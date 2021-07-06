@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+  <title>cgviz</title>
+  <script src="{{ url_for('static', filename='js/jquery-3.1.1.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+  <script src="http://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+  <!--link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css"-->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='jquery-ui.min.cust.css') }}">
+
+</head>
+
+<body>
+
+<script type=text/javascript>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+
+
+<div id='pageheader'>
+  <div class='logo'>
+    <span class="logo">
+      <a href="{{ url_for('species_select') }}">
+	CGVIZ
+      </a>
+    </span>
+    {% if species.label %}<span class="species_header">{{ species.label }}</span>{% endif %}
+  </div>
+    <div id='login'>
+      {% if current_user.is_authenticated %}
+         Logged in as {{ current_user.get_id() }}<br>
+         <a href="{{ url_for('logout') }}">Logout</a></li>
+      {% else %}
+         <a href="{{ url_for('login') }}">Login</a></li>
+      {% endif %}
+    </div>
+</div>
+
+<div class="page">
+  {% block body %}{% endblock %}
+</div>
+
+</body>
+</html>

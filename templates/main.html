@@ -1,0 +1,861 @@
+
+{% extends "layout.html" %}
+{% block body %}
+<div id="fields-modal" class="modal">
+  <div id="fields-content" class="modal-content">
+    <table>
+      <tr><th>Name</th><th>Type</th><th>Show</th><th>Delete</th></tr>
+    {% for f in species.fields %}
+      <tr id="columns_modal_{{f.name}}">
+        <td>{{ f.label }}</td>
+	<td>{{ f.type }}</td>
+	<td><input class="hide_checkbox" type="checkbox" name="{{ f.name }}" value="{{ f.type }}" {% if f.hidden == 1 %}{% else %}checked{%endif%}></td>
+	<td><a onclick="if(confirm('Delete column {{f.name}}?')) delete_metafield('{{ f.name }}');" href="#">X</a></td>
+      </tr>
+     {% endfor %}
+    <tr>
+      <td><input type="text" id="new_field_name" size=6 ></td>
+      <td><select id="new_field_type"><option value="text">text</option><option value="number">number</option></select></td>
+      <td><input id="new_field_visible" checked type="checkbox"></td>
+      <td><button id="new_field_button">Add</button></td>
+    </tr>
+  </table>
+  </div>
+</div>
+
+
+<div id="daterange-modal" class="modal">
+  <div id="daterange-content" class="modal-content">
+    <table>
+      <tr><td>From:</td><td><input size=6 name="daterange_min" id="daterange_min" type="text"></td></tr>
+      <tr><td>To:</td><td><input size=6 name="daterange_max" id="daterange_max" type="text"></td></tr>
+      <tr><td><button id="close_daterange">Close</button></td><td><button id="reset_daterange">Reset</button></td></tr>
+    </table>
+
+  </div>
+</div>
+
+<div id="tag-modal" class="modal">
+  <div id="tag-content" class="modal-content">
+    <table>
+      <tr><td>Blah:</td><td>Add</td></tr>
+      <tr><td>Hah:</td><td>Add</td></tr>
+    </table>
+
+  </div>
+</div>
+
+
+<div class="container">
+
+  <div id="full-list">
+    <div id="button-bar">
+      <button id="button">Generate tree</button>
+      <button id="deselect_button">Clear selection</button>
+      <button id="selectall_button">Select all</button>
+      <button id="daterange_button">Filter by date</button>
+      <button id="fields_button">Columns</button>
+      <!--button id="tag_button">Tag</button-->
+
+      <span class="selectioninfo"><span id="countlabel">0</span> of <span id="totlabel">0</span> isolates selected <span id="pairdiffs"></span></span>
+    </div>
+    <div id="table-div">
+      <table id="main_table" style="width:100%">
+        <thead>
+  	  <tr><th>Sample ID</th><th>Species</th><th>MLST</th><th>PVL</th><th>Added</th>
+	    {% for f in species.fields %}
+	    {% if f.hidden != 1 %}
+	    <th id="{{f.name}}">{{f.label}}</th>
+	    {% endif %}
+	    {% endfor %}
+	  </tr>
+        </thead>
+        <tfoot>
+	  <tr><th><input type="text" placeholder="Search Sample ID"/></th><th id="Species">Species</th><th id="MLST">MLST</th><th id="PVL">PVL</th><th id="Added">Added</th>
+	    {% for f in species.fields %}
+	    {% if f.hidden != 1 %}
+	    <th id={{f.label}}>{{f.label}}</th>
+	    {% endif %}
+	    {% endfor %}
+	  </tr>
+        </tfoot>
+        <tbody>
+	  {% for s in samples %} 
+	  <tr class="isolate" id="{{s._id}}">
+	    <td>
+	      <a onclick="show_data('{{s._id}}')" href="#">{{s.id}}</a>
+	      {% if user_role == 'admin' %}
+              <input class="deleteisolate" value="{{s._id}}" type="image" title="Delete isolate" width=15 src="{{ url_for('static', filename='images/delete.png') }}">
+	      {% if s.hidden != true %}<input class="hideisolate" value="{{s._id}}" type="image" title="Hide isolate" width=15 src="{{ url_for('static', filename='images/hide.png') }}">{% endif %}
+	      {% endif %}
+
+	    </td>
+	    <td><span>{% if s.top_brakken %}{{s.top_brakken.top_species}} {% if species.label == s.top_brakken.top_species %}{% if s.top_brakken.top_species_pct < 0.98 %}<span class="speciesuncertain">?</span>{% endif %}{% else %}<span class="speciesmismatch">x</span>{% endif %}</span>{% endif %}</span></td>
+	    <td><span>{{s.mlst.sequence_type}}</span></td>
+	    {% set PVL_status = s|format_virulence("PVL") %}
+	    <td><span {%if PVL_status == "pos"%}class="pos"{% elif PVL_status == "neg" %}class="neg"{% endif %}>{{PVL_status}}</span></td>
+	    <td><span>{{s._id.generation_time.strftime('%Y-%m-%d') }}</span></td>
+	    {% for f in species.fields %}
+	      {% if f.hidden != 1 %}
+	        {% set meta = s|metadata(f.name) %}
+	        <td {% if meta == "-" %}class="na"{% endif %}><span>{{ meta }}</span></td>
+	      {% endif %}
+	    {% endfor %}
+	  </tr>
+          {% else %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div id="results">
+  </div>
+</div>
+
+<script>
+  $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+  let spec_name = {'saureus':'Staphylococcus aureus'}
+  
+  
+  var column_changes_made = false;
+  var showing;
+  var modal = document.getElementById('fields-modal');
+  var date_modal = document.getElementById('daterange-modal');
+  var tag_modal = document.getElementById('tag-modal');
+  
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+      if(column_changes_made) { location.reload() }
+    }
+    if (event.target == date_modal) {
+      date_modal.style.display = "none";
+    }
+    if (event.target == tag_modal) {
+      tag_modal.style.display = "none";
+    }  
+  }
+
+  window.addEventListener('keydown', updateShiftDown);
+  window.addEventListener('keyup', updateShiftUp);
+  function updateShiftDown(e) {
+    if( e.shiftKey ) $('#button').text("Generate MLST tree");
+  }
+  function updateShiftUp(e) {
+    $('#button').text("Generate tree");
+  }
+
+
+  // Delete metadata field
+  function delete_metafield(id) {
+  console.log("REMOVING");
+    column_changes_made = true;
+    $("#columns_modal_"+id).hide();
+    $.getJSON($SCRIPT_ROOT + '/_deletemetafield', {
+      field: id,
+      species: '{{species.species}}'
+    }, function( data ) {
+      console.log(data);
+      console.log("GONE!")
+    });
+    return false; 
+  }
+
+  
+  // Fetch and show sample metadata
+  function show_data (id) {
+    if( showing ) {
+      $('#'+showing).removeClass('showing');
+    }
+    showing = id;
+    $('#'+showing).addClass('showing');
+    $.getJSON($SCRIPT_ROOT + '/_showdata', {
+      sample: id
+    }, function( data ) {
+      createMetadataTable( data["data"], data["species"]["fields"] )
+    });
+  
+    return false; 
+  }  
+
+  function createMetadataTable(dict, fields) {
+    meta_dict = {}; 
+    var results = document.getElementById("results");
+    while (results.firstChild) {
+      results.removeChild(results.firstChild);
+    }
+
+    if( "metadata" in dict && dict["metadata"] != null ) {
+      meta_dict = dict["metadata"]
+    }
+
+  
+    let brakken_table;
+    if( dict["brakken"] ) {
+      brakken_table = createBrakkenTable(dict["brakken"]);
+    }
+
+    let virulence_table;
+    if( dict["aribavir"] ) {
+      virulence_table = createVirulenceTable(dict["aribavir"]);
+    }
+
+  
+  
+    var table = document.createElement('table');
+    table.className = "metadata"
+    var tableBody = document.createElement('tbody');
+    var header_row = document.createElement('tr')
+    var header_key = document.createElement('th')
+    var header_val = document.createElement('th')
+    header_key.appendChild(document.createTextNode("Sample:"));
+    header_val.appendChild(document.createTextNode(dict["id"]));
+    {% if user_role == "admin" %}
+    header_val.appendChild(document.createTextNode(" ("+dict["_id"]+")"));
+    {% endif %}
+    header_row.className = "metadata_header"
+    header_row.appendChild(header_key)
+    header_row.appendChild(header_val)
+    tableBody.appendChild(header_row)
+    let editable = {};
+
+    console.log(dict['_id']);
+  
+    if( "run" in dict ) {
+      console.log(dict["run"]);
+      var parts = dict["run"].split("/");
+      meta_dict["Sequencing run"] = parts[parts.length-2]+"/"+parts[parts.length-1]
+    }
+    else {
+      meta_dict["Sequencing run"] = "N/A"
+    }
+
+    if( "species" in dict ) {
+      meta_dict["Annotated species"] = spec_name[dict["species"]];
+    }
+    else {
+      meta_dict["Annotated species"] = "N/A"
+    }  
+
+ 
+    /*if( "scheme_md5" in dict ) {
+      meta_dict["cgMLST scheme"] = dict["scheme_md5"]
+    }
+    else {
+      meta_dict["cgMLST scheme"] = "N/A"
+    } */ 
+
+    if( "missing" in dict ) {
+      meta_dict["cgMLST missing loci"] = dict["missing"]
+    }
+    else {
+      meta_dict["cgMLST missing loci"] = "N/A"
+    }
+
+    if( "quast" in dict && dict["quast"] != null && "NG50" in dict["quast"]) {
+      meta_dict["Assembly size"] = parseInt(dict["quast"]["Total length"]).toLocaleString() + " bp";
+      meta_dict["N50"] = parseInt(dict["quast"]["NG50"]).toLocaleString() + " bp";
+      meta_dict["# contigs"] = parseInt(dict["quast"]["# contigs"]).toLocaleString();  
+    }
+    else {
+      meta_dict["Assembly size"] = "N/A"
+      meta_dict["N50"] = "N/A"
+      meta_dict["# contigs"] = "N/A"
+    }
+
+    if( "mlst" in dict ) {
+      meta_dict["MLST"] = dict["mlst"]["sequence_type"]
+    }
+    else {
+      meta_dict["MLST"] = "N/A"
+    }
+
+ 
+    let meta_fields = ["Sequencing run", "Annotated species", "MLST" /*,"cgMLST scheme"*/, "cgMLST missing loci", "Assembly size", "N50", "# contigs"]
+    for (var field of fields) {
+      meta_fields.push(field['name']);
+      editable[field['name']] = 1;
+    }
+
+  
+    for (let key of meta_fields) {
+      var row = document.createElement('tr')
+      var key_cell = document.createElement('td')
+      key_cell.appendChild(document.createTextNode(key))
+      key_cell.className = "metadata_key"
+      var val_cell = document.createElement('td')
+
+      let metavalue = "-";
+      if( meta_dict[key] != undefined && ( typeof meta_dict[key] == "number" || meta_dict[key].length > 0)) {
+         metavalue = meta_dict[key];
+      }
+      val_div = document.createElement('div');
+      val_span = document.createElement('span');
+      val_input = document.createElement('input');
+      val_input.style.display = "none";
+      val_input.type = "text";
+      val_input.name = key+"|"+dict["_id"];
+      val_span.appendChild(document.createTextNode(metavalue));
+      val_div.appendChild(val_span);
+      val_div.appendChild(val_input);
+      if( editable[key] ) {
+        val_div.className = "editable"
+	val_span.className = "editable"
+	val_applytoselected_button = document.createElement("BUTTON")
+	val_applytoselected_button.innerHTML = "To selected";
+	val_applytoselected_button.className = "editable smaller_button";
+	val_applytoselected_button.id = "all_"+key;	
+	val_div.appendChild(val_applytoselected_button);
+      }
+  
+      val_cell.appendChild(val_div)
+      val_cell.className = "metadata_value"
+      row.appendChild(key_cell)
+      row.appendChild(val_cell)
+      tableBody.appendChild(row)
+    }
+    table.appendChild(tableBody);
+
+    results.appendChild(table);
+    if( brakken_table ) {
+      results.appendChild(brakken_table);
+    }
+
+    if( virulence_table ) {
+      results.appendChild(virulence_table);
+    }
+
+}
+
+
+
+
+  
+  function createBrakkenTable(data) {
+
+    let table = document.createElement('table');
+    var tableBody = document.createElement('tbody');
+    var header_row = document.createElement('tr')
+    var header_key = document.createElement('th')
+    var header_val = document.createElement('th')
+    header_key.appendChild(document.createTextNode("Detected species"))
+    header_val.appendChild(document.createTextNode("%"))
+    header_row.className = "metadata_header"
+    header_row.appendChild(header_key)
+    header_row.appendChild(header_val)
+    tableBody.appendChild(header_row)
+
+    table.className = "metadata";
+
+    data.sort(comp_frac).forEach(function(spec) {
+      if( spec['fraction_total_reads'] > 0.01 ) {
+        let row = document.createElement('tr');
+        let spec_cell = document.createElement('td');
+        let perc_cell = document.createElement('td');
+        spec_cell.className = "species"
+        spec_cell.appendChild(document.createTextNode(spec['name']));
+        perc_cell.appendChild(document.createTextNode(Math.round( 100*spec['fraction_total_reads'] * 10) / 10 + "%"));
+        if( spec_name['{{species.species}}'] != spec['name'] ) {
+          row.className = "metadata_warning"
+        }
+        row.appendChild(spec_cell);
+        row.appendChild(perc_cell);
+        tableBody.appendChild(row);
+      }
+    });
+    table.appendChild(tableBody);
+    return(table);
+  }
+
+	
+  function comp_frac(a,b) {
+    if (a.fraction_total_reads < b.fraction_total_reads)
+      return 1;
+    if (a.fraction_total_reads > b.fraction_total_reads)
+      return -1;
+    return 0;
+
+  }
+
+
+
+  function createVirulenceTable(data) {
+
+    let table = document.createElement('table');
+    var tableBody = document.createElement('tbody');
+    var header_row = document.createElement('tr')
+    var header_key = document.createElement('th')
+    var header_val = document.createElement('th')
+    header_key.appendChild(document.createTextNode("Virulence factor"))
+    header_val.appendChild(document.createTextNode("Genes"))
+    header_row.className = "metadata_header"
+    header_row.appendChild(header_key)
+    header_row.appendChild(header_val)
+    tableBody.appendChild(header_row)
+
+    table.className = "metadata";
+
+    let row = document.createElement('tr');
+    let vir_cell = document.createElement('td');
+    let genes_cell = document.createElement('td');
+    vir_cell.appendChild(document.createTextNode("PVL"));
+    let genes_str;
+    if( data['lukS_PV']['present'] == 1 ) { gene_str = "lukS+ " }
+    else if( data['lukS_PV']['present'] == 0 ) { gene_str = "lukS- " }
+    if( data['lukF_PV']['present'] == 1 ) { gene_str += "lukF+ " }
+    else if( data['lukF_PV']['present'] == 0 ) { gene_str += "lukF- " }
+    genes_cell.appendChild(document.createTextNode(gene_str));
+    row.appendChild(vir_cell);
+    row.appendChild(genes_cell);
+    tableBody.appendChild(row);
+    table.appendChild(tableBody);
+    return(table);
+  }
+		  
+  
+  
+  function createTable(tableData, labels) {
+    var table = document.createElement('table');
+    var tableBody = document.createElement('tbody');
+				   
+    tableData.forEach(function(rowData) {
+      var row = document.createElement('tr');
+		   
+      rowData.forEach(function(cellData) {
+        var cell = document.createElement('td');
+        if( cellData == -1 ) { cellData = "" }			   
+        cell.appendChild(document.createTextNode(cellData));
+        row.appendChild(cell);
+      });
+
+      tableBody.appendChild(row);
+    });
+
+   
+    table.appendChild(tableBody);
+
+    var results = document.getElementById("results");
+    while (results.firstChild) {
+      results.removeChild(results.firstChild);
+    }
+    results.appendChild(table);
+  }
+				   
+
+
+
+  // Checkbox to hide metadata field clicked
+  $('.hide_checkbox').click(function() {
+    column_changes_made = true;  
+    var checked = $(this).is(':checked'); 
+    $.getJSON($SCRIPT_ROOT + '/_changehidestate', {
+      name: $(this).attr('name'),
+      chk:  checked,
+      species: '{{species.species}}'
+    }, function( data ) {
+      console.log(data);
+    });
+  });
+
+  
+  $(document).ready(function() {
+    var metadata = {}
+
+    var trs = document.getElementById('main_table').tBodies[0].getElementsByTagName('tr');
+    var selectedCount = 0;
+    $('#totlabel').html(trs.length);			      
+
+    function selectRowsBetweenIndexes(indexes) {
+      indexes.sort(function(a, b) {
+        return a - b;
+      });
+
+      for (var i = indexes[0]; i <= indexes[1]; i++) {
+        if( !$(trs[i-1]).hasClass('selected') ) { selectedCount.cnt += 1 }
+	trs[i-1].className = 'selected';
+      }
+    }
+
+    function deselectRowsBetweenIndexes(indexes) {
+      indexes.sort(function(a, b) {
+        return a - b;
+      });
+
+      for (var i = indexes[0]; i <= indexes[1]; i++) {
+        if( $(trs[i-1]).hasClass('selected') ) { selectedCount.cnt -= 1 }
+	trs[i-1].className = '';
+      }
+    }
+				    
+				    
+    var table = $('#main_table').DataTable( {
+
+      "order": [[ 4, "desc" ]],
+      "paging":   false,
+      "scrollY": "58vh",
+      "scrollX": true,				    
+      "scrollCollapse": true,
+      "searching": true,				      
+      "info": false,
+
+      initComplete: function () {
+        let cols_with_selector = [];
+	for( let i=1; i<this.api().columns().header().length; i++ ) { cols_with_selector.push(i); }
+        this.api().columns(cols_with_selector).every( function () {
+          var column = this;
+          var select = $('<select><option value="">'+column.footer().id+'</option></select>')
+            .appendTo( $(column.footer()).empty() )
+            .on( 'change', function () {
+              var val = $.fn.dataTable.util.escapeRegex(
+                $(this).val()
+              );
+              column
+                .search( val ? '^'+val+'$' : '', true, false )
+                .draw();
+            } );
+
+	   column.data().unique().sort().each( function ( d, j ) {
+             let html_val = $.parseHTML(d); 
+             if( html_val != null ) {
+               let new_d = $(html_val)[0].innerText;
+  	       select.append( '<option value="'+new_d+'">'+new_d+'</option>' )
+             } 
+							      
+          } );
+        } );
+      }
+    } );
+ 
+    table.columns([0]).every( function() {
+      var that = this;
+
+      $( 'input', this.footer() ).on( 'keyup change', function () {
+      if ( that.search() !== this.value ) {
+
+          that
+            .search( this.value )
+           .draw();
+        } 
+      } );
+    } );
+
+    // Date range filter
+    $.fn.dataTable.ext.search.push(
+      function (settings, data, dataIndex) { 
+	var min = $('#daterange_min').datepicker("getDate");
+        var max = $('#daterange_max').datepicker("getDate");
+        var startDate = new Date(data[3]);
+        if (min == null && max == null) { return true; }
+        if (min == null && startDate <= max) { return true;}
+        if(max == null && startDate >= min) {return true;}
+        if (startDate <= max && startDate >= min) { return true; }
+        return false;
+      }
+    );
+    $("#daterange_min").datepicker({dateFormat: 'yy-mm-dd', onSelect: function () { table.draw(); }, changeMonth: true, changeYear: true });
+    $("#daterange_max").datepicker({dateFormat: 'yy-mm-dd', onSelect: function () { table.draw(); }, changeMonth: true, changeYear: true });
+    $('#daterange_min, #daterange_max').change(function () {
+      table.draw();
+    });
+    $('#reset_daterange').on('click', function () {
+      var $dates = $('#daterange_min, #daterange_max').datepicker();
+      $dates.datepicker('setDate', null);
+      table.draw();
+    });							      
+
+
+
+
+
+
+    // Selected count object							      
+    var selectedCount = {
+      value: 0,
+      get cnt() {
+        return this.value;
+      },
+      set cnt(v) {
+	if( this.value == 2 && v != 2 ) {
+          $('#pairdiffs').html('');
+	}
+
+	this.value = v;
+	$('#countlabel').html(this.value);
+	if( this.value == 2 ) {
+          calc_pair_dist();
+        }
+      }
+    }
+							 
+    $('#main_table tbody').on( 'mousedown', 'tr', function (e) {
+      if( ! $(e.target).is('a') ) {
+        if( !e.shiftKey ) {
+          $(this).toggleClass('selected');
+          delete(lastSelected);
+	  delete(lastDeselected);
+          if( $(this).hasClass('selected') ) {
+            lastSelected = $(this)
+  	    selectedCount.cnt += 1;
+	  }
+ 	  else {
+            lastDeselected = $(this)							      
+	    selectedCount.cnt -= 1;
+	  }
+	}
+        else { // Shift-clicking
+          e.preventDefault()   
+          if( typeof(lastSelected) !== 'undefined' ) {
+ 	    selectRowsBetweenIndexes([lastSelected[0].rowIndex, $(this)[0].rowIndex])
+          }   
+          if( typeof(lastDeselected) !== 'undefined' ) {
+ 	    deselectRowsBetweenIndexes([lastDeselected[0].rowIndex, $(this)[0].rowIndex])
+          }   
+	}
+      }
+    } );
+
+    $('#deselect_button').click( function(e) {
+	table.$('tr.selected').removeClass('selected');
+	selectedCount.cnt = 0;				 
+    } );
+
+    $('#selectall_button').click( function(e) {
+      table.$('tr.isolate').removeClass('selected');
+      table.rows({ search: 'applied'}).nodes().each(function() {
+        $(this).addClass('selected');        
+      })
+      selectedCount.cnt = trs.length;
+    } );
+
+				    
+    $('#fields_button').click( function(e) {
+      pos = $('#fields_button').position();
+      $("#fields-content").css({top: pos.top+25, left: pos.left});   
+        modal.style.display = "block";
+        column_changes_made = false;
+    } );				    
+
+    $('#tag_button').click( function(e) {
+      pos = $('#tag_button').position();
+      $("#tag-content").css({top: pos.top+25, left: pos.left});   
+      tag_modal.style.display = "block";
+    } );				    
+
+    $('#daterange_button').click( function(e) {
+      pos = $('#daterange_button').position();
+      $("#daterange-content").css({top: pos.top+25, left: pos.left});   
+      date_modal.style.display = "block";
+    } );				    
+							      
+
+
+
+							      
+
+
+							      
+    // When clicking editables text fields.
+    $(document).on("click", '.editable span', function() {
+      let $this = $(this);
+      $this.siblings("button").animate({opacity: 0}, 0);
+      $this.hide().siblings("input").val($this.text()).show().select();
+    });
+    $(document).on("blur keyup", '.editable input', function(e) {
+      if (e.type === 'blur' || e.type === 'focusout' || e.keyCode === 13) {
+	let $this = $(this);
+        $this.siblings("button").animate({opacity: 1}, 0);
+						      
+        let new_val = $this.val()
+        let name_str = $this.attr('name');							      
+        let [col, row] = name_str.split('|');
+
+	let tr = $('#'+row)
+        tr.each(function(i) {
+          $("td", this).each(function( j ) {
+            let th_id = $(this).closest('table').find('th').eq($(this).index()).attr('id');
+            if( th_id == col ) {
+              $(this).html(new_val);
+              $(this).removeClass('na');
+            }
+          })
+        });
+        table.row(tr).invalidate()
+  
+        $.getJSON($SCRIPT_ROOT + '/_savemetafield', {
+          name: name_str,
+          value: new_val
+        }, function( data ) {
+          console.log(data);
+        });
+        $this.hide().siblings("span").text($this.val()).show();
+      }
+    }).hide();
+
+
+    // When clicking 'apply to selected' button next to editable text field							      
+    $(document).on("click", '.editable button', function() {
+       let new_val = $(this).siblings("span").text();
+       selected = document.getElementsByClassName("selected")
+       sids = []
+       for( i=0; i<selected.length; i++ ) { sids.push(selected[i].id) }
+
+       let name_str = $(this)[0].id;
+       let field_name = name_str.replace(/^(all_)/,"");
+       let do_it = confirm("This will change the '" + field_name + "' value for "+sids.length+" selected isolates to '" + new_val + "'. It cannot be undone. Please confirm.");
+
+       if( do_it ) {				    
+       for( row of sids ) {				    
+	 let tr = $('#'+row)
+         tr.each(function(i) {
+           $("td", this).each(function( j ) {
+             let th_id = $(this).closest('table').find('th').eq($(this).index()).attr('id');
+             if( th_id == field_name ) {
+               $(this).html(new_val);
+               $(this).removeClass('na');
+             }
+           })
+         });
+	 table.row(tr).invalidate()
+       }			    
+				    
+				    $.getJSON($SCRIPT_ROOT + '/_savemetafieldmany', {
+				    sids: sids,
+				    field: field_name,
+				    value: new_val
+				    }, function( data ) {
+				    console.log(data);
+				    });
+       }		    
+    });
+							       
+
+
+
+
+    // Add a new metadata field							      
+    $('#new_field_button').click( function(e) {
+      column_changes_made = true;							      
+      $.getJSON($SCRIPT_ROOT + '/_newmetafield', {
+        name: $('#new_field_name').val(),
+        species: '{{species.species}}',
+        type: $('#new_field_type').val(),
+        visible: $('#new_field_visible').is(':checked')
+      }, function( data ) {
+        console.log(data);							      
+      });
+    });
+
+
+
+    // Delete isolate
+    $('.deleteisolate').click( function(e) {
+      $.getJSON($SCRIPT_ROOT + '/_deleteisolate', {
+        id: $(this).val()
+      }, function( data ) {
+        console.log(data);				    
+      });
+    } );
+							      
+    // Hide isolate
+    $('.hideisolate').click( function(e) {
+      $.getJSON($SCRIPT_ROOT + '/_hideisolate', {
+        id: $(this).val()
+      }, function( data ) {
+        console.log(data);				    
+      });
+    });				    
+							      
+
+							      
+    // Generate tree button clicked!
+    $('#button').click( function (e) {
+
+      let mlst_bool = "0";
+      if (e.shiftKey) { 
+        mlst_bool = "1";
+      }
+console.log(mlst_bool);
+      // Get selected sample IDs into an array
+      selected = document.getElementsByClassName("selected")
+      sids = []
+      for( i=0; i<selected.length; i++ ) { sids.push(selected[i].id) }
+
+      $.post($SCRIPT_ROOT + '/_maketree', {
+	samples: sids,
+        species: '{{species.species}}',
+	mlst: mlst_bool
+      }, function( data ) {
+        //createTable(data.diff_matrix, data.samples) 
+        metadata = data.metadata;
+      }).done(function() {
+        $.ajax({
+	  method: "POST",
+	  url: "http://10.0.224.63/grapetree/maketree",
+	  data: {
+	    profile:'/data/tmp/cgprof.tmp',
+            method:'MSTree',
+            checkEnv: 0,
+          }
+	}).done(function(result){ 
+				   div = document.createElement("div")
+				   //div.setAttribute("id", "tree")
+				   //div.appendChild(document.createTextNode(result))
+				   var result_div = document.getElementById("results");
+				   result_div.appendChild(div)
+
+				   var f = document.createElement("form");
+				   f.setAttribute('method',"post");
+				   f.setAttribute('action',"/grapetree/showtree");
+				   f.setAttribute('target',"_blank");
+
+				   var i = document.createElement("input"); //input element, text
+				   i.setAttribute('type',"hidden");
+				   i.setAttribute('name',"nwktree");
+				   i.setAttribute('value', result);
+
+				   var j = document.createElement("input"); //input element, text
+				   j.setAttribute('type',"hidden");
+				   j.setAttribute('name',"metadata");
+				   j.setAttribute('value', JSON.stringify(metadata));
+				   
+				   var s = document.createElement("input"); //input element, Submit button
+				   s.setAttribute('type',"hidden");
+				   s.setAttribute('value',"Show tree in Grapetree");
+
+				   f.appendChild(i);
+				   f.appendChild(j);
+				   f.appendChild(s);
+				   result_div.appendChild(f);
+				   f.submit();
+				   
+        }).fail(function( jqXHR, textStatus){console.log(textStatus);});
+      });
+
+				   
+      return false; 
+    });  
+
+  } );
+
+
+
+  function calc_pair_dist() {
+    selected = document.getElementsByClassName("selected")
+    sids = []
+    for( i=0; i<selected.length; i++ ) { sids.push(selected[i].id) }
+
+    $.getJSON($SCRIPT_ROOT + '/_calcpairdist', { 
+      iso1: sids[0],
+      iso2: sids[1],
+      species: '{{species.species}}'
+    }, function( data ) {
+      $('#pairdiffs').html('(with '+data["value"]+' differences)');
+    });
+ 				 
+  }
+
+
+</script>
+
+{% endblock %}
