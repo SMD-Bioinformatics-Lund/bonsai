@@ -1,0 +1,49 @@
+header {
+    width: 100%;
+    background-color:#a7caba;
+    border-bottom: 3px solid #78AB94;
+    display: inline-block;
+}
+
+#logo-container {
+    float: left;
+}
+
+.logo {
+    text-decoration:none;
+    font-size:70px;
+    font-weight:bold;
+    color:#fff;
+    text-shadow: 2px 2px 9px #fff;
+}
+
+div.logo {
+    padding:5px;
+}
+
+span.logo {
+    padding-left:20px;
+}
+
+span.logo a {
+    text-decoration:none;
+    font-size:70px;
+    font-weight:bold;
+    color:#fff;
+    text-shadow: 2px 2px 9px #fff;
+}
+
+span.specieName {
+    font-size: 20px;
+    font-style: italic;
+    background-color:#F4F8F6;
+    border-radius: 6px;
+    padding:3px 8px;
+    margin-left: 20px;
+}
+
+#login {
+    float:right;
+    font-size: 12px;
+    padding:20px;
+}
