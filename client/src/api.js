@@ -1,17 +1,19 @@
+const apiUrl = 'http://localhost:3011'
+
 const fetchSamples = async (specieName) => {
-  const res = await fetch(`http://localhost:3001/samples?species=${specieName}`)
+  const res = await fetch(`${apiUrl}/samples?species=${specieName}`)
   const data = await res.json()
   return data
 }
 
 const fetchSpecies = async () => {
-  const res = await fetch('http://localhost:3001/species')
+  const res = await fetch(`${apiUrl}/species`)
   const data = await res.json()
   return data
 }
 
 const fetchSpecieByName = async (specieName) => {
-  const res = await fetch(`http://localhost:3001/species?species=${specieName}&limit=1`)
+  const res = await fetch(`${apiUrl}/species?species=${specieName}&limit=1`)
   const data = await res.json()
   return data
 }

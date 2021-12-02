@@ -5,6 +5,8 @@ import Header from '../components/Header';
 import IsolateTable from '../components/IsolateTable';
 import { fetchSpecieByName, fetchSamples } from '../api';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 const Samples = () => {
   // Define states of view
   const { specie } = useParams()
@@ -34,11 +36,20 @@ const Samples = () => {
   return (
     <>
       <Header specieName={name} />
-      { (specieInfo !== null && sampleData !== null) && 
-        <IsolateTable 
-        specieInfo={specieInfo} 
-        sampleData={sampleData} 
-        /> }
+      <div className="container-fluid">
+        <div className="row justify-content-start">
+          <div className="col-xl-8">
+            { (specieInfo !== null && sampleData !== null) && 
+              <IsolateTable 
+              specieInfo={specieInfo} 
+              sampleData={sampleData} 
+              /> }
+          </div>
+          <div className="col-sm-4">
+            foo bar
+          </div>
+        </div>
+      </div>
     </>
   )
 }

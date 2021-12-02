@@ -9,7 +9,37 @@
         {
           "hidden": 0,
           "type": "text",
-          "name": "QC",
+          "name": "sampleId",
+          "label": "Sample ID"
+        },
+        {
+          "hidden": 0,
+          "type": "text",
+          "name": "specie",
+          "label": "Species"
+        },
+        {
+          "hidden": 0,
+          "type": "text",
+          "name": "mlstSt",
+          "label": "MLST ST"
+        },
+        {
+          "hidden": 0,
+          "type": "text",
+          "name": "pvl",
+          "label": "PVL"
+        },
+        {
+          "hidden": 0,
+          "type": "text",
+          "name": "date",
+          "label": "Upload date"
+        },
+        {
+          "hidden": 0,
+          "type": "text",
+          "name": "qc",
           "label": "QC"
         },
         {
@@ -21,13 +51,13 @@
         {
           "hidden": 0,
           "type": "text",
-          "name": "Utbrott",
-          "label": "Utbrott"
+          "name": "outbreak",
+          "label": "Outbreak"
         },
         {
           "hidden": 0,
           "type": "text",
-          "name": "Comment",
+          "name": "comment",
           "label": "Comment"
         }
       ]
