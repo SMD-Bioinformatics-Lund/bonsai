@@ -41,7 +41,7 @@ const SpeciesPanel = ({specieId, specieName, image, numSamples}) => {
   const url = `/${specieId}`
 
   return (
-    <Link to={url}>
+    <Link key={specieName} to={url}>
       <div className="species-panel">
         <img src={image} alt="" />
         <h3>{specieName}</h3>

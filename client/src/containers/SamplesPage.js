@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from "react-router-dom"
 
 import Header from '../components/Header';
-import IsolateTable from '../components/IsolateTable';
+import IsolateTable from '../components/IsolateTable/Table';
 import { fetchSpecieByName, fetchSamples } from '../api';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -20,7 +20,7 @@ const Samples = () => {
       setSpecieInfo(speciesData[0])
     }
     getSpecieDataFromServer()
-  }, [])
+  }, [specie])
 
   // fetch isolate information
   useEffect(() => {
@@ -29,7 +29,7 @@ const Samples = () => {
       setSampleData(samples)
     }
     getSamplesFromServer()
-  }, [])
+  }, [specie])
 
   const name = specieInfo !== null ? specieInfo.label : ''
 
