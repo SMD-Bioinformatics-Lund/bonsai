@@ -5,6 +5,9 @@ export function getCellFormating(dataType) {
     case 'pvl': 
       formatFunc = ({ cell: { value } }) => <PvlTyping value={value}/>;
       break;
+    case 'mlstSt': 
+      formatFunc = ({ cell: { value } }) => <MlstTyping value={value}/>;
+      break;
     default:
       formatFunc = ({ cell: { value } }) => (<>{value}</>)
       break
@@ -12,17 +15,15 @@ export function getCellFormating(dataType) {
   return {Cell: formatFunc}
 }
 
-
 const PvlTyping = ({ value }) => {
   // Create PVL typing badge
-  console.log(`---> ${value}`)
   let badgeColor
   switch (value) {
     case 'pos':
       badgeColor = 'bg-success';
       break;
     case 'neg':
-      badgeColor = 'bg-warning';
+      badgeColor = 'bg-danger';
       break;
     case 'pos/neg':
       badgeColor = 'bg-warning';
@@ -34,4 +35,9 @@ const PvlTyping = ({ value }) => {
       badgeColor = 'bg-secondary'
   }
   return (<span className={`badge ${badgeColor}`}>{value}</span>);
+}
+
+const MlstTyping = ({ value }) => {
+  // Create PVL typing badge
+  return (<span className="badge bg-secondary">{value}</span>);
 }

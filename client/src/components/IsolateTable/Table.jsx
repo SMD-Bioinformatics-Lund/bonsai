@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from 'prop-types'
 
-import { formatPvl, getMetadata, range } from '../../utils'
+import { formatPvl, abbreviateSpecieName, getMetadata, range } from '../../utils'
 import { getCellFormating } from './Cell'
 import { IndeterminateCheckbox, DefaultColumnFilter, GlobalFilter, parseFilterFunction } from './Filter'
 import { useTable, usePagination, useSortBy, useFilters, useGlobalFilter, useRowSelect } from 'react-table'
@@ -192,7 +192,7 @@ const IsoalteTable = ({ specieInfo, sampleData }) => {
   const data = sampleData.map(sample => {
     return {
       sampleId: sample.sample_id,
-      specie: sample.top_brakken.top_species,
+      specie: abbreviateSpecieName(sample.top_brakken.top_species),
       mlstSt: sample.mlst.sequence_type,
       pvl: formatPvl(sample),
       date: sample.creation_date,

@@ -5,9 +5,14 @@ export function formatPvl(data) {
   if (typeof(lukS_PV) === 'undefined' || typeof(lukF_PV) === 'undefined') return 'NA'
   
   if (lukS_PV.present === 1 && lukF_PV.present === 1) return 'pos'
-  else if (lukS_PV === 1) return 'neg/pos'
-  else if (lukF_PV === 1) return 'pos/neg'
+  else if ( lukS_PV.present === 1 && lukF_PV.present === 0 ) return 'neg/pos'
+  else if (lukS_PV.present === 0 && lukF_PV.present === 1) return 'pos/neg'
   else return 'neg'
+}
+
+export function abbreviateSpecieName(name) {
+  const [genus, specie] = name.split(" ")
+  return `${genus[0]}. ${specie}`
 }
 
 export function getMetadata(data, metric) {
