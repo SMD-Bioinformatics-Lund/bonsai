@@ -19,3 +19,13 @@ export function getMetadata(data, metric) {
 
   return data.metadata[metric]
 }
+
+export function range(start, end, limit = null) {
+  let r = [];
+  for (let i = start; i < end; i++) {
+    if (limit !== null && limit + start < i) { break };
+    r.push(i);
+  }
+  return r;
+}
+
