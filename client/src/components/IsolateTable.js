@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from 'prop-types'
 
-import { formatPvl, getMetadata } from '../utils'
+import { formatPvl, range } from '../utils'
 import { useTable, usePagination, useSortBy, useFilters, useGlobalFilter, useAsyncDebounce, useRowSelect } from 'react-table'
 
 //import Table from 'react-bootstrap/Table';
@@ -22,7 +22,6 @@ const GlobalFilter = ({
 
   return (
     <span className="sample-search">
-      Search:{' '}
       <input
         className="form-control"
         value={value || ""}
@@ -30,14 +29,14 @@ const GlobalFilter = ({
           setValue(e.target.value);
           onChange(e.target.value);
         }}
-        placeholder={`${count} records...`}
+        placeholder={`Search ${count} records...`}
       />
     </span>
   )
 }
 
-const DefaultColumnFilter = ({ column: { filterValue, preFilterRows, setFilter } }) => {
-  const count = preFilterRows.length
+const DefaultColumnFilter = ({ column: { filterValue, preFilteredRows, setFilter } }) => {
+  const count = preFilteredRows.length
 
   return (
     <input
@@ -68,12 +67,162 @@ const IndeterminateCheckbox = React.forwardRef(
   }
 )
 
+// for filtering by selecting a unique option from a list
+const SelectColumnFilter = ({ column: { filterValue, setFilter, preFilteredRows, id }, }) => {
+  // Calculate the options for filtering from preFilterRows
+  const options =  React.useMemo(() => {
+    const options = new Set()
+    preFilteredRows.forEach(row => {
+      options.add(row.values[id])
+    })
+    return [...options.values()]
+  }, [id, preFilteredRows])
+
+  // render multi-select box
+  return (
+    <select 
+      value={filterValue} 
+      onChange={e => { setFilter(e.target.value || undefined) }}
+      id=""
+      className="form-select form-select-sm"
+      >
+        <option key="all" value="">All</option>
+        {options.map((option, i) => (
+          <option key={i} id={i} value={option}>{option}</option>
+        ))}
+    </select>
+  )
+}
+
+
+const SliderColumnFilter = ({column: { filterValue, setFilter, preFilteredRows, id }}) => {
+  // calculate min, max values from preFilteredRows
+  const [min, max] = React.useMemo(() => {
+    let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
+    let max = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
+
+    preFilteredRows.forEach(row => {
+      min = Math.min(row.values[id], min)
+      max = Math.max(row.values[id], max)
+    })
+    return [min, max]
+  }, [id, preFilteredRows])
+  return (
+    <>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        value={filterValue || min}
+        onChange={e => { setFilter(parseInt(e.target.value, 10)) }}
+      />
+      <button onClick={() => setFilter(undefined)}>Off</button>
+    </>
+  )
+} 
+
+
+const NumberRangeColumnFilter = ({ column: { filterValue=[], preFilteredRows, setFilter, id } }) => {
+  const [min, max] = React.useMemo(() => {
+    let min = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
+    let max = preFilteredRows.length ? preFilteredRows[0].values[id] : 0
+    preFilteredRows.forEach(row => {
+      min = Math.min(row.values[id], min)
+      max = Math.max(row.values[id], max)
+    })
+    return [min, max]
+  }, [id, preFilteredRows])
+
+  return (
+    <div className="date-picker">
+      <input
+        value={filterValue[0] || ''}
+        type="number"
+        onChange={e => {
+          const val = e.target.value
+          setFilter(( old=[] ) => [val ? parseInt(val, 10) : undefined, old[1]])
+        }}
+        placeholder={`Min (${min})`}
+      />
+      <input
+        value={filterValue[1] || ''}
+        type="number"
+        onChange={e => {
+          const val = e.target.value
+          setFilter(( old=[] ) => [old[0], val ? parseInt(val, 10) : undefined])
+        }}
+        placeholder={`Max (${max})`}
+      />
+    </div>
+  );
+};
+
+
+// Parse column definition and assign filter function and filter type
+function parseFilterFunction(filterType, filterParam) {
+  let filterFunc = {};
+  switch (filterType) {
+    case 'numberRange': 
+    filterFunc = {Filter: NumberRangeColumnFilter, filter: filterParam};
+      break;
+    case 'selection': 
+    filterFunc = {Filter: SelectColumnFilter, filter: filterParam};
+      break;
+    case 'slider': 
+    filterFunc = {Filter: SliderColumnFilter, filter: filterParam};
+      break;
+    default:
+      break
+  }
+  return filterFunc
+}
+
+
+function cellFormat(dataType) {
+  let formatFunc;
+  switch ( dataType ) {
+    case 'pvl': 
+      formatFunc = {Cell: ({ cell: value }) => <PvlTyping value={value}/>};
+      break;
+    default:
+      formatFunc = {}
+      break
+  }
+  return formatFunc
+}
+
+
+const PvlTyping = ({ value }) => {
+  // Create PVL typing badge
+ let badgeColor
+  switch (value) {
+    case 'pos':
+      badgeColor = 'badge-success';
+      break;
+    case 'neg':
+      badgeColor = 'badge-warning';
+      break;
+    case 'pos/neg':
+      badgeColor = 'badge-warning';
+      break;
+    case 'neg/pos':
+      badgeColor = 'badge-warning';
+      break;
+    default:
+      badgeColor = 'badge-secondary'
+  }
+  return (<span className={`badge ${badgeColor}`}>{value}</span>);
+}
+
+
+
+
 const TableComponent = ({ columns, data }) => {
 
   const defaultColumn = React.useMemo(() => ({
     // Default filter UI
     Filter: DefaultColumnFilter,
-  }), {})
+  }), [])
 
   const table = useTable({
     columns, data, defaultColumn, initialState: { pageIndex: 0, pageSize: 5 }
@@ -120,16 +269,20 @@ const TableComponent = ({ columns, data }) => {
             setGlobalFilter={setGlobalFilter}
           />
         </div>
+        <div className="col-sm-2 align-self-end">
+          <span>{selectedFlatRows.length} of {rows.length} samples</span>
+        </div>
       </div>
       <div className="row">
         <div className="col-lg-12">
           <table className="table table-hover" {...getTableProps()}>
             <thead>
-              {headerGroups.map(headerGroup => (
-                <tr {...headerGroup.getHeaderGroupProps()}>
-                  {headerGroup.headers.map(column => (
-                    <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+              {headerGroups.map((headerGroup, i) => (
+                <tr key={i} {...headerGroup.getHeaderGroupProps()}>
+                  {headerGroup.headers.map((column, i) => (
+                    <th key={i} {...column.getHeaderProps(column.getSortByToggleProps())}>
                       {column.render('Header')}
+                      {/* Render icons when sorting the columns */}
                       <span>
                         {column.isSorted ? column.isSortedDesc ? <SortUp /> : <SortDown /> : ''}
                       </span>
@@ -142,7 +295,7 @@ const TableComponent = ({ columns, data }) => {
               {page.map((row, i) => {
                 prepareRow(row)
                 return (
-                  <tr>
+                  <tr key={i}>
                     {row.cells.map(cell => {
                       return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
                     })}
@@ -150,6 +303,18 @@ const TableComponent = ({ columns, data }) => {
                 )
               })}
             </tbody>
+            <tfoot>
+              {headerGroups.map(headerGroup => (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map((column, i) => (
+                  <th key={i}>
+                    {/* Render columns filter UI */}
+                    <div>{column.canFilter ? column.render('Filter') : null}</div>
+                  </th>
+                ))}
+              </tr>
+              ))}
+            </tfoot>
           </table>
         </div>
       </div>
@@ -158,15 +323,6 @@ const TableComponent = ({ columns, data }) => {
       </div>
     </>
   )
-}
-
-function range(start, end, limit = null) {
-  let r = [];
-  for (let i = start; i < end; i++) {
-    if (limit !== null && limit + start < i) { break };
-    r.push(i);
-  }
-  return r;
 }
 
 const PaginationSection = ({ table, state }) => {
@@ -189,24 +345,24 @@ const PaginationSection = ({ table, state }) => {
 
   return (
     <ul className="pagination pagination-sm">
-      <li className={`page-item ${prevDisabled}`} onClick={() => gotoPage(0)}>
+      <li key="1" className={`page-item ${prevDisabled}`} onClick={() => gotoPage(0)}>
         <a className="page-link"><ChevronDoubleLeft /> </a>
       </li>
-      <li className={`page-item ${prevDisabled}`} onClick={() => previousPage()}>
+      <li key="2" className={`page-item ${prevDisabled}`} onClick={() => previousPage()}>
         <a className="page-link"><ChevronLeft /></a>
       </li>
       {quickSelectPages.map(pageNo =>
-        <li className={`page-item ${pageNo === pageIndex ? 'active' : ''}`} onClick={() => gotoPage(pageNo)}>
+        <li key="3" className={`page-item ${pageNo === pageIndex ? 'active' : ''}`} onClick={() => gotoPage(pageNo)}>
           <a className="page-link">{pageNo + 1}</a>
         </li>
       )}
-      <li className={`page-item ${nextDisabled}`} onClick={() => nextPage()}>
+      <li key="4" className={`page-item ${nextDisabled}`} onClick={() => nextPage()}>
         <a className="page-link"><ChevronRight /></a>
       </li>
-      <li className={`page-item ${nextDisabled}`} onClick={() => gotoPage(pageCount - 1)}>
+      <li key="5" className={`page-item ${nextDisabled}`} onClick={() => gotoPage(pageCount - 1)}>
         <a className="page-link"><ChevronDoubleRight /></a>
       </li>
-      <li>
+      <li key="6">
         <a className="page-link">
           Page{' '}
           <strong>
@@ -220,10 +376,19 @@ const PaginationSection = ({ table, state }) => {
 
 const IsoalteTable = ({ specieInfo, sampleData }) => {
   // create header and data
+  // ...cellFormat(column.name),
   const columns = specieInfo
     .fields
     .filter(column => column.hidden === 0)
-    .map(column => { return { Header: column.label, accessor: column.name } })
+    .map(column => { 
+      return { 
+        Header: column.label, 
+        accessor: column.name,
+        ...parseFilterFunction(column.filterType, column.filterParam),
+        disableFilters: !column.filterable,
+      } 
+    })
+  console.log(columns)
 
   const data = sampleData.map(sample => {
     return {
@@ -249,11 +414,6 @@ const IsoalteTable = ({ specieInfo, sampleData }) => {
 TableComponent.propTypes = {
   columns: PropTypes.array.isRequired,
   data: PropTypes.array.isRequired,
-}
-
-const openDetailPage = (e) => {
-  e.preventDefault()
-  console.log(e)
 }
 
 export default IsoalteTable
