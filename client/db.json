@@ -10,55 +10,83 @@
           "hidden": 0,
           "type": "text",
           "name": "sampleId",
-          "label": "Sample ID"
+          "label": "Sample ID",
+          "sortable": true,
+          "filterable": false
         },
         {
           "hidden": 0,
           "type": "text",
           "name": "specie",
-          "label": "Species"
+          "label": "Species",
+          "sortable": true,
+          "filterable": true,
+          "filterType": "selection",
+          "filterParam": "includes"
         },
         {
           "hidden": 0,
-          "type": "text",
+          "type": "mlstSt",
           "name": "mlstSt",
-          "label": "MLST ST"
+          "label": "MLST ST",
+          "sortable": true,
+          "filterable": true,
+          "filterType": "selection",
+          "filterParam": "includes"
         },
         {
           "hidden": 0,
-          "type": "text",
+          "type": "pvl",
           "name": "pvl",
-          "label": "PVL"
+          "label": "PVL",
+          "sortable": true,
+          "filterable": true,
+          "filterType": "selection",
+          "filterParam": "includes"
         },
         {
           "hidden": 0,
-          "type": "text",
+          "type": "date",
           "name": "date",
-          "label": "Upload date"
+          "label": "Upload date",
+          "sortable": true,
+          "filterable": false
         },
         {
           "hidden": 0,
           "type": "text",
           "name": "qc",
-          "label": "QC"
+          "label": "QC",
+          "sortable": true,
+          "filterable": true,
+          "filterType": "selection",
+          "filterParam": "includes"
         },
         {
+          "hidden": 0,
           "name": "location",
           "label": "Location",
           "type": "text",
-          "hidden": 0
+          "filterable": true,
+          "sortable": false,
+          "filterType": "selection",
+          "filterParam": "includes"
         },
         {
           "hidden": 0,
           "type": "text",
           "name": "outbreak",
-          "label": "Outbreak"
+          "label": "Outbreak",
+          "sortable": false,
+          "filterable": false
         },
         {
           "hidden": 0,
           "type": "text",
           "name": "comment",
-          "label": "Comment"
+          "label": "Comment",
+          "sortable": false,
+          "filterable": false
         }
       ]
     },
@@ -445,7 +473,7 @@
           "present": 1
         },
         "lukS_PV": {
-          "present": 1,
+          "present": 0,
           "lukS_PV_l6_c17_ctg_1": {
             "match_len": "939",
             "id": "100.0",
@@ -2837,7 +2865,7 @@
           "yqiL": "3",
           "pta": "4"
         },
-        "sequence_type": "8"
+        "sequence_type": "3"
       }
     },
     {
@@ -5851,7 +5879,7 @@
             "id": "99.9",
             "match_len": "978"
           },
-          "present": 1
+          "present": 0
         },
         "isdF": {
           "present": 1,
@@ -6241,7 +6269,7 @@
             "id": "100.0",
             "match_len": "939"
           },
-          "present": 1
+          "present": 0
         },
         "scn": {
           "scn_l15_c4_ctg_1": {
