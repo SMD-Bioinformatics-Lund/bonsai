@@ -12,7 +12,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './Table.css';
 
 
-const TableComponent = ({ columns, data }) => {
+const TableComponent = ({ columns, data, selectedRowId, showDetailedResultFunc }) => {
 
   const defaultColumn = React.useMemo(() => ({
     // Default filter UI
@@ -73,7 +73,10 @@ const TableComponent = ({ columns, data }) => {
           <table className="table table-hover" {...getTableProps()}>
             <thead>
               {headerGroups.map((headerGroup, i) => (
-                <tr key={i} {...headerGroup.getHeaderGroupProps()}>
+                <tr 
+                  key={i} 
+                  {...headerGroup.getHeaderGroupProps()}
+                >
                   {headerGroup.headers.map((column, i) => (
                     <th key={i} {...column.getHeaderProps(column.getSortByToggleProps())}>
                       {column.render('Header')}
@@ -92,10 +95,17 @@ const TableComponent = ({ columns, data }) => {
               {page.map((row, i) => {
                 prepareRow(row)
                 return (
-                  <tr key={i}>
+                  <tr 
+                    key={i} 
+                    className={ String(i) === selectedRowId ? 'table-success' : ''}
+                  >
+                    { console.log(`${i}, ${selectedRowId}`) }
                     {row.cells.map(cell => {
-                      return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
-                    })}
+                      return (
+                        <td {...cell.getCellProps()}>
+                          {cell.render('Cell', { onClick: showDetailedResultFunc })}
+                        </td>
+                      )})}
                   </tr>
                 )
               })}
@@ -171,9 +181,8 @@ const PaginationSection = ({ table, state }) => {
   )
 }
 
-const IsoalteTable = ({ specieInfo, sampleData }) => {
+const IsoalteTable = ({ specieInfo, sampleData, selectedRowId, showDetailedResultFunc }) => {
   // create header and data
-  // ...cellFormat(column.name),
   const columns = specieInfo
     .fields
     .filter(column => column.hidden === 0)
@@ -198,14 +207,19 @@ const IsoalteTable = ({ specieInfo, sampleData }) => {
       date: sample.creation_date,
       qc: getMetadata(sample, 'QC'),
       location: getMetadata(sample, 'location'),
-      outbreak: null,
-      comment: null,
+      outbreak: getMetadata(sample, 'outbreak'),
+      comment: getMetadata(sample, 'comment', 20),
     }
   })
 
   return (
     <div className="table-container">
-      <TableComponent columns={columns} data={data} />
+      <TableComponent 
+        columns={columns} 
+        data={data} 
+        selectedRowId={selectedRowId}
+        showDetailedResultFunc={showDetailedResultFunc} 
+      />
     </div>
   )
 }

@@ -8,7 +8,7 @@
       "fields": [
         {
           "hidden": 0,
-          "type": "text",
+          "type": "sampleId",
           "name": "sampleId",
           "label": "Sample ID",
           "sortable": true,
@@ -138,7 +138,8 @@
       "species": "saureus",
       "sample_id": "11MT0500122",
       "metadata": {
-        "location": "Sweden"
+        "location": "Sweden",
+        "comment": "A very short comment"
       },
       "aribavir": {
         "cap8G": {
@@ -6501,7 +6502,9 @@
           "present": 0
         }
       },
-      "metadata": {},
+      "metadata": {
+        "comment": "A super long and very complex comment that can span multiple lines."
+      },
       "alleles": [
         "1",
         "1",

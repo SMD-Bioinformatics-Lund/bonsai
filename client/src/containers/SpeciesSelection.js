@@ -27,10 +27,11 @@ const Species = () => {
       <div className="container">
         {species.map((specie) => ( 
           <SpeciesPanel 
-          specieId={specie.species} 
-          specieName={specie.label} 
-          image={specie.species === 'saureus' ? saureus : test } 
-          numSamples={specie.samples}/>)
+            specieId={specie.species} 
+            specieName={specie.label} 
+            image={specie.species === 'saureus' ? saureus : test } 
+            numSamples={specie.samples}
+          />)
         )}
       </div>
     </>
@@ -42,10 +43,12 @@ const SpeciesPanel = ({specieId, specieName, image, numSamples}) => {
 
   return (
     <Link key={specieName} to={url}>
-      <div className="species-panel">
-        <img src={image} alt="" />
-        <h3>{specieName}</h3>
-        <p>{numSamples} isolates</p>
+      <div className="card species-panel">
+        <img className="card-img-top species-panel-img" src={image} alt="" />
+        <div className="card-body">
+          <h5 className="card-title">{specieName}</h5>
+          <p className="card-text">{numSamples} isolates</p>
+        </div>
       </div>
     </Link>
   )

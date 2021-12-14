@@ -2,6 +2,9 @@ export function getCellFormating(dataType) {
   // Select formating funtion depending on datatype
   let formatFunc;
   switch ( dataType ) {
+    case 'sampleId': 
+      formatFunc = (props) => <SampleId props={props}/>;
+      break;
     case 'pvl': 
       formatFunc = ({ cell: { value } }) => <PvlTyping value={value}/>;
       break;
@@ -13,6 +16,18 @@ export function getCellFormating(dataType) {
       break
   }
   return {Cell: formatFunc}
+}
+
+const SampleId = ({ props }) => {
+  // Create PVL typing badge
+  console.log(props.row.id)
+  return (
+    <a 
+      href="#" 
+      className="link-success"
+      onClick={props.hasOwnProperty("onClick") ? () => {props.onClick(props.value, props.row.id)} : ''}
+    >{ props.value }</a>
+  );
 }
 
 const PvlTyping = ({ value }) => {
@@ -39,5 +54,7 @@ const PvlTyping = ({ value }) => {
 
 const MlstTyping = ({ value }) => {
   // Create PVL typing badge
-  return (<span className="badge bg-secondary">{value}</span>);
+  return (
+    <span className="badge bg-secondary">{value}</span>
+  );
 }

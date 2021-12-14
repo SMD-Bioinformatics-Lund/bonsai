@@ -15,14 +15,16 @@ export function abbreviateSpecieName(name) {
   return `${genus[0]}. ${specie}`
 }
 
-export function getMetadata(data, metric) {
+export function getMetadata(data, metric, truncate=null) {
   if (
     data === null || 
     !data.hasOwnProperty('metadata') || 
     !data.metadata.hasOwnProperty(metric) 
     ) return '-'
 
-  return data.metadata[metric]
+  const dta = data.metadata[metric]
+  if ( truncate === null || dta.length < truncate ) return dta
+  return `${dta.substring(0, truncate)}...`
 }
 
 export function range(start, end, limit = null) {
