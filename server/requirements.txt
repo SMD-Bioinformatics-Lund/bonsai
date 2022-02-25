@@ -1,1 +1,3 @@
+motor
 fastapi[all]
+uvicorn[standard]
