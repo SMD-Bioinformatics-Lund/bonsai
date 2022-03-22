@@ -6,7 +6,7 @@
     padding: 20px;
 }
 
-.species-panel {
+.group-panel {
     width: 16rem;
     text-align:center;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -17,4 +17,4 @@
     text-shadow:0px 1px 0px #ffffff;
 }
 
-.species-panel-img { height: 12rem; }
+.group-panel-img { height: 12rem; }

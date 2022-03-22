@@ -1,21 +1,28 @@
-const apiUrl = 'http://localhost:3011'
+// get API url from environment variable
+const { REACT_APP_API_URL, REACT_APP_API_KEY } = process.env
 
-const fetchSamples = async (specieName) => {
-  const res = await fetch(`${apiUrl}/samples?species=${specieName}`)
+const fetchGroups = async () => {
+  const res = await fetch(`${REACT_APP_API_URL}/groups`)
   const data = await res.json()
   return data
 }
 
-const fetchSpecies = async () => {
-  const res = await fetch(`${apiUrl}/species`)
+const fetchGroupById = async (groupId) => {
+  const res = await fetch(`${REACT_APP_API_URL}/groups/${groupId}`)
   const data = await res.json()
   return data
 }
 
-const fetchSpecieByName = async (specieName) => {
-  const res = await fetch(`${apiUrl}/species?species=${specieName}&limit=1`)
+const fetchSamples = async () => {
+  const res = await fetch(`${REACT_APP_API_URL}/samples`)
   const data = await res.json()
   return data
 }
 
-export {fetchSpecies, fetchSpecieByName, fetchSamples}
+const fetchSampleById = async (sampleId) => {
+  const res = await fetch(`${REACT_APP_API_URL}/samples/${sampleId}`)
+  const data = await res.json()
+  return data
+}
+
+export {fetchGroups, fetchGroupById, fetchSamples, fetchSampleById}

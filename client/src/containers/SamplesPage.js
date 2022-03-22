@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom"
 import Header from '../components/Header';
 import IsolateTable from '../components/IsolateTable/Table';
 import DetailedResultPanel from '../components/DetailedResultPanel';
-import { fetchSpecieByName, fetchSamples } from '../api';
+import { fetchGroupById, fetchSamples } from '../api';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -20,8 +20,8 @@ const Samples = () => {
   // fetch specie information
   useEffect(() => {
     const getSpecieDataFromServer = async () => {
-      const speciesData = await fetchSpecieByName(specie)
-      setSpecieInfo(speciesData[0])
+      const groupData = await fetchGroupById(specie)
+      setSpecieInfo(groupData[0])
     }
     getSpecieDataFromServer()
   }, [specie])
