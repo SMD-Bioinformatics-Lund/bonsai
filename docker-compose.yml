@@ -23,6 +23,8 @@ services:
       - mongodb
     ports: 
       - "8011:8000"
+    environment:
+      - ALLOWED_ORIGINS=*
     volumes:
       - "./server/app:/usr/src/app/app"
       - "./server/run_mimer.py:/usr/src/app/run_mimer.py"
