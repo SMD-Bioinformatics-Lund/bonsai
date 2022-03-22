@@ -1,0 +1,54 @@
+version: '3.9'
+# usage:
+# (sudo) docker-compose up -d
+# (sudo) docker-compose down
+services: 
+  mongodb:
+    image: mongo:latest
+    container_name: mimer_mongodb
+    networks:
+      - scout-net
+    ports:
+      - "8010:27017"
+    expose:
+      - '27017'
+    networks:
+      - mimer-net
+  api:
+    container_name: mimer_api
+    build: 
+      context: server
+      network: host
+    depends_on:
+      - mongodb
+    ports: 
+      - "8011:8000"
+    volumes:
+      - "./server/app:/usr/src/app/app"
+      - "./server/run_mimer.py:/usr/src/app/run_mimer.py"
+    networks:
+      - mimer-net
+    command: "uvicorn app.main:app --reload --host 0.0.0.0"
+  app:
+    container_name: app
+    build: 
+      context: client
+      network: host
+    depends_on:
+      - mongodb
+      - api
+    ports: 
+      - "8012:3000"
+    volumes:
+      - "./client:/app"
+      - "./.env:/app/.env"
+    networks:
+      - mimer-net
+    command: "npm run start"
+networks:
+  mimer-net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.0.1.0/24
