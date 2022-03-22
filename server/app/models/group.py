@@ -17,7 +17,7 @@ FilterParams = List[
 class IncludedSamples(RWModel):
     """Object for keeping track of included samples in a group"""
 
-    inlcuded_samples: List[PyObjectId] = Field(..., alias="includedSamples")
+    included_samples: List[PyObjectId] = Field(..., alias="includedSamples")
 
 
 class UpdateIncludedSamples(IncludedSamples):
@@ -29,7 +29,7 @@ class UpdateIncludedSamples(IncludedSamples):
 class GroupBase(IncludedSamples):
     """Basic specie information."""
 
-    group_id: str = Field(..., alias="collectionId")
+    group_id: str = Field(..., alias="groupId")
     display_name: str = Field(..., alias="displayName")
     image: Image | None = Field(None)
 
