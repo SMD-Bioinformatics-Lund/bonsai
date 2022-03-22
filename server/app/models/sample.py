@@ -1,10 +1,17 @@
 """Data model definition of input/ output data"""
+from datetime import datetime
+from email.policy import default
 from enum import Enum
-from pydantic import BaseModel, Field
+from multiprocessing.sharedctypes import Value
+from unittest.mock import Base
+from pydantic import BaseModel, Field, validator
 from typing import Dict, List
-from .base import DBModelMixin, RWModel
+from .base import DBModelMixin, RWModel, ModifiedAtRWModel
+from ..models.base import PyObjectId
+from bson import ObjectId
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"
+
 
 class TaxLevel(Enum):
     P = "phylum"
@@ -14,8 +21,10 @@ class TaxLevel(Enum):
     G = "genus"
     S = "specie"
 
+
 class VariantType(Enum):
     substitution = "substitution"
+
 
 class ResistanceTag(Enum):
     vre = "VRE"
@@ -71,7 +80,7 @@ class SoupVersion(RWModel):
 class RunMetadata(BaseModel):
     """Run metadata"""
 
-    run: Dict[str, str | List[str] ]
+    run: Dict[str, str | List[str]]
     databases: List[SoupVersion]
 
 
@@ -129,7 +138,9 @@ class VirulenceGene(GeneBase, DatabaseReference):
 class VariantBase(DatabaseReference):
     """Container for mutation information"""
 
-    variant_type: VariantType = Field(..., alias="variantType")  # type of mutation insertion/deletion/substitution
+    variant_type: VariantType = Field(
+        ..., alias="variantType"
+    )  # type of mutation insertion/deletion/substitution
     genes: List[str]
     position: int
     ref_codon: str = Field(..., alias="refCodon")
@@ -159,16 +170,28 @@ class SpeciesPrediction(RWModel):
     fraction_total_reads: float = Field(..., alias="fractionTotalReads")
 
 
-class SampleBase(RWModel):
+class Comment(BaseModel):
+    """Contianer for comments."""
+
+    username: str = Field(..., min_length=0)
+    created_at: datetime = Field(datetime.now(), alias="createdAt")
+    comment: str = Field(..., min_length=0)
+    displayed: bool = True
+
+
+class SampleBase(ModifiedAtRWModel):
     """Base datamodel for sample data structure"""
 
     sample_id: str = Field(
         ..., alias="sampleId", min_length=3, max_length=100, regex=SAMPLE_ID_PATTERN
     )
-    in_collections: List[str] = Field([], alias="inCollection")
+    patient_id: str | None = Field(None, alias="patientId")
     run_metadata: RunMetadata = Field(..., alias="runMetadata")
     qc: SampleQc
     species_prediction: List[SpeciesPrediction] = Field(..., alias="speciesPrediction")
+    # comments and non analytic results
+    comments: List[Comment] = []
+    location: str | None = Field(None, description="Location id")
 
 
 class SampleInPipelineInput(SampleBase):

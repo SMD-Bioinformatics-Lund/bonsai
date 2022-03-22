@@ -1,7 +1,7 @@
 """Routes related to collections of samples."""
 from pydantic import BaseModel, Field, FileUrl
 from typing import List, Dict
-from .base import DBModelMixin, RWModel
+from .base import DBModelMixin, RWModel, PyObjectId
 
 
 class Image(BaseModel):
@@ -14,13 +14,24 @@ FilterParams = List[
 ]
 
 
-class CollectionBase(RWModel):
+class IncludedSamples(RWModel):
+    """Object for keeping track of included samples in a group"""
+
+    inlcuded_samples: List[PyObjectId] = Field(..., alias="includedSamples")
+
+
+class UpdateIncludedSamples(IncludedSamples):
+    """Object for keeping track of included samples in a group"""
+
+    pass
+
+
+class GroupBase(IncludedSamples):
     """Basic specie information."""
 
-    collection_id: str = Field(..., alias="collectionId")
+    group_id: str = Field(..., alias="collectionId")
     display_name: str = Field(..., alias="displayName")
     image: Image | None = Field(None)
-    filter_params: FilterParams = Field(..., alias="filterParams")
 
 
 class OverviewTableColumn(BaseModel):
@@ -36,13 +47,13 @@ class OverviewTableColumn(BaseModel):
     filter_param: str | None = Field(None, alias="filterParam")
 
 
-class CollectionInCreate(CollectionBase):
+class GroupInCreate(GroupBase):
     table_columns: List[OverviewTableColumn] = Field(..., alias="tableColumns")
 
 
-class CollectionInfoDatabase(DBModelMixin, CollectionInCreate):
+class GroupInfoDatabase(DBModelMixin, GroupInCreate):
     pass
 
 
-class CollectionInfoOut(CollectionBase):
+class GroupInfoOut(GroupBase):
     pass

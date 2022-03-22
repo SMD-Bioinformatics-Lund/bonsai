@@ -16,6 +16,8 @@ class Database:
         self.db = self.client[DATABASE_NAME]
         self.sample_group_collection: AsyncIOMotorCollection = self.db.sample_group
         self.sample_collection: AsyncIOMotorCollection = self.db.sample
+        self.location_collection: AsyncIOMotorCollection = self.db.location
+        self.user_collection: AsyncIOMotorCollection = self.db.user
 
 
 db = Database()

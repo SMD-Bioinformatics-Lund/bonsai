@@ -30,7 +30,8 @@ def setup(ctx):
 def index(ctx):
     """Create and update indexes used by the mongo database."""
     db = ctx.obj["DB"]
-    for collection_name, index in INDEXES.items():
+    for collection_name, indexes in INDEXES.items():
         collection = getattr(db, f"{collection_name}_collection")
         click.secho(f"Creating index for: {collection.name}")
-        collection.create_index(index["definition"], **index["options"])
+        for index in indexes:
+            collection.create_index(index["definition"], **index["options"])
