@@ -27,12 +27,15 @@ async def get_samples(db: Database, limit: int = 0, skip: int = 0) -> SampleInDa
     samp_objs = []
     for samp in await cursor.to_list(None):
         inserted_id = samp["_id"]
-        samp_objs.append(SampleInDatabase(
-            id=str(inserted_id),
-            created_at=ObjectId(inserted_id).generation_time,
-            **samp
-        ))
+        samp_objs.append(
+            SampleInDatabase(
+                id=str(inserted_id),
+                created_at=ObjectId(inserted_id).generation_time,
+                **samp,
+            )
+        )
     return samp_objs
+
 
 async def create_sample(
     db: Database, sample: SampleInPipelineInput
@@ -108,7 +111,11 @@ async def add_comment(db: Database, sample_id: str, comment: Comment) -> None:
         {fields["sample_id"].alias: sample_id},
         {
             "$set": {param_modified: datetime.now()},
-            "$push": {param_comment: comment.dict(by_alias=True)},
+            "$push": {param_comment: {
+                "$each": [comment.dict(by_alias=True)],
+                "$position": 0,
+                }
+            },
         },
     )
     if not update_obj.matched_count == 1:
@@ -118,13 +125,17 @@ async def add_comment(db: Database, sample_id: str, comment: Comment) -> None:
     LOG.info(f"Added comment to {sample_id}")
 
 
-async def add_location(db: Database, sample_id: str, location_id: str) -> LocationOutputDatabase:
+async def add_location(
+    db: Database, sample_id: str, location_id: str
+) -> LocationOutputDatabase:
     """Add comment to previously added sample."""
     # Check if loaction is already in database
     try:
         location_obj = await get_location(db, location_id)
     except EntryNotFound as err:
-        LOG.warning('Tried to add location: {location_id} to sample {sample_id}, location not found')
+        LOG.warning(
+            "Tried to add location: {location_id} to sample {sample_id}, location not found"
+        )
         raise err
 
     # Add location to samples

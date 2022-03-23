@@ -1,5 +1,6 @@
 """Mimer api default configuration"""
 import os
+
 # Database connection
 # standard URI has the form:
 # mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
@@ -13,4 +14,4 @@ MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS", 10))
 
 # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
 # https://fastapi.tiangolo.com/tutorial/cors/
-allowed_origins = os.getenv('ALLOWED_ORIGINS', '').split(',')
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")

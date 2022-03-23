@@ -1,5 +1,5 @@
 """Functions for creating and maintaining indexes."""
-from pymongo import ASCENDING, DESCENDING, TEXT, GEOSPHERE  
+from pymongo import ASCENDING, DESCENDING, TEXT, GEOSPHERE
 
 # Create indexes for collections
 INDEXES = {
@@ -22,8 +22,6 @@ INDEXES = {
                 "unique": True,
             },
         },
-    ],
-    "phenotype": [
         {
             "definition": [("addPhenotypePrediction.type", ASCENDING)],
             "options": {
@@ -50,5 +48,5 @@ INDEXES = {
                 "unique": False,
             },
         },
-    ]
+    ],
 }

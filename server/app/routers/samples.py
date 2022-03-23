@@ -70,7 +70,7 @@ async def update_sample(
     sample: Dict | SampleInPipelineInput = Body({}),
     location: Dict = Body({}, embed=True),
 ):
-    return {"sample_id": sample_id, "sample": sample, 'location': location}
+    return {"sample_id": sample_id, "sample": sample, "location": location}
     try:
         comment_obj = await add_location(db, sample_id, location_id)
     except EntryNotFound as error:
@@ -79,6 +79,7 @@ async def update_sample(
             detail=str(error),
         )
     return comment_obj
+
 
 @router.post("/samples/{sample_id}/comment")
 async def post_comment(
@@ -100,6 +101,7 @@ async def post_comment(
         )
     return comment_obj
 
+
 @router.put("/samples/{sample_id}/location")
 async def update_location(
     location_id: str = Body(...),
@@ -112,7 +114,9 @@ async def update_location(
     ),
 ):
     try:
-        location_obj: LocationOutputDatabase = await add_location(db, sample_id, location_id)
+        location_obj: LocationOutputDatabase = await add_location(
+            db, sample_id, location_id
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

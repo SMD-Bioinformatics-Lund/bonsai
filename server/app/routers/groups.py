@@ -10,7 +10,8 @@ from ..models.group import (
     GroupInfoDatabase,
 )
 from ..crud.group import create_group as create_group_record
-from ..crud.group import get_groups, get_group
+from ..crud.group import get_groups, get_group, append_sample_to_group
+from ..crud.errors import EntryNotFound, UpdateDocumentError
 
 router = APIRouter()
 
@@ -65,6 +66,15 @@ async def add_sample_to_group(
 ):
     """Add one or more samples to a group"""
     # cast input information as group db object
-    # group = await add_sample_to_group(db, sample_id, group_id)
-    # return {"id": group_id, "samples": group['addedSamples']}
-    return {"group_id": group_id, "sample_id": sample_id}
+    try:
+        await append_sample_to_group(db, sample_id, group_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        )
+    except UpdateDocumentError as error:
+        raise HTTPException(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            detail=str(error),
+        )

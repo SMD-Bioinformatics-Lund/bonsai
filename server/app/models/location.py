@@ -33,19 +33,23 @@ class GeoJSONPoint(BaseModel):
 
 class GeoJSONPolygon(BaseModel):
     type: str = "Polygon"
-    
+
     coordinates: List[List[COORDS]]
 
     # validators
-    _validate_coords = validator("coordinates", allow_reuse=True)(check_coordinates_polygon)
+    _validate_coords = validator("coordinates", allow_reuse=True)(
+        check_coordinates_polygon
+    )
 
-    @validator('coordinates')
+    @validator("coordinates")
     def check_closed_polygon(cls, coords):
         """Verify that polygon is closed."""
-        base_message = "Invalid Polygon GeoJSON object" 
+        base_message = "Invalid Polygon GeoJSON object"
         for poly_obj in coords:
             if len(poly_obj) < 4:
-                raise ValueError(f"{base_message}: has only {len(poly_obj)} points, min 3")
+                raise ValueError(
+                    f"{base_message}: has only {len(poly_obj)} points, min 3"
+                )
 
             if not poly_obj[0] == poly_obj[-1]:
                 raise ValueError(f"{base_message}: object is not closed.")
@@ -61,6 +65,7 @@ class LocationBase(ModifiedAtRWModel):
 
 class LocationInputCreate(LocationBase):
     """Contianer for geo locations, based on GeoJSON format."""
+
     coordinates: Tuple[float, float]
 
     # validators

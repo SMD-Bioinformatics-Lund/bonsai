@@ -7,6 +7,7 @@ from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSampl
 from typing import Dict, Any, List
 from .sample import get_sample
 from datetime import datetime
+from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
 
@@ -61,20 +62,25 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def add_sample_to_group(
+async def append_sample_to_group(
     db: Database, sample_id: str, group_id: str
-) -> GroupInfoDatabase:
+) -> None:
     """Create a new collection document."""
     sample_obj = await get_sample(db, sample_id)
-    param_included_sample = UpdateIncludedSamples.inlcuded_samples.alias
-    param_modified = UpdateIncludedSamples.modified_at.alias
-    db_obj = await db.sample_group_collection.update_one(
-        {GroupInfoDatabase.group_id.alias: group_id},
+    fields = UpdateIncludedSamples.__fields__
+    param_included_sample = fields["included_samples"].alias
+    param_modified = fields["modified_at"].alias
+    gid_filed = GroupInfoDatabase.__fields__["group_id"]
+    update_obj = await db.sample_group_collection.update_one(
+        {gid_filed.alias: group_id},
         {
-            "$push": {
+            "$set": {param_modified: datetime.now()},
+            "$addToSet": {
                 param_included_sample: sample_obj.id,
-                param_modified: datetime.now(),
             },
         },
     )
-    return db_obj
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(group_id)
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(group_id)
