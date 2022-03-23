@@ -6,12 +6,10 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mimer_mongodb
-    networks:
-      - scout-net
     ports:
       - "8010:27017"
     expose:
-      - '27017'
+      - "27017"
     networks:
       - mimer-net
   api:
@@ -41,6 +39,8 @@ services:
       - api
     ports: 
       - "8012:3000"
+    environment:
+      - ALLOWED_ORIGINS=*
     volumes:
       - "./client:/app"
       - "./.env:/app/.env"
