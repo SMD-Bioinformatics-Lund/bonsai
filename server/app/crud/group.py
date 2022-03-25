@@ -10,8 +10,10 @@ from ..db import Database
 from ..models.group import (GroupInCreate, GroupInfoDatabase,
                             UpdateIncludedSamples)
 from ..models.sample import SampleInDatabase
+from ..models.tags import TAG_LIST
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
+from .tags import compute_phenotype_tags
 
 LOG = logging.getLogger(__name__)
 
@@ -51,9 +53,14 @@ async def get_group(db: Database, group_id: str) -> GroupInfoDatabase:
             },
         }
     ]
-    cursor = db.sample_group_collection.aggregate(pipeline)
-    groups = await cursor.to_list(None)
-    return group_document_to_db_object(groups[0])
+
+    async for group in db.sample_group_collection.aggregate(pipeline):
+        # compute tags for samples
+        for sample in group['includedSamples']:
+            # cast as static object
+            tags: TAG_LIST = compute_phenotype_tags(SampleInDatabase(**sample))
+            sample['tags'] = tags
+        return group_document_to_db_object(group)
 
 
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:

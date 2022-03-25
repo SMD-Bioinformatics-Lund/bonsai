@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, validator
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 from .typing import TypingResultCgMlst, TypingResultMlst
+from .tags import Tag
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"
 
@@ -25,12 +26,6 @@ class TaxLevel(Enum):
 
 class VariantType(Enum):
     substitution = "substitution"
-
-
-class ResistanceTag(Enum):
-    vre = "VRE"
-    esbl = "ESBL"
-    mrsa = "MRSA"
 
 
 class PhenotypeType(Enum):
@@ -201,7 +196,7 @@ class SampleInCreate(SampleBase):
         ..., alias="schemaVersion", description="Version of database schema", gt=0
     )
     # computed tags
-    tags: List[ResistanceTag] = Field([])
+    tags: List[Tag] = Field([])
     # optional typing
     add_typing_result: List[MethodIndex] = Field(..., alias="addTypingResult")
     # optional phenotype prediction
@@ -210,7 +205,7 @@ class SampleInCreate(SampleBase):
     )
 
 
-class SampleInDatabase(DBModelMixin, SampleBase):
+class SampleInDatabase(DBModelMixin, SampleInCreate):
     """Basic sample information"""
 
     pass

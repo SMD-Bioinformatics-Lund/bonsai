@@ -20,7 +20,7 @@ FilterParams = List[
 class IncludedSamples(ModifiedAtRWModel):
     """Object for keeping track of included samples in a group"""
 
-    included_samples: List[PyObjectId | SampleInDatabase] = Field(..., alias="includedSamples")
+    included_samples: List[str | SampleInDatabase] = Field(..., alias="includedSamples")
 
     class Config:
         json_encoders = {ObjectId: str}
