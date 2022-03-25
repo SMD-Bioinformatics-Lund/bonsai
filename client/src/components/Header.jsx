@@ -2,14 +2,14 @@ import { Link } from "react-router-dom"
 import PropTypes from 'prop-types'
 import "./Header.css"
 
-const Header = ({specieName}) => {
+const Header = ({groupName}) => {
   return (
     <header>
       <div className="logo-container">
         <span className="logo">
           <Link to="/">CGVIZ</Link>
         </span>
-        { specieName && <span className="specieName">{specieName}</span> }
+        { groupName && <span className="groupName">{groupName}</span> }
         <div id="login">
           <a href="">Login</a>
         </div>
@@ -19,7 +19,7 @@ const Header = ({specieName}) => {
 }
 
 Header.propTypes = {
-  specieName: PropTypes.string,
+  groupName: PropTypes.string,
 }
 
 export default Header

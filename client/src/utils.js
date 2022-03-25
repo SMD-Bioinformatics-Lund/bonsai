@@ -1,4 +1,5 @@
 export function formatPvl(data) {
+  debugger
   if (data === null || !data.hasOwnProperty('aribavir')) return 'NA'
 
   const { lukS_PV, lukF_PV } = data.aribavir

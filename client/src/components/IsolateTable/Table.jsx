@@ -181,11 +181,11 @@ const PaginationSection = ({ table, state }) => {
   )
 }
 
-const IsoalteTable = ({ specieInfo, sampleData, selectedRowId, showDetailedResultFunc }) => {
+const IsoalteTable = ({ groupInfo, selectedRowId, showDetailedResultFunc }) => {
   // create header and data
-  const columns = specieInfo
-    .fields
-    .filter(column => column.hidden === 0)
+  const columns = groupInfo
+    .tableColumns
+    .filter(column => !column.hidden)
     .map(column => { 
       return { 
         Header: column.label, 
@@ -198,25 +198,11 @@ const IsoalteTable = ({ specieInfo, sampleData, selectedRowId, showDetailedResul
       } 
     })
 
-  const data = sampleData.map(sample => {
-    return {
-      sampleId: sample.sample_id,
-      specie: abbreviateSpecieName(sample.top_brakken.top_species),
-      mlstSt: sample.mlst.sequence_type,
-      pvl: formatPvl(sample),
-      date: sample.creation_date,
-      qc: getMetadata(sample, 'QC'),
-      location: getMetadata(sample, 'location'),
-      outbreak: getMetadata(sample, 'outbreak'),
-      comment: getMetadata(sample, 'comment', 20),
-    }
-  })
-
   return (
     <div className="table-container">
       <TableComponent 
         columns={columns} 
-        data={data} 
+        data={groupInfo.includedSamples} 
         selectedRowId={selectedRowId}
         showDetailedResultFunc={showDetailedResultFunc} 
       />

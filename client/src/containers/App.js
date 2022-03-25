@@ -8,7 +8,7 @@ function App() {
     <Router>
       <Switch>
         <Route path='/' exact component={Groups}/>
-        <Route path='/:specie' component={Samples}/>
+        <Route path='/:group' component={Samples}/>
       </Switch>
     </Router>
   );
