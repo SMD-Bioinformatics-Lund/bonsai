@@ -1,17 +1,17 @@
 """Routes for interacting with user data."""
 
-from fastapi import APIRouter, Query, Path, status, HTTPException
-from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Dict, List, Union
 
-from ..db import db
-from ..crud.sample import create_sample as create_sample_record
-from ..crud.user import get_user, create_user
-from ..crud.errors import EntryNotFound
+from fastapi import APIRouter, HTTPException, Path, Query, status
+from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from ..models.user import UserOutputDatabase, UserInputCreate
+from ..crud.errors import EntryNotFound
+from ..crud.sample import create_sample as create_sample_record
+from ..crud.user import create_user, get_user
+from ..db import db
+from ..models.user import UserInputCreate, UserOutputDatabase
 
 router = APIRouter()
 

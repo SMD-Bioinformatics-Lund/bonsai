@@ -1,17 +1,16 @@
 """Entrypoints for getting group data."""
 
-from fastapi import APIRouter, Body, Path, status, File, HTTPException
 from typing import List
+
+from fastapi import APIRouter, Body, File, HTTPException, Path, status
 from pymongo.errors import DuplicateKeyError
-from ..db import db
-from ..models.group import (
-    GroupInCreate,
-    GroupInfoOut,
-    GroupInfoDatabase,
-)
-from ..crud.group import create_group as create_group_record
-from ..crud.group import get_groups, get_group, append_sample_to_group
+
 from ..crud.errors import EntryNotFound, UpdateDocumentError
+from ..crud.group import append_sample_to_group
+from ..crud.group import create_group as create_group_record
+from ..crud.group import get_group, get_groups
+from ..db import db
+from ..models.group import GroupInCreate, GroupInfoDatabase, GroupInfoOut
 
 router = APIRouter()
 

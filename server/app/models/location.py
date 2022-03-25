@@ -1,6 +1,8 @@
-from pydantic import Field, validator, BaseModel
-from typing import Tuple, List
-from .base import ModifiedAtRWModel, DBModelMixin
+from typing import List, Tuple
+
+from pydantic import BaseModel, Field, validator
+
+from .base import DBModelMixin, ModifiedAtRWModel
 
 COORDS = Tuple[float, float]
 

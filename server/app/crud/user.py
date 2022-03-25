@@ -1,9 +1,12 @@
 """User CRUD operations."""
-from ..models.user import UserInputCreate, UserOutputDatabase, UserInputDatabase
-from ..db import Database
-from bson import ObjectId
-from .errors import EntryNotFound
 import hashlib
+
+from bson import ObjectId
+
+from ..db import Database
+from ..models.user import (UserInputCreate, UserInputDatabase,
+                           UserOutputDatabase)
+from .errors import EntryNotFound
 
 
 async def get_user(db: Database, username: str) -> UserOutputDatabase:

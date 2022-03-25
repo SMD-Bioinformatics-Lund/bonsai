@@ -1,22 +1,17 @@
-from fastapi import APIRouter, Query, Path, status, HTTPException, Body
-from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Dict, List, Union
+
+from fastapi import APIRouter, Body, HTTPException, Path, Query, status
+from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from ..models.location import LocationOutputDatabase
-
+from ..crud.sample import EntryNotFound, add_comment, add_location
+from ..crud.sample import create_sample as create_sample_record
+from ..crud.sample import get_sample, get_samples
 from ..db import db
-from ..crud.sample import EntryNotFound, create_sample as create_sample_record
-from ..crud.sample import get_samples, get_sample, add_comment, add_location
-
-from ..models.sample import (
-    SampleInPipelineInput,
-    SampleInDatabase,
-    SampleInCreate,
-    Comment,
-    SAMPLE_ID_PATTERN,
-)
+from ..models.location import LocationOutputDatabase
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, SampleInCreate,
+                             SampleInDatabase, SampleInPipelineInput)
 
 router = APIRouter()
 

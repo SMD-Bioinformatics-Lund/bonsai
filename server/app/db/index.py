@@ -1,5 +1,5 @@
 """Functions for creating and maintaining indexes."""
-from pymongo import ASCENDING, DESCENDING, TEXT, GEOSPHERE
+from pymongo import ASCENDING, DESCENDING, GEOSPHERE, TEXT
 
 # Create indexes for collections
 INDEXES = {

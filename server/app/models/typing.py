@@ -1,8 +1,11 @@
 """Typing related data models"""
 
-from .base import RWModel
 from typing import Dict
+
 from pydantic import Field
+
+from .base import RWModel
+
 
 class ResultMlstBase(RWModel):
     """Base class for storing MLST-like typing results"""

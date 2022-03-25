@@ -1,9 +1,10 @@
 """Routes related to collections of samples."""
-from pydantic import BaseModel, Field, FileUrl
-from typing import List, Dict
+from typing import Dict, List
 
+from pydantic import BaseModel, Field, FileUrl
+
+from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
 from .sample import SampleInDatabase
-from .base import DBModelMixin, ModifiedAtRWModel, PyObjectId, ObjectId
 
 
 class Image(BaseModel):

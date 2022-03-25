@@ -3,10 +3,12 @@ from datetime import datetime
 from email.policy import default
 from enum import Enum
 from multiprocessing.sharedctypes import Value
-from unittest.mock import Base
-from pydantic import BaseModel, Field, validator
 from typing import Dict, List
-from .base import DBModelMixin, RWModel, ModifiedAtRWModel
+from unittest.mock import Base
+
+from pydantic import BaseModel, Field, validator
+
+from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 from .typing import TypingResultCgMlst, TypingResultMlst
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"

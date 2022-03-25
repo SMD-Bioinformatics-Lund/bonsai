@@ -1,4 +1,5 @@
 from fastapi.middleware.cors import CORSMiddleware
+
 from ..config import allowed_origins
 
 

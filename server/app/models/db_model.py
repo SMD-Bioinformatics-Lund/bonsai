@@ -1,5 +1,6 @@
 """Generic database objects of which several other models are based on."""
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 

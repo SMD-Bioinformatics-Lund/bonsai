@@ -1,6 +1,8 @@
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from ..config import DATABASE_NAME
 import logging
+
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+
+from ..config import DATABASE_NAME
 
 LOG = logging.getLogger(__name__)
 

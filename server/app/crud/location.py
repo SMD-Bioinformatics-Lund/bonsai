@@ -1,14 +1,12 @@
 """CRUD location operataions."""
-from ..db import Database
-from ..models.location import (
-    LocationOutputDatabase,
-    LocationInputCreate,
-    LocationInputDatabase,
-    GeoJSONPolygon,
-)
-from .errors import EntryNotFound
-from bson import ObjectId
 from typing import List
+
+from bson import ObjectId
+
+from ..db import Database
+from ..models.location import (GeoJSONPolygon, LocationInputCreate,
+                               LocationInputDatabase, LocationOutputDatabase)
+from .errors import EntryNotFound
 
 
 def _document_to_db_obj(document) -> LocationOutputDatabase:

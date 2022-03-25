@@ -1,20 +1,16 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
-from bson.objectid import ObjectId
+from datetime import datetime
+from typing import Any, Dict, List
 
-from ..models.location import LocationOutputDatabase
+from bson.objectid import ObjectId
 
 from ..crud.location import get_location
 from ..db import Database
-from ..models.sample import (
-    SampleInPipelineInput,
-    SampleInCreate,
-    SampleInDatabase,
-    Comment,
-)
-from typing import Dict, Any, List
+from ..models.location import LocationOutputDatabase
+from ..models.sample import (Comment, SampleInCreate, SampleInDatabase,
+                             SampleInPipelineInput)
 from .errors import EntryNotFound, UpdateDocumentError
-from datetime import datetime
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1

@@ -1,18 +1,16 @@
-from fastapi import APIRouter, Query, Path, status, HTTPException
 from typing import List
+
+from fastapi import APIRouter, HTTPException, Path, Query, status
 from pymongo.errors import DuplicateKeyError
 
-from ..db import db
-from ..models.location import (
-    LocationInputCreate,
-    LocationOutputDatabase,
-    GeoJSONPolygon,
-)
+from ..crud.errors import EntryNotFound
 from ..crud.location import create_location as create_location_from_db
 from ..crud.location import get_location as get_location_from_db
 from ..crud.location import get_locations as get_locations_from_db
 from ..crud.location import get_locations_within_bbox
-from ..crud.errors import EntryNotFound
+from ..db import db
+from ..models.location import (GeoJSONPolygon, LocationInputCreate,
+                               LocationOutputDatabase)
 
 router = APIRouter()
 

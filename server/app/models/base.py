@@ -1,7 +1,8 @@
 """Generic database objects of which several other models are based on."""
 from datetime import datetime
-from pydantic import BaseModel, Field, BaseConfig
+
 from bson import ObjectId
+from pydantic import BaseConfig, BaseModel, Field
 
 
 class DateTimeModelMixin(BaseModel):

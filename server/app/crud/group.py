@@ -1,14 +1,17 @@
 """Functions for conducting CURD operations on group collection"""
 import logging
-from random import sample
-from bson.objectid import ObjectId
-from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
-from ..models.sample import SampleInDatabase
-from typing import Dict, Any, List
-from .sample import get_sample
 from datetime import datetime
+from random import sample
+from typing import Any, Dict, List
+
+from bson.objectid import ObjectId
+
+from ..db import Database
+from ..models.group import (GroupInCreate, GroupInfoDatabase,
+                            UpdateIncludedSamples)
+from ..models.sample import SampleInDatabase
 from .errors import EntryNotFound, UpdateDocumentError
+from .sample import get_sample
 
 LOG = logging.getLogger(__name__)
 

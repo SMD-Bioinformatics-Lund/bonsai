@@ -1,10 +1,10 @@
 """Main entrypoint for API server."""
 
 from fastapi import Depends, FastAPI
-from .routers import groups, samples, users, locations
+
 from .db.utils import close_mongo_connection, connect_to_mongo
 from .internal.middlewares import configure_cors
-
+from .routers import groups, locations, samples, users
 
 app = FastAPI(title="Mimer")
 

@@ -1,9 +1,10 @@
 """Commmand line interface to server component."""
 import click
-from .db import db
-from .db.utils import connect_to_mongo
-from .db.index import INDEXES
+
 from .__version__ import VERSION as version
+from .db import db
+from .db.index import INDEXES
+from .db.utils import connect_to_mongo
 
 
 @click.group()
