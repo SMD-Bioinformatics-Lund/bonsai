@@ -1,7 +1,9 @@
 """Routes related to collections of samples."""
 from pydantic import BaseModel, Field, FileUrl
 from typing import List, Dict
-from .base import DBModelMixin, ModifiedAtRWModel, PyObjectId
+
+from .sample import SampleInDatabase
+from .base import DBModelMixin, ModifiedAtRWModel, PyObjectId, ObjectId
 
 
 class Image(BaseModel):
@@ -17,7 +19,10 @@ FilterParams = List[
 class IncludedSamples(ModifiedAtRWModel):
     """Object for keeping track of included samples in a group"""
 
-    included_samples: List[PyObjectId] = Field(..., alias="includedSamples")
+    included_samples: List[PyObjectId | SampleInDatabase] = Field(..., alias="includedSamples")
+
+    class Config:
+        json_encoders = {ObjectId: str}
 
 
 class UpdateIncludedSamples(IncludedSamples):

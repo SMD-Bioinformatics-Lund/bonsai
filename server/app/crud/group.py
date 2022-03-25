@@ -4,6 +4,7 @@ from random import sample
 from bson.objectid import ObjectId
 from ..db import Database
 from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
+from ..models.sample import SampleInDatabase
 from typing import Dict, Any, List
 from .sample import get_sample
 from datetime import datetime
@@ -35,8 +36,21 @@ async def get_groups(db: Database) -> List[GroupInfoDatabase]:
 
 async def get_group(db: Database, group_id: str) -> GroupInfoDatabase:
     """Get collections from database."""
-    group = await db.sample_group_collection.find_one({"groupId": group_id})
-    return group_document_to_db_object(group)
+    group_fields = GroupInfoDatabase.__fields__
+    sample_fields = SampleInDatabase.__fields__
+    pipeline = [
+        {"$match": {group_fields["group_id"].alias: group_id}},
+        {"$lookup": {
+            "from": db.sample_collection.name, 
+            "localField": group_fields["included_samples"].alias, 
+            "foreignField": sample_fields["sample_id"].alias, 
+            "as": group_fields["included_samples"].alias,
+            },
+        }
+    ]
+    cursor = db.sample_group_collection.aggregate(pipeline)
+    groups = await cursor.to_list(None)
+    return group_document_to_db_object(groups[0])
 
 
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:
@@ -76,7 +90,7 @@ async def append_sample_to_group(
         {
             "$set": {param_modified: datetime.now()},
             "$addToSet": {
-                param_included_sample: sample_obj.id,
+                param_included_sample: sample_obj.sample_id,
             },
         },
     )

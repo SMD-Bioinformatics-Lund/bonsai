@@ -7,8 +7,7 @@ from unittest.mock import Base
 from pydantic import BaseModel, Field, validator
 from typing import Dict, List
 from .base import DBModelMixin, RWModel, ModifiedAtRWModel
-from ..models.base import PyObjectId
-from bson import ObjectId
+from .typing import TypingResultCgMlst, TypingResultMlst
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"
 
@@ -47,26 +46,6 @@ class SoupType(Enum):
 class TypingMethod(Enum):
     mlst = "mlst"
     cgmlst = "cgmlst"
-
-
-class ResultMlstBase(RWModel):
-    """Base class for storing MLST-like typing results"""
-
-    alleles: Dict[str, int | None]
-
-
-class TypingResultMlst(ResultMlstBase):
-    """MLST results"""
-
-    scheme: str
-    sequence_type: int | None = Field(None, alias="sequenceType")
-
-
-class TypingResultCgMlst(ResultMlstBase):
-    """MLST results"""
-
-    n_novel: int = Field(0, alias="nNovel")
-    n_missing: int = Field(0, alias="nNovel")
 
 
 class SoupVersion(RWModel):
