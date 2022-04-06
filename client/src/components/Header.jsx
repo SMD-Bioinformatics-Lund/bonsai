@@ -7,9 +7,12 @@ const Header = ({groupName}) => {
     <header>
       <div className="logo-container">
         <span className="logo">
-          <Link to="/">CGVIZ</Link>
+          <Link to="/">BaktAn</Link>
         </span>
         { groupName && <span className="groupName">{groupName}</span> }
+        <div>
+
+        </div>
         <div id="login">
           <a href="">Login</a>
         </div>

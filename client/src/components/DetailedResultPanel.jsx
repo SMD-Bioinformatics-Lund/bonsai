@@ -1,34 +1,35 @@
+import CommentPanel from './Comment';
+
 function pathBaseName(path) { return path.split('/').pop() }
 
 
 const DetailedResult = ({selectedSample, displayDetailedResult, closeDetailedResultPanelFunc}) => {
   // display detailed result for a sample
   // define relevant data categories
+  const mlstResult = selectedSample.addTypingResult.filter(res => res.type === "mlst")
   const dataTables = [
     {
       title: "Meta info",
       data: {
-        Run: pathBaseName(selectedSample.run),
+        Run: selectedSample.runMetadata.run.run,
       },
     },
     {
       title: "Quality Control",
       data: {
-        "Assembly Size": selectedSample.quast["Total Length"],
-        "# Contigs": selectedSample.quast["Total Length"],
-        N50: selectedSample.quast.N50,
-        "GC %": selectedSample.quast["GC (%)"],
+        "Assembly Size": selectedSample.qc.assembly.total_length,
+        "# Contigs": selectedSample.qc.assembly.n_contigs,
+        N50: selectedSample.qc.assembly.n50,
+        "GC %": selectedSample.qc.assembly.assebly_gc,
       },
     },
     {
       title: "Typing",
       data: {
-        "MLST ST": selectedSample.mlst.sequence_type,
+        "MLST ST": mlstResult.length > 0 ?  mlstResult[0].sequenceType : "",
       },
     },
   ]
-
-  const comment = selectedSample.metadata.hasOwnProperty("comment") ? selectedSample.metadata.comment : ''
 
   return (
     <div className="card" hidden={!displayDetailedResult}>
@@ -47,20 +48,7 @@ const DetailedResult = ({selectedSample, displayDetailedResult, closeDetailedRes
           </div>
         ))
       }
-      <div className="card-body">
-        <h5 className="card-title">Comment</h5>
-        <form className="row">
-          <textarea 
-            className="form-control" 
-            rows="2"
-            placeholder={
-              selectedSample.metadata.hasOwnProperty("comment") ? 
-              selectedSample.metadata.comment : ''
-            }
-          ></textarea>
-          <button type="Submit" className="btn btn-secondary">Add comment</button>
-        </form>
-      </div>
+      <CommentPanel sampleId={selectedSample.sampleId} comments={selectedSample.comments}/>
     </div>
   );
 };

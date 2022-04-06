@@ -25,4 +25,14 @@ const fetchSampleById = async (sampleId) => {
   return data
 }
 
-export {fetchGroups, fetchGroupById, fetchSamples, fetchSampleById}
+const postCommentToSample = async (sampleId, comment) => {
+  const result = await fetch(`${REACT_APP_API_URL}/samples/${sampleId}/comment`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json;charset=utf-8'},
+    body: JSON.stringify(comment)
+  })
+  const data = await result.json()
+  return data
+}
+
+export {fetchGroups, fetchGroupById, fetchSamples, fetchSampleById, postCommentToSample}

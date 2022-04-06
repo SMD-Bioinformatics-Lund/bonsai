@@ -29,7 +29,7 @@ const Samples = () => {
     if ( rowId === selectedRowId ) {
       closeDetailedResultPanelFunc()
     } else {
-      const sample = groupInfo.includedSamples.filter( sample => sample.sample_id === sampleId )
+      const sample = groupInfo.includedSamples.filter( sample => sample.sampleId === sampleId )
       setSelectedSample(sample[0])
       setDisplayDetailedResult(true)
       setSelectedRowId(rowId)

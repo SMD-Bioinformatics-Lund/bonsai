@@ -20,7 +20,6 @@ export function getCellFormating(dataType) {
 
 const SampleId = ({ props }) => {
   // Create PVL typing badge
-  console.log(props.row.id)
   return (
     <a 
       href="#" 
