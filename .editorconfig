@@ -1,5 +1,8 @@
 root = true
-[*.js, *.jsx]
-indent_style = space
-indent_size = 2
+
+[*.{js,jsx,py}]
 charset = utf-8
+indent_style = space
+
+[*.{js,jsx}]
+indent_size = 2
