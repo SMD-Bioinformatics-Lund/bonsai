@@ -10,7 +10,7 @@ from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import get_sample, get_samples
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (SAMPLE_ID_PATTERN, Comment, SampleInCreate,
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase, SampleInCreate,
                              SampleInDatabase, SampleInPipelineInput)
 
 router = APIRouter()
@@ -18,7 +18,8 @@ router = APIRouter()
 
 @router.get("/samples/", tags=["samples"])
 async def read_samples(limit: int = Query(10, gt=0), skip: int = Query(0, gt=-1)):
-    return get_samples(limit, skip)
+    db_obj = await get_samples(db, limit, skip)
+    return db_obj
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED)
@@ -76,7 +77,7 @@ async def update_sample(
     return comment_obj
 
 
-@router.post("/samples/{sample_id}/comment")
+@router.post("/samples/{sample_id}/comment", response_model=List[CommentInDatabase])
 async def post_comment(
     comment: Comment,
     sample_id: str = Path(

@@ -155,6 +155,11 @@ class Comment(BaseModel):
     displayed: bool = True
 
 
+class CommentInDatabase(Comment):
+    """Comment data structure in database."""
+    id: int = Field(..., alias='id')
+
+
 class SampleBase(ModifiedAtRWModel):
     """Base datamodel for sample data structure"""
 
@@ -166,7 +171,7 @@ class SampleBase(ModifiedAtRWModel):
     qc: SampleQc
     species_prediction: List[SpeciesPrediction] = Field(..., alias="speciesPrediction")
     # comments and non analytic results
-    comments: List[Comment] = []
+    comments: List[CommentInDatabase] = []
     location: str | None = Field(None, description="Location id")
 
 
