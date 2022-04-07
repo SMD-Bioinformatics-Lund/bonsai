@@ -10,8 +10,9 @@ from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import get_sample, get_samples
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase, SampleInCreate,
-                             SampleInDatabase, SampleInPipelineInput)
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             SampleInCreate, SampleInDatabase,
+                             SampleInPipelineInput)
 
 router = APIRouter()
 

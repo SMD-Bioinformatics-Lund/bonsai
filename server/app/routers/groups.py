@@ -2,9 +2,10 @@
 
 from typing import List
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, status
+from fastapi import APIRouter, Depends, File, HTTPException, Path, status
 from pymongo.errors import DuplicateKeyError
 
+from ..auth import oauth2_scheme
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
@@ -16,7 +17,7 @@ router = APIRouter()
 
 # , response_model=List[|groupInfoOut]
 @router.get("/groups/", response_model=List[GroupInfoDatabase], tags=["groups"])
-async def get_groups_in_db():
+async def get_groups_in_db(token: str = Depends(oauth2_scheme)):
     """Get information of the number of samples per group loaded into the database."""
     groups = await get_groups(db)
     return groups

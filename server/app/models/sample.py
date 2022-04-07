@@ -9,8 +9,8 @@ from unittest.mock import Base
 from pydantic import BaseModel, Field, validator
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
-from .typing import TypingResultCgMlst, TypingResultMlst
 from .tags import Tag
+from .typing import TypingResultCgMlst, TypingResultMlst
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"
 
@@ -157,7 +157,8 @@ class Comment(BaseModel):
 
 class CommentInDatabase(Comment):
     """Comment data structure in database."""
-    id: int = Field(..., alias='id')
+
+    id: int = Field(..., alias="id")
 
 
 class SampleBase(ModifiedAtRWModel):

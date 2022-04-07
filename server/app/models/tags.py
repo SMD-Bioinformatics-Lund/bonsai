@@ -1,6 +1,8 @@
 from enum import Enum
-from .base import RWModel
 from typing import List
+
+from .base import RWModel
+
 
 class TagType(Enum):
     virulence = "virulence"
@@ -32,9 +34,11 @@ class TagSeverity(Enum):
 
 class Tag(RWModel):
     """Tag data structure."""
+
     type: TagType
     label: VirulenceTag | ResistanceTag
     description: str
     severity: TagSeverity
+
 
 TAG_LIST = List[Tag]

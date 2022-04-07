@@ -45,21 +45,22 @@ async def get_group(db: Database, group_id: str) -> GroupInfoDatabase:
     sample_fields = SampleInDatabase.__fields__
     pipeline = [
         {"$match": {group_fields["group_id"].alias: group_id}},
-        {"$lookup": {
-            "from": db.sample_collection.name, 
-            "localField": group_fields["included_samples"].alias, 
-            "foreignField": sample_fields["sample_id"].alias, 
-            "as": group_fields["included_samples"].alias,
+        {
+            "$lookup": {
+                "from": db.sample_collection.name,
+                "localField": group_fields["included_samples"].alias,
+                "foreignField": sample_fields["sample_id"].alias,
+                "as": group_fields["included_samples"].alias,
             },
-        }
+        },
     ]
 
     async for group in db.sample_group_collection.aggregate(pipeline):
         # compute tags for samples
-        for sample in group['includedSamples']:
+        for sample in group["includedSamples"]:
             # cast as static object
             tags: TAG_LIST = compute_phenotype_tags(SampleInDatabase(**sample))
-            sample['tags'] = tags
+            sample["tags"] = tags
         return group_document_to_db_object(group)
 
 
@@ -86,9 +87,7 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def append_sample_to_group(
-    db: Database, sample_id: str, group_id: str
-) -> None:
+async def append_sample_to_group(db: Database, sample_id: str, group_id: str) -> None:
     """Create a new collection document."""
     sample_obj = await get_sample(db, sample_id)
     fields = UpdateIncludedSamples.__fields__

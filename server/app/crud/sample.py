@@ -8,15 +8,17 @@ from bson.objectid import ObjectId
 from ..crud.location import get_location
 from ..db import Database
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (Comment, CommentInDatabase ,SampleInCreate, SampleInDatabase,
-                             SampleInPipelineInput)
+from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
+                             SampleInDatabase, SampleInPipelineInput)
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
 
 
-async def get_samples(db: Database, limit: int = 0, skip: int = 0) -> List[SampleInDatabase]:
+async def get_samples(
+    db: Database, limit: int = 0, skip: int = 0
+) -> List[SampleInDatabase]:
     """Get locations from database."""
 
     cursor = db.sample_collection.find(limit=limit, skip=skip)
@@ -98,22 +100,27 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
     return sample_obj
 
 
-async def add_comment(db: Database, sample_id: str, comment: Comment) -> List[CommentInDatabase]:
+async def add_comment(
+    db: Database, sample_id: str, comment: Comment
+) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
     param_modified = fields["modified_at"].alias
     param_comment = fields["comments"].alias
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
-    comment_id = max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
+    comment_id = (
+        max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
+    )
     comment_obj = CommentInDatabase(id=comment_id, **comment.dict())
     update_obj = await db.sample_collection.update_one(
         {fields["sample_id"].alias: sample_id},
         {
             "$set": {param_modified: datetime.now()},
-            "$push": {param_comment: {
-                "$each": [comment_obj.dict(by_alias=True)],
-                "$position": 0,
+            "$push": {
+                param_comment: {
+                    "$each": [comment_obj.dict(by_alias=True)],
+                    "$position": 0,
                 }
             },
         },

@@ -1,12 +1,18 @@
 """User CRUD operations."""
-import hashlib
-
 from bson import ObjectId
+from fastapi import Depends, HTTPBasicCredentials
+from passlib.context import CryptContext
 
+from ..auth import get_password_hash
 from ..db import Database
 from ..models.user import (UserInputCreate, UserInputDatabase,
                            UserOutputDatabase)
 from .errors import EntryNotFound
+
+
+def get_current_user_ldap(credentials: HTTPBasicCredentials = Depends(security)):
+    """Get current user from LDAP3 server."""
+    pass
 
 
 async def get_user(db: Database, username: str) -> UserOutputDatabase:
@@ -24,7 +30,7 @@ async def get_user(db: Database, username: str) -> UserOutputDatabase:
 
 async def create_user(db: Database, user: UserInputCreate) -> UserOutputDatabase:
     # create hash for password
-    hashed_password = hashlib.sha256(user.password.encode()).hexdigest()
+    hashed_password = get_password_hash(user.password)
     """Create new user in the database."""
     user_db_fmt: UserInputDatabase = UserInputDatabase(
         hashed_password=hashed_password, **user.dict()

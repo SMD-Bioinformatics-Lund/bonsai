@@ -15,3 +15,20 @@ MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS", 10))
 # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
 # https://fastapi.tiangolo.com/tutorial/cors/
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+
+# to get a string like this run:
+# openssl rand -hex 32
+SECRET_KEY = "not-so-secret"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+# Configure authentication method used
+# If LDAP is not configured it will fallback on local authentication
+
+# LDAP login Settings
+# LDAP_HOST = "localhost"
+# LDAP_PORT = 389
+# LDAP_BASE_DN = 'cn=admin,dc=example,dc=com
+# LDAP_USER_LOGIN_ATTR = "mail"
+# LDAP_USE_SSL = False
+# LDAP_USE_TLS = True

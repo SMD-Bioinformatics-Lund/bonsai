@@ -1,6 +1,6 @@
 """Main entrypoint for API server."""
 
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 
 from .db.utils import close_mongo_connection, connect_to_mongo
 from .internal.middlewares import configure_cors
