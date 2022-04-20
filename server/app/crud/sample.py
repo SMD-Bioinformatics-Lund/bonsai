@@ -142,7 +142,7 @@ async def add_location(
         location_obj = await get_location(db, location_id)
     except EntryNotFound as err:
         LOG.warning(
-            "Tried to add location: {location_id} to sample {sample_id}, location not found"
+            f"Tried to add location: {location_id} to sample {sample_id}, location not found"
         )
         raise err
 

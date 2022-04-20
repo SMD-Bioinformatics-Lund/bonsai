@@ -22,6 +22,13 @@ SECRET_KEY = "not-so-secret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
+# Definition of user roles
+USER_ROLES = {
+    "admin": ["groups:read", "groups:write"],
+    "user": ["groups:read", "locations:read", "locations:write"],
+    "uploader": ["groups:write"],
+}
+
 # Configure authentication method used
 # If LDAP is not configured it will fallback on local authentication
 

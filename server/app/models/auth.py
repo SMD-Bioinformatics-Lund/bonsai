@@ -1,6 +1,7 @@
 """Definition of User data models."""
 
 from pydantic import BaseModel
+from typing import List
 
 
 class Token(BaseModel):
@@ -10,3 +11,4 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: str | None = None
+    scopes: List[str] = []

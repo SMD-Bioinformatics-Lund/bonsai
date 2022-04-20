@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Union
 
-from fastapi import APIRouter, Body, HTTPException, Path, Query, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Body, HTTPException, Path, Query, status, Security
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.sample import EntryNotFound, add_comment, add_location
@@ -10,21 +9,27 @@ from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import get_sample, get_samples
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
-                             SampleInCreate, SampleInDatabase,
-                             SampleInPipelineInput)
-
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase, SampleInCreate,
+                             SampleInDatabase, SampleInPipelineInput)
+from ..crud.user import get_current_active_user
+from ..models.user import UserOutputDatabase
 router = APIRouter()
 
+DEFAULT_TAGS = ["samples", ]
+READ_PERMISSION = "samples:read"
+WRITE_PERMISSION = "samples:write"
 
-@router.get("/samples/", tags=["samples"])
-async def read_samples(limit: int = Query(10, gt=0), skip: int = Query(0, gt=-1)):
+@router.get("/samples/", tags=DEFAULT_TAGS)
+async def read_samples(limit: int = Query(10, gt=0), skip: int = Query(0, gt=-1), current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])):
     db_obj = await get_samples(db, limit, skip)
     return db_obj
 
 
-@router.post("/samples/", status_code=status.HTTP_201_CREATED)
-async def create_sample(sample: SampleInPipelineInput):
+@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+async def create_sample(sample: SampleInPipelineInput,
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION])
+
+):
     try:
         db_obj = await create_sample_record(db, sample)
     except DuplicateKeyError as error:
@@ -35,7 +40,7 @@ async def create_sample(sample: SampleInPipelineInput):
     return db_obj
 
 
-@router.get("/samples/{sample_id}")
+@router.get("/samples/{sample_id}", tags=DEFAULT_TAGS)
 async def read_sample(
     sample_id: str = Path(
         ...,
@@ -43,7 +48,8 @@ async def read_sample(
         min_length=3,
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
-    )
+    ),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
 ):
     try:
         sample_obj = await get_sample(db, sample_id)
@@ -55,7 +61,7 @@ async def read_sample(
     return sample_obj
 
 
-@router.put("/samples/{sample_id}")
+@router.put("/samples/{sample_id}", tags=DEFAULT_TAGS)
 async def update_sample(
     sample_id: str = Path(
         ...,
@@ -66,6 +72,7 @@ async def update_sample(
     ),
     sample: Dict | SampleInPipelineInput = Body({}),
     location: Dict = Body({}, embed=True),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION]),
 ):
     return {"sample_id": sample_id, "sample": sample, "location": location}
     try:
@@ -78,7 +85,7 @@ async def update_sample(
     return comment_obj
 
 
-@router.post("/samples/{sample_id}/comment", response_model=List[CommentInDatabase])
+@router.post("/samples/{sample_id}/comment", response_model=List[CommentInDatabase], tags=DEFAULT_TAGS)
 async def post_comment(
     comment: Comment,
     sample_id: str = Path(
@@ -88,6 +95,7 @@ async def post_comment(
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
     ),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION])
 ):
     try:
         comment_obj = await add_comment(db, sample_id, comment)
@@ -99,7 +107,7 @@ async def post_comment(
     return comment_obj
 
 
-@router.put("/samples/{sample_id}/location")
+@router.put("/samples/{sample_id}/location", tags=[*DEFAULT_TAGS, "locations"])
 async def update_location(
     location_id: str = Body(...),
     sample_id: str = Path(
@@ -109,6 +117,7 @@ async def update_location(
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
     ),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION])
 ):
     try:
         location_obj: LocationOutputDatabase = await add_location(

@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, HTTPException, Path, Query, status, Security
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound
@@ -11,29 +11,39 @@ from ..crud.location import get_locations_within_bbox
 from ..db import db
 from ..models.location import (GeoJSONPolygon, LocationInputCreate,
                                LocationOutputDatabase)
+from ..crud.user import get_current_active_user
+from ..models.user import UserOutputDatabase
 
 router = APIRouter()
 
+DEFAULT_TAGS = ["locations", ]
+READ_PERMISSION = "locations:read"
+WRITE_PERMISSION = "locations:write"
 
-@router.get("/locations/")
+
+@router.get("/locations/", tags=DEFAULT_TAGS)
 async def get_locations(
-    limit: int = Query(10, gt=0), skip: int = Query(0, gt=-1)
+    limit: int = Query(10, gt=0), skip: int = Query(0, gt=-1),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
 ) -> List[LocationOutputDatabase]:
     """Get list of all locations in the database."""
     result = await get_locations_from_db(db, limit, skip)
     return result
 
 
-@router.post("/locations/")
-async def create_location(location: LocationInputCreate) -> LocationOutputDatabase:
+@router.post("/locations/", tags=DEFAULT_TAGS)
+async def create_location(location: LocationInputCreate,
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION])
+) -> LocationOutputDatabase:
     """Create a new location"""
     loc = await create_location_from_db(db, location)
     return loc
 
 
-@router.get("/locations/bbox")
+@router.get("/locations/bbox", tags=DEFAULT_TAGS)
 async def get_location_bbox(
-    left: float, bottom: float, right: float, top: float
+    left: float, bottom: float, right: float, top: float,
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
 ) -> List[LocationOutputDatabase]:
     """Get a location that are within a bbox."""
     # convert positions to geo json polygon object
@@ -47,8 +57,10 @@ async def get_location_bbox(
     return loc
 
 
-@router.get("/locations/{location_id}")
-async def get_location(location_id: str) -> LocationOutputDatabase:
+@router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
+async def get_location(location_id: str, 
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
+) -> LocationOutputDatabase:
     """Get location with id"""
     try:
         loc = await get_location_from_db(db, location_id)
