@@ -1,3 +1,6 @@
 motor
 fastapi[all]
 uvicorn[standard]
+python-jose[cryptography]
+passlib
+ldap3
