@@ -2,25 +2,24 @@
 from email.policy import HTTP
 from gzip import READ
 from http.client import HTTPException
+
 from bson import ObjectId
-from fastapi import Depends, status, Security
-from fastapi.security import (HTTPBasic, HTTPBasicCredentials, SecurityScopes,
-                              OAuth2PasswordBearer)
+from fastapi import Depends, Security, status
+from fastapi.security import (HTTPBasic, HTTPBasicCredentials,
+                              OAuth2PasswordBearer, SecurityScopes)
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
+from ..config import USER_ROLES
 from ..db import Database, db
 from ..models.auth import TokenData
 from ..models.user import (UserInputCreate, UserInputDatabase,
                            UserOutputDatabase)
 from .errors import EntryNotFound
-from ..config import USER_ROLES
 
 security = HTTPBasic()
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token",
-    scopes={}
-)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
+
 
 def get_current_user_ldap(credentials: HTTPBasicCredentials = Depends(security)):
     """Get current user from LDAP3 server."""
@@ -71,8 +70,7 @@ async def authenticate_user(db: Database, username: str, password: str) -> bool:
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes, 
-    token: str = Depends(oauth2_scheme)
+    security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)
 ) -> UserOutputDatabase:
     """Get current user."""
     if security_scopes.scopes:

@@ -6,14 +6,17 @@ from http.client import HTTPException
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..crud.user import authenticate_user
 from ..auth import create_access_token
 from ..config import ACCESS_TOKEN_EXPIRE_MINUTES
+from ..crud.user import authenticate_user
 from ..db import db
 
 router = APIRouter()
 
-DEFAULT_TAGS = ["authentication", ]
+DEFAULT_TAGS = [
+    "authentication",
+]
+
 
 @router.post("/token", tags=DEFAULT_TAGS)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -27,7 +30,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": form_data.username, "scopes": "fool"}, 
-        expires_delta=access_token_expires
+        data={"sub": form_data.username, "scopes": "fool"},
+        expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}

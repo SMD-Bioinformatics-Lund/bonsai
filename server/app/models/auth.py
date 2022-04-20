@@ -1,7 +1,8 @@
 """Definition of User data models."""
 
-from pydantic import BaseModel
 from typing import List
+
+from pydantic import BaseModel
 
 
 class Token(BaseModel):

@@ -1,7 +1,8 @@
 """Definition of User data models."""
 
-from pydantic import EmailStr, Field
 from typing import List
+
+from pydantic import EmailStr, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
