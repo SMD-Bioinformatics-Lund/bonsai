@@ -49,4 +49,14 @@ INDEXES = {
             },
         },
     ],
+    "user": [
+        {
+            "definition": [("username", ASCENDING)],
+            "options": {
+                "name": "user_username",
+                "background": True,
+                "unique": True,
+            },
+        },
+    ],
 }
