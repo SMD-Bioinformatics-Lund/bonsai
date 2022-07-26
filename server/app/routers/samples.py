@@ -12,8 +12,7 @@ from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
-                             SampleInCreate, SampleInDatabase,
-                             SampleInPipelineInput)
+                             SampleInDatabase, PipelineResult)
 from ..models.user import UserOutputDatabase
 
 router = APIRouter()
@@ -39,7 +38,7 @@ async def read_samples(
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_sample(
-    sample: SampleInPipelineInput,
+    sample: PipelineResult,
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -51,7 +50,7 @@ async def create_sample(
             status_code=status.HTTP_409_CONFLICT,
             detail=error.details["errmsg"],
         )
-    return db_obj
+    return {"type": "success", "id": db_obj.id}
 
 
 @router.get("/samples/{sample_id}", tags=DEFAULT_TAGS)
@@ -86,7 +85,7 @@ async def update_sample(
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
     ),
-    sample: Dict | SampleInPipelineInput = Body({}),
+    sample: Dict | PipelineResult = Body({}),
     location: Dict = Body({}, embed=True),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[WRITE_PERMISSION]

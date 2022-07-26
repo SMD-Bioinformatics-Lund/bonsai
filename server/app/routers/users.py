@@ -11,15 +11,26 @@ from ..crud.errors import EntryNotFound
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.user import create_user, get_current_active_user, get_user
 from ..db import db
-from ..models.user import UserInputCreate, UserOutputDatabase
+from ..models.user import UserInputCreate, UserInputDatabase, UserOutputDatabase
 
 router = APIRouter()
 
 DEFAULT_TAGS = [
     "users",
 ]
+OWN_USER = "users:me"
 READ_PERMISSION = "users:read"
 WRITE_PERMISSION = "users:write"
+
+
+@router.get("/users/me", tags=DEFAULT_TAGS, response_model=UserOutputDatabase)
+async def get_users_me(
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[OWN_USER]
+    ),
+) -> UserOutputDatabase:
+    """Get user data for user with username."""
+    return current_user
 
 
 @router.get("/users/{username}", tags=DEFAULT_TAGS)

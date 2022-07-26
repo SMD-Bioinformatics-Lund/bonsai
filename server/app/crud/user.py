@@ -1,16 +1,15 @@
 """User CRUD operations."""
 from email.policy import HTTP
 from gzip import READ
-from http.client import HTTPException
 
 from bson import ObjectId
-from fastapi import Depends, Security, status
+from fastapi import Depends, Security, status, HTTPException
 from fastapi.security import (HTTPBasic, HTTPBasicCredentials,
                               OAuth2PasswordBearer, SecurityScopes)
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
-from ..config import USER_ROLES
+from ..config import USER_ROLES, SECRET_KEY, ALGORITHM
 from ..db import Database, db
 from ..models.auth import TokenData
 from ..models.user import (UserInputCreate, UserInputDatabase,
@@ -77,6 +76,7 @@ async def get_current_user(
         authenticate_value = f"Bearer scope={security_scopes.scope_str}"
     else:
         authenticate_value = f"Bearer"
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credentials could not be validated",
@@ -91,12 +91,18 @@ async def get_current_user(
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
+
     try:
-        user: UserOutputDatabase = get_user(db, username=token_data.username)
+        user: UserOutputDatabase = await get_user(db, username=token_data.username)
     except EntryNotFound:
         raise credentials_exception
     for scope in security_scopes.scopes:
-        if scope not in USER_ROLES.get(user.roles, []):
+        users_all_permissions = {
+            perm 
+            for user_role in user.roles
+            for perm in USER_ROLES.get(user_role , [])
+            }
+        if not scope in users_all_permissions:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Credentials could not be validated",
@@ -106,7 +112,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: UserOutputDatabase = Security(get_current_user, scopes=["me"]),
+    current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
 ) -> UserOutputDatabase:
     """Get current active user."""
     if current_user.disabled:

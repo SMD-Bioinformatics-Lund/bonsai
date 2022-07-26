@@ -1,7 +1,7 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import List
 
 from bson.objectid import ObjectId
 
@@ -9,7 +9,7 @@ from ..crud.location import get_location
 from ..db import Database
 from ..models.location import LocationOutputDatabase
 from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
-                             SampleInDatabase, SampleInPipelineInput)
+                             SampleInDatabase, PipelineResult)
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
@@ -36,35 +36,13 @@ async def get_samples(
 
 
 async def create_sample(
-    db: Database, sample: SampleInPipelineInput
+    db: Database, sample: PipelineResult
 ) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
-    # restructure data to db format
-
     # validate data format
-    sample_db_fmt: SampleInCreate = SampleInCreate(
-        sample_id=sample.sample_id,
-        schema_version=CURRENT_SCHEMA_VERSION,
+    sample_db_fmt: SampleDatabaseInput = SampleInCreate(
         in_collections=[],
-        run_metadata=sample.run_metadata,
-        qc=sample.qc,
-        species_prediction=sample.species_prediction,
-        add_typing_result=[
-            {"type": "cgmlst", "result": sample.mlst},
-            {"type": "cgmlst", "result": sample.cgmlst},
-        ],
-        add_phenotype_prediction=[
-            {
-                "type": "antimicrobial_resistance",
-                "result": sample.antimicrobial_resistance,
-            },
-            {"type": "chemical_resistance", "result": sample.chemical_resistance},
-            {
-                "type": "environmental_factor_resistance",
-                "result": sample.environmental_resistance,
-            },
-            {"type": "virulence", "result": sample.virulence},
-        ],
+        **sample.dict()
     )
     # store data in database
     doc = await db.sample_collection.insert_one(sample_db_fmt.dict(by_alias=True))

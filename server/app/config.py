@@ -24,8 +24,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Definition of user roles
 USER_ROLES = {
-    "admin": ["groups:read", "groups:write"],
-    "user": ["groups:read", "locations:read", "locations:write"],
+    "admin": ["users:me", "groups:read", "groups:write", "samples:read", "samples:write"],
+    "user": ["users:me", "samples:read", "groups:read", "locations:read", "locations:write"],
     "uploader": ["groups:write"],
 }
 

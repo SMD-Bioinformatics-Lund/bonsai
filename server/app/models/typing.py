@@ -1,5 +1,6 @@
 """Typing related data models"""
 
+from enum import Enum
 from typing import Dict
 
 from pydantic import Field
@@ -25,3 +26,17 @@ class TypingResultCgMlst(ResultMlstBase):
 
     n_novel: int = Field(0, alias="nNovel")
     n_missing: int = Field(0, alias="nNovel")
+
+
+class TypingMethod(Enum):
+    """Valid typing methods."""
+
+    MLST = "mlst"
+    CGMLST = "cgmlst"
+
+
+class TypingResultIndex(RWModel):
+    """Basic key-value index for analysis results."""
+
+    type: TypingMethod
+    result: TypingResultMlst | TypingResultCgMlst

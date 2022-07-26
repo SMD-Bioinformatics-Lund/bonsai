@@ -15,7 +15,7 @@ INDEXES = {
     ],
     "sample": [
         {
-            "definition": [("sample_id", ASCENDING)],
+            "definition": [("sampleId", ASCENDING)],
             "options": {
                 "name": "sample_sample_id",
                 "background": True,

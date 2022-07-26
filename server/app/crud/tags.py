@@ -1,5 +1,7 @@
 """Functions for computing tags."""
-from ..models.sample import PhenotypeResult, PhenotypeType, SampleInDatabase
+from multiprocessing.sharedctypes import Value
+from ..models.phenotype import PhenotypeResult, PhenotypeType
+from ..models.sample import SampleInDatabase
 from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag
 
 
@@ -8,8 +10,8 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
         pred
-        for pred in sample.add_phenotype_prediction
-        if pred.type == PhenotypeType.vir.value
+        for pred in sample.phenotype_result
+        if pred.type == PhenotypeType.VIR.value
     ]
     if len(virs) > 0:
         vir_result: PhenotypeResult = virs[0].result
@@ -18,26 +20,26 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
         # classify PVL
         if has_lukF and has_lukS:
             tag = Tag(
-                type=TagType.virulence,
-                label=VirulenceTag.pvl_all_pos,
+                type=TagType.VIRULENCE,
+                label=VirulenceTag.PVL_ALL_POS,
                 description="",
-                severity=TagSeverity.danger,
+                severity=TagSeverity.DANGER,
             )
         elif any([has_lukF and not has_lukS, has_lukS and not has_lukF]):
             tag = Tag(
-                type=TagType.virulence,
-                label=VirulenceTag.pvl_lukF_pos
+                type=TagType.VIRULENCE,
+                label=VirulenceTag.PVL_LUKF_POS
                 if has_lukF
-                else VirulenceTag.pvl_lukS_pos,
+                else VirulenceTag.PVL_LUKS_POS,
                 description="",
-                severity=TagSeverity.warning,
+                severity=TagSeverity.WARNING,
             )
         elif not has_lukF and not has_lukS:
             tag = Tag(
-                type=TagType.virulence,
-                label=VirulenceTag.pvl_all_neg,
+                type=TagType.VIRULENCE,
+                label=VirulenceTag.PVL_ALL_NEG,
                 description="",
-                severity=TagSeverity.passed,
+                severity=TagSeverity.PASSED,
             )
         tags.append(tag)
 
