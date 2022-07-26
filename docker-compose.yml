@@ -39,8 +39,6 @@ services:
       - api
     ports: 
       - "8012:3000"
-    environment:
-      - ALLOWED_ORIGINS=*
     volumes:
       - "./client:/app"
       - "./.env:/app/.env"
