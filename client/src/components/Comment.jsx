@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types'
 import { useState, useEffect } from 'react'
 import "./Comment.css"
-import { postCommentToSample } from '../api'
+import { postCommentToSample } from '../services/api'
 
 const CommentPanel = ({sampleId, comments}) => {
   const [sampleComments, setSampleComments] = useState(comments)

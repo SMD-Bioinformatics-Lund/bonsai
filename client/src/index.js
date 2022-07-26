@@ -1,14 +1,25 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './containers/App';
+import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { Provider } from 'react-redux';
+import store from './store';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import "@popperjs/core"
+import "bootstrap"
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+//    <React.StrictMode>
+//      
+//    </React.StrictMode>
+
+                //<Route path=":groupId" element={<Samples/>} />
+ReactDOM
+  .createRoot(document.getElementById('root'))
+  .render(
+    <Provider store={store}>
+      <App/>
+    </Provider>
 );
 
 // If you want to start measuring performance in your app, pass a function

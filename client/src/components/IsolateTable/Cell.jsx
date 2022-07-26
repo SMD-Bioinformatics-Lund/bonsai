@@ -1,3 +1,5 @@
+import { Link, useParams } from "react-router-dom";
+
 export function getCellFormating(dataType) {
   // Select formating funtion depending on datatype
   let formatFunc;
@@ -21,11 +23,12 @@ export function getCellFormating(dataType) {
 const SampleId = ({ props }) => {
   // Create PVL typing badge
   return (
-    <a 
-      href="#" 
+    <Link
+      to={`${props.value}`}
       className="link-success"
-      onClick={props.hasOwnProperty("onClick") ? () => {props.onClick(props.value, props.row.id)} : ''}
-    >{ props.value }</a>
+    >
+      { props.value }
+    </Link>
   );
 }
 

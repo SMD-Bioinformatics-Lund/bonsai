@@ -12,7 +12,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './Table.css';
 
 
-const TableComponent = ({ columns, data, selectedRowId, showDetailedResultFunc }) => {
+const TableComponent = ({ columns, data, selectedRowId }) => {
 
   const defaultColumn = React.useMemo(() => ({
     // Default filter UI
@@ -103,7 +103,7 @@ const TableComponent = ({ columns, data, selectedRowId, showDetailedResultFunc }
                     {row.cells.map(cell => {
                       return (
                         <td {...cell.getCellProps()}>
-                          {cell.render('Cell', { onClick: showDetailedResultFunc })}
+                          {cell.render('Cell', { })}
                         </td>
                       )})}
                   </tr>
@@ -181,7 +181,7 @@ const PaginationSection = ({ table, state }) => {
   )
 }
 
-const IsoalteTable = ({ groupInfo, selectedRowId, showDetailedResultFunc }) => {
+const IsoalteTable = ({ groupInfo, selectedRowId }) => {
   // create header and data
   const columns = groupInfo
     .tableColumns
@@ -204,7 +204,6 @@ const IsoalteTable = ({ groupInfo, selectedRowId, showDetailedResultFunc }) => {
         columns={columns} 
         data={groupInfo.includedSamples} 
         selectedRowId={selectedRowId}
-        showDetailedResultFunc={showDetailedResultFunc} 
       />
     </div>
   )

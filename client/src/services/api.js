@@ -1,5 +1,5 @@
 // get API url from environment variable
-const { REACT_APP_API_URL, REACT_APP_API_KEY } = process.env
+const { REACT_APP_API_URL } = process.env
 
 const fetchGroups = async () => {
   const res = await fetch(`${REACT_APP_API_URL}/groups`)
@@ -31,6 +31,12 @@ const postCommentToSample = async (sampleId, comment) => {
     headers: {'Content-Type': 'application/json;charset=utf-8'},
     body: JSON.stringify(comment)
   })
+  const data = await result.json()
+  return data
+}
+
+const getUser = async (userName) => {
+  const result = await fetch(`${REACT_APP_API_URL}/users/${userName}`)
   const data = await result.json()
   return data
 }
