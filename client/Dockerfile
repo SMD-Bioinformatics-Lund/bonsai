@@ -1,17 +1,11 @@
-FROM node:alpine
+FROM python:3.10.2
 
-WORKDIR /app
+# Set build variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-ENV PATH /app/node_modules/.bin:$PATH
-
-# install app dependencies
-COPY package.json ./
-COPY package-lock.json ./
-
-RUN npm install --silent -g && npx browserslist@latest --update-db
-
-# add app
-COPY public src ./
-
-# start app
-CMD ["npm", "start"]
+WORKDIR /usr/src/app
+COPY requirements.txt ./
+COPY app app/
+RUN pip install --no-cache-dir --upgrade pip &&                 \
+	pip install --no-cache-dir --requirement requirements.txt

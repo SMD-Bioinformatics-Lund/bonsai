@@ -38,13 +38,14 @@ services:
       - mongodb
       - api
     ports: 
-      - "8012:3000"
+      - "8012:5000"
+    environment:
+      - FLASK_APP=app.app:create_app
     volumes:
-      - "./client:/app"
-      - "./.env:/app/.env"
+      - "./client/app:/usr/src/app/app"
     networks:
       - mimer-net
-    command: "npm run start"
+    command: "flask run --host 0.0.0.0"
 networks:
   mimer-net:
     driver: bridge
