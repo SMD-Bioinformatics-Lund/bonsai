@@ -173,4 +173,10 @@ async def get_typing_profiles(db: Database, sample_idx: list[str], typing_method
         async for sample 
         in db.sample_collection.aggregate(pipeline)
     ]
+    missing_samples = set(sample_idx) - {s.sampleId for s in results}
+    if len(missing_samples) > 0:
+        msg = 'The samples "%s" didnt have %s typing result.' % (
+            ", ".join(list(missing_samples)), typing_method
+        )
+        raise EntryNotFound(msg)
     return results
