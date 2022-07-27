@@ -40,8 +40,8 @@ def to_newick(node, newick, parentdist, leaf_names):
 
 def cluster_on_allele_profile(profiles: TypingProfileOutput, method: ClusterMethod, distance_metric: DistanceMethod) -> str:
     """Cluster samples on allele profiles."""
-    obs = pd.DataFrame([s.typingResult for s in profiles])
-    leaf_names = list(obs.columns)
+    obs = pd.DataFrame([s.typingResult for s in profiles], index=[s.sampleId for s in profiles])
+    leaf_names = list(obs.index)
     # calcualte distance matrix
     dist_mtrx = pdist(obs, metric=distance_metric.value)
 

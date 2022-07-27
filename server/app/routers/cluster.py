@@ -16,12 +16,16 @@ DEFAULT_TAGS = [
 READ_PERMISSION = "cluster:read"
 WRITE_PERMISSION = "cluster:write"
 
+class TypingMethod(Enum):
+    MLST = "mlst"
+    CGMLST = "cgmlst"
 
 #    current_user: UserOutputDatabase = Security(
 #        get_current_active_user, scopes=[WRITE_PERMISSION]
 #    ),
-@router.get("/cluster/cgmlst/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+@router.get("/cluster/{typing_method}/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def cluster_samples(
+    typing_method: TypingMethod,
     sid: list[str] = Query(default=...),
     distance: DistanceMethod = Query(...),
     method: ClusterMethod = Query(...)
@@ -30,6 +34,6 @@ async def cluster_samples(
     
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
-    profiles: TypingProfileOutput = await get_typing_profiles(db, sid, typing_method="cgmlst")
+    profiles: TypingProfileOutput = await get_typing_profiles(db, sid, typing_method.value)
     newick_tree: str = cluster_on_allele_profile(profiles, method, distance)
     return newick_tree 
