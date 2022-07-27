@@ -1,9 +1,0 @@
-.comment-wrapper .comment-body {
-    max-height:650px;
-    overflow:auto;
-}
-
-.comment-wrapper .comment-list .comment {
-    border-bottom:1px dashed #efefef;
-    margin-bottom:25px;
-}
