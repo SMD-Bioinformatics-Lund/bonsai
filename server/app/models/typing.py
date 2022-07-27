@@ -7,11 +7,13 @@ from pydantic import Field
 
 from .base import RWModel
 
+CGMLST_ALLELES = Dict[str, int | None]
+
 
 class ResultMlstBase(RWModel):
     """Base class for storing MLST-like typing results"""
 
-    alleles: Dict[str, int | None]
+    alleles: CGMLST_ALLELES
 
 
 class TypingResultMlst(ResultMlstBase):

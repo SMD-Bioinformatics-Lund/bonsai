@@ -10,10 +10,20 @@ from ..db import Database
 from ..models.location import LocationOutputDatabase
 from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
                              SampleInDatabase, PipelineResult)
+from ..models.typing import CGMLST_ALLELES
+from ..models.base import RWModel
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
+
+class TypingProfileAggregate(RWModel):
+    """Sample id and predicted alleles."""
+
+    sampleId: str
+    typingResult: CGMLST_ALLELES
+
+TypingProfileOutput = list[TypingProfileAggregate]
 
 
 async def get_samples(
@@ -143,3 +153,24 @@ async def add_location(
         raise UpdateDocumentError(sample_id)
     LOG.info(f"Added location {location_obj.display_name} to {sample_id}")
     return location_obj
+
+
+async def get_typing_profiles(db: Database, sample_idx: list[str], typing_method: str) -> TypingProfileOutput:
+    """Get locations from database."""
+    pipeline = [
+        {"$project": {"_id": 0, "sampleId": 1, "typingResult": 1}},
+        {"$unwind": "$typingResult"},
+        {"$match": {"$and": [
+            {"sampleId": {"$in": sample_idx}}, 
+            {"typingResult.type": typing_method}
+        ]}},
+        {"$addFields": {"typingResult": "$typingResult.result.alleles"}}
+    ]
+
+    # query database
+    results = [
+        TypingProfileAggregate(**sample)
+        async for sample 
+        in db.sample_collection.aggregate(pipeline)
+    ]
+    return results
