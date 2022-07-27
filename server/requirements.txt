@@ -4,3 +4,6 @@ uvicorn[standard]
 python-jose[cryptography]
 passlib
 ldap3
+scipy
+pandas
+scikit-bio
