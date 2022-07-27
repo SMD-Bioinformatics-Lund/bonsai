@@ -35,7 +35,6 @@ async def get_groups(db: Database) -> List[GroupInfoDatabase]:
     cursor = db.sample_group_collection.find({})
     groups = []
     for row in await cursor.to_list(length=100):
-        print("oooo")
         groups.append(group_document_to_db_object(row))
     return groups
 
