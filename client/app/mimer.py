@@ -12,15 +12,15 @@ def get_current_user(token):
     headers["Authorization"] = "Bearer {token}"
 
     # conduct query
-    url = Path(current_app.config["MIMER_API_URL"], 'users', 'me')
+    url = f'{current_app.config["MIMER_API_URL"]}/users/me'
     resp = requests.get(url)
     resp.raise_for_status()
-    return resp.json
+    return resp.json()
 
 def get_auth_token(username: str, password: str) -> str:
     """Get authentication token from api"""
-    url = Path(current_app.config["MIMER_API_URL"], 'token')
+    url = f'{current_app.config["MIMER_API_URL"]}/token'
     resp = requests.post(url, data={username: username, password: password})
     # controll that request 
     resp.raise_for_status()
-    return resp.json
+    return resp.json()
