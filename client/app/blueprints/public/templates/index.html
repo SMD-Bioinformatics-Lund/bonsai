@@ -1,7 +1,31 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div>
-    <h1>Welcome to Project Orange</h1>
+<div class="card bg-white mt-6 w-75 position-absolute translate-middle-x start-50">
+    <div class="card-body">
+        <span class="text-center">
+            <h1 class="card-title text-danger text-center">Orange</h1>
+            <h5 class="card-subtitle text-muted text-center">Through observation, sensation and experience shall the truth of the multiverse be revealed.</h5>
+            <br>
+            <p class="card-text"><b>Version:</b> {{ version }}</p>
+        </span>
+        <hr/>
+        <p class="card-text">Orange, orange and orange.</p>
+        <form action="{{ url_for('login.login') }}">
+            <div class="row">
+                <div class="col">
+                    <input class="form-control" type="text" placeholder="User name" id="username">
+                </div>
+                <div class="col">
+                    <input class="form-control" type="password" placeholder="Password" id="password">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <button class="btn btn-primary text-white" type="submit">Login</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock content %}

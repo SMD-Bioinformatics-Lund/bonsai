@@ -1,0 +1,1 @@
+MIMER_API_URL = "http://api"

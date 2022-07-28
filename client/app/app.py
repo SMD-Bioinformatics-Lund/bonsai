@@ -1,6 +1,8 @@
 """Code for setting up the flask app."""
 from flask import Flask, current_app
-from .blueprints import public
+from .blueprints import public, login
+from .extensions import login_manager
+
 
 def create_app():
     """Flask app factory function."""
@@ -9,6 +11,10 @@ def create_app():
     # load default config
     app.config.from_pyfile("config.py")
 
+    # initialize flask extensions
+    login_manager.init_app(app)
+
+    # configure pages etc
     register_blueprints(app)
 
     return app
@@ -17,3 +23,4 @@ def create_app():
 def register_blueprints(app):
     """Register flask blueprints."""
     app.register_blueprint(public.public_bp)
+    app.register_blueprint(login.login_bp)
