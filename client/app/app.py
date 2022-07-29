@@ -10,6 +10,8 @@ def create_app():
     app = Flask(__name__)
     # load default config
     app.config.from_pyfile("config.py")
+    # setup secret key
+    app.secret_key = app.config["SECRET_KEY"]
 
     # initialize flask extensions
     login_manager.init_app(app)

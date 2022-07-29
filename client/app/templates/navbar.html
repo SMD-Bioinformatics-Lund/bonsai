@@ -20,7 +20,7 @@
         </ul>
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
-                {{ user_dropdown() }}
+                {{ user_dropdown(current_user) }}
             {% endif %}
         </ul>
     </div>
@@ -29,8 +29,8 @@
 {% endmacro %}
 
 {% macro navbar_link(name) %}
-<li class="nav-link">
-    <a href="">{{ name }}</a>
+<li class="nav-item">
+    <a class="nav-link" href="#">{{ name }}</a>
 </li>
 {% endmacro %}
 
@@ -46,21 +46,27 @@
         aria-expanded="false"
         >
         <span className="user-alias-container bg-dark text-light text-center text-uppercase fs-6 fw-lighter font-monospace">
-            {{ current_user }}
+            {{ current_user.username }}
         </span>
     </a>
     <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
-        {{ dropdown_link('Profile', '#', disabled=True) }}
-        {{ dropdown_link('Settings', '#', disabled=True) }}
+        {{ dropdown_link('Profile', disabled=True) }}
+        {{ dropdown_link('Settings', disabled=True) }}
         <li><hr class="dropdown-divider"/></li>
-        {{ dropdown_link('Log out', '#', disabled=True) }}
+        {{ dropdown_link('Log out', 'login.logout', disabled=False) }}
     </ul>
 </li>
 {% endmacro %}
 
 {% macro dropdown_link(text, url_target, disabled=False) %}
 <li>
-    <a href="{{url_target}}"
+    <a href="
+    {% if url_target %}
+        {{ url_for(url_target) }}
+    {% else %}
+        #
+    {% endif %}
+    "
         class="dropdown-item {% if disabled %} disabled {% endif %}"
     >{{ text }}</a>
 </li>
