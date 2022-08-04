@@ -14,9 +14,9 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            {{ navbar_link('Home') }}
-            {{ navbar_link('Groups') }}
-            {{ navbar_link('Locations') }}
+            {{ navbar_link('Home', 'public.index') }}
+            {{ navbar_link('Groups', 'groups.groups') }}
+            {{ navbar_link('Locations', 'groups.groups', True) }}
         </ul>
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
@@ -28,9 +28,9 @@
 </nav>
 {% endmacro %}
 
-{% macro navbar_link(name) %}
+{% macro navbar_link(name, target, disabled=False) %}
 <li class="nav-item">
-    <a class="nav-link" href="#">{{ name }}</a>
+    <a class="nav-link {% if disabled %} disabled {% endif %}" href="{{ url_for(target) }}">{{ name }}</a>
 </li>
 {% endmacro %}
 
