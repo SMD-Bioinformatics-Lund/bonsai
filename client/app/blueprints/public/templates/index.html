@@ -11,19 +11,31 @@
         </span>
         <hr/>
         <p class="card-text">Orange, orange and orange.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% set category = "border-" + messages[-1][0] %}
+        {% else %}
+            {% set category = "" %}
+        {% endif %}
         <form action="{{ url_for('login.login') }}" method="POST" name="login">
             <div class="row">
                 <div class="col">
-                    <input class="form-control" type="text" placeholder="User name" id="username" name="username">
+                    <input class="form-control {{ category }}" type="text" placeholder="User name" id="username" name="username">
                 </div>
                 <div class="col">
-                    <input class="form-control" type="password" placeholder="Password" id="password" name="password">
+                    <input class="form-control {{ category }}" type="password" placeholder="Password" id="password" name="password">
                 </div>
                 <div class="col">
                     <button class="btn btn-primary text-white" type="submit">Login</button>
                 </div>
             </div>
         </form>
+        {% if messages %}
+            {% set category = messages[-1][0] %}
+            {% set message = messages[-1][1] %}
+            <p class="text-{{category}} fs-6 fw-bold">{{ message }}</p>
+        {% endif %}
+        {% endwith %}
     </div>
 </div>
 {% endblock content %}
