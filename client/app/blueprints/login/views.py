@@ -4,7 +4,9 @@ from app.extensions import login_manager
 from app.mimer import get_auth_token, get_current_user, TokenObject
 from requests.exceptions import HTTPError
 
-login_bp = Blueprint("login", __name__, template_folder="templates", static_folder="static")
+login_bp = Blueprint(
+    "login", __name__, template_folder="templates", static_folder="static"
+)
 
 
 class LoginUser(UserMixin):
@@ -22,7 +24,7 @@ class LoginUser(UserMixin):
     @property
     def is_admin(self):
         """Check if the user is admin."""
-        return "admin" in self.roles 
+        return "admin" in self.roles
 
 
 @login_bp.route("/logout")
@@ -37,15 +39,15 @@ def logout():
     return redirect(url_for("public.index"))
 
 
-@login_bp.route('/login', methods=['GET', 'POST'])
+@login_bp.route("/login", methods=["GET", "POST"])
 def login():
     """Login a user."""
     if "next" in request.args:
         session["next_url"] = request.args["next"]
 
     # get login credentials from form
-    username = request.form['username']
-    password = request.form['password']
+    username = request.form["username"]
+    password = request.form["password"]
 
     try:
         token_obj: TokenObject = get_auth_token(username, password)
@@ -59,7 +61,6 @@ def login():
             flash("Sorry, you could not log in due to an internal error", "warning")
 
         return redirect(url_for("public.index"))
-
 
     user_obj = get_current_user(token_obj)
     user = LoginUser(user_obj, token_obj)
@@ -78,11 +79,14 @@ def load_user(user_id):
     user = LoginUser(user_obj, token) if user_obj else None
     return user
 
+
 def perform_login(user):
     if login_user(user):
         flash(f"you logged in as: {user.username}", "success")
         next_url = session.pop("next_url", None)
-        return redirect(request.args.get("next") or next_url or url_for("groups.groups"))
+        return redirect(
+            request.args.get("next") or next_url or url_for("groups.groups")
+        )
 
     # could not log in
     flash("sorry, you could not log in", "warning")

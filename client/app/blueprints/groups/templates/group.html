@@ -1,7 +1,28 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<h1>Group {{group_id}}</h1>
-<p>Information...</p>
+<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
+    <div class="card-body">
+        <h1 class="card-title">Group {{group_id}}</h1>
+        <hr>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Sample Id</th>
+                    <th>Other column</th>
+                </tr>
+            </thead>
+            <tbody class="table-hover">
+                {% for sample in samples %}
+                <tr>
+                    <th><a href="{{ url_for('samples.sample', sample_id=sample.sampleId) }}">{{sample.sampleId}}</a></th>
+                    <th>-</th>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{{ table_definition }}
 {% endblock content %}
 

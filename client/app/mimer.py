@@ -10,6 +10,7 @@ from functools import wraps
 
 class TokenObject(BaseModel):
     """Token object"""
+
     token: str
     type: str
 
@@ -23,7 +24,8 @@ def api_authentication(func):
         headers["Accept"] = "application/json"
         headers["Authorization"] = f"{token_obj.type.capitalize()} {token_obj.token}"
 
-        return func(headers, *args, **kwargs)
+        return func(headers=headers, *args, **kwargs)
+
     return wrapper
 
 
@@ -33,7 +35,7 @@ def get_current_user(headers):
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/users/me'
     resp = requests.get(url, headers=headers)
-    
+
     resp.raise_for_status()
     return resp.json()
 
@@ -45,11 +47,13 @@ def get_auth_token(username: str, password: str) -> TokenObject:
     headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     url = f'{current_app.config["MIMER_API_URL"]}/token'
-    resp = requests.post(url, data={"username": username, "password": password}, headers=headers)
-    # controll that request 
+    resp = requests.post(
+        url, data={"username": username, "password": password}, headers=headers
+    )
+    # controll that request
     resp.raise_for_status()
     json_res = resp.json()
-    token_obj = TokenObject(token=json_res['access_token'], type=json_res['token_type'])
+    token_obj = TokenObject(token=json_res["access_token"], type=json_res["token_type"])
     return token_obj
 
 
@@ -59,6 +63,18 @@ def get_groups(headers):
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/groups'
     resp = requests.get(url, headers=headers)
-    
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def get_samples_in_group(headers, **kwargs):
+    """Get groups from database"""
+    # conduct query
+    group_id = kwargs.get("group_id")
+    url = f'{current_app.config["MIMER_API_URL"]}/groups/{group_id}'
+    resp = requests.get(url, headers=headers)
+
     resp.raise_for_status()
     return resp.json()

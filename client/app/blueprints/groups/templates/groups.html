@@ -2,23 +2,33 @@
 
 {% block content %}
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
-    <h1>Groups page</h1>
-    <p>Information on groups</p>
-</div>
-<div class="d-flex justify-content-center">
-    <div class="container">
-    {% for group in groups %}
-        {{ group_panel(group) }}
-    {% endfor %}
+    <div class="card-body">
+        <h1 class="card-title">Groups</h1>
+        <p>Samples can be included in groups.</p>
+
+    <div class="d-flex justify-content-center">
+        <div class="container">
+            {% for group in groups %}
+            {{ group_panel(group) }}
+            {% endfor %}
+        </div>
+        </div>
+        <hr>
+        <p class="card-text">Tables with all samples</p>
     </div>
 </div>
 {% endblock content %}
 
 {% macro group_panel(group) %}
-<a href="{{ url_for('groups.group', group_id=group.groupId) }}">
-    <div class="card group-panel">
-        <h5 class="card-title">{{ group.displayName }}</h5>
-        <p class="card-text">{{ group.includedSamples | length }}} isolates</p>
-    </div>
-</a>
+<div class="card group-panel w-25">
+    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">
+                {{ group.displayName }}
+                <span class="badge rounded-pill bg-success">{{ group.includedSamples | length }} isolates</span>
+            </h5>
+            <p class="card-text">Last update: <em>{{ group.modifiedAt | strftime }}</em></p>
+        </div>
+    </a>
+</div>
 {% endmacro %}

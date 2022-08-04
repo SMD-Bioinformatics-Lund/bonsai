@@ -1,11 +1,14 @@
 """Declaration of views for groups"""
 from flask import Blueprint, current_app, render_template, redirect, url_for
 from flask_login import login_required, current_user
-from app.mimer import get_groups, TokenObject
+from app.mimer import get_groups, get_samples_in_group, TokenObject
 
-groups_bp = Blueprint("groups", __name__, template_folder="templates", static_folder="static")
+groups_bp = Blueprint(
+    "groups", __name__, template_folder="templates", static_folder="static"
+)
 
-@groups_bp.route('/groups')
+
+@groups_bp.route("/groups")
 @login_required
 def groups():
     """Groups view."""
@@ -18,8 +21,19 @@ def groups():
     return render_template("groups.html", groups=groups)
 
 
-@groups_bp.route('/groups/<group_id>')
+@groups_bp.route("/groups/<group_id>")
 @login_required
 def group(group_id):
     """Group view."""
-    return render_template("group.html", group_id=group_id)
+    token = TokenObject(**current_user.get_id())
+    group = get_samples_in_group(token, group_id=group_id)
+    # TODO add flag to exclude cgmlst from api call
+    # TODO implement table definition to dynamically generate a table
+    # TODO add pagination
+    table_definition = group["tableColumns"]
+    return render_template(
+        "group.html",
+        group_id=group_id,
+        samples=group["includedSamples"],
+        table_definition=table_definition,
+    )

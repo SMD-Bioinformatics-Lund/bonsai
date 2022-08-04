@@ -2,6 +2,7 @@
 from flask import Flask, current_app
 from .blueprints import public, login, groups, sample
 from .extensions import login_manager
+from dateutil.parser import parse
 
 
 def create_app():
@@ -18,6 +19,13 @@ def create_app():
 
     # configure pages etc
     register_blueprints(app)
+
+    @app.template_filter("strftime")
+    def _jinja2_filter_datetime(date, fmt=None):
+        date = parse(date)
+        native = date.replace(tzinfo=None)
+        format = "%b %d, %Y"
+        return native.strftime(format)
 
     return app
 
