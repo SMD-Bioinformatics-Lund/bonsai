@@ -1,6 +1,6 @@
 """Code for setting up the flask app."""
 from flask import Flask, current_app
-from .blueprints import public, login
+from .blueprints import public, login, groups, sample
 from .extensions import login_manager
 
 
@@ -26,3 +26,5 @@ def register_blueprints(app):
     """Register flask blueprints."""
     app.register_blueprint(public.public_bp)
     app.register_blueprint(login.login_bp)
+    app.register_blueprint(sample.samples_bp)
+    app.register_blueprint(groups.groups_bp)

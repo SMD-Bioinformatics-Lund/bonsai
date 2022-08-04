@@ -55,7 +55,6 @@ def login():
 @login_manager.user_loader
 def load_user(user_id):
     """Reload user object from user id stored in session."""
-    print(user_id)
     token = TokenObject(**user_id)
     user_obj = get_current_user(token)
     user = LoginUser(user_obj, token) if user_obj else None
@@ -65,7 +64,7 @@ def perform_login(user):
     if login_user(user):
         flash(f"you logged in as: {user.username}", "success")
         next_url = session.pop("next_url", None)
-        return redirect(request.args.get("next") or next_url or url_for("public.index"))
+        return redirect(request.args.get("next") or next_url or url_for("groups.groups"))
 
     # could not log in
     flash("sorry, you could not log in", "warning")

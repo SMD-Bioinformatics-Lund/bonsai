@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
+    <h1>Groups page</h1>
+    <p>Information on groups</p>
+</div>
+<div class="d-flex justify-content-center">
+    <div class="container">
+    {% for group in groups %}
+        {{ group_panel(group) }}
+    {% endfor %}
+    </div>
+</div>
+{% endblock content %}
+
+{% macro group_panel(group) %}
+<a href="{{ url_for('groups.group', group_id=group.groupId) }}">
+    <div class="card group-panel">
+        <h5 class="card-title">{{ group.displayName }}</h5>
+        <p class="card-text">{{ group.includedSamples | length }}} isolates</p>
+    </div>
+</a>
+{% endmacro %}
