@@ -102,11 +102,7 @@ async def update_sample(
     return comment_obj
 
 
-@router.post(
-    "/samples/{sample_id}/comment",
-    response_model=List[CommentInDatabase],
-    tags=DEFAULT_TAGS,
-)
+@router.post("/samples/{sample_id}/comment", response_model=List[CommentInDatabase], tags=DEFAULT_TAGS,)
 async def post_comment(
     comment: Comment,
     sample_id: str = Path(

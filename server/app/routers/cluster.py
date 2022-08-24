@@ -45,3 +45,25 @@ async def cluster_samples(
     # sanity check that all samples had the desired typing result in the database
     newick_tree: str = cluster_on_allele_profile(profiles, method, distance)
     return newick_tree 
+
+@router.post("/cluster/{typing_method}/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+async def cluster_samples(
+    typing_method: TypingMethod,
+    sid: list[str] = Query(default=...),
+    distance: DistanceMethod = Query(...),
+    method: ClusterMethod = Query(...)
+):
+    """Cluster samples on their cgmlst profile.
+    
+    In order to cluster the samples, all samples need to have a profile and be of the same specie.
+    """
+    try:
+        profiles: TypingProfileOutput = await get_typing_profiles(db, sid, typing_method.value)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        )
+    # sanity check that all samples had the desired typing result in the database
+    newick_tree: str = cluster_on_allele_profile(profiles, method, distance)
+    return newick_tree 

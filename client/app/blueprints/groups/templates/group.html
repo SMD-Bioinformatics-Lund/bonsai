@@ -3,26 +3,46 @@
 {% block content %}
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
-        <h1 class="card-title">Group {{group_id}}</h1>
+        <div class="d-flex">
+            <h1 class="me-auto">Group {{group_id}}</h1><input type="submit" form="sampleForm" class="btn btn-primary ms-auto" value="Submit" />
+        </div>
         <hr>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Sample Id</th>
-                    <th>Other column</th>
-                </tr>
-            </thead>
-            <tbody class="table-hover">
-                {% for sample in samples %}
-                <tr>
-                    <th><a href="{{ url_for('samples.sample', sample_id=sample.sampleId) }}">{{sample.sampleId}}</a></th>
-                    <th>-</th>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.cgmlst') }}">
+            <table id="dataTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllSamples"  name="selectAll"></th>
+                        <th>{{table_definition[0]['label']}}</th>
+                        <th>{{table_definition[1]['label']}}</th>
+                    </tr>
+                </thead>
+                <tbody class="table-hover">
+                    {% for sample in samples %}
+                    <tr>
+                        <td><input type="checkbox" id="sampleCheckboxes" name="samples" value="{{sample.sampleId}}"></td>
+                        <td><a href="{{ url_for('samples.sample', sample_id=sample.sampleId) }}">{{sample.sampleId}}</a></td>
+                        <td>-</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
     </div>
 </div>
-{{ table_definition }}
+<script>
+    var checkItAll = document.getElementById('selectAllSamples');
+    var inputs = document.querySelectorAll('[id=sampleCheckboxes]');
+    checkItAll.addEventListener('change', function() {
+        if (checkItAll.checked) {
+            inputs.forEach(function(input) {
+                input.checked = true;
+            });
+        } else {
+            inputs.forEach(function(input) {
+                input.checked = false;
+            });
+        }
+    });
+</script>
 {% endblock content %}
 

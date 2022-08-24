@@ -78,3 +78,12 @@ def get_samples_in_group(headers, **kwargs):
 
     resp.raise_for_status()
     return resp.json()
+
+@api_authentication
+def cgmlst_cluster_samples(headers, **kwargs):
+    """Get groups from database"""
+    url = f'{current_app.config["MIMER_API_URL"]}/cluster/cgmlst'
+    resp = requests.post(url, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
