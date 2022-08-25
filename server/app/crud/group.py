@@ -10,7 +10,7 @@ from bson.objectid import ObjectId
 from ..db import Database
 from ..models.group import (GroupInCreate, GroupInfoDatabase,
                             UpdateIncludedSamples)
-from ..models.sample import SampleInDatabase
+from ..models.sample import SampleSummary
 from ..models.typing import TypingMethod
 from ..models.tags import TAG_LIST
 from .errors import EntryNotFound, UpdateDocumentError
@@ -44,7 +44,7 @@ async def get_groups(db: Database) -> List[GroupInfoDatabase]:
 async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -> GroupInfoDatabase:
     """Get collections from database."""
     group_fields = GroupInfoDatabase.__fields__
-    sample_fields = SampleInDatabase.__fields__
+    sample_fields = SampleSummary.__fields__
     included_samples_field = group_fields["included_samples"].alias
 
     # make aggregation pipeline
@@ -67,7 +67,8 @@ async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -
                                 "as": "result",
                                 "cond": {"$ne": ["$$result.type", TypingMethod.CGMLST.value]},
                             }
-                        }
+                        },
+                        sample_fields["major_specie"].alias: {"$first": f"${sample_fields['species_prediction'].alias}"}
                     }}
                 ]
             }
@@ -77,7 +78,7 @@ async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -
         if lookup_samples:
             for sample in group[included_samples_field]:
                 # cast as static object
-                tags: TAG_LIST = compute_phenotype_tags(SampleInDatabase(**sample))
+                tags: TAG_LIST = compute_phenotype_tags(SampleSummary(**sample))
                 sample["tags"] = tags
         return group_document_to_db_object(group)
 

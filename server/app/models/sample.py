@@ -87,3 +87,9 @@ class SampleInDatabase(DBModelMixin, SampleBase, PipelineResult):
     """Sample database model outputed from the database."""
 
     pass
+
+
+class SampleSummary(DBModelMixin, SampleBase, PipelineResult):
+    """Summary of a sample stored in the database."""
+
+    major_specie: SpeciesPrediction = Field(..., alias="majorSpecie")
