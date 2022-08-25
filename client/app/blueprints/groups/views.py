@@ -26,7 +26,7 @@ def groups():
 def group(group_id):
     """Group view."""
     token = TokenObject(**current_user.get_id())
-    group = get_samples_in_group(token, group_id=group_id)
+    group = get_samples_in_group(token, group_id=group_id, lookup_samples=True)
     # TODO add flag to exclude cgmlst from api call
     # TODO implement table definition to dynamically generate a table
     # TODO add pagination

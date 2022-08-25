@@ -1,6 +1,7 @@
 """Functions for conducting CURD operations on group collection"""
 import logging
 from datetime import datetime
+from multiprocessing.sharedctypes import Value
 from random import sample
 from typing import Any, Dict, List
 
@@ -10,6 +11,7 @@ from ..db import Database
 from ..models.group import (GroupInCreate, GroupInfoDatabase,
                             UpdateIncludedSamples)
 from ..models.sample import SampleInDatabase
+from ..models.typing import TypingMethod
 from ..models.tags import TAG_LIST
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
@@ -39,28 +41,44 @@ async def get_groups(db: Database) -> List[GroupInfoDatabase]:
     return groups
 
 
-async def get_group(db: Database, group_id: str) -> GroupInfoDatabase:
+async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -> GroupInfoDatabase:
     """Get collections from database."""
     group_fields = GroupInfoDatabase.__fields__
     sample_fields = SampleInDatabase.__fields__
+    included_samples_field = group_fields["included_samples"].alias
+
+    # make aggregation pipeline
     pipeline = [
         {"$match": {group_fields["group_id"].alias: group_id}},
-        {
+    ]
+    if lookup_samples:
+        typing_field = sample_fields["typing_result"].alias
+        pipeline.extend([{
             "$lookup": {
                 "from": db.sample_collection.name,
-                "localField": group_fields["included_samples"].alias,
+                "localField": included_samples_field,
                 "foreignField": sample_fields["sample_id"].alias,
-                "as": group_fields["included_samples"].alias,
-            },
-        },
-    ]
-
+                "as": included_samples_field,
+                "pipeline": [
+                    {"$addFields": {
+                        typing_field: {
+                            "$filter": {
+                                "input": f"${typing_field}",
+                                "as": "result",
+                                "cond": {"$ne": ["$$result.type", TypingMethod.CGMLST.value]},
+                            }
+                        }
+                    }}
+                ]
+            }
+        }])
     async for group in db.sample_group_collection.aggregate(pipeline):
-        # compute tags for samples
-        for sample in group["includedSamples"]:
-            # cast as static object
-            tags: TAG_LIST = compute_phenotype_tags(SampleInDatabase(**sample))
-            sample["tags"] = tags
+        # compute tags for samples if samples are included
+        if lookup_samples:
+            for sample in group[included_samples_field]:
+                # cast as static object
+                tags: TAG_LIST = compute_phenotype_tags(SampleInDatabase(**sample))
+                sample["tags"] = tags
         return group_document_to_db_object(group)
 
 

@@ -66,12 +66,13 @@ async def create_group(
 )
 async def get_group_in_db(
     group_id: str,
+    lookup_samples: bool = False,
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await get_group(db, group_id)
+    group = await get_group(db, group_id, lookup_samples=lookup_samples)
     return group
 
 
