@@ -4,7 +4,7 @@ from typing import Dict, List
 from pydantic import BaseModel, Field, FileUrl
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
-from .sample import SampleInDatabase
+from .sample import SampleSummary
 
 
 class Image(BaseModel):
@@ -20,7 +20,7 @@ FilterParams = List[
 class IncludedSamples(ModifiedAtRWModel):
     """Object for keeping track of included samples in a group"""
 
-    included_samples: List[str | SampleInDatabase] = Field(..., alias="includedSamples")
+    included_samples: List[str | SampleSummary] = Field(..., alias="includedSamples")
 
     class Config:
         json_encoders = {ObjectId: str}
