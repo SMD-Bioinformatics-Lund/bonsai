@@ -74,7 +74,8 @@ def get_samples_in_group(headers, **kwargs):
     # conduct query
     group_id = kwargs.get("group_id")
     url = f'{current_app.config["MIMER_API_URL"]}/groups/{group_id}'
-    resp = requests.get(url, headers=headers)
+    lookup_samples = kwargs.get("lookup_samples", False)
+    resp = requests.get(url, headers=headers, params={"lookup_samples": lookup_samples})
 
     resp.raise_for_status()
     return resp.json()
