@@ -4,6 +4,6 @@ uvicorn[standard]
 python-jose[cryptography]
 passlib
 ldap3
-scipy
 pandas
+scipy==1.8.1
 scikit-bio
