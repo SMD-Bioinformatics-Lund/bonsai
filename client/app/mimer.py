@@ -81,6 +81,17 @@ def get_samples_in_group(headers, **kwargs):
     return resp.json()
 
 @api_authentication
+def get_sample_by_id(headers, **kwargs):
+    """Get sample from database by id"""
+    # conduct query
+    sample_id = kwargs.get("sample_id")
+    url = f'{current_app.config["MIMER_API_URL"]}/samples/{sample_id}'
+    resp = requests.get(url, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+@api_authentication
 def cgmlst_cluster_samples(headers, **kwargs):
     """Get groups from database"""
     url = f'{current_app.config["MIMER_API_URL"]}/cluster/cgmlst'

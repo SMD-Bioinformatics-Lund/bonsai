@@ -1,7 +1,7 @@
 """Declaration of views for samples"""
 from flask import Blueprint, current_app, render_template
-from app.mimer import cgmlst_cluster_samples
-from flask_login import login_required
+from app.mimer import cgmlst_cluster_samples, get_sample_by_id, TokenObject
+from flask_login import login_required, current_user
 
 samples_bp = Blueprint(
     "samples", __name__, template_folder="templates", static_folder="static"
@@ -19,7 +19,9 @@ def samples():
 @login_required
 def sample(sample_id):
     """Samples view."""
-    return render_template("sample.html", sample_id=sample_id)
+    token = TokenObject(**current_user.get_id())
+    sample = get_sample_by_id(token, sample_id=sample_id)
+    return render_template("sample.html", sample=sample)
 
 
 @samples_bp.route("/cluster/", methods=['GET', 'POST'])
