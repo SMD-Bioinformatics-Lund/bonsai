@@ -31,6 +31,7 @@ def group(group_id):
     # TODO implement table definition to dynamically generate a table
     # TODO add pagination
     table_definition = group["tableColumns"]
+    #raise Exception
     return render_template(
         "group.html",
         group_id=group_id,

@@ -45,7 +45,7 @@ class OverviewTableColumn(BaseModel):
 
     hidden: bool = Field(False)
     type: str
-    name: str
+    path: str
     label: str
     sortable: bool = Field(False)
     filterable: bool = Field(False)
