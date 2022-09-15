@@ -131,3 +131,6 @@ dmypy.json
 # javascript and node related files
 node_modules
 .npm
+
+# directory tree
+volumes/mongodb/*
