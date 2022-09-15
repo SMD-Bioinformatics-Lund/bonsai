@@ -82,7 +82,6 @@ def load_user(user_id):
 
 def perform_login(user):
     if login_user(user):
-        flash(f"you logged in as: {user.username}", "success")
         next_url = session.pop("next_url", None)
         return redirect(
             request.args.get("next") or next_url or url_for("groups.groups")
