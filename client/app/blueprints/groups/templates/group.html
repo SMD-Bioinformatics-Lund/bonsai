@@ -9,6 +9,10 @@
         </div>
         <hr>
         <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.cgmlst') }}">
+            <button id="cluster-button" class="btn btn-success" disabled="disabled">
+                <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
+                <span id="cluster-btn-text">Cluster samples</span>
+            </button>
             <table id="dataTable" class="table table-striped">
                 <thead>
                     <tr>
@@ -34,16 +38,42 @@
     var checkItAll = document.getElementById('selectAllSamples');
     var inputs = document.querySelectorAll('[id=sampleCheckboxes]');
     checkItAll.addEventListener('change', function() {
-        if (checkItAll.checked) {
+            if (checkItAll.checked) {
             inputs.forEach(function(input) {
                 input.checked = true;
-            });
-        } else {
+                });
+            } else {
             inputs.forEach(function(input) {
                 input.checked = false;
-            });
-        }
-    });
+                });
+            }
+        });
+
+        // enable cluster box when at least one samples has been selected
+        document
+        .getElementById("dataTable")
+        .addEventListener("change", (event) => {
+            const btn = document.getElementById("cluster-button")
+            if (checkboxes.some((checkbox) => checkbox.checked)) {
+                btn.disabled = false
+            } else {
+                btn.disabled = true
+            }
+        });
+
+        // add submit clustering function
+        document
+        .getElementById("cluster-button")
+        .addEventListener("click", (event) => {
+            event.preventDefault()  // prevent normal behaviour
+            // show spinner
+            event.target.innerText = "Clustering..."
+            event.target.parentElement.querySelector("#cluster-btn-spinner").hidden = false
+            // get sample ids for checked samples
+            // submit clustering job
+            // profit?
+        })
+    })
 </script>
 {% endblock content %}
 
