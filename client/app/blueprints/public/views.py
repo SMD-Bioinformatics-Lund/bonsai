@@ -14,4 +14,4 @@ def index():
 
 @public_bp.route("/favicon")
 def favicon():
-    return send_from_directory(current_app.static_folder, "favicon.ico")
+    return send_from_directory(public_bp.static_folder, "favicon.ico")
