@@ -90,3 +90,8 @@ def perform_login(user):
     # could not log in
     flash("sorry, you could not log in", "warning")
     return redirect(url_for("public.index"))
+
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return redirect(url_for("public.index"))
