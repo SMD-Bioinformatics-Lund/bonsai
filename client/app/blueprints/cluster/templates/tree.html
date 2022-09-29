@@ -1,0 +1,88 @@
+{% extends "layout.html" %}
+
+{% set title="Tree" %}
+
+{% block scripts %}
+  super()
+  <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.9.1.min.js"></script>
+  <script src="{{url_for('static', filename='js/d3.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/base_tree.js')}}"></script>
+  <script src="{{url_for('static', filename='js/d3_m_tree.js')}}"></script>
+{% endblock scripts %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='treeStyle.css') }}">
+{% endblock css %}
+
+{% block content %}
+  <!--  Sidebar with display options for the visualized network -->
+  <div id="sidebar">
+    <h3>Evaluate your selected nodes here</h3>
+    <hr />
+    <p>Manipulate style</p>
+    <div>
+      <form class="pure-form">
+        <input type="text" id="searchNodeInput" placeholder="Enter sample name">
+        <button id="submitNodeButton">Highlight node</button>
+      </form>
+      <select name="metaOption" id="metaCategories" method="GET">
+        {% for ele in tree['metadata_list'] %}
+        <option value="{{ ele }}" SELECTED>{{ ele }}</option>
+        {% endfor %}
+      </select>
+      <button class="first-ele" id="colourNodes">Colour nodes</button>
+      <button id="clearButton">Clear Styling</button>
+      <button class="first-ele" id="labelButton">Show/Hide Labels</button>
+    </div>
+    <hr />
+    <p>Manipulate view</p>
+    <div>
+      <button id="collapseButton">Show selected subtree</button>
+      <button id="reloadButton">Show the whole tree</button>
+      <button id="logButton">Log/unlog link lengths</button>
+    </div>
+    <hr />
+    <p>Miscelaneous</p>
+    <div>
+      <button id="downloadButton">Download SVG</button>
+      <!-- add a help button that creates a popup -->
+      <button id="helpButton">Help</button>
+    </div>
+  </div>
+
+  <script src="{{url_for('static', filename='js/SlickGrid/slick.dataview.js')}}"></script>
+  <script src="{{url_for('static', filename='js/tree/context.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+  <script src="{{url_for('static', filename='js/tree/grid.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+  <script src="{{url_for('static', filename='js/tree/help.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+  <script charset="utf-8"
+    src="{{url_for('static', filename='js/tree/base_tree.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+  <script charset="utf-8"
+    src="{{url_for('static', filename='js/tree/d3_m_tree.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+  <script charset="utf-8"
+    src="{{url_for('static', filename='js/tree/grapetree_fileHandler.js?version={{config['JAVASCRIPT_VERSION']}}"></script>
+
+  <div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p>To show a selected subtree, hold down shift and click drag over the desired nodes.</p>
+      <p>If you want to deselect one or several nodes just do the same thing</p>
+      <p>To highlight one or several nodes, enter the sample name in the search bar and click the highlight button.</p>
+    </div>
+
+  </div>
+  <!--  Main div for the tree -->
+  <div id="tree-holder"></div>
+
+  <script src="{{url_for('static', filename='js/draw_tree.js')}}"></script>
+  <script>
+    // Data format can be found in jsdoc documentation
+    var data = {{ tree| safe }}
+    tree = drawTree(data);
+  </script>
+{% endblock content %}
+  
+
+
+

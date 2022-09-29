@@ -28,4 +28,4 @@ def cgmlst():
     if request.method == 'POST':
         samples = request.form.getlist('samples')
         #nwk = cgmlst_cluster_samples(token, samples=samples)
-    return render_template("cluster.html", samples=samples)
+    return render_template("tree.html", samples=samples)
