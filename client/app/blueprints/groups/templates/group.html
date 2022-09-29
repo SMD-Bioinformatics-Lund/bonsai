@@ -13,20 +13,25 @@
                 <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
                 <span id="cluster-btn-text">Cluster samples</span>
             </button>
-            <table id="dataTable" class="table table-striped">
+            <table id="data-table" class="table table-striped">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAllSamples"  name="selectAll"></th>
-                        <th>{{table_definition[0]['label']}}</th>
-                        <th>{{table_definition[1]['label']}}</th>
+                        <th><input type="checkbox" id="select-all-samples"  name="selectAll"></th>
+                        {% for column in table_definition %}
+                        <th>{{ column.label }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
-                <tbody class="table-hover">
+                <tbody id="data-table-body" class="table-hover">
                     {% for sample in samples %}
                     <tr>
-                        <td><input type="checkbox" id="sampleCheckboxes" name="samples" value="{{sample.sampleId}}"></td>
-                        <td><a href="{{ url_for('samples.sample', sample_id=sample.sampleId) }}">{{sample.sampleId}}</a></td>
-                        <td>-</td>
+                        <td><input type="checkbox" class="sample-checkbox" name="samples" value="{{sample.sampleId}}"></td>
+                        {% for column in table_definition %}
+                            {% set macro_name = 'render_' + column.type %}
+                            <th>
+                                {{ cell_format[macro_name](sample | json_path(column.path)) }}
+                            </th>
+                        {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -35,44 +40,41 @@
     </div>
 </div>
 <script>
-    var checkItAll = document.getElementById('selectAllSamples');
-    var inputs = document.querySelectorAll('[id=sampleCheckboxes]');
-    checkItAll.addEventListener('change', function() {
-            if (checkItAll.checked) {
-            inputs.forEach(function(input) {
+    const checkItAll = document.getElementById('select-all-samples');
+    const sampleCheckboxes = document.querySelectorAll('[class=sample-checkbox]');
+    checkItAll.addEventListener('change', () => {
+        if (checkItAll.checked) {
+            sampleCheckboxes.forEach(input => {
                 input.checked = true;
                 });
-            } else {
-            inputs.forEach(function(input) {
+        } else {
+            sampleCheckboxes.forEach(input => {
                 input.checked = false;
                 });
             }
         });
 
-        // enable cluster box when at least one samples has been selected
-        document
-        .getElementById("dataTable")
-        .addEventListener("change", (event) => {
-            const btn = document.getElementById("cluster-button")
-            if (checkboxes.some((checkbox) => checkbox.checked)) {
-                btn.disabled = false
-            } else {
-                btn.disabled = true
-            }
-        });
+    // enable cluster box when at least one samples has been selected
+    document.getElementById("data-table-body").addEventListener("change", (event) => {
+        const btn = document.getElementById("cluster-button")
+        if (Array.from(sampleCheckboxes).some((checkbox) => checkbox.checked)) {
+            btn.disabled = false
+        } else {
+            btn.disabled = true
+        }
+    });
 
-        // add submit clustering function
-        document
-        .getElementById("cluster-button")
-        .addEventListener("click", (event) => {
-            event.preventDefault()  // prevent normal behaviour
-            // show spinner
-            event.target.innerText = "Clustering..."
-            event.target.parentElement.querySelector("#cluster-btn-spinner").hidden = false
-            // get sample ids for checked samples
-            // submit clustering job
-            // profit?
-        })
+    // add submit clustering function
+    document
+    .getElementById("cluster-button")
+    .addEventListener("click", (event) => {
+        event.preventDefault()  // prevent normal behaviour
+        // show spinner
+        event.target.innerText = "Clustering..."
+        event.target.parentElement.querySelector("#cluster-btn-spinner").hidden = false
+        // get sample ids for checked samples
+        // submit clustering job
+        // profit?
     })
 </script>
 {% endblock content %}
