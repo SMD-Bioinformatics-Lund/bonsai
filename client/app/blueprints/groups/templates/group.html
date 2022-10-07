@@ -25,7 +25,7 @@
                 <tbody id="data-table-body" class="table-hover">
                     {% for sample in samples %}
                     <tr>
-                        <td><input type="checkbox" class="sample-checkbox" name="samples" value="{{sample.sampleId}}"></td>
+                        <td><input type="checkbox" id="{{sample.sampleId}}" class="sample-checkbox" name="samples" value="{{sample.sampleId}}"></td>
                         {% for column in table_definition %}
                             {% set macro_name = 'render_' + column.type %}
                             <th>
