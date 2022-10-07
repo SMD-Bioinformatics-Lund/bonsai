@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 {% import "cell_fmt.html" as cell_format %}
+{% from "toasts.html" import generic_alert_toast%}
 
 {% block content %}
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
@@ -42,7 +43,20 @@
         </form>
     </div>
 </div>
+
+{{ generic_alert_toast("cluster-toast", "bg-danger") }}
+
 <script>
+    // load all javascript after load
+    window.onload = () => {
+    // initialize toasts
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+    var toastList = toastElList.map(toastEl => {
+        return new bootstrap.Toast(toastEl)
+    })
+
+    // setup code for checkboxes
+    const orgButtonText = document.getElementById("cluster-button").innerText
     const checkItAll = document.getElementById('select-all-samples');
     const sampleCheckboxes = document.querySelectorAll('[class=sample-checkbox]');
     checkItAll.addEventListener('change', () => {
@@ -60,12 +74,30 @@
     // enable cluster box when at least one samples has been selected
     document.getElementById("data-table-body").addEventListener("change", (event) => {
         const btn = document.getElementById("cluster-button")
-        if (Array.from(sampleCheckboxes).some((checkbox) => checkbox.checked)) {
+        // check if at least two checkboxes are checked
+        if (Array.from(sampleCheckboxes).filter(checkbox => checkbox.checked).length > 1) {
             btn.disabled = false
         } else {
             btn.disabled = true
         }
     });
+
+    const clusterButtonError = () => {
+        // Disable clustering buttin on case of an error
+        const button = document.getElementById("cluster-button")
+        button.querySelector("#cluster-btn-text").innerText = orgButtonText
+        const spinner = button.querySelector("#cluster-btn-spinner")
+        spinner.hidden = true
+        button.disabled = true
+        button.className = "btn btn-danger"
+        button.innerHTML = '<i class="bi bi-exclamation-triangle"></i>' + button.innerHTML
+    }
+
+    const throwClusterErrorToast = (resp) => {
+        const toastElement = document.getElementById("cluster-toast")
+        const toast = bootstrap.Toast.getInstance(toastElement)
+        toast.show()
+    }
 
     // add submit clustering function
     document
