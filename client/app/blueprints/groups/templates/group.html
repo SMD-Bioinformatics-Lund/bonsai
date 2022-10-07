@@ -9,6 +9,9 @@
         </div>
         <hr>
         <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.cgmlst') }}">
+            <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
+            <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
+            <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
             <button id="cluster-button" class="btn btn-success" disabled="disabled">
                 <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
                 <span id="cluster-btn-text">Cluster samples</span>
@@ -70,12 +73,55 @@
     .addEventListener("click", (event) => {
         event.preventDefault()  // prevent normal behaviour
         // show spinner
-        event.target.innerText = "Clustering..."
-        event.target.parentElement.querySelector("#cluster-btn-spinner").hidden = false
+        const button = document.getElementById("cluster-button")
+        button.querySelector("#cluster-btn-text").innerText = "Clustering..."
+        const spinner = button.querySelector("#cluster-btn-spinner")
+        spinner.hidden = false
         // get sample ids for checked samples
-        // submit clustering job
+        const sampleId = Array.from(sampleCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.id)
+        const typingData = document.getElementById("cluster-typing-data").value
+        const distance = document.getElementById("cluster-distance-metric").value
+        const method = document.getElementById("cluster-clustering-method").value
+        // setup and submit clustering job
+        const xhr = new XMLHttpRequest()
+        const apiURL = "{{ config.MIMER_API_URL }}"
+        const entrypointURL = `${apiURL}/cluster/${typingData}`
+        // add event listeners for processing different outcomes of request
+        xhr.addEventListener("load", event => {
+            // successful request
+            if(xhr.readyState == 4 && xhr.status == 201) {
+                alert(xhr.responseText);
+            } else {
+                clusterButtonError()
+                throwClusterErrorToast(xhr.response)
+            }
+        })
+
+        xhr.addEventListener("abort", resp => {
+            // failed request disable button and warn user
+            alert("clustering was aborted")
+        })
+
+        xhr.addEventListener("error", resp => {
+            // failed request disable button and warn user
+            clusterButtonError()
+            throwClusterErrorToast(xhr.response)
+        })
+
+        // make request
+        xhr.open("POST", entrypointURL, true)
+        // set request token header
+        xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`)
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
+        xhr.send(JSON.stringify({"sampleIds": sampleId, "method": method, "distance": distance}))
+        //xhr.send(JSON.stringify({"sampleIds": sampleId, "distance": distance}))
         // profit?
     })
+
+    }
 </script>
+
+
 {% endblock content %}
 
