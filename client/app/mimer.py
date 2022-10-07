@@ -80,6 +80,7 @@ def get_samples_in_group(headers, **kwargs):
     resp.raise_for_status()
     return resp.json()
 
+
 @api_authentication
 def get_sample_by_id(headers, **kwargs):
     """Get sample from database by id"""
@@ -90,6 +91,7 @@ def get_sample_by_id(headers, **kwargs):
 
     resp.raise_for_status()
     return resp.json()
+
 
 @api_authentication
 def cgmlst_cluster_samples(headers, **kwargs):
