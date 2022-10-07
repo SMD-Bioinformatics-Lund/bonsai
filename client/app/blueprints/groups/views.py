@@ -18,7 +18,7 @@ def groups():
 
     token = TokenObject(**current_user.get_id())
     groups = get_groups(token)
-    return render_template("groups.html", groups=groups)
+    return render_template("groups.html", title="Groups", groups=groups)
 
 
 @groups_bp.route("/groups/<group_id>")
@@ -34,6 +34,7 @@ def group(group_id):
     #raise Exception
     return render_template(
         "group.html",
+        title=group_id,
         group_id=group_id,
         samples=group["includedSamples"],
         table_definition=table_definition,
