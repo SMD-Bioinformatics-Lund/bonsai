@@ -3,13 +3,18 @@
 {% from "toasts.html" import generic_alert_toast%}
 
 {% block content %}
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-absolute top-0 end-0 p-3">
+        {{ generic_alert_toast("cluster-toast") }}
+    </div>
+</div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
         <div class="d-flex">
             <h1 class="me-auto">Group {{group_id}}</h1>
         </div>
         <hr>
-        <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.cgmlst') }}">
+        <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
             <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
             <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
             <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
@@ -43,10 +48,15 @@
         </form>
     </div>
 </div>
-
-{{ generic_alert_toast("cluster-toast", "bg-danger") }}
+<form id="open-tree-form" action="{{url_for('cluster.tree')}}" method="post" hidden target="_blank">
+    <input type="text" name="newick" id="newick-content">
+    <input type="text" name="metadata" id="metadata-content">
+    <input type="submit" value="">
+</form>
 
 <script>
+    // store url to tree page
+    const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
     // load all javascript after load
     window.onload = () => {
     // initialize toasts
@@ -96,7 +106,28 @@
     const throwClusterErrorToast = (resp) => {
         const toastElement = document.getElementById("cluster-toast")
         const toast = bootstrap.Toast.getInstance(toastElement)
+        const title = toast._element.querySelector('#toast-title')
+        const errorMessage = toast._element.querySelector('#toast-error-message')
+        const stacktraceMessage = toast._element.querySelector('#toast-stack-trace')
+        // define title
+        title.innerText = `Error during clustering, status ${resp.status}`
+        errorMessage.innerText = resp.responseText
+        stacktraceMessage.innerText = ""
         toast.show()
+    }
+
+    function openTreeView ({newick, metadata}) {
+        // Open a tree view as a new tab my creating a form and submit it
+        const form = document.getElementById("open-tree-form")
+        // add metadata and newick file to form
+        const newickInput = form.querySelector("#newick-content")
+        newickInput.setAttribute("value", newick)
+        const metadataInput = form.querySelector("#metadata-content")
+        metadataInput.setAttribute("value", 
+            window.sessionStorage.getItem("clusteredSamples")
+        )
+        const submitBnt = form.querySelector("input[type=submit]")
+        submitBnt.click()
     }
 
     // add submit clustering function
@@ -122,22 +153,26 @@
         xhr.addEventListener("load", event => {
             // successful request
             if(xhr.readyState == 4 && xhr.status == 201) {
-                alert(xhr.responseText);
+                // todo add default parameters
+                // instead open a new tab by mocking a submission
+                openTreeView({newick: xhr.responseText, metadata: "not so much"})
+                spinner.hidden = true
+                button.querySelector("#cluster-btn-text").innerText = orgButtonText
             } else {
                 clusterButtonError()
-                throwClusterErrorToast(xhr.response)
+                throwClusterErrorToast(xhr)
             }
         })
 
-        xhr.addEventListener("abort", resp => {
+        xhr.addEventListener("abort", event => {
             // failed request disable button and warn user
             alert("clustering was aborted")
         })
 
-        xhr.addEventListener("error", resp => {
+        xhr.addEventListener("error", event => {
             // failed request disable button and warn user
             clusterButtonError()
-            throwClusterErrorToast(xhr.response)
+            throwClusterErrorToast(xhr)
         })
 
         // make request
@@ -146,9 +181,8 @@
         xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`)
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
+        window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sampleId: sampleId}))
         xhr.send(JSON.stringify({"sampleIds": sampleId, "method": method, "distance": distance}))
-        //xhr.send(JSON.stringify({"sampleIds": sampleId, "distance": distance}))
-        // profit?
     })
 
     }

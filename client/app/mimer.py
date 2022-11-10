@@ -82,6 +82,18 @@ def get_samples_in_group(headers, **kwargs):
 
 
 @api_authentication
+def get_samples_by_id(headers, **kwargs):
+    """Get multipe samples from database by id"""
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/samples'
+    sample_ids = kwargs.get("sample_ids", None)
+    resp = requests.get(url, headers=headers, params={"sid": sample_ids})
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def get_sample_by_id(headers, **kwargs):
     """Get sample from database by id"""
     # conduct query

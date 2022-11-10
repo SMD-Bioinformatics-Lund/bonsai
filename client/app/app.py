@@ -5,6 +5,8 @@ from .extensions import login_manager
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 from .models import Severity, VirulenceTag, TagType, Tag, TAG_LIST
+from itertools import chain
+from collections import defaultdict
 
 
 def create_app():
@@ -18,6 +20,10 @@ def create_app():
 
     # initialize flask extensions
     login_manager.init_app(app)
+
+    # import jinja2 extensions
+    app.jinja_env.add_extension("jinja2.ext.do")
+    app.jinja_env.globals.update(zip=zip)
 
     # configure pages etc
     register_blueprints(app)
@@ -92,3 +98,44 @@ def register_filters(app):
                 severity=Severity.PASSED,
             )
         return tag
+
+    @app.template_filter()
+    def get_all_phenotypes(res):
+        susceptible = res["result"]["phenotypes"]["susceptible"]
+        resistant = res["result"]["phenotypes"]["resistant"]
+        all_phenotypes = ", ".join(chain(susceptible, resistant))
+        return f"All phenotypes: {all_phenotypes}"
+
+    @app.template_filter()
+    def camelcase_to_text(text):
+        return text.replace("_", " ")
+
+    @app.template_filter()
+    def cgmlst_count_called(alleles):
+        return sum(1 for allele in alleles.values() if allele is not None)
+
+    @app.template_filter()
+    def cgmlst_count_missing(alleles):
+        return sum(1 for allele in alleles.values() if allele is None)
+
+    @app.template_filter()
+    def groupby_antib_class(antibiotics):
+        # todo lookup antibiotic classes in database
+        antibiotic_classes = {
+            "tobramycin": "aminoglycoside",
+            "gentamicin": "aminoglycoside",
+            "ampicillin+clavulanic acid": "beta-lactam",
+            "amoxicillin": "beta-lactam"
+        }
+        result = defaultdict(list)
+        for antib in antibiotics:
+            if antib in antibiotic_classes:
+                result[antibiotic_classes[antib]].append(antib)
+        return result
+
+    @app.template_filter()
+    def fmt_number(num):
+        """Format number by adding a thousand separator"""
+        if isinstance(num, (int, float)):
+            num = "{:,}".format(num)
+        return num

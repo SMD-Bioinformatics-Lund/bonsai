@@ -27,21 +27,23 @@ TypingProfileOutput = list[TypingProfileAggregate]
 
 
 async def get_samples(
-    db: Database, limit: int = 0, skip: int = 0
+    db: Database, limit: int = 0, skip: int = 0, include: List[str] | None = None,
 ) -> List[SampleInDatabase]:
-    """Get locations from database."""
+    """Get samples from database."""
 
     cursor = db.sample_collection.find(limit=limit, skip=skip)
     samp_objs = []
     for samp in await cursor.to_list(None):
         inserted_id = samp["_id"]
-        samp_objs.append(
-            SampleInDatabase(
+        sample = SampleInDatabase(
                 id=str(inserted_id),
                 created_at=ObjectId(inserted_id).generation_time,
                 **samp,
             )
-        )
+        # TODO replace with aggregation pipeline
+        if include is not None and sample.sample_id not in include:
+            continue
+        samp_objs.append(sample)
     return samp_objs
 
 

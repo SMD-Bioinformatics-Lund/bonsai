@@ -1,0 +1,13 @@
+.card {
+    min-width: 20rem;
+    max-width: 40rem;
+    margin: 20px;
+}
+
+#phenotype-card {
+    width: 20rem;
+}
+
+#mlst-card {
+    min-width: 20rem;
+}

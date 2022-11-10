@@ -28,11 +28,12 @@ WRITE_PERMISSION = "samples:write"
 async def read_samples(
     limit: int = Query(10, gt=0),
     skip: int = Query(0, gt=-1),
+    sid: List[str] | None = Query(...),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    db_obj = await get_samples(db, limit, skip)
+    db_obj = await get_samples(db, limit, skip, sid)
     return db_obj
 
 

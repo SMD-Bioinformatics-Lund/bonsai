@@ -4,7 +4,7 @@ from app.mimer import cgmlst_cluster_samples, get_sample_by_id, TokenObject
 from flask_login import login_required, current_user
 
 samples_bp = Blueprint(
-    "samples", __name__, template_folder="templates", static_folder="static"
+    "samples", __name__, template_folder="templates", static_folder="static", static_url_path="/samples/static"
 )
 
 

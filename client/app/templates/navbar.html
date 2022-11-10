@@ -1,7 +1,11 @@
 {% macro navbar(current_user) %}
 <nav class="navbar navbar-expand-lg navbar-light bg-success bg-opacity-25">
     <div class="container-fluid">
-    <a href="/" class="navbar-brand">BaktAna</a>
+    <a href="/" class="navbar-brand">
+        <span class="bg-secondary rounded-5" style="display: block; --bs-bg-opacity: .5;">
+            <img src="{{url_for('public.favicon', filename='android-chrome-512x512.png')}}" alt="Logo", width="80" height="80" >
+        </span>
+    </a>
     <button class="navbar-toggler" 
         type="button" 
         data-bs-toggle="collapse"
