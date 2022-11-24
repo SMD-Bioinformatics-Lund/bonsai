@@ -113,3 +113,18 @@ def cgmlst_cluster_samples(headers, **kwargs):
 
     resp.raise_for_status()
     return resp.json()
+
+
+@api_authentication
+def post_comment_to_sample(headers, **kwargs):
+    """Post comment to sample"""
+    sample_id = kwargs.get("sample_id")
+    data = {
+        "comment": kwargs.get("comment"),
+        "username": kwargs.get("user_name")
+    }
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/samples/{sample_id}/comment'
+    resp = requests.post(url, headers=headers, json=data)
+    resp.raise_for_status()
+    return resp.json()
