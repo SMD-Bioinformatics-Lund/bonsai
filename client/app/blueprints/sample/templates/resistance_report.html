@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% macro cgmlst_qc_card(result) %}
+<div class="card">
+    <div class="card-header">
+        {{ result.type }} QC
+    </div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <tr>
+                <th scope="row">N Called Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_called }}</td>
+            </tr>
+            <tr>
+                <th scope="row">N Novel Alleles</th>
+                <td>{{ result.result.nNovel | fmt_number }}</td>
+            </tr>
+            <tr>
+                <th scope="row">N Missing Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_missing }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid">
+    <div class="row">
+        {{ sidebar(sample, navigation=False) }}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
+            <div id="sample-id-heading" class="pt-4">
+                <h1>Extended resistance: {{sample.sampleId}}</h1>
+            </div>
+            <h4>Resistance</h4>
+            <hr>
+            <div id="epi-typing-heading" class="row justify-content-md-center">
+                <div class="col-md-auto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+{% endblock content %}

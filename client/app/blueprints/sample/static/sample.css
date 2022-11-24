@@ -1,13 +1,7 @@
-.card {
-    min-width: 20rem;
-    max-width: 40rem;
-    margin: 20px;
+.sidebar {
+    height: 30rem;
 }
 
-#phenotype-card {
-    width: 20rem;
-}
-
-#mlst-card {
-    min-width: 20rem;
+.sidebar-heading {
+  font-size: .75rem;
 }

@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "sidebar.html" import sidebar %}
 
 {% block css %}
 {{ super() }}
@@ -19,8 +20,10 @@
 {% macro analysis_meta(sample_info) %}
 <h4>Analysis metadata</h4>
 <h5>
-    Pipeline
-    <a href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank"><i class="bi bi-pc-horizontal"></i></a>
+    <a href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
+        <i class="bi me-2 bi-pc-horizontal"></i></a>
+        Pipeline
+    </a>
 </h5>
 {% set meta=sample["runMetadata"]%}
 <dl class="row">
@@ -35,7 +38,7 @@
     <dt class="col-sm-2">Profile</dt>
     <dd class="col-sm-2">{{ meta.run.analysisProfile }}</dd>
 </dl>
-<h5>Databases<i class="bi bi-server"></i></h5>
+<h5><i class="bi bi-server me-2"></i>Databases</h5>
 <dl class="row">
     {% for db in meta["databases"] %}
     <dt class="col-sm-2">{{ db["name"] }}</dt>
@@ -45,7 +48,7 @@
 {% endmacro %}
 
 {% macro mlst_card(mlst) %}
-<div class="card">
+<div class="card col-md-auto">
     <div class="card-header">MLST</div>
     <div class="card-body">
         <div class="p-2">
@@ -78,23 +81,29 @@
     <div class="card-header">{{ result.type | camelcase_to_text | capitalize }}</div>
     <div class="card-body">
         <h5 class="card-title">Predicted phenotype</h5>
-        <table class="table table-hover">
-            {% set groups = res.phenotypes.resistant | groupby_antib_class %}
-            <thead>
-                {% for antib_class in groups %}
-                    <th>{{ antib_class | capitalize }}</th>
-                {% endfor %}
-            </thead>
-            <tbody>
-                {% for antibs in zip(*groups.values()) %}
-                    <tr>
-                        {% for antib in antibs %}
-                        <td>{{ antib | capitalize }}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                {% set groups = res.phenotypes.resistant | groupby_antib_class %}
+                <thead>
+                    {% for antib_class in groups %}
+                        <th>{{ antib_class | capitalize }}</th>
+                    {% endfor %}
+                </thead>
+                <tbody>
+                    {% for antibs in zip_longest(*groups.values()) %}
+                        <tr>
+                            {% for antib in antibs %}
+                            <td>
+                                {% if antib %}
+                                {{ antib | capitalize }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         <hr>
         <h5 class="card-title">Predicted genes</h5>
         <table class="table">
@@ -155,30 +164,32 @@
 {% endmacro %}
 
 {% macro qc_card(qc_info) %}
-<div class="card">
-    <div class="card-header">
-        {{qc_info.tool | capitalize }}
-        {% if qc_info.version %}
-            <span>{{qc_info.version}}</span>
-        {% endif %}
-    </div>
-    <div class="card-body">
-        <table class="table table-sm table-striped">
-            <thead>
+<div class="col-md-auto">
+    <div class="card">
+        <div class="card-header">
+            {{qc_info.tool | capitalize }}
+            {% if qc_info.version %}
+                <span>{{qc_info.version}}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Metric</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for name, value in qc_info.result.items() %}
                 <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col">Value</th>
+                    <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                    <td>{{ value | fmt_number }}</td>
                 </tr>
-            </thead>
-            <tbody>
-            {% for name, value in qc_info.result.items() %}
-            <tr>
-                <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
-                <td>{{ value | fmt_number }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endmacro %}
@@ -206,79 +217,86 @@
     </div>
 </div>
 {% endmacro %}
-{% macro comment_card(sample) %}
-<div class="card sticky-top w-25">
-    <div class="card-header">Comments</div>
-    <div class="card-body">
-        {% if sample.comment | length > 1 %}
-            {% for comment in sample.comment %}
-                <p>comment</p>
-            {% endfor %}
-        {% endif %}
-        <hr>
-        <div class="form-floating">
-            <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment"></textarea>
-            <label for="comment-box">Comments</label>
-        </div>
-        <a href="#" class="btn btn-primary mt-2">Save</a>
-    </div>
-</div>
-{% endmacro %}
-
 {% block content %}
-{{ comment_card(sample) }}
 {% set footnotes = [] %}
-<div class="container bg-white p-5">
-    <h1>{{sample.sampleId}}</h1>
-    <dl class="row">
-        <dt class="col-sm-2">Analysis date</dt>
-        <dd class="col-sm-2">{{sample["createdAt"]}}</dd>
-    </dl>
-    <h4>Epidemiological Typing</h4>
-    {% for res in sample.typingResult %}
-        {% if res.type == "mlst" %}
-            {{ mlst_card(res.result) }}
-        {% endif %}
-    {% endfor %}
-    <h4>Phenotype prediction</h4>
-    {% for res in sample.phenotypeResult %}
-        {% if res.type == "antimicrobial_resistance" %}
-            {{ resistance_card(res) }}
-            {% do footnotes.append( res | get_all_phenotypes ) %}
-        {% endif %}
-    {% endfor %}
-    <h4>Virulence</h4>
-    {% for res in sample.phenotypeResult %}
-        {% if res.type == "virulence" %}
-            {{ virulence_card(res.result) }}
-        {% endif %}
-    {% endfor %}
-    <hr>
-    <h4>Quality</h4>
-    <div class="d-flex">
-        {% for qc_tool in sample.qc %}
-            {{ qc_card(qc_tool) }}
-        {% endfor %}
-        {% for res in sample.typingResult %}
-            {% if res.type == "cgmlst" %}
-                {{ cgmlst_qc_card(res) }}
-            {% endif %}
-        {% endfor %}
+<div class="container-fluid">
+    <div class="row">
+        {{ sidebar(sample) }}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
+            <div id="sample-id-heading" class="pt-4">
+                <h1>{{sample.sampleId}}</h1>
+                <dl class="row gx-5>
+                    <dt class="col-xs">Analysis date</dt>
+                    <dd class="col-xs">{{sample["createdAt"] | strftime}}</dd>
+                </dl>
+            </div>
+            <h4>Epidemiological Typing</h4>
+            <hr>
+            <div id="epi-typing-heading" class="row justify-content-md-center">
+            {% for res in sample.typingResult %}
+                {% if res.type == "mlst" %}
+                    <div class="col-md-auto">
+                    {{ mlst_card(res.result) }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            </div>
+            <h4>Phenotype prediction</h4>
+            <hr>
+            <div id="phenotype-heading" class="row justify-content-md-center">
+            {% for res in sample.phenotypeResult %}
+                {% if res.type == "antimicrobial_resistance" %}
+                    <div class="col-md-auto">
+                    {{ resistance_card(res) }}
+                    </div>
+                    {% do footnotes.append( res | get_all_phenotypes ) %}
+                {% endif %}
+            {% endfor %}
+            </div>
+            <h4>Virulence</h4>
+            <hr>
+            <div id="virulence-heading" class="row justify-content-md-center">
+            {% for res in sample.phenotypeResult %}
+                {% if res.type == "virulence" %}
+                    <div class="col-md-6">
+                    {{ virulence_card(res.result) }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            </div>
+            <h4>Quality</h4>
+            <hr>
+            <div id="qc-heading" class="row gx-5 justify-content-md-center">
+                {% for qc_tool in sample.qc %}
+                    <div class="col-md-auto">
+                    {{ qc_card(qc_tool) }}
+                    </div>
+                {% endfor %}
+
+                {% for res in sample.typingResult %}
+                    {% if res.type == "cgmlst" %}
+                        <div class="col-md-auto">
+                        {{ cgmlst_qc_card(res) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <hr>
+            {{ analysis_meta(sample) }}
+            <hr>
+            <h4>References</h4>
+            <ol class="fs-6 text-muted">
+                <li>A reference</li>
+                <li>Another reference</li>
+            </ol>
+            <h4>Footnotes</h4>
+            <ol class="fs-6 text-muted">
+                {% for note in footnotes %}
+                    <li>{{note}}</li>
+                {% endfor %}
+            </ol>
+        </div>
     </div>
-    <hr>
-    {{ analysis_meta(sample) }}
-    <hr>
-    <h4>References</h4>
-    <ol class="fs-6 text-muted">
-        <li>A reference</li>
-        <li>Another reference</li>
-    </ol>
-    <h4>Footnotes</h4>
-    <ol class="fs-6 text-muted">
-        {% for note in footnotes %}
-            <li>{{note}}</li>
-        {% endfor %}
-    </ol>
 </div>
 <script>
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')

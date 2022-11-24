@@ -1,0 +1,90 @@
+{% macro comment_area(comments) %}
+{% endmacro %}
+
+{% macro comment_area(sample) %}
+<div>
+    {% if sample.comments | length > 1 %}
+        {% for comment in sample.comments %}
+            {% if comment.displayed %}
+            <div class="m-2 p-1 bg-white border border-1 border-secondary rounded">
+                <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
+                <span class="text-sm text-muted">- {{ comment.username }}</span>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No comment</p>
+    {% endif %}
+</div>
+<form action={{url_for('samples.add_comment', sample_id=sample.sampleId)}} method="POST">
+    <div class="form-floating">
+        <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
+        <label class="text-muted" for="comment-box">My comment</label>
+    </div>
+    <button type="submit" class="btn btn-sm btn-outline-success mt-2"> 
+        <i class="bi bi-chat-square-text"></i>
+        Add comment
+    </button>
+</form>
+{% endmacro %}
+
+{% macro navigation_links() %}
+<h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Navigation</h6>
+<ul class="nav nav-pills nav-flush flex-column mb-auto text-left">
+    <li class="nav-item">
+        <a class="nav-link" href="#sample-id-heading">
+            <i class="bi me-2 bi-house"></i>
+            ID
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#epi-typing-heading">
+            <i class="bi me-2 bi-diagram-3"></i>
+            Typing
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#phenotype-heading">
+            <i class="bi me-2 bi-file-text"></i>
+            Phenotype
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#virulence-heading">
+            <i class="bi me-2 bi-file-text"></i>
+            Virulence
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#qc-heading">
+            <i class="bi me-2 bi-bar-chart-line"></i>
+            QC
+        </a>
+    </li>
+</ul>
+{% endmacro %}
+
+{% macro sidebar(sample, navigation=True) %}
+<div id="sidebar" class="col-md-3 col-lg-2 bg-ligth sticky-top sidebar">
+    {% if navigation %}
+        {{ navigation_links() }}
+    {% endif %}
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
+    <ul class="nav flex-column">
+        <li class="nav-item mb-2 disabled>
+            <a href="#">
+                <i class="bi bi-bar-chart"></i>
+                Outbreak
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href={{ url_for('samples.resistance_report', sample_id=sample.sampleId) }}>
+                <i class="bi bi-bar-chart"></i>
+                Resistance
+            </a>
+        </li>
+    </ul>
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
+    {{ comment_area(sample) }}
+</div>
+{% endmacro  %}
