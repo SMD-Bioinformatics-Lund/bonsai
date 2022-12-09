@@ -5,3 +5,7 @@
 .sidebar-heading {
   font-size: .75rem;
 }
+
+.comment-box:hover {
+  box-shadow: .4rem .225rem .80rem rgba(0,0,0,.095) !important;
+}

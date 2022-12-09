@@ -6,9 +6,9 @@
     {% if sample.comments | length > 1 %}
         {% for comment in sample.comments %}
             {% if comment.displayed %}
-            <div class="m-2 p-1 bg-white border border-1 border-secondary rounded">
+            <div class="comment-box m-2 p-1 bg-white shadow-sm rounded">
                 <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
-                <span class="text-sm text-muted">- {{ comment.username }}</span>
+                <span class="text-sm text-muted">- {{ comment.username }}, {{ comment.createdAt | strftime }}</span>
             </div>
             {% endif %}
         {% endfor %}
