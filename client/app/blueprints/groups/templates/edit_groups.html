@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('groups.static', filename='groups.css')}}">
+{% endblock css %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{url_for('groups.static', filename='edit_groups.js')}}"></script>
+{% endblock scripts %}
+
+{% macro inputText(id, value="", label="", description="") %}
+<label for="input-{{id}}" class="form-label">{{label}}</label>
+<input id="input-{{id}}" class="form-control" aria-describedby="{{id}}-help-block" type="text" value="{{value}}">
+<div id="{{id}}-help-block">{{description}}</div>
+{% endmacro %}
+
+{% macro inputCheck(id, label, checked=False) %}
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" id="{{id}}-check">
+    <label class="form-check-label" for="{{id}}-check">{{label}}</label>
+</div>
+{% endmacro %}
+
+{% macro create_new_group() %}
+<h1>Create new sample group</h1>
+<p>Create new or edit existing sample groups.</p>
+<form action="submit" method="post">
+    <div class="mb-3">
+        {{ inputText('group-id', 'Group id', 'Unique id for the group to be associated with') }}
+    </div>
+    <div class="mb-3">
+        {{ inputText('group-name', 'Group name', 'Human readable group name') }}
+    </div>
+    <h5>Columns</h5>
+    <hr>
+    <button class="btn btn-primary">Add column</button>
+</form>
+{% endmacro %}
+
+{% macro column_info_form(col) %}
+<div class="card mb-2 bg-light column-card">
+    <div class="card-body">
+        <button 
+            class="float-end btn-close" aria-label="Remove"
+            onclick="this.parentElement.parentElement.remove()" type="button"></button>
+        <div class="row">
+            <div class="col-auto">
+                {{ inputText(id='col-label', value=col.label, label='Column name') }}
+            </div>
+            <div class="col-lg-6">
+                {{ inputText(id='col-data-path', value=col.path, label='JSON Path') }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-auto">
+                {{ inputCheck(col.label, 'Sortable', checked=col.sortable) }}
+            </div>
+            <div class="col-auto">
+                {{ inputCheck(col.label, 'Searchable', checked=col.sortable) }}
+            </div>
+            <div class="col-auto">
+                {{ inputCheck(col.label, 'Hidden', checked=col.hidden) }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro edit_group(group) %}
+<h1>Edit <i>{{group.displayName}}</i> group</h1>
+<p>Edit variables in group.</p>
+<div class="row g-3">
+    <div class="col-auto">
+        {{ inputText(id='group-id', value=group.groupId, label='Group id', description='Unique id') }}
+    </div>
+    <div class="col-auto">
+        {{ inputText(id='group-name', value=group.displayName, label='Group name', description='Human readable group name') }}
+    </div>
+</div>
+<hr>
+<div class="row g-3">
+    <h5 class="">Columns</h5>
+    <div id="added-columns-list">
+        {% for col in group.tableColumns %}
+            {{ column_info_form(col) }}
+        {% endfor %}
+    </div>
+    <div class="pt-4 border border-2 rounded p-2">
+    <form class="" onsubmit="event.preventDefault(); addNewColumnToList(this)">
+        <div class="row">
+                <div class="col-auto">
+                    <label for="input-col-label" class="form-label">Column name</label>
+                    <input id="input-col-label" class="form-control" aria-describedby="col-label-help-block" type="text" value="">
+                </div>
+                <div class="col-lg-6">
+                    <label for="input-col-data-path" class="form-label">JSON Path</label>
+                    <input id="input-col-data-path" class="form-control" aria-describedby="col-data-path-help-block" type="text" value="">
+                    <div id="col-data-path-help-block"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="PVL-check">
+                        <label class="form-check-label" for="PVL-check">Sortable</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="PVL-check">
+                        <label class="form-check-label" for="PVL-check">Searchable</label>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="PVL-check">
+                        <label class="form-check-label" for="PVL-check">Hidden</label>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Add column</button>
+        </form>
+    </div>
+</div>
+<hr>
+<div class="row g-3">
+    <h5 class="">Samples</h5>
+    <p class="">Samples added to the group</p>
+    <form action="#" onsubmit="event.preventDefault() ;addSampleToList(this.querySelector('input').value)">
+        <div class="input-group mb-3">
+            <input id="add-sample-input" type="text" class="form-control" placeholder="Sample id" aria-label="Sample Id" aria-describedby="add-sample-button" required>
+            <button 
+                class="btn btn-outline-secondary" type="submit" id="add-sample-button">
+                Add sample
+            </button>
+        </div>
+    </form>
+    <ul id="added-samples-list" class="list-group">
+    {% for sample_id in group.includedSamples %}
+        <li key={{sample_id}} class="list-group-item list-group-item-action d-flex justify-content-between">
+            {{ sample_id }}
+            <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
+        </li>
+    {% endfor %}
+    </ul>
+</div>
+<hr>
+<div class="row g-3">
+    <div class="col-auto">
+        <button class="btn btn-success">
+            <i class="bi bi-save"></i>
+            Update
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-danger">
+            <i class="bi bi-trash3-fill"></i>
+            Delete
+        </button>
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+<div id="edit-group-panel" class="container-fluid">
+    <div class="row">
+        <div class="px-0 col-md-3 col-lg-2 bg-ligth sticky-top sidebar d-flex flex-column align-items-stretch flex-shrink-0">
+            <div class="list-group list-group-flush border-bottom scrollarea">
+            <a class="d-flex align-items-center flex-shrink-0 p-3 link-dark text-decoration-none border-bottom" 
+               href="{{ url_for('groups.edit_groups') }}"
+            >
+                <span class="fs-5 fw-semibold">
+                    <i class="bi bi-pencil-square"></i>
+                    Create or edit groups
+                </span>
+            </a>
+            {% for group in groups %}
+                <a class="list-group-item list-group-item-action py-3 lh-tight border-end {% if selected_group == group.groupId %}active{% endif %}" 
+                   href="{{ url_for('groups.edit_groups', group_id=group.groupId) }}"
+                   {% if selected_group == group.groupId %} aria-current="true"{% endif %}
+                >
+                    <div class="d-flex w-100 align-items-center justify-content-between">
+                        <strong class="mb-1">{{group.displayName}}</strong>
+                        <small>{{group.modifiedAt | strftime }}</small>
+                    </div>
+                    <span class="badge bg-dark">{{group.includedSamples | length}} samples</span>
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container">
+            {% if selected_group == None %}
+                {{ create_new_group() }}
+            {% else %}
+                {% for group in groups %}
+                    {% if selected_group == group.groupId %}
+                        {{ edit_group(group) }}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+<template id="sample-list-item-template">
+    <li class="list-group-item list-group-item-action d-flex justify-content-between">
+        <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
+    </li>
+</template>
+<template id="column-list-item-template">
+</template>
+{% endblock content %}

@@ -1,0 +1,10 @@
+.group-card:hover {
+  box-shadow: .4rem .225rem .80rem rgba(0,0,0,.095) !important;
+}
+
+.column-card:hover {
+  box-shadow: .2rem .125rem .40rem rgba(0,0,0,.095) !important;
+}
+.sidebar {
+    height: 30rem;
+}

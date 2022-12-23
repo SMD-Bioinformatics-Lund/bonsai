@@ -2,6 +2,12 @@
 {% import "cell_fmt.html" as cell_format %}
 {% from "toasts.html" import generic_alert_toast%}
 
+{% block css %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('groups.static', filename='group.css') }}">
+{% endblock css %}
+
 {% block content %}
 <div aria-live="polite" aria-atomic="true" class="position-relative">
     <div class="toast-container position-absolute top-0 end-0 p-3">
@@ -18,33 +24,11 @@
             <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
             <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
             <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
-            <button id="cluster-button" class="btn btn-success" disabled="disabled">
+            <button id="cluster-button" class="btn btn-success mb-2" disabled="disabled">
                 <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
                 <span id="cluster-btn-text">Cluster samples</span>
             </button>
-            <table id="data-table" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="select-all-samples"  name="selectAll"></th>
-                        {% for column in table_definition %}
-                        <th>{{ column.label }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody id="data-table-body" class="table-hover">
-                    {% for sample in samples %}
-                    <tr>
-                        <td><input type="checkbox" id="{{sample.sampleId}}" class="sample-checkbox" name="samples" value="{{sample.sampleId}}"></td>
-                        {% for column in table_definition %}
-                            {% set macro_name = 'render_' + column.type %}
-                            <th>
-                                {{ cell_format[macro_name](sample | json_path(column.path)) }}
-                            </th>
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div id="data-table"></div>
         </form>
     </div>
 </div>
@@ -54,9 +38,83 @@
     <input type="submit" value="">
 </form>
 
+<script type="module">
+    import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
+    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
+
+    const formatSampleId = (val, params) => {
+        const baseUrl = new URL(window.location.href).origin
+        let element = document.createElement('a')
+        element.setAttribute('href', new URL(`samples/${val}`, baseUrl))
+        element.innerText = val
+        return element.outerHTML
+    }
+
+    const formatTaxonomicName = (val, params) => {
+        let element = document.createElement('span')
+        element.className = 'fw-light fst-italic'
+        element.innerText = val
+        return element.outerHTML
+    }
+
+    // define formatters
+    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
+    w2utils.formatters['mrsa'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['mlst'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['pvl'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['sampleid']  = formatSampleId
+
+    // get table configuration
+    const apiTableConfig = {{ table_definition | tojson}}
+    const columns = apiTableConfig.map(col => {
+        return {
+            field: col.type,
+            text: col.label,
+            sortable: col.sortable,
+            hidden: col.hidden,
+            render: col.type.toLowerCase()
+        }
+    })
+    // configure table
+    let tableConfig = {
+        grid: {
+            name: 'grid',
+            box: '#data-table',
+            show: {
+                footer: false,
+                toolbar: true,
+                selectColumn: true,
+            },
+            multiSelect: true,
+            liveSearch: true,
+            columns: columns,
+            async onSelect(event) {
+                await event.complete
+                document.getElementById("cluster-button").disabled = 2 > this.getSelection().length
+            }
+        },
+    }
+    // setup grid
+    let grid = new w2grid(tableConfig.grid)
+
+    // get data
+    const testSamples = {{ samples | tojson}}
+    grid.records = testSamples.map(
+        sample => {
+            let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.type]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+            columns["recid"] = sample["sampleId"]
+            return columns
+    }) 
+
+    window.getSelectedRows = () => grid.getSelection()
+    grid.render()
+</script>
+
 <script>
     // store url to tree page
     const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
+    const orgButtonText = document.getElementById("cluster-button").innerText
+
     // load all javascript after load
     window.onload = () => {
     // initialize toasts
@@ -64,33 +122,7 @@
     var toastList = toastElList.map(toastEl => {
         return new bootstrap.Toast(toastEl)
     })
-
-    // setup code for checkboxes
-    const orgButtonText = document.getElementById("cluster-button").innerText
-    const checkItAll = document.getElementById('select-all-samples');
-    const sampleCheckboxes = document.querySelectorAll('[class=sample-checkbox]');
-    checkItAll.addEventListener('change', () => {
-        if (checkItAll.checked) {
-            sampleCheckboxes.forEach(input => {
-                input.checked = true;
-                });
-        } else {
-            sampleCheckboxes.forEach(input => {
-                input.checked = false;
-                });
-            }
-        });
-
-    // enable cluster box when at least one samples has been selected
-    document.getElementById("data-table-body").addEventListener("change", (event) => {
-        const btn = document.getElementById("cluster-button")
-        // check if at least two checkboxes are checked
-        if (Array.from(sampleCheckboxes).filter(checkbox => checkbox.checked).length > 1) {
-            btn.disabled = false
-        } else {
-            btn.disabled = true
-        }
-    });
+    }
 
     const clusterButtonError = () => {
         // Disable clustering buttin on case of an error
@@ -129,7 +161,6 @@
         const submitBnt = form.querySelector("input[type=submit]")
         submitBnt.click()
     }
-
     // add submit clustering function
     document
     .getElementById("cluster-button")
@@ -140,8 +171,9 @@
         button.querySelector("#cluster-btn-text").innerText = "Clustering..."
         const spinner = button.querySelector("#cluster-btn-spinner")
         spinner.hidden = false
+        
         // get sample ids for checked samples
-        const sampleId = Array.from(sampleCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.id)
+        const sampleId = window.getSelectedRows()
         const typingData = document.getElementById("cluster-typing-data").value
         const distance = document.getElementById("cluster-distance-metric").value
         const method = document.getElementById("cluster-clustering-method").value
@@ -184,10 +216,6 @@
         window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sampleId: sampleId}))
         xhr.send(JSON.stringify({"sampleIds": sampleId, "method": method, "distance": distance}))
     })
-
-    }
 </script>
-
-
 {% endblock content %}
 

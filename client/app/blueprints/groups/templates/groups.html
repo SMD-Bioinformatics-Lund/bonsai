@@ -1,17 +1,30 @@
 {% extends "layout.html" %}
 
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('groups.static', filename='groups.css')}}">
+{% endblock css %}
+
 {% block content %}
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
-        <h1 class="card-title">Groups</h1>
-        <p>Samples can be included in groups.</p>
-
-    <div class="d-flex justify-content-center">
-        <div class="container">
-            {% for group in groups %}
-            {{ group_panel(group) }}
-            {% endfor %}
-        </div>
+        <h1 class="card-title">Sample groups</h1>
+        <p>Samples assigned to dedicated groups.</p>
+        {% if current_user.is_admin %}
+            <a href={{url_for('groups.edit_groups')}} class="btn btn-warning">
+                <i class="bi bi-pencil-square"></i>
+                Edit groups
+            </a>
+        {% endif %}
+        <hr>
+        <div class="d-flex justify-content-center">
+            <div class="container row">
+                {% for group in groups %}
+                    <div class="col-md-auto">
+                        {{ group_card(group) }}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
         <hr>
         <p class="card-text">Tables with all samples</p>
@@ -19,8 +32,8 @@
 </div>
 {% endblock content %}
 
-{% macro group_panel(group) %}
-<div class="card group-panel w-25">
+{% macro group_card(group) %}
+<div class="card group-card">
     <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
         <div class="card-body">
             <h5 class="card-title text-secondary">

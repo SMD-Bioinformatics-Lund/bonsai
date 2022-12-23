@@ -4,7 +4,7 @@ from flask_login import login_required, current_user
 from app.mimer import get_groups, get_samples_in_group, TokenObject
 
 groups_bp = Blueprint(
-    "groups", __name__, template_folder="templates", static_folder="static"
+    "groups", __name__, template_folder="templates", static_folder="static", static_url_path="/groups/static"
 )
 
 
@@ -20,6 +20,18 @@ def groups():
     groups = get_groups(token)
     return render_template("groups.html", title="Groups", groups=groups)
 
+@groups_bp.route("/groups/edit")
+@groups_bp.route("/groups/edit/<group_id>")
+@login_required
+def edit_groups(group_id=None):
+    """Groups view."""
+    # if not valid token or if user is not admin
+    if current_user.get_id() is None or not current_user.is_admin:
+        return redirect(url_for("public.index"))
+
+    token = TokenObject(**current_user.get_id())
+    groups = get_groups(token)
+    return render_template("edit_groups.html", title="Groups", selected_group=group_id, groups=groups)
 
 @groups_bp.route("/groups/<group_id>")
 @login_required
