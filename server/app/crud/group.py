@@ -97,11 +97,42 @@ async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDa
     return db_obj
 
 
+async def delete_group(db: Database, group_id: str) -> bool:
+    """Delete group with group_id from database."""
+    gid_filed = GroupInfoDatabase.__fields__["group_id"]
+    doc = await db.sample_group_collection.delete_one({gid_filed.alias: group_id})
+    if doc.deleted_count == 0:
+        raise EntryNotFound(group_id)
+    return doc.deleted_count
+
+
+async def update_group(db: Database, group_id: str, group_record: GroupInCreate) -> GroupInfoDatabase:
+    """Update information of group."""
+    fields = GroupInfoDatabase.__fields__
+    param_modified = fields["modified_at"].alias
+    gid_filed = fields["group_id"]
+    # update info in database
+    update_obj = await db.sample_group_collection.update_one(
+        {gid_filed.alias: group_id},
+        {
+            "$set": {param_modified: datetime.now()},
+            "$set": group_record.dict(by_alias=True),
+        },
+    )
+
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(group_id)
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(group_id)
+
+    return update_obj.modified_count
+
+
 async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     """Create a new collection document."""
     # cast input data as the type expected to insert in the database
     db_obj = await db.sample_group_collection.insert_one(
-        group_record.dict(by_alias=True)
+        image.dict(by_alias=True)
     )
     return db_obj
 

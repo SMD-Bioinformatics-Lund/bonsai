@@ -8,3 +8,8 @@
 .sidebar {
     height: 30rem;
 }
+
+#data-table {
+    width: 100%;
+    height: 40em;
+}

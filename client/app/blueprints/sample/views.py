@@ -1,5 +1,5 @@
 """Declaration of views for samples"""
-from flask import Blueprint, current_app, render_template, redirect, session, request
+from flask import Blueprint, current_app, render_template, redirect, url_for, request
 from app.mimer import cgmlst_cluster_samples, get_sample_by_id, post_comment_to_sample, TokenObject
 from flask_login import login_required, current_user
 
@@ -35,9 +35,9 @@ def add_comment(sample_id):
     try:
         resp = post_comment_to_sample(token, sample_id=sample_id, user_name=current_user.username, comment=data)
     except:
-        flash(resp.text)
+        flash(resp.text, 'danger')
     finally:
-        return redirect(session["url"])
+        return redirect(url_for('samples.sample', sample_id=sample_id))
 
 
 @samples_bp.route("/samples/<sample_id>/resistance_report")

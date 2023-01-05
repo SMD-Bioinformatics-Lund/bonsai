@@ -69,6 +69,30 @@ def get_groups(headers):
 
 
 @api_authentication
+def delete_group(headers, group_id):
+    """Remove group from database."""
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/groups/{group_id}'
+    resp = requests.delete(url, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def update_group(headers, **kwargs):
+    """Update information in database for a group with group_id."""
+    group_id = kwargs.get("group_id")
+    data = kwargs.get("data")
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/groups/{group_id}'
+    resp = requests.put(url, json=data, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def get_samples_in_group(headers, **kwargs):
     """Get groups from database"""
     # conduct query
@@ -86,8 +110,12 @@ def get_samples_by_id(headers, **kwargs):
     """Get multipe samples from database by id"""
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/samples'
-    sample_ids = kwargs.get("sample_ids", None)
-    resp = requests.get(url, headers=headers, params={"sid": sample_ids})
+    parmas = dict(
+        sample_ids = kwargs.get("sample_ids", None),
+        limit = kwargs.get("limit", 20),
+        skip = kwargs.get("skip", 0)
+    )
+    resp = requests.get(url, headers=headers, params=parmas)
 
     resp.raise_for_status()
     return resp.json()
