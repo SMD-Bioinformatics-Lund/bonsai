@@ -25,6 +25,21 @@
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
                 {{ user_dropdown(current_user) }}
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="basket-offcanvas" href="#basket-offcanvas" role="button">
+                        <i class="bi bi-basket3"></i>
+                    </a>
+                </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="d-flex flex-row nav-link active" href="/">
+                    <i class="bi bi-person fs-2 px-2"></i>
+                    <div class="d-flex flex-column ">
+                        <span>Welcome</span>
+                        <strong>Log in</strong>
+                    </div>
+                </a>
+            </li>
             {% endif %}
         </ul>
     </div>
@@ -49,8 +64,8 @@
         data-bs-display="static"
         aria-expanded="false"
         >
-        <span className="user-alias-container bg-dark text-light text-center text-uppercase fs-6 fw-lighter font-monospace">
-            {{ current_user.username }}
+        <span className="user-alias-container">
+            <i class="bi bi-person fs-2"></i>
         </span>
     </a>
     <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
