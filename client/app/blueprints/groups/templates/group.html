@@ -20,16 +20,28 @@
             <h1 class="me-auto">Group {{group_id}}</h1>
         </div>
         <hr>
-        <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
-            <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
-            <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
-            <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
-            <button id="cluster-button" class="btn btn-success mb-2" disabled="disabled">
-                <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
-                <span id="cluster-btn-text">Cluster samples</span>
-            </button>
-            <div id="data-table"></div>
-        </form>
+        <nav class="navbar bg-light">
+            <div class="container-fluid justify-content-start">
+                <span class="navbar-text">
+                    <i>Selected samples:</i>
+                    <span id="n-selected-samples-counter">0</span>
+                </span>
+                <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" onclick="addSelctedSamplesToBasket(this)" disabled>
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add to basket</span>
+                </button>
+                <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
+                    <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
+                    <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
+                    <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
+                    <button id="cluster-button" class="btn btn-sm btn-success ms-2" disabled>
+                        <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
+                        <span id="cluster-btn-text">Cluster samples</span>
+                    </button>
+                </form>
+            </div>
+        </nav>
+        <div id="data-table"></div>
     </div>
 </div>
 <form id="open-tree-form" action="{{url_for('cluster.tree')}}" method="post" hidden target="_blank">
@@ -77,6 +89,9 @@
             async onSelect(event) {
                 await event.complete
                 document.getElementById("cluster-button").disabled = 2 > this.getSelection().length
+                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
             }
         },
     }
