@@ -1,5 +1,5 @@
 """Declaration of views for groups"""
-from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash
+from flask import Blueprint, current_app, render_template, redirect, session, url_for, request, flash
 from flask_login import login_required, current_user
 from app.mimer import get_samples_by_id, get_groups, get_samples_in_group, delete_group, update_group, TokenObject
 import json
@@ -20,7 +20,9 @@ def groups():
     token = TokenObject(**current_user.get_id())
     groups = get_groups(token)
     samples = get_samples_by_id(token, limit=100)
-    return render_template("groups.html", title="Groups", groups=groups, samples=samples)
+    basket = session
+
+    return render_template("groups.html", title="Groups", groups=groups, samples=samples, basket=basket)
 
 @groups_bp.route("/groups/edit", methods=['GET', 'POST'])
 @groups_bp.route("/groups/edit/<group_id>", methods=['GET', 'POST'])

@@ -29,6 +29,18 @@
         </div>
         <hr>
         <h5>All samples</h5>
+        <nav class="navbar bg-light">
+            <div class="container-fluid justify-content-start">
+                <span class="navbar-text">
+                    <i>Selected samples:</i>
+                    <span id="n-selected-samples-counter">0</span>
+                </span>
+                <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" onclick="addSelctedSamplesToBasket(this)" type="submit" disabled>
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add to basket</span>
+                </button>
+            </div>
+        </nav>
         <div id="data-table"></div>
     </div>
 </div>
@@ -99,6 +111,12 @@
                     path: '$.createdAt'
                 },
             ],
+            async onSelect(event) {
+                await event.complete
+                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
+            }
         },
     }
     // setup grid
@@ -114,6 +132,34 @@
     }) 
 
     window.getSelectedRows = () => grid.getSelection()
+    window.action = function (method, param1, param2, param3) {
+    grid[method](param1, param2, param3)
+}
     grid.render()
+</script>
+
+<script>
+    function addSelctedSamplesToBasket(btn) {
+        // add selected samples from table to session storage
+        const body = {
+            sampleId: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        fetch(`${window.origin}/api/basket/add`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {location.reload()})
+    }
+
+    function resetSelectedSamplesBtn(btn) {
+        // change button to show that things has been added
+    }
+
+
+
 </script>
 {% endmacro %}

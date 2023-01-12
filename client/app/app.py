@@ -1,6 +1,6 @@
 """Code for setting up the flask app."""
 from flask import Flask, current_app
-from .blueprints import public, login, groups, sample, cluster
+from .blueprints import public, login, groups, sample, cluster, api
 from .extensions import login_manager
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
@@ -46,6 +46,7 @@ def register_blueprints(app):
     app.register_blueprint(sample.samples_bp)
     app.register_blueprint(groups.groups_bp)
     app.register_blueprint(cluster.cluster_bp)
+    app.register_blueprint(api.api_bp)
 
 
 def register_filters(app):

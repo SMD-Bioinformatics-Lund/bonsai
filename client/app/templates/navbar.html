@@ -25,9 +25,16 @@
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
                 {{ user_dropdown(current_user) }}
-                <li class="nav-item">
-                    <a class="nav-link active" data-bs-toggle="basket-offcanvas" href="#basket-offcanvas" role="button">
-                        <i class="bi bi-basket3"></i>
+                <li class="nav-item d-flex flex-row">
+                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button">
+                        <i class="bi bi-basket3 fs-4"></i>
+                        {% set basket=session.get('basket', []) %}
+                        {% if basket | length > 0 %}
+                            <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
+                                <span id="samples-in-basket-counter">{{ basket | length }}</span>
+                                <span class="visually-hidden">Samples in basket</span>
+                            </span>
+                        {% endif %}
                     </a>
                 </li>
             {% else %}
@@ -45,6 +52,40 @@
     </div>
     </div>
 </nav>
+{{ sample_basket_offcanvas() }}
+{% endmacro %}
+
+{% macro sample_basket_offcanvas() %}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">Samples</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <div>
+        {% for sample in session.get('basket', []) %}
+            <div class="card mb-2">
+                <div class="card-body">
+                    <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
+                        <i class="bi bi-trash3-fill"></i>
+                    </button>
+                    <h5 class="card-title"><a href="{{ url_for('samples.sample', sample_id=sample) }}">{{ sample }}</a></h5>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="dropdown mt-3">
+      <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        Analysis
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#">Resistance</a></li>
+        <li><a class="dropdown-item" href="#">Virulence</a></li>
+        <li><a class="dropdown-item" href="#">Epidemiology</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
 {% endmacro %}
 
 {% macro navbar_link(name, target, disabled=False) %}
