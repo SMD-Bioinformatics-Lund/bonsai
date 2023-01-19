@@ -50,3 +50,12 @@ class Tag(RWModel):
 
 
 TAG_LIST = List[Tag]
+
+
+class PhenotypeType(Enum):
+    """Valid phenotyp methods."""
+
+    ANTIMICROBIAL_RESISTANCE = "antimicrobial_resistance"
+    CHEMICAL_RESISTANCE = "chemical_resistance"
+    ENVIRONMENTAL_RESISTANCE = "environmental_factor_resistance"
+    VIRULENCE = "virulence"

@@ -3,6 +3,7 @@ from flask import Blueprint, current_app, render_template, redirect, session, ur
 from flask_login import login_required, current_user
 from app.mimer import get_samples_by_id, get_groups, get_samples_in_group, delete_group, update_group, TokenObject
 import json
+from app.models import PhenotypeType
 
 groups_bp = Blueprint(
     "groups", __name__, template_folder="templates", static_folder="static", static_url_path="/groups/static"
@@ -54,7 +55,13 @@ def edit_groups(group_id=None):
                 return redirect(url_for('groups.edit_groups'))
             except Exception as err:
                 flash(f'An error occured when updating group, {err}', 'danger')
-    return render_template("edit_groups.html", title="Groups", selected_group=group_id, groups=groups)
+    # get valid phenotypes
+    valid_phenotypes = {
+        entry.name.lower().capitalize().replace("_", " "): entry.value
+        for entry 
+        in PhenotypeType.__members__.values()
+    }
+    return render_template("edit_groups.html", title="Groups", selected_group=group_id, groups=groups, valid_phenotypes=valid_phenotypes)
 
 
 @groups_bp.route("/groups/<group_id>")

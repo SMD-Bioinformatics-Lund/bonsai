@@ -128,7 +128,7 @@
                     </div>
                 </div>
             </div>
-            <button class="btn btn-primary" type="submit">Add column</button>
+            <button class="btn btn-outline-primary" type="submit">Add column</button>
         </form>
     </div>
 </div>
@@ -153,6 +153,44 @@
         </li>
     {% endfor %}
     </ul>
+</div>
+<hr>
+<div class="row g-3">
+    <h5 class="">Validated genes</h5>
+    {% if not group == None %}
+        <div class="row gx-6">
+        {% for name, value in valid_phenotypes.items() %}
+            <div class="col-md" {% if not value in group.validatedGenes %}hidden{% endif %}>
+                <div class="rounded-1 p-2 bg-light">
+                    <h6>{{ name }}</h6>
+                    <ul id="{{value}}-list" class="list-group validated-genes-list">
+                    {% for gene in group.validatedGenes.get(value, []) %}
+                        <li key={{gene}} class="list-group-item list-group-item-action d-flex justify-content-between">
+                            {{ gene }}
+                            <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post" onsubmit="event.preventDefault(); addGeneToList(this.querySelector('input').value, this.querySelector('select').value)">
+        <div class="row">
+            <div class="col-auto">
+                <select name="gene-type" id="gene-type-select" class="form-select">
+                    {% for name, value in valid_phenotypes.items() %}
+                        <option value="{{value}}">{{name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <input id="verified-gene-input" type="text" class="form-control" placeholder="Gene name" aria-label="Update list of validated genes.">
+            </div>
+        </div>
+        <button class="btn btn-outline-primary mt-2" type="submit">Add gene</button>
+    </form>
 </div>
 <hr>
 <div class="row g-3 mb-4">

@@ -1,7 +1,17 @@
 const addSampleToList = (sampleId) => {
     sampleListItem = document.getElementById('sample-list-item-template').content.firstElementChild.cloneNode(true)
     sampleListItem.childNodes[0].nodeValue = sampleId
+    sampleListItem.setAttribute("key", sampleId)
     document.getElementById('added-samples-list').appendChild(sampleListItem)
+}
+
+const addGeneToList = (geneName, categroy) => {
+    sampleListItem = document.getElementById('sample-list-item-template').content.firstElementChild.cloneNode(true)
+    sampleListItem.childNodes[0].nodeValue = geneName
+    sampleListItem.setAttribute("key", geneName)
+    const geneList = document.getElementById(`${categroy}-list`)
+    geneList.parentElement.parentElement.hidden = false
+    geneList.appendChild(sampleListItem)
 }
 
 const addNewColumnToList = (element) => {
@@ -33,6 +43,12 @@ const updateGroup = (event) => {
             }
     })
     const samplesList = document.querySelectorAll('#added-samples-list li')
+    let validatedGenes = {}
+    for (const list of document.querySelectorAll('.validated-genes-list')) {
+        const geneName = list.id.replace("-list", "") 
+        const items = Array.from(list.querySelectorAll("li")).map(li => li.getAttribute("key"))
+        if ( items.length > 0) validatedGenes[geneName] = items
+    }
     const addedSamples = Array.from(samplesList).map(li => li.getAttribute('key'))
     // store updatd fields as json in input
     const result = event.target.querySelector('input[name="input-update-group"]')
@@ -40,6 +56,7 @@ const updateGroup = (event) => {
         groupId: groupId, 
         displayName: groupName,
         tableColumns: groupColumns,
+        validatedGenes: validatedGenes,
         includedSamples: addedSamples
     })
 }

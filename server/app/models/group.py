@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, FileUrl
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
 from .sample import SampleSummary
+from .phenotype import PhenotypeType
 
 
 FilterParams = List[
@@ -49,6 +50,7 @@ class OverviewTableColumn(BaseModel):
 
 class GroupInCreate(GroupBase):
     table_columns: List[OverviewTableColumn] = Field(..., alias="tableColumns")
+    validated_genes: Dict[PhenotypeType, List[str]] = Field(..., alias="validatedGenes")
 
 
 class GroupInfoDatabase(DBModelMixin, GroupInCreate):
