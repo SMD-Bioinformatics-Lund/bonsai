@@ -123,6 +123,38 @@ async def add_comment(
     return [comment_obj.dict()] + sample.comments
 
 
+async def hide_comment(
+    db: Database, sample_id: str, comment_id: int
+) -> List[CommentInDatabase]:
+    """Add comment to previously added sample."""
+    fields = SampleInDatabase.__fields__
+    param_modified = fields["modified_at"].alias
+    param_comment = fields["comments"].alias
+    # get existing comments for sample to get the next comment id
+    print([param_comment, sample_id, comment_id])
+    update_obj = await db.sample_collection.update_one(
+        {fields["sample_id"].alias: sample_id, f"{param_comment}.id": comment_id},
+        {
+            "$set": {
+                param_modified: datetime.now(), 
+                f"{param_comment}.$.displayed": False
+            }, 
+        },
+    )
+    print([update_obj.matched_count, update_obj.modified_count])
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(sample_id)
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(sample_id)
+    LOG.info(f"Hide comment {comment_id} for {sample_id}")
+    # update comments in return object
+    comments = []
+    for cmt in comments:
+        cmd.displayed = False if cmt.id == comment_id else cmt.displayed
+        comments.append(cmt)
+    return comments
+
+
 async def add_location(
     db: Database, sample_id: str, location_id: str
 ) -> LocationOutputDatabase:

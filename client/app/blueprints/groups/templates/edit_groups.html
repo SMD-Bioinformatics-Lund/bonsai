@@ -219,24 +219,6 @@
             </div>
         </div>
         <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container">
-            {# flashed info #}
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{category}} alert-dismissible fade show sticky-top" role="alert">
-                            {% if category == 'success' %}
-                                <i class="bi bi-check2-square"></i>
-                            {% elif category == 'warning' %}
-                                <i class="bi bi-exclamation-triangle"></i>
-                            {% elif category == 'danger' %}
-                                <i class="bi bi-exclamation-triangle"></i>
-                            {% endif %}
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
             {# content #}
             {% if selected_group == None %}
                 {{ create_or_edit_group(None) }}

@@ -1,6 +1,6 @@
 """Declaration of views for samples"""
-from flask import Blueprint, current_app, render_template, redirect, url_for, request
-from app.mimer import cgmlst_cluster_samples, get_sample_by_id, post_comment_to_sample, TokenObject
+from flask import Blueprint, current_app, render_template, redirect, url_for, request, flash
+from app.mimer import cgmlst_cluster_samples, get_sample_by_id, post_comment_to_sample, remove_comment_from_sample, TokenObject
 from flask_login import login_required, current_user
 
 samples_bp = Blueprint(
@@ -34,6 +34,20 @@ def add_comment(sample_id):
     # todo validate data
     try:
         resp = post_comment_to_sample(token, sample_id=sample_id, user_name=current_user.username, comment=data)
+    except:
+        flash(resp.text, 'danger')
+    finally:
+        return redirect(url_for('samples.sample', sample_id=sample_id))
+
+
+@samples_bp.route("/samples/<sample_id>/comment/<comment_id>", methods=["POST"])
+@login_required
+def hide_comment(sample_id, comment_id):
+    """Hist comment for sample."""
+    token = TokenObject(**current_user.get_id())
+    # hide comment
+    try:
+        resp = remove_comment_from_sample(token, sample_id=sample_id, comment_id=comment_id)
     except:
         flash(resp.text, 'danger')
     finally:

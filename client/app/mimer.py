@@ -156,3 +156,14 @@ def post_comment_to_sample(headers, **kwargs):
     resp = requests.post(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
+
+@api_authentication
+def remove_comment_from_sample(headers, **kwargs):
+    """Post comment to sample"""
+    sample_id = kwargs.get("sample_id")
+    comment_id = kwargs.get("comment_id")
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/samples/{sample_id}/comment/{comment_id}'
+    resp = requests.delete(url, headers=headers)
+    resp.raise_for_status()
+    return resp.json()

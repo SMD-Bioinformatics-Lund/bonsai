@@ -35,6 +35,24 @@
 
     <body class="bg-light">
         {{ navbar(current_user) }}
+        {# flashed info #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{category}} alert-dismissible fade show sticky-top" role="alert">
+                        {% if category == 'success' %}
+                            <i class="bi bi-check2-square"></i>
+                        {% elif category == 'warning' %}
+                            <i class="bi bi-exclamation-triangle"></i>
+                        {% elif category == 'danger' %}
+                            <i class="bi bi-exclamation-triangle"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         {% block body %}
             {% block content %}
             {% endblock content %}

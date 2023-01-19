@@ -6,6 +6,7 @@ from fastapi import (APIRouter, Body, HTTPException, Path, Query, Security,
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.sample import EntryNotFound, add_comment, add_location
+from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import get_sample, get_samples
 from ..crud.user import get_current_active_user
@@ -119,6 +120,31 @@ async def post_comment(
 ):
     try:
         comment_obj = await add_comment(db, sample_id, comment)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        )
+    return comment_obj
+
+
+@router.delete("/samples/{sample_id}/comment/{comment_id}", response_model=List[CommentInDatabase], tags=DEFAULT_TAGS,)
+async def hide_comment(
+    sample_id: str = Path(
+        ...,
+        title="ID of the sample to get",
+        min_length=3,
+        max_length=100,
+        regex=SAMPLE_ID_PATTERN,
+    ),
+    comment_id: int = Path(..., title="ID of the comment to delete"),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Hide comment from sample."""
+    try:
+        comment_obj = await hide_comment_for_sample(db, sample_id, comment_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
