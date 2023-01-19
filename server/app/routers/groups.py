@@ -118,21 +118,6 @@ async def update_group_info(
     return {"id": group_id, "group_info": group_info}
 
 
-@router.post(
-    "/groups/{group_id}/image", status_code=status.HTTP_200_OK, tags=["groups"]
-)
-async def update_image_for_group(
-    group_id: str,
-    image: bytes = File(...),
-    current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    ),
-):
-    """Add an impage to a group."""
-    # cast input information as group db object
-    return {"id": group_id, "file_size": len(image)}
-
-
 @router.put(
     "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=["groups"]
 )

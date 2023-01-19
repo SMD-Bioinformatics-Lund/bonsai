@@ -7,11 +7,6 @@ from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
 from .sample import SampleSummary
 
 
-class Image(BaseModel):
-    url: FileUrl
-    name: str
-
-
 FilterParams = List[
     Dict[str, str | int | float],
 ]
@@ -37,7 +32,6 @@ class GroupBase(IncludedSamples):
 
     group_id: str = Field(..., alias="groupId")
     display_name: str = Field(..., alias="displayName")
-    image: Image | None = Field(None)
 
 
 class OverviewTableColumn(BaseModel):
