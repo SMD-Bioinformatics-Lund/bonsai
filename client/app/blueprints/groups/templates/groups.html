@@ -44,21 +44,6 @@
         <div id="data-table"></div>
     </div>
 </div>
-{% endblock content %}
-
-{% macro group_card(group) %}
-<div class="card group-card">
-    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
-        <div class="card-body">
-            <h5 class="card-title text-secondary">
-                {{ group.displayName }}
-                <span class="badge rounded-pill bg-success">{{ group.includedSamples | length }} isolates</span>
-            </h5>
-            <p class="card-text">Last update: <em>{{ group.modifiedAt | strftime }}</em></p>
-        </div>
-    </a>
-</div>
-
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
     import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
@@ -123,7 +108,7 @@
     let grid = new w2grid(tableConfig.grid)
     
     // get data
-    const testSamples = {{ samples | tojson}}
+    const testSamples = {{ samples | tojson }}
     grid.records = testSamples.map(
         sample => {
             let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
@@ -154,12 +139,19 @@
             credentials: 'same-origin'
         }).then(response => {location.reload()})
     }
-
-    function resetSelectedSamplesBtn(btn) {
-        // change button to show that things has been added
-    }
-
-
-
 </script>
+{% endblock content %}
+
+{% macro group_card(group) %}
+<div class="card group-card">
+    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">
+                {{ group.displayName }}
+                <span class="badge rounded-pill bg-success">{{ group.includedSamples | length }} isolates</span>
+            </h5>
+            <p class="card-text">Last update: <em>{{ group.modifiedAt | strftime }}</em></p>
+        </div>
+    </a>
+</div>
 {% endmacro %}
