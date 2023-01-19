@@ -2,7 +2,7 @@
 {% endmacro %}
 
 {% macro comment_area(sample) %}
-<div>
+<div id="comment-container" class="overflow-auto">
     {% if sample.comments | length > 1 %}
         {% for comment in sample.comments %}
             {% if comment.displayed %}
@@ -20,7 +20,7 @@
     {% endif %}
 </div>
 <form action={{url_for('samples.add_comment', sample_id=sample.sampleId)}} method="post">
-    <div class="form-floating">
+    <div class="form-floating mt-4">
         <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
         <label class="text-muted" for="comment-box">My comment</label>
     </div>

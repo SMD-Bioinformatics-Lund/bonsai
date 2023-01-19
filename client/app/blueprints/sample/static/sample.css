@@ -1,3 +1,7 @@
+#comment-container {
+  max-height: 40em;
+}
+
 .sidebar {
     height: 30rem;
 }
