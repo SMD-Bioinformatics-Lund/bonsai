@@ -247,9 +247,16 @@
             <div id="phenotype-heading" class="row justify-content-md-center">
             {% for res in sample.phenotypeResult %}
                 {% if res.type == "antimicrobial_resistance" %}
-                    <div class="col-md-auto">
-                    {{ resistance_card(res) }}
-                    </div>
+                    {% set n_res=res.result.phenotypes.resistant | length %}
+                    {% if is_filtered and n_res == 0 %}
+                        <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                    {% elif n_res == 0 %}
+                        <p>No predicted resistance determinants.</p>
+                    {% else %}
+                        <div class="col-md-auto">
+                        {{ resistance_card(res) }}
+                        </div>
+                    {% endif %}
                     {% do footnotes.append( res | get_all_phenotypes ) %}
                 {% endif %}
             {% endfor %}
@@ -259,9 +266,16 @@
             <div id="virulence-heading" class="row justify-content-md-center">
             {% for res in sample.phenotypeResult %}
                 {% if res.type == "virulence" %}
+                    {% set n_genes=res.result.genes | length %}
+                    {% if is_filtered and n_genes == 0 %}
+                        <p>No validated virulence factors identified. Use the extended virulence report to see all predicted resistance.</p>
+                    {% elif n_genes == 0 %}
+                        <p>No validated virulence factors identified.</p>
+                    {% else %}
                     <div class="col-md-6">
                     {{ virulence_card(res.result) }}
                     </div>
+                    {% endif %}
                 {% endif %}
             {% endfor %}
             </div>

@@ -63,14 +63,16 @@
     w2utils.formatters['sampleid']  = formatSampleId
 
     // get table configuration
-    const apiTableConfig = {{ table_definition | tojson}}
+    const apiTableConfig = {{ table_definition | tojson }}
+    const groupId = "{{ group_id }}"
+    // create table
     const columns = apiTableConfig.map(col => {
         return {
             field: col.type,
             text: col.label,
             sortable: col.sortable,
             hidden: col.hidden,
-            render: col.type.toLowerCase()
+            render: col.type.toLowerCase(),
         }
     })
     // configure table
@@ -104,6 +106,7 @@
         sample => {
             let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.type]: JSONPath({path: col.path, json: sample})[0]}), {}) 
             columns["recid"] = sample["sampleId"]
+            columns["groupId"] = groupId
             return columns
     }) 
 

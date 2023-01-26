@@ -69,6 +69,17 @@ def get_groups(headers):
 
 
 @api_authentication
+def get_group_by_id(headers, group_id):
+    """Get a group with its group_id from database"""
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/groups/{group_id}'
+    resp = requests.get(url, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def delete_group(headers, group_id):
     """Remove group from database."""
     # conduct query

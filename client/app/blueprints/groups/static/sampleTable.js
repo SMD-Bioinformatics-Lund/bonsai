@@ -1,7 +1,8 @@
-export const formatSampleId = (val, params) => {
+export function formatSampleId(val, params, data) {
     const baseUrl = new URL(window.location.href).origin
     let element = document.createElement('a')
-    element.setAttribute('href', new URL(`samples/${val}`, baseUrl))
+    let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
+    element.setAttribute('href', new URL(path, baseUrl))
     element.innerText = val
     return element.outerHTML
 }
