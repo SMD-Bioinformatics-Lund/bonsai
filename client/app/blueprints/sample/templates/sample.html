@@ -182,7 +182,7 @@
                 {% if res.type == "virulence" %}
                     {% set n_genes=res.result.genes | length %}
                     {% if is_filtered and n_genes == 0 %}
-                        <p>No validated virulence factors identified. Use the extended virulence report to see all predicted resistance.</p>
+                        <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
                     {% elif n_genes == 0 %}
                         <p>No validated virulence factors identified.</p>
                     {% else %}
