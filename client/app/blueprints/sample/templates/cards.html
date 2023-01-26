@@ -1,0 +1,116 @@
+{% macro resistance_card(result) %}
+<div class="card">
+    {% set res=result.result%}
+    <div class="card-header">{{ result.type | camelcase_to_text | capitalize }}</div>
+    <div class="card-body">
+        <h5 class="card-title">Predicted phenotype</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                {% set groups = res.phenotypes.resistant | groupby_antib_class %}
+                <thead>
+                    {% for antib_class in groups %}
+                        <th>{{ antib_class | capitalize }}</th>
+                    {% endfor %}
+                </thead>
+                <tbody>
+                    {% for antibs in zip_longest(*groups.values()) %}
+                        <tr>
+                            {% for antib in antibs %}
+                            <td>
+                                {% if antib %}
+                                {{ antib | capitalize }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <hr>
+        <h5 class="card-title">Predicted genes</h5>
+        <table class="table">
+            <thead>
+                <tr>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Accession</td>
+                    <td scope="col">Sequence depth</td>
+                    <td scope="col">Identity</td>
+                    <td scope="col">Coverage</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for gene in res.genes %}
+            <tr>
+                <td>{{ gene.name }}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-custom-class="custom-tooltip" data-bs-title="{{ ', '.join(gene.phenotypes)}}"
+                    >
+                        R {{ gene.phenotypes | length }}
+                    </span>
+                </td>
+                <td>{{ gene.accession }}</td>
+                <td>{{ gene.depth }}</td>
+                <td>{{ gene.coverage }}</td>
+                <td>{{ gene.identity }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <h5 class="card-title">Predicted mutations</h5>
+        <table class="table">
+            <thead>
+                <tr>
+                    <td scope="col">Mutation</td>
+                    <td scope="col">Change</td>
+                    <td scope="col">Type</td>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Depth</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for mut in res.mutations %}
+            <tr>
+                <td>{{ mut.refCodon }}<b>{{ mut.position }}</b>{{ mut.altCodon }}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" data-bs-placement="top" 
+                    data-bs-custom-class="custom-tooltip" data-bs-title="{{ ', '.join(mut.phenotypes)}}"
+                    >
+                        R {{ mut.phenotypes | length }}
+                    </span>
+                </td>
+                <td>{{ mut.refCodon | nt_to_aa }}<i class="bi bi-arrow-right mx-2"></i>{{ mut.altCodon | nt_to_aa }}</td>
+                <td>{{ mut.variantType }}</td>
+                <td>{{ ", ".join(mut.genes) }}</td>
+                <td>{{ mut.depth }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro virulence_card(res) %}
+<div class="card">
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Identity</td>
+                    <td scope="col">Coverage</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for gene in res.genes %}
+            <tr>
+                <td>{{ gene.name }}</td>
+                <td>{{ gene.coverage }}</td>
+                <td>{{ gene.identity }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
