@@ -1,39 +1,18 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
-    <div class="card-body">
-        <span class="text-center">
-            <h1 class="card-title text-danger text-center">Orange</h1>
-            <h5 class="card-subtitle text-muted text-center">Through observation, sensation and experience shall the truth of the multiverse be revealed.</h5>
-            <br>
-            <p class="card-text"><b>Version:</b> {{ version }}</p>
-        </span>
-        <hr/>
-        <p class="card-text">Orange, orange and orange.</p>
+<div class="bg-white w-100">
+    <span class="text-center">
+        <h1 class="text-danger text-center">Orange</h1>
+        <h5 class="text-muted text-center">Through observation, sensation and experience shall the truth of the multiverse be revealed.</h5>
+        <br>
+        <p class="card-text"><b>Version:</b> {{ version }}</p>
+    </span>
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% set category = "border-" + messages[-1][0] %}
         {% else %}
             {% set category = "" %}
-        {% endif %}
-        <form action="{{ url_for('login.login') }}" method="POST" name="login">
-            <div class="row">
-                <div class="col">
-                    <input class="form-control {{ category }}" type="text" placeholder="User name" id="username" name="username">
-                </div>
-                <div class="col">
-                    <input class="form-control {{ category }}" type="password" placeholder="Password" id="password" name="password">
-                </div>
-                <div class="col">
-                    <button class="btn btn-primary text-white" type="submit">Login</button>
-                </div>
-            </div>
-        </form>
-        {% if messages %}
-            {% set category = messages[-1][0] %}
-            {% set message = messages[-1][1] %}
-            <p class="text-{{category}} fs-6 fw-bold">{{ message }}</p>
         {% endif %}
         {% endwith %}
     </div>
