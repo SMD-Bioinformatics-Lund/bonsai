@@ -90,7 +90,7 @@
 
 {% macro navbar_link(name, target, disabled=False) %}
 <li class="nav-item">
-    <a class="nav-link {% if disabled %} disabled {% endif %}" href="{{ url_for(target) }}">{{ name }}</a>
+    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" href="{{ url_for(target) }}">{{ name }}</a>
 </li>
 {% endmacro %}
 
