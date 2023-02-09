@@ -1,11 +1,12 @@
-from flask import Blueprint, session, redirect, url_for, request, flash
+from flask import Blueprint, session, redirect, url_for, request, flash, render_template
 from flask_login import login_user, logout_user, login_required, UserMixin
 from app.extensions import login_manager
 from app.mimer import get_auth_token, get_current_user, TokenObject
 from requests.exceptions import HTTPError
+from app import VERSION
 
 login_bp = Blueprint(
-    "login", __name__, template_folder="templates", static_folder="static"
+    "login", __name__, template_folder="templates", static_folder="static", static_url_path="/login"
 )
 
 
@@ -25,6 +26,12 @@ class LoginUser(UserMixin):
     def is_admin(self):
         """Check if the user is admin."""
         return "admin" in self.roles
+
+
+@login_bp.route("/login")
+def login_page():
+    """Landing page view."""
+    return render_template("login.html", version=VERSION)
 
 
 @login_bp.route("/logout")

@@ -12,12 +12,6 @@ def index():
     return render_template("index.html", version=VERSION)
 
 
-@public_bp.route("/login")
-def login():
-    """Landing page view."""
-    return render_template("login.html", version=VERSION)
-
-
 @public_bp.route("/favicon", methods=["GET"])
 def favicon():
     return send_from_directory(public_bp.static_folder, request.args.get("filename"))
