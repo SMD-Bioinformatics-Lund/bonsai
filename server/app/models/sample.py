@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, conlist
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 from .tags import Tag
@@ -45,7 +45,7 @@ class PipelineResult(RWModel):
 
     # mandatory metadata fields
     run_metadata: RunMetadata = Field(..., alias="runMetadata")
-    species_prediction: List[SpeciesPrediction] = Field(..., alias="speciesPrediction")
+    species_prediction: conlist(SpeciesPrediction, min_items=1) = Field(..., alias="speciesPrediction")
 
     # optional fields
     qc: List[QcMethodIndex] = Field(...)
