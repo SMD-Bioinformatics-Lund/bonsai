@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, render_template, send_from_directory, 
 from app import VERSION
 
 public_bp = Blueprint(
-    "public", __name__, template_folder="templates", static_folder="static", static_url_path="/login/static"
+    "public", __name__, template_folder="templates", static_folder="static", static_url_path="/"
 )
 
 
