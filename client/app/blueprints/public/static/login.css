@@ -2,14 +2,6 @@ html, body {
     overflow: hidden;
 }
 
-#sw-logo-text {
-    font-family: "Bodoni MT", "Times New Roman", Times, serif;
-}
-
-.sw-logo-text-lg {
-    font-size: 72pt;
-}
-
 .sidebar {
     height: 100%;
 }
