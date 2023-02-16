@@ -13,7 +13,7 @@ from .phenotype import PhenotypeResult, PhenotypeResultIndex
 from .qc import QcMethodIndex
 from .typing import TypingResultIndex, TypingResultCgMlst, TypingResultMlst
 
-SAMPLE_ID_PATTERN = "^[a-zA-Z1-9-_]+$"
+SAMPLE_ID_PATTERN = "^[a-zA-Z0-9-_]+$"
 #, regex=SAMPLE_ID_PATTERN
 
 
@@ -28,8 +28,8 @@ class TaxLevel(Enum):
 
 class SpeciesPrediction(RWModel):
     scientific_name: str = Field(..., alias="scientificName")
-    tax_id: int = Field(..., alias="taxId")
-    tax_level: TaxLevel = Field(..., alias="taxLevel")
+    taxonomy_id: int = Field(..., alias="taxonomyId")
+    taxonomy_lvl: TaxLevel = Field(..., alias="taxonomyLevel")
     kraken_assigned_reads: int = Field(..., alias="krakenAssignedReads")
     added_reads: int = Field(..., alias="addedReads")
     fraction_total_reads: float = Field(..., alias="fractionTotalReads")
