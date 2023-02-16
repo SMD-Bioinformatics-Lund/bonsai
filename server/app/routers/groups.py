@@ -2,8 +2,7 @@
 
 from typing import List
 
-from fastapi import (APIRouter, Depends, File, HTTPException, Path, Security,
-                     status)
+from fastapi import APIRouter, Depends, File, HTTPException, Path, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -92,14 +91,12 @@ async def delete_group_from_db(
         result = await delete_group(db, group_id)
     except EntryNotFound as err:
         raise HTTPException(
-            status_code=404, 
-            detail=f"Group with id: {group_id} not in database")
+            status_code=404, detail=f"Group with id: {group_id} not in database"
+        )
     return result
 
 
-@router.put(
-    "/groups/{group_id}", status_code=status.HTTP_200_OK, tags=["groups"]
-)
+@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=["groups"])
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
@@ -113,8 +110,8 @@ async def update_group_info(
         result = await update_group(db, group_id, group_info)
     except EntryNotFound as err:
         raise HTTPException(
-            status_code=404, 
-            detail=f"Group with id: {group_id} not in database")
+            status_code=404, detail=f"Group with id: {group_id} not in database"
+        )
     return {"id": group_id, "group_info": group_info}
 
 

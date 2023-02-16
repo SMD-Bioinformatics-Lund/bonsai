@@ -8,8 +8,13 @@ from bson.objectid import ObjectId
 from ..crud.location import get_location
 from ..db import Database
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
-                             SampleInDatabase, PipelineResult)
+from ..models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+    PipelineResult,
+)
 from ..models.typing import CGMLST_ALLELES
 from ..models.base import RWModel
 from .errors import EntryNotFound, UpdateDocumentError
@@ -17,17 +22,22 @@ from .errors import EntryNotFound, UpdateDocumentError
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
 
+
 class TypingProfileAggregate(RWModel):
     """Sample id and predicted alleles."""
 
     sampleId: str
     typingResult: CGMLST_ALLELES
 
+
 TypingProfileOutput = list[TypingProfileAggregate]
 
 
 async def get_samples(
-    db: Database, limit: int = 0, skip: int = 0, include: List[str] | None = None,
+    db: Database,
+    limit: int = 0,
+    skip: int = 0,
+    include: List[str] | None = None,
 ) -> List[SampleInDatabase]:
     """Get samples from database."""
 
@@ -36,10 +46,10 @@ async def get_samples(
     for samp in await cursor.to_list(None):
         inserted_id = samp["_id"]
         sample = SampleInDatabase(
-                id=str(inserted_id),
-                created_at=ObjectId(inserted_id).generation_time,
-                **samp,
-            )
+            id=str(inserted_id),
+            created_at=ObjectId(inserted_id).generation_time,
+            **samp,
+        )
         # TODO replace with aggregation pipeline
         if include is not None and sample.sample_id not in include:
             continue
@@ -47,14 +57,11 @@ async def get_samples(
     return samp_objs
 
 
-async def create_sample(
-    db: Database, sample: PipelineResult
-) -> SampleInDatabase:
+async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
     sample_db_fmt: SampleDatabaseInput = SampleInCreate(
-        in_collections=[],
-        **sample.dict()
+        in_collections=[], **sample.dict()
     )
     # store data in database
     doc = await db.sample_collection.insert_one(sample_db_fmt.dict(by_alias=True))
@@ -136,9 +143,9 @@ async def hide_comment(
         {fields["sample_id"].alias: sample_id, f"{param_comment}.id": comment_id},
         {
             "$set": {
-                param_modified: datetime.now(), 
-                f"{param_comment}.$.displayed": False
-            }, 
+                param_modified: datetime.now(),
+                f"{param_comment}.$.displayed": False,
+            },
         },
     )
     print([update_obj.matched_count, update_obj.modified_count])
@@ -189,28 +196,34 @@ async def add_location(
     return location_obj
 
 
-async def get_typing_profiles(db: Database, sample_idx: list[str], typing_method: str) -> TypingProfileOutput:
+async def get_typing_profiles(
+    db: Database, sample_idx: list[str], typing_method: str
+) -> TypingProfileOutput:
     """Get locations from database."""
     pipeline = [
         {"$project": {"_id": 0, "sampleId": 1, "typingResult": 1}},
         {"$unwind": "$typingResult"},
-        {"$match": {"$and": [
-            {"sampleId": {"$in": sample_idx}}, 
-            {"typingResult.type": typing_method}
-        ]}},
-        {"$addFields": {"typingResult": "$typingResult.result.alleles"}}
+        {
+            "$match": {
+                "$and": [
+                    {"sampleId": {"$in": sample_idx}},
+                    {"typingResult.type": typing_method},
+                ]
+            }
+        },
+        {"$addFields": {"typingResult": "$typingResult.result.alleles"}},
     ]
 
     # query database
     results = [
         TypingProfileAggregate(**sample)
-        async for sample 
-        in db.sample_collection.aggregate(pipeline)
+        async for sample in db.sample_collection.aggregate(pipeline)
     ]
     missing_samples = set(sample_idx) - {s.sampleId for s in results}
     if len(missing_samples) > 0:
         msg = 'The samples "%s" didnt have %s typing result.' % (
-            ", ".join(list(missing_samples)), typing_method
+            ", ".join(list(missing_samples)),
+            typing_method,
         )
         raise EntryNotFound(msg)
     return results

@@ -9,9 +9,7 @@ from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag
 def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
-        pred
-        for pred in sample.phenotype_result
-        if pred.type == PhenotypeType.VIR.value
+        pred for pred in sample.phenotype_result if pred.type == PhenotypeType.VIR.value
     ]
     if len(virs) > 0:
         vir_result: PhenotypeResult = virs[0].result

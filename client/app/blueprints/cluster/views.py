@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from enum import Enum
 import json
 
+
 class DataType(str, Enum):
     """Valid datatypes"""
 
@@ -28,22 +29,29 @@ class DataPointStyle(BaseModel):
 
 class MetaData(BaseModel):
     """Structure of metadata options"""
-    metadata: Dict[str, Dict[str,str]]
+
+    metadata: Dict[str, Dict[str, str]]
     metadata_list: list[str]
-    metadata_options: Dict[str,DataPointStyle]
+    metadata_options: Dict[str, DataPointStyle]
 
 
 cluster_bp = Blueprint(
-    "cluster", __name__, template_folder="templates", static_folder="static", static_url_path="/tree/static"
+    "cluster",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    static_url_path="/tree/static",
 )
+
 
 def get_value(sample, value):
     val = sample.get(value)
     return "-" if val is None else val
 
+
 def gather_metadata(samples) -> MetaData:
     """Create metadata structure.
-    
+
     GrapeTree metadata structure
     ============================
     metadata = dict[metadata_name,value]
@@ -51,7 +59,7 @@ def gather_metadata(samples) -> MetaData:
     metadata_options = dict[metadata_name, formatting_options]
 
     formatting_options = dict[options, values]
-    
+
     valid options
     - label
     - coltype
@@ -64,11 +72,13 @@ def gather_metadata(samples) -> MetaData:
         # add sample to metadata list
         # store metadata
         sample_id = sample["sampleId"]
-        mlst_res = next(res["result"] for res in sample["typingResult"] if res["type"] == "mlst")
+        mlst_res = next(
+            res["result"] for res in sample["typingResult"] if res["type"] == "mlst"
+        )
         metadata[sample_id] = {
             "location": get_value(sample, "location"),
             "time": sample["createdAt"],
-            "st": get_value(mlst_res, "sequenceType")
+            "st": get_value(mlst_res, "sequenceType"),
         }
     # build metadata list
     metadata_list = set()
@@ -95,30 +105,32 @@ def gather_metadata(samples) -> MetaData:
     )
 
 
-@cluster_bp.route("/tree", methods=['GET', 'POST'])
+@cluster_bp.route("/tree", methods=["GET", "POST"])
 @login_required
 def tree():
     """grapetree view."""
-    if request.method == 'POST':
-        newick = request.form.get('newick')
-        samples = json.loads(request.form.get('metadata'))
+    if request.method == "POST":
+        newick = request.form.get("newick")
+        samples = json.loads(request.form.get("metadata"))
         # query for sample metadata
         token = TokenObject(**current_user.get_id())
         samples = get_samples_by_id(token, sample_ids=samples["sampleId"])
         metadata = gather_metadata(samples)
         data = dict(nwk=newick, **metadata.dict())
-        return render_template("ms_tree.html", title="cgMLST Cluster", data=json.dumps(data))
-    return url_for('public.index')
+        return render_template(
+            "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
+        )
+    return url_for("public.index")
 
 
-@cluster_bp.route("/cluster_samples", methods=['GET', 'POST'])
+@cluster_bp.route("/cluster_samples", methods=["GET", "POST"])
 @login_required
 def cluster_and_display_tree():
     """Cluster samples and display results in a view."""
-    if request.method == 'POST':
+    if request.method == "POST":
         sample_ids = [
-            sample['sampleId'] for sample 
-            in json.loads(request.form.get('sampleIds', ""))
+            sample["sampleId"]
+            for sample in json.loads(request.form.get("sampleIds", ""))
         ]
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
@@ -129,5 +141,7 @@ def cluster_and_display_tree():
         metadata = gather_metadata(samples)
         # query for sample metadata
         data = dict(nwk=newick, **metadata.dict())
-        return render_template("ms_tree.html", title="cgMLST Cluster", data=json.dumps(data))
-    return url_for('public.index')
+        return render_template(
+            "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
+        )
+    return url_for("public.index")

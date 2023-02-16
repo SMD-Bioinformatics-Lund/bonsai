@@ -111,11 +111,11 @@ def register_filters(app):
     def camelcase_to_text(text):
         return text.replace("_", " ")
 
-    @app.template_filter('strftime')
+    @app.template_filter("strftime")
     def _jinja2_filter_datetime(date, fmt=None):
         date = dateutil.parser.parse(date)
         native = date.replace(tzinfo=None)
-        format='%b %d, %Y'
+        format = "%b %d, %Y"
         return native.strftime(format)
 
     @app.template_filter()
@@ -130,28 +130,73 @@ def register_filters(app):
     def nt_to_aa(nt_seq):
         """Translate nucleotide sequence to aa sequence"""
         TABLE = {
-                "TTT": "F", "TTC": "F", "TTA": "L", "TTG": "L",
-                "TCT": "S", "TCC": "S", "TCA": "S", "TCG": "S",
-                "TAT": "Y", "TAC": "Y",                           # noqa: E241
-                "TGT": "C", "TGC": "C",             "TGG": "W",   # noqa: E241
-                "CTT": "L", "CTC": "L", "CTA": "L", "CTG": "L",
-                "CCT": "P", "CCC": "P", "CCA": "P", "CCG": "P",
-                "CAT": "H", "CAC": "H", "CAA": "Q", "CAG": "Q",
-                "CGT": "R", "CGC": "R", "CGA": "R", "CGG": "R",
-                "ATT": "I", "ATC": "I", "ATA": "I", "ATG": "M",
-                "ACT": "T", "ACC": "T", "ACA": "T", "ACG": "T",
-                "AAT": "N", "AAC": "N", "AAA": "K", "AAG": "K",
-                "AGT": "S", "AGC": "S", "AGA": "R", "AGG": "R",
-                "GTT": "V", "GTC": "V", "GTA": "V", "GTG": "V",
-                "GCT": "A", "GCC": "A", "GCA": "A", "GCG": "A",
-                "GAT": "D", "GAC": "D", "GAA": "E", "GAG": "E",
-                "GGT": "G", "GGC": "G", "GGA": "G", "GGG": "G",
-            }
-        stop_codons=["TAA", "TAG", "TGA"],
-        start_codons=["TTG", "CTG", "ATT", "ATC", "ATA", "ATG", "GTG"],
+            "TTT": "F",
+            "TTC": "F",
+            "TTA": "L",
+            "TTG": "L",
+            "TCT": "S",
+            "TCC": "S",
+            "TCA": "S",
+            "TCG": "S",
+            "TAT": "Y",
+            "TAC": "Y",  # noqa: E241
+            "TGT": "C",
+            "TGC": "C",
+            "TGG": "W",  # noqa: E241
+            "CTT": "L",
+            "CTC": "L",
+            "CTA": "L",
+            "CTG": "L",
+            "CCT": "P",
+            "CCC": "P",
+            "CCA": "P",
+            "CCG": "P",
+            "CAT": "H",
+            "CAC": "H",
+            "CAA": "Q",
+            "CAG": "Q",
+            "CGT": "R",
+            "CGC": "R",
+            "CGA": "R",
+            "CGG": "R",
+            "ATT": "I",
+            "ATC": "I",
+            "ATA": "I",
+            "ATG": "M",
+            "ACT": "T",
+            "ACC": "T",
+            "ACA": "T",
+            "ACG": "T",
+            "AAT": "N",
+            "AAC": "N",
+            "AAA": "K",
+            "AAG": "K",
+            "AGT": "S",
+            "AGC": "S",
+            "AGA": "R",
+            "AGG": "R",
+            "GTT": "V",
+            "GTC": "V",
+            "GTA": "V",
+            "GTG": "V",
+            "GCT": "A",
+            "GCC": "A",
+            "GCA": "A",
+            "GCG": "A",
+            "GAT": "D",
+            "GAC": "D",
+            "GAA": "E",
+            "GAG": "E",
+            "GGT": "G",
+            "GGC": "G",
+            "GGA": "G",
+            "GGG": "G",
+        }
+        stop_codons = (["TAA", "TAG", "TGA"],)
+        start_codons = (["TTG", "CTG", "ATT", "ATC", "ATA", "ATG", "GTG"],)
         aa_seq = ""
         for pos in range(0, len(nt_seq), 3):
-            codon = nt_seq[pos: pos + 3].upper()
+            codon = nt_seq[pos : pos + 3].upper()
             if codon in start_codons:
                 aa_seq += "START"
             elif codon in stop_codons:
@@ -164,7 +209,7 @@ def register_filters(app):
     def groupby_antib_class(antibiotics):
         # todo lookup antibiotic classes in database
         antibiotic_class_lookup = {
-            antib.lower(): k 
+            antib.lower(): k
             for k, v in current_app.config.get("ANTIBIOTIC_CLASSES", {}).items()
             for antib in v
         }

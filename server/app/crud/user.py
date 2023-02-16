@@ -4,16 +4,19 @@ from gzip import READ
 
 from bson import ObjectId
 from fastapi import Depends, Security, status, HTTPException
-from fastapi.security import (HTTPBasic, HTTPBasicCredentials,
-                              OAuth2PasswordBearer, SecurityScopes)
+from fastapi.security import (
+    HTTPBasic,
+    HTTPBasicCredentials,
+    OAuth2PasswordBearer,
+    SecurityScopes,
+)
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
 from ..config import USER_ROLES, SECRET_KEY, ALGORITHM
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import (UserInputCreate, UserInputDatabase,
-                           UserOutputDatabase)
+from ..models.user import UserInputCreate, UserInputDatabase, UserOutputDatabase
 from .errors import EntryNotFound
 
 security = HTTPBasic()
@@ -98,10 +101,8 @@ async def get_current_user(
         raise credentials_exception
     for scope in security_scopes.scopes:
         users_all_permissions = {
-            perm 
-            for user_role in user.roles
-            for perm in USER_ROLES.get(user_role , [])
-            }
+            perm for user_role in user.roles for perm in USER_ROLES.get(user_role, [])
+        }
         if not scope in users_all_permissions:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

@@ -8,9 +8,7 @@ from .sample import SampleSummary
 from .phenotype import PhenotypeType
 
 
-FilterParams = List[
-    Dict[str, str | int | float],
-]
+FilterParams = List[Dict[str, str | int | float],]
 
 
 class IncludedSamples(ModifiedAtRWModel):

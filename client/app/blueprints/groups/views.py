@@ -1,12 +1,32 @@
 """Declaration of views for groups"""
-from flask import Blueprint, current_app, render_template, redirect, session, url_for, request, flash
+from flask import (
+    Blueprint,
+    current_app,
+    render_template,
+    redirect,
+    session,
+    url_for,
+    request,
+    flash,
+)
 from flask_login import login_required, current_user
-from app.mimer import get_samples_by_id, get_groups, get_samples_in_group, delete_group, update_group, TokenObject
+from app.mimer import (
+    get_samples_by_id,
+    get_groups,
+    get_samples_in_group,
+    delete_group,
+    update_group,
+    TokenObject,
+)
 import json
 from app.models import PhenotypeType
 
 groups_bp = Blueprint(
-    "groups", __name__, template_folder="templates", static_folder="static", static_url_path="/groups/static"
+    "groups",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    static_url_path="/groups/static",
 )
 
 
@@ -23,10 +43,13 @@ def groups():
     samples = get_samples_by_id(token, limit=100)
     basket = session
 
-    return render_template("groups.html", title="Groups", groups=groups, samples=samples, basket=basket)
+    return render_template(
+        "groups.html", title="Groups", groups=groups, samples=samples, basket=basket
+    )
 
-@groups_bp.route("/groups/edit", methods=['GET', 'POST'])
-@groups_bp.route("/groups/edit/<group_id>", methods=['GET', 'POST'])
+
+@groups_bp.route("/groups/edit", methods=["GET", "POST"])
+@groups_bp.route("/groups/edit/<group_id>", methods=["GET", "POST"])
 @login_required
 def edit_groups(group_id=None):
     """Groups view."""
@@ -38,30 +61,35 @@ def edit_groups(group_id=None):
     groups = get_groups(token)
 
     # remove group from database
-    if request.method == 'POST':
+    if request.method == "POST":
         # if a group should be removed
-        if 'input-remove-group' in request.form:
+        if "input-remove-group" in request.form:
             try:
-                delete_group(token, group_id=request.form.get('input-remove-group'))
-                flash('Group updated', 'success')
+                delete_group(token, group_id=request.form.get("input-remove-group"))
+                flash("Group updated", "success")
             except Exception as err:
-                flash(f'An error occured when updating group, {err}', 'danger')
-            return redirect(url_for('groups.edit_groups'))
-        elif 'input-update-group' in request.form:
-            updated_data = json.loads(request.form.get('input-update-group'))
+                flash(f"An error occured when updating group, {err}", "danger")
+            return redirect(url_for("groups.edit_groups"))
+        elif "input-update-group" in request.form:
+            updated_data = json.loads(request.form.get("input-update-group"))
             try:
                 update_group(token, group_id=group_id, data=updated_data)
-                flash(f'Group updated', 'success')
-                return redirect(url_for('groups.edit_groups'))
+                flash(f"Group updated", "success")
+                return redirect(url_for("groups.edit_groups"))
             except Exception as err:
-                flash(f'An error occured when updating group, {err}', 'danger')
+                flash(f"An error occured when updating group, {err}", "danger")
     # get valid phenotypes
     valid_phenotypes = {
         entry.name.lower().capitalize().replace("_", " "): entry.value
-        for entry 
-        in PhenotypeType.__members__.values()
+        for entry in PhenotypeType.__members__.values()
     }
-    return render_template("edit_groups.html", title="Groups", selected_group=group_id, groups=groups, valid_phenotypes=valid_phenotypes)
+    return render_template(
+        "edit_groups.html",
+        title="Groups",
+        selected_group=group_id,
+        groups=groups,
+        valid_phenotypes=valid_phenotypes,
+    )
 
 
 @groups_bp.route("/groups/<group_id>")

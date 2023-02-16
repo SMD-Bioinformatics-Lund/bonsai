@@ -14,7 +14,7 @@ from .qc import QcMethodIndex
 from .typing import TypingResultIndex, TypingResultCgMlst, TypingResultMlst
 
 SAMPLE_ID_PATTERN = "^[a-zA-Z0-9-_]+$"
-#, regex=SAMPLE_ID_PATTERN
+# , regex=SAMPLE_ID_PATTERN
 
 
 class TaxLevel(Enum):
@@ -38,14 +38,14 @@ class SpeciesPrediction(RWModel):
 class PipelineResult(RWModel):
     """Input format of sample object from pipeline."""
 
-    sample_id: str = Field(
-        ..., alias="sampleId", min_length=3, max_length=100
-    )
+    sample_id: str = Field(..., alias="sampleId", min_length=3, max_length=100)
     schema_version: int = Field(..., alias="schemaVersion", gt=0)
 
     # mandatory metadata fields
     run_metadata: RunMetadata = Field(..., alias="runMetadata")
-    species_prediction: conlist(SpeciesPrediction, min_items=1) = Field(..., alias="speciesPrediction")
+    species_prediction: conlist(SpeciesPrediction, min_items=1) = Field(
+        ..., alias="speciesPrediction"
+    )
 
     # optional fields
     qc: List[QcMethodIndex] = Field(...)

@@ -6,7 +6,11 @@ from requests.exceptions import HTTPError
 from app import VERSION
 
 login_bp = Blueprint(
-    "login", __name__, template_folder="templates", static_folder="static", static_url_path="/login"
+    "login",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    static_url_path="/login",
 )
 
 

@@ -122,9 +122,9 @@ def get_samples_by_id(headers, **kwargs):
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/samples'
     parmas = dict(
-        sample_ids = kwargs.get("sample_ids", None),
-        limit = kwargs.get("limit", 20),
-        skip = kwargs.get("skip", 0)
+        sample_ids=kwargs.get("sample_ids", None),
+        limit=kwargs.get("limit", 20),
+        skip=kwargs.get("skip", 0),
     )
     resp = requests.get(url, headers=headers, params=parmas)
 
@@ -158,15 +158,13 @@ def cgmlst_cluster_samples(headers, **kwargs):
 def post_comment_to_sample(headers, **kwargs):
     """Post comment to sample"""
     sample_id = kwargs.get("sample_id")
-    data = {
-        "comment": kwargs.get("comment"),
-        "username": kwargs.get("user_name")
-    }
+    data = {"comment": kwargs.get("comment"), "username": kwargs.get("user_name")}
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/samples/{sample_id}/comment'
     resp = requests.post(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
+
 
 @api_authentication
 def remove_comment_from_sample(headers, **kwargs):
@@ -179,6 +177,7 @@ def remove_comment_from_sample(headers, **kwargs):
     resp.raise_for_status()
     return resp.json()
 
+
 @api_authentication
 def cluster_samples(headers, **kwargs):
     """Cluster samples on selected typing result."""
@@ -186,7 +185,7 @@ def cluster_samples(headers, **kwargs):
     data = {
         "sampleIds": kwargs.get("sample_ids"),
         "method": kwargs.get("method", "single"),
-        "distance": kwargs.get("distance", "jaccard")
+        "distance": kwargs.get("distance", "jaccard"),
     }
     # conduct query
     url = f'{current_app.config["MIMER_API_URL"]}/cluster/{typing_method}/'

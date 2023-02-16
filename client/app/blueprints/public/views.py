@@ -2,7 +2,11 @@ from flask import Blueprint, current_app, render_template, send_from_directory, 
 from app import VERSION
 
 public_bp = Blueprint(
-    "public", __name__, template_folder="templates", static_folder="static", static_url_path="/"
+    "public",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    static_url_path="/",
 )
 
 
@@ -15,6 +19,7 @@ def index():
 @public_bp.route("/favicon", methods=["GET"])
 def favicon():
     return send_from_directory(public_bp.static_folder, request.args.get("filename"))
+
 
 @public_bp.route("/webmanifest")
 def webmanifest():

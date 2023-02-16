@@ -3,9 +3,8 @@ from flask import Blueprint, request, session, jsonify
 from flask_login import login_required, current_user
 import json
 
-api_bp = Blueprint(
-    "api", __name__, template_folder="templates", static_folder="static"
-)
+api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
+
 
 @api_bp.route("/api/basket/add", methods=["POST"])
 @login_required
@@ -15,14 +14,16 @@ def add_sample_to_basket():
     if current_user.get_id() is None:
         return jsonify("Not authenticated"), 401
 
-    if request.method == 'POST':
+    if request.method == "POST":
         # add samples to basket
-        samples_in_basket = session.get('basket', [])
-        samples_to_add = json.loads(request.data).get('selectedSamples') 
+        samples_in_basket = session.get("basket", [])
+        samples_to_add = json.loads(request.data).get("selectedSamples")
         # add only unique id
-        session['basket'] = list({
-            entry['sampleId']: entry for entry in 
-            samples_in_basket + samples_to_add}.values())
+        session["basket"] = list(
+            {
+                entry["sampleId"]: entry for entry in samples_in_basket + samples_to_add
+            }.values()
+        )
         return f"Added {', '.join(samples_in_basket)}", 200
 
 
@@ -34,11 +35,11 @@ def remove_sample_from_basket():
     if current_user.get_id() is None:
         return "Not authenticated", 401
 
-    if request.method == 'POST':
+    if request.method == "POST":
         # add samples to basket
-        samples_in_basket = session.get('basket')
-        to_remove = json.loads(request.data).get('sampleId', '')
+        samples_in_basket = session.get("basket")
+        to_remove = json.loads(request.data).get("sampleId", "")
         samples = [sid for sid in samples_in_basket if not sid["sampleId"] == to_remove]
-        session['basket'] = samples
+        session["basket"] = samples
         return f"removed {to_remove}", 200
     return "", 200

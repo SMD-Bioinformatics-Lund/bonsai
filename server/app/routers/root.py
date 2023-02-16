@@ -4,6 +4,7 @@ from ..__version__ import VERSION as version
 
 router = APIRouter()
 
+
 @router.get("/")
 async def read_root():
     """Return root message."""

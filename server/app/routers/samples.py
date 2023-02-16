@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Union
 
-from fastapi import (APIRouter, Body, HTTPException, Path, Query, Security,
-                     status)
+from fastapi import APIRouter, Body, HTTPException, Path, Query, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.sample import EntryNotFound, add_comment, add_location
@@ -12,8 +11,13 @@ from ..crud.sample import get_sample, get_samples
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
-                             SampleInDatabase, PipelineResult)
+from ..models.sample import (
+    SAMPLE_ID_PATTERN,
+    Comment,
+    CommentInDatabase,
+    SampleInDatabase,
+    PipelineResult,
+)
 from ..models.user import UserOutputDatabase
 
 router = APIRouter()
@@ -104,7 +108,11 @@ async def update_sample(
     return comment_obj
 
 
-@router.post("/samples/{sample_id}/comment", response_model=List[CommentInDatabase], tags=DEFAULT_TAGS,)
+@router.post(
+    "/samples/{sample_id}/comment",
+    response_model=List[CommentInDatabase],
+    tags=DEFAULT_TAGS,
+)
 async def post_comment(
     comment: Comment,
     sample_id: str = Path(
@@ -128,7 +136,11 @@ async def post_comment(
     return comment_obj
 
 
-@router.delete("/samples/{sample_id}/comment/{comment_id}", response_model=List[CommentInDatabase], tags=DEFAULT_TAGS,)
+@router.delete(
+    "/samples/{sample_id}/comment/{comment_id}",
+    response_model=List[CommentInDatabase],
+    tags=DEFAULT_TAGS,
+)
 async def hide_comment(
     sample_id: str = Path(
         ...,

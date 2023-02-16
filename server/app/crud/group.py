@@ -8,8 +8,7 @@ from typing import Any, Dict, List
 from bson.objectid import ObjectId
 
 from ..db import Database
-from ..models.group import (GroupInCreate, GroupInfoDatabase,
-                            UpdateIncludedSamples)
+from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
 from ..models.sample import SampleSummary
 from ..models.typing import TypingMethod
 from ..models.tags import TAG_LIST
@@ -27,7 +26,7 @@ def group_document_to_db_object(document: Dict[str, Any]) -> GroupInfoDatabase:
         id=str(inserted_id),
         created_at=ObjectId(inserted_id).generation_time,
         modified_at=ObjectId(inserted_id).generation_time,
-        **document
+        **document,
     )
     return db_obj
 
@@ -41,7 +40,9 @@ async def get_groups(db: Database) -> List[GroupInfoDatabase]:
     return groups
 
 
-async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -> GroupInfoDatabase:
+async def get_group(
+    db: Database, group_id: str, lookup_samples: bool = False
+) -> GroupInfoDatabase:
     """Get collections from database."""
     group_fields = GroupInfoDatabase.__fields__
     sample_fields = SampleSummary.__fields__
@@ -53,26 +54,39 @@ async def get_group(db: Database, group_id: str, lookup_samples: bool = False) -
     ]
     if lookup_samples:
         typing_field = sample_fields["typing_result"].alias
-        pipeline.extend([{
-            "$lookup": {
-                "from": db.sample_collection.name,
-                "localField": included_samples_field,
-                "foreignField": sample_fields["sample_id"].alias,
-                "as": included_samples_field,
-                "pipeline": [
-                    {"$addFields": {
-                        typing_field: {
-                            "$filter": {
-                                "input": f"${typing_field}",
-                                "as": "result",
-                                "cond": {"$ne": ["$$result.type", TypingMethod.CGMLST.value]},
+        pipeline.extend(
+            [
+                {
+                    "$lookup": {
+                        "from": db.sample_collection.name,
+                        "localField": included_samples_field,
+                        "foreignField": sample_fields["sample_id"].alias,
+                        "as": included_samples_field,
+                        "pipeline": [
+                            {
+                                "$addFields": {
+                                    typing_field: {
+                                        "$filter": {
+                                            "input": f"${typing_field}",
+                                            "as": "result",
+                                            "cond": {
+                                                "$ne": [
+                                                    "$$result.type",
+                                                    TypingMethod.CGMLST.value,
+                                                ]
+                                            },
+                                        }
+                                    },
+                                    sample_fields["major_specie"].alias: {
+                                        "$first": f"${sample_fields['species_prediction'].alias}"
+                                    },
+                                }
                             }
-                        },
-                        sample_fields["major_specie"].alias: {"$first": f"${sample_fields['species_prediction'].alias}"}
-                    }}
-                ]
-            }
-        }])
+                        ],
+                    }
+                }
+            ]
+        )
     async for group in db.sample_group_collection.aggregate(pipeline):
         # compute tags for samples if samples are included
         if lookup_samples:
@@ -92,7 +106,7 @@ async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDa
         id=str(inserted_id),
         created_at=ObjectId(inserted_id).generation_time,
         modified_at=ObjectId(inserted_id).generation_time,
-        **group_record.dict(by_alias=True)
+        **group_record.dict(by_alias=True),
     )
     return db_obj
 
@@ -106,7 +120,9 @@ async def delete_group(db: Database, group_id: str) -> bool:
     return doc.deleted_count
 
 
-async def update_group(db: Database, group_id: str, group_record: GroupInCreate) -> GroupInfoDatabase:
+async def update_group(
+    db: Database, group_id: str, group_record: GroupInCreate
+) -> GroupInfoDatabase:
     """Update information of group."""
     fields = GroupInfoDatabase.__fields__
     param_modified = fields["modified_at"].alias
@@ -131,9 +147,7 @@ async def update_group(db: Database, group_id: str, group_record: GroupInCreate)
 async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     """Create a new collection document."""
     # cast input data as the type expected to insert in the database
-    db_obj = await db.sample_group_collection.insert_one(
-        image.dict(by_alias=True)
-    )
+    db_obj = await db.sample_group_collection.insert_one(image.dict(by_alias=True))
     return db_obj
 
 
