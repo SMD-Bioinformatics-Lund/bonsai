@@ -101,4 +101,4 @@ def perform_login(user):
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    return redirect(url_for("public.index"))
+    return redirect(url_for("login.login_page"))
