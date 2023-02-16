@@ -31,7 +31,7 @@ class LoginUser(UserMixin):
 @login_bp.route("/login")
 def login_page():
     """Landing page view."""
-    return render_template("login.html", version=VERSION)
+    return render_template("login.html", title="Login", version=VERSION)
 
 
 @login_bp.route("/logout")

@@ -25,6 +25,7 @@ def add_sample_to_basket():
             samples_in_basket + samples_to_add}.values())
         return f"Added {', '.join(samples_in_basket)}", 200
 
+
 @api_bp.route("/api/basket/remove", methods=["POST"])
 @login_required
 def remove_sample_from_basket():

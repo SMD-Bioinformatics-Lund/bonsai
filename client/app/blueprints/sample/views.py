@@ -59,7 +59,7 @@ def sample(sample_id):
                 # update object from database
                 pred_res["result"]["genes"] = genes
                 pred_res["result"]["mutations"] = mutations
-    return render_template("sample.html", sample=sample, is_filtered=bool(group_id))
+    return render_template("sample.html", sample=sample, title=sample_id, is_filtered=bool(group_id))
 
 
 @samples_bp.route("/samples/<sample_id>/comment", methods=["POST"])
@@ -98,7 +98,7 @@ def resistance_report(sample_id):
     """Samples view."""
     token = TokenObject(**current_user.get_id())
     sample = get_sample_by_id(token, sample_id=sample_id)
-    return render_template("resistance_report.html", sample=sample)
+    return render_template("resistance_report.html", title=f"{sample_id} resistance", sample=sample)
 
 
 @samples_bp.route("/cluster/", methods=['GET', 'POST'])
