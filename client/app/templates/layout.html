@@ -5,32 +5,35 @@
     {{ navbar(current_user) }}
 {% endblock navbar %}
 
-<script>
-    function removeSampleFromBasket(btn) {
-        // remove sample id from basket
-        // update basket counter by making request to front-end api, 
-        const body = {
-            sampleId: btn.parentElement.querySelector('h5').innerText
-        }
-        fetch(`${window.origin}/api/basket/remove`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        }).then(response => {
-            // remove card from list
-            btn.parentElement.parentElement.remove()
-            // decrease count
-            const counter = document.querySelector("#samples-in-basket-counter")
-            const num = Number(counter.innerText)
-            if ( num < 1 ) {
-                document.querySelector("#samples-in-basket-badge").hidden = true
-            } else {
-                counter.innerText = num - 1
+{% block scripts %}
+    {{ super() }}
+    <script>
+        function removeSampleFromBasket(btn) {
+            // remove sample id from basket
+            // update basket counter by making request to front-end api, 
+            const body = {
+                sampleId: btn.parentElement.querySelector('h6').id
             }
-        })
-    }
-</script>
+            fetch(`${window.origin}/api/basket/remove`, {
+                method: "POST",
+                body: JSON.stringify(body),
+                headers: {
+                    'Accept': 'application/json', 
+                    'Content-Type': 'application/json' 
+                },
+                credentials: 'same-origin'
+            }).then(response => {
+                // remove card from list
+                btn.parentElement.parentElement.remove()
+                // decrease count
+                const counter = document.querySelector("#samples-in-basket-counter")
+                const num = Number(counter.innerText)
+                if ( num < 1 ) {
+                    document.querySelector("#samples-in-basket-badge").hidden = true
+                } else {
+                    counter.innerText = num - 1
+                }
+            })
+        }
+    </script>
+{% endblock scripts %}

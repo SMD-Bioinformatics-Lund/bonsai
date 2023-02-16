@@ -2,8 +2,8 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-success bg-opacity-25">
     <div class="container-fluid">
     <a href="/" class="navbar-brand">
-        <span class="bg-secondary rounded-5" style="display: block; --bs-bg-opacity: .5;">
-            <img src="{{url_for('public.favicon', filename='android-chrome-512x512.png')}}" alt="Logo", width="80" height="80" >
+        <span class="rounded-5 d-block p-1" style="background-color: #f7efe5;">
+            <img src="{{url_for('public.static', filename='bonsai_logo_sm.png')}}" alt="Logo", width="80" height="70" >
         </span>
     </a>
     <button class="navbar-toggler" 
@@ -57,34 +57,52 @@
 
 {% macro sample_basket_offcanvas() %}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">Samples</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body">
-    <div>
-        {% for sample in session.get('basket', []) %}
-            <div class="card mb-2">
-                <div class="card-body">
-                    <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
-                        <i class="bi bi-trash3-fill"></i>
+    {% set samples = session.get('basket', [])%} 
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">
+            {% if samples | length > 0 %}
+                Samples
+            {% else %}
+                Your basket is empty
+            {% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="overflow-auto" style="max-height: 60vh;">
+            {# Create sample cards in basket #}
+            {% for sample in samples %}
+                <div class="card mb-2 rounded-1 p-0">
+                    <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
+                        <a class="text-muted" href="{{ url_for('samples.sample', sample_id=sample) }}">
+                            <h6 id="{{ sample }}" class="text-uppercase fw-bold text-muted my-0 py-0">{{ sample }}</h6>
+                        </a>
+                        <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-auto">
+                <button class="btn btn-success" disabled>Cluster</button>
+            </div>
+            <div class="col-auto">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"  {% if samples | length == 0 %} disabled {% endif %}>
+                        Analysis
                     </button>
-                    <h5 class="card-title"><a href="{{ url_for('samples.sample', sample_id=sample) }}">{{ sample }}</a></h5>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Resistance</a></li>
+                        <li><a class="dropdown-item" href="#">Virulence</a></li>
+                        <li><a class="dropdown-item" href="#">Epidemiology</a></li>
+                    </ul>
                 </div>
             </div>
-        {% endfor %}
+        </div>
     </div>
-    <div class="dropdown mt-3">
-      <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-        Analysis
-      </button>
-      <ul class="dropdown-menu">
-        <li><a class="dropdown-item" href="#">Resistance</a></li>
-        <li><a class="dropdown-item" href="#">Virulence</a></li>
-        <li><a class="dropdown-item" href="#">Epidemiology</a></li>
-      </ul>
-    </div>
-  </div>
 </div>
 {% endmacro %}
 
