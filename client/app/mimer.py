@@ -178,3 +178,19 @@ def remove_comment_from_sample(headers, **kwargs):
     resp = requests.delete(url, headers=headers)
     resp.raise_for_status()
     return resp.json()
+
+@api_authentication
+def cluster_samples(headers, **kwargs):
+    """Cluster samples on selected typing result."""
+    typing_method = kwargs.get("typing_method", "cgmslt")
+    data = {
+        "sampleIds": kwargs.get("sample_ids"),
+        "method": kwargs.get("method", "single"),
+        "distance": kwargs.get("distance", "jaccard")
+    }
+    # conduct query
+    url = f'{current_app.config["MIMER_API_URL"]}/cluster/{typing_method}/'
+    print(data)
+    resp = requests.post(url, headers=headers, json=data)
+    resp.raise_for_status()
+    return resp.json()

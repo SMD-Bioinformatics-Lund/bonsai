@@ -1,6 +1,6 @@
 """Declaration of views for samples"""
-from flask import Blueprint, render_template, request, redirect, url_for
-from app.mimer import cgmlst_cluster_samples, get_samples_by_id, TokenObject
+from flask import Blueprint, render_template, request, redirect, url_for, current_app
+from app.mimer import cluster_samples, get_samples_by_id, TokenObject
 from flask_login import login_required, current_user
 from typing import Dict
 from pydantic import BaseModel
@@ -106,6 +106,28 @@ def tree():
         token = TokenObject(**current_user.get_id())
         samples = get_samples_by_id(token, sample_ids=samples["sampleId"])
         metadata = gather_metadata(samples)
+        data = dict(nwk=newick, **metadata.dict())
+        return render_template("ms_tree.html", title="cgMLST Cluster", data=json.dumps(data))
+    return url_for('public.index')
+
+
+@cluster_bp.route("/cluster_samples", methods=['GET', 'POST'])
+@login_required
+def cluster_and_display_tree():
+    """Cluster samples and display results in a view."""
+    if request.method == 'POST':
+        sample_ids = [
+            sample['sampleId'] for sample 
+            in json.loads(request.form.get('sampleIds', ""))
+        ]
+        token = TokenObject(**current_user.get_id())
+        # trigger clustering on api
+        newick = cluster_samples(token, sample_ids=sample_ids, typing_method="cgmlst")
+
+        # get metadata
+        samples = get_samples_by_id(token, sample_ids=sample_ids)
+        metadata = gather_metadata(samples)
+        # query for sample metadata
         data = dict(nwk=newick, **metadata.dict())
         return render_template("ms_tree.html", title="cgMLST Cluster", data=json.dumps(data))
     return url_for('public.index')
