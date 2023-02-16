@@ -181,3 +181,9 @@ def register_filters(app):
         if isinstance(num, (int, float)):
             num = "{:,}".format(num)
         return num
+
+    @app.template_filter()
+    def has_same_analysis_profile(samples):
+        """Check if all samples from session cache have the same analysis profile."""
+        profiles = [sample["profile"] for sample in samples]
+        return len(set(profiles)) == 1

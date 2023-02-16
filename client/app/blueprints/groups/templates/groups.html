@@ -102,7 +102,12 @@
                 await event.complete
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
-                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
+                sessionStorage.setItem(
+                    "selectedSamples", 
+                    JSON.stringify(
+                        this.get(this.getSelection()).map(row => {return {sampleId: row.sampleId, profile: row.profile}}) 
+                    )
+                );
             }
         },
     }
@@ -129,7 +134,7 @@
     function addSelctedSamplesToBasket(btn) {
         // add selected samples from table to session storage
         const body = {
-            sampleId: JSON.parse(sessionStorage.getItem("selectedSamples"))
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
         }
         fetch(`${window.origin}/api/basket/add`, {
             method: "POST",
