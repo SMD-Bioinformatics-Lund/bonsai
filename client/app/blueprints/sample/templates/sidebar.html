@@ -3,7 +3,7 @@
 
 {% macro comment_area(sample) %}
 <div id="comment-container" class="overflow-auto">
-    {% if sample.comments | length > 1 %}
+    {% if sample.comments | length > 0 %}
         {% for comment in sample.comments %}
             {% if comment.displayed %}
             <div class="comment-box m-2 p-1 bg-white shadow-sm rounded">
