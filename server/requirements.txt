@@ -1,9 +1,1 @@
-motor
-fastapi[all]
-uvicorn[standard]
-python-jose[cryptography]
-passlib
-ldap3
-pandas
-scipy==1.8.1
-scikit-bio
+-e .

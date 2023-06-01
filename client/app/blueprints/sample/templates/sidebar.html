@@ -11,7 +11,7 @@
                     <button class="float-end float-top btn btn-sm btn-link" aria-label="Remove" type="submit"><i class="bi bi-trash3"></i></button>
                 </form>
                 <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
-                <span class="text-sm text-muted">- {{ comment.username }}, {{ comment.createdAt | strftime }}</span>
+                <span class="text-sm text-muted">- {{ comment.username }}, {{ comment.created_at | strftime }}</span>
             </div>
             {% endif %}
         {% endfor %}
@@ -81,7 +81,7 @@
             </a>
         </li>
         <li class="nav-item mb-2">
-            <a href={{ url_for('samples.resistance_report', sample_id=sample.sampleId) }}>
+            <a href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
                 <i class="bi bi-bar-chart"></i>
                 Resistance
             </a>

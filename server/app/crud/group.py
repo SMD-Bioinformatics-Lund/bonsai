@@ -2,8 +2,8 @@
 import logging
 from datetime import datetime
 from multiprocessing.sharedctypes import Value
-from random import sample
 from typing import Any, Dict, List
+from pymongo import ASCENDING
 
 from bson.objectid import ObjectId
 
@@ -24,8 +24,6 @@ def group_document_to_db_object(document: Dict[str, Any]) -> GroupInfoDatabase:
     inserted_id = document["_id"]
     db_obj = GroupInfoDatabase(
         id=str(inserted_id),
-        created_at=ObjectId(inserted_id).generation_time,
-        modified_at=ObjectId(inserted_id).generation_time,
         **document,
     )
     return db_obj
@@ -46,28 +44,28 @@ async def get_group(
     """Get collections from database."""
     group_fields = GroupInfoDatabase.__fields__
     sample_fields = SampleSummary.__fields__
-    included_samples_field = group_fields["included_samples"].alias
+    included_samples_field = group_fields["included_samples"].name
 
     # make aggregation pipeline
     pipeline = [
-        {"$match": {group_fields["group_id"].alias: group_id}},
+        {"$match": {group_fields["group_id"].name: group_id}},
     ]
     if lookup_samples:
-        typing_field = sample_fields["typing_result"].alias
+        typing_field = sample_fields["typing_result"]
         pipeline.extend(
             [
                 {
                     "$lookup": {
                         "from": db.sample_collection.name,
                         "localField": included_samples_field,
-                        "foreignField": sample_fields["sample_id"].alias,
+                        "foreignField": sample_fields["sample_id"].name,
                         "as": included_samples_field,
                         "pipeline": [
                             {
                                 "$addFields": {
-                                    typing_field: {
+                                    typing_field.name: {
                                         "$filter": {
-                                            "input": f"${typing_field}",
+                                            "input": f"${typing_field.name}",
                                             "as": "result",
                                             "cond": {
                                                 "$ne": [
@@ -77,10 +75,13 @@ async def get_group(
                                             },
                                         }
                                     },
-                                    sample_fields["major_specie"].alias: {
-                                        "$first": f"${sample_fields['species_prediction'].alias}"
+                                    sample_fields["major_specie"].name: {
+                                        "$first": f"${sample_fields['species_prediction'].name}"
                                     },
                                 }
+                            }, 
+                            {
+                                "$sort": { "created_at": ASCENDING },
                             }
                         ],
                     }
@@ -93,20 +94,17 @@ async def get_group(
             for sample in group[included_samples_field]:
                 # cast as static object
                 tags: TAG_LIST = compute_phenotype_tags(SampleSummary(**sample))
-                sample["tags"] = tags
         return group_document_to_db_object(group)
 
 
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:
     """Create a new group document."""
     # cast input data as the type expected to insert in the database
-    doc = await db.sample_group_collection.insert_one(group_record.dict(by_alias=True))
+    doc = await db.sample_group_collection.insert_one(group_record.dict())
     inserted_id = doc.inserted_id
     db_obj = GroupInfoDatabase(
         id=str(inserted_id),
-        created_at=ObjectId(inserted_id).generation_time,
-        modified_at=ObjectId(inserted_id).generation_time,
-        **group_record.dict(by_alias=True),
+        **group_record.dict(),
     )
     return db_obj
 
@@ -114,7 +112,7 @@ async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDa
 async def delete_group(db: Database, group_id: str) -> bool:
     """Delete group with group_id from database."""
     gid_filed = GroupInfoDatabase.__fields__["group_id"]
-    doc = await db.sample_group_collection.delete_one({gid_filed.alias: group_id})
+    doc = await db.sample_group_collection.delete_one({gid_filed: group_id})
     if doc.deleted_count == 0:
         raise EntryNotFound(group_id)
     return doc.deleted_count
@@ -125,14 +123,14 @@ async def update_group(
 ) -> GroupInfoDatabase:
     """Update information of group."""
     fields = GroupInfoDatabase.__fields__
-    param_modified = fields["modified_at"].alias
+    param_modified = fields["modified_at"]
     gid_filed = fields["group_id"]
     # update info in database
     update_obj = await db.sample_group_collection.update_one(
-        {gid_filed.alias: group_id},
+        {gid_filed: group_id},
         {
             "$set": {param_modified: datetime.now()},
-            "$set": group_record.dict(by_alias=True),
+            "$set": group_record.dict(),
         },
     )
 
@@ -147,7 +145,7 @@ async def update_group(
 async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     """Create a new collection document."""
     # cast input data as the type expected to insert in the database
-    db_obj = await db.sample_group_collection.insert_one(image.dict(by_alias=True))
+    db_obj = await db.sample_group_collection.insert_one(image.dict())
     return db_obj
 
 
@@ -155,11 +153,11 @@ async def append_sample_to_group(db: Database, sample_id: str, group_id: str) ->
     """Create a new collection document."""
     sample_obj = await get_sample(db, sample_id)
     fields = UpdateIncludedSamples.__fields__
-    param_included_sample = fields["included_samples"].alias
-    param_modified = fields["modified_at"].alias
+    param_included_sample = fields["included_samples"]
+    param_modified = fields["modified_at"]
     gid_filed = GroupInfoDatabase.__fields__["group_id"]
     update_obj = await db.sample_group_collection.update_one(
-        {gid_filed.alias: group_id},
+        {gid_filed: group_id},
         {
             "$set": {param_modified: datetime.now()},
             "$addToSet": {

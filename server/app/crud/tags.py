@@ -1,6 +1,6 @@
 """Functions for computing tags."""
 from multiprocessing.sharedctypes import Value
-from ..models.phenotype import PhenotypeResult, PhenotypeType
+from ..models.phenotype import ElementTypeResult, ElementType
 from ..models.sample import SampleInDatabase
 from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag
 
@@ -9,10 +9,10 @@ from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag
 def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
-        pred for pred in sample.phenotype_result if pred.type == PhenotypeType.VIR.value
+        pred for pred in sample.phenotype_result if pred.type == ElementType.VIR.value
     ]
     if len(virs) > 0:
-        vir_result: PhenotypeResult = virs[0].result
+        vir_result: ElementTypeResult = virs[0].result
         has_lukS = any(gene.name == "lukS-PV" for gene in vir_result.genes)
         has_lukF = any(gene.name == "lukF-PV" for gene in vir_result.genes)
         # classify PVL

@@ -1,11 +1,11 @@
 """Routes related to collections of samples."""
 from typing import Dict, List
 
-from pydantic import BaseModel, Field, FileUrl
+from pydantic import BaseModel, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
 from .sample import SampleSummary
-from .phenotype import PhenotypeType
+from .phenotype import ElementType
 
 
 FilterParams = List[Dict[str, str | int | float],]
@@ -14,7 +14,7 @@ FilterParams = List[Dict[str, str | int | float],]
 class IncludedSamples(ModifiedAtRWModel):
     """Object for keeping track of included samples in a group"""
 
-    included_samples: List[str | SampleSummary] = Field(..., alias="includedSamples")
+    included_samples: List[str | SampleSummary]
 
     class Config:
         json_encoders = {ObjectId: str}
@@ -29,8 +29,8 @@ class UpdateIncludedSamples(IncludedSamples):
 class GroupBase(IncludedSamples):
     """Basic specie information."""
 
-    group_id: str = Field(..., alias="groupId")
-    display_name: str = Field(..., alias="displayName")
+    group_id: str
+    display_name: str
 
 
 class OverviewTableColumn(BaseModel):
@@ -42,13 +42,13 @@ class OverviewTableColumn(BaseModel):
     label: str
     sortable: bool = Field(False)
     filterable: bool = Field(False)
-    filter_type: str | None = Field(None, alias="filterType")
-    filter_param: str | None = Field(None, alias="filterParam")
+    filter_type: str | None = Field(None)
+    filter_param: str | None = Field(None)
 
 
 class GroupInCreate(GroupBase):
-    table_columns: List[OverviewTableColumn] = Field(..., alias="tableColumns")
-    validated_genes: Dict[PhenotypeType, List[str]] = Field(..., alias="validatedGenes")
+    table_columns: List[OverviewTableColumn] = Field(...)
+    validated_genes: Dict[ElementType, List[str]] | None = Field({})
 
 
 class GroupInfoDatabase(DBModelMixin, GroupInCreate):

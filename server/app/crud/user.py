@@ -36,7 +36,7 @@ async def get_user(db: Database, username: str) -> UserOutputDatabase:
 
     inserted_id = db_obj["_id"]
     user_obj = UserInputDatabase(
-        id=str(inserted_id), created_at=ObjectId(inserted_id).generation_time, **db_obj
+        id=str(inserted_id), **db_obj
     )
     return user_obj
 
@@ -49,12 +49,11 @@ async def create_user(db: Database, user: UserInputCreate) -> UserOutputDatabase
         hashed_password=hashed_password, **user.dict()
     )
     # store data in database
-    doc = await db.user_collection.insert_one(user_db_fmt.dict(by_alias=True))
+    doc = await db.user_collection.insert_one(user_db_fmt.dict())
     inserted_id = doc.inserted_id
     db_obj = UserInputDatabase(
         id=str(inserted_id),
-        created_at=ObjectId(inserted_id).generation_time,
-        **user_db_fmt.dict(by_alias=True),
+        **user_db_fmt.dict(),
     )
     return db_obj
 

@@ -5,7 +5,7 @@ from pymongo import ASCENDING, DESCENDING, GEOSPHERE, TEXT
 INDEXES = {
     "sample_group": [
         {
-            "definition": [("groupId", ASCENDING)],
+            "definition": [("group_id", ASCENDING)],
             "options": {
                 "name": "sample_group",
                 "background": True,
@@ -15,7 +15,7 @@ INDEXES = {
     ],
     "sample": [
         {
-            "definition": [("sampleId", ASCENDING)],
+            "definition": [("sample_id", ASCENDING), ("created_at", ASCENDING)],
             "options": {
                 "name": "sample_sample_id",
                 "background": True,
@@ -23,7 +23,7 @@ INDEXES = {
             },
         },
         {
-            "definition": [("addPhenotypePrediction.type", ASCENDING)],
+            "definition": [("add_phenotype_prediction.type", ASCENDING)],
             "options": {
                 "name": "sample_add_phenotype_prediction",
                 "background": True,

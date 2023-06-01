@@ -26,7 +26,7 @@
         Pipeline
     </a>
 </h5>
-{% set meta=sample["runMetadata"]%}
+{% set meta=sample["run_metadata"]%}
 <dl class="row">
     <dt class="col-sm-2">Pipeline</dt>
     <dd class="col-sm-2">{{ meta.run.pipeline }}</dd>
@@ -37,7 +37,7 @@
 </dl>
 <dl class="row">
     <dt class="col-sm-2">Profile</dt>
-    <dd class="col-sm-2">{{ meta.run.analysisProfile }}</dd>
+    <dd class="col-sm-2">{{ meta.run.analysis_profile }}</dd>
 </dl>
 <h5><i class="bi bi-server me-2"></i>Databases</h5>
 <dl class="row">
@@ -54,7 +54,7 @@
     <div class="card-body">
         <div class="p-2">
             <strong>ST</strong>
-            {{ mlst.sequenceType }}
+            {{ mlst.sequence_type }}
         </div>
         <div class="p-2">
             <table class="table table-sm">
@@ -121,7 +121,7 @@
             </tr>
             <tr>
                 <th scope="row">N Novel Alleles</th>
-                <td>{{ result.result.nNovel | fmt_number }}</td>
+                <td>{{ result.result.n_novel | fmt_number }}</td>
             </tr>
             <tr>
                 <th scope="row">N Missing Alleles</th>
@@ -139,16 +139,16 @@
         {{ sidebar(sample) }}
         <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
             <div id="sample-id-heading" class="pt-4">
-                <h1>{{sample.sampleId}}</h1>
+                <h1>{{sample.sample_id}}</h1>
                 <dl class="row gx-5>
                     <dt class="col-xs">Analysis date</dt>
-                    <dd class="col-xs">{{sample["createdAt"] | strftime}}</dd>
+                    <dd class="col-xs">{{sample["created_at"] | strftime}}</dd>
                 </dl>
             </div>
             <h4>Epidemiological Typing</h4>
             <hr>
             <div id="epi-typing-heading" class="row justify-content-md-center">
-            {% for res in sample.typingResult %}
+            {% for res in sample.typing_result %}
                 {% if res.type == "mlst" %}
                     <div class="col-md-auto">
                     {{ mlst_card(res.result) }}
@@ -159,7 +159,7 @@
             <h4>Phenotype prediction</h4>
             <hr>
             <div id="phenotype-heading" class="row justify-content-md-center">
-            {% for res in sample.phenotypeResult %}
+            {% for res in sample.phenotype_result %}
                 {% if res.type == "antimicrobial_resistance" %}
                     {% set n_res=res.result.phenotypes.resistant | length %}
                     {% if is_filtered and n_res == 0 %}
@@ -178,7 +178,7 @@
             <h4>Virulence</h4>
             <hr>
             <div id="virulence-heading" class="row justify-content-md-center">
-            {% for res in sample.phenotypeResult %}
+            {% for res in sample.phenotype_result %}
                 {% if res.type == "virulence" %}
                     {% set n_genes=res.result.genes | length %}
                     {% if is_filtered and n_genes == 0 %}
@@ -202,7 +202,7 @@
                     </div>
                 {% endfor %}
 
-                {% for res in sample.typingResult %}
+                {% for res in sample.typing_result %}
                     {% if res.type == "cgmlst" %}
                         <div class="col-md-auto">
                         {{ cgmlst_qc_card(res) }}

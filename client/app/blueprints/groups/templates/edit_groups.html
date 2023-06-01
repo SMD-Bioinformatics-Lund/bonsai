@@ -60,7 +60,7 @@
     <h1>Create new sample group</h1>
     <p>Create new or edit existing sample groups.</p>
 {% else %}
-    <h1>Edit <i>{{group.displayName}}</i> group</h1>
+    <h1>Edit <i>{{group.display_name}}</i> group</h1>
     <p>Edit variables in group.</p>
 {% endif %}
 {# Extract or set dummy variables to populate the fields #}
@@ -71,9 +71,9 @@
     {% set included_samples = [] %}
 {% else %}
     {% set group_id = group.groupId %}
-    {% set display_name = group.displayName %}
-    {% set table_columns = group.tableColumns %}
-    {% set included_samples = group.includedSamples %}
+    {% set display_name = group.display_name %}
+    {% set table_columns = group.table_columns %}
+    {% set included_samples = group.included_samples %}
 {% endif %}
 <div class="row g-3">
     <div class="col-auto">
@@ -164,7 +164,7 @@
                 <div class="rounded-1 p-2 bg-light">
                     <h6>{{ name }}</h6>
                     <ul id="{{value}}-list" class="list-group validated-genes-list">
-                    {% for gene in group.validatedGenes.get(value, []) %}
+                    {% for gene in group.validated_genes.get(value, []) %}
                         <li key={{gene}} class="list-group-item list-group-item-action d-flex justify-content-between">
                             {{ gene }}
                             <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
@@ -208,7 +208,7 @@
     {% else %}
         <div class="col-auto">
             <form method="POST" onsubmit="updateGroup(event)">
-                <input type="text" name="input-group-id" value="{{group.groupId}}" hidden>
+                <input type="text" name="input-group-id" value="{{group.group_id}}" hidden>
                 <input type="text" name="input-update-group" value="" hidden>
                 <button class="btn btn-success">
                     <i class="bi bi-save"></i>
@@ -218,7 +218,7 @@
         </div>
         <div class="col-auto">
             <form method="POST">
-                <input type="text" name="input-remove-group" value="{{group.groupId}}" hidden>
+                <input type="text" name="input-remove-group" value="{{group.group_id}}" hidden>
                 <button type="submit" class="btn btn-danger">
                     <i class="bi bi-trash3-fill"></i>
                     Delete group
@@ -243,15 +243,15 @@
                 </span>
             </a>
             {% for group in groups %}
-                <a class="list-group-item list-group-item-action py-3 lh-tight border-end {% if selected_group == group.groupId %}active{% endif %}" 
-                   href="{{ url_for('groups.edit_groups', group_id=group.groupId) }}"
+                <a class="list-group-item list-group-item-action py-3 lh-tight border-end {% if selected_group == group.group_id %}active{% endif %}" 
+                   href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}"
                    {% if selected_group == group.groupId %} aria-current="true"{% endif %}
                 >
                     <div class="d-flex w-100 align-items-center justify-content-between">
-                        <strong class="mb-1">{{group.displayName}}</strong>
-                        <small>{{group.modifiedAt | strftime }}</small>
+                        <strong class="mb-1">{{group.display_name}}</strong>
+                        <small>{{group.modified_at | strftime }}</small>
                     </div>
-                    <span class="badge bg-dark">{{group.includedSamples | length}} samples</span>
+                    <span class="badge bg-dark">{{group.included_samples | length}} samples</span>
                 </a>
             {% endfor %}
             </div>
@@ -262,7 +262,7 @@
                 {{ create_or_edit_group(None) }}
             {% else %}
                 {% for group in groups %}
-                    {% if selected_group == group.groupId %}
+                    {% if selected_group == group.group_id %}
                         {{ create_or_edit_group(group) }}
                     {% endif %}
                 {% endfor %}

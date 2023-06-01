@@ -13,6 +13,18 @@ class SoupType(Enum):
     SW = "software"
 
 
+class SequencingPlatform(Enum):
+    ILLUMINA = "illumina"
+    ION_TORRENT = "ion torrent"
+    ONP = "oxford nanopore"
+    PACBIO = "pacbio"
+
+
+class SequencingType(Enum):
+    SINGLE_END = "SE"
+    PAIRED_END = "PE"
+
+
 class SoupVersion(RWModel):
     """Version of Software of Unknown Provenance."""
 
@@ -27,9 +39,12 @@ class RunInformation(RWModel):
     pipeline: str
     version: str
     commit: str
-    analysis_profile: str = Field(..., alias="analysisProfile")
-    configuration_files: List[str] = Field(..., alias="configurationFiles")
-    run: str
+    analysis_profile: str
+    configuration_files: List[str]
+    workflow_name: str
+    sample_name: str
+    sequencing_platform: SequencingPlatform
+    sequencing_type: SequencingType
     command: str
     date: datetime
 

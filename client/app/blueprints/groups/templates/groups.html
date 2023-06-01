@@ -54,16 +54,26 @@
     // define formatters
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
     w2utils.formatters['sampleid']  = formatSampleId
+    const apiURL = "{{ config.MIMER_API_URL }}"
+    const samples = {{ samples | tojson }}
 
     let tableConfig = {
         grid: {
             name: 'grid',
             box: '#data-table',
+            //url: `${apiURL}/samples`,
+            //dataType: 'HTTP',
+            //httpHeaders: {
+            //    'Authorization': "Bearer {{token}}",
+            //    'Content-Type': 'application/json'
+            //},
             show: {
                 footer: false,
                 toolbar: true,
                 selectColumn: true,
+                lineNumbers: false,
             },
+            //limit: 100,
             multiSelect: true,
             liveSearch: true,
             columns: [
@@ -108,26 +118,40 @@
                         this.get(this.getSelection()).map(row => {return {sampleId: row.sampleId, profile: row.profile}}) 
                     )
                 );
-            }
+            },
+            //onLoad(event) {
+            //    //event.preventDefault()
+            //    let data = w2utils.clone(event.detail.data)
+            //    let fmtRecords = data.records.map( sample => {
+            //        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+            //        columns["recid"] = sample["sampleId"]
+            //        return columns
+            //    })
+            //    event.detail.records
+            //    //grid.records.push(...fmtRecords)
+            //    //grid.refresh()
+            //}
         },
     }
     // setup grid
     let grid = new w2grid(tableConfig.grid)
-    
-    // get data
-    const testSamples = {{ samples | tojson }}
-    grid.records = testSamples.map(
-        sample => {
-            let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-            columns["recid"] = sample["sampleId"]
-            return columns
-    }) 
-
+   
+    // append samples to grid
+    grid.records = samples.records.map( sample => {
+        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+        columns["recid"] = sample["sampleId"]
+        return columns
+    })
     window.getSelectedRows = () => grid.getSelection()
     window.action = function (method, param1, param2, param3) {
-    grid[method](param1, param2, param3)
-}
+        grid[method](param1, param2, param3)
+    }
+    window.refreshGrid = function(auto) {
+        grid.autoLoad = auto
+        grid.skip(0)
+    }
     grid.render()
+    refreshGrid(true)
 </script>
 
 <script>
@@ -154,10 +178,10 @@
     <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
         <div class="card-body">
             <h5 class="card-title text-secondary">
-                {{ group.displayName }}
-                <span class="badge rounded-pill bg-success">{{ group.includedSamples | length }} isolates</span>
+                {{ group.display_name }}
+                <span class="badge rounded-pill bg-success">{{ group.included_samples | length }} isolates</span>
             </h5>
-            <p class="card-text">Last update: <em>{{ group.modifiedAt | strftime }}</em></p>
+            <p class="card-text">Last update: <em>{{ group.modified_at | strftime }}</em></p>
         </div>
     </a>
 </div>

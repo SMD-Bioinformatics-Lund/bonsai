@@ -7,7 +7,7 @@ export function formatSampleId(val, params, data) {
     return element.outerHTML
 }
 
-export const formatTaxonomicName = (val, params) => {
+export const formatTaxonomicName = (val, params, data) => {
     let element = document.createElement('span')
     element.className = 'fw-light fst-italic'
     element.innerText = val

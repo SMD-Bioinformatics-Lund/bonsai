@@ -78,8 +78,8 @@
                         R {{ mut.phenotypes | length }}
                     </span>
                 </td>
-                <td>{{ mut.refCodon | nt_to_aa }}<i class="bi bi-arrow-right mx-2"></i>{{ mut.altCodon | nt_to_aa }}</td>
-                <td>{{ mut.variantType }}</td>
+                <td>{{ mut.ref_codon | nt_to_aa }}<i class="bi bi-arrow-right mx-2"></i>{{ mut.altCodon | nt_to_aa }}</td>
+                <td>{{ mut.variant_type }}</td>
                 <td>{{ ", ".join(mut.genes) }}</td>
                 <td>{{ mut.depth }}</td>
             </tr>

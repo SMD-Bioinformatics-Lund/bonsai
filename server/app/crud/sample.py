@@ -2,6 +2,8 @@
 import logging
 from datetime import datetime
 from typing import List
+import sourmash
+from pathlib import Path
 
 from bson.objectid import ObjectId
 
@@ -18,6 +20,7 @@ from ..models.sample import (
 from ..models.typing import CGMLST_ALLELES
 from ..models.base import RWModel
 from .errors import EntryNotFound, UpdateDocumentError
+from app import config
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -47,7 +50,6 @@ async def get_samples(
         inserted_id = samp["_id"]
         sample = SampleInDatabase(
             id=str(inserted_id),
-            created_at=ObjectId(inserted_id).generation_time,
             **samp,
         )
         # TODO replace with aggregation pipeline
@@ -64,16 +66,14 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
         in_collections=[], **sample.dict()
     )
     # store data in database
-    doc = await db.sample_collection.insert_one(sample_db_fmt.dict(by_alias=True))
+    doc = await db.sample_collection.insert_one(sample_db_fmt.dict())
     # print(sample_db_fmt.dict(by_alias=True))
 
     # create object representing the dataformat in database
     inserted_id = doc.inserted_id
     db_obj = SampleInDatabase(
         id=str(inserted_id),
-        created_at=ObjectId(inserted_id).generation_time,
-        modified_at=ObjectId(inserted_id).generation_time,
-        **sample_db_fmt.dict(by_alias=True),
+        **sample_db_fmt.dict(),
     )
     return db_obj
 
@@ -81,7 +81,7 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
 async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
     """Get sample with sample_id."""
     db_obj: SampleInCreate = await db.sample_collection.find_one(
-        {"sampleId": sample_id}
+        {"sample_id": sample_id}
     )
 
     if db_obj is None:
@@ -90,8 +90,6 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
     inserted_id = db_obj["_id"]
     sample_obj = SampleInDatabase(
         id=str(inserted_id),
-        created_at=ObjectId(inserted_id).generation_time,
-        modified_at=ObjectId(inserted_id).generation_time,
         **db_obj,
     )
     return sample_obj
@@ -102,8 +100,8 @@ async def add_comment(
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"].alias
-    param_comment = fields["comments"].alias
+    param_modified = fields["modified_at"]
+    param_comment = fields["comments"]
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
     comment_id = (
@@ -111,12 +109,12 @@ async def add_comment(
     )
     comment_obj = CommentInDatabase(id=comment_id, **comment.dict())
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"].alias: sample_id},
+        {fields["sample_id"]: sample_id},
         {
             "$set": {param_modified: datetime.now()},
             "$push": {
                 param_comment: {
-                    "$each": [comment_obj.dict(by_alias=True)],
+                    "$each": [comment_obj.dict()],
                     "$position": 0,
                 }
             },
@@ -135,12 +133,12 @@ async def hide_comment(
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"].alias
-    param_comment = fields["comments"].alias
+    param_modified = fields["modified_at"]
+    param_comment = fields["comments"]
     # get existing comments for sample to get the next comment id
     print([param_comment, sample_id, comment_id])
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"].alias: sample_id, f"{param_comment}.id": comment_id},
+        {fields["sample_id"]: sample_id, f"{param_comment}.id": comment_id},
         {
             "$set": {
                 param_modified: datetime.now(),
@@ -177,10 +175,10 @@ async def add_location(
 
     # Add location to samples
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"].alias
-    param_location = fields["location"].alias
+    param_modified = fields["modified_at"]
+    param_location = fields["location"]
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"].alias: sample_id},
+        {fields["sample_id"]: sample_id},
         {
             "$set": {
                 param_modified: datetime.now(),
@@ -201,17 +199,17 @@ async def get_typing_profiles(
 ) -> TypingProfileOutput:
     """Get locations from database."""
     pipeline = [
-        {"$project": {"_id": 0, "sampleId": 1, "typingResult": 1}},
-        {"$unwind": "$typingResult"},
+        {"$project": {"_id": 0, "sample_id": 1, "typing_result": 1}},
+        {"$unwind": "$typing_result"},
         {
             "$match": {
                 "$and": [
-                    {"sampleId": {"$in": sample_idx}},
-                    {"typingResult.type": typing_method},
+                    {"sample_id": {"$in": sample_idx}},
+                    {"typing_result.type": typing_method},
                 ]
             }
         },
-        {"$addFields": {"typingResult": "$typingResult.result.alleles"}},
+        {"$addFields": {"typing_result": "$typing_result.result.alleles"}},
     ]
 
     # query database
@@ -227,3 +225,43 @@ async def get_typing_profiles(
         )
         raise EntryNotFound(msg)
     return results
+
+
+def get_samples_similar_to_reference(sample_id: str, min_similarity: float, kmer_size: int = 21, limit: int | None = None):
+    """Get find samples that are similar to reference sample.
+    
+    min_similarity - minimum similarity score to be included
+    
+    """
+
+    # load sourmash index
+    signature_dir = Path(config.GENOME_SIGNATURE_DIR)
+    index_path = signature_dir.joinpath(f"samples.sbt.zip")
+    # ensure that index exist
+    if not index_path.is_file():
+        raise FileNotFoundError(f'Sourmash index does not exist: {index_path}')
+    tree = sourmash.load_file_as_index(str(index_path))
+
+    # load reference sequence
+    query_signature_path = signature_dir.joinpath('samples', f"{sample_id}.sig")
+    if not query_signature_path.is_file():
+        raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
+    query_signature = sourmash.load_one_signature(
+            str(query_signature_path), ksize=kmer_size
+    )
+
+    # query for similar sequences
+    result = tree.search(query_signature, threshold=min_similarity)
+    
+    # read sample information of similar samples
+    samples = []
+    for itr_no, (similarity, found_sig, _) in enumerate(result):
+        # limit the number of samples
+        if limit and limit < itr_no:
+            break
+        # read sample results
+        hit_fname = Path(found_sig.filename)
+        # extract sample id from sample name
+        base_fname = hit_fname.name[:-len(hit_fname.suffix)]
+        samples.append({'sample_id': base_fname, 'similarity': similarity})
+    return samples

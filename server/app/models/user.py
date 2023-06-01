@@ -2,7 +2,7 @@
 
 from typing import List
 
-from pydantic import EmailStr, Field
+from pydantic import EmailStr
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
@@ -11,8 +11,8 @@ class UserBase(RWModel):
     """Base user model"""
 
     username: str
-    first_name: str = Field(..., alias="firstName")
-    last_name: str = Field(..., alias="lastName")
+    first_name: str
+    last_name: str
     email: EmailStr
     disabled: bool = False
     roles: List[str] = []
@@ -32,7 +32,7 @@ class UserInputDatabase(UserBase, ModifiedAtRWModel):
     Includes modified timestamp.
     """
 
-    hashed_password: str = Field(..., alias="hashedPassword")
+    hashed_password: str
 
 
 class UserOutputDatabase(UserBase, DBModelMixin):

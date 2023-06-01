@@ -27,6 +27,6 @@ class QuastQcResult(BaseModel):
 
 
 class QcMethodIndex(RWModel):
-    tool: QcTool
+    software: QcTool
     version: str | None
     result: QuastQcResult

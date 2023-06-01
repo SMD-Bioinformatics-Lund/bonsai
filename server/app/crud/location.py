@@ -50,7 +50,7 @@ async def create_location(
         display_name=location.display_name, location={**location.dict()}
     )
     # store data in database
-    doc = await db.location_collection.insert_one(loc_db_fmt.dict(by_alias=True))
+    doc = await db.location_collection.insert_one(loc_db_fmt.dict())
     # create data representation of inserted object
     inserted_id = doc.inserted_id
     return LocationOutputDatabase(
@@ -66,7 +66,7 @@ async def get_locations_within_bbox(
     """Query database for locations that are within a given bbox."""
     # read field names from data model
     fields = LocationOutputDatabase.__fields__
-    param_location = fields["location"].alias
+    param_location = fields["location"]
     # query database
     cursor = db.location_collection.find(
         {f"{param_location}.coordinates": {"$geoWithin": {"$geometry": bbox.dict()}}}

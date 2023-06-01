@@ -8,7 +8,7 @@ from pydantic import BaseConfig, BaseModel, Field
 class DateTimeModelMixin(BaseModel):
     """Add explicit time stamps to database model."""
 
-    created_at: datetime | None = Field(None, alias="createdAt")
+    created_at: datetime | None = Field(None)
 
 
 class DBModelMixin(DateTimeModelMixin):
@@ -27,7 +27,8 @@ class RWModel(BaseModel):
 class ModifiedAtRWModel(RWModel):
     """Base RW model that keep reocrds of when a document was last modified."""
 
-    modified_at: datetime = Field(datetime.now(), alias="modifiedAt")
+    created_at: datetime = Field(datetime.utcnow())
+    modified_at: datetime = Field(datetime.utcnow())
 
 
 class PyObjectId(ObjectId):

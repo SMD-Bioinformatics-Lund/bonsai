@@ -51,6 +51,7 @@ def cluster_on_allele_profile(
     )
     leaf_names = list(obs.index)
     # calcualte distance matrix
+    raise ValueError(profiles)
     dist_mtrx = pdist(obs, metric=distance_metric.value)
 
     if method == ClusterMethod.NJ:

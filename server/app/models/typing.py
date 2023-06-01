@@ -7,7 +7,28 @@ from pydantic import Field
 
 from .base import RWModel
 
-CGMLST_ALLELES = Dict[str, int | None]
+
+class TypingSoftware(Enum):
+    """Container for software names."""
+
+    CHEWBBACA = "chewbbaca"
+    MLST = "mlst"
+
+
+class ChewbbacaErrors(Enum):
+    """Chewbbaca error codes."""
+
+    PLOT5 = "PLOT5"
+    PLOT3 = "PLOT3"
+    LOTSC = "LOTSC"
+    NIPH = "NIPH"
+    NIPHEM = "NIPHEM"
+    ALM = "ALM"
+    ASM = "ASM"
+    LNF = "LNF"
+
+
+CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors]
 
 
 class ResultMlstBase(RWModel):
@@ -20,14 +41,14 @@ class TypingResultMlst(ResultMlstBase):
     """MLST results"""
 
     scheme: str
-    sequence_type: int | None = Field(None, alias="sequenceType")
+    sequence_type: int | None = Field(None)
 
 
 class TypingResultCgMlst(ResultMlstBase):
     """MLST results"""
 
-    n_novel: int = Field(0, alias="nNovel")
-    n_missing: int = Field(0, alias="nNovel")
+    n_novel: int = Field(0)
+    n_missing: int = Field(0)
 
 
 class TypingMethod(Enum):
