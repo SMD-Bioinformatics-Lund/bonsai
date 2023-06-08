@@ -83,6 +83,8 @@ class SampleBase(ModifiedAtRWModel):
     # comments and non analytic results
     comments: List[CommentInDatabase] = []
     location: str | None = Field(None, description="Location id")
+    # signature file name
+    genome_signature: str | None = Field(None, description="Genome signature name")
 
 
 class SampleInCreate(SampleBase, PipelineResult):

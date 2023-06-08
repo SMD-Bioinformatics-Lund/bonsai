@@ -7,7 +7,8 @@ from pymongo.errors import DuplicateKeyError
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import get_sample, get_samples
+from ..crud.sample import get_sample, get_samples, add_genome_signature_file
+from ..crud.sample import update_sample as crud_update_sample
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
@@ -15,17 +16,16 @@ from ..models.sample import (
     SAMPLE_ID_PATTERN,
     Comment,
     CommentInDatabase,
-    SampleInDatabase,
+    SampleInCreate,
     PipelineResult,
 )
 from ..models.user import UserOutputDatabase
 from app import config
 import sourmash
-import pathlib
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-import gzip
-import io
 import logging
+import pathlib
+from ..utils import format_error_message
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -125,58 +125,42 @@ async def create_genome_signatures_sample(
     signature: Annotated[bytes, File()],
 ):
     # verify that sample are in database
-    await get_sample(db, sample_id)
-
-    # get signature directory
-    signature_db = pathlib.Path('/data/signature_db')
-    # make db if signature db is not present
-    if not signature_db.exists():
-        signature_db.mkdir(parents=True, exist_ok=True)
-
-    # check that signature doesnt exist
-    signature_file = signature_db.joinpath(f"{sample_id}.sig")
-    if signature_file.is_file():
-        #raise ValueError("Sample already exist")
-        pass
-
-    # check if compressed and decompress data
-    if signature[:2] == b"\x1f\x8b":
-        LOG.debug("Decompressing gziped file")
-        signature = gzip.decompress(signature)
-
-    # save signature to file
-    LOG.info("Writing genome signatures to file")
     try:
-        with open(signature_file, "w") as out:
-            print(signature, file=out)
-    except PermissionError:
-        LOG.error("Dont have permission to write file to disk")
+        sample = await get_sample(db, sample_id)
+    except ValueError as err:
+        raise HTTPException(status_code=404, detail=format_error_message(err))
+
+    # abort if signature has already been added
+    sig_exist_err = HTTPException(status_code=409, detail="Signature is already added to sample")
+    if sample.genome_signature is not None:
+        raise sig_exist_err
     
-    # load signature to memory
-    signature = next(sourmash.signature.load_signatures(signature_file, ksize=config.SIGNATURE_KMER_SIZE))
-    
-    # add signature to existing index
-    sbt_filename = signature_db.joinpath('genomes.sbt.zip')
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename))
+    try:
+        signature_path: pathlib.Path = add_genome_signature_file(sample_id, signature)
+    except FileExistsError as err:
+        raise sig_exist_err
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=format_error_message(err))
     else:
-        LOG.debug("Create new index file")
-        tree = sourmash.sbtmh.create_sbt_index()
-    # add generated signature to bloom tree
-    LOG.info("Adding genome signatures to index")
-    leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-    tree.add_node(leaf)
-    # save updated bloom tree
-    try:
-        tree.save(str(sbt_filename))
-    except PermissionError:
-        LOG.error("Dont have permission to write file to disk")
-    # create signatures
+        # updated sample in database with signature object
+        # recast the data to proper object
+        upd_sample_data = SampleInCreate(**{
+            **sample.dict(), 
+            **{'genome_signature': str(signature_path.resolve())}
+        })
+        status = await crud_update_sample(db, upd_sample_data)
+        LOG.error(f'status {status}')
+
+    # if signature file could not be added to sample db
+    if not status:
+        # remove added signature file from database and index
+        remove_genome_signature_file(sample_id)
+        # raise error
+        raise HTTPException(status=500, detail='The signature file could not be updated')
+
     return {
         "type": "success", "id": sample_id, 
-        "index_file": sbt_filename, 
-        "signature_file": signature_file, 
+        "signature_file": signature_path, 
     }
 
 
