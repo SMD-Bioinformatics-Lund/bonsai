@@ -137,7 +137,7 @@ async def create_genome_signatures_sample(
     # verify that sample are in database
     try:
         sample = await get_sample(db, sample_id)
-    except ValueError as err:
+    except EntryNotFound as err:
         raise HTTPException(status_code=404, detail=format_error_message(err))
 
     # abort if signature has already been added
