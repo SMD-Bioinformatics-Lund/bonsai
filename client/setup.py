@@ -20,7 +20,6 @@ setup(
     "jsonpath2"
    ],
    entry_points={
-    "console_scripts": ["bonsai = app.cli:cli"]
    },
    scripts=[]
 )
