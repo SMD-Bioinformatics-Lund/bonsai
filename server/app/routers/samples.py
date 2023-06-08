@@ -1,7 +1,17 @@
 from datetime import datetime
 from typing import Dict, List, Union, Annotated
 
-from fastapi import APIRouter, Body, HTTPException, Path, Query, Security, status, File, UploadFile
+from fastapi import (
+    APIRouter,
+    Body,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+    status,
+    File,
+    UploadFile,
+)
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.sample import EntryNotFound, add_comment, add_location
@@ -131,10 +141,12 @@ async def create_genome_signatures_sample(
         raise HTTPException(status_code=404, detail=format_error_message(err))
 
     # abort if signature has already been added
-    sig_exist_err = HTTPException(status_code=409, detail="Signature is already added to sample")
+    sig_exist_err = HTTPException(
+        status_code=409, detail="Signature is already added to sample"
+    )
     if sample.genome_signature is not None:
         raise sig_exist_err
-    
+
     try:
         signature_path: pathlib.Path = add_genome_signature_file(sample_id, signature)
     except FileExistsError as err:
@@ -144,23 +156,25 @@ async def create_genome_signatures_sample(
     else:
         # updated sample in database with signature object
         # recast the data to proper object
-        upd_sample_data = SampleInCreate(**{
-            **sample.dict(), 
-            **{'genome_signature': str(signature_path.resolve())}
-        })
+        upd_sample_data = SampleInCreate(
+            **{**sample.dict(), **{"genome_signature": str(signature_path.resolve())}}
+        )
         status = await crud_update_sample(db, upd_sample_data)
-        LOG.error(f'status {status}')
+        LOG.error(f"status {status}")
 
     # if signature file could not be added to sample db
     if not status:
         # remove added signature file from database and index
         remove_genome_signature_file(sample_id)
         # raise error
-        raise HTTPException(status=500, detail='The signature file could not be updated')
+        raise HTTPException(
+            status=500, detail="The signature file could not be updated"
+        )
 
     return {
-        "type": "success", "id": sample_id, 
-        "signature_file": signature_path, 
+        "type": "success",
+        "id": sample_id,
+        "signature_file": signature_path,
     }
 
 

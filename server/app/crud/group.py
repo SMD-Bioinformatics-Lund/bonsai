@@ -79,10 +79,10 @@ async def get_group(
                                         "$first": f"${sample_fields['species_prediction'].name}"
                                     },
                                 }
-                            }, 
+                            },
                             {
-                                "$sort": { "created_at": ASCENDING },
-                            }
+                                "$sort": {"created_at": ASCENDING},
+                            },
                         ],
                     }
                 }

@@ -3,9 +3,9 @@ def format_error_message(exception: Exception) -> str:
     proc_args = []
     for arg in exception.args:
         if isinstance(arg, (tuple, list)):
-            arg_str = ', '.join(arg)
+            arg_str = ", ".join(arg)
         elif isinstance(arg, dict):
-            arg_str = ', '.join([f'{k}={v}' for k, v in arg.items()])
+            arg_str = ", ".join([f"{k}={v}" for k, v in arg.items()])
         elif isinstance(arg, str):
             arg_str = arg
         proc_args.append(arg_str)

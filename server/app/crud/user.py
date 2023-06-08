@@ -35,9 +35,7 @@ async def get_user(db: Database, username: str) -> UserOutputDatabase:
         raise EntryNotFound(f"User {username} not in database")
 
     inserted_id = db_obj["_id"]
-    user_obj = UserInputDatabase(
-        id=str(inserted_id), **db_obj
-    )
+    user_obj = UserInputDatabase(id=str(inserted_id), **db_obj)
     return user_obj
 
 
