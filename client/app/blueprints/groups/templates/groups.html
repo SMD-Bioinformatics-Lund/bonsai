@@ -83,7 +83,7 @@
                     sortable: true,
                     searchable: true,
                     render: 'sampleid',
-                    path: '$.sampleId'
+                    path: '$.sample_id'
                 },
                 {
                     field: 'specie',
@@ -91,21 +91,21 @@
                     sortable: true,
                     searchable: true,
                     render: 'taxonomic_name',
-                    path: '$.speciesPrediction[0].scientificName'
+                    path: '$.species_prediction[0].scientific_name'
                 },
                 {
                     field: 'profile',
                     text: 'Analysis profile',
                     sortable: true,
                     searchable: true,
-                    path: '$.runMetadata.run.analysisProfile'
+                    path: '$.run_metadata.run.analysis_profile'
                 },
                 {
                     field: 'cdate',
                     text: 'Upload date',
                     sortable: true,
                     render: 'date',
-                    path: '$.createdAt'
+                    path: '$.created_at'
                 },
             ],
             async onSelect(event) {
@@ -115,7 +115,7 @@
                 sessionStorage.setItem(
                     "selectedSamples", 
                     JSON.stringify(
-                        this.get(this.getSelection()).map(row => {return {sampleId: row.sampleId, profile: row.profile}}) 
+                        this.get(this.getSelection()).map(row => {return {sampleId: row.sample_id, profile: row.profile}}) 
                     )
                 );
             },
@@ -139,7 +139,7 @@
     // append samples to grid
     grid.records = samples.records.map( sample => {
         let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-        columns["recid"] = sample["sampleId"]
+        columns["recid"] = sample["sample_id"]
         return columns
     })
     window.getSelectedRows = () => grid.getSelection()
