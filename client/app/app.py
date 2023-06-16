@@ -221,9 +221,13 @@ def register_filters(app):
         return result
 
     @app.template_filter()
-    def fmt_number(num):
-        """Format number by adding a thousand separator"""
+    def fmt_number(num, sig_digits=None):
+        """Format number by adding a thousand separator 
+        
+        Has option to round values to X signifiacnt digits."""
         if isinstance(num, (int, float)):
+            if sig_digits is not None:
+                num = round(num, sig_digits)
             num = "{:,}".format(num)
         return num
 
