@@ -7,6 +7,11 @@
 <link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
 {% endblock css %}
 
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+{% endblock scripts %}
+
 {% macro make_db_link(db) %}
 {% if db.name == 'resfinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/resfinder_db/commits" %}
@@ -77,36 +82,98 @@
 {% endmacro %}
 
 
-{% macro qc_card(qc_info) %}
-<div class="col-md-auto">
-    <div class="card">
-        <div class="card-header">
-            {{qc_info.tool | capitalize }}
-            {% if qc_info.version %}
-                <span>{{qc_info.version}}</span>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            <table class="table table-sm table-striped">
-                <thead>
-                    <tr>
-                        <th scope="col">Metric</th>
-                        <th scope="col">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for name, value in qc_info.result.items() %}
+{% macro qc_card_postalign(qc_info) %}
+<div class="card">
+    <div class="card-header">PostQc Alignment</div>
+    <div class="card-body">
+        {% set pct_above_hist=qc_info.result.pct_above_x %}
+        {# create entries for tabular data #}
+        <table class="table table-sm table-striped">
+            <thead>
                 <tr>
-                    <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
-                    <td>{{ value | fmt_number }}</td>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
                 </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+                {# skip data that should be plotted #}
+                {% if name != "pct_above_x" %}
+                    <tr>
+                        <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                        <td>{{ value | fmt_number(sig_digits=2) }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        <div id="qcPlot"></div>
+        <script>
+            //const qcPlot = document.getElementById("qc-plot")
+            const rawData = {{pct_above_hist | tojson }}
+            const data = {
+                type: 'bar',
+                x: Object.keys(rawData).map(k => `${k}X`), 
+                y: Object.values(rawData).map(Number), 
+                marker: {
+                    color: "#c0ddd1",
+                    line: { width: 4}
+                }
+            };
+            const layout = { 
+                title: 'Genome coverage', 
+                autosize: false,
+                width: 400,
+                height: 200,
+                margin: {
+                    l: 10,
+                    r: 10,
+                    b: 30,
+                    t: 30,
+                    pad: 4
+                },
+                yaxis: {
+                    title: "Percent bases",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                xaxis: {
+                    title: "Coverage",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                font: { size: 12 }}
+            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: true} )
+        </script>
     </div>
 </div>
 {% endmacro %}
+
+
+{% macro qc_card_generic(qc_info) %}
+<div class="card">
+    <div class="card-header">{{qc_info.software | capitalize}}</div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+            <tr>
+                <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                <td>{{ value | fmt_number(sig_digits=2) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
 
 {% macro cgmlst_qc_card(result) %}
 <div class="card">
@@ -198,7 +265,11 @@
             <div id="qc-heading" class="row gx-5 justify-content-md-center">
                 {% for qc_tool in sample.qc %}
                     <div class="col-md-auto">
-                    {{ qc_card(qc_tool) }}
+                        {% if qc_tool.software == "postalignqc" %}
+                            {{ qc_card_postalign(qc_tool) }}
+                        {% else %}
+                            {{ qc_card_generic(qc_tool) }}
+                        {% endif %}
                     </div>
                 {% endfor %}
 
