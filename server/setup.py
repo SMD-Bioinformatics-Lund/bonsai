@@ -29,5 +29,4 @@ setup(
    entry_points={
     "console_scripts": ["mimer_api = app.cli:cli"]
    },
-   scripts=["scripts/generate_dummy_samples.py"]
 )
