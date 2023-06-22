@@ -17,7 +17,9 @@ from app.mimer import (
     TokenObject,
 )
 from flask_login import login_required, current_user
-from itertools import chain
+from itertools import chain, groupby
+from app.models import ElementType, PredictionSoftware
+from app import config
 
 samples_bp = Blueprint(
     "samples",
@@ -98,8 +100,53 @@ def sample(sample_id):
                 # update object from database
                 pred_res["result"]["genes"] = genes
                 pred_res["result"]["mutations"] = mutations
+
+    # summarize predicted antimicrobial resistance
+    amr_summary = {}
+    resistance_info = {"genes": {}, "mutations": {}}
+    for pred_res in sample["element_type_result"]:
+        # only get AMR resistance
+        if pred_res["type"] == ElementType.AMR.value:
+            for gene in pred_res["result"]["genes"]:
+                gene_name = gene["gene_symbol"]
+                # get/create summary dictionary object
+                gene_entry = amr_summary.get(
+                    gene_name, {
+                        # create default object
+                        "gene_symbol": gene_name,
+                        "software": [],
+                        "res_class": "Unknown"
+                    })
+                # annotate softwares
+                gene_entry['software'].append(pred_res["software"])
+
+                # annotate resistance class
+                if pred_res["software"] == PredictionSoftware.AMRFINDER.value:
+                    gene_entry['res_class'] = gene["res_class"]
+
+                # store object
+                amr_summary[gene_name] = gene_entry
+
+                # reformat resistance gene table
+                gene_entry = resistance_info['genes'].get(gene_name, [])
+                gene['software'] = pred_res['software']
+                gene_entry.append(gene)
+                resistance_info['genes'][gene_name] = gene_entry
+
+            # iterate over mutations and populate resistance summaries
+            for mutation in pred_res["result"]["mutations"]:
+                raise ValueError()
+
+    # group summary by res_class
+    amr_summary = {
+        res_type: list(rows) 
+        for res_type, rows 
+        in  groupby(amr_summary.values(), key=lambda x: x['res_class'])
+    }
+
     return render_template(
-        "sample.html", sample=sample, title=sample_id, is_filtered=bool(group_id)
+        "sample.html", sample=sample, amr_summary=amr_summary, resistance_info=resistance_info,
+        title=sample_id, is_filtered=bool(group_id)
     )
 
 

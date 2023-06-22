@@ -12,6 +12,24 @@ class RWModel(BaseModel):
         use_enum_values = True
 
 
+class PredictionSoftware(Enum):
+    """Container for software names."""
+
+    # phenotype
+    AMRFINDER = "amrfinder"
+    RESFINDER = "resfinder"
+    VIRFINDER = "virulencefinder"
+
+
+class ElementType(Enum):
+    AMR = "AMR"
+    ACID = "STRESS_ACID"
+    BIOCIDE = "STRESS_BIOCIDE"
+    METAL = "STRESS_METAL"
+    HEAT = "STRESS_HEAT"
+    VIR = "VIRULENCE"
+
+
 class TagType(Enum):
     VIRULENCE = "virulence"
     RESISTANCE = "resistane"

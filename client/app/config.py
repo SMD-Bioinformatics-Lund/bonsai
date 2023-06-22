@@ -7,6 +7,9 @@ MIMER_API_URL = os.getenv("MIMER_API_URL", "http://api:8000")
 # Session secret key
 SECRET_KEY = b"not-so-secret"
 
+# res classes
+AMR_CLASS = {}
+
 # Antibiotic classes
 ANTIBIOTIC_CLASSES = {
     "Aminoglycosides": [

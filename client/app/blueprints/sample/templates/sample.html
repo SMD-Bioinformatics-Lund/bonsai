@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar %}
-{% from "cards.html" import resistance_card, virulence_card %}
+{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card %}
 
 {% block css %}
 {{ super() }}
@@ -115,6 +115,8 @@
                 type: 'bar',
                 x: Object.keys(rawData).map(k => `${k}X`), 
                 y: Object.values(rawData).map(Number), 
+                text: Object.values(rawData).map(num  => `${Math.round(Number(num), 1)}%`),
+                textposition: 'auto',
                 marker: {
                     color: "#c0ddd1",
                     line: { width: 4}
@@ -132,6 +134,7 @@
                     t: 30,
                     pad: 4
                 },
+                hoverinfo: '',
                 yaxis: {
                     title: "Percent bases",
                     titlefont: { size: 12 },
@@ -226,27 +229,32 @@
             <h4>Phenotype prediction</h4>
             <hr>
             <div id="phenotype-heading" class="row justify-content-md-center">
-            {% for res in sample.phenotype_result %}
-                {% if res.type == "antimicrobial_resistance" %}
-                    {% set n_res=res.result.phenotypes.resistant | length %}
-                    {% if is_filtered and n_res == 0 %}
-                        <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
-                    {% elif n_res == 0 %}
-                        <p>No predicted resistance determinants.</p>
-                    {% else %}
-                        <div class="col-md-auto">
-                        {{ resistance_card(res) }}
-                        </div>
+            {% set n_res=amr_summary | length %}
+            {% if is_filtered and n_res == 0 %}
+                <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+            {% elif n_res == 0 %}
+                <p>No predicted resistance determinants.</p>
+            {% else %}
+                <div class="col-md-auto">
+                {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
+                </div>
+            {% endif %}
+            {# Add supplementary resistance info #}
+            {% for elem in sample.element_type_result %}
+                {% if elem.type.startswith('STRESS') %}
+                    {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
+                    <div class="col-md-auto">
+                        {{ resistance_table_card(elem) }}
+                    </div>
                     {% endif %}
-                    {% do footnotes.append( res | get_all_phenotypes ) %}
                 {% endif %}
             {% endfor %}
             </div>
-            <h4>Virulence</h4>
+            <h4 class="pt-4">Virulence</h4>
             <hr>
             <div id="virulence-heading" class="row justify-content-md-center">
-            {% for res in sample.phenotype_result %}
-                {% if res.type == "virulence" %}
+            {% for res in sample.element_type_result %}
+                {% if res.type == "VIRULENCE" %}
                     {% set n_genes=res.result.genes | length %}
                     {% if is_filtered and n_genes == 0 %}
                         <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
@@ -260,7 +268,7 @@
                 {% endif %}
             {% endfor %}
             </div>
-            <h4>Quality</h4>
+            <h4 class="pt-4">Quality</h4>
             <hr>
             <div id="qc-heading" class="row gx-5 justify-content-md-center">
                 {% for qc_tool in sample.qc %}
