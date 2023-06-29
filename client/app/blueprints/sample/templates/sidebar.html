@@ -7,7 +7,7 @@
         {% for comment in sample.comments %}
             {% if comment.displayed %}
             <div class="comment-box m-2 p-1 bg-white shadow-sm rounded">
-                <form action={{url_for('samples.hide_comment', sample_id=sample.sampleId, comment_id=comment.id)}} method="POST">
+                <form action={{url_for('samples.hide_comment', sample_id=sample.sample_id, comment_id=comment.id)}} method="POST">
                     <button class="float-end float-top btn btn-sm btn-link" aria-label="Remove" type="submit"><i class="bi bi-trash3"></i></button>
                 </form>
                 <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
@@ -19,7 +19,7 @@
         <p class="text-muted">No comment</p>
     {% endif %}
 </div>
-<form action={{url_for('samples.add_comment', sample_id=sample.sampleId)}} method="post">
+<form action={{url_for('samples.add_comment', sample_id=sample.sample_id)}} method="post">
     <div class="form-floating mt-4">
         <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
         <label class="text-muted" for="comment-box">My comment</label>

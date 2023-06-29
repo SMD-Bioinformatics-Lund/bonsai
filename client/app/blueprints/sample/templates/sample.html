@@ -243,7 +243,7 @@
             {% for elem in sample.element_type_result %}
                 {% if elem.type.startswith('STRESS') %}
                     {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
-                    <div class="col-md-auto">
+                    <div class="col-md-auto py-4">
                         {{ resistance_table_card(elem) }}
                     </div>
                     {% endif %}

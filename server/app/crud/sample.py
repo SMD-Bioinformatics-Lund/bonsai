@@ -124,8 +124,8 @@ async def add_comment(
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"]
-    param_comment = fields["comments"]
+    param_modified = fields["modified_at"].name
+    param_comment = fields["comments"].name
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
     comment_id = (
@@ -133,7 +133,7 @@ async def add_comment(
     )
     comment_obj = CommentInDatabase(id=comment_id, **comment.dict())
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"]: sample_id},
+        {fields["sample_id"].name: sample_id},
         {
             "$set": {param_modified: datetime.now()},
             "$push": {
@@ -144,6 +144,7 @@ async def add_comment(
             },
         },
     )
+
     if not update_obj.matched_count == 1:
         raise EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
@@ -157,12 +158,12 @@ async def hide_comment(
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"]
-    param_comment = fields["comments"]
+    param_modified = fields["modified_at"].name
+    param_comment = fields["comments"].name
     # get existing comments for sample to get the next comment id
     print([param_comment, sample_id, comment_id])
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"]: sample_id, f"{param_comment}.id": comment_id},
+        {fields["sample_id"].name: sample_id, f"{param_comment}.id": comment_id},
         {
             "$set": {
                 param_modified: datetime.now(),
@@ -198,10 +199,10 @@ async def add_location(
 
     # Add location to samples
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"]
-    param_location = fields["location"]
+    param_modified = fields["modified_at"].name
+    param_location = fields["location"].name
     update_obj = await db.sample_collection.update_one(
-        {fields["sample_id"]: sample_id},
+        {fields["sample_id"].name: sample_id},
         {
             "$set": {
                 param_modified: datetime.now(),
