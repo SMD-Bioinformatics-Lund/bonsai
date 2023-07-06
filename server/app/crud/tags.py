@@ -2,25 +2,25 @@
 from multiprocessing.sharedctypes import Value
 from ..models.phenotype import ElementTypeResult, ElementType
 from ..models.sample import SampleInDatabase
-from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag
+from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag, ResistanceTag
 
 
 # Phenotypic tags
 def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
-        pred for pred in sample.phenotype_result if pred.type == ElementType.VIR.value
+        pred for pred in sample.element_type_result if pred.type == ElementType.VIR.value
     ]
     if len(virs) > 0:
         vir_result: ElementTypeResult = virs[0].result
-        has_lukS = any(gene.name == "lukS-PV" for gene in vir_result.genes)
-        has_lukF = any(gene.name == "lukF-PV" for gene in vir_result.genes)
+        has_lukS = any(gene.gene_symbol.startswith("lukS") for gene in vir_result.genes)
+        has_lukF = any(gene.gene_symbol.startswith("lukF") for gene in vir_result.genes)
         # classify PVL
         if has_lukF and has_lukS:
             tag = Tag(
                 type=TagType.VIRULENCE,
                 label=VirulenceTag.PVL_ALL_POS,
-                description="",
+                description="Both lukF and lukS were identified",
                 severity=TagSeverity.DANGER,
             )
         elif any([has_lukF and not has_lukS, has_lukS and not has_lukF]):
@@ -29,21 +29,55 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
                 label=VirulenceTag.PVL_LUKF_POS
                 if has_lukF
                 else VirulenceTag.PVL_LUKS_POS,
-                description="",
+                description="One of the luk sub-units identified",
                 severity=TagSeverity.WARNING,
             )
         elif not has_lukF and not has_lukS:
             tag = Tag(
                 type=TagType.VIRULENCE,
                 label=VirulenceTag.PVL_ALL_NEG,
-                description="",
+                description="Neither lukF or lukS was identified",
                 severity=TagSeverity.PASSED,
             )
         tags.append(tag)
 
 
+def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
+    """Check if sample is MRSA.
+    
+    An SA is classified as MRSA if it carries either mecA, mecB or mecC.
+    https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3780952/
+    """
+    mrsa_genes = []
+    valid_genes = ['mecA', 'mecB', 'mecC']
+    for prediction in sample.element_type_result:
+        if not prediction.type == ElementType.AMR.value:
+            continue
+
+        for gene in prediction.result.genes:
+            if any([gene.gene_symbol.startswith(symbol) for symbol in valid_genes]):
+                mrsa_genes.append(gene.gene_symbol)
+
+    # add MRSA tag if needed
+    if len(mrsa_genes) > 0:
+        tag = Tag(
+            type=TagType.RESISTANCE,
+            label=ResistanceTag.MRSA,
+            description=f"Carried genes: {' '.join(mrsa_genes)}",
+            severity=TagSeverity.DANGER,
+        )
+    else:
+        tag = Tag(
+            type=TagType.RESISTANCE,
+            label=ResistanceTag.MSSA,
+            description="",
+            severity=TagSeverity.INFO,
+        )
+    tags.append(tag)
+
+
 ALL_TAG_FUNCS = [
-    add_pvl,
+    add_pvl, add_mrsa
 ]
 
 

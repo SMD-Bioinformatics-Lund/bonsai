@@ -14,20 +14,21 @@ class ResistanceTag(Enum):
     VRE = "VRE"
     ESBL = "ESBL"
     MRSA = "MRSA"
+    MSSA = "MSSA"
 
 
 class VirulenceTag(Enum):
-    PVL_ALL_POS = "pos"
-    PVL_LUKS_POS = "neg/pos"
-    PVL_LUKF_POS = "pos/neg"
-    PVL_ALL_NEG = "neg"
+    PVL_ALL_POS = "PVL pos"
+    PVL_LUKS_POS = "PVL neg/pos"
+    PVL_LUKF_POS = "PVL pos/neg"
+    PVL_ALL_NEG = "PVL neg"
 
 
 class TagSeverity(Enum):
     """Defined severity classes of tags"""
 
     INFO = "info"
-    PASSED = "pass"
+    PASSED = "success"
     WARNING = "warning"
     DANGER = "danger"
 

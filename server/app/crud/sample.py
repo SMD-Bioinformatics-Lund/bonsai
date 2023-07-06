@@ -8,6 +8,7 @@ from pathlib import Path
 from bson.objectid import ObjectId
 
 from ..crud.location import get_location
+from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.location import LocationOutputDatabase
 from ..models.sample import (
@@ -55,6 +56,9 @@ async def get_samples(
             id=str(inserted_id),
             **samp,
         )
+        # Compute tags
+        tags: TAG_LIST = compute_phenotype_tags(sample)
+        sample.tags = tags
         # TODO replace with aggregation pipeline
         if include is not None and sample.sample_id not in include:
             continue
@@ -116,6 +120,9 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
         id=str(inserted_id),
         **db_obj,
     )
+    # Compute tags
+    tags: TAG_LIST = compute_phenotype_tags(sample_obj)
+    sample_obj.tags = tags
     return sample_obj
 
 

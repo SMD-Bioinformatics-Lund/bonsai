@@ -208,12 +208,30 @@
     <div class="row">
         {{ sidebar(sample) }}
         <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
-            <div id="sample-id-heading" class="pt-4">
-                <h1>{{sample.sample_id}}</h1>
-                <dl class="row gx-5>
-                    <dt class="col-xs">Analysis date</dt>
-                    <dd class="col-xs">{{sample["created_at"] | strftime}}</dd>
-                </dl>
+            <h1 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h1>
+            <div class="row gx-5">
+                <div class="col-md-auto">
+                    Analysis date: {{sample.created_at | strftime}}
+                    <br>
+                    <p>
+                        Tags: 
+                        {% for tag in sample.tags %}
+                            {% if tag.type == "virulence" %}
+                                {% set heading="virulence-heading" %}
+                            {% else %}
+                                {% set heading="phenotype-heading" %}
+                            {% endif %}
+                            <a 
+                                class="btn btn-sm btn-{{tag.severity}}"
+                                href="#{{heading}}"
+                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                data-bs-title="{{ tag.description }}"
+                            >
+                                {{tag.label}}
+                            </a>
+                        {% endfor %}
+                    </p>
+                </div>
             </div>
             <h4>Epidemiological Typing</h4>
             <hr>
@@ -292,6 +310,7 @@
             <hr>
             {{ analysis_meta(sample) }}
             <hr>
+            <!-- 
             <h4>References</h4>
             <ol class="fs-6 text-muted">
                 <li>A reference</li>
@@ -303,6 +322,7 @@
                     <li>{{note}}</li>
                 {% endfor %}
             </ol>
+            -->
         </div>
     </div>
 </div>

@@ -49,11 +49,12 @@
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
     import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
-    import { formatTaxonomicName, formatSampleId } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
 
     // define formatters
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
     w2utils.formatters['sampleid']  = formatSampleId
+    w2utils.formatters['tags']  = formatTag
     const apiURL = "{{ config.MIMER_API_URL }}"
     const samples = {{ samples | tojson }}
 
@@ -86,12 +87,27 @@
                     path: '$.sample_id'
                 },
                 {
+                    field: 'tags',
+                    text: 'Tags',
+                    sortable: false,
+                    searchable: true,
+                    render: 'tags',
+                    path: '$.tags'
+                },
+                {
                     field: 'specie',
                     text: 'Major species',
                     sortable: true,
                     searchable: true,
                     render: 'taxonomic_name',
                     path: '$.species_prediction[0].scientific_name'
+                },
+                {
+                    field: 'mlst-st',
+                    text: 'MLST St',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.typing_result[0].result.sequence_type'
                 },
                 {
                     field: 'profile',

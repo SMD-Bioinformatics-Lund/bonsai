@@ -13,3 +13,13 @@ export const formatTaxonomicName = (val, params, data) => {
     element.innerText = val
     return element.outerHTML
 }
+
+export const formatTag = (val, params, data) => {
+    let elements = val.map(tag => {
+        let element = document.createElement('span')
+        element.className = `badge text-bg-${tag.severity} p-1 me-1`
+        element.innerText = tag.label
+        return element.outerHTML
+    })
+    return elements.join('')
+}
