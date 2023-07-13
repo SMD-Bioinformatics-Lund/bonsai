@@ -44,7 +44,7 @@
         <div id="data-table"></div>
     </div>
 </div>
-<form id="open-tree-form" action="{{url_for('cluster.tree')}}" method="post" hidden target="_blank">
+<form id="open-tree-form" action="{{ url_for('cluster.tree') }}" method="POST" hidden target="_blank">
     <input type="text" name="newick" id="newick-content">
     <input type="text" name="metadata" id="metadata-content">
     <input type="submit" value="">
@@ -105,7 +105,7 @@
     grid.records = testSamples.map(
         sample => {
             let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.type]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-            columns["recid"] = sample["sampleId"]
+            columns["recid"] = sample["sample_id"]
             columns["groupId"] = groupId
             return columns
     }) 
@@ -197,6 +197,7 @@
             } else {
                 clusterButtonError()
                 throwClusterErrorToast(xhr)
+                console.log(xhr)
             }
         })
 
@@ -217,8 +218,8 @@
         xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`)
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
-        window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sampleId: sampleId}))
-        xhr.send(JSON.stringify({"sampleIds": sampleId, "method": method, "distance": distance}))
+        window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
+        xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
 </script>
 {% endblock content %}

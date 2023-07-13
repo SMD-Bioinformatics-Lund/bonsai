@@ -70,7 +70,7 @@
     {% set table_columns = [] %}
     {% set included_samples = [] %}
 {% else %}
-    {% set group_id = group.groupId %}
+    {% set group_id = group.group_id %}
     {% set display_name = group.display_name %}
     {% set table_columns = group.table_columns %}
     {% set included_samples = group.included_samples %}
@@ -196,10 +196,10 @@
 <div class="row g-3 mb-4">
     {% if group == None %}
         <div class="col-auto">
-            <form method="POST" onsubmit="createGroup(event)">
-                <input type="text" name="input-group-id" value="{{group.groupId}}" hidden>
+            <form method="POST" onsubmit="updateGroup(event, 'create')">
+                <input type="text" name="input-group-id" value="{{group.group_id}}" hidden>
                 <input type="text" name="input-create-group" value="" hidden>
-                <button class="btn btn-success" disabled>
+                <button class="btn btn-success">
                     <i class="bi bi-pencil-square"></i>
                     Create
                 </button>
@@ -207,7 +207,7 @@
         </div>
     {% else %}
         <div class="col-auto">
-            <form method="POST" onsubmit="updateGroup(event)">
+            <form method="POST" onsubmit="updateGroup(event, 'update')">
                 <input type="text" name="input-group-id" value="{{group.group_id}}" hidden>
                 <input type="text" name="input-update-group" value="" hidden>
                 <button class="btn btn-success">
@@ -245,7 +245,7 @@
             {% for group in groups %}
                 <a class="list-group-item list-group-item-action py-3 lh-tight border-end {% if selected_group == group.group_id %}active{% endif %}" 
                    href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}"
-                   {% if selected_group == group.groupId %} aria-current="true"{% endif %}
+                   {% if selected_group == group.group_id %} aria-current="true"{% endif %}
                 >
                     <div class="d-flex w-100 align-items-center justify-content-between">
                         <strong class="mb-1">{{group.display_name}}</strong>

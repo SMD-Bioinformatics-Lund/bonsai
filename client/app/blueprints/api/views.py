@@ -21,10 +21,10 @@ def add_sample_to_basket():
         # add only unique id
         session["basket"] = list(
             {
-                entry["sampleId"]: entry for entry in samples_in_basket + samples_to_add
+                entry["sample_id"]: entry for entry in samples_in_basket + samples_to_add
             }.values()
         )
-        msg = ', '.join([entry["sampleId"] for entry in samples_in_basket])
+        msg = ', '.join([entry["sample_id"] for entry in samples_in_basket])
         return f"Added {msg}", 200
 
 
@@ -39,8 +39,8 @@ def remove_sample_from_basket():
     if request.method == "POST":
         # add samples to basket
         samples_in_basket = session.get("basket")
-        to_remove = json.loads(request.data).get("sampleId", "")
-        samples = [sid for sid in samples_in_basket if not sid["sampleId"] == to_remove]
+        to_remove = json.loads(request.data).get("sample_id", "")
+        samples = [sid for sid in samples_in_basket if not sid["sample_id"] == to_remove]
         session["basket"] = samples
         return f"removed {to_remove}", 200
     return "", 200

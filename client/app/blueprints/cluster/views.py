@@ -71,14 +71,14 @@ def gather_metadata(samples) -> MetaData:
     for sample in samples:
         # add sample to metadata list
         # store metadata
-        sample_id = sample["sampleId"]
+        sample_id = sample["sample_id"]
         mlst_res = next(
-            res["result"] for res in sample["typingResult"] if res["type"] == "mlst"
+            res["result"] for res in sample["typing_result"] if res["type"] == "mlst"
         )
         metadata[sample_id] = {
             "location": get_value(sample, "location"),
-            "time": sample["createdAt"],
-            "st": get_value(mlst_res, "sequenceType"),
+            "time": sample["created_at"],
+            "st": get_value(mlst_res, "sequence_type"),
         }
     # build metadata list
     metadata_list = set()
@@ -114,8 +114,8 @@ def tree():
         samples = json.loads(request.form.get("metadata"))
         # query for sample metadata
         token = TokenObject(**current_user.get_id())
-        samples = get_samples_by_id(token, sample_ids=samples["sampleId"])
-        metadata = gather_metadata(samples)
+        samples = get_samples_by_id(token, sample_ids=samples["sample_id"])
+        metadata = gather_metadata(samples["records"])
         data = dict(nwk=newick, **metadata.dict())
         return render_template(
             "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
@@ -129,7 +129,7 @@ def cluster_and_display_tree():
     """Cluster samples and display results in a view."""
     if request.method == "POST":
         sample_ids = [
-            sample["sampleId"]
+            sample["sample_id"]
             for sample in json.loads(request.form.get("sampleIds", ""))
         ]
         token = TokenObject(**current_user.get_id())
@@ -138,7 +138,7 @@ def cluster_and_display_tree():
 
         # get metadata
         samples = get_samples_by_id(token, sample_ids=sample_ids)
-        metadata = gather_metadata(samples)
+        metadata = gather_metadata(samples["records"])
         # query for sample metadata
         data = dict(nwk=newick, **metadata.dict())
         return render_template(

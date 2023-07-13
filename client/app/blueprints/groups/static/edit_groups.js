@@ -26,7 +26,7 @@ const addNewColumnToList = (element) => {
     document.getElementById('added-columns-list').appendChild(columnListItem)
 }
 
-const updateGroup = (event) => {
+const updateGroup = (event, method) => {
     // collect information to be sumbitted
     const groupId = document.getElementById('input-group-id').value
     const groupName = document.getElementById('input-group-name').value
@@ -51,12 +51,12 @@ const updateGroup = (event) => {
     }
     const addedSamples = Array.from(samplesList).map(li => li.getAttribute('key'))
     // store updatd fields as json in input
-    const result = event.target.querySelector('input[name="input-update-group"]')
+    const result = event.target.querySelector(`input[name="input-${method}-group"]`)
     result.value = JSON.stringify({
-        groupId: groupId, 
-        displayName: groupName,
-        tableColumns: groupColumns,
-        validatedGenes: validatedGenes,
-        includedSamples: addedSamples
+        group_id: groupId, 
+        display_name: groupName,
+        table_columns: groupColumns,
+        validated_genes: validatedGenes,
+        included_samples: addedSamples
     })
 }

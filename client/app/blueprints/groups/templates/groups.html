@@ -131,7 +131,7 @@
                 sessionStorage.setItem(
                     "selectedSamples", 
                     JSON.stringify(
-                        this.get(this.getSelection()).map(row => {return {sampleId: row.sample_id, profile: row.profile}}) 
+                        this.get(this.getSelection()).map(row => {return {sample_id: row.sampleId, profile: row.profile}}) 
                     )
                 );
             },
@@ -191,7 +191,7 @@
 
 {% macro group_card(group) %}
 <div class="card group-card">
-    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.groupId) }}">
+    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
         <div class="card-body">
             <h5 class="card-title text-secondary">
                 {{ group.display_name }}

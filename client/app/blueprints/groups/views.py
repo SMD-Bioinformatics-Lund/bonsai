@@ -16,6 +16,7 @@ from app.mimer import (
     get_samples_in_group,
     delete_group,
     update_group,
+    create_group,
     TokenObject,
 )
 import json
@@ -74,6 +75,14 @@ def edit_groups(group_id=None):
             updated_data = json.loads(request.form.get("input-update-group"))
             try:
                 update_group(token, group_id=group_id, data=updated_data)
+                flash(f"Group updated", "success")
+                return redirect(url_for("groups.edit_groups"))
+            except Exception as err:
+                flash(f"An error occured when updating group, {err}", "danger")
+        elif "input-create-group" in request.form:
+            input_data = json.loads(request.form.get("input-create-group", {}))
+            try:
+                create_group(token, data=input_data)
                 flash(f"Group updated", "success")
                 return redirect(url_for("groups.edit_groups"))
             except Exception as err:
