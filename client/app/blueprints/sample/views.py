@@ -18,7 +18,7 @@ from app.mimer import (
 )
 from flask_login import login_required, current_user
 from itertools import chain, groupby
-from app.models import ElementType, PredictionSoftware
+from app.models import ElementType, PredictionSoftware, NT_TO_AA
 from app import config
 
 samples_bp = Blueprint(
@@ -109,6 +109,8 @@ def sample(sample_id):
         if pred_res["type"] == ElementType.AMR.value:
             for gene in pred_res["result"]["genes"]:
                 gene_name = gene["gene_symbol"]
+                if gene_name is None:
+                    raise ValueError()
                 # get/create summary dictionary object
                 gene_entry = amr_summary.get(
                     gene_name, {
@@ -135,7 +137,23 @@ def sample(sample_id):
 
             # iterate over mutations and populate resistance summaries
             for mutation in pred_res["result"]["mutations"]:
-                raise ValueError()
+                gene_name, *_ = mutation["ref_id"].split(';;')
+                # gene entries
+                gene_entry = amr_summary.get(
+                    gene_name, {
+                        # create default object
+                        "gene_symbol": gene_name,
+                        "software": [],
+                        "res_class": "Unknown"
+                    })
+                if mutation['variant_type'] == 'substitution':
+                    ref_aa = NT_TO_AA[mutation['ref_codon'].upper()]
+                    alt_aa = NT_TO_AA[mutation['alt_codon'].upper()]
+                    gene_entry['change'] = f"{ref_aa}{mutation['position']}{alt_aa}"
+                else:
+                    raise ValueError()
+                # store object
+                amr_summary[gene_name] = gene_entry
 
     # group summary by res_class
     amr_summary = {
