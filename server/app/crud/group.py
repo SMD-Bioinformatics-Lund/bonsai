@@ -153,11 +153,11 @@ async def append_sample_to_group(db: Database, sample_id: str, group_id: str) ->
     """Create a new collection document."""
     sample_obj = await get_sample(db, sample_id)
     fields = UpdateIncludedSamples.__fields__
-    param_included_sample = fields["included_samples"]
-    param_modified = fields["modified_at"]
-    gid_filed = GroupInfoDatabase.__fields__["group_id"]
+    param_included_sample = fields["included_samples"].name
+    param_modified = fields["modified_at"].name
+    gid_field = GroupInfoDatabase.__fields__["group_id"].name
     update_obj = await db.sample_group_collection.update_one(
-        {gid_filed: group_id},
+        {gid_field: group_id},
         {
             "$set": {param_modified: datetime.now()},
             "$addToSet": {
