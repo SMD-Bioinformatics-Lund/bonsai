@@ -2,6 +2,14 @@
     <a class="text-dark" target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/{{accession}}">{{ accession }}</a>
 {% endmacro %}
 
+{% macro resistance_summary_row(gene)%}
+    <td>{{ accession_link(gene.accession) }}</td>
+    <td>{{ gene.depth | fmt_null_values }}</td>
+    <td>{{ gene.identity | fmt_number }}%</td>
+    <td>{{ gene.coverage | fmt_number }}%</td>
+    <td class="fst-italic fw-lighter">{{ gene.software }}</td>
+{% endmacro %}
+
 {% macro resistance_summary_card(resistance, summary=None) %}
 <div class="card">
     <div class="card-header">Antimicrobial resistance</div>
@@ -46,18 +54,19 @@
                     <td scope="col">Software</td>
                 </tr>
             </thead>
-            <tbody>
+            <td>
                 {% for gene_symbol, genes in resistance.genes.items() %}
-                    <tr rowspan="{{ genes | length }}">
-                        <td>{{gene_symbol}}</td>
-                        {% for gene in genes %}
-                            <td>{{ accession_link(gene.accession) }}</td>
-                            <td>{{ gene.depth | fmt_null_values }}</td>
-                            <td>{{ gene.identity | fmt_number }}%</td>
-                            <td>{{ gene.coverage | fmt_number }}%</td>
-                            <td class="fst-italic fw-lighter">{{ gene.software }}</td>
-                        {% endfor %}
+                    <tr>
+                        <td rowspan="{{ genes | length }}">{{gene_symbol}}</td>
+                        {{ resistance_summary_row(genes[0]) }}
                     </tr>
+                    {% if genes | length > 1 %}
+                        {% for gene in genes[1:] %}
+                        <tr>
+                            {{ resistance_summary_row(gene) }}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
