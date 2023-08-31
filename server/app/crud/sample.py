@@ -33,8 +33,20 @@ CURRENT_SCHEMA_VERSION = 1
 class TypingProfileAggregate(RWModel):
     """Sample id and predicted alleles."""
 
-    sampleId: str
-    typingResult: CGMLST_ALLELES
+    sample_id: str
+    typing_result: CGMLST_ALLELES
+
+    def allele_profile(self, strip_errors: bool = True):
+        """Get allele profile."""
+        profile = {}
+        for gene, allele in self.typing_result.items():
+            if isinstance(allele, int):
+                profile[gene] = allele
+            elif strip_errors:
+                profile[gene] = None
+            else:
+                profile[gene] = allele
+        return profile
 
 
 TypingProfileOutput = list[TypingProfileAggregate]
@@ -248,7 +260,7 @@ async def get_typing_profiles(
         TypingProfileAggregate(**sample)
         async for sample in db.sample_collection.aggregate(pipeline)
     ]
-    missing_samples = set(sample_idx) - {s.sampleId for s in results}
+    missing_samples = set(sample_idx) - {s.sample_id for s in results}
     if len(missing_samples) > 0:
         msg = 'The samples "%s" didnt have %s typing result.' % (
             ", ".join(list(missing_samples)),
