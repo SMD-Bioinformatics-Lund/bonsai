@@ -111,8 +111,8 @@ async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDa
 
 async def delete_group(db: Database, group_id: str) -> bool:
     """Delete group with group_id from database."""
-    gid_filed = GroupInfoDatabase.__fields__["group_id"]
-    doc = await db.sample_group_collection.delete_one({gid_filed: group_id})
+    gid_field = GroupInfoDatabase.__fields__["group_id"].name
+    doc = await db.sample_group_collection.delete_one({gid_field: group_id})
     if doc.deleted_count == 0:
         raise EntryNotFound(group_id)
     return doc.deleted_count
@@ -123,11 +123,11 @@ async def update_group(
 ) -> GroupInfoDatabase:
     """Update information of group."""
     fields = GroupInfoDatabase.__fields__
-    param_modified = fields["modified_at"]
-    gid_filed = fields["group_id"]
+    param_modified = fields["modified_at"].name
+    gid_field = fields["group_id"].name
     # update info in database
     update_obj = await db.sample_group_collection.update_one(
-        {gid_filed: group_id},
+        {gid_field: group_id},
         {
             "$set": {param_modified: datetime.now()},
             "$set": group_record.dict(),
