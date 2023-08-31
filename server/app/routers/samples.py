@@ -276,4 +276,4 @@ async def read_sample(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    return {"sample_id": sample_id, "limit": limit, "similaryt": similarity}
+    return {"sample_id": sample_id, "limit": limit, "simiarity": similarity}
