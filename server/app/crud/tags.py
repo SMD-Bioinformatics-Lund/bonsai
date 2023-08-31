@@ -55,7 +55,13 @@ def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
             continue
 
         for gene in prediction.result.genes:
-            if any([gene.gene_symbol.startswith(symbol) for symbol in valid_genes]):
+            # lookup if has valid genes
+            gene_lookup = [
+                gene.gene_symbol.startswith(symbol) 
+                for symbol in valid_genes 
+                if gene.gene_symbol is not None
+            ]
+            if any(gene_lookup):
                 mrsa_genes.append(gene.gene_symbol)
 
     # add MRSA tag if needed
