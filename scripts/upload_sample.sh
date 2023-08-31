@@ -6,7 +6,10 @@ set -o errexit -o pipefail -o noclobber -o nounset
 check_curl_status () {
   # check status of recent curl command
   # $1 is status code, response message is read from ./response.txt
-  ! [[ $1 == 200 || $1 == 201 ]] && echo "Upload error: ${PROCESS} status: ${1} - sample: $(basename $input_file); $(cat "${RESPONSE}" | jq .detail )" && exit 3
+  if ! [[ $1 == 200 || $1 == 201 ]]; then 
+    echo "Upload error: ${PROCESS} status: ${1} - sample: $(basename $input_file); $(cat "${RESPONSE}" | jq .detail )"
+    exit 3
+  fi
 }
 
 # parse command line argument
@@ -56,6 +59,7 @@ done
 [[ ! $(curl -is "${api_url}" | head -n 1) ]] && echo "Error connecting to API URL: '${api_url}'" && exit 2
 
 PROCESS='login'
+echo login
 # log in to Bonsai API and store access token
 response=$(curl -s -X 'POST'                           \
   "${api_url}/token"                                   \
@@ -74,15 +78,16 @@ sample_id=$(echo "${sample}" | jq .sample_id | sed "s/\"//g")
 [[ -z "${sample_id}" ]] && echo "Empty sample_id in input file '${input_file}'" && exit 3
 
 # upload sample
+echo upload sample json
 PROCESS='upload sample'
-RESPONSE=response.txt
+RESPONSE=$(tempfile -s .txt)
 status=$(curl -X 'POST' -s            \
   "${api_url}/samples/"               \
   -H "Authorization: Bearer ${token}" \
   -H 'Content-Type: application/json' \
   -w %{http_code}                     \
-  -d "${sample}"                      \
-  -o "${RESPONSE}")
+  -o "${RESPONSE}"                    \
+  -d "${sample}")
 
 # check upload status
 check_curl_status $status
@@ -93,6 +98,7 @@ signature_fname=$(basename "${input_file}" | sed "s/_result.*/\.sig/")
 signature_path="${input_file%/*/*}/sourmash/${signature_fname}"
 
 # upload signature
+echo upload sample signature
 PROCESS='upload signature'
 if [[ -f "${signature_path}" ]]; then
   # upload signature
@@ -100,6 +106,7 @@ if [[ -f "${signature_path}" ]]; then
     "${api_url}/samples/${sample_id}/signature"  \
     -H "Authorization: Bearer ${token}"          \
     -H 'Content-Type: multipart/form-data'       \
+    -w %{http_code}                              \
     -F "signature=@${signature_path}"            \
     -o "${RESPONSE}")
 fi
@@ -107,14 +114,10 @@ fi
 check_curl_status $status
 
 # if group has been assign, add sample to group
-if [[ ! -z "${group}" ]]; then
+if [[ ! -z "${group_name}" ]]; then
+  echo adding group
   PROCESS='assign group'
-  status=$(curl -X PUT \ 
-    -G -s                                         \
-    --data-urlencode "sample_id=${sample_id}"     \
-    -H "Authorization: Bearer ${token}"           \
-    "${api_url}/groups/${group}/sample"           \
-    -o "${RESPONSE}")
+  status=$(curl -X "PUT" -s "${api_url}/groups/${group_name}/sample" -G --data-urlencode "sample_id=${sample_id}" -H "Authorization: Bearer ${token}" -w %{http_code} -o "${RESPONSE}")
   check_curl_status $status
 fi
 
