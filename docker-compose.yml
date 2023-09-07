@@ -5,17 +5,17 @@ version: '3.9'
 services: 
   mongodb:
     image: mongo:latest
-    container_name: mimer_mongodb
+    container_name: mongodb
     ports:
-      - "8010:27017"
+      - "27017:27017"
     expose:
       - "27017"
     volumes:
       - "./volumes/mongodb:/data/db"
     networks:
-      - mimer-net
+      - bonsai-net
   api:
-    container_name: mimer_api
+    container_name: api
     build: 
       context: server
       network: host
@@ -29,7 +29,7 @@ services:
       - "./server/app:/usr/src/app/app"
       - "./server/run_mimer.py:/usr/src/app/run_mimer.py"
     networks:
-      - mimer-net
+      - bonsai-net
     command: "uvicorn app.main:app --reload --host 0.0.0.0"
   app:
     container_name: app
@@ -40,17 +40,18 @@ services:
       - mongodb
       - api
     ports: 
-      - "8012:5000"
+      - "8010:5000"
     environment:
       - FLASK_APP=app.app:create_app
       - FLASK_ENV=development 
     volumes:
       - "./client/app:/usr/src/app/app"
     networks:
-      - mimer-net
+      - bonsai-net
     command: "flask run --host 0.0.0.0"
+
 networks:
-  mimer-net:
+  bonsai-net:
     driver: bridge
     ipam:
       driver: default
