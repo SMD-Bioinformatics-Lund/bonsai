@@ -1,7 +1,7 @@
 """Data model definition of input/ output data"""
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List
+from typing import List
 
 from pydantic import BaseModel, Field, conlist
 
@@ -52,7 +52,7 @@ class PipelineResult(RWModel):
 
     # mandatory metadata fields
     run_metadata: RunMetadata
-    species_prediction: conlist(SpeciesPrediction, min_items=1)
+    species_prediction: conlist(SpeciesPrediction, min_length=1)
 
     # optional fields
     qc: List[QcMethodIndex] = Field(...)
