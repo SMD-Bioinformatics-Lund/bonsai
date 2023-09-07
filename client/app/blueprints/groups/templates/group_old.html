@@ -147,7 +147,7 @@
         const method = document.getElementById("cluster-clustering-method").value
         // setup and submit clustering job
         const xhr = new XMLHttpRequest()
-        const apiURL = "{{ config.MIMER_API_URL }}"
+        const apiURL = "{{ config.BONSAI_API_URL }}"
         const entrypointURL = `${apiURL}/cluster/${typingData}`
         // add event listeners for processing different outcomes of request
         xhr.addEventListener("load", event => {

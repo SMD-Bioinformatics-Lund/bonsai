@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-   name='mimer_api',
+   name='bonsai_api',
    version='0.1',
    description='Bonsai REST api',
    author='Markus Johansson',
@@ -27,6 +27,6 @@ setup(
     "pydantic-factories"
    ],
    entry_points={
-    "console_scripts": ["mimer_api = app.cli:cli"]
+    "console_scripts": ["bonsai_api = app.cli:cli"]
    },
 )

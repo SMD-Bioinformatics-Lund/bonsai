@@ -5,7 +5,7 @@ import os
 # standard URI has the form:
 # mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
 # read more: https://docs.mongodb.com/manual/reference/connection-string/
-DATABASE_NAME = os.getenv("DATABASE_NAME", "mimer")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "bonsai")
 DB_HOST = os.getenv("DB_HOST", "mongodb")
 DB_PORT = os.getenv("DB_PORT", "27017")
 MONGODB_URI = f"mongodb://{DB_HOST}:{DB_PORT}/{DATABASE_NAME}"

@@ -1,14 +1,13 @@
 """Declaration of views for samples"""
 from flask import (
     Blueprint,
-    current_app,
     render_template,
     redirect,
     url_for,
     request,
     flash,
 )
-from app.mimer import (
+from app.bonsai import (
     cgmlst_cluster_samples,
     get_sample_by_id,
     get_group_by_id,
@@ -19,7 +18,6 @@ from app.mimer import (
 from flask_login import login_required, current_user
 from itertools import chain, groupby
 from app.models import ElementType, PredictionSoftware, NT_TO_AA
-from app import config
 
 samples_bp = Blueprint(
     "samples",

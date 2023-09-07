@@ -10,7 +10,7 @@ from flask import (
     flash,
 )
 from flask_login import login_required, current_user
-from app.mimer import (
+from app.bonsai import (
     get_samples_by_id,
     get_groups,
     get_samples_in_group,

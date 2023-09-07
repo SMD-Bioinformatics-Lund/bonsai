@@ -47,11 +47,11 @@ def cluster_on_allele_profile(
 ) -> str:
     """Cluster samples on allele profiles."""
     obs = pd.DataFrame(
-        [s.typingResult for s in profiles], index=[s.sampleId for s in profiles]
+        [sample.allele_profile() for sample in profiles], 
+        index=[sample.sample_id for sample in profiles]
     )
     leaf_names = list(obs.index)
     # calcualte distance matrix
-    raise ValueError(profiles)
     dist_mtrx = pdist(obs, metric=distance_metric.value)
 
     if method == ClusterMethod.NJ:

@@ -6,7 +6,7 @@ from .db.utils import close_mongo_connection, connect_to_mongo
 from .internal.middlewares import configure_cors
 from .routers import root, auth, groups, locations, samples, users, cluster
 
-app = FastAPI(title="Mimer")
+app = FastAPI(title="Bonsai")
 
 # configure CORS
 configure_cors(app)

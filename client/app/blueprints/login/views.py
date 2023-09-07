@@ -1,7 +1,7 @@
 from flask import Blueprint, session, redirect, url_for, request, flash, render_template
 from flask_login import login_user, logout_user, login_required, UserMixin
 from app.extensions import login_manager
-from app.mimer import get_auth_token, get_current_user, TokenObject
+from client.app.bonsai import get_auth_token, get_current_user, TokenObject
 from requests.exceptions import HTTPError
 from app import VERSION
 

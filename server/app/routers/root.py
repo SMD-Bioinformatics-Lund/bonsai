@@ -9,6 +9,6 @@ router = APIRouter()
 async def read_root():
     """Return root message."""
     return {
-        "message": "Welcome to the Mimer api",
+        "message": "Welcome to the Bonsai API",
         "version": version,
     }

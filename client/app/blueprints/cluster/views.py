@@ -1,6 +1,6 @@
 """Declaration of views for samples"""
 from flask import Blueprint, render_template, request, redirect, url_for, current_app
-from app.mimer import cluster_samples, get_samples_by_id, TokenObject
+from app.bonsai import cluster_samples, get_samples_by_id, TokenObject
 from flask_login import login_required, current_user
 from typing import Dict
 from pydantic import BaseModel

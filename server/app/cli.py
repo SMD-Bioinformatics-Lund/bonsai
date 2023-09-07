@@ -27,7 +27,7 @@ def _generate_random_pwd(length=15) -> str:
 @click.version_option(version)
 @click.pass_context
 def cli(ctx):
-    """Mimer api server"""
+    """Bonsai api server"""
     ctx.ensure_object(dict)
     connect_to_mongo()
     db.setup()
