@@ -26,8 +26,8 @@ services:
     environment:
       - ALLOWED_ORIGINS=*
     volumes:
-      - "./server/app:/usr/src/app/app"
-      - "./server/run_mimer.py:/usr/src/app/run_mimer.py"
+      - "./server/app:/home/worker/app/app"
+      - "./volumes/api/genome_signatures:/data/signature_db"
     networks:
       - bonsai-net
     command: "uvicorn app.main:app --reload --host 0.0.0.0"
@@ -45,7 +45,7 @@ services:
       - FLASK_APP=app.app:create_app
       - FLASK_ENV=development 
     volumes:
-      - "./client/app:/usr/src/app/app"
+      - "./client/app:/home/worker/app/app"
     networks:
       - bonsai-net
     command: "flask run --host 0.0.0.0"
@@ -56,4 +56,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.0.1.0/24
+        - subnet: 172.0.20.0/24
