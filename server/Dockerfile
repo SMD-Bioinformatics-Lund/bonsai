@@ -11,7 +11,6 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 # copy project dir
 WORKDIR /home/worker/app
 COPY --chown=worker:worker app app/
-COPY --chown=worker:worker scripts scripts/
 COPY --chown=worker:worker setup.py ./
 
 RUN mkdir -p /data/signature_db && chown -R "worker:worker" /data/signature_db
