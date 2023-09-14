@@ -30,7 +30,7 @@ class DataPointStyle(BaseModel):
 class MetaData(BaseModel):
     """Structure of metadata options"""
 
-    metadata: Dict[str, Dict[str, str]]
+    metadata: Dict[str, Dict[str, str | int | float]]
     metadata_list: list[str]
     metadata_options: Dict[str, DataPointStyle]
 
