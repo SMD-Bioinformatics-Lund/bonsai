@@ -27,7 +27,7 @@ services:
       - ALLOWED_ORIGINS=*
     volumes:
       - "./server/app:/home/worker/app/app"
-      - "./volumes/api/genome_signatures:/data/signature_db"
+      # - "./volumes/api/genome_signatures:/data/signature_db"
     networks:
       - bonsai-net
     command: "uvicorn app.main:app --reload --host 0.0.0.0"
