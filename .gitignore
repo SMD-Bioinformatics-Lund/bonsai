@@ -134,7 +134,9 @@ node_modules
 
 # directory tree
 volumes/mongodb/*
+!volumes/mongodb/.gitkeep
 volumes/api/*
+!volumes/api/.gitkeep
 data/*
 
 # editor related files
