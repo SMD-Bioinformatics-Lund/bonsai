@@ -5,3 +5,6 @@ node_modules
 npm-debug.log
 build
 .dockerignore
+
+# volumes and other mounted files
+volumes
