@@ -13,10 +13,10 @@ WORKDIR /home/worker/app
 COPY --chown=worker:worker app app/
 COPY --chown=worker:worker setup.py ./
 
-RUN mkdir -p /data/signature_db && chown -R "worker:worker" /data/signature_db
-
 # install dependancies
 RUN pip install --no-cache-dir --editable .
+
+RUN mkdir -p /data/signature_db && chown worker:worker /data/signature_db
 
 # run app as non-root user
 USER worker
