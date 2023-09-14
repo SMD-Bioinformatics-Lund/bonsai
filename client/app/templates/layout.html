@@ -12,7 +12,7 @@
             // remove sample id from basket
             // update basket counter by making request to front-end api, 
             const body = {
-                sampleId: btn.parentElement.querySelector('h6').id
+                sample_id: btn.parentElement.querySelector('h6').id
             }
             fetch(`${window.origin}/api/basket/remove`, {
                 method: "POST",
