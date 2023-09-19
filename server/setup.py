@@ -24,7 +24,8 @@ setup(
     "biopython",
     "scipy",
     "scikit-bio",
-    "pydantic-factories"
+    "pydantic-factories",
+    "grapetree"
    ],
    entry_points={
     "console_scripts": ["bonsai_api = app.cli:cli"]
