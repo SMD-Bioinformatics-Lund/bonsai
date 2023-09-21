@@ -25,7 +25,7 @@ class TypingMethod(Enum):
 
 
 class clusterInput(RWModel):
-    sample_ids: list[str] = Field(..., alias="sampleIds")
+    sample_ids: list[str] = Field(..., min_length=2, alias="sampleIds")
     distance: DistanceMethod
     method: ClusterMethod
 
