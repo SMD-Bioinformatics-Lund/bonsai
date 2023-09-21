@@ -8,7 +8,12 @@ from ..crud.errors import EntryNotFound
 from ..models.user import UserOutputDatabase
 from ..models.base import RWModel
 from ..db import db
-from ..internal.cluster import cluster_on_allele_profile, ClusterMethod, DistanceMethod
+from ..internal.cluster import (
+#    cluster_on_allele_profile,
+    cluster_on_allele_profile_grapetree_mstrees,
+    ClusterMethod,
+    DistanceMethod,
+)
 
 router = APIRouter()
 
@@ -63,58 +68,4 @@ async def cluster_samples(
     #     profiles, clusterInput.method, clusterInput.distance
     # )
     # print(newick_tree)
-    return newick_tree
-
-
-def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -> str:
-    """
-    Cluster samples on their cgmlst profile using grapetree MStreesV2.
-    """
-    import tempfile
-    import csv
-    import subprocess
-    import os
-
-    processed_profiles: list[dict] = []
-    tsv_header = set()
-
-    for sample in profiles:
-        processed_profile: dict = sample.allele_profile(strip_errors=True)
-
-        # Recode missing vals to "-"
-        processed_profile = {
-            key: "-" if value is None else value
-            for key, value in processed_profile.items()
-        }
-
-        tsv_header.update(processed_profile.keys())
-
-        # First char in header needs to be a '#'
-        processed_profile["#sample"] = sample.sample_id
-        processed_profiles.append(processed_profile)
-
-    with tempfile.NamedTemporaryFile("w", delete=True) as tmp_alleles_tsv:
-        tsv_header = list(tsv_header)
-        tsv_header.insert(0, "#sample")
-        writer = csv.DictWriter(
-            tmp_alleles_tsv, tsv_header, restval="-", delimiter="\t"
-        )
-        writer.writeheader()
-        writer.writerows(processed_profiles)
-
-        # grapetree freaks out if binary not called from the same dir as input tsv:
-        grapetree_output = subprocess.Popen(
-            [
-                "grapetree",
-                "-p",
-                os.path.basename(tmp_alleles_tsv.name),
-                "-m",
-                "MSTreeV2",
-            ],
-            stdout=subprocess.PIPE,
-            cwd="/tmp",
-        )
-        stdout, _ = grapetree_output.communicate()
-
-    newick_tree = stdout.decode("utf-8").rstrip()
     return newick_tree

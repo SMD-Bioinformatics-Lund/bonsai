@@ -1,11 +1,17 @@
 """Function for clustering."""
+import csv
+import os
+import subprocess
+import tempfile
+from enum import Enum
+
+import pandas as pd
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import pdist
-from ..crud.sample import TypingProfileOutput
-from enum import Enum
-import pandas as pd
-from skbio.tree import nj
 from skbio import DistanceMatrix
+from skbio.tree import nj
+
+from ..crud.sample import TypingProfileOutput
 
 
 class DistanceMethod(Enum):
@@ -47,8 +53,8 @@ def cluster_on_allele_profile(
 ) -> str:
     """Cluster samples on allele profiles."""
     obs = pd.DataFrame(
-        [sample.allele_profile() for sample in profiles], 
-        index=[sample.sample_id for sample in profiles]
+        [sample.allele_profile() for sample in profiles],
+        index=[sample.sample_id for sample in profiles],
     )
     leaf_names = list(obs.index)
     # calcualte distance matrix
@@ -63,4 +69,55 @@ def cluster_on_allele_profile(
         # convert distance matrix to cluster
         tree = hierarchy.to_tree(Z, False)
         newick_tree = to_newick(tree, "", tree.dist, leaf_names)
+    return newick_tree
+
+
+def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -> str:
+    """
+    Cluster samples on their cgmlst profile using grapetree MStreesV2.
+    """
+
+    processed_profiles: list[dict] = []
+    tsv_header = set()
+
+    for sample in profiles:
+        processed_profile: dict = sample.allele_profile(strip_errors=True)
+
+        # Recode missing vals to "-"
+        processed_profile = {
+            key: "-" if value is None else value
+            for key, value in processed_profile.items()
+        }
+
+        tsv_header.update(processed_profile.keys())
+
+        # First char in header needs to be a '#'
+        processed_profile["#sample"] = sample.sample_id
+        processed_profiles.append(processed_profile)
+
+    with tempfile.NamedTemporaryFile("w", delete=True) as tmp_alleles_tsv:
+        tsv_header = list(tsv_header)
+        tsv_header.insert(0, "#sample")
+        writer = csv.DictWriter(
+            tmp_alleles_tsv, tsv_header, restval="-", delimiter="\t"
+        )
+        writer.writeheader()
+        writer.writerows(processed_profiles)
+
+        # grapetree freaks out if binary not called from the same dir as input tsv:
+        grapetree_output = subprocess.Popen(
+            [
+                "grapetree",
+                "-p",
+                os.path.basename(tmp_alleles_tsv.name),
+                "-m",
+                "MSTreeV2",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,  # ignore grapetree warnings/stderr
+            cwd="/tmp",
+        )
+        stdout, _ = grapetree_output.communicate()
+
+    newick_tree = stdout.decode("utf-8").rstrip()
     return newick_tree
