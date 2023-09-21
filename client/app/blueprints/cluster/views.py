@@ -1,10 +1,11 @@
 """Declaration of views for samples"""
-from flask import Blueprint, render_template, request, redirect, url_for, current_app
+from flask import Blueprint, render_template, request, url_for, flash, redirect
 from app.bonsai import cluster_samples, get_samples_by_id, TokenObject
 from flask_login import login_required, current_user
 from typing import Dict
 from pydantic import BaseModel
 from enum import Enum
+from requests.exceptions import HTTPError
 import json
 
 
@@ -134,14 +135,17 @@ def cluster_and_display_tree():
         ]
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
-        newick = cluster_samples(token, sample_ids=sample_ids, typing_method="cgmlst")
-
-        # get metadata
-        samples = get_samples_by_id(token, sample_ids=sample_ids)
-        metadata = gather_metadata(samples["records"])
-        # query for sample metadata
-        data = dict(nwk=newick, **metadata.dict())
-        return render_template(
-            "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
-        )
-    return url_for("public.index")
+        try:
+            newick = cluster_samples(token, sample_ids=sample_ids, typing_method="cgmlst")
+        except HTTPError as error:
+            flash(str(error), "danger")
+        else:
+            # get metadata
+            samples = get_samples_by_id(token, sample_ids=sample_ids)
+            metadata = gather_metadata(samples["records"])
+            # query for sample metadata
+            data = dict(nwk=newick, **metadata.dict())
+            return render_template(
+                "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
+            )
+    return redirect(url_for("public.index"))
