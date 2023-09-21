@@ -91,7 +91,11 @@
                 {% set has_same_profile = samples | has_same_analysis_profile %}
                 <form action="{{ url_for('cluster.cluster_and_display_tree') }}" method="POST" target="_blank">
                     <input name="sampleIds" type="text" value='{{ samples | tojson }}' hidden>
-                    <button type="submit" class="btn btn-success" {% if not has_same_profile and samples | length > 1 %}disabled{% endif %}>
+                    <button 
+                      type="submit" 
+                      class="btn btn-success" 
+                      {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
+                    >
                         Cluster
                     </button>
                 </form>
