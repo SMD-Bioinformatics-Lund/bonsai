@@ -13,6 +13,10 @@ from skbio.tree import nj
 
 from ..crud.sample import TypingProfileOutput
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 class DistanceMethod(Enum):
     """Index of methods for calculating the distance matrix during hierarchical clustering of samples."""
@@ -75,6 +79,12 @@ def cluster_on_allele_profile(
 def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -> str:
     """
     Cluster samples on their cgmlst profile using grapetree MStreesV2.
+
+    Returns:
+     - newick tree (str)
+
+    Profiles are recoded to grapetree input format and sent away as a TSV to
+    the grapetree binary
     """
 
     processed_profiles: list[dict] = []
@@ -96,28 +106,38 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
         processed_profiles.append(processed_profile)
 
     with tempfile.NamedTemporaryFile("w", delete=True) as tmp_alleles_tsv:
-        tsv_header = list(tsv_header)
+        tsv_header = sorted(list(tsv_header))
         tsv_header.insert(0, "#sample")
         writer = csv.DictWriter(
             tmp_alleles_tsv, tsv_header, restval="-", delimiter="\t"
         )
+        LOG.debug(
+            "Writing %s profiles to %s", len(processed_profiles), tmp_alleles_tsv.name
+        )
         writer.writeheader()
         writer.writerows(processed_profiles)
+        tmp_alleles_tsv.flush()
 
-        # grapetree freaks out if binary not called from the same dir as input tsv:
-        grapetree_output = subprocess.Popen(
-            [
-                "grapetree",
-                "-p",
-                os.path.basename(tmp_alleles_tsv.name),
-                "-m",
-                "MSTreeV2",
-            ],
+        grapetree_cmd = [
+            "grapetree",
+            "-p",
+            os.path.basename(tmp_alleles_tsv.name),
+            "-m",
+            "MSTreeV2",
+        ]
+
+        LOG.debug(f"Executing os cmd: %s", " ".join(grapetree_cmd))
+
+        # working directory needs to be writeable as grapetree created tmp
+        # files when generating the tree, hence cwd=/tmp
+        with subprocess.Popen(
+            grapetree_cmd,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,  # ignore grapetree warnings/stderr
+            stderr=subprocess.PIPE,  # ignore grapetree warnings/stderr.
             cwd="/tmp",
-        )
-        stdout, _ = grapetree_output.communicate()
+        ) as grapetree_output:
+            stdout, _ = grapetree_output.communicate()
 
     newick_tree = stdout.decode("utf-8").rstrip()
+    LOG.debug(f"Returning newick tree: %s", newick_tree)
     return newick_tree
