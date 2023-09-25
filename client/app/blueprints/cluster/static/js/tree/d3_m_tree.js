@@ -1029,6 +1029,69 @@ D3MSTree.prototype.getTreeAsNewick=function(){
 	return this.newickTree;
 }
 
+/* Björn's modified labels:
+ *
+ * The modified _setNodeText below should allow for the display of multiple sample id
+ * labels for grouped nodes, rather than just one.
+ *
+ */
+D3MSTree.prototype._setNodeText = function(){
+    var self=this;
+    var grouped = this.grouped_nodes;
+    var field =this.node_text_value;
+    this.node_elements.selectAll('text').remove();
+    if (! this.show_node_labels){
+        return;
+    }
+    var node_text = this.node_elements.filter(function(d){
+        return (!d.hypothetical || self.show_hypothetical_nodes);
+    }).
+    append('text').attr('class', 'node-group-number').
+    attr('dy', ".71em").attr('text-anchor', 'middle').attr('font-size', this.node_font_size).
+    attr('font-family', 'sans-serif').attr('transform', function(it){
+        return "translate(0," + -self.node_font_size / 3 + ")";
+     }).text(function(it){
+        if (field && field !== "node_id"){
+             var meta_ids = self.metadata_map[it.id];
+             if (meta_ids){
+                 var display = self.metadata[meta_ids[0]][field];
+                 return display?display:"ND";
+             } else {
+                     return "ND";
+             }
+        }
+	var all_ids_html = grouped[it.id].join(',');
+	return all_ids_html;
+            //return it.id;
+}).call(wrap, 100);
+
+
+
+function wrap(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(',').reverse(),
+        word,
+        line = [],
+        lineHeight = 1, // ems
+        y = text.attr("y")-8*words.length,
+		lnum=1,
+        dy = parseFloat(text.attr("dy")),
+        tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      line.pop();
+      tspan.text(line.join(" "));
+      line = [word];
+      tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lnum*lineHeight + dy + "em").text(word);
+    }
+  });
+}
+};
+
+
+/* Original function included in grapetree/D3
 D3MSTree.prototype._setNodeText = function(){
         var self=this;
         var field =this.node_text_value;
@@ -1058,6 +1121,7 @@ D3MSTree.prototype._setNodeText = function(){
                 return  it.id
         });
 };
+*/
 
 D3MSTree.prototype.delOtherNodes = function(nodes) {
 	var nn = {};
