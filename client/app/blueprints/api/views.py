@@ -2,11 +2,9 @@
 from flask import Blueprint, request, session, jsonify
 from flask_login import login_required, current_user
 import json
-import logging
+
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
-
-LOG = logging.getLogger(__name__)
 
 
 @api_bp.route("/api/basket/add", methods=["POST"])
