@@ -10,7 +10,7 @@ from .tags import Tag
 
 from .metadata import RunMetadata
 from .phenotype import ElementTypeResult, ElementType, PredictionSoftware
-from .qc import QcMethodIndex
+from .qc import QcMethodIndex, QcClassification
 from .typing import TypingMethod, TypingResultCgMlst, TypingResultMlst, TypingSoftware
 
 CURRENT_SCHEMA_VERSION = 1
@@ -80,6 +80,7 @@ class SampleBase(ModifiedAtRWModel):
 
     patient_id: str | None = Field(None)
     tags: List[Tag] = []
+    qc_status: QcClassification = QcClassification()
     # comments and non analytic results
     comments: List[CommentInDatabase] = []
     location: str | None = Field(None, description="Location id")

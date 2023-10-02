@@ -18,14 +18,16 @@ from ..models.sample import (
     SampleInDatabase,
     PipelineResult,
 )
-from ..models.typing import CGMLST_ALLELES, TypingMethod
 from ..models.sample import SampleInDatabase
+from ..models.qc import QcClassification
+from ..models.typing import CGMLST_ALLELES
 from ..models.base import RWModel
 from .errors import EntryNotFound, UpdateDocumentError
 from app import config
 import gzip
 import pathlib
 from ..utils import format_error_message
+from fastapi.encoders import jsonable_encoder
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -134,7 +136,7 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
         in_collections=[], **sample.dict()
     )
     # store data in database
-    doc = await db.sample_collection.insert_one(sample_db_fmt.dict())
+    doc = await db.sample_collection.insert_one(jsonable_encoder(sample_db_fmt))
     # print(sample_db_fmt.dict(by_alias=True))
 
     # create object representing the dataformat in database
@@ -226,8 +228,8 @@ async def hide_comment(
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     fields = SampleInDatabase.__fields__
-    param_modified = fields["modified_at"].name
-    param_comment = fields["comments"].name
+    param_modified = "modified_at"
+    param_comment = "comments"
     # get existing comments for sample to get the next comment id
     print([param_comment, sample_id, comment_id])
     update_obj = await db.sample_collection.update_one(
@@ -250,6 +252,26 @@ async def hide_comment(
         cmd.displayed = False if cmt.id == comment_id else cmt.displayed
         comments.append(cmt)
     return comments
+
+
+async def update_sample_qc_classification(db: Database, sample_id: str, classification: QcClassification) -> bool:
+    """Update the quality control classification of a sample"""
+
+    query = {"sample_id": sample_id}
+    update_obj = await db.sample_collection.update_one(query, {
+        "$set": {
+            "modified_at": datetime.now(),
+            "qc_status": jsonable_encoder(classification)
+        }
+    })
+    # verify successful update
+    # if sample is not fund
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(sample_id)
+    # if not modifed
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(sample_id)
+    return classification
 
 
 async def add_location(
