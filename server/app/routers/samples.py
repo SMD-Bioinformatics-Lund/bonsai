@@ -17,7 +17,7 @@ from pymongo.errors import DuplicateKeyError
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import get_sample, get_samples, add_genome_signature_file
+from ..crud.sample import get_sample, get_samples_summay, add_genome_signature_file
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.user import get_current_active_user
 from ..db import db
@@ -52,6 +52,8 @@ async def read_samples(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
     offset: int = Query(0, gt=-1),
+    include_mlst: bool = True,
+    include_cgmlst: bool = True,
     sid: List[str] | None = Query(None),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -59,7 +61,7 @@ async def read_samples(
 ):
     # skip and offset function the same
     skip = max([offset, skip])
-    db_obj = await get_samples(db, limit, skip, sid)
+    db_obj = await get_samples_summay(db, limit=limit, skip=skip, include=sid, include_mlst=include_mlst, include_cgmlst=include_cgmlst)
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 

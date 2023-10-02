@@ -106,15 +106,16 @@ def edit_groups(group_id=None):
 def group(group_id):
     """Group view."""
     token = TokenObject(**current_user.get_id())
-    group = get_samples_in_group(token, group_id=group_id, lookup_samples=True)
+    group = get_samples_in_group(token, group_id=group_id, lookup_samples=False)
+    table_definition = group["table_columns"]
+    samples = get_samples_by_id(token, limit=0, skip=0, sample_ids=group["included_samples"])
     # TODO add flag to exclude cgmlst from api call
     # TODO implement table definition to dynamically generate a table
     # TODO add pagination
-    table_definition = group["table_columns"]
     return render_template(
         "group.html",
         title=group_id,
         group_id=group_id,
-        samples=group["included_samples"],
+        samples=samples["records"],
         table_definition=table_definition,
     )

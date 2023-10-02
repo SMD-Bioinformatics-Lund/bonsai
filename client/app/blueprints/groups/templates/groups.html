@@ -79,7 +79,7 @@
             liveSearch: true,
             columns: [
                 {
-                    field: 'sampleId',
+                    field: 'sample_id',
                     text: 'Sample Id',
                     sortable: true,
                     searchable: true,
@@ -100,21 +100,21 @@
                     sortable: true,
                     searchable: true,
                     render: 'taxonomic_name',
-                    path: '$.species_prediction[0].scientific_name'
+                    path: '$.species_prediction.scientific_name'
                 },
                 {
                     field: 'mlst-st',
                     text: 'MLST St',
                     sortable: true,
                     searchable: true,
-                    path: '$.typing_result[0].result.sequence_type'
+                    path: '$.mlst.sequence_type'
                 },
                 {
                     field: 'profile',
                     text: 'Analysis profile',
                     sortable: true,
                     searchable: true,
-                    path: '$.run_metadata.run.analysis_profile'
+                    path: '$.profile'
                 },
                 {
                     field: 'cdate',

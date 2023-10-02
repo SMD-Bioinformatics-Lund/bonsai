@@ -134,7 +134,7 @@ def get_samples_by_id(headers, **kwargs):
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples'
     parmas = dict(
-        sample_ids=kwargs.get("sample_ids", None),
+        sid=kwargs.get("sample_ids", None),
         limit=kwargs.get("limit", 20),
         skip=kwargs.get("skip", 0),
     )

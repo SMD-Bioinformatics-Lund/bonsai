@@ -42,30 +42,25 @@ async def get_group(
     db: Database, group_id: str, lookup_samples: bool = False
 ) -> GroupInfoDatabase:
     """Get collections from database."""
-    group_fields = GroupInfoDatabase.__fields__
-    sample_fields = SampleSummary.__fields__
-    included_samples_field = group_fields["included_samples"].name
-
     # make aggregation pipeline
     pipeline = [
-        {"$match": {group_fields["group_id"].name: group_id}},
+        {"$match": {"group_id": group_id}},
     ]
     if lookup_samples:
-        typing_field = sample_fields["typing_result"]
         pipeline.extend(
             [
                 {
                     "$lookup": {
                         "from": db.sample_collection.name,
-                        "localField": included_samples_field,
-                        "foreignField": sample_fields["sample_id"].name,
-                        "as": included_samples_field,
+                        "localField": "included_samples",
+                        "foreignField": "sample_id",
+                        "as": "included_samples",
                         "pipeline": [
                             {
                                 "$addFields": {
-                                    typing_field.name: {
+                                    "typing_result": {
                                         "$filter": {
-                                            "input": f"${typing_field.name}",
+                                            "input": "typing_result",
                                             "as": "result",
                                             "cond": {
                                                 "$ne": [
@@ -75,8 +70,8 @@ async def get_group(
                                             },
                                         }
                                     },
-                                    sample_fields["major_specie"].name: {
-                                        "$first": f"${sample_fields['species_prediction'].name}"
+                                    "major_specie": {
+                                        "$first": "species_prediction"
                                     },
                                 }
                             },
@@ -111,8 +106,7 @@ async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDa
 
 async def delete_group(db: Database, group_id: str) -> bool:
     """Delete group with group_id from database."""
-    gid_field = GroupInfoDatabase.__fields__["group_id"].name
-    doc = await db.sample_group_collection.delete_one({gid_field: group_id})
+    doc = await db.sample_group_collection.delete_one({"group_id": group_id})
     if doc.deleted_count == 0:
         raise EntryNotFound(group_id)
     return doc.deleted_count
@@ -122,14 +116,11 @@ async def update_group(
     db: Database, group_id: str, group_record: GroupInCreate
 ) -> GroupInfoDatabase:
     """Update information of group."""
-    fields = GroupInfoDatabase.__fields__
-    param_modified = fields["modified_at"].name
-    gid_field = fields["group_id"].name
     # update info in database
     update_obj = await db.sample_group_collection.update_one(
-        {gid_field: group_id},
+        {"group_id": group_id},
         {
-            "$set": {param_modified: datetime.now()},
+            "$set": {"modified_at": datetime.now()},
             "$set": group_record.dict(),
         },
     )
@@ -152,16 +143,12 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
 async def append_sample_to_group(db: Database, sample_id: str, group_id: str) -> None:
     """Create a new collection document."""
     sample_obj = await get_sample(db, sample_id)
-    fields = UpdateIncludedSamples.__fields__
-    param_included_sample = fields["included_samples"].name
-    param_modified = fields["modified_at"].name
-    gid_field = GroupInfoDatabase.__fields__["group_id"].name
     update_obj = await db.sample_group_collection.update_one(
-        {gid_field: group_id},
+        {"group_id": group_id},
         {
-            "$set": {param_modified: datetime.now()},
+            "$set": {"modified_at": datetime.now()},
             "$addToSet": {
-                param_included_sample: sample_obj.sample_id,
+                "included_samples": sample_obj.sample_id,
             },
         },
     )

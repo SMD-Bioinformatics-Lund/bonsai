@@ -18,7 +18,8 @@ from ..models.sample import (
     SampleInDatabase,
     PipelineResult,
 )
-from ..models.typing import CGMLST_ALLELES
+from ..models.typing import CGMLST_ALLELES, TypingMethod
+from ..models.sample import SampleInDatabase
 from ..models.base import RWModel
 from .errors import EntryNotFound, UpdateDocumentError
 from app import config
@@ -52,6 +53,55 @@ class TypingProfileAggregate(RWModel):
 TypingProfileOutput = list[TypingProfileAggregate]
 
 
+async def get_samples_summay(
+    db: Database,
+    limit: int = 0,
+    skip: int = 0,
+    include: List[str] | None = None,
+    include_mlst: bool = True,
+    include_cgmlst: bool = True,
+    include_amr: bool = True,
+    include_virulence: bool = True,
+) -> List[SampleInDatabase]:
+    """Get a summay of several samples."""
+    # build query pipeline
+    pipeline = []
+    if include is not None:
+        pipeline.append({"$match": {"sample_id": {"$in": include}}})
+    if skip > 0:
+        pipeline.append({"$skip": skip})
+    if limit > 0:
+        pipeline.append({"$limit": limit})
+
+
+    pipeline.append({
+        "$addFields": {
+            "typing_result": {
+                "$filter": {
+                    "input": "$typing_result",
+                    "as": "res",
+                    "cond": {"$eq": ["$$res.type", "mlst"]}
+                }
+            }
+        }
+    })
+    pipeline.append({
+        "$project": {
+            "_id": 0,
+            "id": {"$convert": {"input": "$_id", "to": "string"}},
+            "sample_id": 1,
+            "tags": 1,
+            "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
+            "mlst": {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}},
+            "profile": "$run_metadata.run.analysis_profile",
+            "created_at": 1,
+        }
+    })
+
+    cursor = db.sample_collection.aggregate(pipeline)
+    return await cursor.to_list(None)
+
+
 async def get_samples(
     db: Database,
     limit: int = 0,
@@ -76,7 +126,6 @@ async def get_samples(
             continue
         samp_objs.append(sample)
     return samp_objs
-
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
