@@ -83,7 +83,7 @@
         </div>
         <div class="col-auto d-flex flex-row">
             <select id="failed-qc-action" class="form-select form-select-sm" name="qc-action" aria-label="Action on failed sample" disabled>
-                <option selected>Select action</option>
+                <option selected disabled>Select action</option>
                 {% for action in bad_qc_actions %}
                     <option 
                         value="{{action}}"
