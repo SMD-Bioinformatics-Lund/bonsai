@@ -378,6 +378,7 @@
         // enable selction of actions to take after rejecting a sample
         const select = document.getElementById("failed-qc-action")
         select.disabled = true
+        select.hidden = true
         select.value = null
         const textArea = document.getElementById("failed-qc-comment-container")
         textArea.hidden = true
@@ -385,7 +386,9 @@
     })
     document.getElementById("failed-qc-btn").addEventListener("click", () => {
         // enable selction of actions to take after rejecting a sample
-        document.getElementById("failed-qc-action").disabled = false
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = false
+        select.hidden = false
         document.getElementById("failed-qc-comment-container").hidden = false
     })
 </script>
