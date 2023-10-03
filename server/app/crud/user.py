@@ -1,6 +1,7 @@
 """User CRUD operations."""
 from email.policy import HTTP
 from gzip import READ
+from typing import List
 
 from bson import ObjectId
 from fastapi import Depends, Security, status, HTTPException
@@ -10,14 +11,15 @@ from fastapi.security import (
     OAuth2PasswordBearer,
     SecurityScopes,
 )
+from fastapi.encoders import jsonable_encoder
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
 from ..config import USER_ROLES, SECRET_KEY, ALGORITHM
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import UserInputCreate, UserInputDatabase, UserOutputDatabase
-from .errors import EntryNotFound
+from ..models.user import UserInputCreate, UserInputDatabase, UserOutputDatabase, SampleBasketObject
+from .errors import EntryNotFound, UpdateDocumentError
 
 security = HTTPBasic()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
@@ -116,3 +118,68 @@ async def get_current_active_user(
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+async def get_samples_in_user_basket(current_user,
+    security: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+) -> List[SampleBasketObject]:
+    """Get samples in the current user basket."""
+    user: UserOutputDatabase = await get_user(db, username=current_user.username)
+    return user.basket
+
+
+async def add_samples_to_user_basket(
+    current_user: UserOutputDatabase,
+    sample_ids: List[SampleBasketObject],
+    security: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+) -> SampleBasketObject:
+    """Add samples to the basket of the current user."""
+    update_obj = await db.user_collection.update_one(
+        {"username": current_user.username},
+        {
+            "$addToSet": {
+                "basket": {
+                    "$each": jsonable_encoder(sample_ids),
+                },
+            },
+        }
+    )
+
+    # verify update
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(current_user.username)
+    
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(current_user.username)
+
+    # get updated object
+    user: UserOutputDatabase = await get_user(db, username=current_user.username)
+    return user.basket
+
+
+async def remove_samples_from_user_basket(
+    current_user: UserOutputDatabase,
+    sample_ids: List[SampleBasketObject],
+    security: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+) -> SampleBasketObject:
+    """Remove samples to the basket of the current user."""
+    update_obj = await db.user_collection.update_one(
+        {"username": current_user.username},
+        {
+            "$pull": {
+                "basket": {
+                    "sample_id": {"$in": sample_ids}
+                },
+            },
+        }
+    )
+
+    # verify update
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(current_user.username)
+    
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(current_user.username)
+    # get updated basket
+    user: UserOutputDatabase = await get_user(db, username=current_user.username)
+    return user.basket

@@ -7,6 +7,12 @@ from pydantic import EmailStr
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
 
+class SampleBasketObject(RWModel):
+    """Contaner for sample baskt content."""
+    sample_id: str
+    analysis_profile: str
+
+
 class UserBase(RWModel):
     """Base user model"""
 
@@ -16,6 +22,7 @@ class UserBase(RWModel):
     email: EmailStr
     disabled: bool = False
     roles: List[str] = []
+    basket: List[SampleBasketObject] = []
 
 
 class UserInputCreate(UserBase):
