@@ -66,23 +66,23 @@
 
 {% macro qc_classificaion(cls, bad_qc_actions, sample_id) %}
 <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
-<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" method="post" class="">
+<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" method="post" name="qc-classification" class="form-control">
     <div class="row pb-2">
         <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
             <input 
                 type="radio" class="btn-check btn-sm" name="qc-validation" 
-                id="passed-qc-btn" autocomplete="off"
+                id="passed-qc-btn" autocomplete="off" value="passed"
                 {% if cls.status == "passed" %}checked{% endif  %}
             >
             <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
             <input type="radio" class="btn-check btn-sm" name="qc-validation"
-                id="failed-qc-btn" autocomplete="off"
+                id="failed-qc-btn" autocomplete="off" value="failed"
                 {% if cls.status == "failed" %}checked{% endif  %}
             >
             <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
         </div>
         <div class="col-auto d-flex flex-row">
-            <select id="failed-qc-action" class="form-select form-select-sm" aria-label="Action on failed sample" disabled>
+            <select id="failed-qc-action" class="form-select form-select-sm" name="qc-action" aria-label="Action on failed sample" disabled>
                 <option selected>Select action</option>
                 {% for action in bad_qc_actions %}
                     <option 
@@ -96,9 +96,8 @@
     <div id="failed-qc-comment-container" class="row" {% if cls.status != "failed" %}hidden{% endif %}>
         <div id="" class="col-auto">
             <label class="text-muted" for="failed-qc-comment">Comment</label>
-            <textarea type="text" class="form-control" name="comment" id="failed-qc-comment" 
-                value="{{cls.comment}}" required
-            ></textarea>
+            <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment" required
+            >{{cls.comment}}</textarea>
         </div>
     </div>
     <div class="row">

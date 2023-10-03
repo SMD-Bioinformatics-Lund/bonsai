@@ -216,6 +216,24 @@ def remove_comment_from_sample(headers, **kwargs):
 
 
 @api_authentication
+def update_sample_qc_classification(headers, **kwargs):
+    """Update the qc classificaiton of a sample"""
+    if not 'sample_id' in kwargs:
+        raise ValueError('Sample id is required for this entrypoint')
+    sample_id = kwargs['sample_id']
+    data = {
+        "status": kwargs.get("status"),
+        "action": kwargs.get("action"),
+        "comment": kwargs.get("comment"),
+    }
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/qc_status'
+    resp = requests.put(url, headers=headers, json=data)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def cluster_samples(headers, **kwargs):
     """Cluster samples on selected typing result."""
     typing_method = kwargs.get("typing_method", "cgmslt")

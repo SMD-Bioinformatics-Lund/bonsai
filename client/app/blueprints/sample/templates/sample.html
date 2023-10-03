@@ -243,6 +243,9 @@
                             </a>
                         {% endfor %}
                     </p>
+                    <p>
+                        QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
+                    </p>
                 </div>
             </div>
             <h4>Epidemiological Typing</h4>

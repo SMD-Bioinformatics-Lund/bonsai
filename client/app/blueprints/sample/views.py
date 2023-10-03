@@ -13,6 +13,7 @@ from app.bonsai import (
     get_sample_by_id,
     get_group_by_id,
     post_comment_to_sample,
+    update_sample_qc_classification,
     remove_comment_from_sample,
     find_samples_similar_to_reference,
     TokenObject,
@@ -227,8 +228,8 @@ def hide_comment(sample_id, comment_id):
         resp = remove_comment_from_sample(
             token, sample_id=sample_id, comment_id=comment_id
         )
-    except:
-        flash(resp.text, "danger")
+    except Exception as error:
+        flash(str(error), "danger")
     finally:
         return redirect(url_for("samples.sample", sample_id=sample_id))
 
@@ -238,20 +239,26 @@ def hide_comment(sample_id, comment_id):
 def update_qc_classification(sample_id):
     """Update the quality control report of a sample."""
     token = TokenObject(**current_user.get_id())
-    data = request.form["qc_status"]
-    # todo validate data
-    flash(dir(request.form), "danger")
-    return redirect(url_for("samples.sample", sample_id=sample_id))
-    """
+
+    # build data to store in db
+    result = request.form.get('qc-validation', None)
+    if result == 'passed':
+        action = None
+        comment = ''
+    elif result == 'failed':
+        comment = request.form.get('qc-comment', '')
+        action = request.form.get('qc-action', '')
+    else:
+        raise ValueError(f'Unknown value of qc classification, {result}')
+
     try:
-        resp = post_comment_to_sample(
-            token, sample_id=sample_id, user_name=current_user.username, comment=data
+        update_sample_qc_classification(
+            token, sample_id=sample_id, status=result, action=action, comment=comment
         )
-    except:
-        flash(resp.text, "danger")
+    except Exception as error:
+        flash(str(error), "danger")
     finally:
         return redirect(url_for("samples.sample", sample_id=sample_id))
-    """
 
 
 @samples_bp.route("/samples/<sample_id>/resistance_report")
