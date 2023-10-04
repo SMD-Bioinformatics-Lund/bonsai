@@ -28,7 +28,7 @@
                 <li class="nav-item d-flex flex-row">
                     <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button">
                         <i class="bi bi-basket3 fs-4"></i>
-                        {% set basket=session.get('basket', []) %}
+                        {% set basket=current_user.basket %}
                         {% if basket | length > 0 %}
                             <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
                                 <span id="samples-in-basket-counter">{{ basket | length }}</span>
@@ -52,12 +52,12 @@
     </div>
     </div>
 </nav>
-{{ sample_basket_offcanvas() }}
+{{ sample_basket_offcanvas(current_user) }}
 {% endmacro %}
 
-{% macro sample_basket_offcanvas() %}
+{% macro sample_basket_offcanvas(current_user) %}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
-    {% set samples = session.get('basket', [])%} 
+    {% set samples = current_user.basket %} 
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">
             {% if samples | length > 0 %}
@@ -76,7 +76,7 @@
                     <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
                         <a class="text-muted d-flex flex-column" href="{{ url_for('samples.sample', sample_id=sample.sample_id) }}">
                             <h6 id="{{ sample.sample_id }}" class="text-uppercase fw-bold text-muted my-0 py-0">{{ sample.sample_id }}</h6>
-                            <i class="text-muted fs-6 fw-light p-0">{{ sample.profile }}</i>
+                            <i class="text-muted fs-6 fw-light p-0">{{ sample.analysis_profile }}</i>
                         </a>
                         <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
                             <i class="bi bi-trash3-fill"></i>

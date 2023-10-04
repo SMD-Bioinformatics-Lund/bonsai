@@ -12,6 +12,12 @@ class RWModel(BaseModel):
         use_enum_values = True
 
 
+class SampleBasketObject(RWModel):
+    """Contaner for sample baskt content."""
+    sample_id: str
+    analysis_profile: str
+
+
 class PredictionSoftware(Enum):
     """Container for software names."""
 

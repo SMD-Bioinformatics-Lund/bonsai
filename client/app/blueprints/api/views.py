@@ -1,6 +1,8 @@
 """Declaration of flask api entrypoints"""
-from flask import Blueprint, request, session, jsonify
+from flask import Blueprint, request, session, jsonify, flash
 from flask_login import login_required, current_user
+from app.bonsai import add_samples_to_basket, remove_samples_from_basket, TokenObject
+from app.models import SampleBasketObject
 import json
 
 
@@ -15,19 +17,18 @@ def add_sample_to_basket():
     if current_user.get_id() is None:
         return jsonify("Not authenticated"), 401
 
-    if request.method == "POST":
-        # add samples to basket
-        samples_in_basket = session.get("basket", [])
-        samples_to_add = json.loads(request.data).get("selectedSamples")
-        # add only unique id
-        session["basket"] = list(
-            {
-                entry["sample_id"]: entry
-                for entry in samples_in_basket + samples_to_add
-            }.values()
-        )
-        msg = ", ".join([entry["sample_id"] for entry in samples_in_basket])
-        return f"Added {msg}", 200
+    # add samples to basket
+    raw_samples = json.loads(request.data).get("selectedSamples")
+    # cast to correct type
+    samples_to_add = [SampleBasketObject(**smp) for smp in raw_samples]
+    try:
+        token = TokenObject(**current_user.get_id())
+        add_samples_to_basket(token, samples=samples_to_add)
+    except Exception as error:
+        flash(str(error), 'warning')
+        return "Error", 500
+    else:
+        return "Added", 200
 
 
 @api_bp.route("/api/basket/remove", methods=["POST"])
@@ -38,18 +39,10 @@ def remove_sample_from_basket():
     if current_user.get_id() is None:
         return "Not authenticated", 401
 
-    if request.method == "POST":
-        # add samples to basket
-        samples_in_basket = session.get("basket")
-        request_data = json.loads(request.data)
-        if request_data.get("remove_all", False):
-            to_remove = str(session["basket"])
-            session["basket"] = []
-        else:
-            to_remove = json.loads(request.data).get("sample_id", "")
-            samples = [
-                sid for sid in samples_in_basket if not sid["sample_id"] == to_remove
-            ]
-            session["basket"] = samples
-        return f"removed {to_remove}", 200
+    sample_id = json.loads(request.data).get('sample_id', None)
+    if sample_id is None:
+        return "Invalid input", 500
+
+    token = TokenObject(**current_user.get_id())
+    remove_samples_from_basket(token, sample_ids=[sample_id])
     return "", 200

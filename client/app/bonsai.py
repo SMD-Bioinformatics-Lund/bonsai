@@ -2,10 +2,10 @@
 from email import header
 import requests
 from requests.structures import CaseInsensitiveDict
-from pathlib import Path
 from flask import current_app
-from pydantic import BaseModel, BaseConfig, Field
+from pydantic import BaseModel
 from functools import wraps
+from .models import SampleBasketObject
 
 
 class TokenObject(BaseModel):
@@ -105,11 +105,36 @@ def update_group(headers, **kwargs):
 
 @api_authentication
 def create_group(headers, **kwargs):
-    """Create new group."""
+    """create new group."""
     data = kwargs.get("data")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups'
     resp = requests.post(url, json=data, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def add_samples_to_basket(headers, **kwargs):
+    """create new group."""
+    samples: List[SampleBasketObject] = kwargs.get("samples")
+    samples = [smp.dict() for smp in samples]
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
+    resp = requests.put(url, json=samples, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def remove_samples_from_basket(headers, **kwargs):
+    """create new group."""
+    sample_ids: List[str] = kwargs.get("sample_ids")
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
+    resp = requests.delete(url, json=sample_ids, headers=headers)
 
     resp.raise_for_status()
     return resp.json()

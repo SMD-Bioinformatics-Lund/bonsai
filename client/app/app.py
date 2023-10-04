@@ -241,5 +241,5 @@ def register_filters(app):
     @app.template_filter()
     def has_same_analysis_profile(samples):
         """Check if all samples from session cache have the same analysis profile."""
-        profiles = [sample["profile"] for sample in samples]
+        profiles = [sample["analysis_profile"] for sample in samples]
         return len(set(profiles)) == 1

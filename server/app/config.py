@@ -26,10 +26,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 USER_ROLES = {
     "admin": [
         "users:me",
+        "users:read",
         "groups:read",
         "groups:write",
         "samples:read",
         "samples:write",
+        "locations:read",
+        "locations:write",
     ],
     "user": [
         "users:me",
