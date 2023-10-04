@@ -320,7 +320,7 @@ async def get_typing_profiles(
 
 
 def get_samples_similar_to_reference(
-    sample_id: str, min_similarity: float, kmer_size: int = 21, limit: int | None = None
+    sample_id: str, min_similarity: float, kmer_size: int, limit: int | None = None
 ):
     """Get find samples that are similar to reference sample.
 
@@ -330,19 +330,23 @@ def get_samples_similar_to_reference(
 
     # load sourmash index
     signature_dir = Path(config.GENOME_SIGNATURE_DIR)
-    index_path = signature_dir.joinpath(f"samples.sbt.zip")
+    index_path = signature_dir.joinpath(f"genomes.sbt.zip")
     # ensure that index exist
     if not index_path.is_file():
         raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
     tree = sourmash.load_file_as_index(str(index_path))
 
     # load reference sequence
-    query_signature_path = signature_dir.joinpath("samples", f"{sample_id}.sig")
+    query_signature_path = signature_dir.joinpath(f"{sample_id}.sig")
     if not query_signature_path.is_file():
         raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
-    query_signature = sourmash.load_one_signature(
+    query_signature = list(sourmash.load_file_as_signatures(
         str(query_signature_path), ksize=kmer_size
-    )
+    ))
+    if len(query_signature) == 0:
+        raise ValueError(f'No signature in: {sample_id} with kmer size: {kmer_size}')
+    else:
+        query_signature = query_signature[0]
 
     # query for similar sequences
     result = tree.search(query_signature, threshold=min_similarity)
