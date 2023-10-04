@@ -271,7 +271,7 @@ async def read_sample(
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
     ),
-    limit: int = Query(10, gt=-1, title="Limit the output to x samples"),
+    limit: int | None = Query(10, gt=-1, title="Limit the output to x samples"),
     similarity: float = Query(0.5, gt=0, title="Similarity threshold"),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
