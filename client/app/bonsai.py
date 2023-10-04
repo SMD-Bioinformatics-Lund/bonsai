@@ -229,3 +229,18 @@ def cluster_samples(headers, **kwargs):
     resp = requests.post(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
+
+
+@api_authentication
+def find_samples_similar_to_reference(headers, **kwargs):
+    """Find samples with closest minhash distance to reference."""
+    sample_id: str = kwargs.get("sample_id")
+    similarity: float = kwargs.get("similarity", 0.5)  # similarity score
+    limit: int = kwargs.get("limit", None)
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
+    resp = requests.get(url, headers=headers, params={
+        "sample_id": sample_id, "similarity": similarity, "limit": limit
+    })
+    resp.raise_for_status()
+    return resp.json()

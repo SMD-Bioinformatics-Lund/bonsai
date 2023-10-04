@@ -13,6 +13,7 @@ from app.bonsai import (
     get_group_by_id,
     post_comment_to_sample,
     remove_comment_from_sample,
+    find_samples_similar_to_reference,
     TokenObject,
 )
 from flask_login import login_required, current_user
@@ -164,6 +165,21 @@ def sample(sample_id):
         "sample.html", sample=sample, amr_summary=amr_summary, resistance_info=resistance_info,
         title=sample_id, is_filtered=bool(group_id)
     )
+
+
+@samples_bp.route("/samples/<sample_id>/similar", methods=["POST"])
+@login_required
+def find_similar_samples(sample_id):
+    """Find samples that are similar."""
+    token = TokenObject(**current_user.get_id())
+    similarity = request.json.get('similarity', 0.5)
+    try:
+        resp = find_samples_similar_to_reference(
+            token, sample_id=sample_id, similarity=similarity
+        )
+    except Exception as error:
+        return {"status": 500, "details": str(error)}, 500
+    return resp, 200
 
 
 @samples_bp.route("/samples/<sample_id>/comment", methods=["POST"])

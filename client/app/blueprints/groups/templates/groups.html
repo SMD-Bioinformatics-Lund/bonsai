@@ -12,7 +12,7 @@
         <h1 class="card-title">Sample groups</h1>
         <p>Samples assigned to dedicated groups.</p>
         {% if current_user.is_admin %}
-            <a href={{url_for('groups.edit_groups')}} class="btn btn-warning">
+            <a href={{ url_for('groups.edit_groups') }} class="btn btn-warning">
                 <i class="bi bi-pencil-square"></i>
                 Edit groups
             </a>
@@ -38,9 +38,14 @@
                     <span id="n-selected-samples-counter">0</span>
                 </span>
                 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
-                onclick="addSelctedSamplesToBasket(this)" disabled>
+                        onclick="addSelctedSamplesToBasket(this)" disabled>
                     <i class="bi bi-plus-lg"></i>
                     <span>Add to basket</span>
+                </button>
+                <button id="select-similar-samples-btn" class="btn btn-sm btn-outline-secondary ms-4" 
+                        onclick="getSimilarSamplesAndCheckRows()" disabled>
+                    <i class="bi bi-search"></i>
+                    <span>Find similar</span>
                 </button>
             </div>
         </nav>
@@ -127,7 +132,11 @@
             ],
             async onSelect(event) {
                 await event.complete
+                // enable add to basket button when some rows are selected
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                // enable find simiar samples button when ONE row is selected
+                document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
+                // update slected samples counter
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
                 sessionStorage.setItem(
                     "selectedSamples", 
@@ -186,6 +195,27 @@
             },
             credentials: 'same-origin'
         }).then(response => {location.reload()})
+    }
+
+    async function getSimilarSamples() {
+        const sampleId=window.getSelectedRows()[0]
+        const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
+            method: "POST",
+            body: JSON.stringify({simiarity: 0.5}),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        })
+        return response.json()
+    }
+
+    function getSimilarSamplesAndCheckRows() {
+        // get similar samples and check rows
+        getSimilarSamples().then((data) => {
+            window.action('select', data.samples.map(sample => sample.sample_id))
+        })
     }
 </script>
 {% endblock content %}
