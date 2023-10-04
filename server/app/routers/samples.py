@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Dict, List, Union, Annotated
+from typing import Dict, List, Annotated
 
 from fastapi import (
     APIRouter,
@@ -17,7 +16,7 @@ from pymongo.errors import DuplicateKeyError
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import get_sample, get_samples_summay, add_genome_signature_file
+from ..crud.sample import get_sample, get_samples_summay, add_genome_signature_file, get_samples_similar_to_reference
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.user import get_current_active_user
 from ..db import db
@@ -273,9 +272,16 @@ async def read_sample(
         regex=SAMPLE_ID_PATTERN,
     ),
     limit: int = Query(10, gt=-1, title="Limit the output to x samples"),
-    similarity: int = Query(10, gt=0, title="Similarity threshold"),
+    similarity: float = Query(0.5, gt=0, title="Similarity threshold"),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    return {"sample_id": sample_id, "limit": limit, "simiarity": similarity}
+    try:
+        samples = get_samples_similar_to_reference(sample_id, kmer_size=config.SIGNATURE_KMER_SIZE, min_similarity=similarity, limit=limit)
+    except FileNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        )
+    return {"reference": sample_id, "samples": samples, "limit": limit, "simiarity": similarity}
