@@ -361,8 +361,14 @@
         //layout: "circle",
         layout: "vertical",
         type: "dendrogram",
+        mode: "square",
         ruler: false,
         leafLabels: true,
+        margin: [10, 10, 70, 30]
     });
+    //
+    const sampleId = "{{sample.sample_id}}"
+    tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+    
 </script>
 {% endblock content %}
