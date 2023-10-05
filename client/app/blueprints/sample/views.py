@@ -186,10 +186,10 @@ def sample(sample_id):
 def find_similar_samples(sample_id):
     """Find samples that are similar."""
     token = TokenObject(**current_user.get_id())
-    similarity = request.json.get('similarity', 0.5)
+    limit = request.json.get('limit', 10)
     try:
         resp = find_samples_similar_to_reference(
-            token, sample_id=sample_id, similarity=similarity
+            token, sample_id=sample_id, limit=limit
         )
     except Exception as error:
         return {"status": 500, "details": str(error)}, 500
