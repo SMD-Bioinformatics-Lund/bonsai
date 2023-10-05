@@ -10,6 +10,8 @@
 {% block scripts %}
 {{ super() }}
 <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
 {% endblock scripts %}
 
 {% macro make_db_link(db) %}
@@ -77,6 +79,16 @@
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro similar_samples_card(data) %}
+<div class="card col-md-auto" style="width: 24rem;">
+    <div class="card-header">Similar samples [<i>{{ data.typing_method }}</i>]</div>
+    <div class="card-body">
+        <div id="tree-body"></div>
     </div>
 </div>
 {% endmacro %}
@@ -236,13 +248,16 @@
             <h4>Epidemiological Typing</h4>
             <hr>
             <div id="epi-typing-heading" class="row justify-content-md-center">
-            {% for res in sample.typing_result %}
-                {% if res.type == "mlst" %}
-                    <div class="col-md-auto">
-                    {{ mlst_card(res.result) }}
-                    </div>
-                {% endif %}
-            {% endfor %}
+                <div class="col-md-auto">
+                    {{ similar_samples_card(similar_samples) }}
+                </div>
+                {% for res in sample.typing_result %}
+                    {% if res.type == "mlst" %}
+                        <div class="col-md-auto">
+                        {{ mlst_card(res.result) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
             <h4>Phenotype prediction</h4>
             <hr>
@@ -339,5 +354,15 @@
             btn.parentElement.remove()
         })
     }
+
+    const similarSamples = {{ similar_samples | tojson }}
+    const tree = new TidyTree(similarSamples.newick, { 
+        parent: "#tree-body",
+        //layout: "circle",
+        layout: "vertical",
+        type: "dendrogram",
+        ruler: false,
+        leafLabels: true,
+    });
 </script>
 {% endblock content %}

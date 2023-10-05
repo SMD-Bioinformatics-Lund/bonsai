@@ -4,6 +4,10 @@ import os
 import subprocess
 import tempfile
 from enum import Enum
+import sourmash
+from app import config
+from pathlib import Path
+from typing import List
 
 import pandas as pd
 from scipy.cluster import hierarchy
@@ -140,4 +144,40 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
 
     newick_tree = stdout.decode("utf-8").rstrip()
     LOG.debug(f"Returning newick tree: %s", newick_tree)
+    return newick_tree
+
+
+def cluster_on_minhash_signature(sample_ids: List[str], method: ClusterMethod):
+    """Cluster multiple samples on their minhash signatures."""
+    # load sourmash index
+    signature_dir = Path(config.GENOME_SIGNATURE_DIR)
+
+    # load sequence signatures to memory
+    siglist = []
+    kmer_sizes = config.SIGNATURE_KMER_SIZE
+    for sample_id in sample_ids:
+        signature_path = signature_dir.joinpath(f"{sample_id}.sig")
+        if not signature_path.is_file():
+            raise FileNotFoundError(f"Signature file not found, {signature_path}")
+
+        # read signature
+        loaded = sourmash.load_file_as_signatures(str(signature_path), 
+                                                  ksize=kmer_sizes)
+        # check if signatures were fund
+        loaded = list(loaded)
+        if not loaded:
+            raise ValueError(f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}")
+        siglist.extend(loaded)  # append to all signatures
+
+    # create distance matrix
+    similarity = sourmash.compare.compare_all_pairs(siglist, 
+                                                    ignore_abundance=True, 
+                                                    n_jobs=1, 
+                                                    return_ani=False)
+    # cluster on similarity matrix
+    Z = hierarchy.linkage(similarity, method=method.value)
+    tree = hierarchy.to_tree(Z, False)
+    # creae newick tree
+    labeltext = [str(item).replace(".fasta", "") for item in siglist]
+    newick_tree = to_newick(tree, "", tree.dist, labeltext)
     return newick_tree

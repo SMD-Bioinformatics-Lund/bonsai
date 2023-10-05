@@ -9,6 +9,7 @@ from flask import (
 )
 from app.bonsai import (
     cgmlst_cluster_samples,
+    cluster_samples,
     get_sample_by_id,
     get_group_by_id,
     post_comment_to_sample,
@@ -161,9 +162,22 @@ def sample(sample_id):
         in  groupby(amr_summary.values(), key=lambda x: x['res_class'])
     }
 
+    # Get the 10 most similar samples and calculate the pair-wise similaity
+    similar_samples = find_samples_similar_to_reference(
+        token, sample_id=sample_id, limit=10
+    )
+    # cluster the similar samples
+    TYPING_METHOD = "minhash"
+    LINKAGE = "single"
+    newick_file = cluster_samples(
+        token, 
+        sample_ids=[smp["sample_id"] for smp in similar_samples["samples"]],
+        typing_method=TYPING_METHOD, method=LINKAGE)
+    similar_samples = {"typing_method": TYPING_METHOD, "method": LINKAGE, "newick": newick_file}
+
     return render_template(
         "sample.html", sample=sample, amr_summary=amr_summary, resistance_info=resistance_info,
-        title=sample_id, is_filtered=bool(group_id)
+        title=sample_id, is_filtered=bool(group_id), similar_samples=similar_samples
     )
 
 

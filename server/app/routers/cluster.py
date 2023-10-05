@@ -11,6 +11,7 @@ from ..db import db
 from ..internal.cluster import (
 #    cluster_on_allele_profile,
     cluster_on_allele_profile_grapetree_mstrees,
+    cluster_on_minhash_signature,
     ClusterMethod,
     DistanceMethod,
 )
@@ -27,6 +28,7 @@ WRITE_PERMISSION = "cluster:write"
 class TypingMethod(Enum):
     MLST = "mlst"
     CGMLST = "cgmlst"
+    MINHASH = "minhash"
 
 
 class clusterInput(RWModel):
@@ -52,20 +54,22 @@ async def cluster_samples(
 
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
-    try:
-        profiles: TypingProfileOutput = await get_typing_profiles(
-            db, clusterInput.sample_ids, typing_method.value
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+    if typing_method == TypingMethod.MINHASH:
+        newick_tree = cluster_on_minhash_signature(clusterInput.sample_ids, clusterInput.method)
+    else:
+        try:
+            profiles: TypingProfileOutput = await get_typing_profiles(
+                db, clusterInput.sample_ids, typing_method.value
+            )
+        except EntryNotFound as error:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(error),
+            )
+        newick_tree: str = cluster_on_allele_profile_grapetree_mstrees(profiles)
+        # sanity check that all samples had the desired typing result in the database
+        # newick_tree: str = cluster_on_allele_profile(
+        #     profiles, clusterInput.method, clusterInput.distance
+        # )
 
-    newick_tree: str = cluster_on_allele_profile_grapetree_mstrees(profiles)
-    # sanity check that all samples had the desired typing result in the database
-    # newick_tree: str = cluster_on_allele_profile(
-    #     profiles, clusterInput.method, clusterInput.distance
-    # )
-    # print(newick_tree)
     return newick_tree
