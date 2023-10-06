@@ -99,9 +99,9 @@ async def get_samples_summary(
     # define a optional projections
     optional_projecton = {}
     if include_qc:
-        optional_projecton["qc_status"] = int(include_qc),
+        optional_projecton["qc_status"] = 1
     if include_mlst:
-        optional_projecton["mlst"] = {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}},
+        optional_projecton["mlst"] = {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}}
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
