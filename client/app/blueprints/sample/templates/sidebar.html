@@ -66,7 +66,8 @@
 
 {% macro qc_classificaion(cls, bad_qc_actions, sample_id) %}
 <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
-<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" method="post" name="qc-classification" class="form-control">
+<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" 
+      method="post" name="qc-classification" class="form-control">
     <div class="row pb-2">
         <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
             <input 
@@ -82,7 +83,8 @@
             <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
         </div>
         <div class="col-auto d-flex flex-row">
-            <select id="failed-qc-action" class="form-select form-select-sm" name="qc-action" aria-label="Action on failed sample" disabled>
+            <select id="failed-qc-action" class="form-select form-select-sm" 
+                    name="qc-action" aria-label="Action on failed sample" disabled hidden>
                 <option selected disabled>Select action</option>
                 {% for action in bad_qc_actions %}
                     <option 
@@ -96,7 +98,7 @@
     <div id="failed-qc-comment-container" class="row" {% if cls.status != "failed" %}hidden{% endif %}>
         <div id="" class="col-auto">
             <label class="text-muted" for="failed-qc-comment">Comment</label>
-            <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment" required
+            <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment"
             >{{cls.comment}}</textarea>
         </div>
     </div>
