@@ -1043,9 +1043,7 @@ D3MSTree.prototype._setNodeText = function(){
     if (! this.show_node_labels){
         return;
     }
-    var node_text = this.node_elements.filter(function(d){
-        return (!d.hypothetical || self.show_hypothetical_nodes);
-    }).
+    var node_text = this.node_elements.filter(node => (!node.hypothetical || self.show_hypothetical_nodes))
     append('text').attr('class', 'node-group-number').
     attr('dy', ".71em").attr('text-anchor', 'middle').attr('font-size', this.node_font_size).
     attr('font-family', 'sans-serif').attr('transform', function(it){
@@ -1062,7 +1060,6 @@ D3MSTree.prototype._setNodeText = function(){
         }
 	var all_ids_html = grouped[it.id].join(',');
 	return all_ids_html;
-            //return it.id;
 }).call(wrap, 100);
 
 
@@ -1075,7 +1072,7 @@ function wrap(text, width) {
         line = [],
         lineHeight = 1, // ems
         y = text.attr("y")-8*words.length,
-		lnum=1,
+	lnum=1,
         dy = parseFloat(text.attr("dy")),
         tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
     while (word = words.pop()) {
