@@ -161,7 +161,7 @@
                 sessionStorage.setItem(
                     "selectedSamples", 
                     JSON.stringify(
-                        this.get(this.getSelection()).map(row => {return {sample_id: row.sampleId, analysis_profile: row.profile}}) 
+                        this.get(this.getSelection()).map(row => {return {sample_id: row.sample_id, analysis_profile: row.profile}}) 
                     )
                 );
             },
