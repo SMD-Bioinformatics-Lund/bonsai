@@ -52,8 +52,9 @@ async def read_samples(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
     offset: int = Query(0, gt=-1),
-    include_mlst: bool = True,
-    include_cgmlst: bool = True,
+    include_qc: bool = Query(True),
+    include_mlst: bool = Query(True),
+    #include_cgmlst: bool = Query(True),
     sid: List[str] | None = Query(None),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -61,7 +62,7 @@ async def read_samples(
 ):
     # skip and offset function the same
     skip = max([offset, skip])
-    db_obj = await get_samples_summary(db, limit=limit, skip=skip, include=sid, include_mlst=include_mlst, include_cgmlst=include_cgmlst)
+    db_obj = await get_samples_summary(db, limit=limit, skip=skip, include=sid, include_qc=include_qc, include_mlst=include_mlst, include_cgmlst=include_cgmlst)
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 

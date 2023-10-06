@@ -60,6 +60,7 @@ async def get_samples_summary(
     limit: int = 0,
     skip: int = 0,
     include: List[str] | None = None,
+    include_qc: bool = True,
     include_mlst: bool = True,
     include_cgmlst: bool = True,
     include_amr: bool = True,
@@ -87,19 +88,24 @@ async def get_samples_summary(
             }
         }
     })
-    pipeline.append({
-        "$project": {
-            "_id": 0,
-            "id": {"$convert": {"input": "$_id", "to": "string"}},
-            "sample_id": 1,
-            "tags": 1,
-            "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
-            "mlst": {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}},
-            "profile": "$run_metadata.run.analysis_profile",
-            "created_at": 1,
-        }
-    })
+    base_projection = {"_id": 0, 
+                       "id": {"$convert": {"input": "$_id", "to": "string"}}, 
+                       "sample_id": 1, 
+                       "tags": 1, 
+                       "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
+                       "created_at": 1, 
+                       "profile": "$run_metadata.run.analysis_profile",
+                       }
+    # define a optional projections
+    optional_projecton = {}
+    if include_qc:
+        optional_projecton["qc_status"] = int(include_qc),
+    if include_mlst:
+        optional_projecton["mlst"] = {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}},
+    # add projections to pipeline
+    pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
+    # query database
     cursor = db.sample_collection.aggregate(pipeline)
     return await cursor.to_list(None)
 
