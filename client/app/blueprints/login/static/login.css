@@ -1,0 +1,23 @@
+html, body {
+    overflow: hidden;
+}
+
+.sidebar {
+    height: 100%;
+}
+
+.login-gradient-upper {
+    background-color: #a3ebb1;
+    z-index: -2;
+}
+
+.login-gradient-lower {
+    display: block;
+    width: 700px;
+    height: 30vh;
+    position: absolute;
+    bottom: -30px;
+    left: -300px;
+    transform: perspective(300px) rotateY(-45deg);
+    background-color: #18a558;
+}

@@ -1,0 +1,53 @@
+{% extends "bootstrap_base.html" %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('login.static', filename='login.css')}}">
+{% endblock css %}
+
+{% block content %}
+<div class="w-100">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% set category = "border-" + messages[-1][0] %}
+    {% else %}
+        {% set category = "" %}
+    {% endif %}
+    <div class="row vh-100">
+        <div class="d-none d-xl-block col-xl-3 login-gradient-upper">
+            <h1 class="text-white sw-logo-text sw-logo-text-lg fw-bold text-center pt-5">Bonsai</h1>
+            <div class="login-gradient-lower overflow-hidden"></div>
+            <p class="text-white fs-4 fw-bold text-center position-relative top-50 start-0">Version {{version}}</p>
+        </div>
+        <div class="col-12 col-xl-9 bg-white container px-5">
+            <div class="w-50 mx-auto">
+                <div class="row pt-5 align-items-center">
+                    <form action="{{ url_for('login.login') }}" method="POST" name="login">
+                        <div class="col-lg-6">
+                            <h1>Welcome! Log in</h1>
+                        </div>
+                        <div class="col-lg-auto mt-2">
+                            <input class="form-control form-control-lg rounded-1" type="text" placeholder="User name" id="username" name="username">
+                        </div>
+                        <div class="col-lg-auto mt-4">
+                            <input class="form-control form-control-lg rounded-1" type="password" placeholder="Password" id="password" name="password">
+                        </div>
+                        <div class="col-lg-auto mt-4">
+                            <button class="btn btn-dark btn-lg rounded-1 w-100" type="submit">Login</button>
+                        </div>
+                        <div class="col-lg-auto mt-2">
+                            <button class="btn btn-outline-dark btn-lg rounded-1 w-100" type="submit">Request an account</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if messages %}
+        {% set category = messages[-1][0] %}
+        {% set message = messages[-1][1] %}
+        <p class="text-{{category}} fs-6 fw-bold">{{ message }}</p>
+    {% endif %}
+    {% endwith %}
+</div>
+{% endblock content %}

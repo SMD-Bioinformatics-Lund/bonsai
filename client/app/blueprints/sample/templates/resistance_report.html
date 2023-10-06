@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar %}
+{% from "cards.html" import resistance_card, virulence_card %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid">
+    <div class="row">
+        {{ sidebar(sample, navigation=False) }}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 pb-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
+            <div id="sample-id-heading" class="pt-4">
+                <h1>Resistance report: {{sample.sampleId}}</h1>
+            </div>
+            <h4>Overview</h4>
+            <hr>
+            <div id="phenotype-heading" class="row justify-content-md-center">
+                <div class="col-md-auto">
+                {% for res in sample.phenotypeResult %}
+                    {% if res.type == "antimicrobial_resistance" %}
+                        <div class="col-md-auto">
+                        {{ resistance_card(res) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</script>
+{% endblock content %}

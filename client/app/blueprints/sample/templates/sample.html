@@ -1,0 +1,395 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar %}
+{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
+{% endblock scripts %}
+
+{% macro make_db_link(db) %}
+{% if db.name == 'resfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/resfinder_db/commits" %}
+{% elif db.name == 'virulencefinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/virulencefinder_db/commits" %}
+{% elif db.name == 'pointfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
+{% endif %}
+<a href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+{% endmacro %}
+
+{% macro analysis_meta(sample_info) %}
+<h4>Analysis metadata</h4>
+<h5>
+    <a href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
+        <i class="bi me-2 bi-pc-horizontal"></i></a>
+        Pipeline
+    </a>
+</h5>
+{% set meta=sample["run_metadata"]%}
+<dl class="row">
+    <dt class="col-sm-2">Pipeline</dt>
+    <dd class="col-sm-2">{{ meta.run.pipeline }}</dd>
+</dl>
+<dl class="row">
+    <dt class="col-sm-2">Version</dt>
+    <dd class="col-sm-2">{{ meta.run.version }}</dd>
+</dl>
+<dl class="row">
+    <dt class="col-sm-2">Profile</dt>
+    <dd class="col-sm-2">{{ meta.run.analysis_profile }}</dd>
+</dl>
+<h5><i class="bi bi-server me-2"></i>Databases</h5>
+<dl class="row">
+    {% for db in meta["databases"] %}
+    <dt class="col-sm-2">{{ db["name"] }}</dt>
+    <dd class="col-sm-2">{{ make_db_link(db) }}</dd>
+    {% endfor %}
+</dl>
+{% endmacro %}
+
+{% macro mlst_card(mlst) %}
+<div class="card col-md-auto">
+    <div class="card-header">MLST</div>
+    <div class="card-body">
+        <div class="p-2">
+            <strong>ST</strong>
+            {{ mlst.sequence_type }}
+        </div>
+        <div class="p-2">
+            <table class="table table-sm">
+                <thead>
+                    <th>Gene</th>
+                    {% for name in mlst.alleles %}
+                        <td scope="col">{{name}}</td>
+                    {% endfor %}
+                </thead>
+                <tbody class="table-group-divider">
+                    <th>Allele No</th>
+                    {% for value in mlst.alleles.values() %}
+                        <td>{{value}}</td>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro similar_samples_card(data) %}
+<div class="card col-md-auto" style="width: 24rem;">
+    <div class="card-header">Similar samples [<i>{{ data.typing_method }}</i>]</div>
+    <div class="card-body">
+        <div id="tree-body" style="pointer-events: none;"></div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro qc_card_postalign(qc_info) %}
+<div class="card">
+    <div class="card-header">PostQc Alignment</div>
+    <div class="card-body">
+        {% set pct_above_hist=qc_info.result.pct_above_x %}
+        {# create entries for tabular data #}
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+                {# skip data that should be plotted #}
+                {% if name != "pct_above_x" %}
+                    <tr>
+                        <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                        <td>{{ value | fmt_number(sig_digits=2) }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        <div id="qcPlot"></div>
+        <script>
+            //const qcPlot = document.getElementById("qc-plot")
+            const rawData = {{pct_above_hist | tojson }}
+            const data = {
+                type: 'bar',
+                x: Object.keys(rawData).map(k => `${k}X`), 
+                y: Object.values(rawData).map(Number), 
+                text: Object.values(rawData).map(num  => `${Math.round(Number(num), 1)}%`),
+                textposition: 'auto',
+                marker: {
+                    color: "#c0ddd1",
+                    line: { width: 4}
+                }
+            };
+            const layout = { 
+                title: 'Genome coverage', 
+                autosize: false,
+                width: 400,
+                height: 200,
+                margin: {
+                    l: 10,
+                    r: 10,
+                    b: 30,
+                    t: 30,
+                    pad: 4
+                },
+                hoverinfo: '',
+                yaxis: {
+                    title: "Percent bases",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                xaxis: {
+                    title: "Coverage",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                font: { size: 12 }}
+            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: true} )
+        </script>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro qc_card_generic(qc_info) %}
+<div class="card">
+    <div class="card-header">{{qc_info.software | capitalize}}</div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+            <tr>
+                <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                <td>{{ value | fmt_number(sig_digits=2) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro cgmlst_qc_card(result) %}
+<div class="card">
+    <div class="card-header">
+        {{ result.type }} QC
+    </div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <tr>
+                <th scope="row">N Called Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_called }}</td>
+            </tr>
+            <tr>
+                <th scope="row">N Novel Alleles</th>
+                <td>{{ result.result.n_novel | fmt_number }}</td>
+            </tr>
+            <tr>
+                <th scope="row">N Missing Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_missing }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid">
+    <div class="row">
+        {{ sidebar(sample, bad_qc_actions) }}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
+            <h1 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h1>
+            <div class="row gx-5">
+                <div class="col-md-auto">
+                    Analysis date: {{sample.created_at | strftime}}
+                    <br>
+                    <p>
+                        Tags: 
+                        {% for tag in sample.tags %}
+                            {% if tag.type == "virulence" %}
+                                {% set heading="virulence-heading" %}
+                            {% else %}
+                                {% set heading="phenotype-heading" %}
+                            {% endif %}
+                            <a 
+                                class="btn btn-sm btn-{{tag.severity}}"
+                                href="#{{heading}}"
+                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                data-bs-title="{{ tag.description }}"
+                            >
+                                {{tag.label}}
+                            </a>
+                        {% endfor %}
+                    </p>
+                    <p>
+                        QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
+                    </p>
+                </div>
+            </div>
+            <h4>Epidemiological Typing</h4>
+            <hr>
+            <div id="epi-typing-heading" class="row justify-content-md-center">
+                <div class="col-md-auto">
+                    {{ similar_samples_card(similar_samples) }}
+                </div>
+                {% for res in sample.typing_result %}
+                    {% if res.type == "mlst" %}
+                        <div class="col-md-auto">
+                        {{ mlst_card(res.result) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <h4>Phenotype prediction</h4>
+            <hr>
+            <div id="phenotype-heading" class="row justify-content-md-center">
+            {% set n_res=amr_summary | length %}
+            {% if is_filtered and n_res == 0 %}
+                <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+            {% elif n_res == 0 %}
+                <p>No predicted resistance determinants.</p>
+            {% else %}
+                <div class="col-md-auto">
+                {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
+                </div>
+            {% endif %}
+            {# Add supplementary resistance info #}
+            {% for elem in sample.element_type_result %}
+                {% if elem.type.startswith('STRESS') %}
+                    {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
+                    <div class="col-md-auto py-4">
+                        {{ resistance_table_card(elem) }}
+                    </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            </div>
+            <h4 class="pt-4">Virulence</h4>
+            <hr>
+            <div id="virulence-heading" class="row justify-content-md-center">
+            {% for res in sample.element_type_result %}
+                {% if res.type == "VIRULENCE" %}
+                    {% set n_genes=res.result.genes | length %}
+                    {% if is_filtered and n_genes == 0 %}
+                        <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
+                    {% elif n_genes == 0 %}
+                        <p>No validated virulence factors identified.</p>
+                    {% else %}
+                    <div class="col-md-6">
+                    {{ virulence_card(res.result) }}
+                    </div>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            </div>
+            <h4 class="pt-4">Quality</h4>
+            <hr>
+            <div id="qc-heading" class="row gx-5 justify-content-md-center">
+                {% for qc_tool in sample.qc %}
+                    <div class="col-md-auto">
+                        {% if qc_tool.software == "postalignqc" %}
+                            {{ qc_card_postalign(qc_tool) }}
+                        {% else %}
+                            {{ qc_card_generic(qc_tool) }}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {% for res in sample.typing_result %}
+                    {% if res.type == "cgmlst" %}
+                        <div class="col-md-auto">
+                        {{ cgmlst_qc_card(res) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <hr>
+            {{ analysis_meta(sample) }}
+            <hr>
+            <!-- 
+            <h4>References</h4>
+            <ol class="fs-6 text-muted">
+                <li>A reference</li>
+                <li>Another reference</li>
+            </ol>
+            <h4>Footnotes</h4>
+            <ol class="fs-6 text-muted">
+                {% for note in footnotes %}
+                    <li>{{note}}</li>
+                {% endfor %}
+            </ol>
+            -->
+        </div>
+    </div>
+</div>
+<script>
+    //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+    function removeComment(btn) {
+        // remove comment from sample
+        const apiURL = "{{ config.BONSAI_API_URL }}"
+        fetch(`${apiURL}/samples/basket/add`, {
+
+        }).then(response => {
+            btn.parentElement.remove()
+        })
+    }
+
+    const similarSamples = {{ similar_samples | tojson }}
+    const tree = new TidyTree(similarSamples.newick, { 
+        parent: "#tree-body",
+        //layout: "circle",
+        layout: "vertical",
+        type: "dendrogram",
+        mode: "square",
+        ruler: false,
+        leafLabels: true,
+        margin: [10, 10, 70, 30]
+    });
+    //
+    const sampleId = "{{sample.sample_id}}"
+    tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+    
+    // handle sample qc rejections
+    document.getElementById("passed-qc-btn").addEventListener("click", () => {
+        // enable selction of actions to take after rejecting a sample
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = true
+        select.hidden = true
+        select.value = null
+        const textArea = document.getElementById("failed-qc-comment-container")
+        textArea.hidden = true
+        select.value = null
+    })
+    document.getElementById("failed-qc-btn").addEventListener("click", () => {
+        // enable selction of actions to take after rejecting a sample
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = false
+        select.hidden = false
+        document.getElementById("failed-qc-comment-container").hidden = false
+    })
+</script>
+{% endblock content %}

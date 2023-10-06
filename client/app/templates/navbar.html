@@ -1,0 +1,174 @@
+{% macro navbar(current_user) %}
+<nav class="navbar navbar-expand-lg navbar-light bg-success bg-opacity-25">
+    <div class="container-fluid">
+    <a href="/" class="navbar-brand">
+        <span class="rounded-5 d-block p-1" style="background-color: #f7efe5;">
+            <img src="{{url_for('public.static', filename='bonsai_logo_sm.png')}}" alt="Logo", width="80" height="70" >
+        </span>
+    </a>
+    <button class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+        >
+        <span class="navbar-toggler-icon"/>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            {{ navbar_link('Home', 'public.index') }}
+            {{ navbar_link('Groups', 'groups.groups') }}
+            {{ navbar_link('Locations', 'groups.groups', True) }}
+        </ul>
+        <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
+            {% if current_user.is_authenticated %}
+                {{ user_dropdown(current_user) }}
+                <li class="nav-item d-flex flex-row">
+                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button">
+                        <i class="bi bi-basket3 fs-4"></i>
+                        {% set basket=current_user.basket %}
+                        {% if basket | length > 0 %}
+                            <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
+                                <span id="samples-in-basket-counter">{{ basket | length }}</span>
+                                <span class="visually-hidden">Samples in basket</span>
+                            </span>
+                        {% endif %}
+                    </a>
+                </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="d-flex flex-row nav-link active" href="{{url_for('login.login')}}">
+                    <i class="bi bi-person fs-2 px-2"></i>
+                    <div class="d-flex flex-column ">
+                        <span>Welcome</span>
+                        <strong>Log in</strong>
+                    </div>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    </div>
+</nav>
+{{ sample_basket_offcanvas(current_user) }}
+{% endmacro %}
+
+{% macro sample_basket_offcanvas(current_user) %}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
+    {% set samples = current_user.basket %} 
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">
+            {% if samples | length > 0 %}
+                Samples
+            {% else %}
+                Your basket is empty
+            {% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="overflow-auto" style="max-height: 60vh;">
+            {# Create sample cards in basket #}
+            {% for sample in samples %}
+                <div class="card mb-2 rounded-1 p-0 sample_in_basket">
+                    <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
+                        <a class="text-muted d-flex flex-column" href="{{ url_for('samples.sample', sample_id=sample.sample_id) }}">
+                            <h6 id="{{ sample.sample_id }}" class="text-uppercase fw-bold text-muted my-0 py-0">{{ sample.sample_id }}</h6>
+                            <i class="text-muted fs-6 fw-light p-0">{{ sample.analysis_profile }}</i>
+                        </a>
+                        <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-auto">
+                <button
+                    class="btn btn-outline-danger btn-sm float-right"
+                    aria-label="Clear basket"
+                    onclick="removeAllSamplesFromBasket()"
+                    type="button">
+                    <i class="bi btn-sm bi-trash3-fill">Clear basket</i>
+                </button>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-auto">
+                {% set has_same_profile = samples | has_same_analysis_profile %}
+                <form action="{{ url_for('cluster.cluster_and_display_tree') }}" method="POST" target="_blank">
+                    <input name="sampleIds" type="text" value='{{ samples | tojson }}' hidden>
+                    <button 
+                      type="submit" 
+                      class="btn btn-success" 
+                      {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
+                    >
+                        Cluster
+                    </button>
+                </form>
+            </div>
+            <div class="col-auto">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"  {% if samples | length == 0 %} disabled {% endif %}>
+                        Analysis
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Resistance</a></li>
+                        <li><a class="dropdown-item" href="#">Virulence</a></li>
+                        <li><a class="dropdown-item" href="#">Epidemiology</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro navbar_link(name, target, disabled=False) %}
+<li class="nav-item">
+    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" href="{{ url_for(target) }}">{{ name }}</a>
+</li>
+{% endmacro %}
+
+{% macro user_dropdown(current_user) %}
+<li class="nav-item dropdown">
+    <a 
+        id="navbarDropdown"
+        class="nav-link dropdown-toggle" 
+        role="button"
+        href="#" 
+        data-bs-toggle="dropdown"
+        data-bs-display="static"
+        aria-expanded="false"
+        >
+        <span className="user-alias-container">
+            <i class="bi bi-person fs-2"></i>
+        </span>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
+        {{ dropdown_link('Profile', disabled=True) }}
+        {{ dropdown_link('Settings', disabled=True) }}
+        <li><hr class="dropdown-divider"/></li>
+        {{ dropdown_link('Log out', 'login.logout', disabled=False) }}
+    </ul>
+</li>
+{% endmacro %}
+
+{% macro dropdown_link(text, url_target, disabled=False) %}
+<li>
+    <a href="
+    {% if url_target %}
+        {{ url_for(url_target) }}
+    {% else %}
+        #
+    {% endif %}
+    "
+        class="dropdown-item {% if disabled %} disabled {% endif %}"
+    >{{ text }}</a>
+</li>
+{% endmacro %}

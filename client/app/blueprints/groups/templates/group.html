@@ -1,0 +1,252 @@
+{% extends "layout.html" %}
+{% import "cell_fmt.html" as cell_format %}
+{% from "toasts.html" import generic_alert_toast%}
+
+{% block css %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('groups.static', filename='group.css') }}">
+{% endblock css %}
+
+{% block content %}
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-absolute top-0 end-0 p-3">
+        {{ generic_alert_toast("cluster-toast") }}
+    </div>
+</div>
+<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
+    <div class="card-body">
+        <div class="d-flex">
+            <h1 class="me-auto">Group {{group_id}}</h1>
+        </div>
+        <hr>
+        <nav class="navbar bg-light">
+            <div class="container-fluid justify-content-start">
+                <span class="navbar-text">
+                    <i>Selected samples:</i>
+                    <span id="n-selected-samples-counter">0</span>
+                </span>
+                <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" onclick="addSelctedSamplesToBasket(this)" disabled>
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add to basket</span>
+                </button>
+                <button id="select-similar-samples-btn" class="btn btn-sm btn-outline-secondary ms-4" 
+                        onclick="getSimilarSamplesAndCheckRows()" disabled>
+                    <i class="bi bi-search"></i>
+                    <span>Find similar</span>
+                </button>
+                <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
+                    <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
+                    <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
+                    <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
+                    <button id="cluster-button" class="btn btn-sm btn-success ms-2" disabled>
+                        <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
+                        <span id="cluster-btn-text">Cluster samples</span>
+                    </button>
+                </form>
+            </div>
+        </nav>
+        <div id="data-table"></div>
+    </div>
+</div>
+<form id="open-tree-form" action="{{ url_for('cluster.tree') }}" method="POST" hidden target="_blank">
+    <input type="text" name="newick" id="newick-content">
+    <input type="text" name="metadata" id="metadata-content">
+    <input type="submit" value="">
+</form>
+
+<script type="module">
+    import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
+    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
+    import { formatTaxonomicName, formatSampleId } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+
+    // define formatters
+    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
+    w2utils.formatters['mrsa'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['mlst'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['pvl'] = (val, params) => typeof val === 'undefined' ? '-' : val
+    w2utils.formatters['sampleid']  = formatSampleId
+
+    // get table configuration
+    const apiTableConfig = {{ table_definition | tojson }}
+    const groupId = "{{ group_id }}"
+    // create table
+    const columns = apiTableConfig.map(col => {
+        return {
+            field: col.type,
+            text: col.label,
+            sortable: col.sortable,
+            hidden: col.hidden,
+            render: col.type.toLowerCase(),
+        }
+    })
+    // configure table
+    let tableConfig = {
+        grid: {
+            name: 'grid',
+            box: '#data-table',
+            show: {
+                footer: false,
+                toolbar: true,
+                selectColumn: true,
+            },
+            multiSelect: true,
+            liveSearch: true,
+            columns: columns,
+            async onSelect(event) {
+                await event.complete
+                document.getElementById("cluster-button").disabled = 2 > this.getSelection().length
+                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
+            }
+        },
+    }
+    // setup grid
+    let grid = new w2grid(tableConfig.grid)
+
+    // get data
+    const testSamples = {{ samples | tojson}}
+    grid.records = testSamples.map(
+        sample => {
+            let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.type]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+            columns["recid"] = sample["sample_id"]
+            columns["groupId"] = groupId
+            return columns
+    }) 
+
+    window.getSelectedRows = () => grid.getSelection()
+    grid.render()
+</script>
+
+<script>
+    // store url to tree page
+    const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
+    const orgButtonText = document.getElementById("cluster-button").innerText
+
+    // load all javascript after load
+    window.onload = () => {
+    // initialize toasts
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+    var toastList = toastElList.map(toastEl => {
+        return new bootstrap.Toast(toastEl)
+    })
+    }
+
+    const clusterButtonError = () => {
+        // Disable clustering buttin on case of an error
+        const button = document.getElementById("cluster-button")
+        button.querySelector("#cluster-btn-text").innerText = orgButtonText
+        const spinner = button.querySelector("#cluster-btn-spinner")
+        spinner.hidden = true
+        button.disabled = true
+        button.className = "btn btn-danger"
+        button.innerHTML = '<i class="bi bi-exclamation-triangle"></i>' + button.innerHTML
+    }
+
+    const throwClusterErrorToast = (resp) => {
+        const toastElement = document.getElementById("cluster-toast")
+        const toast = bootstrap.Toast.getInstance(toastElement)
+        const title = toast._element.querySelector('#toast-title')
+        const errorMessage = toast._element.querySelector('#toast-error-message')
+        const stacktraceMessage = toast._element.querySelector('#toast-stack-trace')
+        // define title
+        title.innerText = `Error during clustering, status ${resp.status}`
+        errorMessage.innerText = resp.responseText
+        stacktraceMessage.innerText = ""
+        toast.show()
+    }
+
+    function openTreeView ({newick, metadata}) {
+        // Open a tree view as a new tab my creating a form and submit it
+        const form = document.getElementById("open-tree-form")
+        // add metadata and newick file to form
+        const newickInput = form.querySelector("#newick-content")
+        newickInput.setAttribute("value", newick)
+        const metadataInput = form.querySelector("#metadata-content")
+        metadataInput.setAttribute("value", 
+            window.sessionStorage.getItem("clusteredSamples")
+        )
+        const submitBnt = form.querySelector("input[type=submit]")
+        submitBnt.click()
+    }
+    // add submit clustering function
+    document
+    .getElementById("cluster-button")
+    .addEventListener("click", (event) => {
+        event.preventDefault()  // prevent normal behaviour
+        // show spinner
+        const button = document.getElementById("cluster-button")
+        button.querySelector("#cluster-btn-text").innerText = "Clustering..."
+        const spinner = button.querySelector("#cluster-btn-spinner")
+        spinner.hidden = false
+        
+        // get sample ids for checked samples
+        const sampleId = window.getSelectedRows()
+        const typingData = document.getElementById("cluster-typing-data").value
+        const distance = document.getElementById("cluster-distance-metric").value
+        const method = document.getElementById("cluster-clustering-method").value
+        // setup and submit clustering job
+        const xhr = new XMLHttpRequest()
+        const apiURL = "{{ config.BONSAI_API_URL }}"
+        const entrypointURL = `${apiURL}/cluster/${typingData}`
+        // add event listeners for processing different outcomes of request
+        xhr.addEventListener("load", event => {
+            // successful request
+            if(xhr.readyState == 4 && xhr.status == 201) {
+                // todo add default parameters
+                // instead open a new tab by mocking a submission
+                openTreeView({newick: xhr.responseText, metadata: "not so much"})
+                spinner.hidden = true
+                button.querySelector("#cluster-btn-text").innerText = orgButtonText
+            } else {
+                clusterButtonError()
+                throwClusterErrorToast(xhr)
+                console.log(xhr)
+            }
+        })
+
+        xhr.addEventListener("abort", event => {
+            // failed request disable button and warn user
+            alert("clustering was aborted")
+        })
+
+        xhr.addEventListener("error", event => {
+            // failed request disable button and warn user
+            clusterButtonError()
+            throwClusterErrorToast(xhr)
+        })
+
+        // make request
+        xhr.open("POST", entrypointURL, true)
+        // set request token header
+        xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`)
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
+        window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
+        xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
+    })
+
+    async function getSimilarSamples() {
+        const sampleId=window.getSelectedRows()[0]
+        const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
+            method: "POST",
+            body: JSON.stringify({simiarity: 0.5}),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        })
+        return response.json()
+    }
+
+    function getSimilarSamplesAndCheckRows() {
+        // get similar samples and check rows
+        getSimilarSamples().then((data) => {
+            window.action('select', data.samples.map(sample => sample.sample_id))
+        })
+    }
+</script>
+{% endblock content %}
+

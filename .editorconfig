@@ -1,0 +1,8 @@
+root = true
+
+[*.{js,jsx,py}]
+charset = utf-8
+indent_style = space
+
+[*.{js,jsx}]
+indent_size = 2

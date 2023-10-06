@@ -1,0 +1,259 @@
+{% extends "layout.html" %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
+<link rel="stylesheet" href="{{url_for('groups.static', filename='groups.css')}}">
+{% endblock css %}
+
+{% block content %}
+<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
+    <div class="card-body">
+        <h1 class="card-title">Sample groups</h1>
+        <p>Samples assigned to dedicated groups.</p>
+        {% if current_user.is_admin %}
+            <a href={{ url_for('groups.edit_groups') }} class="btn btn-warning">
+                <i class="bi bi-pencil-square"></i>
+                Edit groups
+            </a>
+        <hr>
+        {% endif %}
+        {% if groups %}
+        <div class="d-flex justify-content-center">
+            <div class="container row">
+                {% for group in groups %}
+                    <div class="col-md-auto">
+                        {{ group_card(group) }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <hr>
+        {% endif %}
+        <h5>All samples</h5>
+        <nav class="navbar bg-light">
+            <div class="container-fluid justify-content-start">
+                <span class="navbar-text">
+                    <i>Selected samples:</i>
+                    <span id="n-selected-samples-counter">0</span>
+                </span>
+                <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
+                        onclick="addSelctedSamplesToBasket(this)" disabled>
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add to basket</span>
+                </button>
+                <div class="dropdown">
+                    <button id="select-similar-samples-btn" 
+                            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
+                            data-bs-toggle="dropdown" disabled>
+                        <i class="bi bi-search"></i>
+                        <span>Find similar</span>
+                    </button>
+                    <form class="dropdown-menu dropdown-menu-end p-2 needs-validation">
+                        <input type="text" name="similar-samples-threshold" 
+                               id="similar-samples-threshold" class="form-control form-control-sm" 
+                               placeholder="Number of samples" required>
+                        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2"
+                                onclick="getSimilarSamplesAndCheckRows(this)" disabled>
+                            <i class="bi bi-search"></i>
+                            Search
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+        <div id="data-table"></div>
+    </div>
+</div>
+<script type="module">
+    import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
+    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+
+    // define formatters
+    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
+    w2utils.formatters['sampleid']  = formatSampleId
+    w2utils.formatters['tags']  = formatTag
+    const apiURL = "{{ config.BONSAI_API_URL }}"
+    const samples = {{ samples | tojson }}
+
+    let tableConfig = {
+        grid: {
+            name: 'grid',
+            box: '#data-table',
+            //url: `${apiURL}/samples`,
+            //dataType: 'HTTP',
+            //httpHeaders: {
+            //    'Authorization': "Bearer {{token}}",
+            //    'Content-Type': 'application/json'
+            //},
+            show: {
+                footer: false,
+                toolbar: true,
+                selectColumn: true,
+                lineNumbers: false,
+            },
+            //limit: 100,
+            multiSelect: true,
+            liveSearch: true,
+            columns: [
+                {
+                    field: 'sample_id',
+                    text: 'Sample Id',
+                    sortable: true,
+                    searchable: true,
+                    render: 'sampleid',
+                    path: '$.sample_id'
+                },
+                {
+                    field: 'tags',
+                    text: 'Tags',
+                    sortable: false,
+                    searchable: true,
+                    render: 'tags',
+                    path: '$.tags'
+                },
+                {
+                    field: 'specie',
+                    text: 'Major species',
+                    sortable: true,
+                    searchable: true,
+                    render: 'taxonomic_name',
+                    path: '$.species_prediction.scientific_name'
+                },
+                {
+                    field: 'qc',
+                    text: 'QC',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.qc_status.status'
+                },
+                {
+                    field: 'mlst-st',
+                    text: 'MLST St',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.mlst.sequence_type'
+                },
+                {
+                    field: 'profile',
+                    text: 'Analysis profile',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.profile'
+                },
+                {
+                    field: 'cdate',
+                    text: 'Upload date',
+                    sortable: true,
+                    render: 'date',
+                    path: '$.created_at'
+                },
+            ],
+            async onSelect(event) {
+                await event.complete
+                // enable add to basket button when some rows are selected
+                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                // enable find simiar samples button when ONE row is selected
+                document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
+                // update slected samples counter
+                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                sessionStorage.setItem(
+                    "selectedSamples", 
+                    JSON.stringify(
+                        this.get(this.getSelection()).map(row => {return {sample_id: row.sample_id, analysis_profile: row.profile}}) 
+                    )
+                );
+            },
+            //onLoad(event) {
+            //    //event.preventDefault()
+            //    let data = w2utils.clone(event.detail.data)
+            //    let fmtRecords = data.records.map( sample => {
+            //        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+            //        columns["recid"] = sample["sampleId"]
+            //        return columns
+            //    })
+            //    event.detail.records
+            //    //grid.records.push(...fmtRecords)
+            //    //grid.refresh()
+            //}
+        },
+    }
+    // setup grid
+    let grid = new w2grid(tableConfig.grid)
+   
+    // append samples to grid
+    grid.records = samples.records.map( sample => {
+        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+        columns["recid"] = sample["sample_id"]
+        return columns
+    })
+    window.getSelectedRows = () => grid.getSelection()
+    window.action = function (method, param1, param2, param3) {
+        grid[method](param1, param2, param3)
+    }
+    window.refreshGrid = function(auto) {
+        grid.autoLoad = auto
+        grid.skip(0)
+    }
+    grid.render()
+    refreshGrid(true)
+</script>
+
+<script>
+    function addSelctedSamplesToBasket(btn) {
+        // add selected samples from table to session storage
+        const body = {
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        fetch(`${window.origin}/api/basket/add`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {location.reload()})
+    }
+
+    async function getSimilarSamples() {
+        const sampleId=window.getSelectedRows()[0]
+        const limit=document.getElementById("similar-samples-threshold").value
+        const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
+            method: "POST",
+            body: JSON.stringify({limit: limit}),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        })
+        return response.json()
+    }
+
+    function getSimilarSamplesAndCheckRows(btn) {
+        // get similar samples and check rows
+        getSimilarSamples().then((data) => {
+            window.action('select', data.samples.map(sample => sample.sample_id))
+        })
+    }
+    document.getElementById("similar-samples-threshold").addEventListener("input", (elem) => {
+        document.getElementById("similar-samples-button").disabled = isNaN(parseInt(elem.data))
+    });
+</script>
+{% endblock content %}
+
+{% macro group_card(group) %}
+<div class="card group-card">
+    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">
+                {{ group.display_name }}
+                <span class="badge rounded-pill bg-success">{{ group.included_samples | length }} isolates</span>
+            </h5>
+            <p class="card-text">Last update: <em>{{ group.modified_at | strftime }}</em></p>
+        </div>
+    </a>
+</div>
+{% endmacro %}

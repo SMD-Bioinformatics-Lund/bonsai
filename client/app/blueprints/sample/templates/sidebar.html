@@ -1,0 +1,138 @@
+{% macro comment_area(sample) %}
+<div id="comment-container" class="overflow-auto">
+    {% if sample.comments | length > 0 %}
+        {% for comment in sample.comments %}
+            {% if comment.displayed %}
+            <div class="comment-box m-2 p-1 bg-white shadow-sm rounded">
+                <form action={{ url_for('samples.hide_comment', sample_id=sample.sample_id, comment_id=comment.id) }} method="POST">
+                    <button class="float-end float-top btn btn-sm btn-link" aria-label="Remove" type="submit"><i class="bi bi-trash3"></i></button>
+                </form>
+                <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
+                <span class="text-sm text-muted">- {{ comment.username }}, {{ comment.created_at | strftime }}</span>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="text-muted">No comment</p>
+    {% endif %}
+</div>
+<form action={{ url_for('samples.add_comment', sample_id=sample.sample_id) }} method="post">
+    <div class="form-floating mt-4">
+        <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
+        <label class="text-muted" for="comment-box">My comment</label>
+    </div>
+    <button type="submit" class="btn btn-sm btn-outline-success mt-2"> 
+        <i class="bi bi-chat-square-text"></i>
+        Add comment
+    </button>
+</form>
+{% endmacro %}
+
+{% macro navigation_links() %}
+<h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Navigation</h6>
+<ul class="nav nav-pills nav-flush flex-column mb-auto text-left">
+    <li class="nav-item">
+        <a class="nav-link" href="#sample-id-heading">
+            <i class="bi me-2 bi-house"></i>
+            ID
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#epi-typing-heading">
+            <i class="bi me-2 bi-diagram-3"></i>
+            Typing
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#phenotype-heading">
+            <i class="bi me-2 bi-file-text"></i>
+            Phenotype
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#virulence-heading">
+            <i class="bi me-2 bi-file-text"></i>
+            Virulence
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="#qc-heading">
+            <i class="bi me-2 bi-bar-chart-line"></i>
+            QC
+        </a>
+    </li>
+</ul>
+{% endmacro %}
+
+{% macro qc_classificaion(cls, bad_qc_actions, sample_id) %}
+<h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
+<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" 
+      method="post" name="qc-classification" class="form-control">
+    <div class="row pb-2">
+        <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
+            <input 
+                type="radio" class="btn-check btn-sm" name="qc-validation" 
+                id="passed-qc-btn" autocomplete="off" value="passed"
+                {% if cls.status == "passed" %}checked{% endif  %}
+            >
+            <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
+            <input type="radio" class="btn-check btn-sm" name="qc-validation"
+                id="failed-qc-btn" autocomplete="off" value="failed"
+                {% if cls.status == "failed" %}checked{% endif  %}
+            >
+            <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
+        </div>
+        <div class="col-auto d-flex flex-row">
+            <select id="failed-qc-action" class="form-select form-select-sm" 
+                    name="qc-action" aria-label="Action on failed sample" disabled hidden>
+                <option selected disabled>Select action</option>
+                {% for action in bad_qc_actions %}
+                    <option 
+                        value="{{action}}"
+                        {% if cls.action == action %}selected{% endif %}
+                    >{{action | capitalize}}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div id="failed-qc-comment-container" class="row" {% if cls.status != "failed" %}hidden{% endif %}>
+        <div id="" class="col-auto">
+            <label class="text-muted" for="failed-qc-comment">Comment</label>
+            <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment"
+            >{{cls.comment}}</textarea>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Confirm</button>
+        </div>
+    </div>
+</form>
+{% endmacro %}
+
+{% macro sidebar(sample, bad_qc_actions, navigation=True) %}
+<div id="sidebar" class="col-md-3 col-lg-2 bg-ligth sticky-top sidebar">
+    {% if navigation %}
+        {{ navigation_links() }}
+    {% endif %}
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
+    <ul class="nav flex-column">
+        <li class="nav-item mb-2" disabled>
+            <a href="#">
+                <i class="bi bi-bar-chart"></i>
+                Outbreak
+            </a>
+        </li>
+        <li class="nav-item mb-2">
+            <a href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
+                <i class="bi bi-bar-chart"></i>
+                Resistance
+            </a>
+        </li>
+    </ul>
+
+    {{ qc_classificaion(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
+    {{ comment_area(sample) }}
+</div>
+{% endmacro  %}

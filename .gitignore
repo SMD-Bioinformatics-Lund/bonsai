@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!client/app/blueprints/cluster/static/js/SlickGrid/lib/
 lib64/
 parts/
 sdist/
@@ -127,3 +128,18 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# javascript and node related files
+node_modules
+.npm
+
+# directory tree
+volumes/mongodb/*
+!volumes/mongodb/.gitkeep
+volumes/api/genome_signatures/*
+!volumes/api/genome_signatures/.gitkeep
+data/*
+
+# editor related files
+*~
+.vscode

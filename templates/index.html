@@ -1,9 +1,0 @@
-
-{% extends "layout.html" %}
-{% block body %}
-
-{% for s in species %}
-<a href="{{ url_for('main_screen', spec=s.species ) }}"><div class="species_selector"><strong><i>{{s.label}}</i></strong><br><span class="isolate_count">{{ counts[s.species] }} isolates</span></div></a>
-{% endfor %}
-
-{% endblock %}

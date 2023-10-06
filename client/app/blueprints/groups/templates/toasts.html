@@ -1,0 +1,16 @@
+{% macro generic_alert_toast(name, class_names) %}
+<div id={{name}} class="toast {{class_names}}" role="alert" aria-live="assertive" aria-atomic="true">
+  <div class="toast-header">
+    <span class="badge bg-danger">
+      <i class="bi bi-exclamation-triangle-fill" style="color: white;"></i>
+    </span>
+    <strong id="toast-title" class="me-auto"></strong>
+    <small id="toast-time"></small>
+    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+  </div>
+  <div class="toast-body">
+    <p id="toast-error-message"></p>
+    <p id="toast-stack-trace"></p>
+  </div>
+</div>
+{% endmacro %}

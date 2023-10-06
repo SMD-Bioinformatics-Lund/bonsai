@@ -1,0 +1,34 @@
+{% macro render_sampleId(sample_id)  %}
+    <a href={{url_for('samples.sample', sample_id=sample_id)}}>{{sample_id}}</a>
+{% endmacro %}
+
+{% macro render_taxonomic_name(text)  %}
+    <span class="fw-light fst-italic">{{text}}</span>
+{% endmacro %}
+
+{% macro render_qc(text)  %}
+    <span class="fw-light fst-italic">{{text}}</span>
+{% endmacro %}
+
+{% macro render_mlst(st)  %}
+    {% if st == None %}
+        {% set st="-" %}
+    {% endif %}
+    <span class="fw-normal fs-6">{{st}}</span>
+{% endmacro %}
+
+{% macro render_pvl(pvl)  %}
+    {% set pvl_tag = pvl | is_pvl_pos %}
+    <span class="badge bg-{{pvl_tag.severity}} fw-normal">{{pvl_tag.label}}</span>
+{% endmacro %}
+
+{% macro render_mrsa(amr)  %}
+    {% set has_meca = amr | has_arg("mecA") %}
+    {% if has_meca %}
+        <span class="bade bg-danger fw-normal text-light fs-6">MRSA</span>
+    {% endif %}
+{% endmacro %}
+
+{% macro render_text(text)  %}
+    <span>{{text}}</span>
+{% endmacro %}
