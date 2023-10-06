@@ -115,9 +115,7 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
         writer = csv.DictWriter(
             tmp_alleles_tsv, tsv_header, restval="-", delimiter="\t"
         )
-        LOG.debug(
-            "Writing %s profiles to %s", len(processed_profiles), tmp_alleles_tsv.name
-        )
+        LOG.debug(f"Writing {len(processed_profiles)} profiles to {tmp_alleles_tsv.name}")
         writer.writeheader()
         writer.writerows(processed_profiles)
         tmp_alleles_tsv.flush()
@@ -130,7 +128,7 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
             "MSTreeV2",
         ]
 
-        LOG.debug(f"Executing os cmd: %s", " ".join(grapetree_cmd))
+        LOG.debug(f"Executing os cmd: {' '.join(grapetree_cmd)}")
 
         # working directory needs to be writeable as grapetree created tmp
         # files when generating the tree, hence cwd=/tmp
@@ -140,7 +138,10 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
             stderr=subprocess.PIPE,  # ignore grapetree warnings/stderr.
             cwd="/tmp",
         ) as grapetree_output:
-            stdout, _ = grapetree_output.communicate()
+            try:
+                stdout, _ = grapetree_output.communicate(timeout=15)
+            except TimeoutExpired:
+                proc.kill()
 
     newick_tree = stdout.decode("utf-8").rstrip()
     LOG.debug(f"Returning newick tree: %s", newick_tree)
