@@ -16,7 +16,13 @@ from pymongo.errors import DuplicateKeyError
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import get_sample, get_samples_summary, add_genome_signature_file, update_sample_qc_classification, get_samples_similar_to_reference
+from ..crud.sample import (
+    get_sample,
+    get_samples_summary,
+    add_genome_signature_file,
+    update_sample_qc_classification,
+    get_samples_similar_to_reference,
+)
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.user import get_current_active_user
 from ..db import db
@@ -54,7 +60,7 @@ async def read_samples(
     offset: int = Query(0, gt=-1),
     include_qc: bool = Query(True),
     include_mlst: bool = Query(True),
-    #include_cgmlst: bool = Query(True),
+    # include_cgmlst: bool = Query(True),
     sid: List[str] | None = Query(None),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -62,7 +68,14 @@ async def read_samples(
 ):
     # skip and offset function the same
     skip = max([offset, skip])
-    db_obj = await get_samples_summary(db, limit=limit, skip=skip, include=sid, include_qc=include_qc, include_mlst=include_mlst)
+    db_obj = await get_samples_summary(
+        db,
+        limit=limit,
+        skip=skip,
+        include=sid,
+        include_qc=include_qc,
+        include_mlst=include_mlst,
+    )
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
@@ -200,7 +213,9 @@ async def update_qc_status(
     ),
 ):
     try:
-        status_obj = await update_sample_qc_classification(db, sample_id, classification)
+        status_obj = await update_sample_qc_classification(
+            db, sample_id, classification
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -308,10 +323,20 @@ async def read_sample(
     ),
 ):
     try:
-        samples = get_samples_similar_to_reference(sample_id, kmer_size=config.SIGNATURE_KMER_SIZE, min_similarity=similarity, limit=limit)
+        samples = get_samples_similar_to_reference(
+            sample_id,
+            kmer_size=config.SIGNATURE_KMER_SIZE,
+            min_similarity=similarity,
+            limit=limit,
+        )
     except FileNotFoundError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(error),
         )
-    return {"reference": sample_id, "samples": samples, "limit": limit, "simiarity": similarity}
+    return {
+        "reference": sample_id,
+        "samples": samples,
+        "limit": limit,
+        "simiarity": similarity,
+    }

@@ -7,7 +7,14 @@ from fastapi import APIRouter, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.user import create_user, get_current_active_user, get_user, get_samples_in_user_basket, add_samples_to_user_basket, remove_samples_from_user_basket
+from ..crud.user import (
+    create_user,
+    get_current_active_user,
+    get_user,
+    get_samples_in_user_basket,
+    add_samples_to_user_basket,
+    remove_samples_from_user_basket,
+)
 from ..db import db
 from ..models.user import UserInputCreate, UserOutputDatabase, SampleBasketObject
 
@@ -34,10 +41,13 @@ async def get_users_me(
 @router.get("/users/basket", tags=DEFAULT_TAGS)
 async def get_samples_in_basket(
     current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[OWN_USER])
-    ) -> List[SampleBasketObject]:
+        get_current_active_user, scopes=[OWN_USER]
+    )
+) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
-    basket_obj: List[SampleBasketObject] = await get_samples_in_user_basket(current_user)
+    basket_obj: List[SampleBasketObject] = await get_samples_in_user_basket(
+        current_user
+    )
     return basket_obj
 
 
@@ -45,11 +55,14 @@ async def get_samples_in_basket(
 async def add_samples_to_basket(
     samples: List[SampleBasketObject],
     current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[OWN_USER])
-    ) -> List[SampleBasketObject]:
+        get_current_active_user, scopes=[OWN_USER]
+    ),
+) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
-        basket_obj: List[SampleBasketObject] = await add_samples_to_user_basket(current_user, samples)
+        basket_obj: List[SampleBasketObject] = await add_samples_to_user_basket(
+            current_user, samples
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -67,11 +80,14 @@ async def add_samples_to_basket(
 async def remove_samples_from_basket(
     sample_ids: List[str],
     current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[OWN_USER])
-    ) -> List[SampleBasketObject]:
+        get_current_active_user, scopes=[OWN_USER]
+    ),
+) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
-        basket_obj: List[SampleBasketObject] = await remove_samples_from_user_basket(current_user, sample_ids)
+        basket_obj: List[SampleBasketObject] = await remove_samples_from_user_basket(
+            current_user, sample_ids
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

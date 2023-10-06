@@ -218,9 +218,9 @@ def remove_comment_from_sample(headers, **kwargs):
 @api_authentication
 def update_sample_qc_classification(headers, **kwargs):
     """Update the qc classificaiton of a sample"""
-    if not 'sample_id' in kwargs:
-        raise ValueError('Sample id is required for this entrypoint')
-    sample_id = kwargs['sample_id']
+    if not "sample_id" in kwargs:
+        raise ValueError("Sample id is required for this entrypoint")
+    sample_id = kwargs["sample_id"]
     data = {
         "status": kwargs.get("status"),
         "action": kwargs.get("action"),
@@ -257,8 +257,10 @@ def find_samples_similar_to_reference(headers, **kwargs):
     limit: int = kwargs.get("limit", None)
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
-    resp = requests.get(url, headers=headers, params={
-        "sample_id": sample_id, "similarity": similarity, "limit": limit
-    })
+    resp = requests.get(
+        url,
+        headers=headers,
+        params={"sample_id": sample_id, "similarity": similarity, "limit": limit},
+    )
     resp.raise_for_status()
     return resp.json()

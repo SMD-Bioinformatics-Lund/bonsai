@@ -74,7 +74,7 @@ def gather_metadata(samples) -> MetaData:
         # store metadata
         sample_id = sample["sample_id"]
         metadata[sample_id] = {
-            #"location": get_value(sample, "location"),
+            # "location": get_value(sample, "location"),
             "time": sample["created_at"],
             "st": get_value(sample["mlst"], "sequence_type"),
         }
@@ -133,7 +133,9 @@ def cluster_and_display_tree():
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
-            newick = cluster_samples(token, sample_ids=sample_ids, typing_method="cgmlst")
+            newick = cluster_samples(
+                token, sample_ids=sample_ids, typing_method="cgmlst"
+            )
         except HTTPError as error:
             flash(str(error), "danger")
         else:

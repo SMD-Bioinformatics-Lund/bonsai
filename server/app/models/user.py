@@ -9,6 +9,7 @@ from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
 class SampleBasketObject(RWModel):
     """Contaner for sample baskt content."""
+
     sample_id: str
     analysis_profile: str
 

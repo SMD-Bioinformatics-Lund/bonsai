@@ -18,7 +18,12 @@ from ..auth import get_password_hash, verify_password
 from ..config import USER_ROLES, SECRET_KEY, ALGORITHM
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import UserInputCreate, UserInputDatabase, UserOutputDatabase, SampleBasketObject
+from ..models.user import (
+    UserInputCreate,
+    UserInputDatabase,
+    UserOutputDatabase,
+    SampleBasketObject,
+)
 from .errors import EntryNotFound, UpdateDocumentError
 
 security = HTTPBasic()
@@ -120,7 +125,8 @@ async def get_current_active_user(
     return current_user
 
 
-async def get_samples_in_user_basket(current_user,
+async def get_samples_in_user_basket(
+    current_user,
     security: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
 ) -> List[SampleBasketObject]:
     """Get samples in the current user basket."""
@@ -142,13 +148,13 @@ async def add_samples_to_user_basket(
                     "$each": jsonable_encoder(sample_ids),
                 },
             },
-        }
+        },
     )
 
     # verify update
     if not update_obj.matched_count == 1:
         raise EntryNotFound(current_user.username)
-    
+
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(current_user.username)
 
@@ -167,17 +173,15 @@ async def remove_samples_from_user_basket(
         {"username": current_user.username},
         {
             "$pull": {
-                "basket": {
-                    "sample_id": {"$in": sample_ids}
-                },
+                "basket": {"sample_id": {"$in": sample_ids}},
             },
-        }
+        },
     )
 
     # verify update
     if not update_obj.matched_count == 1:
         raise EntryNotFound(current_user.username)
-    
+
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(current_user.username)
     # get updated basket

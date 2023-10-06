@@ -114,43 +114,47 @@ def sample(sample_id):
                     raise ValueError()
                 # get/create summary dictionary object
                 gene_entry = amr_summary.get(
-                    gene_name, {
+                    gene_name,
+                    {
                         # create default object
                         "gene_symbol": gene_name,
                         "software": [],
-                        "res_class": "Unknown"
-                    })
+                        "res_class": "Unknown",
+                    },
+                )
                 # annotate softwares
-                gene_entry['software'].append(pred_res["software"])
+                gene_entry["software"].append(pred_res["software"])
 
                 # annotate resistance class
                 if pred_res["software"] == PredictionSoftware.AMRFINDER.value:
-                    gene_entry['res_class'] = gene["res_class"]
+                    gene_entry["res_class"] = gene["res_class"]
 
                 # store object
                 amr_summary[gene_name] = gene_entry
 
                 # reformat resistance gene table
-                gene_entry = resistance_info['genes'].get(gene_name, [])
-                gene['software'] = pred_res['software']
+                gene_entry = resistance_info["genes"].get(gene_name, [])
+                gene["software"] = pred_res["software"]
                 gene_entry.append(gene)
-                resistance_info['genes'][gene_name] = gene_entry
+                resistance_info["genes"][gene_name] = gene_entry
 
             # iterate over mutations and populate resistance summaries
             for mutation in pred_res["result"]["mutations"]:
-                gene_name, *_ = mutation["ref_id"].split(';;')
+                gene_name, *_ = mutation["ref_id"].split(";;")
                 # gene entries
                 gene_entry = amr_summary.get(
-                    gene_name, {
+                    gene_name,
+                    {
                         # create default object
                         "gene_symbol": gene_name,
                         "software": [],
-                        "res_class": "Unknown"
-                    })
-                if mutation['variant_type'] == 'substitution':
-                    ref_aa = NT_TO_AA[mutation['ref_codon'].upper()]
-                    alt_aa = NT_TO_AA[mutation['alt_codon'].upper()]
-                    gene_entry['change'] = f"{ref_aa}{mutation['position']}{alt_aa}"
+                        "res_class": "Unknown",
+                    },
+                )
+                if mutation["variant_type"] == "substitution":
+                    ref_aa = NT_TO_AA[mutation["ref_codon"].upper()]
+                    alt_aa = NT_TO_AA[mutation["alt_codon"].upper()]
+                    gene_entry["change"] = f"{ref_aa}{mutation['position']}{alt_aa}"
                 else:
                     raise ValueError()
                 # store object
@@ -158,9 +162,10 @@ def sample(sample_id):
 
     # group summary by res_class
     amr_summary = {
-        res_type: list(rows) 
-        for res_type, rows 
-        in  groupby(amr_summary.values(), key=lambda x: x['res_class'])
+        res_type: list(rows)
+        for res_type, rows in groupby(
+            amr_summary.values(), key=lambda x: x["res_class"]
+        )
     }
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
@@ -173,15 +178,26 @@ def sample(sample_id):
     TYPING_METHOD = "minhash"
     LINKAGE = "single"
     newick_file = cluster_samples(
-        token, 
+        token,
         sample_ids=[smp["sample_id"] for smp in similar_samples["samples"]],
-        typing_method=TYPING_METHOD, method=LINKAGE)
-    similar_samples = {"typing_method": TYPING_METHOD, "method": LINKAGE, "newick": newick_file}
+        typing_method=TYPING_METHOD,
+        method=LINKAGE,
+    )
+    similar_samples = {
+        "typing_method": TYPING_METHOD,
+        "method": LINKAGE,
+        "newick": newick_file,
+    }
 
     return render_template(
-        "sample.html", sample=sample, amr_summary=amr_summary, resistance_info=resistance_info,
-        title=sample_id, is_filtered=bool(group_id), similar_samples=similar_samples,
-        bad_qc_actions=bad_qc_actions
+        "sample.html",
+        sample=sample,
+        amr_summary=amr_summary,
+        resistance_info=resistance_info,
+        title=sample_id,
+        is_filtered=bool(group_id),
+        similar_samples=similar_samples,
+        bad_qc_actions=bad_qc_actions,
     )
 
 
@@ -190,7 +206,7 @@ def sample(sample_id):
 def find_similar_samples(sample_id):
     """Find samples that are similar."""
     token = TokenObject(**current_user.get_id())
-    limit = request.json.get('limit', 10)
+    limit = request.json.get("limit", 10)
     try:
         resp = find_samples_similar_to_reference(
             token, sample_id=sample_id, limit=limit
@@ -241,15 +257,15 @@ def update_qc_classification(sample_id):
     token = TokenObject(**current_user.get_id())
 
     # build data to store in db
-    result = request.form.get('qc-validation', None)
-    if result == 'passed':
+    result = request.form.get("qc-validation", None)
+    if result == "passed":
         action = None
-        comment = ''
-    elif result == 'failed':
-        comment = request.form.get('qc-comment', '')
-        action = request.form.get('qc-action', '')
+        comment = ""
+    elif result == "failed":
+        comment = request.form.get("qc-comment", "")
+        action = request.form.get("qc-action", "")
     else:
-        raise ValueError(f'Unknown value of qc classification, {result}')
+        raise ValueError(f"Unknown value of qc classification, {result}")
 
     try:
         update_sample_qc_classification(

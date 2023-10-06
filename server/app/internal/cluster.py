@@ -94,19 +94,19 @@ def cluster_on_minhash_signature(sample_ids: List[str], method: ClusterMethod):
             raise FileNotFoundError(f"Signature file not found, {signature_path}")
 
         # read signature
-        loaded = sourmash.load_file_as_signatures(str(signature_path), 
-                                                  ksize=kmer_sizes)
+        loaded = sourmash.load_file_as_signatures(str(signature_path), ksize=kmer_sizes)
         # check if signatures were fund
         loaded = list(loaded)
         if not loaded:
-            raise ValueError(f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}")
+            raise ValueError(
+                f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}"
+            )
         siglist.extend(loaded)  # append to all signatures
 
     # create distance matrix
-    similarity = sourmash.compare.compare_all_pairs(siglist, 
-                                                    ignore_abundance=True, 
-                                                    n_jobs=1, 
-                                                    return_ani=False)
+    similarity = sourmash.compare.compare_all_pairs(
+        siglist, ignore_abundance=True, n_jobs=1, return_ani=False
+    )
     # cluster on similarity matrix
     Z = hierarchy.linkage(similarity, method=method.value)
     tree = hierarchy.to_tree(Z, False)
@@ -115,7 +115,7 @@ def cluster_on_minhash_signature(sample_ids: List[str], method: ClusterMethod):
     newick_tree = to_newick(tree, "", tree.dist, labeltext)
     return newick_tree
 
-  
+
 def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -> str:
     """
     Cluster samples on their cgmlst profile using grapetree MStreesV2.
@@ -151,7 +151,9 @@ def cluster_on_allele_profile_grapetree_mstrees(profiles: TypingProfileOutput) -
         writer = csv.DictWriter(
             tmp_alleles_tsv, tsv_header, restval="-", delimiter="\t"
         )
-        LOG.debug(f"Writing {len(processed_profiles)} profiles to {tmp_alleles_tsv.name}")
+        LOG.debug(
+            f"Writing {len(processed_profiles)} profiles to {tmp_alleles_tsv.name}"
+        )
         writer.writeheader()
         writer.writerows(processed_profiles)
         tmp_alleles_tsv.flush()
@@ -198,19 +200,19 @@ def cluster_on_minhash_signature(sample_ids: List[str], method: ClusterMethod):
             raise FileNotFoundError(f"Signature file not found, {signature_path}")
 
         # read signature
-        loaded = sourmash.load_file_as_signatures(str(signature_path), 
-                                                  ksize=kmer_sizes)
+        loaded = sourmash.load_file_as_signatures(str(signature_path), ksize=kmer_sizes)
         # check if signatures were fund
         loaded = list(loaded)
         if not loaded:
-            raise ValueError(f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}")
+            raise ValueError(
+                f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}"
+            )
         siglist.extend(loaded)  # append to all signatures
 
     # create distance matrix
-    similarity = sourmash.compare.compare_all_pairs(siglist, 
-                                                    ignore_abundance=True, 
-                                                    n_jobs=1, 
-                                                    return_ani=False)
+    similarity = sourmash.compare.compare_all_pairs(
+        siglist, ignore_abundance=True, n_jobs=1, return_ani=False
+    )
     # cluster on similarity matrix
     Z = hierarchy.linkage(similarity, method=method.value)
     tree = hierarchy.to_tree(Z, False)

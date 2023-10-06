@@ -222,8 +222,8 @@ def register_filters(app):
 
     @app.template_filter()
     def fmt_number(num, sig_digits=None):
-        """Format number by adding a thousand separator 
-        
+        """Format number by adding a thousand separator
+
         Has option to round values to X signifiacnt digits."""
         if isinstance(num, (int, float)):
             if sig_digits is not None:
@@ -235,7 +235,7 @@ def register_filters(app):
     def fmt_null_values(value):
         """Replace null values with -."""
         if value is None:
-            value = '–'
+            value = "–"
         return value
 
     @app.template_filter()

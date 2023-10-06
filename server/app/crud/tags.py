@@ -2,14 +2,23 @@
 from multiprocessing.sharedctypes import Value
 from ..models.phenotype import ElementTypeResult, ElementType
 from ..models.sample import SampleInDatabase
-from ..models.tags import TAG_LIST, Tag, TagSeverity, TagType, VirulenceTag, ResistanceTag
+from ..models.tags import (
+    TAG_LIST,
+    Tag,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+    ResistanceTag,
+)
 
 
 # Phenotypic tags
 def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
-        pred for pred in sample.element_type_result if pred.type == ElementType.VIR.value
+        pred
+        for pred in sample.element_type_result
+        if pred.type == ElementType.VIR.value
     ]
     if len(virs) > 0:
         vir_result: ElementTypeResult = virs[0].result
@@ -44,12 +53,12 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
 
 def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     """Check if sample is MRSA.
-    
+
     An SA is classified as MRSA if it carries either mecA, mecB or mecC.
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3780952/
     """
     mrsa_genes = []
-    valid_genes = ['mecA', 'mecB', 'mecC']
+    valid_genes = ["mecA", "mecB", "mecC"]
     for prediction in sample.element_type_result:
         if not prediction.type == ElementType.AMR.value:
             continue
@@ -57,8 +66,8 @@ def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
         for gene in prediction.result.genes:
             # lookup if has valid genes
             gene_lookup = [
-                gene.gene_symbol.startswith(symbol) 
-                for symbol in valid_genes 
+                gene.gene_symbol.startswith(symbol)
+                for symbol in valid_genes
                 if gene.gene_symbol is not None
             ]
             if any(gene_lookup):
@@ -82,9 +91,7 @@ def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     tags.append(tag)
 
 
-ALL_TAG_FUNCS = [
-    add_pvl, add_mrsa
-]
+ALL_TAG_FUNCS = [add_pvl, add_mrsa]
 
 
 def compute_phenotype_tags(sample: SampleInDatabase) -> TAG_LIST:

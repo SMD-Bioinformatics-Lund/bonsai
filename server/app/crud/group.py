@@ -70,9 +70,7 @@ async def get_group(
                                             },
                                         }
                                     },
-                                    "major_specie": {
-                                        "$first": "species_prediction"
-                                    },
+                                    "major_specie": {"$first": "species_prediction"},
                                 }
                             },
                             {

@@ -76,32 +76,39 @@ async def get_samples_summary(
     if limit > 0:
         pipeline.append({"$limit": limit})
 
-
-    pipeline.append({
-        "$addFields": {
-            "typing_result": {
-                "$filter": {
-                    "input": "$typing_result",
-                    "as": "res",
-                    "cond": {"$eq": ["$$res.type", "mlst"]}
+    pipeline.append(
+        {
+            "$addFields": {
+                "typing_result": {
+                    "$filter": {
+                        "input": "$typing_result",
+                        "as": "res",
+                        "cond": {"$eq": ["$$res.type", "mlst"]},
+                    }
                 }
             }
         }
-    })
-    base_projection = {"_id": 0, 
-                       "id": {"$convert": {"input": "$_id", "to": "string"}}, 
-                       "sample_id": 1, 
-                       "tags": 1, 
-                       "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
-                       "created_at": 1, 
-                       "profile": "$run_metadata.run.analysis_profile",
-                       }
+    )
+    base_projection = {
+        "_id": 0,
+        "id": {"$convert": {"input": "$_id", "to": "string"}},
+        "sample_id": 1,
+        "tags": 1,
+        "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
+        "created_at": 1,
+        "profile": "$run_metadata.run.analysis_profile",
+    }
     # define a optional projections
     optional_projecton = {}
     if include_qc:
         optional_projecton["qc_status"] = 1
     if include_mlst:
-        optional_projecton["mlst"] = {"$getField": {"field": "result", "input": {"$arrayElemAt": ["$typing_result", 0]}}}
+        optional_projecton["mlst"] = {
+            "$getField": {
+                "field": "result",
+                "input": {"$arrayElemAt": ["$typing_result", 0]},
+            }
+        }
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
@@ -134,6 +141,7 @@ async def get_samples(
             continue
         samp_objs.append(sample)
     return samp_objs
+
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
@@ -255,16 +263,21 @@ async def hide_comment(
     return comments
 
 
-async def update_sample_qc_classification(db: Database, sample_id: str, classification: QcClassification) -> bool:
+async def update_sample_qc_classification(
+    db: Database, sample_id: str, classification: QcClassification
+) -> bool:
     """Update the quality control classification of a sample"""
 
     query = {"sample_id": sample_id}
-    update_obj = await db.sample_collection.update_one(query, {
-        "$set": {
-            "modified_at": datetime.now(),
-            "qc_status": jsonable_encoder(classification)
-        }
-    })
+    update_obj = await db.sample_collection.update_one(
+        query,
+        {
+            "$set": {
+                "modified_at": datetime.now(),
+                "qc_status": jsonable_encoder(classification),
+            }
+        },
+    )
     # verify successful update
     # if sample is not fund
     if not update_obj.matched_count == 1:
@@ -361,11 +374,11 @@ def get_samples_similar_to_reference(
     query_signature_path = signature_dir.joinpath(f"{sample_id}.sig")
     if not query_signature_path.is_file():
         raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
-    query_signature = list(sourmash.load_file_as_signatures(
-        str(query_signature_path), ksize=kmer_size
-    ))
+    query_signature = list(
+        sourmash.load_file_as_signatures(str(query_signature_path), ksize=kmer_size)
+    )
     if len(query_signature) == 0:
-        raise ValueError(f'No signature in: {sample_id} with kmer size: {kmer_size}')
+        raise ValueError(f"No signature in: {sample_id} with kmer size: {kmer_size}")
     else:
         query_signature = query_signature[0]
 

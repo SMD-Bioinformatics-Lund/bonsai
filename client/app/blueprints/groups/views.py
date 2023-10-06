@@ -45,7 +45,12 @@ def groups():
     basket = session
 
     return render_template(
-        "groups.html", title="Groups", groups=groups, samples=samples, basket=basket, token=current_user.get_id().get("token")
+        "groups.html",
+        title="Groups",
+        groups=groups,
+        samples=samples,
+        basket=basket,
+        token=current_user.get_id().get("token"),
     )
 
 
@@ -108,7 +113,9 @@ def group(group_id):
     token = TokenObject(**current_user.get_id())
     group = get_samples_in_group(token, group_id=group_id, lookup_samples=False)
     table_definition = group["table_columns"]
-    samples = get_samples_by_id(token, limit=0, skip=0, sample_ids=group["included_samples"])
+    samples = get_samples_by_id(
+        token, limit=0, skip=0, sample_ids=group["included_samples"]
+    )
     # TODO add flag to exclude cgmlst from api call
     # TODO implement table definition to dynamically generate a table
     # TODO add pagination

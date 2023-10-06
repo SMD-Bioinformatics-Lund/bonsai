@@ -9,7 +9,7 @@ from ..models.user import UserOutputDatabase
 from ..models.base import RWModel
 from ..db import db
 from ..internal.cluster import (
-#    cluster_on_allele_profile,
+    #    cluster_on_allele_profile,
     cluster_on_allele_profile_grapetree_mstrees,
     cluster_on_minhash_signature,
     ClusterMethod,
@@ -55,7 +55,9 @@ async def cluster_samples(
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
     if typing_method == TypingMethod.MINHASH:
-        newick_tree = cluster_on_minhash_signature(clusterInput.sample_ids, clusterInput.method)
+        newick_tree = cluster_on_minhash_signature(
+            clusterInput.sample_ids, clusterInput.method
+        )
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(
