@@ -1,25 +1,12 @@
 """Declaration of views for groups"""
-from flask import (
-    Blueprint,
-    current_app,
-    render_template,
-    redirect,
-    session,
-    url_for,
-    request,
-    flash,
-)
-from flask_login import login_required, current_user
-from app.bonsai import (
-    get_samples_by_id,
-    get_groups,
-    get_samples_in_group,
-    delete_group,
-    update_group,
-    create_group,
-    TokenObject,
-)
 import json
+
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, session, url_for)
+from flask_login import current_user, login_required
+
+from app.bonsai import (TokenObject, create_group, delete_group, get_groups,
+                        get_samples_by_id, get_samples_in_group, update_group)
 from app.models import PhenotypeType
 
 groups_bp = Blueprint(

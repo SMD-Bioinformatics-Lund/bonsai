@@ -6,12 +6,12 @@ from typing import List
 from pydantic import BaseModel, Field, conlist
 
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
-from .tags import Tag
-
 from .metadata import RunMetadata
-from .phenotype import ElementTypeResult, ElementType, PredictionSoftware
-from .qc import QcMethodIndex, QcClassification
-from .typing import TypingMethod, TypingResultCgMlst, TypingResultMlst, TypingSoftware
+from .phenotype import ElementType, ElementTypeResult, PredictionSoftware
+from .qc import QcClassification, QcMethodIndex
+from .tags import Tag
+from .typing import (TypingMethod, TypingResultCgMlst, TypingResultMlst,
+                     TypingSoftware)
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"

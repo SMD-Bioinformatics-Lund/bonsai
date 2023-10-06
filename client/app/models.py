@@ -1,6 +1,7 @@
-from pydantic import BaseModel, BaseConfig
 from enum import Enum
 from typing import List
+
+from pydantic import BaseConfig, BaseModel
 
 
 class RWModel(BaseModel):

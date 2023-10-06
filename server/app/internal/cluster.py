@@ -1,23 +1,23 @@
 """Function for clustering."""
 import csv
+import logging
 import os
 import subprocess
 import tempfile
 from enum import Enum
-import sourmash
-from app import config
 from pathlib import Path
 from typing import List
 
 import pandas as pd
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import pdist
+
+import sourmash
+from app import config
 from skbio import DistanceMatrix
 from skbio.tree import nj
 
 from ..crud.sample import TypingProfileOutput
-
-import logging
 
 LOG = logging.getLogger(__name__)
 

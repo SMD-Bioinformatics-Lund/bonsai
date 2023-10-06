@@ -1,20 +1,19 @@
 """Entrypoints for starting clustering jobs."""
-from fastapi import APIRouter, Query, Security, status, HTTPException, Body
-from pydantic import constr, Field
 from enum import Enum
-from ..crud.user import get_current_active_user
-from ..crud.sample import get_typing_profiles, TypingProfileOutput
+
+from fastapi import APIRouter, Body, HTTPException, Query, Security, status
+from pydantic import Field, constr
+
 from ..crud.errors import EntryNotFound
-from ..models.user import UserOutputDatabase
-from ..models.base import RWModel
+from ..crud.sample import TypingProfileOutput, get_typing_profiles
+from ..crud.user import get_current_active_user
 from ..db import db
-from ..internal.cluster import (
-    #    cluster_on_allele_profile,
-    cluster_on_allele_profile_grapetree_mstrees,
-    cluster_on_minhash_signature,
-    ClusterMethod,
-    DistanceMethod,
-)
+from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
+                                DistanceMethod,
+                                cluster_on_allele_profile_grapetree_mstrees,
+                                cluster_on_minhash_signature)
+from ..models.base import RWModel
+from ..models.user import UserOutputDatabase
 
 router = APIRouter()
 

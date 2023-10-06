@@ -1,5 +1,6 @@
 """API root message."""
 from fastapi import APIRouter
+
 from ..__version__ import VERSION as version
 
 router = APIRouter()

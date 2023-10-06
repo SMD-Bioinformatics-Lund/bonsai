@@ -1,12 +1,15 @@
 """Code for setting up the flask app."""
+from collections import defaultdict
+from itertools import chain, zip_longest
+
 from flask import Flask, current_app
-from .blueprints import public, login, groups, sample, cluster, api
-from .extensions import login_manager
+
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
-from .models import Severity, VirulenceTag, TagType, Tag, TAG_LIST
-from itertools import chain, zip_longest
-from collections import defaultdict
+
+from .blueprints import api, cluster, groups, login, public, sample
+from .extensions import login_manager
+from .models import TAG_LIST, Severity, Tag, TagType, VirulenceTag
 
 
 def create_app():

@@ -1,46 +1,30 @@
-from typing import Dict, List, Annotated
+import logging
+import pathlib
+from typing import Annotated, Dict, List
 
-from fastapi import (
-    APIRouter,
-    Body,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-    File,
-    UploadFile,
-)
+from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pymongo.errors import DuplicateKeyError
 
-from ..crud.sample import EntryNotFound, add_comment, add_location
-from ..crud.sample import hide_comment as hide_comment_for_sample
+import sourmash
+from app import config
+from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
+                     Security, UploadFile, status)
+
+from ..crud.sample import (EntryNotFound, add_comment,
+                           add_genome_signature_file, add_location)
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import (
-    get_sample,
-    get_samples_summary,
-    add_genome_signature_file,
-    update_sample_qc_classification,
-    get_samples_similar_to_reference,
-)
+from ..crud.sample import (get_sample, get_samples_similar_to_reference,
+                           get_samples_summary)
+from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
+from ..crud.sample import update_sample_qc_classification
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (
-    SAMPLE_ID_PATTERN,
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    PipelineResult,
-)
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
-from app import config
-import sourmash
-from Bio.SeqIO.FastaIO import SimpleFastaParser
-import logging
-import pathlib
 from ..utils import format_error_message
 
 LOG = logging.getLogger(__name__)

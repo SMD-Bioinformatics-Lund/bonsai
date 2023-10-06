@@ -1,26 +1,16 @@
 """Declaration of views for samples"""
-from flask import (
-    Blueprint,
-    render_template,
-    redirect,
-    url_for,
-    request,
-    flash,
-)
-from app.bonsai import (
-    cgmlst_cluster_samples,
-    cluster_samples,
-    get_sample_by_id,
-    get_group_by_id,
-    post_comment_to_sample,
-    update_sample_qc_classification,
-    remove_comment_from_sample,
-    find_samples_similar_to_reference,
-    TokenObject,
-)
-from flask_login import login_required, current_user
 from itertools import chain, groupby
-from app.models import ElementType, PredictionSoftware, NT_TO_AA, BadSampleQualityAction
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+
+from app.bonsai import (TokenObject, cgmlst_cluster_samples, cluster_samples,
+                        find_samples_similar_to_reference, get_group_by_id,
+                        get_sample_by_id, post_comment_to_sample,
+                        remove_comment_from_sample,
+                        update_sample_qc_classification)
+from app.models import (NT_TO_AA, BadSampleQualityAction, ElementType,
+                        PredictionSoftware)
 
 samples_bp = Blueprint(
     "samples",

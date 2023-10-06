@@ -1,9 +1,11 @@
-from flask import Blueprint, session, redirect, url_for, request, flash, render_template
-from flask_login import login_user, logout_user, login_required, UserMixin
-from app.extensions import login_manager
-from app.bonsai import get_auth_token, get_current_user, TokenObject
+from flask import (Blueprint, flash, redirect, render_template, request,
+                   session, url_for)
+from flask_login import UserMixin, login_required, login_user, logout_user
 from requests.exceptions import HTTPError
+
 from app import __version__ as VERSION
+from app.bonsai import TokenObject, get_auth_token, get_current_user
+from app.extensions import login_manager
 
 login_bp = Blueprint(
     "login",

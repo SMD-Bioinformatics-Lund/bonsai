@@ -3,20 +3,17 @@
 from datetime import datetime
 from typing import Dict, List, Union
 
-from fastapi import APIRouter, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
+from fastapi import APIRouter, HTTPException, Security, status
+
 from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.user import (
-    create_user,
-    get_current_active_user,
-    get_user,
-    get_samples_in_user_basket,
-    add_samples_to_user_basket,
-    remove_samples_from_user_basket,
-)
+from ..crud.user import (add_samples_to_user_basket, create_user,
+                         get_current_active_user, get_samples_in_user_basket,
+                         get_user, remove_samples_from_user_basket)
 from ..db import db
-from ..models.user import UserInputCreate, UserOutputDatabase, SampleBasketObject
+from ..models.user import (SampleBasketObject, UserInputCreate,
+                           UserOutputDatabase)
 
 router = APIRouter()
 

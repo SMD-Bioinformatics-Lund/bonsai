@@ -1,12 +1,14 @@
 """Declaration of views for samples"""
-from flask import Blueprint, render_template, request, url_for, flash, redirect
-from app.bonsai import cluster_samples, get_samples_by_id, TokenObject
-from flask_login import login_required, current_user
-from typing import Dict
-from pydantic import BaseModel
-from enum import Enum
-from requests.exceptions import HTTPError
 import json
+from enum import Enum
+from typing import Dict
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
+
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
+from pydantic import BaseModel
 
 
 class DataType(str, Enum):

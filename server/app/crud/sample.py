@@ -1,33 +1,28 @@
 """Functions for performing CURD operations on sample collection."""
+import gzip
 import logging
+import pathlib
 from datetime import datetime
-from typing import List
-import sourmash
 from pathlib import Path
+from typing import List
 
 from bson.objectid import ObjectId
+
+import sourmash
+from app import config
+from fastapi.encoders import jsonable_encoder
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
-from ..models.location import LocationOutputDatabase
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-    PipelineResult,
-)
-from ..models.sample import SampleInDatabase
-from ..models.qc import QcClassification
-from ..models.typing import CGMLST_ALLELES
 from ..models.base import RWModel
-from .errors import EntryNotFound, UpdateDocumentError
-from app import config
-import gzip
-import pathlib
+from ..models.location import LocationOutputDatabase
+from ..models.qc import QcClassification
+from ..models.sample import (Comment, CommentInDatabase, PipelineResult,
+                             SampleInCreate, SampleInDatabase)
+from ..models.typing import CGMLST_ALLELES
 from ..utils import format_error_message
-from fastapi.encoders import jsonable_encoder
+from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1

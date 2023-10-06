@@ -3,15 +3,16 @@ import logging
 from datetime import datetime
 from multiprocessing.sharedctypes import Value
 from typing import Any, Dict, List
-from pymongo import ASCENDING
 
 from bson.objectid import ObjectId
+from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
+from ..models.group import (GroupInCreate, GroupInfoDatabase,
+                            UpdateIncludedSamples)
 from ..models.sample import SampleSummary
-from ..models.typing import TypingMethod
 from ..models.tags import TAG_LIST
+from ..models.typing import TypingMethod
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
 from .tags import compute_phenotype_tags

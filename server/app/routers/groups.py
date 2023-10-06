@@ -2,13 +2,15 @@
 
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, Path, Security, status
 from pymongo.errors import DuplicateKeyError
+
+from fastapi import (APIRouter, Depends, File, HTTPException, Path, Security,
+                     status)
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
-from ..crud.group import get_group, get_groups, delete_group, update_group
+from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.group import GroupInCreate, GroupInfoDatabase

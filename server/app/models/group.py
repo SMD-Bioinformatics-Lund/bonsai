@@ -4,9 +4,8 @@ from typing import Dict, List
 from pydantic import BaseModel, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, PyObjectId
-from .sample import SampleSummary
 from .phenotype import ElementType
-
+from .sample import SampleSummary
 
 FilterParams = List[Dict[str, str | int | float],]
 

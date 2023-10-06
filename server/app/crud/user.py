@@ -4,26 +4,19 @@ from gzip import READ
 from typing import List
 
 from bson import ObjectId
-from fastapi import Depends, Security, status, HTTPException
-from fastapi.security import (
-    HTTPBasic,
-    HTTPBasicCredentials,
-    OAuth2PasswordBearer,
-    SecurityScopes,
-)
+
+from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.security import (HTTPBasic, HTTPBasicCredentials,
+                              OAuth2PasswordBearer, SecurityScopes)
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
-from ..config import USER_ROLES, SECRET_KEY, ALGORITHM
+from ..config import ALGORITHM, SECRET_KEY, USER_ROLES
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import (
-    UserInputCreate,
-    UserInputDatabase,
-    UserOutputDatabase,
-    SampleBasketObject,
-)
+from ..models.user import (SampleBasketObject, UserInputCreate,
+                           UserInputDatabase, UserOutputDatabase)
 from .errors import EntryNotFound, UpdateDocumentError
 
 security = HTTPBasic()
