@@ -39,10 +39,19 @@ def remove_sample_from_basket():
     if current_user.get_id() is None:
         return "Not authenticated", 401
 
-    sample_id = json.loads(request.data).get('sample_id', None)
-    if sample_id is None:
+    # verify input
+    request_data = json.loads(request.data)
+    sample_id = request_data.get('sample_id', None)
+    remove_all = request_data.get("remove_all", False)
+    if sample_id is None and not remove_all:
         return "Invalid input", 500
 
     token = TokenObject(**current_user.get_id())
-    remove_samples_from_basket(token, sample_ids=[sample_id])
-    return "", 200
+    if remove_all:
+        to_remove = [sample["sample_id"] for sample in current_user.basket]
+    else:
+        to_remove = [sample_id]
+    # call bonsai api to remove samples from basket
+    remove_samples_from_basket(token, sample_ids=to_remove)
+    
+    return f"removed {len(to_remove)}", 200
