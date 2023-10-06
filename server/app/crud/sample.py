@@ -53,7 +53,7 @@ class TypingProfileAggregate(RWModel):
 TypingProfileOutput = list[TypingProfileAggregate]
 
 
-async def get_samples_summay(
+async def get_samples_summary(
     db: Database,
     limit: int = 0,
     skip: int = 0,

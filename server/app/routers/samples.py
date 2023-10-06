@@ -60,7 +60,7 @@ async def read_samples(
 ):
     # skip and offset function the same
     skip = max([offset, skip])
-    db_obj = await get_samples_summay(db, limit=limit, skip=skip, include=sid, include_mlst=include_mlst, include_cgmlst=include_cgmlst)
+    db_obj = await get_samples_summary(db, limit=limit, skip=skip, include=sid, include_mlst=include_mlst, include_cgmlst=include_cgmlst)
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
