@@ -73,13 +73,10 @@ def gather_metadata(samples) -> MetaData:
         # add sample to metadata list
         # store metadata
         sample_id = sample["sample_id"]
-        mlst_res = next(
-            res["result"] for res in sample["typing_result"] if res["type"] == "mlst"
-        )
         metadata[sample_id] = {
-            "location": get_value(sample, "location"),
+            #"location": get_value(sample, "location"),
             "time": sample["created_at"],
-            "st": get_value(mlst_res, "sequence_type"),
+            "st": get_value(sample["mlst"], "sequence_type"),
         }
     # build metadata list
     metadata_list = set()
@@ -115,8 +112,8 @@ def tree():
         samples = json.loads(request.form.get("metadata"))
         # query for sample metadata
         token = TokenObject(**current_user.get_id())
-        samples = get_samples_by_id(token, sample_ids=samples["sample_id"])
-        metadata = gather_metadata(samples["records"])
+        sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
+        metadata = gather_metadata(sample_summary)
         data = dict(nwk=newick, **metadata.dict())
         return render_template(
             "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
