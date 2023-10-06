@@ -2,6 +2,9 @@
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[mypy]
+plugins = "pydantic.mypy"
+
 [tool.isort]
 profile = "black"
 src_paths = ["isort", "test"]
