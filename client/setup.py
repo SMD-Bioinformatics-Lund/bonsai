@@ -11,7 +11,8 @@ setup(
    install_requires=[
     'setuptools',
     'wheel',
-    'Flask',
+    'Flask<=2.3.3',
+    'werkzeug<=2.3.7',
     "flask-login",
     "requests",
     "pydantic",
