@@ -10,7 +10,9 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 # copy project dir
 WORKDIR /home/worker/app
 COPY --chown=worker:worker app app/
-COPY --chown=worker:worker setup.py ./
+COPY --chown=worker:worker setup.py  ./
+COPY --chown=worker:worker setup.cfg ./
+COPY --chown=worker:worker pyproject.toml ./
 
 # install dependancies
 RUN pip install --no-cache-dir --editable .

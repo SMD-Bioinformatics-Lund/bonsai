@@ -1,5 +1,5 @@
 from flask import Blueprint, current_app, render_template, send_from_directory, request
-from app import VERSION
+from app import __version__ as VERSION
 
 public_bp = Blueprint(
     "public",

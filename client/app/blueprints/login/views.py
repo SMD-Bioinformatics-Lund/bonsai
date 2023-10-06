@@ -3,7 +3,7 @@ from flask_login import login_user, logout_user, login_required, UserMixin
 from app.extensions import login_manager
 from app.bonsai import get_auth_token, get_current_user, TokenObject
 from requests.exceptions import HTTPError
-from app import VERSION
+from app import __version__ as VERSION
 
 login_bp = Blueprint(
     "login",
