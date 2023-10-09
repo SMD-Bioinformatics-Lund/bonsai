@@ -1,7 +1,7 @@
 """Typing related data models"""
 
 from enum import Enum
-from typing import Dict
+from typing import Dict, List
 
 from pydantic import Field
 
@@ -28,7 +28,7 @@ class ChewbbacaErrors(Enum):
     LNF = "LNF"
 
 
-CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors]
+CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors | List[int]]
 
 
 class ResultMlstBase(RWModel):
