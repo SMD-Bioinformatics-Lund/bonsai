@@ -102,7 +102,7 @@
             <div class="col-auto">
                 {% set has_same_profile = samples | has_same_analysis_profile %}
                 <form action="{{ url_for('cluster.cluster_and_display_tree') }}" method="POST" target="_blank">
-                    <input name="sampleIds" type="text" value='{{ samples | tojson }}' hidden>
+                    <input name="sampleIds" type="text" value='{{ samples | default("") | tojson }}' hidden>
                     <button 
                       type="submit" 
                       class="btn btn-success" 
