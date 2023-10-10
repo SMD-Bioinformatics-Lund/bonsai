@@ -10,16 +10,17 @@
 <script src="{{url_for('groups.static', filename='edit_groups.js')}}"></script>
 {% endblock scripts %}
 
-{% macro inputText(id, value="", label="", description="") %}
+{% macro inputText(id, value="", label="", description="", required=False) %}
 <label for="input-{{id}}" class="form-label">{{label}}</label>
-<input id="input-{{id}}" class="form-control" aria-describedby="{{id}}-help-block" type="text" value="{{value}}">
-<div id="{{id}}-help-block">{{description}}</div>
+<input id="input-{{id}}" class="form-control" aria-describedby="{{id}}-help-block" 
+       type="text" value="{{value}}" placeholder="{{description}}"
+       {% if required %}required{% endif %}>
 {% endmacro %}
 
 {% macro inputCheck(id, label, checked=False) %}
 <div class="form-check">
-    <input class="form-check-input" type="checkbox" id="{{id}}-check">
     <label class="form-check-label" for="{{id}}-check">{{label}}</label>
+    <input class="form-check-input" type="checkbox" id="{{id}}-check">
 </div>
 {% endmacro %}
 
@@ -78,9 +79,11 @@
 <div class="row g-3">
     <div class="col-auto">
         {{ inputText(id='group-id', value=group_id, label='Group id', description='Unique id') }}
+        <div class="invalid-feedback">Please provide a unique group id</div>
     </div>
     <div class="col-auto">
         {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
+        <div class="invalid-feedback">Please provide a unique group name</div>
     </div>
 </div>
 <hr>
@@ -236,7 +239,7 @@
             <div class="list-group list-group-flush border-bottom scrollarea">
             <a class="d-flex align-items-center flex-shrink-0 p-3 link-dark text-decoration-none border-bottom" 
                href="{{ url_for('groups.edit_groups') }}"
-            >
+            ></a
                 <span class="fs-5 fw-semibold">
                     <i class="bi bi-pencil-square"></i>
                     Create or edit groups

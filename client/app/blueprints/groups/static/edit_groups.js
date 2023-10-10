@@ -26,10 +26,44 @@ const addNewColumnToList = (element) => {
     document.getElementById('added-columns-list').appendChild(columnListItem)
 }
 
+
+function validateFilledInput(input) {
+    // validate that input element is filled
+    if ( input.value === "") {
+        input.classList.add("is-invalid")
+        throw new Error("Input is empty")
+    }
+}
+
+
 const updateGroup = (event, method) => {
     // collect information to be sumbitted
-    const groupId = document.getElementById('input-group-id').value
-    const groupName = document.getElementById('input-group-name').value
+    let groupId = document.getElementById('input-group-id')
+    let groupName = document.getElementById('input-group-name')
+    let failedValidation = false // controller for validation
+    // validate group id
+    try {
+        validateFilledInput(groupId)
+        groupId = groupId.value
+    } catch (error) {
+        console.log(error) // throw error
+        failedValidation = true
+    }
+    // validate group name
+    try {
+        validateFilledInput(groupName)
+        groupName = groupName.value
+    } catch (error) {
+        console.log(error) // throw error
+        failedValidation = true
+    }
+    // break execution of input failed validation
+    if (failedValidation) {
+        event.preventDefault()
+        event.stopPropagation()
+        // stop submit event and break function execution
+        return
+    }
     // get all cards
     const list = document.querySelectorAll('.column-card')
     const groupColumns = Array.from(list).map(column => {
