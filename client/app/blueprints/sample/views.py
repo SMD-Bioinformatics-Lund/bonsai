@@ -1,5 +1,6 @@
 """Declaration of views for samples"""
 from itertools import chain, groupby
+from requests.exceptions import HTTPError
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -11,6 +12,9 @@ from app.bonsai import (TokenObject, cgmlst_cluster_samples, cluster_samples,
                         update_sample_qc_classification)
 from app.models import (NT_TO_AA, BadSampleQualityAction, ElementType,
                         PredictionSoftware)
+import logging
+
+LOG = logging.getLogger(__name__)
 
 samples_bp = Blueprint(
     "samples",
@@ -161,23 +165,28 @@ def sample(sample_id):
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # Get the 10 most similar samples and calculate the pair-wise similaity
-    similar_samples = find_samples_similar_to_reference(
-        token, sample_id=sample_id, limit=10
-    )
-    # cluster the similar samples
-    TYPING_METHOD = "minhash"
-    LINKAGE = "single"
-    newick_file = cluster_samples(
-        token,
-        sample_ids=[smp["sample_id"] for smp in similar_samples["samples"]],
-        typing_method=TYPING_METHOD,
-        method=LINKAGE,
-    )
-    similar_samples = {
-        "typing_method": TYPING_METHOD,
-        "method": LINKAGE,
-        "newick": newick_file,
-    }
+    try:
+        similar_samples = find_samples_similar_to_reference(
+            token, sample_id=sample_id, limit=10
+        )
+        # cluster the similar samples
+        TYPING_METHOD = "minhash"
+        LINKAGE = "single"
+        newick_file = cluster_samples(
+            token,
+            sample_ids=[smp["sample_id"] for smp in similar_samples["samples"]],
+            typing_method=TYPING_METHOD,
+            method=LINKAGE,
+        )
+        similar_samples = {
+            "typing_method": TYPING_METHOD,
+            "method": LINKAGE,
+            "newick": newick_file,
+        }
+    except HTTPError as error:
+        LOG.warning(f"Error while clustering samples: {str(error)}")
+        similar_samples = None
+
 
     return render_template(
         "sample.html",
