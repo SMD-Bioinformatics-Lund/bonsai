@@ -366,19 +366,20 @@
     }
 
     const similarSamples = {{ similar_samples | tojson }}
-    const tree = new TidyTree(similarSamples.newick, { 
-        parent: "#tree-body",
-        //layout: "circle",
-        layout: "vertical",
-        type: "dendrogram",
-        mode: "square",
-        ruler: false,
-        leafLabels: true,
-        margin: [10, 10, 70, 30]
-    });
-    //
     const sampleId = "{{sample.sample_id}}"
-    tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+    if ( similarSamples ) {
+        const tree = new TidyTree(similarSamples.newick, { 
+            parent: "#tree-body",
+            //layout: "circle",
+            layout: "vertical",
+            type: "dendrogram",
+            mode: "square",
+            ruler: false,
+            leafLabels: true,
+            margin: [10, 10, 70, 30]
+        });
+        tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+    }
     
     // handle sample qc rejections
     document.getElementById("passed-qc-btn").addEventListener("click", () => {
