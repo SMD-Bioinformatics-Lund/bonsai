@@ -240,14 +240,13 @@
                             {% else %}
                                 {% set heading="phenotype-heading" %}
                             {% endif %}
-                            <a 
-                                class="btn btn-sm btn-{{tag.severity}}"
-                                href="#{{heading}}"
+                            <span 
+                                class="badge rounded-pill bg-{{tag.severity}}"
                                 data-bs-toggle="tooltip" data-bs-placement="top"
                                 data-bs-title="{{ tag.description }}"
                             >
                                 {{tag.label}}
-                            </a>
+                            </span>
                         {% endfor %}
                     </p>
                     <p>
