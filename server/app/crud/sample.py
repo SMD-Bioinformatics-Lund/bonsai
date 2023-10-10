@@ -202,7 +202,6 @@ async def add_comment(
     db: Database, sample_id: str, comment: Comment
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
-    fields = SampleInDatabase.__fields__
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
     comment_id = (
@@ -234,10 +233,9 @@ async def hide_comment(
     db: Database, sample_id: str, comment_id: int
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
-    fields = SampleInDatabase.__fields__
     # get existing comments for sample to get the next comment id
     update_obj = await db.sample_collection.update_one(
-        {"sample_id": sample_id, f"{param_comment}.id": comment_id},
+        {"sample_id": sample_id, "comments.id": comment_id},
         {
             "$set": {
                 "modified_at": datetime.now(),
