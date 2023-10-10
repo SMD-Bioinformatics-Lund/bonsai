@@ -27,9 +27,9 @@ const addNewColumnToList = (element) => {
 }
 
 
-function validateFilledInput(input) {
+function validateFilledInput(input, minLength = 1) {
     // validate that input element is filled
-    if ( input.value === "" || input.value.length < 1]) {
+    if ( input.value === "" || input.value.length < minLength ) {
         input.classList.add("is-invalid")
         throw new Error("Input is empty")
     }
@@ -43,7 +43,7 @@ const updateGroup = (event, method) => {
     let failedValidation = false // controller for validation
     // validate group id
     try {
-        validateFilledInput(groupId)
+        validateFilledInput(groupId, 5)
         groupId = groupId.value
     } catch (error) {
         console.log(error) // throw error
@@ -51,7 +51,7 @@ const updateGroup = (event, method) => {
     }
     // validate group name
     try {
-        validateFilledInput(groupName)
+        validateFilledInput(groupName, 1)
         groupName = groupName.value
     } catch (error) {
         console.log(error) // throw error

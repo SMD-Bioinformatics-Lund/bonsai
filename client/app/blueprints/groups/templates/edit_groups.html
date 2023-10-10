@@ -79,11 +79,11 @@
 <div class="row g-3">
     <div class="col-auto">
         {{ inputText(id='group-id', value=group_id, label='Group id', description='Unique id') }}
-        <div class="invalid-feedback">Please provide a unique group id</div>
+        <div class="invalid-feedback">Group id must be unique and longer than 5 characters</div>
     </div>
     <div class="col-auto">
         {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
-        <div class="invalid-feedback">Please provide a unique group name</div>
+        <div class="invalid-feedback">Please provide a valid group name</div>
     </div>
 </div>
 <hr>
