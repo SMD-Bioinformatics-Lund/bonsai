@@ -26,7 +26,7 @@
 {% endmacro %}
 
 {% macro analysis_meta(sample_info) %}
-<h4>Analysis metadata</h4>
+<h5>Analysis metadata</h5>
 <h5>
     <a href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
         <i class="bi me-2 bi-pc-horizontal"></i></a>
@@ -227,10 +227,10 @@
     <div class="row">
         {{ sidebar(sample, bad_qc_actions) }}
         <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
-            <h1 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h1>
+            <h4 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h4>
             <div class="row gx-5">
                 <div class="col-md-auto">
-                    Analysis date: {{sample.created_at | strftime}}
+                    Upload date: {{sample.created_at | strftime}}
                     <br>
                     <p>
                         Tags: 
@@ -254,7 +254,7 @@
                     </p>
                 </div>
             </div>
-            <h4>Epidemiological Typing</h4>
+            <h5>Epidemiological Typing</h5>
             <hr>
             <div id="epi-typing-heading" class="row justify-content-md-center">
                 <div class="col-md-auto">
@@ -268,7 +268,7 @@
                     {% endif %}
                 {% endfor %}
             </div>
-            <h4>Phenotype prediction</h4>
+            <h5 class="pt-4">Phenotype prediction</h5>
             <hr>
             <div id="phenotype-heading" class="row justify-content-md-center">
             {% set n_res=amr_summary | length %}
@@ -292,7 +292,7 @@
                 {% endif %}
             {% endfor %}
             </div>
-            <h4 class="pt-4">Virulence</h4>
+            <h5 class="pt-4">Virulence</h5>
             <hr>
             <div id="virulence-heading" class="row justify-content-md-center">
             {% for res in sample.element_type_result %}
@@ -303,14 +303,14 @@
                     {% elif n_genes == 0 %}
                         <p>No validated virulence factors identified.</p>
                     {% else %}
-                    <div class="col-md-6">
+                    <div class="col-md-auto">
                     {{ virulence_card(res.result) }}
                     </div>
                     {% endif %}
                 {% endif %}
             {% endfor %}
             </div>
-            <h4 class="pt-4">Quality</h4>
+            <h5 class="pt-4">Quality</h5>
             <hr>
             <div id="qc-heading" class="row gx-5 justify-content-md-center">
                 {% for qc_tool in sample.qc %}
