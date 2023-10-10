@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% from "toasts.html" import generic_small_alert_toast %}
 
 {% block css %}
 {{ super() }}
@@ -7,6 +8,11 @@
 {% endblock css %}
 
 {% block content %}
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-absolute top-0 end-0 p-3">
+        {{ generic_small_alert_toast("cluster-toast", "bg-warning border-0") }}
+    </div>
+</div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
         <h1 class="card-title">Sample groups</h1>
@@ -201,6 +207,25 @@
 </script>
 
 <script>
+    // load all javascript after load
+    window.onload = () => {
+    // initialize toasts
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+    var toastList = toastElList.map(toastEl => {
+        return new bootstrap.Toast(toastEl)
+    })
+    }
+
+    function throwSmallErrorToast(message){
+        const toastElement = document.getElementById("cluster-toast")
+        const toast = bootstrap.Toast.getInstance(toastElement)
+        const errorMessage = toast._element.querySelector('#toast-error-message')
+
+        // add custom error message
+        errorMessage.innerText = message
+        toast.show()
+    }
+
     function addSelctedSamplesToBasket(btn) {
         // add selected samples from table to session storage
         const body = {
@@ -220,22 +245,38 @@
     async function getSimilarSamples() {
         const sampleId=window.getSelectedRows()[0]
         const limit=document.getElementById("similar-samples-threshold").value
-        const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
-            method: "POST",
-            body: JSON.stringify({limit: limit}),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        })
-        return response.json()
+        try {
+            const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
+                method: "POST",
+                body: JSON.stringify({limit: limit}),
+                headers: {
+                    'Accept': 'application/json', 
+                    'Content-Type': 'application/json' 
+                },
+                credentials: 'same-origin'
+            })
+            const jsonData = await response.json()
+            // check return code
+            if ( !response.ok ) {
+                console.log(`Error while finding similar samples: ${jsonData.details}`)
+                return false
+            } else {
+                return jsonData
+            }
+        } catch ( error ) {
+            console.error("Error:", error)
+            return false
+        }
     }
 
     function getSimilarSamplesAndCheckRows(btn) {
         // get similar samples and check rows
         getSimilarSamples().then((data) => {
-            window.action('select', data.samples.map(sample => sample.sample_id))
+            if ( data ) {
+                window.action('select', data.samples.map(sample => sample.sample_id))
+            } else {
+                throwSmallErrorToast("Error while finding similar samples")
+            }
         })
     }
     document.getElementById("similar-samples-threshold").addEventListener("input", (elem) => {
