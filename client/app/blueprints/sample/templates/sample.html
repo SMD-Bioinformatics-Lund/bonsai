@@ -85,10 +85,17 @@
 
 
 {% macro similar_samples_card(data) %}
-<div class="card col-md-auto" style="width: 24rem;">
-    <div class="card-header">Similar samples [<i>{{ data.typing_method }}</i>]</div>
+<div class="card col-md-auto {% if data is none %}border-warning{% endif %}" style="width: 24rem;">
+    <div class="card-header">Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}</div>
     <div class="card-body">
-        <div id="tree-body" style="pointer-events: none;"></div>
+        {% if data is none %}
+            <p class="card-text">
+                Failed to find samples. 
+                Please contact the administrator.
+            </p>
+        {% else %}
+            <div id="tree-body" style="pointer-events: none;"></div>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
