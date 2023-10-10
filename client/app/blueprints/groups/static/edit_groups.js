@@ -29,7 +29,7 @@ const addNewColumnToList = (element) => {
 
 function validateFilledInput(input) {
     // validate that input element is filled
-    if ( input.value === "") {
+    if ( input.value === "" || input.value.length < 1]) {
         input.classList.add("is-invalid")
         throw new Error("Input is empty")
     }

@@ -29,7 +29,7 @@ class GroupBase(IncludedSamples):
     """Basic specie information."""
 
     group_id: str = Field(..., min_length=5)
-    display_name: str
+    display_name: str = Field(..., min_length=1)
 
 
 class OverviewTableColumn(BaseModel):
