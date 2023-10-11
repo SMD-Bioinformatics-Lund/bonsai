@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "sidebar.html" import sidebar %}
+{% from "sidebar.html" import sidebar, table_of_content %}
 {% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card %}
 
 {% block css %}
@@ -226,127 +226,120 @@
 <div class="container-fluid">
     <div class="row">
         {{ sidebar(sample, bad_qc_actions) }}
-        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#sidebar">
-            <h4 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h4>
-            <div class="row gx-5">
-                <div class="col-md-auto">
-                    Upload date: {{sample.created_at | strftime}}
-                    <br>
-                    <p>
-                        Tags: 
-                        {% for tag in sample.tags %}
-                            {% if tag.type == "virulence" %}
-                                {% set heading="virulence-heading" %}
-                            {% else %}
-                                {% set heading="phenotype-heading" %}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#toc-contents">
+            <div class="row">
+                <div class="col">
+                    <h4 id="sample-id-heading" class="pt-4">{{sample.sample_id}}</h4>
+                    <div class="row gx-5">
+                        <div class="col-md-auto">
+                            Upload date: {{sample.created_at | strftime}}
+                            <br>
+                            <p>
+                                Tags: 
+                                {% for tag in sample.tags %}
+                                    {% if tag.type == "virulence" %}
+                                        {% set heading="virulence-heading" %}
+                                    {% else %}
+                                        {% set heading="phenotype-heading" %}
+                                    {% endif %}
+                                    <span 
+                                        class="badge rounded-pill bg-{{tag.severity}}"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ tag.description }}"
+                                    >
+                                        {{tag.label}}
+                                    </span>
+                                {% endfor %}
+                            </p>
+                            <p>
+                                QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <h5>Epidemiological Typing</h5>
+                    <hr>
+                    <div id="epi-typing-heading" class="row justify-content-md-center">
+                        <div class="col-md-auto">
+                            {{ similar_samples_card(similar_samples) }}
+                        </div>
+                        {% for res in sample.typing_result %}
+                            {% if res.type == "mlst" %}
+                                <div class="col-md-auto">
+                                {{ mlst_card(res.result) }}
+                                </div>
                             {% endif %}
-                            <span 
-                                class="badge rounded-pill bg-{{tag.severity}}"
-                                data-bs-toggle="tooltip" data-bs-placement="top"
-                                data-bs-title="{{ tag.description }}"
-                            >
-                                {{tag.label}}
-                            </span>
                         {% endfor %}
-                    </p>
-                    <p>
-                        QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
-                    </p>
-                </div>
-            </div>
-            <h5>Epidemiological Typing</h5>
-            <hr>
-            <div id="epi-typing-heading" class="row justify-content-md-center">
-                <div class="col-md-auto">
-                    {{ similar_samples_card(similar_samples) }}
-                </div>
-                {% for res in sample.typing_result %}
-                    {% if res.type == "mlst" %}
-                        <div class="col-md-auto">
-                        {{ mlst_card(res.result) }}
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-            <h5 class="pt-4">Phenotype prediction</h5>
-            <hr>
-            <div id="phenotype-heading" class="row justify-content-md-center">
-            {% set n_res=amr_summary | length %}
-            {% if is_filtered and n_res == 0 %}
-                <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
-            {% elif n_res == 0 %}
-                <p>No predicted resistance determinants.</p>
-            {% else %}
-                <div class="col-md-auto">
-                {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
-                </div>
-            {% endif %}
-            {# Add supplementary resistance info #}
-            {% for elem in sample.element_type_result %}
-                {% if elem.type.startswith('STRESS') %}
-                    {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
-                    <div class="col-md-auto py-4">
-                        {{ resistance_table_card(elem) }}
                     </div>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            </div>
-            <h5 class="pt-4">Virulence</h5>
-            <hr>
-            <div id="virulence-heading" class="row justify-content-md-center">
-            {% for res in sample.element_type_result %}
-                {% if res.type == "VIRULENCE" %}
-                    {% set n_genes=res.result.genes | length %}
-                    {% if is_filtered and n_genes == 0 %}
-                        <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
-                    {% elif n_genes == 0 %}
-                        <p>No validated virulence factors identified.</p>
+                    <h5 class="pt-4">Phenotype prediction</h5>
+                    <hr>
+                    <div id="phenotype-heading" class="row justify-content-md-center">
+                    {% set n_res=amr_summary | length %}
+                    {% if is_filtered and n_res == 0 %}
+                        <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                    {% elif n_res == 0 %}
+                        <p>No predicted resistance determinants.</p>
                     {% else %}
-                    <div class="col-md-auto">
-                    {{ virulence_card(res.result) }}
-                    </div>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            </div>
-            <h5 class="pt-4">Quality</h5>
-            <hr>
-            <div id="qc-heading" class="row gx-5 justify-content-md-center">
-                {% for qc_tool in sample.qc %}
-                    <div class="col-md-auto">
-                        {% if qc_tool.software == "postalignqc" %}
-                            {{ qc_card_postalign(qc_tool) }}
-                        {% else %}
-                            {{ qc_card_generic(qc_tool) }}
-                        {% endif %}
-                    </div>
-                {% endfor %}
-
-                {% for res in sample.typing_result %}
-                    {% if res.type == "cgmlst" %}
                         <div class="col-md-auto">
-                        {{ cgmlst_qc_card(res) }}
+                        {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
                         </div>
                     {% endif %}
-                {% endfor %}
+                    {# Add supplementary resistance info #}
+                    {% for elem in sample.element_type_result %}
+                        {% if elem.type.startswith('STRESS') %}
+                            {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
+                            <div class="col-md-auto py-4">
+                                {{ resistance_table_card(elem) }}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                    <h5 class="pt-4">Virulence</h5>
+                    <hr>
+                    <div id="virulence-heading" class="row justify-content-md-center">
+                    {% for res in sample.element_type_result %}
+                        {% if res.type == "VIRULENCE" %}
+                            {% set n_genes=res.result.genes | length %}
+                            {% if is_filtered and n_genes == 0 %}
+                                <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
+                            {% elif n_genes == 0 %}
+                                <p>No validated virulence factors identified.</p>
+                            {% else %}
+                            <div class="col-md-auto">
+                            {{ virulence_card(res.result) }}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                    <h5 class="pt-4">Quality</h5>
+                    <hr>
+                    <div id="qc-heading" class="row gx-5 justify-content-md-center">
+                        {% for qc_tool in sample.qc %}
+                            <div class="col-md-auto">
+                                {% if qc_tool.software == "postalignqc" %}
+                                    {{ qc_card_postalign(qc_tool) }}
+                                {% else %}
+                                    {{ qc_card_generic(qc_tool) }}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        {% for res in sample.typing_result %}
+                            {% if res.type == "cgmlst" %}
+                                <div class="col-md-auto">
+                                {{ cgmlst_qc_card(res) }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <hr>
+                    {{ analysis_meta(sample) }}
+                </div>
+                <div class="col-sm-2">
+                    {{ table_of_content() }}
+                </div>
             </div>
-            <hr>
-            {{ analysis_meta(sample) }}
-            <hr>
-            <!-- 
-            <h4>References</h4>
-            <ol class="fs-6 text-muted">
-                <li>A reference</li>
-                <li>Another reference</li>
-            </ol>
-            <h4>Footnotes</h4>
-            <ol class="fs-6 text-muted">
-                {% for note in footnotes %}
-                    <li>{{note}}</li>
-                {% endfor %}
-            </ol>
-            -->
         </div>
     </div>
 </div>

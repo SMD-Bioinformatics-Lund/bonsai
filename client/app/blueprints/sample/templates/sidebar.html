@@ -28,41 +28,6 @@
 </form>
 {% endmacro %}
 
-{% macro navigation_links() %}
-<h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Navigation</h6>
-<ul class="nav nav-pills nav-flush flex-column mb-auto text-left">
-    <li class="nav-item">
-        <a class="nav-link" href="#sample-id-heading">
-            <i class="bi me-2 bi-house"></i>
-            ID
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="#epi-typing-heading">
-            <i class="bi me-2 bi-diagram-3"></i>
-            Typing
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="#phenotype-heading">
-            <i class="bi me-2 bi-file-text"></i>
-            Phenotype
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="#virulence-heading">
-            <i class="bi me-2 bi-file-text"></i>
-            Virulence
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="#qc-heading">
-            <i class="bi me-2 bi-bar-chart-line"></i>
-            QC
-        </a>
-    </li>
-</ul>
-{% endmacro %}
 
 {% macro qc_classificaion(cls, bad_qc_actions, sample_id) %}
 <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
@@ -110,11 +75,8 @@
 </form>
 {% endmacro %}
 
-{% macro sidebar(sample, bad_qc_actions, navigation=True) %}
+{% macro sidebar(sample, bad_qc_actions) %}
 <div id="sidebar" class="col-md-3 col-lg-2 bg-ligth sticky-top sidebar">
-    {% if navigation %}
-        {{ navigation_links() }}
-    {% endif %}
     <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
     <ul class="nav flex-column">
         <li class="nav-item mb-2" disabled>
@@ -135,4 +97,52 @@
     <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
     {{ comment_area(sample) }}
 </div>
-{% endmacro  %}
+{% endmacro %}
+
+
+{% macro table_of_content() %}
+<div class="toc mt-3 mb-5 my-lg-0 mb-lg-5 px-sm-1 text-body-secondary">
+    <button class="btn btn-link p-md-0 mb-2 mb-md-0 text-decoration-none bd-toc-toggle d-md-none" 
+            type="button" data-bs-toggle="collapse" data-bs-target="#tocContents" 
+            aria-expanded="false" aria-controls="tocContents">
+            On this page
+            <span class="navbar-toggler-icon"></span>
+    </button>
+    <h6 class="sidebar-heading d-none d-md-block h6 my-2 ms-3 text-muted text-uppercase">On this page</h6>
+    <hr class="d-none d-md-block my-2 ms-3">
+    <div id="toc-contents" class="collapse toc-collapse">
+        <ul class="nav nav-flush flex-column mb-auto text-left">
+            <li class="nav-item">
+                <a class="nav-link" href="#sample-id-heading">
+                    <i class="bi me-2 bi-house"></i>
+                    ID
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#epi-typing-heading">
+                    <i class="bi me-2 bi-diagram-3"></i>
+                    Typing
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#phenotype-heading">
+                    <i class="bi me-2 bi-file-text"></i>
+                    Phenotype
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#virulence-heading">
+                    <i class="bi me-2 bi-file-text"></i>
+                    Virulence
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#qc-heading">
+                    <i class="bi me-2 bi-bar-chart-line"></i>
+                    QC
+                </a>
+            </li>
+        </nav>
+    </div>
+</div>
+{% endmacro %}
