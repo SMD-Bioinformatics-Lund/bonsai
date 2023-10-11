@@ -38,3 +38,7 @@
 .toc-collapse {
   display: block !important;
 }
+
+.card {
+  border-radius: 0 !important;
+}
