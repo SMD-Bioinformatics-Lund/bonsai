@@ -22,37 +22,58 @@
 {% elif db.name == 'pointfinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
 {% endif %}
-<a href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+<a class="link-dark link-underline-success" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
 {% endmacro %}
 
-{% macro analysis_meta(sample_info) %}
-<h5>Analysis metadata</h5>
-<h5>
-    <a href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
-        <i class="bi me-2 bi-pc-horizontal"></i></a>
-        Pipeline
-    </a>
-</h5>
+{% macro analysis_meta_pipeline(sample_info) %}
 {% set meta=sample["run_metadata"]%}
-<dl class="row">
-    <dt class="col-sm-2">Pipeline</dt>
-    <dd class="col-sm-2">{{ meta.run.pipeline }}</dd>
-</dl>
-<dl class="row">
-    <dt class="col-sm-2">Version</dt>
-    <dd class="col-sm-2">{{ meta.run.version }}</dd>
-</dl>
-<dl class="row">
-    <dt class="col-sm-2">Profile</dt>
-    <dd class="col-sm-2">{{ meta.run.analysis_profile }}</dd>
-</dl>
-<h5><i class="bi bi-server me-2"></i>Databases</h5>
-<dl class="row">
-    {% for db in meta["databases"] %}
-    <dt class="col-sm-2">{{ db["name"] }}</dt>
-    <dd class="col-sm-2">{{ make_db_link(db) }}</dd>
-    {% endfor %}
-</dl>
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>
+            <a class="link-dark link-underline-success" href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
+                Pipeline
+            </a>
+        </h5>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>Pipeline</th>
+                    <td>{{ meta.run.pipeline }}</td>
+                </tr>
+                <tr>
+                    <th>Version</th>
+                    <td>{{ meta.run.version }}</td>
+                </tr>
+                <tr>
+                    <th>Profile</th>
+                    <td>{{ meta.run.analysis_profile }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro analysis_meta_databases(sample_info) %}
+{% set meta=sample["run_metadata"]%}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in meta["databases"] %}
+                <tr>
+                    <th>{{ db["name"] }}</th>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endmacro %}
 
 {% macro mlst_card(mlst) %}
@@ -224,29 +245,28 @@
 {% macro sample_header(sample) %}
 <div class="card">
     <div class="card-body">
-        <h4 id="sample-id-heading">{{sample.sample_id}}</h4>
+        <div class="d-flex">
+            <h4 id="sample-id-heading" class="card-title">{{sample.sample_id}}</h4>
+            {% for tag in sample.tags %}
+                {% if tag.type == "virulence" %}
+                    {% set heading="virulence-heading" %}
+                {% else %}
+                    {% set heading="phenotype-heading" %}
+                {% endif %}
+                <span 
+                    class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
+                    data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="{{ tag.description }}"
+                >
+                    {{tag.label}}
+                </span>
+            {% endfor %}
+        </div>
         <div class="row gx-5">
             <div class="col-md-auto">
                 Upload date: {{sample.created_at | strftime}}
                 <br>
-                <p>
-                    Tags: 
-                    {% for tag in sample.tags %}
-                        {% if tag.type == "virulence" %}
-                            {% set heading="virulence-heading" %}
-                        {% else %}
-                            {% set heading="phenotype-heading" %}
-                        {% endif %}
-                        <span 
-                            class="badge rounded-pill bg-{{tag.severity}}"
-                            data-bs-toggle="tooltip" data-bs-placement="top"
-                            data-bs-title="{{ tag.description }}"
-                        >
-                            {{tag.label}}
-                        </span>
-                    {% endfor %}
-                </p>
-                <p>
+                <p class="card-text">
                     QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
                 </p>
             </div>
@@ -270,7 +290,7 @@
                 </div>
                 <div class="col col-sm-12 col-md-10 order-md-2">
                     <h5>Epidemiological Typing</h5>
-                    <hr>
+                    <hr class="mt-2 col-md-3 border border-success border-2">
                     <div id="epi-typing-heading" class="row justify-content-md-center">
                         <div class="col-md-auto">
                             {{ similar_samples_card(similar_samples) }}
@@ -283,8 +303,8 @@
                             {% endif %}
                         {% endfor %}
                     </div>
-                    <h5 class="pt-4">Phenotype prediction</h5>
-                    <hr>
+                    <h5>Phenotype prediction</h5>
+                    <hr class="mt-2 col-md-3 border border-success border-2">
                     <div id="phenotype-heading" class="row justify-content-md-center">
                     {% set n_res=amr_summary | length %}
                     {% if is_filtered and n_res == 0 %}
@@ -307,8 +327,8 @@
                         {% endif %}
                     {% endfor %}
                     </div>
-                    <h5 class="pt-4">Virulence</h5>
-                    <hr>
+                    <h5>Virulence</h5>
+                    <hr class="mt-2 col-md-3 border border-success border-2">
                     <div id="virulence-heading" class="row justify-content-md-center">
                     {% for res in sample.element_type_result %}
                         {% if res.type == "VIRULENCE" %}
@@ -325,8 +345,8 @@
                         {% endif %}
                     {% endfor %}
                     </div>
-                    <h5 class="pt-4">Quality</h5>
-                    <hr>
+                    <h5>Quality</h5>
+                    <hr class="mt-2 col-md-3 border border-success border-2">
                     <div id="qc-heading" class="row gx-5 justify-content-md-center">
                         {% for qc_tool in sample.qc %}
                             <div class="col-md-auto">
@@ -346,9 +366,12 @@
                             {% endif %}
                         {% endfor %}
                     </div>
-                    <hr>
-                    {{ analysis_meta(sample) }}
-                </div>
+                    <h5 class="mb-0">Analysis metadata</h5>
+                    <hr class="mt-2 col-md-3 border border-success border-2">
+                    <div class="row">
+                        <div class="col-auto">{{ analysis_meta_pipeline(sample) }}</div>
+                        <div class="col-auto">{{ analysis_meta_databases(sample) }}</div>
+                </hr>
             </div>
         </div>
     </div>

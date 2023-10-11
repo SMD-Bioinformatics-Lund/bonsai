@@ -15,12 +15,10 @@
 }
 
 .toc {
-  position: sticky;
   top: 5rem;
   right: 0;
   z-index: 2;
   overflow-y: auto;
-  grid-area: toc;
 }
 
 #toc-contents a {
@@ -30,7 +28,6 @@
 }
 
 #toc-contents a:hover, a.active {
-  
   color: #198754 !important;
   border-left-color: #198754 !important;
 }
@@ -41,4 +38,9 @@
 
 .card {
   border-radius: 0 !important;
+  margin-bottom: 0.850rem;
+}
+
+.tag {
+  height: 50%;
 }

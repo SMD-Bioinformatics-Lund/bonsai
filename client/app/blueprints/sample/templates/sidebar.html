@@ -81,13 +81,13 @@
     <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
     <ul class="nav flex-column">
         <li class="nav-item mb-2" disabled>
-            <a href="#">
+            <a class="link-secondary link-underline-success" href="#">
                 <i class="bi bi-bar-chart"></i>
                 Outbreak
             </a>
         </li>
         <li class="nav-item mb-2">
-            <a href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
+            <a class="link-secondary link-underline-success" href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
                 <i class="bi bi-bar-chart"></i>
                 Resistance
             </a>
