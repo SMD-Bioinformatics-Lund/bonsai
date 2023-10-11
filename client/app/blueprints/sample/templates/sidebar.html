@@ -16,7 +16,8 @@
         <p class="text-muted">No comment</p>
     {% endif %}
 </div>
-<form action={{ url_for('samples.add_comment', sample_id=sample.sample_id) }} method="post">
+<form class="pb-2"
+      action={{ url_for('samples.add_comment', sample_id=sample.sample_id) }} method="post">
     <div class="form-floating mt-4">
         <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
         <label class="text-muted" for="comment-box">My comment</label>
@@ -76,8 +77,8 @@
 {% endmacro %}
 
 {% macro sidebar(sample, bad_qc_actions) %}
-<div id="sidebar" 
-     class="shadow vh-100 col-md-3 col-lg-2 bg-ligth sticky-top sidebar">
+<div id="sample-sidebar" 
+     class="shadow bg-light pb-2 vh-md-100 col-md-3 col-lg-2 sticky-top sidebar collapse d-md-block">
     <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
     <ul class="nav flex-column">
         <li class="nav-item mb-2" disabled>
@@ -103,13 +104,6 @@
 
 {% macro table_of_content() %}
 <div class="toc mt-3 my-lg-0 px-sm-1 text-body-secondary">
-    <button class="btn btn-sm btn-outline-success text-decoration-none d-block d-md-none" 
-            type="button" data-bs-toggle="collapse" data-bs-target="#toc-contents" 
-            aria-expanded="false" aria-controls="toc-contents">
-            <i class="bi bi-list"></i>
-            <span class="text-uppercase">On this page</span>
-            
-    </button>
     <h6 class="sidebar-heading d-none d-md-block h6 my-2 ms-3 text-muted text-uppercase">On this page</h6>
     <hr class="d-none d-md-block my-2 ms-3">
     <div id="toc-contents" class="collapse d-md-block">

@@ -277,6 +277,20 @@
 
 {% block content %}
 {% set footnotes = [] %}
+<div class="d-md-none d-sm-block sticky-top bg-secondary">
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-link fs-2 text-white text-decoration-none"
+                type="button" data-bs-toggle="collapse" data-bs-target="#sample-sidebar" 
+                aria-expanded="false" aria-controls="sample-sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <button class="btn btn-link fs-2 text-white"
+                type="button" data-bs-toggle="collapse" data-bs-target="#toc-contents" 
+                aria-expanded="false" aria-controls="toc-contents">
+            <i class="bi bi-three-dots"></i>
+        </button>
+    </div>
+</div>
 <div class="container-fluid">
     <div class="row">
         {{ sidebar(sample, bad_qc_actions) }}
