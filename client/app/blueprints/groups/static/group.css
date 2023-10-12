@@ -2,3 +2,7 @@
     width: 100%;
     height: 40em;
 }
+
+.card-body .table {
+    font-size: small;
+}

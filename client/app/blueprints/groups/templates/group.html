@@ -16,10 +16,15 @@
 </div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
-        <div class="d-flex">
-            <h1 class="me-auto">Group {{group_id}}</h1>
-        </div>
-        <hr>
+        <h4 class="card-title me-auto fw-light">{{group_id}}</h4>
+        <hr class="mt-2 col-md-2 border border-success border-2">
+        <p class="card-text mb-2">feugiat vivamus at augue eget arcu dictum varius duis at consectetur lorem</p>
+        <table class="table table-sm w-auto">
+            <thead><tr><th>Samples</th><th>Updated</th></tr></thead>
+            <tbody>
+                <tr><td>{{ samples | length }}</td><td>{{ modified | strftime }}</td></tr>
+            </tbody>
+        </table>
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
                 <span class="navbar-text">
