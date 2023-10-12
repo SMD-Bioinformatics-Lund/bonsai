@@ -1,10 +1,11 @@
 {% macro navbar(current_user) %}
-<nav class="navbar navbar-expand-lg navbar-light bg-success bg-opacity-25">
+<nav class="navbar navbar-expand-lg navbar-light bg-success bg-opacity-25 p-1">
     <div class="container-fluid">
     <a href="/" class="navbar-brand">
-        <span class="rounded-5 d-block p-1" style="background-color: #f7efe5;">
-            <img src="{{url_for('public.static', filename='bonsai_logo_sm.png')}}" alt="Logo", width="80" height="70" >
-        </span>
+        <div class="rounded-5 d-block p-1" style="background-color: #f7efe5;">
+            <img class="m-1" alt="Logo" width="40"
+                 src="{{url_for('public.static', filename='bonsai_logo_sm.png')}}">
+        </div>
     </a>
     <button class="navbar-toggler" 
         type="button" 
