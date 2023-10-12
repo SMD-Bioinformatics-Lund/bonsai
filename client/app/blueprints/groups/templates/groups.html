@@ -15,28 +15,23 @@
 </div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
-        <h1 class="card-title">Sample groups</h1>
-        <p>Samples assigned to dedicated groups.</p>
-        {% if current_user.is_admin %}
-            <a href={{ url_for('groups.edit_groups') }} class="btn btn-warning">
-                <i class="bi bi-pencil-square"></i>
-                Edit groups
-            </a>
-        <hr>
-        {% endif %}
+        <div class="d-flex">
+            <h5 class="card-title text-uppercase fw-light">Groups</h5>
+        </div>
+        <hr class="mt-2 col-md-2 border border-success border-2">
         {% if groups %}
         <div class="d-flex justify-content-center">
             <div class="container row">
                 {% for group in groups %}
                     <div class="col-md-auto">
-                        {{ group_card(group) }}
+                        {{ group_card(group, current_user.is_admin) }}
                     </div>
                 {% endfor %}
             </div>
         </div>
-        <hr>
         {% endif %}
-        <h5>All samples</h5>
+        <h5 class="card-title text-uppercase fw-light pt-4">All samples</h5>
+        <hr class="mt-2 col-md-2 border border-success border-2">
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
                 <span class="navbar-text">
@@ -66,6 +61,11 @@
                         </button>
                     </form>
                 </div>
+                {% if current_user.is_admin %}
+                    <a href={{ url_for('groups.edit_groups') }} class="btn btn-sm btn-secondary ms-2">
+                        Create group
+                    </a>
+                {% endif %}
             </div>
         </nav>
         <div id="data-table"></div>
@@ -285,15 +285,22 @@
 </script>
 {% endblock content %}
 
-{% macro group_card(group) %}
-<div class="card group-card">
+{% macro group_card(group, is_admin=False) %}
+<div class="card group-card position-relative">
+    {% if is_admin %}
+        <a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle"
+                role="button"
+                href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}">
+            <i class="bi bi-pencil"></i>
+        </a>
+    {% endif %}
     <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
         <div class="card-body">
-            <h5 class="card-title text-secondary">
-                {{ group.display_name }}
-                <span class="badge rounded-pill bg-success">{{ group.included_samples | length }} isolates</span>
-            </h5>
-            <p class="card-text">Last update: <em>{{ group.modified_at | strftime }}</em></p>
+            <h5 class="card-title text-secondary">{{ group.display_name }}</h5>
+            <p class="card-text">Samples: {{ group.included_samples | length }}</p>
+        </div>
+        <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
+            Updated: {{ group.modified_at | strftime }}
         </div>
     </a>
 </div>

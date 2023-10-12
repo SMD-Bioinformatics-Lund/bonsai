@@ -1,10 +1,27 @@
-.group-card:hover {
+.group-card a:hover {
   box-shadow: .4rem .225rem .80rem rgba(0,0,0,.095) !important;
 }
 
 .column-card:hover {
   box-shadow: .2rem .125rem .40rem rgba(0,0,0,.095) !important;
 }
+
+.group-card .card-body {
+  padding: 0.5rem;
+}
+
+.group-card .card-footer {
+  font-size: x-small;
+}
+
+.group-card .card-text {
+  font-size: small;
+}
+
+.group-card .edit-button {
+  font-size: small;
+}
+
 .sidebar {
     height: 30rem;
 }
