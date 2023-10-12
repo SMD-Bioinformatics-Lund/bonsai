@@ -294,7 +294,7 @@
     {% endif %}
     <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
         <div class="card-body">
-            <h5 class="card-title text-secondary mb-0">{{ group.display_name }}</h5>
+            <h5 class="card-title mb-0">{{ group.display_name }}</h5>
             <span class="text-muted text-uppercase fw-semibold n-samples">Samples: {{ group.included_samples | length }}</span>
             {% if group.description %}
                 <p class="card-text text-wrap">{{ group.description }}</p>
