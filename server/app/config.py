@@ -20,7 +20,7 @@ allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 # openssl rand -hex 32
 SECRET_KEY = "not-so-secret"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 180
 
 # Definition of user roles
 USER_ROLES = {
