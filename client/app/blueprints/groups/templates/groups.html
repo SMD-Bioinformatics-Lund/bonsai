@@ -15,15 +15,13 @@
 </div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
-        <div class="d-flex">
-            <h5 class="card-title text-uppercase fw-light">Groups</h5>
-        </div>
+        <h5 class="card-title text-uppercase fw-light">Groups</h5>
         <hr class="mt-2 col-md-2 border border-success border-2">
         {% if groups %}
         <div class="d-flex justify-content-center">
-            <div class="container row">
+            <div class="row">
                 {% for group in groups %}
-                    <div class="col-md-auto">
+                    <div class="col-sm-6 col-md-4 col-lg-auto py-2">
                         {{ group_card(group, current_user.is_admin) }}
                     </div>
                 {% endfor %}
@@ -296,11 +294,14 @@
     {% endif %}
     <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
         <div class="card-body">
-            <h5 class="card-title text-secondary">{{ group.display_name }}</h5>
-            <p class="card-text">Samples: {{ group.included_samples | length }}</p>
+            <h5 class="card-title text-secondary mb-0">{{ group.display_name }}</h5>
+            <span class="text-muted text-uppercase fw-semibold n-samples">Samples: {{ group.included_samples | length }}</span>
+            {% if group.description %}
+                <p class="card-text text-wrap">{{ group.description }}</p>
+            {% endif %}
         </div>
         <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
-            Updated: {{ group.modified_at | strftime }}
+            <span class="last-update text-uppercase fw-semibold text-muted">Updated: {{ group.modified_at | strftime }}</span>
         </div>
     </a>
 </div>
