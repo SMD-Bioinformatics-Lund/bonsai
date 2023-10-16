@@ -432,6 +432,7 @@ def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
     and create or update existing index if required.
     """
     # get signature directory
+    LOG.info(f'Adding signature file for {sample_id}')
     signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
     # make db if signature db is not present
     if not signature_db.exists():
@@ -443,6 +444,7 @@ def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
         raise FileExistsError("Signature file already exists")
 
     # check if compressed and decompress data
+    LOG.info('Check if signature is compressed')
     if signature[:2] == b"\x1f\x8b":
         LOG.debug("Decompressing gziped file")
         signature = gzip.decompress(signature)
@@ -452,9 +454,10 @@ def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
     try:
         with open(signature_file, "w") as out:
             print(signature.decode("utf-8"), file=out)
-    except PermissionError as err:
-        LOG.error(f"Dont have permission to write file to disk - {', '.join(err.args)}")
-        raise err
+    except PermissionError:
+        msg = f"Dont have permission to write file to disk, {signature_file}"
+        LOG.error(msg)
+        raise PermissionError(msg)
 
     # add signature to index
     try:
