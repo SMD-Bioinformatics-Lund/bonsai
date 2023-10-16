@@ -142,7 +142,7 @@ def cluster_and_display_tree():
             flash(str(error), "danger")
         else:
             # get metadata
-            samples = get_samples_by_id(token, sample_ids=sample_ids)
+            samples = get_samples_by_id(token, sample_ids=sample_ids, limit = 0)
             metadata = gather_metadata(samples["records"])
             # query for sample metadata
             data = dict(nwk=newick, **metadata.dict())
