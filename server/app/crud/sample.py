@@ -98,18 +98,24 @@ async def get_samples_summary(
     if include_qc:
         optional_projecton["qc_status"] = 1
     if include_mlst:
-        optional_projecton["mlst"] = {
-            "$getField": {
-                "field": "result",
-                "input": {"$arrayElemAt": ["$typing_result", 0]},
-            }
-        }
+        optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
     # query database
     cursor = db.sample_collection.aggregate(pipeline)
-    return await cursor.to_list(None)
+    # get query results from the database
+    results = await cursor.to_list(None)
+
+    if include_mlst:
+        # replace mlst with the nested result as a work around 
+        # for mongo version < 5
+        upd_results = []
+        for res in results:
+            res['mlst'] = res['mlst']['result']
+            upd_results.append(res)
+        results = upd_results.copy()
+    return results
 
 
 async def get_samples(
