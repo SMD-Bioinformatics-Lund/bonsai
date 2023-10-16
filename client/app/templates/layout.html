@@ -14,7 +14,8 @@
             const body = {
                 sample_id: btn.parentElement.querySelector('h6').id
             }
-            fetch(`${window.origin}/api/basket/remove`, {
+            const baseUrl = {{ request.script_root|tojson }}
+            fetch(`${baseUrl}/api/basket/remove`, {
                 method: "POST",
                 body: JSON.stringify(body),
                 headers: {
@@ -42,7 +43,8 @@
             const body = {
                 remove_all: true
             }
-            fetch(`${window.origin}/api/basket/remove`, {
+            const baseUrl = {{ request.script_root|tojson }}
+            fetch(`${baseUrl}/api/basket/remove`, {
                 method: "POST",
                 body: JSON.stringify(body),
                 headers: {

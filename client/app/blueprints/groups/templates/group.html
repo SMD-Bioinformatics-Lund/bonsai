@@ -65,7 +65,14 @@
     w2utils.formatters['mrsa'] = (val, params) => typeof val === 'undefined' ? '-' : val
     w2utils.formatters['mlst'] = (val, params) => typeof val === 'undefined' ? '-' : val
     w2utils.formatters['pvl'] = (val, params) => typeof val === 'undefined' ? '-' : val
-    w2utils.formatters['sampleid']  = formatSampleId
+    w2utils.formatters['sampleid']  = (val, data) => {
+        const baseUrl = {{ request.script_root|tojson }}
+        let element = document.createElement('a')
+        let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
+        element.setAttribute('href', `${baseUrl}/${path}`)
+        element.innerText = val
+        return element.outerHTML
+    }
 
     // get table configuration
     const apiTableConfig = {{ table_definition | tojson }}
