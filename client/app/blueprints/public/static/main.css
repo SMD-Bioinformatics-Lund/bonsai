@@ -9,3 +9,10 @@
 .corporate-logo {
     width: 25em;
 }
+
+/* CSS OVERRIDES */
+/* Prevent search ui from pushing table data off screen */
+/* when applying search filters in /groups              */
+div#grid_grid_searches.w2ui-grid-searches {
+    margin-right:0!important
+}
