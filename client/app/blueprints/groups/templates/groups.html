@@ -76,8 +76,16 @@
 
     // define formatters
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
-    w2utils.formatters['sampleid']  = formatSampleId
     w2utils.formatters['tags']  = formatTag
+    w2utils.formatters['sampleid']  = (val, data) => {
+        const baseUrl = {{ request.script_root|tojson }}
+        let element = document.createElement('a')
+        let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
+        element.setAttribute('href', `${baseUrl}/${path}`)
+        element.innerText = val
+        return element.outerHTML
+    }
+    // define constants
     const apiURL = "{{ config.BONSAI_API_URL }}"
     const samples = {{ samples | tojson }}
 
@@ -107,7 +115,7 @@
                     sortable: true,
                     searchable: true,
                     render: 'sampleid',
-                    path: '$.sample_id'
+                    path: '$.sample_id',
                 },
                 {
                     field: 'tags',
@@ -229,7 +237,8 @@
         const body = {
             selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
         }
-        fetch(`${window.origin}/api/basket/add`, {
+        const baseUrl = {{ request.script_root|tojson }}
+        fetch(`${baseUrl}/api/basket/add`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
@@ -243,8 +252,9 @@
     async function getSimilarSamples() {
         const sampleId=window.getSelectedRows()[0]
         const limit=document.getElementById("similar-samples-threshold").value
+        const baseUrl = {{ request.script_root|tojson }}
         try {
-            const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
+            const response = await fetch(`${baseUrl}/samples/${sampleId}/similar`, {
                 method: "POST",
                 body: JSON.stringify({limit: limit}),
                 headers: {
