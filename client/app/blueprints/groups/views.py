@@ -111,5 +111,6 @@ def group(group_id):
         title=group_id,
         group_id=group_id,
         samples=samples["records"],
+        modified=group["modified_at"],
         table_definition=table_definition,
     )
