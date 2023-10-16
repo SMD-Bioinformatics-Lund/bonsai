@@ -95,7 +95,11 @@
                 <tbody class="table-group-divider">
                     <th>Allele No</th>
                     {% for value in mlst.alleles.values() %}
-                        <td>{{value}}</td>
+                        {% if value is list %}
+                            <td class="fst-italic">{{ value | join("/") }}</td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
                     {% endfor %}
                 </tbody>
             </table>
