@@ -109,7 +109,7 @@ def group(group_id):
     return render_template(
         "group.html",
         title=group_id,
-        group_id=group_id,
+        group_name=group["display_name"],
         samples=samples["records"],
         modified=group["modified_at"],
         table_definition=table_definition,
