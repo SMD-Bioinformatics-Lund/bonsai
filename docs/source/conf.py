@@ -1,10 +1,9 @@
 # Configuration file for the Sphinx documentation builder.
 
 # -- Project information
-
 project = 'Bonsai'
-copyright = '2023, Region Skåne'
 author = 'Markus Johansson'
+copyright = "Region Skåne"
 
 release = '0.1'
 version = '0.1.0'
@@ -17,6 +16,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
+    'myst_parser',
 ]
 
 intersphinx_mapping = {
@@ -33,3 +33,5 @@ html_theme = 'sphinx_rtd_theme'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+language = "en"
