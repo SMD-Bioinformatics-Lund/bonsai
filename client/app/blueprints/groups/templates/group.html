@@ -239,6 +239,23 @@
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
 
+    function addSelctedSamplesToBasket(btn) {
+        // add selected samples from table to session storage
+        const body = {
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        const baseUrl = {{ request.script_root|tojson }}
+        fetch(`${baseUrl}/api/basket/add`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {location.reload()})
+    }
+
     async function getSimilarSamples() {
         const sampleId=window.getSelectedRows()[0]
         const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
