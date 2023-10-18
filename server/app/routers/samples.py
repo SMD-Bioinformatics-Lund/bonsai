@@ -6,6 +6,7 @@ from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pymongo.errors import DuplicateKeyError
 
 import sourmash
+from pydantic import BaseModel
 from app import config
 from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
                      Security, UploadFile, status)
@@ -30,6 +31,21 @@ from ..utils import format_error_message
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
+class SearchParams(BaseModel):
+    """Parameters for searching for samples."""
+
+    sample_id: str | List[str]
+
+
+class SearchBody(BaseModel):
+    """Parameters for searching for samples."""
+
+    params: SearchParams
+    order: str = 1
+    limit: int | None = None
+    skip: int = 0
+
+
 DEFAULT_TAGS = [
     "samples",
 ]
@@ -45,7 +61,6 @@ async def read_samples(
     include_qc: bool = Query(True),
     include_mlst: bool = Query(True),
     # include_cgmlst: bool = Query(True),
-    sid: List[str] | None = Query(None),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -56,7 +71,6 @@ async def read_samples(
         db,
         limit=limit,
         skip=skip,
-        include=sid,
         include_qc=include_qc,
         include_mlst=include_mlst,
     )
@@ -78,6 +92,26 @@ async def create_sample(
             detail=error.details["errmsg"],
         )
     return {"type": "success", "id": db_obj.id}
+
+
+@router.post("/samples/search", tags=DEFAULT_TAGS)
+async def search_samples(
+    body: SearchBody,
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION]),
+    ):
+    """Search for multiple samples."""
+    sample_ids = body.params.sample_id
+    # to list if sample ids is a string
+    if isinstance(sample_ids, str):
+        sample_ids = [sample_ids]
+    # query samples
+    db_obj = await get_samples_summary(
+        db,
+        include=sample_ids,
+        limit=body.limit,
+        skip=body.skip,
+    )
+    return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
 @router.get("/samples/{sample_id}", tags=DEFAULT_TAGS)

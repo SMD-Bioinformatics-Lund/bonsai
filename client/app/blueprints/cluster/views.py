@@ -115,7 +115,7 @@ def tree():
         # query for sample metadata
         token = TokenObject(**current_user.get_id())
         sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
-        metadata = gather_metadata(sample_summary)
+        metadata = gather_metadata(sample_summary["records"])
         data = dict(nwk=newick, **metadata.dict())
         return render_template(
             "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)

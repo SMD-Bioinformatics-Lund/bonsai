@@ -157,16 +157,34 @@ def get_samples_in_group(headers, **kwargs):
 
 
 @api_authentication
-def get_samples_by_id(headers, **kwargs):
-    """Get multipe samples from database by id"""
+def get_samples(headers, **kwargs):
+    """Get multipe samples from database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples'
-    parmas = dict(
-        sid=kwargs.get("sample_ids", None),
-        limit=kwargs.get("limit", 20),
-        skip=kwargs.get("skip", 0),
-    )
+    # get limit, offeset and skip values
+    parmas = {"limit": kwargs.get("limit", 20), "skip": kwargs.get("skip", 0)}
     resp = requests.get(url, headers=headers, params=parmas)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def get_samples_by_id(headers, **kwargs):
+    """Search the database for multiple samples"""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/search'
+    sample_id = kwargs.get("sample_ids", None)
+    if sample_id is None:
+        raise ValueError("No sample id provided.")
+    search = {
+        "params": {
+            "sample_id": sample_id,
+        },
+        "limit": kwargs.get("limit", 0),
+        "skip": kwargs.get("skip", 0),
+    }
+    resp = requests.post(url, headers=headers, json=search)
 
     resp.raise_for_status()
     return resp.json()
