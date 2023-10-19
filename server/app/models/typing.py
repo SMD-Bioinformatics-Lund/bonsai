@@ -8,14 +8,14 @@ from pydantic import Field
 from .base import RWModel
 
 
-class TypingSoftware(Enum):
+class TypingSoftware(str, Enum):
     """Container for software names."""
 
     CHEWBBACA = "chewbbaca"
     MLST = "mlst"
 
 
-class ChewbbacaErrors(Enum):
+class ChewbbacaErrors(str, Enum):
     """Chewbbaca error codes."""
 
     PLOT5 = "PLOT5"
@@ -28,7 +28,14 @@ class ChewbbacaErrors(Enum):
     LNF = "LNF"
 
 
-CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors | List[int]]
+class MlstErrors(str, Enum):
+    """MLST error codes."""
+
+    NOVEL = "novel"
+    PARTIAL = "partial"
+
+
+CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors | MlstErrors | List[int]]
 
 
 class ResultMlstBase(RWModel):
