@@ -1,4 +1,4 @@
-name: Bonsai Client CI
+name: Bonsai API CI
 
 on:
   push:
@@ -29,4 +29,4 @@ jobs:
           context: client
           file: ./Dockerfile
           push: true
-          tags: clinicalgenomicslund/bonsai_app:latest
+          tags: clinicalgenomicslund/bonsai_api:latest
