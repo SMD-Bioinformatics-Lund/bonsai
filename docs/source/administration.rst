@@ -1,7 +1,7 @@
 Administration
 ==============
 
-Users and admins administer Bonsai through either the API command line interface or the Bonsai front end. Bonsai has three predefined user roles (user, uploader, and admin) with different levels of privileges. The uploader role has only write permissions and is intended for automation scripts that upload new samples or create groups. A user with an uploader role cannot retrieve information from the database to minimize the threat vector.
+Users and admins administer Bonsai through either the API command line interface or the Bonsai front end. Bonsai has three predefined user roles (*user*, *uploader*, and *admin*) with different levels of privileges. The uploader role has only write permissions and is intended for automation scripts that upload new samples or create groups. A user with an uploader role cannot retrieve information from the database to minimize the threat vector.
 
 The user can view samples and groups and post comments but not upload new results or manage sample groups. The user role should be enough for most users.
 
