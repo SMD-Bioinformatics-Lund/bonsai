@@ -2,7 +2,7 @@
 from itertools import chain, groupby
 from requests.exceptions import HTTPError
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for, current_app
 from flask_login import current_user, login_required
 
 from app.bonsai import (TokenObject, cgmlst_cluster_samples, cluster_samples,
@@ -12,9 +12,6 @@ from app.bonsai import (TokenObject, cgmlst_cluster_samples, cluster_samples,
                         update_sample_qc_classification)
 from app.models import (NT_TO_AA, BadSampleQualityAction, ElementType,
                         PredictionSoftware)
-import logging
-
-LOG = logging.getLogger(__name__)
 
 samples_bp = Blueprint(
     "samples",
@@ -42,6 +39,7 @@ def samples():
 @login_required
 def sample(sample_id):
     """Samples view."""
+    current_app.logger.debug('Removing non-validated genes from input')
     token = TokenObject(**current_user.get_id())
     # get sample
     sample = get_sample_by_id(token, sample_id=sample_id)
@@ -54,6 +52,7 @@ def sample(sample_id):
         validated_genes = group.get("validatedGenes", {})
         # remove non validated genes from output
         for category, valid_genes in validated_genes.items():
+            current_app.logger.debug('Removing non-validated genes from input')
             pred_res = next(
                 iter([r for r in sample["phenotypeResult"] if r["type"] == category])
             )
@@ -99,6 +98,7 @@ def sample(sample_id):
     # summarize predicted antimicrobial resistance
     amr_summary = {}
     resistance_info = {"genes": {}, "mutations": {}}
+    current_app.logger.debug('Make AMR prediction summary table')
     for pred_res in sample["element_type_result"]:
         # only get AMR resistance
         if pred_res["type"] == ElementType.AMR.value:
@@ -184,7 +184,7 @@ def sample(sample_id):
             "newick": newick_file,
         }
     except HTTPError as error:
-        LOG.warning(f"Error while clustering samples: {str(error)}")
+        current_app.logger.warning(f"Error while clustering samples: {str(error)}")
         similar_samples = None
 
 

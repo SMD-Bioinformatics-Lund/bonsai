@@ -11,7 +11,6 @@ from .custom_filters import FILTERS as JINJA_FILTERS
 
 def create_app():
     """Flask app factory function."""
-
     app = Flask(__name__)
     # load default config
     app.config.from_pyfile("config.py")

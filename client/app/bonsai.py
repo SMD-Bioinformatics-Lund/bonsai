@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from .models import SampleBasketObject
 
-
 class TokenObject(BaseModel):
     """Token object"""
 
@@ -76,6 +75,7 @@ def get_group_by_id(headers, group_id):
     """Get a group with its group_id from database"""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
+    current_app.logger.debug(f'Query API for group "{group_id}"')
     resp = requests.get(url, headers=headers)
 
     resp.raise_for_status()
@@ -184,6 +184,7 @@ def get_samples_by_id(headers, **kwargs):
         "limit": kwargs.get("limit", 0),
         "skip": kwargs.get("skip", 0),
     }
+    current_app.logger.debug(f'Query API for "{sample_id}"')
     resp = requests.post(url, headers=headers, json=search)
 
     resp.raise_for_status()
@@ -197,6 +198,7 @@ def get_sample_by_id(headers, **kwargs):
     sample_id = kwargs.get("sample_id")
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}'
     resp = requests.get(url, headers=headers)
+    current_app.logger.debug(f'Query API for sample "{sample_id}"')
 
     resp.raise_for_status()
     return resp.json()
@@ -278,6 +280,7 @@ def find_samples_similar_to_reference(headers, **kwargs):
     limit: int = kwargs.get("limit", None)
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
+    current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
     resp = requests.get(
         url,
         headers=headers,
