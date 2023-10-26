@@ -2,10 +2,14 @@
 import os
 
 # Setup api url
-BONSAI_API_URL = os.getenv("BONSAI_API_URL", "http://api:8000")
+BONSAI_API_URL = os.getenv("BONSAI_API_URL", "http://localhost:8011")
 
 # Session secret key
 SECRET_KEY = b"not-so-secret"
+
+# parameters for finding similar samples
+SAMPLE_VIEW_SIMILARITY_LIMIT = 10
+SAMPLE_VIEW_SIMILARITY_THRESHOLD = 0.9
 
 # res classes
 AMR_CLASS = {}

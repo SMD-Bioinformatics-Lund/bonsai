@@ -5,20 +5,19 @@ from typing import Annotated, Dict, List
 from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pymongo.errors import DuplicateKeyError
 
-import sourmash
 from pydantic import BaseModel
 from app import config
 from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
                      Security, UploadFile, status)
 
-from ..crud.sample import (EntryNotFound, add_comment,
-                           add_genome_signature_file, add_location)
+from ..crud.sample import (EntryNotFound, add_comment, add_location)
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import (get_sample, get_samples_similar_to_reference,
                            get_samples_summary)
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
+from ..crud.minhash import add_genome_signature_file, remove_genome_signature_file
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
@@ -27,6 +26,7 @@ from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
                              PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
 from ..utils import format_error_message
+from ..redis import Redis
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -195,6 +195,16 @@ async def create_genome_signatures_sample(
         )
         status = await crud_update_sample(db, upd_sample_data)
         LOG.error(f"status {status}")
+
+        # add signature to index
+        try:
+            add_genome_signature_to_index(signature_path)
+        except Exception as err:
+            # remove signature file from disk in case of errors
+            LOG.error("Error encounterd when appending signature to index")
+            signature_file.unlink()
+            raise err
+
 
     # if signature file could not be added to sample db
     if not status:

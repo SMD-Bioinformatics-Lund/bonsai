@@ -1,11 +1,14 @@
 """Entrypoints for starting clustering jobs."""
 from enum import Enum
+import logging
 
 from fastapi import APIRouter, Body, HTTPException, Query, Security, status
 from pydantic import Field, constr
+from pathlib import Path
 
 from ..crud.errors import EntryNotFound
-from ..crud.sample import TypingProfileOutput, get_typing_profiles
+from ..crud.sample import TypingProfileOutput, get_typing_profiles, get_signature_path_for_samples
+from ..crud.minhash import schedule_add_genome_signature_to_index
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
@@ -14,7 +17,9 @@ from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
                                 cluster_on_minhash_signature)
 from ..models.base import RWModel
 from ..models.user import UserOutputDatabase
+from ..redis import check_redis_job_status, JobStatus
 
+LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 DEFAULT_TAGS = [
@@ -74,3 +79,38 @@ async def cluster_samples(
         # )
 
     return newick_tree
+
+
+class indexInput(RWModel):
+    sample_ids: list[str] = Field(..., min_length=1)
+    force: bool = False
+
+
+@router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
+async def index_genome_signatures(index_input: indexInput):
+    """Entrypoint for scheduling indexing of sourmash signatures."""
+    try:
+        signatures = await get_signature_path_for_samples(db, index_input.sample_ids)
+    except Exception as error:
+        LOG.error(error)
+        raise error
+
+    # verify results
+    if len(signatures) == 0:
+        sids = ", ".join(index_input.sample_ids)
+        msg = f"No signatures found for samples: {sids}"
+        LOG.warning(msg)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=msg,
+        )
+    signature_paths = [Path(sig['genome_signature']) for sig in signatures]
+    job_id: str = schedule_add_genome_signature_to_index(signature_paths)
+    return {"job_id": job_id}
+
+
+@router.get("/minhash/status/{job_id}", status_code=status.HTTP_200_OK, tags=["minhash"])
+async def check_job_status(job_id: str) -> JobStatus:
+    """Entrypoint for checking status of running jobs."""
+    info = check_redis_job_status(job_id=job_id)
+    return info

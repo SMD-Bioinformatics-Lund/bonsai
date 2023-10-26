@@ -12,6 +12,10 @@ MONGODB_URI = f"mongodb://{DB_HOST}:{DB_PORT}/{DATABASE_NAME}"
 MAX_CONNECTIONS = int(os.getenv("MAX_CONNECTIONS", 10))
 MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS", 10))
 
+# Redis connection
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+
 # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
 # https://fastapi.tiangolo.com/tutorial/cors/
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")

@@ -1,7 +1,5 @@
 """Functions for performing CURD operations on sample collection."""
-import gzip
 import logging
-import pathlib
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -352,6 +350,21 @@ async def get_typing_profiles(
     return results
 
 
+async def get_signature_path_for_samples(db: Database, sample_ids: list[str]) -> TypingProfileOutput:
+    """Get genome signature paths for samples."""
+    LOG.info("Get signatures for samples")
+    query = {"$and": [                             # query for documents with
+            {"sample_id": {"$in": sample_ids}},    # matching sample ids
+            {"genome_signature": {"$ne": None}},   # AND genome_signatures not null
+        ]}
+    projection = {"_id": 0, "sample_id": 1, "genome_signature": 1}  # projection
+    LOG.debug(f"Query: {query}; projection: {projection}")
+    cursor = db.sample_collection.find(query, projection)
+    results = await cursor.to_list(None)
+    LOG.debug(f"Found {len(results)} signatures")
+    return results
+
+
 def get_samples_similar_to_reference(
     sample_id: str, min_similarity: float, kmer_size: int, limit: int | None = None
 ):
@@ -362,17 +375,20 @@ def get_samples_similar_to_reference(
     """
 
     # load sourmash index
+    LOG.debug(f'Getting samples similar to: {sample_id}')
     signature_dir = Path(config.GENOME_SIGNATURE_DIR)
     index_path = signature_dir.joinpath(f"genomes.sbt.zip")
     # ensure that index exist
     if not index_path.is_file():
         raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
+    LOG.debug(f'Load index file to memory')
     tree = sourmash.load_file_as_index(str(index_path))
 
     # load reference sequence
     query_signature_path = signature_dir.joinpath(f"{sample_id}.sig")
     if not query_signature_path.is_file():
         raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
+    LOG.debug(f'Loading signatures in path: {str(query_signature_path)}')
     query_signature = list(
         sourmash.load_file_as_signatures(str(query_signature_path), ksize=kmer_size)
     )
@@ -382,10 +398,12 @@ def get_samples_similar_to_reference(
         query_signature = query_signature[0]
 
     # query for similar sequences
+    LOG.debug(f'Searching for signatures with similarity > {min_similarity}')
     result = tree.search(query_signature, threshold=min_similarity)
 
     # read sample information of similar samples
     samples = []
+    LOG.debug(f'Applying limit: {limit}')
     for itr_no, (similarity, found_sig, _) in enumerate(result):
         # limit the number of samples
         if limit and limit < itr_no:
@@ -396,123 +414,3 @@ def get_samples_similar_to_reference(
         base_fname = hit_fname.name[: -len(hit_fname.suffix)]
         samples.append({"sample_id": base_fname, "similarity": similarity})
     return samples
-
-
-def add_genome_signature_to_index(signature_file: pathlib.Path) -> bool:
-    """Add genome signature file to sourmash index"""
-    signature = next(
-        sourmash.load_file_as_signatures(
-            str(signature_file.resolve()), ksize=config.SIGNATURE_KMER_SIZE
-        )
-    )
-
-    # get signature directory
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-
-    # add signature to existing index
-    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename.resolve()))
-    else:
-        LOG.debug("Create new index file")
-        tree = sourmash.sbtmh.create_sbt_index()
-    # add generated signature to bloom tree
-    LOG.info("Adding genome signatures to index")
-    leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-    tree.add_node(leaf)
-    # save updated bloom tree
-    try:
-        tree.save(str(sbt_filename))
-    except PermissionError as err:
-        LOG.error("Dont have permission to write file to disk")
-        raise err
-
-    return True
-
-
-def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
-    """
-    Add new genome signature file to host file system.
-
-    and create or update existing index if required.
-    """
-    # get signature directory
-    LOG.info(f'Adding signature file for {sample_id}')
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    # make db if signature db is not present
-    if not signature_db.exists():
-        signature_db.mkdir(parents=True, exist_ok=True)
-
-    # check that signature doesnt exist
-    signature_file = signature_db.joinpath(f"{sample_id}.sig")
-    if signature_file.is_file():
-        raise FileExistsError("Signature file already exists")
-
-    # check if compressed and decompress data
-    LOG.info('Check if signature is compressed')
-    if signature[:2] == b"\x1f\x8b":
-        LOG.debug("Decompressing gziped file")
-        signature = gzip.decompress(signature)
-
-    # save signature to file
-    LOG.info("Writing genome signatures to file")
-    try:
-        with open(signature_file, "w") as out:
-            print(signature.decode("utf-8"), file=out)
-    except PermissionError:
-        msg = f"Dont have permission to write file to disk, {signature_file}"
-        LOG.error(msg)
-        raise PermissionError(msg)
-
-    # add signature to index
-    try:
-        add_genome_signature_to_index(signature_file)
-    except Exception as err:
-        # remove signature file from disk in case of errors
-        LOG.debug("Error encounterd when appending signature, removing signature file")
-        signature_file.unlink()
-        raise err
-
-    return signature_file
-
-
-def remove_genome_signature_file(sample_id: str) -> bool:
-    """Remove an existing signature file from disk."""
-
-    # get signature directory
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-
-    # check that signature doesnt exist
-    signature_file = signature_db.joinpath(f"{sample_id}.sig")
-    if signature_file.is_file():
-        # load signature to memory
-        signature = next(
-            sourmash.signature.load_signatures(
-                signature_file, ksize=config.SIGNATURE_KMER_SIZE
-            )
-        )
-        # remove file
-        signature_file.unlink()
-    else:
-        raise FileNotFoundError(f"Signature file: {signature_file} not found")
-
-    # remove signature to existing index
-    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename))
-
-        # add generated signature to bloom tree
-        LOG.info("Adding genome signatures to index")
-        leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-        tree.remove_many(leaf)
-
-        try:
-            tree.save(str(sbt_filename.resolve()))
-        except PermissionError as err:
-            LOG.error("Dont have permission to write file to disk")
-            raise err
-        return True
-    LOG.info(f"Signature file: {signature_file} was removed")
-    return False

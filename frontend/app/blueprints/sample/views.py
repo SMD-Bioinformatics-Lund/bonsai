@@ -39,6 +39,7 @@ def samples():
 @login_required
 def sample(sample_id):
     """Samples view."""
+    config = current_app.config
     current_app.logger.debug('Removing non-validated genes from input')
     token = TokenObject(**current_user.get_id())
     # get sample
@@ -167,7 +168,9 @@ def sample(sample_id):
     # Get the 10 most similar samples and calculate the pair-wise similaity
     try:
         similar_samples = find_samples_similar_to_reference(
-            token, sample_id=sample_id, limit=10
+            token, sample_id=sample_id, 
+            limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"], 
+            similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"]
         )
         # cluster the similar samples
         TYPING_METHOD = "minhash"
@@ -206,9 +209,10 @@ def find_similar_samples(sample_id):
     """Find samples that are similar."""
     token = TokenObject(**current_user.get_id())
     limit = request.json.get("limit", 10)
+    similarity = request.json.get("similarity", 0.5)
     try:
         resp = find_samples_similar_to_reference(
-            token, sample_id=sample_id, limit=limit
+            token, sample_id=sample_id, limit=limit, similarity=similarity
         )
     except Exception as error:
         return {"status": 500, "details": str(error)}, 500
