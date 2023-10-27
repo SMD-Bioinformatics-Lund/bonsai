@@ -12,12 +12,15 @@ from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
 
 from ..crud.sample import (EntryNotFound, add_comment, add_location)
 from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import (get_sample, get_samples_similar_to_reference,
-                           get_samples_summary)
+from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
-from ..crud.minhash import add_genome_signature_file, remove_genome_signature_file
+from ..crud.minhash import (add_genome_signature_file, 
+                            remove_genome_signature_file, 
+                            schedule_get_samples_similar_to_reference,
+                            SubmittedJob
+                            )
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
@@ -26,7 +29,6 @@ from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
                              PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
 from ..utils import format_error_message
-from ..redis import Redis
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -335,7 +337,7 @@ async def update_location(
     return location_obj
 
 
-@router.get("/samples/{sample_id}/similar", tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}/similar", response_model=SubmittedJob, tags=["minhash", *DEFAULT_TAGS])
 async def read_sample(
     sample_id: str = Path(
         ...,
@@ -350,21 +352,10 @@ async def read_sample(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    try:
-        samples = get_samples_similar_to_reference(
-            sample_id,
-            kmer_size=config.SIGNATURE_KMER_SIZE,
-            min_similarity=similarity,
-            limit=limit,
-        )
-    except FileNotFoundError as error:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(error),
-        )
-    return {
-        "reference": sample_id,
-        "samples": samples,
-        "limit": limit,
-        "simiarity": similarity,
-    }
+    submission_info: SubmittedJob = schedule_get_samples_similar_to_reference(
+        sample_id,
+        kmer_size=config.SIGNATURE_KMER_SIZE,
+        min_similarity=similarity,
+        limit=limit,
+    )
+    return submission_info

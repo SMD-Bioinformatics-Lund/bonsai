@@ -6,6 +6,10 @@ from pydantic import BaseModel
 from app.config import REDIS_HOST, REDIS_PORT
 from typing import Any
 from datetime import datetime
+from enum import Enum
+import logging
+
+LOG = logging.getLogger(__name__)
 
 class RedisQueue:
     """Worker queue interface."""
@@ -19,10 +23,20 @@ class RedisQueue:
 
 redis = RedisQueue()
 
+class JobStatusCodes(str, Enum):
+    """Container for RQ status codes"""
+    QUEUED = "queued"
+    STARTED = "started" 
+    DEFERRED = "deferred"
+    FINISHED = "finished"
+    STOPPED = "stopped" 
+    SCHEDULED = "scheduled"
+    CANCELED = "canceled"
+    FAILED = "failed"
 
 class JobStatus(BaseModel):
     """Container for basic job information."""
-    status: str
+    status: JobStatusCodes
     queue: str
     result: Any
     submitted_at: datetime
@@ -37,11 +51,14 @@ def check_redis_job_status(job_id: str) -> JobStatus:
         status=job.get_status(refresh=True),
         queue=job.origin,
         task=job.func_name,
-        result=job.result,
+        result=job.return_value(),
         submitted_at=job.enqueued_at,
         started_at=job.started_at,
         finished_at=job.ended_at,
     )
+    # LOG stacktraces for failed jobs
+    if job_info.status == JobStatusCodes.FAILED:
+        LOG.warning(f"Redis job {JobStatusCodes.FAILED}; {job.exc_info}")
     return job_info
 
 

@@ -3,14 +3,16 @@ import logging
 import gzip
 import pathlib
 import sourmash
+from typing import List
 from app import config
+import fasteners
+from pydantic import BaseModel
 
 LOG = logging.getLogger(__name__)
 
 
 def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
     """
-    Add new genome signature file to host file system.
 
     and create or update existing index if required.
     """
@@ -51,6 +53,9 @@ def remove_genome_signature_file(sample_id: str) -> bool:
     # get signature directory
     signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
 
+    # get genome index
+    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
+
     # check that signature doesnt exist
     signature_file = signature_db.joinpath(f"{sample_id}.sig")
     if signature_file.is_file():
@@ -86,34 +91,105 @@ def remove_genome_signature_file(sample_id: str) -> bool:
     return False
 
 
-def add_genome_signature_to_index(signature_file: pathlib.Path) -> bool:
+def add_genome_signatures_to_index(signature_files: List[pathlib.Path]) -> bool:
     """Add genome signature file to sourmash index"""
-    signature = next(
-        sourmash.load_file_as_signatures(
-            str(signature_file.resolve()), ksize=config.SIGNATURE_KMER_SIZE
-        )
-    )
 
     # get signature directory
     signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
 
+    # get genome index
+    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
+    sbt_lock_path = f"{str(sbt_filename)}.lock"
+    lock = fasteners.InterProcessLock(sbt_lock_path)
+    LOG.debug("Using lock: {sbt_lock_path}")
+
+    signatures = []
+    for file_path in signature_files:
+        signature = next(
+            sourmash.load_file_as_signatures(
+                str(file_path.resolve()), ksize=config.SIGNATURE_KMER_SIZE
+            )
+        )
+        signatures.append(signature)
+
     # add signature to existing index
     sbt_filename = signature_db.joinpath("genomes.sbt.zip")
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename.resolve()))
-    else:
-        LOG.debug("Create new index file")
-        tree = sourmash.sbtmh.create_sbt_index()
-    # add generated signature to bloom tree
-    LOG.info("Adding genome signatures to index")
-    leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-    tree.add_node(leaf)
-    # save updated bloom tree
-    try:
-        tree.save(str(sbt_filename))
-    except PermissionError as err:
-        LOG.error("Dont have permission to write file to disk")
-        raise err
+    # acquire lock to append signatures to database
+    LOG.debug(f"Attempt to acquire lock to append {len(signatures)} to index...")
+    with lock:
+        # check if index already exist
+        if sbt_filename.is_file():
+            LOG.debug("Append to existing file")
+            tree = sourmash.load_file_as_index(str(sbt_filename.resolve()))
+        else:
+            LOG.debug("Create new index file")
+            tree = sourmash.sbtmh.create_sbt_index()
+
+        # add generated signature to bloom tree
+        LOG.info(f"Adding {len(signatures)} genome signatures to index")
+        for signature in signatures:
+            leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
+            tree.add_node(leaf)
+        # save updated bloom tree
+        try:
+            tree.save(str(sbt_filename))
+        except PermissionError as err:
+            LOG.error("Dont have permission to write file to disk")
+            raise err
 
     return True
+
+
+class SimilarSignature(BaseModel):
+    """Container for similar signature result"""
+
+    sample_id: str
+    similarity: float 
+    path: str
+
+
+SimilarSignatures = List[SimilarSignature]
+
+def get_signatures_similar_to_reference(signature_file: str, min_similarity: float) -> SimilarSignatures:
+    """Get find samples that are similar to reference sample.
+
+    min_similarity - minimum similarity score to be included
+    """
+
+    # load sourmash index
+    LOG.debug(f'Getting samples similar to: {signature_file}')
+    signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
+    index_path = signature_dir.joinpath(f"genomes.sbt.zip")
+    # ensure that index exist
+    if not index_path.is_file():
+        raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
+    LOG.debug(f'Load index file to memory')
+    tree = sourmash.load_file_as_index(str(index_path))
+
+    # load reference sequence
+    signature_file = pathlib.Path(signature_file)
+    if not signature_file.is_file():
+        raise FileNotFoundError(f"Signature file not found, {signature_file.name}")
+    LOG.debug(f'Loading signatures in path: {str(signature_file)}')
+    query_signature = list(
+        sourmash.load_file_as_signatures(str(signature_file), ksize=config.SIGNATURE_KMER_SIZE)
+    )
+    if len(query_signature) == 0:
+        raise ValueError(f"No signature in: {signature_file.name} with kmer size: {config.SIGNATURE_KMER_SIZE}")
+    else:
+        query_signature = query_signature[0]
+
+    # query for similar sequences
+    LOG.debug(f'Searching for signatures with similarity > {min_similarity}')
+    result = tree.search(query_signature, threshold=min_similarity)
+
+    # read sample information of similar samples
+    samples = []
+    for itr_no, (similarity, found_sig, _) in enumerate(result):
+        # read sample results
+        signature_path = pathlib.Path(found_sig.filename)
+        # extract sample id from sample name
+        base_fname = signature_path.name[: -len(signature_path.suffix)]
+        samples.append(SimilarSignature(
+            sample_id=base_fname, similarity=similarity, path=str(signature_path.absolute())))
+    return samples

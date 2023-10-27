@@ -6,8 +6,15 @@ import sourmash
 from app import config
 from typing import List
 from app.redis import redis
+from ..models.base import RWModel
 
 LOG = logging.getLogger(__name__)
+
+class SubmittedJob(RWModel):
+    """Container for submitted jobs."""
+
+    id: str
+    task: str
 
 
 def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
@@ -88,42 +95,24 @@ def remove_genome_signature_file(sample_id: str) -> bool:
     return False
 
 
-def schedule_add_genome_signature_to_index(signature_files: List[pathlib.Path]) -> str:
+def schedule_add_genome_signature_to_index(signature_files: List[pathlib.Path]) -> SubmittedJob:
     """Schedule adding signature to index."""
     TASK = "app.tasks.index"
-    job = redis.minhash.enqueue(TASK, sample_ids=signature_files, job_timeout='30m')
+    job = redis.minhash.enqueue(TASK, signature_files=signature_files, job_timeout='30m')
     LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
-    return job.id
+    return SubmittedJob(id=job.id, task=TASK)
 
 
-def add_genome_signature_to_index(signature_file: pathlib.Path) -> bool:
-    """Add genome signature file to sourmash index"""
-    signature = next(
-        sourmash.load_file_as_signatures(
-            str(signature_file.resolve()), ksize=config.SIGNATURE_KMER_SIZE
-        )
-    )
+def schedule_get_samples_similar_to_reference(
+    sample_id: str, min_similarity: float, kmer_size: int, limit: int | None = None
+) -> SubmittedJob:
+    """Schedule find similar samples job.
 
-    # get signature directory
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-
-    # add signature to existing index
-    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename.resolve()))
-    else:
-        LOG.debug("Create new index file")
-        tree = sourmash.sbtmh.create_sbt_index()
-    # add generated signature to bloom tree
-    LOG.info("Adding genome signatures to index")
-    leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-    tree.add_node(leaf)
-    # save updated bloom tree
-    try:
-        tree.save(str(sbt_filename))
-    except PermissionError as err:
-        LOG.error("Dont have permission to write file to disk")
-        raise err
-
-    return True
+    min_similarity - minimum similarity score to be included
+    """
+    TASK = "app.tasks.similar"
+    signature_path = pathlib.Path(config.GENOME_SIGNATURE_DIR).joinpath(f"{sample_id}.sig")
+    job = redis.minhash.enqueue(TASK, ref_signature=signature_path, 
+                                min_similarity=min_similarity, job_timeout='30m')
+    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
+    return SubmittedJob(id=job.id, task=TASK)

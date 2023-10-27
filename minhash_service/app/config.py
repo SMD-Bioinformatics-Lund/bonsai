@@ -2,7 +2,8 @@
 from os import getenv
 
 # Sourmash variables
-KMER_SIZE = 31
+SIGNATURE_KMER_SIZE = 31
+GENOME_SIGNATURE_DIR = "/data/signature_db"
 
 # Sourmash variables
 REDIS_HOST = getenv("REDIS_HOST", "redis")
@@ -20,7 +21,7 @@ DICT_CONFIG = {
     },
     'handlers': {
         'default': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'standard',
             'class': 'logging.StreamHandler',
             'stream': 'ext://sys.stderr',  # Default is stderr
@@ -29,7 +30,7 @@ DICT_CONFIG = {
     'loggers': {
         'root': {  # root logger
             'handlers': ['default'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': False
         },
     }
