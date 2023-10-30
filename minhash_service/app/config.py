@@ -2,8 +2,8 @@
 from os import getenv
 
 # Sourmash variables
-SIGNATURE_KMER_SIZE = 31
-GENOME_SIGNATURE_DIR = "/data/signature_db"
+SIGNATURE_KMER_SIZE = int(getenv("KMER_SIZE", 31))
+GENOME_SIGNATURE_DIR = getenv("DB_PATH", "/data/signature_db")
 
 # Sourmash variables
 REDIS_HOST = getenv("REDIS_HOST", "redis")
