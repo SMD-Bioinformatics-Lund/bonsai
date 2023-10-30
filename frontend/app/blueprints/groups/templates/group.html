@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% import "cell_fmt.html" as cell_format %}
 {% from "toasts.html" import generic_alert_toast %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
 
 {% block css %}
     {{ super() }}
@@ -31,15 +32,8 @@
                     <i>Selected samples:</i>
                     <span id="n-selected-samples-counter">0</span>
                 </span>
-                <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" onclick="addSelctedSamplesToBasket(this)" disabled>
-                    <i class="bi bi-plus-lg"></i>
-                    <span>Add to basket</span>
-                </button>
-                <button id="select-similar-samples-btn" class="btn btn-sm btn-outline-secondary ms-4" 
-                        onclick="getSimilarSamplesAndCheckRows()" disabled>
-                    <i class="bi bi-search"></i>
-                    <span>Find similar</span>
-                </button>
+                {{ add_to_basket_btn() }}
+                {{ search_similar_btn() }}
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
@@ -239,43 +233,10 @@
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
 
-    function addSelctedSamplesToBasket(btn) {
-        // add selected samples from table to session storage
-        const body = {
-            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
-        }
-        const baseUrl = {{ request.script_root|tojson }}
-        fetch(`${baseUrl}/api/basket/add`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        }).then(response => {location.reload()})
-    }
-
-    async function getSimilarSamples() {
-        const sampleId=window.getSelectedRows()[0]
-        const response = await fetch(`${window.origin}/samples/${sampleId}/similar`, {
-            method: "POST",
-            body: JSON.stringify({simiarity: 0.5}),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        })
-        return response.json()
-    }
-
-    function getSimilarSamplesAndCheckRows() {
-        // get similar samples and check rows
-        getSimilarSamples().then((data) => {
-            window.action('select', data.samples.map(sample => sample.sample_id))
-        })
-    }
+    // template code for adding to basket
+    {{ add_to_basket_js() }}
+    // template code for searching similar samples
+    {{ search_similar_js() }}
 </script>
 {% endblock content %}
 
