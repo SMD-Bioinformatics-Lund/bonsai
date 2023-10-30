@@ -52,11 +52,11 @@ def read_signature(sample_id: str):
 def write_signature(sample_id: str, signature) -> pathlib.Path:
     """
     Add genome signature to index.
-    
+
     Create new index if none exist.
     """
     # get signature directory
-    LOG.info(f'Adding signature file for {sample_id}')
+    LOG.info(f"Adding signature file for {sample_id}")
     signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
     # make db if signature db is not present
     if not signature_db.exists():
@@ -66,7 +66,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     signature_file = get_signature_path(sample_id)
 
     # check if compressed and decompress data
-    LOG.info('Check if signature is compressed')
+    LOG.info("Check if signature is compressed")
     if signature[:2] == b"\x1f\x8b":
         LOG.debug("Decompressing gziped file")
         signature = gzip.decompress(signature)

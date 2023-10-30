@@ -1,12 +1,13 @@
 """Define reddis tasks."""
 from typing import List, Dict
 from pathlib import Path
-from .minhash.cluster import cluster_signatures, ClusterMethod 
-from .minhash.io import write_signature, add_signatures_to_index 
+from .minhash.cluster import cluster_signatures, ClusterMethod
+from .minhash.io import write_signature, add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
 from .minhash.similarity import get_similar_signatures, SimilarSignatures
 
 import logging
+
 LOG = logging.getLogger(__name__)
 
 
@@ -32,7 +33,7 @@ def remove_signature(sample_id: str) -> Dict[str, str | bool]:
 
 def index(signature_files: List[Path]):
     """Index sourmash signatures."""
-    LOG.info('Indexing signatures...')
+    LOG.info("Indexing signatures...")
     res = add_signatures_to_index(signature_files)
     signatures = ", ".join([file.name for file in signature_files])
     if res:
@@ -42,19 +43,25 @@ def index(signature_files: List[Path]):
     return msg
 
 
-def similar(sample_id: str, min_similarity: float = 0.5, limit: int | None = None) -> SimilarSignatures:
+def similar(
+    sample_id: str, min_similarity: float = 0.5, limit: int | None = None
+) -> SimilarSignatures:
     """
     Find signatures similar to reference signature.
 
     Retun list of similar signatures that describe signature and similarity.
     """
-    samples = get_similar_signatures(sample_id, min_similarity=min_similarity, limit=limit)
-    LOG.info(f"Finding samples similar to {sample_id} with min similarity {min_similarity}; limit {limit}")
+    samples = get_similar_signatures(
+        sample_id, min_similarity=min_similarity, limit=limit
+    )
+    LOG.info(
+        f"Finding samples similar to {sample_id} with min similarity {min_similarity}; limit {limit}"
+    )
     results = [s.model_dump() for s in samples]
     return results
 
 
-def cluster(sample_ids: List[str], cluster_method: str) -> str:
+def cluster(sample_ids: List[str], cluster_method: str = "single") -> str:
     """Cluster multiple sample on their sourmash signatures."""
     # validate input
     try:
@@ -68,7 +75,12 @@ def cluster(sample_ids: List[str], cluster_method: str) -> str:
     return newick
 
 
-def find_similar_and_cluster(ref_signature: Path, min_similarity: float = 0.5, limit: int | None = None, cluster_method: str) -> str:
+def find_similar_and_cluster(
+    sample_id: str,
+    min_similarity: float = 0.5,
+    limit: int | None = None,
+    cluster_method: str = "single",
+) -> str:
     """Find similar samples and cluster them on their minhash profile."""
     # validate input
     try:
@@ -77,7 +89,9 @@ def find_similar_and_cluster(ref_signature: Path, min_similarity: float = 0.5, l
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
         raise ValueError(msg)
-    sample_ids = get_similar_signatures(ref_signature, min_similarity=min_similarity, limit=limit)
+    sample_ids = get_similar_signatures(
+        sample_id, min_similarity=min_similarity, limit=limit
+    )
 
     # if 1 or 0 samples were found, return emtpy newick
     if len(sample_ids) < 2:
