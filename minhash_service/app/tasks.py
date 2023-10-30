@@ -2,10 +2,20 @@
 from time import sleep
 from typing import List
 from pathlib import Path
-from .minhash import add_genome_signatures_to_index, get_signatures_similar_to_reference, SimilarSignatures
+from .minhash import (write_genome_signature_file, add_genome_signatures_to_index, get_signatures_similar_to_reference, SimilarSignatures)
 
 import logging
 LOG = logging.getLogger(__name__)
+
+
+def add_signature(sample_id: str, signature) -> str:
+    """
+    Find signatures similar to reference signature.
+
+    Retun list of similar signatures that describe signature and similarity.
+    """
+    signature_path = write_genome_signature_file(sample_id, signature)
+    return str(signature_path)
 
 
 def index(signature_files: List[Path]):
@@ -20,14 +30,14 @@ def index(signature_files: List[Path]):
     return msg
 
 
-def similar(ref_signature: Path, min_similarity: float = 0.5, limit: int | None = None) -> SimilarSignatures:
+def similar(sample_id: str, min_similarity: float = 0.5, limit: int | None = None) -> SimilarSignatures:
     """
     Find signatures similar to reference signature.
 
     Retun list of similar signatures that describe signature and similarity.
     """
-    samples = get_signatures_similar_to_reference(ref_signature, min_similarity=min_similarity, limit=limit)
-    LOG.info(f"Finding samples similar to {ref_signature} with min similarity {min_similarity}; limit {limit}")
+    samples = get_signatures_similar_to_reference(sample_id, min_similarity=min_similarity, limit=limit)
+    LOG.info(f"Finding samples similar to {sample_id} with min similarity {min_similarity}; limit {limit}")
     results = [s.model_dump() for s in samples]
     return results
 

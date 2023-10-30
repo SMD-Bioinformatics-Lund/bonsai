@@ -75,7 +75,7 @@ def _load_signature(sample_id: str):
     return loaded
 
 
-def add_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
+def write_genome_signature_file(sample_id: str, signature) -> pathlib.Path:
     """
     Add genome signature to index.
     
