@@ -4,6 +4,7 @@ import pathlib
 import gzip
 from app import config
 import sourmash
+from typing import List
 
 LOG = logging.getLogger(__name__)
 

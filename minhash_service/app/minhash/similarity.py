@@ -6,7 +6,7 @@ from typing import List
 from app import config
 import fasteners
 from pydantic import BaseModel
-from .io import get_sbt_index
+from .io import get_sbt_index, read_signature
 
 
 LOG = logging.getLogger(__name__)
@@ -37,10 +37,10 @@ def get_similar_signatures(
     db = sourmash.load_file_as_index(index_path)
 
     # load reference sequence
-    query_signature = _load_signature(sample_id)
+    query_signature = read_signature(sample_id)
     if len(query_signature) == 0:
         raise ValueError(
-            f"No signature in: {signature_file.name} with kmer size: {config.SIGNATURE_KMER_SIZE}"
+            f"No signature in: {query_signature.filename} with kmer size: {config.SIGNATURE_KMER_SIZE}"
         )
     else:
         query_signature = query_signature[0]

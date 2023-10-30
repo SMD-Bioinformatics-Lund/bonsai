@@ -2,6 +2,7 @@
 from enum import Enum
 from scipy.cluster import hierarchy
 import logging
+from typing import List
 from .io import read_signature
 
 LOG = logging.getLogger(__name__)
