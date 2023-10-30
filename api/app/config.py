@@ -48,9 +48,6 @@ USER_ROLES = {
     "uploader": ["groups:write"],
 }
 
-GENOME_SIGNATURE_DIR = "/data/signature_db"
-SIGNATURE_KMER_SIZE = 31
-
 # Configure authentication method used
 # If LDAP is not configured it will fallback on local authentication
 

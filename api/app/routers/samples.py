@@ -18,7 +18,6 @@ from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
 from ..crud.minhash import (schedule_add_genome_signature, 
                             schedule_add_genome_signature_to_index,
-                            remove_genome_signature_file, 
                             schedule_get_samples_similar_to_reference,
                             SubmittedJob
                             )
