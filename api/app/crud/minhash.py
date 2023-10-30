@@ -56,7 +56,8 @@ def schedule_get_samples_similar_to_reference(
     """
     TASK = "app.tasks.similar"
     job = redis.minhash.enqueue(TASK, sample_id=sample_id, 
-                                min_similarity=min_similarity, job_timeout='30m')
+                                min_similarity=min_similarity, limit=limit, 
+                                job_timeout='30m')
     LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
     return SubmittedJob(id=job.id, task=TASK)
 
