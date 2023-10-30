@@ -41,17 +41,27 @@
                     <i class="bi bi-plus-lg"></i>
                     <span>Add to basket</span>
                 </button>
-                <div class="dropdown">
+                <div id="find-similar-dropdown" class="dropdown">
                     <button id="select-similar-samples-btn" 
                             class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
                             data-bs-toggle="dropdown" disabled>
-                        <i class="bi bi-search"></i>
-                        <span>Find similar</span>
+                        <span class="content">
+                            <i class="bi bi-search"></i>
+                            <span>Find similar</span>
+                        </span>
+                        <span class="loading align-middle" hidden>
+                            <span class="spinner-grow text-success spinner-grow-sm" role="status">
+                            </span>
+                            Loading...
+                        </span>
                     </button>
                     <form class="dropdown-menu dropdown-menu-end p-2 needs-validation">
-                        <input type="text" name="similar-samples-threshold" 
-                               id="similar-samples-threshold" class="form-control form-control-sm" 
+                        <input type="text" name="similar-samples-limit" 
+                               id="similar-samples-limit" class="form-control form-control-sm" 
                                placeholder="Number of samples" required>
+                        <input type="text" name="similar-samples-threshold" 
+                               id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
+                               placeholder="Min similarity" value="0.95" required>
                         <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2"
                                 onclick="getSimilarSamplesAndCheckRows(this)" disabled>
                             <i class="bi bi-search"></i>
@@ -252,12 +262,13 @@
 
     async function getSimilarSamples() {
         const sampleId=window.getSelectedRows()[0]
-        const limit=document.getElementById("similar-samples-threshold").value
+        const limit=document.getElementById("similar-samples-limit").value
+        const similarity=document.getElementById("similar-samples-threshold").value
         const baseUrl = {{ request.script_root|tojson }}
         try {
             const response = await fetch(`${baseUrl}/samples/${sampleId}/similar`, {
                 method: "POST",
-                body: JSON.stringify({limit: limit}),
+                body: JSON.stringify({limit: limit, similarity: similarity}),
                 headers: {
                     'Accept': 'application/json', 
                     'Content-Type': 'application/json' 
@@ -317,9 +328,30 @@
     }
 
     const resultParser = (result) => result.data.result
+    
+    const showSpinner = (element) => {
+        // show spinner and hide content
+        const btnContent = element.querySelector('.content')
+        const btnSpinner = element.querySelector('.loading')
+        btnContent.hidden = true
+        btnContent.disabled = true
+        btnSpinner.hidden = false
+    }
+
+    const hideSpinner = (element) => {
+        // hide spinner and show content
+        const btnContent = element.querySelector('.content')
+        const btnSpinner = element.querySelector('.loading')
+        btnContent.hidden = false
+        btnContent.disabled = false
+        btnSpinner.hidden = true
+    }
 
     async function getSimilarSamplesAndCheckRows(btn) {
         // get similar samples and check rows
+        const parentElem = btn.parentElement.parentElement
+        showSpinner(parentElem)
+        // start query
         getSimilarSamples().then( async (job) => {
             if ( job ) {
                 //async () => await fetchJobStatus(job.id),  // function to get job status
@@ -331,11 +363,14 @@
                         3000                // interval time
                     )
                     window.action('select', () => result.map(sample => sample.sample_id))
+                    hideSpinner(parentElem)
                 } catch (err) {
                     throwSmallErrorToast("Error while finding similar samples")
+                    hideSpinner(parentElem)
                 }
             } else {
                 throwSmallErrorToast("Error while finding similar samples")
+                hideSpinner(parentElem)
             }
         })
     }
