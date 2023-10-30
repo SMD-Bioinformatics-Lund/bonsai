@@ -20,20 +20,25 @@ def index(signature_files: List[Path]):
     return msg
 
 
-def similar(ref_signature: Path, min_similarity: float = 0.5) -> SimilarSignatures:
+def similar(ref_signature: Path, min_similarity: float = 0.5, limit: int | None = None) -> SimilarSignatures:
     """
     Find signatures similar to reference signature.
 
     Retun list of similar signatures that describe signature and similarity.
     """
-    samples = get_signatures_similar_to_reference(ref_signature, min_similarity=min_similarity)
-    LOG.info(samples)
+    samples = get_signatures_similar_to_reference(ref_signature, min_similarity=min_similarity, limit=limit)
+    LOG.info(f"Finding samples similar to {ref_signature} with min similarity {min_similarity}; limit {limit}")
     results = [s.model_dump() for s in samples]
     return results
 
 
-def cluster(*args, **kwargs):
-    """Cluster sourmash signatures."""
-    LOG.info([args, kwargs])
+def cluster(signatures):
+    """Cluster multiple sample on their sourmash signatures."""
     sleep(120)
+    pass
+
+
+def find_similar_and_cluster(ref_signature: Path, min_similarity: float = 0.5, limit: int | None = None) -> str:
+    """Find similar samples and cluster them on their minhash profile."""
+    samples = get_signatures_similar_to_reference(ref_signature, min_similarity=min_similarity, limit=limit)
     pass
