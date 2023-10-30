@@ -1,12 +1,13 @@
 """Define reddis tasks."""
-from typing import List, Dict
-from pathlib import Path
-from .minhash.cluster import cluster_signatures, ClusterMethod
-from .minhash.io import write_signature, add_signatures_to_index
-from .minhash.io import remove_signature as remove_signature_file
-from .minhash.similarity import get_similar_signatures, SimilarSignatures
-
 import logging
+from pathlib import Path
+from typing import Dict, List
+
+from .minhash.cluster import ClusterMethod, cluster_signatures
+from .minhash.io import add_signatures_to_index
+from .minhash.io import remove_signature as remove_signature_file
+from .minhash.io import write_signature
+from .minhash.similarity import SimilarSignatures, get_similar_signatures
 
 LOG = logging.getLogger(__name__)
 

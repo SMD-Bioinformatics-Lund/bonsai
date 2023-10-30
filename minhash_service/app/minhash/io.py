@@ -1,10 +1,11 @@
 """Functions for reading and writing signatures"""
+import gzip
 import logging
 import pathlib
-import gzip
-from app import config
-import sourmash
 from typing import List
+
+import sourmash
+from app import config
 
 LOG = logging.getLogger(__name__)
 

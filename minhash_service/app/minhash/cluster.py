@@ -1,10 +1,12 @@
 """Functions for clustering on minhashes"""
-from enum import Enum
-from scipy.cluster import hierarchy
 import logging
+from enum import Enum
 from typing import List
-from .io import read_signature
+
 import sourmash
+from scipy.cluster import hierarchy
+
+from .io import read_signature
 
 LOG = logging.getLogger(__name__)
 

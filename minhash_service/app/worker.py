@@ -1,9 +1,10 @@
 """Service entrypoint for minhash service."""
 import logging
 from logging.config import dictConfig
-from redis import Redis
-from rq import Queue, Worker, Connection
+
 from app import config, tasks
+from redis import Redis
+from rq import Connection, Queue, Worker
 
 dictConfig(config.DICT_CONFIG)
 LOG = logging.getLogger(__name__)

@@ -1,13 +1,14 @@
 """Operations on minhash signatures."""
 import logging
 import pathlib
-import sourmash
 from typing import List
-from app import config
-import fasteners
-from pydantic import BaseModel
-from .io import get_sbt_index, read_signature
 
+import fasteners
+import sourmash
+from app import config
+from pydantic import BaseModel
+
+from .io import get_sbt_index, read_signature
 
 LOG = logging.getLogger(__name__)
 
