@@ -16,7 +16,8 @@ from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
-from ..crud.minhash import (add_genome_signature_file, 
+from ..crud.minhash import (schedule_add_genome_signature, 
+                            schedule_add_genome_signature_to_index,
                             remove_genome_signature_file, 
                             schedule_get_samples_similar_to_reference,
                             SubmittedJob
@@ -183,44 +184,21 @@ async def create_genome_signatures_sample(
     if sample.genome_signature is not None:
         raise sig_exist_err
 
-    try:
-        signature_path: pathlib.Path = add_genome_signature_file(sample_id, signature)
-    except FileExistsError as err:
-        raise sig_exist_err
-    except Exception as err:
-        raise HTTPException(status_code=500, detail=format_error_message(err))
-    else:
-        # updated sample in database with signature object
-        # recast the data to proper object
-        upd_sample_data = SampleInCreate(
-            **{**sample.dict(), **{"genome_signature": str(signature_path.resolve())}}
-        )
-        status = await crud_update_sample(db, upd_sample_data)
-        LOG.error(f"status {status}")
+    add_sig_job = schedule_add_genome_signature(sample_id, signature)
+    index_job = schedule_add_genome_signature_to_index([sample_id], depends_on=[add_sig_job.id])
 
-        # add signature to index
-        try:
-            add_genome_signature_to_index(signature_path)
-        except Exception as err:
-            # remove signature file from disk in case of errors
-            LOG.error("Error encounterd when appending signature to index")
-            signature_file.unlink()
-            raise err
-
-
-    # if signature file could not be added to sample db
-    if not status:
-        # remove added signature file from database and index
-        remove_genome_signature_file(sample_id)
-        # raise error
-        raise HTTPException(
-            status=500, detail="The signature file could not be updated"
-        )
+    # updated sample in database with signature object jobid
+    # recast the data to proper object
+    upd_sample_data = SampleInCreate(
+        **{**sample.dict(), **{"genome_signature": add_sig_job.id}}
+    )
+    status = await crud_update_sample(db, upd_sample_data)
+    LOG.error(f"status {status}")
 
     return {
-        "type": "success",
         "id": sample_id,
-        "signature_file": signature_path,
+        "add_signature_job": add_sig_job.id,
+        "index_job": index_job.id,
     }
 
 
