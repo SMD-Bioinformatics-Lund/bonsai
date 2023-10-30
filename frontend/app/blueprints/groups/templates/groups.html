@@ -213,6 +213,7 @@
 </script>
 
 <script>
+    const apiURL = "{{ config.BONSAI_API_URL }}"
     // load all javascript after load
     window.onload = () => {
     // initialize toasts
@@ -277,16 +278,68 @@
         }
     }
 
-    function getSimilarSamplesAndCheckRows(btn) {
+    async function poll(fn, fnCondition, resultParser, ms) {
+        // utility function for polling data
+        let result = await fn()
+        while (fnCondition(result)) {
+            await wait(ms)
+            result = await fn()
+        }
+        return resultParser(result)
+    }
+
+    function wait(ms = 2000) {
+        return new Promise(resolve => {
+            setTimeout(resolve, ms)
+        })
+    }
+
+    let fetchJobStatus = async (jobId) => {
+        const response = await fetch(`${apiURL}/minhash/status/${jobId}`)
+        return {status: response.status, data: await response.json()}
+    }
+
+    function validateJobStatus(result) {
+        // check job status
+        // returns true if run is invalid
+        let isValid = false
+        const jobInfo = result.data
+        if ( jobInfo.status === "finished" ) {
+            // if job has finished report result
+            isValid = true
+        } else if ( jobInfo.status === "failed" ) {
+            // if job failed raise error
+            throw new Error(`Finding similar samples failed: ${jobInfo.result}`)
+            isValid = true
+        } 
+        console.log(`Job status: ${jobInfo.status}; is valid ${isValid}`)
+        return !isValid
+    }
+
+    const resultParser = (result) => result.data.result
+
+    async function getSimilarSamplesAndCheckRows(btn) {
         // get similar samples and check rows
-        getSimilarSamples().then((data) => {
-            if ( data ) {
-                window.action('select', data.samples.map(sample => sample.sample_id))
+        getSimilarSamples().then( async (job) => {
+            if ( job ) {
+                //async () => await fetchJobStatus(job.id),  // function to get job status
+                try {
+                    let result = await poll(
+                        async () => fetchJobStatus(job.id),  // function to get job status
+                        validateJobStatus,  // validator
+                        resultParser,       // parse results
+                        3000                // interval time
+                    )
+                    window.action('select', () => result.map(sample => sample.sample_id))
+                } catch (err) {
+                    throwSmallErrorToast("Error while finding similar samples")
+                }
             } else {
                 throwSmallErrorToast("Error while finding similar samples")
             }
         })
     }
+
     document.getElementById("similar-samples-threshold").addEventListener("input", (elem) => {
         document.getElementById("similar-samples-button").disabled = isNaN(parseInt(elem.data))
     });
