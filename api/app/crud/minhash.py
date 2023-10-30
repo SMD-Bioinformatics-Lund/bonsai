@@ -46,7 +46,7 @@ def schedule_add_genome_signature_to_index(sample_ids: List[str], depends_on: Li
 
 
 def schedule_get_samples_similar_to_reference(
-    sample_id: str, min_similarity: float, kmer_size: int, limit: int | None = None
+    sample_id: str, min_similarity: float, limit: int | None = None
 ) -> SubmittedJob:
     """Schedule find similar samples job.
 

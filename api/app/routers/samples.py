@@ -331,7 +331,6 @@ async def read_sample(
 ):
     submission_info: SubmittedJob = schedule_get_samples_similar_to_reference(
         sample_id,
-        kmer_size=config.SIGNATURE_KMER_SIZE,
         min_similarity=similarity,
         limit=limit,
     )
