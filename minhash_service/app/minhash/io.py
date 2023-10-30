@@ -84,7 +84,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     return signature_file
 
 
-def remove_genome_signature_file(sample_id: str) -> bool:
+def remove_signature(sample_id: str) -> bool:
     """Remove an existing signature file from disk."""
 
     # get signature directory
@@ -126,3 +126,43 @@ def remove_genome_signature_file(sample_id: str) -> bool:
         return True
     LOG.info(f"Signature file: {signature_file} was removed")
     return False
+
+
+def add_signatures_to_index(sample_ids: List[str]) -> bool:
+    """Add genome signature file to sourmash index"""
+
+    genome_index = get_sbt_index(check=False)
+    sbt_lock_path = f"{genome_index}.lock"
+    lock = fasteners.InterProcessLock(sbt_lock_path)
+    LOG.debug("Using lock: {sbt_lock_path}")
+
+    signatures = []
+    for sample_id in sample_ids:
+        signature = _load_signature(sample_id)
+        signatures.append(signature[0])
+
+    # add signature to existing index
+    # acquire lock to append signatures to database
+    LOG.debug(f"Attempt to acquire lock to append {len(signatures)} to index...")
+    with lock:
+        # check if index already exist
+        try:
+            index_path = get_sbt_index()
+            tree = sourmash.load_file_as_index(index_path)
+        except FileNotFoundError:
+            tree = sourmash.sbtmh.create_sbt_index()
+
+        # add generated signature to bloom tree
+        LOG.info(f"Adding {len(signatures)} genome signatures to index")
+        for signature in signatures:
+            leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
+            tree.add_node(leaf)
+        # save updated bloom tree
+        try:
+            index_path = get_sbt_index(check=False)
+            tree.save(index_path)
+        except PermissionError as err:
+            LOG.error("Dont have permission to write file to disk")
+            raise err
+
+    return True
