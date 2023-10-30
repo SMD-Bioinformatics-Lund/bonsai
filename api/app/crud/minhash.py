@@ -5,6 +5,8 @@ from app.redis import redis
 from rq import Retry
 from rq.job import Dependency
 from ..models.base import RWModel
+from ..internal.cluster import ClusterMethod
+
 
 LOG = logging.getLogger(__name__)
 
@@ -56,4 +58,15 @@ def schedule_get_samples_similar_to_reference(
     job = redis.minhash.enqueue(TASK, sample_id=sample_id, 
                                 min_similarity=min_similarity, job_timeout='30m')
     LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
+    return SubmittedJob(id=job.id, task=TASK)
+
+
+def schedule_cluster_samples(sample_ids: List[str], cluster_method: ClusterMethod) -> SubmittedJob:
+    """Schedule find similar samples job.
+
+    min_similarity - minimum similarity score to be included
+    """
+    TASK = "app.tasks.cluster"
+    job = redis.minhash.enqueue(TASK, sample_ids=sample_ids, cluster_method=cluster_method.value, job_timeout='30m') 
+    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}; {job}")
     return SubmittedJob(id=job.id, task=TASK)

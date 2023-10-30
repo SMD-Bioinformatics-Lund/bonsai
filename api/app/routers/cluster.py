@@ -8,13 +8,12 @@ from pathlib import Path
 
 from ..crud.errors import EntryNotFound
 from ..crud.sample import TypingProfileOutput, get_typing_profiles, get_signature_path_for_samples
-from ..crud.minhash import schedule_add_genome_signature_to_index
+from ..crud.minhash import schedule_add_genome_signature_to_index, schedule_cluster_samples
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
                                 DistanceMethod,
-                                cluster_on_allele_profile_grapetree_mstrees,
-                                cluster_on_minhash_signature)
+                                cluster_on_allele_profile_grapetree_mstrees)
 from ..models.base import RWModel
 from ..models.user import UserOutputDatabase
 from ..redis import check_redis_job_status, JobStatus
@@ -48,7 +47,7 @@ class clusterInput(RWModel):
 #        get_current_active_user, scopes=[WRITE_PERMISSION]
 #    ),
 @router.post(
-    "/cluster/{typing_method}/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS
+    "/cluster/{typing_method}/", status_code=status.HTTP_201_CREATED, tags=["minhash", *DEFAULT_TAGS]
 )
 async def cluster_samples(
     typing_method: TypingMethod,
@@ -59,9 +58,8 @@ async def cluster_samples(
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
     if typing_method == TypingMethod.MINHASH:
-        newick_tree = cluster_on_minhash_signature(
-            clusterInput.sample_ids, clusterInput.method
-        )
+        job = schedule_cluster_samples(clusterInput.sample_ids, clusterInput.method)
+        return job
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(
