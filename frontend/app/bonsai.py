@@ -8,7 +8,7 @@ from requests.structures import CaseInsensitiveDict
 
 from pydantic import BaseModel
 
-from .models import SampleBasketObject
+from .models import SampleBasketObject, SubmittedJob
 
 class TokenObject(BaseModel):
     """Token object"""
@@ -257,7 +257,7 @@ def update_sample_qc_classification(headers, **kwargs):
 
 
 @api_authentication
-def cluster_samples(headers, **kwargs):
+def cluster_samples(headers, **kwargs) -> SubmittedJob:
     """Cluster samples on selected typing result."""
     typing_method = kwargs.get("typing_method", "cgmslt")
     data = {
@@ -269,11 +269,11 @@ def cluster_samples(headers, **kwargs):
     url = f'{current_app.config["BONSAI_API_URL"]}/cluster/{typing_method}/'
     resp = requests.post(url, headers=headers, json=data)
     resp.raise_for_status()
-    return resp.json()
+    return SubmittedJob(**resp.json())
 
 
 @api_authentication
-def find_samples_similar_to_reference(headers, **kwargs):
+def find_samples_similar_to_reference(headers, **kwargs) -> SubmittedJob:
     """Find samples with closest minhash distance to reference."""
     sample_id: str = kwargs.get("sample_id")
     similarity: float = kwargs.get("similarity", 0.5)  # similarity score
@@ -287,4 +287,30 @@ def find_samples_similar_to_reference(headers, **kwargs):
         params={"sample_id": sample_id, "similarity": similarity, "limit": limit},
     )
     resp.raise_for_status()
-    return resp.json()
+    return SubmittedJob(**resp.json())
+
+
+@api_authentication
+def find_and_cluster_similar_samples(headers, **kwargs) -> SubmittedJob:
+    """Find samples with closest minhash distance to reference."""
+    # params relating to finding similar samples
+    sample_id: str = kwargs.get("sample_id")
+    similarity: float = kwargs.get("similarity", 0.5)  # similarity score
+    limit: int = kwargs.get("limit", None)
+    # params relating to clustering
+    typing_method: str = kwargs.get("typing_method", None)
+    cluster_method: str = kwargs.get("cluster_method", None)
+
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
+    current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
+    resp = requests.get(
+        url,
+        headers=headers,
+        params={"sample_id": sample_id, "similarity": similarity, 
+                "limit": limit, "cluster": True, "cluster_method": cluster_method, 
+                "typing_method": typing_method,
+        },
+    )
+    resp.raise_for_status()
+    return SubmittedJob(**resp.json())
