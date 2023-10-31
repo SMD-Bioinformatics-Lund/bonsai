@@ -40,3 +40,8 @@
 .tag {
   height: 50%;
 }
+
+#similar-samples-cluster .spinner-border {
+  width: 4rem;
+  height: 4rem;
+}
