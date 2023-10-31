@@ -2,21 +2,18 @@
 from enum import Enum
 import logging
 
-from fastapi import APIRouter, Body, HTTPException, Query, Security, status
-from pydantic import Field, constr
+from fastapi import APIRouter, HTTPException, status
+from pydantic import Field
 from pathlib import Path
 
 from ..crud.errors import EntryNotFound
 from ..crud.sample import TypingProfileOutput, get_typing_profiles, get_signature_path_for_samples
 from ..crud.minhash import schedule_add_genome_signature_to_index, schedule_cluster_samples
-from ..crud.user import get_current_active_user
 from ..db import db
 from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
                                 DistanceMethod,
                                 cluster_on_allele_profile_grapetree_mstrees)
 from ..models.base import RWModel
-from ..models.user import UserOutputDatabase
-from ..redis import check_redis_job_status, JobStatus
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -105,10 +102,3 @@ async def index_genome_signatures(index_input: indexInput):
     signature_paths = [Path(sig['genome_signature']) for sig in signatures]
     job_id: str = schedule_add_genome_signature_to_index(signature_paths)
     return {"job_id": job_id}
-
-
-@router.get("/minhash/status/{job_id}", status_code=status.HTTP_200_OK, tags=["minhash"])
-async def check_job_status(job_id: str) -> JobStatus:
-    """Entrypoint for checking status of running jobs."""
-    info = check_redis_job_status(job_id=job_id)
-    return info
