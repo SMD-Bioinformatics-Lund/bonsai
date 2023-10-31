@@ -87,7 +87,7 @@ def schedule_find_similar_and_cluster(
         TASK = "app.tasks.find_similar_and_cluster"
         job = redis.minhash.enqueue(TASK, sample_id=sample_id, 
                                     min_similarity=min_similarity, limit=limit, 
-                                    cluster_method=cluster_method, job_timeout='30m')
+                                    cluster_method=cluster_method.value, job_timeout='30m')
         LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
     else:
         raise ValueError(f"{typing_method} is not implemented yet")

@@ -4,7 +4,7 @@ from typing import Annotated, Dict, List
 
 from pymongo.errors import DuplicateKeyError
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
                      Security, status)
 
@@ -314,8 +314,19 @@ async def update_location(
     return location_obj
 
 
-@router.get("/samples/{sample_id}/similar", response_model=SubmittedJob, tags=["minhash", *DEFAULT_TAGS])
+class SimilarSamplesInput(BaseModel):
+    """Input parameters for finding similar samples."""
+
+    limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")
+    similarity: float = Field(default=0.5, gt=0, title="Similarity threshold"),
+    cluster: bool = Field(default=False, title="Cluster the similar"),
+    typing_method: TypingMethod | None = Field(None, title="Cluster using a specific typing method"),
+    cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar"),
+
+
+@router.post("/samples/{sample_id}/similar", response_model=SubmittedJob, tags=["minhash", *DEFAULT_TAGS])
 async def read_sample(
+    body: SimilarSamplesInput,
     sample_id: str = Path(
         ...,
         title="ID of the refernece sample",
@@ -323,28 +334,23 @@ async def read_sample(
         max_length=100,
         regex=SAMPLE_ID_PATTERN,
     ),
-    limit: int | None = Query(10, gt=-1, title="Limit the output to x samples"),
-    similarity: float = Query(0.5, gt=0, title="Similarity threshold"),
-    cluster: bool = Query(False, title="Cluster the similar"),
-    typing_method: TypingMethod = Query(TypingMethod.MINHASH, title="Cluster using a specific typing method"),
-    linkage: ClusterMethod = Query(ClusterMethod.SINGLE, title="Cluster the similar"),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    LOG.info(f"ref: {sample_id}, limit: {limit}, cluster: {cluster}")
-    if cluster:
+    LOG.info(f"ref: {sample_id}, body: {body}")
+    if body.cluster:
         submission_info: SubmittedJob = schedule_find_similar_and_cluster(
             sample_id,
-            min_similarity=similarity,
-            limit=limit,
-            typing_method=typing_method,
-            linkage=linkage,
+            min_similarity=body.similarity,
+            limit=body.limit,
+            typing_method=body.typing_method,
+            cluster_method=body.cluster_method,
         )
     else:
         submission_info: SubmittedJob = schedule_find_similar_samples(
             sample_id,
-            min_similarity=similarity,
-            limit=limit,
+            min_similarity=body.similarity,
+            limit=body.limit,
         )
     return submission_info
