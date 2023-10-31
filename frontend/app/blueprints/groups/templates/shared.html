@@ -103,7 +103,7 @@ function wait(ms = 2000) {
 }
 
 let fetchJobStatus = async (jobId) => {
-    const response = await fetch(`${apiURL}/minhash/status/${jobId}`)
+    const response = await fetch(`${apiURL}/job/status/${jobId}`)
     return {status: response.status, data: await response.json()}
 }
 

@@ -38,10 +38,19 @@
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
                     <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
-                    <button id="cluster-button" class="btn btn-sm btn-success ms-2" disabled>
-                        <span id="cluster-btn-spinner" hidden class="spinner-grow spinner-grow-sm"></span>
-                        <span id="cluster-btn-text">Cluster samples</span>
-                    </button>
+                    <div id="cluster-samples-dropdown" class="dropdown">
+                        <button id="cluster-button" class="btn btn-sm btn-outline-success ms-2"
+                                disabled>
+                            <span class="content">
+                                <i class="bi bi-diagram-3-fill"></i>
+                                Cluster
+                            </span>
+                            <span class="loading align-middle" hidden>
+                                <span class="spinner-grow text-success spinner-grow-sm" role="status"></span>
+                                Loading...
+                            </span>
+                        </button>
+                    </div>
                 </form>
             </div>
         </nav>
@@ -142,12 +151,7 @@
     const clusterButtonError = () => {
         // Disable clustering buttin on case of an error
         const button = document.getElementById("cluster-button")
-        button.querySelector("#cluster-btn-text").innerText = orgButtonText
-        const spinner = button.querySelector("#cluster-btn-spinner")
-        spinner.hidden = true
-        button.disabled = true
-        button.className = "btn btn-danger"
-        button.innerHTML = '<i class="bi bi-exclamation-triangle"></i>' + button.innerHTML
+        hideSpinner(button)
     }
 
     const throwClusterErrorToast = (resp) => {
@@ -183,15 +187,15 @@
         event.preventDefault()  // prevent normal behaviour
         // show spinner
         const button = document.getElementById("cluster-button")
-        button.querySelector("#cluster-btn-text").innerText = "Clustering..."
-        const spinner = button.querySelector("#cluster-btn-spinner")
-        spinner.hidden = false
+        showSpinner(button)
         
         // get sample ids for checked samples
         const sampleId = window.getSelectedRows()
         const typingData = document.getElementById("cluster-typing-data").value
         const distance = document.getElementById("cluster-distance-metric").value
+        // if there are more than 1k samples use minhash instead of cgmlst
         const method = document.getElementById("cluster-clustering-method").value
+        debugger
         // setup and submit clustering job
         const xhr = new XMLHttpRequest()
         const apiURL = "{{ config.BONSAI_API_URL }}"
@@ -203,7 +207,7 @@
                 // todo add default parameters
                 // instead open a new tab by mocking a submission
                 openTreeView({newick: xhr.responseText, metadata: "not so much"})
-                spinner.hidden = true
+                hideSpinner(button)
                 button.querySelector("#cluster-btn-text").innerText = orgButtonText
             } else {
                 clusterButtonError()
