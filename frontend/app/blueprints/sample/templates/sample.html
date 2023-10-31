@@ -112,7 +112,8 @@
 {% macro similar_samples_card(data) %}
 <div class="card col-md-auto {% if data is none %}border-warning{% endif %}" style="width: 24rem;">
     <div class="card-header">Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}</div>
-    <div id="similar-samples-cluster" class="card-body">
+    {{ data }}
+    <div id="similar-samples-cluster" class="card-body" data-job-id="{{data.job.id}}">
         <div class="d-flex justify-content-center loading my-5">
             <div class="spinner-border text-success" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -415,8 +416,10 @@
         })
     }
 
-    const similarSamples = {{ similar_samples | tojson }}
+    //const similarSamples = {{ similar_samples | tojson }}
     const sampleId = "{{sample.sample_id}}"
+    const similarSamplesJob = document.getElementById("similar-samples-cluster")
+    debugger
     if ( similarSamples ) {
         const tree = new TidyTree(similarSamples.newick, { 
             parent: "#tree-body",
