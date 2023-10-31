@@ -194,8 +194,7 @@
         const typingData = document.getElementById("cluster-typing-data").value
         const distance = document.getElementById("cluster-distance-metric").value
         // if there are more than 1k samples use minhash instead of cgmlst
-        const method = document.getElementById("cluster-clustering-method").value
-        debugger
+        const method = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-clustering-method").value
         // setup and submit clustering job
         const xhr = new XMLHttpRequest()
         const apiURL = "{{ config.BONSAI_API_URL }}"
