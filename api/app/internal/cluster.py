@@ -12,7 +12,6 @@ import pandas as pd
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import pdist
 
-import sourmash
 from app import config
 from skbio import DistanceMatrix
 from skbio.tree import nj
@@ -77,42 +76,6 @@ def cluster_on_allele_profile(
         # convert distance matrix to cluster
         tree = hierarchy.to_tree(Z, False)
         newick_tree = to_newick(tree, "", tree.dist, leaf_names)
-    return newick_tree
-
-
-def cluster_on_minhash_signature(sample_ids: List[str], method: ClusterMethod):
-    """Cluster multiple samples on their minhash signatures."""
-    # load sourmash index
-    signature_dir = Path(config.GENOME_SIGNATURE_DIR)
-
-    # load sequence signatures to memory
-    siglist = []
-    kmer_sizes = config.SIGNATURE_KMER_SIZE
-    for sample_id in sample_ids:
-        signature_path = signature_dir.joinpath(f"{sample_id}.sig")
-        if not signature_path.is_file():
-            raise FileNotFoundError(f"Signature file not found, {signature_path}")
-
-        # read signature
-        loaded = sourmash.load_file_as_signatures(str(signature_path), ksize=kmer_sizes)
-        # check if signatures were fund
-        loaded = list(loaded)
-        if not loaded:
-            raise ValueError(
-                f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}"
-            )
-        siglist.extend(loaded)  # append to all signatures
-
-    # create distance matrix
-    similarity = sourmash.compare.compare_all_pairs(
-        siglist, ignore_abundance=True, n_jobs=1, return_ani=False
-    )
-    # cluster on similarity matrix
-    Z = hierarchy.linkage(similarity, method=method.value)
-    tree = hierarchy.to_tree(Z, False)
-    # creae newick tree
-    labeltext = [str(item).replace(".fasta", "") for item in siglist]
-    newick_tree = to_newick(tree, "", tree.dist, labeltext)
     return newick_tree
 
 
