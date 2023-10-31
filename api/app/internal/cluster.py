@@ -37,6 +37,12 @@ class ClusterMethod(Enum):
     NJ = "neighbor_joining"
 
 
+class TypingMethod(str, Enum):
+    MLST = "mlst"
+    CGMLST = "cgmlst"
+    MINHASH = "minhash"
+
+
 def to_newick(node, newick, parentdist, leaf_names):
     """Convert hierarcical tree representation to newick format."""
 

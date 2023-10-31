@@ -12,6 +12,7 @@ from ..crud.minhash import schedule_add_genome_signature_to_index, schedule_clus
 from ..db import db
 from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
                                 DistanceMethod,
+                                TypingMethod,
                                 cluster_on_allele_profile_grapetree_mstrees)
 from ..models.base import RWModel
 
@@ -23,12 +24,6 @@ DEFAULT_TAGS = [
 ]
 READ_PERMISSION = "cluster:read"
 WRITE_PERMISSION = "cluster:write"
-
-
-class TypingMethod(Enum):
-    MLST = "mlst"
-    CGMLST = "cgmlst"
-    MINHASH = "minhash"
 
 
 class clusterInput(RWModel):
