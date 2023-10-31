@@ -10,6 +10,8 @@ SECRET_KEY = b"not-so-secret"
 # parameters for finding similar samples
 SAMPLE_VIEW_SIMILARITY_LIMIT = 10
 SAMPLE_VIEW_SIMILARITY_THRESHOLD = 0.9
+SAMPLE_VIEW_TYPING_METHOD = "minhash"
+SAMPLE_VIEW_CLUSTER_METHOD = "single"
 
 # res classes
 AMR_CLASS = {}

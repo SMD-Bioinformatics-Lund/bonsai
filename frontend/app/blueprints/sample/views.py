@@ -5,7 +5,7 @@ from requests.exceptions import HTTPError
 from flask import Blueprint, flash, redirect, render_template, request, url_for, current_app
 from flask_login import current_user, login_required
 
-from app.bonsai import (TokenObject, cgmlst_cluster_samples, cluster_samples,
+from app.bonsai import (TokenObject, cgmlst_cluster_samples,
                         find_samples_similar_to_reference, get_group_by_id,
                         get_sample_by_id, post_comment_to_sample,
                         remove_comment_from_sample,
@@ -165,31 +165,16 @@ def sample(sample_id):
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    # Get the 10 most similar samples and calculate the pair-wise similaity
-    try:
-        similar_samples = find_samples_similar_to_reference(
-            token, sample_id=sample_id, 
-            limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"], 
-            similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"]
-        )
-        # cluster the similar samples
-        TYPING_METHOD = "minhash"
-        LINKAGE = "single"
-        newick_file = cluster_samples(
-            token,
-            sample_ids=[smp["sample_id"] for smp in similar_samples["samples"]],
-            typing_method=TYPING_METHOD,
-            method=LINKAGE,
-        )
-        similar_samples = {
-            "typing_method": TYPING_METHOD,
-            "method": LINKAGE,
-            "newick": newick_file,
-        }
-    except HTTPError as error:
-        current_app.logger.warning(f"Error while clustering samples: {str(error)}")
-        similar_samples = None
-
+    # Get the most similar samples and calculate the pair-wise similaity
+    typing_method = config["SAMPLE_VIEW_TYPING_METHOD"]
+    job = find_samples_similar_to_reference(
+        token, sample_id=sample_id, 
+        limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"], 
+        similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"],
+        typing_method=typing_method,
+        cluster_method=config["SAMPLE_VIEW_CLUSTER_METHOD"]
+    )
+    simiar_samples = {"job": job.model_dump(), "typing_method": typing_method}
 
     return render_template(
         "sample.html",
@@ -198,7 +183,7 @@ def sample(sample_id):
         resistance_info=resistance_info,
         title=sample_id,
         is_filtered=bool(group_id),
-        similar_samples=similar_samples,
+        similar_samples=simiar_samples,
         bad_qc_actions=bad_qc_actions,
     )
 

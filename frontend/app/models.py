@@ -96,6 +96,13 @@ class PhenotypeType(Enum):
     VIRULENCE = "virulence"
 
 
+class SubmittedJob(RWModel):
+    """Container for submitted jobs."""
+
+    id: str
+    task: str
+
+
 NT_TO_AA = {
     "TTT": "F",
     "TTC": "F",
