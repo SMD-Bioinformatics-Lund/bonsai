@@ -99,5 +99,5 @@ def find_similar_and_cluster(
         LOG.warning(f"{len(sample_ids)}")
         return "()"
     # cluster samples
-    newick: str = cluster_signatures(sample_ids, method)
+    newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method)
     return newick

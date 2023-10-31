@@ -30,6 +30,7 @@ def get_similar_signatures(
 
     min_similarity - minimum similarity score to be included
     """
+    LOG.info(f"Finding similar: {sample_id}; similarity: {min_similarity}, limit: {limit}")
 
     # load sourmash index
     LOG.debug(f"Getting samples similar to: {sample_id}")
@@ -63,4 +64,5 @@ def get_similar_signatures(
         # break iteration if limit is reached
         if isinstance(limit, int) and limit == itr_no:
             break
+    LOG.info(f"Found {len(samples)} samples similar to {sample_id}")
     return samples
