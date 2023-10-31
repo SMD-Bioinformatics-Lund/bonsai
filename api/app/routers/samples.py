@@ -2,13 +2,11 @@ import logging
 import pathlib
 from typing import Annotated, Dict, List
 
-from Bio.SeqIO.FastaIO import SimpleFastaParser
 from pymongo.errors import DuplicateKeyError
 
 from pydantic import BaseModel
-from app import config
 from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
-                     Security, UploadFile, status)
+                     Security, status)
 
 from ..crud.sample import (EntryNotFound, add_comment, add_location)
 from ..crud.sample import create_sample as create_sample_record
@@ -18,7 +16,8 @@ from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
 from ..crud.minhash import (schedule_add_genome_signature, 
                             schedule_add_genome_signature_to_index,
-                            schedule_get_samples_similar_to_reference,
+                            schedule_find_similar_samples,
+                            schedule_find_similar_and_cluster,
                             SubmittedJob
                             )
 from ..crud.user import get_current_active_user
@@ -29,6 +28,7 @@ from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
                              PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
 from ..utils import format_error_message
+from ..internal.cluster import ClusterMethod, TypingMethod
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -325,13 +325,26 @@ async def read_sample(
     ),
     limit: int | None = Query(10, gt=-1, title="Limit the output to x samples"),
     similarity: float = Query(0.5, gt=0, title="Similarity threshold"),
+    cluster: bool = Query(False, title="Cluster the similar"),
+    typing_method: TypingMethod = Query(TypingMethod.MINHASH, title="Cluster using a specific typing method"),
+    linkage: ClusterMethod = Query(ClusterMethod.SINGLE, title="Cluster the similar"),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    submission_info: SubmittedJob = schedule_get_samples_similar_to_reference(
-        sample_id,
-        min_similarity=similarity,
-        limit=limit,
-    )
+    LOG.info(f"ref: {sample_id}, limit: {limit}, cluster: {cluster}")
+    if cluster:
+        submission_info: SubmittedJob = schedule_find_similar_and_cluster(
+            sample_id,
+            min_similarity=similarity,
+            limit=limit,
+            typing_method=typing_method,
+            linkage=linkage,
+        )
+    else:
+        submission_info: SubmittedJob = schedule_find_similar_samples(
+            sample_id,
+            min_similarity=similarity,
+            limit=limit,
+        )
     return submission_info

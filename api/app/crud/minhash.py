@@ -5,7 +5,7 @@ from app.redis import redis
 from rq import Retry
 from rq.job import Dependency
 from ..models.base import RWModel
-from ..internal.cluster import ClusterMethod
+from ..internal.cluster import ClusterMethod, TypingMethod
 
 
 LOG = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def schedule_add_genome_signature_to_index(sample_ids: List[str], depends_on: Li
     return SubmittedJob(id=job.id, task=TASK)
 
 
-def schedule_get_samples_similar_to_reference(
+def schedule_find_similar_samples(
     sample_id: str, min_similarity: float, limit: int | None = None
 ) -> SubmittedJob:
     """Schedule find similar samples job.
@@ -70,4 +70,25 @@ def schedule_cluster_samples(sample_ids: List[str], cluster_method: ClusterMetho
     TASK = "app.tasks.cluster"
     job = redis.minhash.enqueue(TASK, sample_ids=sample_ids, cluster_method=cluster_method.value, job_timeout='30m') 
     LOG.debug(f"Submitting job, {TASK} to {job.worker_name}; {job}")
+    return SubmittedJob(id=job.id, task=TASK)
+
+
+def schedule_find_similar_and_cluster(
+    sample_id: str, min_similarity: float, typing_method: TypingMethod, 
+    cluster_method: ClusterMethod, limit: int | None = None
+) -> SubmittedJob:
+    """Schedule a job to find similar samples and cluster the results
+
+    min_similarity - minimum similarity score to be included
+    typing_method - what data the samples should be clustered on
+    linkage - the linkage function to use when clustering
+    """
+    if typing_method == TypingMethod.MINHASH:
+        TASK = "app.tasks.find_similar_and_cluster"
+        job = redis.minhash.enqueue(TASK, sample_id=sample_id, 
+                                    min_similarity=min_similarity, limit=limit, 
+                                    cluster_method=cluster_method, job_timeout='30m')
+        LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
+    else:
+        raise ValueError(f"{typing_method} is not implemented yet")
     return SubmittedJob(id=job.id, task=TASK)
