@@ -53,8 +53,7 @@
 	<div id='welcome-div' style='background:white;padding:10px'>
 		<span id='welcome-div-close' class="glyphicon glyphicon-remove"
 			style="float:right;margin-right:5px;zoom:1.5;display:none" onclick="$('#welcome-div').hide()"></span>
-		<div id='welcome-div-text'>
-		</div>
+		<div id='welcome-div-text'></div>
 	</div>
 
 	<div id='information-div' class="modal fade" tabindex="-1" role="dialog">
@@ -120,7 +119,7 @@
 		</script>
 	</div><!-- /.modal -->
 
-	{{ sidebar() }}
+	{{ sidebar(typing_data) }}
 	<div id="graph-div" class="graph-overlay"></div>
 
 	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/tree/base_tree.js')}}"></script>

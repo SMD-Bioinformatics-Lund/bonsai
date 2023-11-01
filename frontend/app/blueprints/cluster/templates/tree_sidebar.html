@@ -2,7 +2,7 @@
   <span class="glyphicon glyphicon-question-sign" style="float:right;margin-right:5px" onclick="getHelpBox('{{help_text}}');"></span>
 {% endmacro %}
 
-{% macro sidebar() %}
+{% macro sidebar(typing_data) %}
 <div id='sidebar'>
   <div>
     <a href="/" class="navbar-brand">
@@ -13,6 +13,7 @@
         class="glyphicon glyphicon-question-sign"
         style="font-size:30px;height:50px;margin-right:5px;top:10px"></span></a>
   </div>
+  <h5>Clustering method: <span class="font-italic">{{typing_data}}</span></h5>
   <br>
   <div id='input-output-panel' class='panel panel-default'>
     <div class='panel-heading mst-menu-title' id='file-menu'> <b id='input-output-title'>Inputs/Outputs</b><span

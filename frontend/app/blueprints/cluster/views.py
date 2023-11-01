@@ -111,6 +111,7 @@ def tree():
     """grapetree view."""
     if request.method == "POST":
         newick = request.form.get("newick")
+        typing_data = request.form.get("typing_data")
         samples = json.loads(request.form.get("metadata"))
         # query for sample metadata
         token = TokenObject(**current_user.get_id())
@@ -118,7 +119,7 @@ def tree():
         metadata = gather_metadata(sample_summary["records"])
         data = dict(nwk=newick, **metadata.dict())
         return render_template(
-            "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
+            "ms_tree.html", title=f"{typing_data} cluster", typing_data=typing_data, data=json.dumps(data)
         )
     return url_for("public.index")
 
