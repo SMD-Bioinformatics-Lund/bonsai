@@ -34,9 +34,8 @@ function addSelctedSamplesToBasket(btn) {
             <i class="bi bi-search"></i>
             <span>Find similar</span>
         </span>
-        <span class="loading align-middle" hidden>
-            <span class="spinner-grow text-success spinner-grow-sm" role="status">
-            </span>
+        <span class="loading align-middle d-none">
+            <span class="spinner-grow text-success spinner-grow-sm" role="status"></span>
             Loading...
         </span>
     </button>
@@ -103,6 +102,7 @@ function wait(ms = 2000) {
 }
 
 let fetchJobStatus = async (jobId) => {
+    console.log(`fetch status for ${jobId}`)
     const response = await fetch(`${apiURL}/job/status/${jobId}`)
     return {status: response.status, data: await response.json()}
 }
@@ -128,20 +128,20 @@ const resultParser = (result) => result.data.result
 
 const showSpinner = (element) => {
     // show spinner and hide content
-    const btnContent = element.querySelector('.content')
-    const btnSpinner = element.querySelector('.loading')
-    btnContent.hidden = true
-    btnContent.disabled = true
-    btnSpinner.hidden = false
+    const content = element.querySelector('.content')
+    const spinner = element.querySelector('.loading')
+    content.classList.add("d-none")
+    content.disabled = true
+    spinner.classList.remove("d-none")
 }
 
 const hideSpinner = (element) => {
     // hide spinner and show content
-    const btnContent = element.querySelector('.content')
-    const btnSpinner = element.querySelector('.loading')
-    btnContent.hidden = false
-    btnContent.disabled = false
-    btnSpinner.hidden = true
+    const content = element.querySelector('.content')
+    const spinner = element.querySelector('.loading')
+    content.classList.remove("d-none")
+    content.disabled = false
+    spinner.classList.add("d-none")
 }
 
 async function getSimilarSamplesAndCheckRows(btn) {

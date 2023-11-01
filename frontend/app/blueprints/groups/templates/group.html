@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% import "cell_fmt.html" as cell_format %}
-{% from "toasts.html" import generic_alert_toast %}
 {% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
 
 {% block css %}
@@ -10,11 +9,6 @@
 {% endblock css %}
 
 {% block content %}
-<div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-absolute top-0 end-0 p-3">
-        {{ generic_alert_toast("cluster-toast") }}
-    </div>
-</div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
         <h4 class="card-title me-auto fw-light">{{group_name}}</h4>
@@ -38,19 +32,17 @@
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
                     <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
-                    <div id="cluster-samples-dropdown" class="dropdown">
-                        <button id="cluster-button" class="btn btn-sm btn-outline-success ms-2"
-                                disabled>
-                            <span class="content">
-                                <i class="bi bi-diagram-3-fill"></i>
-                                Cluster
-                            </span>
-                            <span class="loading align-middle" hidden>
-                                <span class="spinner-grow text-success spinner-grow-sm" role="status"></span>
-                                Loading...
-                            </span>
-                        </button>
-                    </div>
+                    <button id="cluster-button" class="btn btn-sm btn-outline-success ms-2"
+                            disabled>
+                        <span class="content">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            Cluster
+                        </span>
+                        <span class="loading align-middle d-none">
+                            <span class="spinner-grow text-light spinner-grow-sm" role="status"></span>
+                            Loading...
+                        </span>
+                    </button>
                 </form>
             </div>
         </nav>
@@ -59,10 +51,10 @@
 </div>
 <form id="open-tree-form" action="{{ url_for('cluster.tree') }}" method="POST" hidden target="_blank">
     <input type="text" name="newick" id="newick-content">
+    <input type="text" name="typing_data" id="typing-data-content">
     <input type="text" name="metadata" id="metadata-content">
     <input type="submit" value="">
 </form>
-
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
     import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
@@ -133,53 +125,41 @@
     window.getSelectedRows = () => grid.getSelection()
     grid.render()
 </script>
-
+<script>
+    const apiURL = "{{ config.BONSAI_API_URL }}"
+    // template code for adding to basket
+    {{ add_to_basket_js() }}
+    // template code for searching similar samples
+    {{ search_similar_js() }}
+</script>
 <script>
     // store url to tree page
     const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
     const orgButtonText = document.getElementById("cluster-button").innerText
 
     // load all javascript after load
-    window.onload = () => {
-    // initialize toasts
-    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-    var toastList = toastElList.map(toastEl => {
-        return new bootstrap.Toast(toastEl)
-    })
-    }
-
     const clusterButtonError = () => {
         // Disable clustering buttin on case of an error
         const button = document.getElementById("cluster-button")
         hideSpinner(button)
     }
 
-    const throwClusterErrorToast = (resp) => {
-        const toastElement = document.getElementById("cluster-toast")
-        const toast = bootstrap.Toast.getInstance(toastElement)
-        const title = toast._element.querySelector('#toast-title')
-        const errorMessage = toast._element.querySelector('#toast-error-message')
-        const stacktraceMessage = toast._element.querySelector('#toast-stack-trace')
-        // define title
-        title.innerText = `Error during clustering, status ${resp.status}`
-        errorMessage.innerText = resp.responseText
-        stacktraceMessage.innerText = ""
-        toast.show()
-    }
-
-    function openTreeView ({newick, metadata}) {
+    async function openTreeView ({newick, typingData}) {
         // Open a tree view as a new tab my creating a form and submit it
         const form = document.getElementById("open-tree-form")
         // add metadata and newick file to form
         const newickInput = form.querySelector("#newick-content")
         newickInput.setAttribute("value", newick)
         const metadataInput = form.querySelector("#metadata-content")
+        const typingDataInput = form.querySelector("#typing-data-content")
+        typingDataInput.setAttribute("value", typingData)
         metadataInput.setAttribute("value", 
             window.sessionStorage.getItem("clusteredSamples")
         )
         const submitBnt = form.querySelector("input[type=submit]")
         submitBnt.click()
     }
+
     // add submit clustering function
     document
     .getElementById("cluster-button")
@@ -191,26 +171,40 @@
         
         // get sample ids for checked samples
         const sampleId = window.getSelectedRows()
-        const typingData = document.getElementById("cluster-typing-data").value
         const distance = document.getElementById("cluster-distance-metric").value
         // if there are more than 1k samples use minhash instead of cgmlst
-        const method = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-clustering-method").value
+        //const typingData = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-typing-data").value
+        const typingData = "minhash"
+        // minhash doesnt support neigbour joining
+        const method = typingData === "minhash" ? "single" : document.getElementById("cluster-clustering-method").value
         // setup and submit clustering job
         const xhr = new XMLHttpRequest()
-        const apiURL = "{{ config.BONSAI_API_URL }}"
         const entrypointURL = `${apiURL}/cluster/${typingData}`
         // add event listeners for processing different outcomes of request
         xhr.addEventListener("load", event => {
             // successful request
             if(xhr.readyState == 4 && xhr.status == 201) {
-                // todo add default parameters
                 // instead open a new tab by mocking a submission
-                openTreeView({newick: xhr.responseText, metadata: "not so much"})
-                hideSpinner(button)
-                button.querySelector("#cluster-btn-text").innerText = orgButtonText
+                const jobId = JSON.parse(xhr.responseText)
+                try {
+                    (async () => {
+                        // start polling for cluster results
+                        let newick = await poll(
+                            async () => fetchJobStatus(jobId.id),  // GET job status
+                            validateJobStatus,  // validator
+                            resultParser,       // parse results
+                            3000                // interval time
+                        )
+                        // open grape tree
+                        openTreeView({newick: newick, typingData: typingData})
+                        hideSpinner(button)
+                    })()
+                } catch (error) {
+                    throwSmallErrorToast(error, "error")
+                }
             } else {
                 clusterButtonError()
-                throwClusterErrorToast(xhr)
+                throwSmallErrorToast(xhr.responseText)
                 console.log(xhr)
             }
         })
@@ -223,7 +217,7 @@
         xhr.addEventListener("error", event => {
             // failed request disable button and warn user
             clusterButtonError()
-            throwClusterErrorToast(xhr)
+            throwSmallErrorToast(xhr.responseText)
         })
 
         // make request
@@ -236,10 +230,6 @@
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
 
-    // template code for adding to basket
-    {{ add_to_basket_js() }}
-    // template code for searching similar samples
-    {{ search_similar_js() }}
 </script>
 {% endblock content %}
 
