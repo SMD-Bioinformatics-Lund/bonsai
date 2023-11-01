@@ -318,10 +318,10 @@ class SimilarSamplesInput(BaseModel):
     """Input parameters for finding similar samples."""
 
     limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")
-    similarity: float = Field(default=0.5, gt=0, title="Similarity threshold"),
-    cluster: bool = Field(default=False, title="Cluster the similar"),
-    typing_method: TypingMethod | None = Field(None, title="Cluster using a specific typing method"),
-    cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar"),
+    similarity: float = Field(default=0.5, gt=0, title="Similarity threshold")
+    cluster: bool = Field(default=False, title="Cluster the similar")
+    typing_method: TypingMethod | None = Field(None, title="Cluster using a specific typing method")
+    cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar")
 
 
 @router.post("/samples/{sample_id}/similar", response_model=SubmittedJob, tags=["minhash", *DEFAULT_TAGS])
@@ -338,7 +338,7 @@ async def read_sample(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    LOG.info(f"ref: {sample_id}, body: {body}")
+    LOG.info(f"ref: {sample_id}, body: {body}, cluster: {body.cluster}")
     if body.cluster:
         submission_info: SubmittedJob = schedule_find_similar_and_cluster(
             sample_id,
