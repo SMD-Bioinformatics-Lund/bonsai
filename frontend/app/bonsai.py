@@ -9,6 +9,9 @@ from requests.structures import CaseInsensitiveDict
 from pydantic import BaseModel
 
 from .models import SampleBasketObject, SubmittedJob
+import logging
+
+LOG = logging.getLogger(__name__)
 
 class TokenObject(BaseModel):
     """Token object"""
@@ -284,7 +287,7 @@ def find_samples_similar_to_reference(headers, **kwargs) -> SubmittedJob:
     resp = requests.post(
         url,
         headers=headers,
-        json={"sample_id": sample_id, "similarity": similarity, "limit": limit},
+        json={"similarity": similarity, "limit": limit, "cluster": False},
     )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
