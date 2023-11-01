@@ -281,10 +281,10 @@ def find_samples_similar_to_reference(headers, **kwargs) -> SubmittedJob:
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
     current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
-    resp = requests.get(
+    resp = requests.post(
         url,
         headers=headers,
-        params={"sample_id": sample_id, "similarity": similarity, "limit": limit},
+        json={"sample_id": sample_id, "similarity": similarity, "limit": limit},
     )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
@@ -304,12 +304,12 @@ def find_and_cluster_similar_samples(headers, **kwargs) -> SubmittedJob:
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
     current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
-    resp = requests.get(
+    resp = requests.post(
         url,
         headers=headers,
-        params={"sample_id": sample_id, "similarity": similarity, 
-                "limit": limit, "cluster": True, "cluster_method": cluster_method, 
-                "typing_method": typing_method,
+        json={"sample_id": sample_id, "similarity": similarity, 
+              "limit": limit, "cluster": True, "cluster_method": cluster_method, 
+              "typing_method": typing_method,
         },
     )
     resp.raise_for_status()
