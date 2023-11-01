@@ -67,7 +67,6 @@
         <script>
             // initialize toasts
             var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-            console.log(toastElList)
             var toastList = toastElList.map(toastEl => {
                 return new bootstrap.Toast(toastEl)
             })
