@@ -201,7 +201,7 @@ def find_similar_samples(sample_id):
         )
     except Exception as error:
         return {"status": 500, "details": str(error)}, 500
-    return resp, 200
+    return resp.model_dump(), 200
 
 
 @samples_bp.route("/samples/<sample_id>/comment", methods=["POST"])
