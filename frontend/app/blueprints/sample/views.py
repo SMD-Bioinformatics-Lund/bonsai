@@ -6,9 +6,9 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for,
 from flask_login import current_user, login_required
 
 from app.bonsai import (TokenObject, cgmlst_cluster_samples,
-                        find_samples_similar_to_reference, get_group_by_id,
-                        get_sample_by_id, post_comment_to_sample,
-                        remove_comment_from_sample,
+                        find_samples_similar_to_reference, find_and_cluster_similar_samples, 
+                        get_group_by_id, get_sample_by_id, 
+                        post_comment_to_sample, remove_comment_from_sample,
                         update_sample_qc_classification)
 from app.models import (NT_TO_AA, BadSampleQualityAction, ElementType,
                         PredictionSoftware)
@@ -167,7 +167,7 @@ def sample(sample_id):
 
     # Get the most similar samples and calculate the pair-wise similaity
     typing_method = config["SAMPLE_VIEW_TYPING_METHOD"]
-    job = find_samples_similar_to_reference(
+    job = find_and_cluster_similar_samples(
         token, sample_id=sample_id, 
         limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"], 
         similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"],

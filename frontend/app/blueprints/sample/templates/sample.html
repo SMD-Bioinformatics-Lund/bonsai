@@ -110,23 +110,22 @@
 
 
 {% macro similar_samples_card(data) %}
-<div class="card col-md-auto {% if data is none %}border-warning{% endif %}" style="width: 24rem;">
-    <div class="card-header">Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}</div>
-    {{ data }}
+<div id="similar-samples-card"
+     class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
+     style="width: 24rem;">
+    <div class="card-header">
+        Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}
+    </div>
     <div id="similar-samples-cluster" class="card-body" data-job-id="{{data.job.id}}">
         <div class="d-flex justify-content-center loading my-5">
             <div class="spinner-border text-success" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-        </div>
-        <div id="tree-body" class="job-success" 
-             style="pointer-events: none;" hidden></div>
-        <div class="job-failed" hidden>
-            <p class="card-text">
-                Failed to find samples. 
-                Please contact the administrator.
-            </p>
+        <div class="content">
+            <div id="tree-body" class="job-success" 
+                 style="pointer-events: none;">
+            </div>
         </div>
     </div>
 </div>
@@ -303,15 +302,17 @@
     </div>
 </div>
 <div class="container-fluid">
-<div class="row">
-    {{ sidebar(sample, bad_qc_actions) }}
-    <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" data-bs-spy="scroll" data-bs-target="#toc-contents">
-        <div class="row">
-            <div class="col-lg-2 order-md-1 sticky-top">
-                {{ table_of_content() }}
-            </div>
-            <div class="col-sm-12 col-md-10 order-md-0 mt-2">
-                {{ sample_header(sample) }}
+    <div class="row">
+        {{ sidebar(sample, bad_qc_actions) }}
+        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" 
+            data-bs-spy="scroll" data-bs-target="#toc-contents">
+            <div class="row">
+                <div class="col-lg-2 order-md-1 sticky-top">
+                    {{ table_of_content() }}
+                </div>
+                <div class="col-sm-12 col-md-10 order-md-0 mt-2">
+                    {{ sample_header(sample) }}
+                </div>
             </div>
             <div class="col col-sm-12 col-md-10 order-md-2">
                 <h5>Epidemiological Typing</h5>
@@ -403,6 +404,121 @@
     </div>
 </div>
 <script>
+    const apiURL = "{{ config.BONSAI_API_URL }}"
+    const sampleId = document.getElementById("sample-id-heading").textContent 
+
+    // functions for retrieving and drawing dendrogram
+    async function poll(fn, fnCondition, resultParser, ms) {
+        // utility function for polling data
+        let result = await fn()
+        while (fnCondition(result)) {
+            await wait(ms)
+            result = await fn()
+        }
+        return resultParser(result)
+    }
+
+    function wait(ms = 2000) {
+        // wait between fetch jobs
+        return new Promise(resolve => {
+            setTimeout(resolve, ms)
+        })
+    }
+
+    let fetchJobStatus = async (jobId) => {
+        // fetch job status from bonsai api
+        const response = await fetch(`${apiURL}/job/status/${jobId}`)
+        return {status: response.status, data: await response.json()}
+    }
+
+    function validateJobStatus(result) {
+        // check job status
+        // returns true if run is invalid
+        let isValid = false
+        const jobInfo = result.data
+        if ( jobInfo.status === "finished" ) {
+            // if job has finished report result
+            isValid = true
+        } else if ( jobInfo.status === "failed" ) {
+            // if job failed raise error
+            throw new Error(`Job failed: ${jobInfo.result}`)
+            isValid = true
+        } 
+        console.log(`Job status: ${jobInfo.status}; is valid ${isValid}`)
+        return !isValid
+    }
+
+    // get result from job info object
+    const resultParser = (result) => result.data.result
+
+    const showSpinner = (element) => {
+        // show spinner and hide content
+        const content = element.querySelector('.content')
+        const spinner = element.querySelector('.loading')
+        content.classList.add("d-none")
+        content.disabled = true
+        spinner.classList.remove("d-none")
+        spinner.hidden = false
+    }
+
+    const hideSpinner = (element) => {
+        // hide spinner and show content
+        const content = element.querySelector('.content')
+        const spinner = element.querySelector('.loading')
+        content.classList.remove("d-none")
+        content.disabled = false
+        spinner.classList.add("d-none")
+    }
+
+    function drawDendrogram(newick, sampleId) {
+        const tree = new TidyTree(newick, { 
+            parent: "#tree-body",
+            //layout: "circle",
+            layout: "vertical",
+            type: "dendrogram",
+            mode: "square",
+            ruler: false,
+            leafLabels: true,
+            margin: [10, 10, 70, 30]
+        });
+        // hightlight current sample
+        tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+    }
+
+    async function fetchNewickAndDrawDendrogram() {
+        // wait until cluster job has fhinished 
+        // and then draw dendrogram
+        const jobId = (
+            document.getElementById("similar-samples-cluster")
+                    .getAttribute("data-job-id"))
+        const card = document.getElementById('similar-samples-card')
+        // if job is not none
+        if ( typeof jobId === 'string' ) {
+            // poll job result
+            try {
+                let result = await poll(
+                    async () => fetchJobStatus(jobId),  // GET job status
+                    validateJobStatus,  // validator
+                    resultParser,       // parse results
+                    3000                // interval time
+                )
+                hideSpinner(card)
+                drawDendrogram(result, sampleId)
+            } catch (err) {
+                card.hidden = true
+                throwSmallErrorToast(err, "error")
+            }
+        } else {
+            card.hidden = true
+            throwSmallErrorToast("No cluster job detected", "error")
+        }
+    }
+    window.onload = () => {
+        // run function when window have loaded
+        fetchNewickAndDrawDendrogram()
+    }
+</script>
+<script>
     //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
@@ -416,24 +532,6 @@
         })
     }
 
-    //const similarSamples = {{ similar_samples | tojson }}
-    const sampleId = "{{sample.sample_id}}"
-    const similarSamplesJob = document.getElementById("similar-samples-cluster")
-    debugger
-    if ( similarSamples ) {
-        const tree = new TidyTree(similarSamples.newick, { 
-            parent: "#tree-body",
-            //layout: "circle",
-            layout: "vertical",
-            type: "dendrogram",
-            mode: "square",
-            ruler: false,
-            leafLabels: true,
-            margin: [10, 10, 70, 30]
-        });
-        tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
-    }
-    
     // handle sample qc rejections
     document.getElementById("passed-qc-btn").addEventListener("click", () => {
         // enable selction of actions to take after rejecting a sample
