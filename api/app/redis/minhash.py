@@ -1,20 +1,13 @@
 """Operations on minhash signatures."""
 import logging
 from typing import List
-from app.redis import redis
+from .queue import redis
 from rq import Retry
 from rq.job import Dependency
-from ..models.base import RWModel
-from ..internal.cluster import ClusterMethod, TypingMethod
+from . import SubmittedJob, ClusterMethod, TypingMethod
 
 
 LOG = logging.getLogger(__name__)
-
-class SubmittedJob(RWModel):
-    """Container for submitted jobs."""
-
-    id: str
-    task: str
 
 
 def schedule_add_genome_signature(sample_id: str, signature) -> SubmittedJob | str:

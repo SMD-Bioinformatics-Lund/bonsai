@@ -1,5 +1,4 @@
 import logging
-import pathlib
 from typing import Annotated, Dict, List
 
 from pymongo.errors import DuplicateKeyError
@@ -14,7 +13,8 @@ from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
-from ..crud.minhash import (schedule_add_genome_signature, 
+from ..redis import ClusterMethod, TypingMethod
+from ..redis.minhash import (schedule_add_genome_signature, 
                             schedule_add_genome_signature_to_index,
                             schedule_find_similar_samples,
                             schedule_find_similar_and_cluster,
@@ -28,7 +28,6 @@ from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
                              PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
 from ..utils import format_error_message
-from ..internal.cluster import ClusterMethod, TypingMethod
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()

@@ -173,8 +173,7 @@
         const sampleId = window.getSelectedRows()
         const distance = document.getElementById("cluster-distance-metric").value
         // if there are more than 1k samples use minhash instead of cgmlst
-        //const typingData = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-typing-data").value
-        const typingData = "minhash"
+        const typingData = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-typing-data").value
         // minhash doesnt support neigbour joining
         const method = typingData === "minhash" ? "single" : document.getElementById("cluster-clustering-method").value
         // setup and submit clustering job

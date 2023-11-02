@@ -18,7 +18,7 @@ class RedisQueue:
         """Setup connection and define queues."""
         self.connection = Redis(REDIS_HOST, REDIS_PORT)
         self.minhash: Queue = Queue('minhash', connection=self.connection)
-        self.cgmlst: Queue = Queue('cgmlst', connection=self.connection)
+        self.allele: Queue = Queue('allele_cluster', connection=self.connection)
 
 
 redis = RedisQueue()
@@ -60,10 +60,3 @@ def check_redis_job_status(job_id: str) -> JobStatus:
     if job_info.status == JobStatusCodes.FAILED:
         LOG.warning(f"Redis job {JobStatusCodes.FAILED}; {job.exc_info}")
     return job_info
-
-
-def connect_to_redis():
-    """Setup connection to redis message queue."""
-    LOG.info("Initiate connection to Redis")
-    redis.setup()  # initiate collections
-    LOG.info("Connection successfull")

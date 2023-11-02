@@ -1,5 +1,5 @@
 """Routes for interacting with submitted jobs."""
-from ..redis import check_redis_job_status, JobStatus
+from ..redis.queue import check_redis_job_status, JobStatus
 from fastapi import APIRouter, status
 import logging
 

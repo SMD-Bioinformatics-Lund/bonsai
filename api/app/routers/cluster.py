@@ -8,12 +8,11 @@ from pathlib import Path
 
 from ..crud.errors import EntryNotFound
 from ..crud.sample import TypingProfileOutput, get_typing_profiles, get_signature_path_for_samples
-from ..crud.minhash import schedule_add_genome_signature_to_index, schedule_cluster_samples
+from ..redis import DistanceMethod, ClusterMethod, TypingMethod, MsTreeMethods
+from ..redis.minhash import schedule_add_genome_signature_to_index
+from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.allele_cluster import schedule_cluster_samples as schedule_allele_cluster_samples
 from ..db import db
-from ..internal.cluster import (ClusterMethod,  # cluster_on_allele_profile,
-                                DistanceMethod,
-                                TypingMethod,
-                                cluster_on_allele_profile_grapetree_mstrees)
 from ..models.base import RWModel
 
 LOG = logging.getLogger(__name__)
@@ -28,8 +27,8 @@ WRITE_PERMISSION = "cluster:write"
 
 class clusterInput(RWModel):
     sample_ids: list[str] = Field(..., min_length=2, alias="sampleIds")
-    distance: DistanceMethod
-    method: ClusterMethod
+    distance: DistanceMethod | None = None
+    method: ClusterMethod | MsTreeMethods
 
     class Config:
         use_enum_values = False
@@ -50,8 +49,7 @@ async def cluster_samples(
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
     if typing_method == TypingMethod.MINHASH:
-        job = schedule_cluster_samples(clusterInput.sample_ids, clusterInput.method)
-        return job
+        job = schedule_minhash_cluster_samples(clusterInput.sample_ids, clusterInput.method)
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(
@@ -62,13 +60,8 @@ async def cluster_samples(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=str(error),
             )
-        newick_tree: str = cluster_on_allele_profile_grapetree_mstrees(profiles)
-        # sanity check that all samples had the desired typing result in the database
-        # newick_tree: str = cluster_on_allele_profile(
-        #     profiles, clusterInput.method, clusterInput.distance
-        # )
-
-    return newick_tree
+        job = schedule_allele_cluster_samples(profiles, clusterInput.method)
+    return job
 
 
 class indexInput(RWModel):
