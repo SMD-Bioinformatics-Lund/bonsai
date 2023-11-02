@@ -159,7 +159,7 @@ async function getSimilarSamplesAndCheckRows(btn) {
                     resultParser,       // parse results
                     3000                // interval time
                 )
-                window.action('select', () => result.map(sample => sample.sample_id))
+                window.action('select', result.map(sample => sample.sample_id))
                 hideSpinner(parentElem)
             } catch (err) {
                 throwSmallErrorToast("Error while finding similar samples")
