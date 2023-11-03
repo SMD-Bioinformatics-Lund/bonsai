@@ -31,7 +31,7 @@
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
-                    <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="neighbor_joining">
+                    <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="MSTreeV2">
                     <button id="cluster-button" class="btn btn-sm btn-outline-success ms-2"
                             disabled>
                         <span class="content">
@@ -125,7 +125,7 @@
     {{ add_to_basket_js() }}
     // template code for searching similar samples
     {{ search_similar_js() }}
-</>
+</script>
 <script>
     // store url to tree page
     const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
