@@ -118,14 +118,14 @@
 
     window.getSelectedRows = () => grid.getSelection()
     grid.render()
-</form>
+</script>
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
     // template code for adding to basket
     {{ add_to_basket_js() }}
     // template code for searching similar samples
     {{ search_similar_js() }}
-</script>
+</>
 <script>
     // store url to tree page
     const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
