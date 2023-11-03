@@ -102,16 +102,33 @@
         <div class="row">
             <div class="col-auto">
                 {% set has_same_profile = samples | has_same_analysis_profile %}
-                <form action="{{ url_for('cluster.cluster_and_display_tree') }}" method="POST" target="_blank">
-                    <input name="sampleIds" type="text" value='{{ samples | default("") | tojson }}' hidden>
+                <div id="basket-cluster-samples" 
+                     class="dropdown"
+                     data-bi-tree-route="{{url_for('cluster.cluster')}}">
+                    <input name="sample-ids" type="text" value='{{ samples | default("") | tojson }}' hidden>
                     <button 
-                      type="submit" 
-                      class="btn btn-success" 
+                      class="btn btn-success dropdown-toggle" 
+                      type="button" data-bs-toggle="dropdown"
                       {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
                     >
-                        Cluster
+                        <span class="content">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            Cluster
+                        </span>
+                        <span class="loading align-middle d-none">
+                            <span class="spinner-grow text-light spinner-grow-sm" role="status"></span>
+                            Loading...
+                        </span>
                     </button>
-                </form>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" 
+                               onclick="clusterSamplesInBasket(this)"
+                               data-bi-typing-method="cgmlst">cgMLST</a>
+                        </li>
+                        <!--<li><a class="dropdown-item" href="#">minhash</a></li> -->
+                    </ul>
+                </div>
             </div>
             <div class="col-auto">
                 <div class="dropdown">

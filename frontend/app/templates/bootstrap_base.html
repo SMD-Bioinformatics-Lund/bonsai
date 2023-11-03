@@ -37,17 +37,6 @@
         {% block navbar %}
         {% endblock navbar %}
         {# toast #}
-        <div aria-live="polite" aria-atomic="true" class="position-relative">
-            <div class="toast-container position-absolute top-0 end-0 p-3">
-                <div id="small-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="d-flex">
-                        <div id="toast-error-message" class="toast-body"></div>
-                        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        <small id="toast-time"></small>
-                    </div>
-                </div>
-            </div>
-        </div>
         {# flashed info #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -73,10 +62,23 @@
                 return new bootstrap.Toast(toastEl)
             })
 
-            function throwSmallToast(message, type="info"){
-                const toastElement = document.querySelector(".toast-container .toast")
+            const throwSmallToast = (message, type="info") => {
+                // get template toast element
+                const toastTemplate = document.getElementById("small-toast-template")
+
+                // copy new element
+                const toastElement = toastTemplate.content.querySelector(".toast").cloneNode(true)
+
+                // append new toast to DOM
+                const toastContainer = document.getElementById("toast-container")
+                toastContainer.appendChild(toastElement)
+
+                // instanciate new toast element
+                const toast = new bootstrap.Toast(toastElement)
+
+                // select button
                 const btn = toastElement.querySelector("button")
-                const toast = bootstrap.Toast.getInstance(toastElement)
+                //const toast = bootstrap.Toast.getInstance(toastElement)
                 // style toast depending on type
                 switch(type) {
                     case "info":
@@ -105,5 +107,15 @@
             {% block content %}
             {% endblock content %}
         {% endblock body%}
+        <div id="toast-container" class="toast-container position-absolute bottom-0 end-0 p-3"></div>
     </body>
+    <template id="small-toast-template">
+        <div id="small-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div id="toast-error-message" class="toast-body"></div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <small id="toast-time"></small>
+            </div>
+        </div>
+    </template>
 </html>

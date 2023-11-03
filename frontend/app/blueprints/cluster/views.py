@@ -129,31 +129,26 @@ def tree():
 
 @cluster_bp.route("/cluster_samples", methods=["GET", "POST"])
 @login_required
-def cluster_and_display_tree():
+def cluster():
     """Cluster samples and display results in a view."""
     if request.method == "POST":
 
-        LOG.info(request.form.get("sampleIds", ""))
+        body = request.get_json()
         sample_ids = [
             sample["sample_id"]
-            for sample in json.loads(request.form.get("sampleIds", ""))
+            for sample in body["sample_ids"]
         ]
-        LOG.info(sample_ids)
+        typing_method = body.get("typing_method", "cgmlst")
+        cluster_method = body.get("cluster_method", "MSTreeV2")
+        LOG.error(f"sid: {sample_ids}; method: {typing_method}, cluster: {cluster_method}, body: {body}")
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
-            newick = cluster_samples(
-                token, sample_ids=sample_ids, typing_method="cgmlst", cluster_method="MSTreeV2"
+            job = cluster_samples(
+                token, sample_ids=sample_ids, typing_method=typing_method, cluster_method=cluster_method
             )
         except HTTPError as error:
             flash(str(error), "danger")
         else:
-            # get metadata
-            samples = get_samples_by_id(token, sample_ids=sample_ids, limit = 0)
-            metadata = gather_metadata(samples["records"])
-            # query for sample metadata
-            data = dict(nwk=newick, **metadata.dict())
-            return render_template(
-                "ms_tree.html", title="cgMLST Cluster", data=json.dumps(data)
-            )
+            return job.model_dump(mode='json')
     return redirect(url_for("public.index"))
