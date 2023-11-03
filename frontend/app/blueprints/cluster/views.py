@@ -9,6 +9,9 @@ from requests.exceptions import HTTPError
 
 from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from pydantic import BaseModel
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class DataType(str, Enum):
@@ -129,15 +132,18 @@ def tree():
 def cluster_and_display_tree():
     """Cluster samples and display results in a view."""
     if request.method == "POST":
+
+        LOG.info(request.form.get("sampleIds", ""))
         sample_ids = [
             sample["sample_id"]
             for sample in json.loads(request.form.get("sampleIds", ""))
         ]
+        LOG.info(sample_ids)
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
             newick = cluster_samples(
-                token, sample_ids=sample_ids, typing_method="cgmlst"
+                token, sample_ids=sample_ids, typing_method="cgmlst", cluster_method="MSTreeV2"
             )
         except HTTPError as error:
             flash(str(error), "danger")
