@@ -199,11 +199,11 @@
                         hideSpinner(button)
                     })()
                 } catch (error) {
-                    throwSmallErrorToast(error, "error")
+                    throwSmallToast(error, "error")
                 }
             } else {
                 clusterButtonError()
-                throwSmallErrorToast(xhr.responseText)
+                throwSmallToast(xhr.responseText)
                 console.log(xhr)
             }
         })
@@ -216,7 +216,7 @@
         xhr.addEventListener("error", event => {
             // failed request disable button and warn user
             clusterButtonError()
-            throwSmallErrorToast(xhr.responseText)
+            throwSmallToast(xhr.responseText)
         })
 
         // make request

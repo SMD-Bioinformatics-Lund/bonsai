@@ -73,7 +73,7 @@
                 return new bootstrap.Toast(toastEl)
             })
 
-            function throwSmallErrorToast(message, type="info"){
+            function throwSmallToast(message, type="info"){
                 const toastElement = document.querySelector(".toast-container .toast")
                 const btn = toastElement.querySelector("button")
                 const toast = bootstrap.Toast.getInstance(toastElement)

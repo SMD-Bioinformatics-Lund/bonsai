@@ -1,5 +1,4 @@
 {% extends "layout.html" %}
-{% from "toasts.html" import generic_small_alert_toast %}
 {% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
 
 {% block css %}
@@ -9,11 +8,6 @@
 {% endblock css %}
 
 {% block content %}
-<div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-absolute top-0 end-0 p-3">
-        {{ generic_small_alert_toast("cluster-toast", "bg-warning border-0") }}
-    </div>
-</div>
 <div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
     <div class="card-body">
         <h5 class="card-title text-uppercase fw-light">Groups</h5>
@@ -194,25 +188,6 @@
 
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
-    // load all javascript after load
-    window.onload = () => {
-    // initialize toasts
-    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-    var toastList = toastElList.map(toastEl => {
-        return new bootstrap.Toast(toastEl)
-    })
-    }
-
-    function throwSmallErrorToast(message){
-        const toastElement = document.getElementById("cluster-toast")
-        const toast = bootstrap.Toast.getInstance(toastElement)
-        const errorMessage = toast._element.querySelector('#toast-error-message')
-
-        // add custom error message
-        errorMessage.innerText = message
-        toast.show()
-    }
-
     // template code for adding to basket
     {{ add_to_basket_js() }}
     // template code for searching similar samples
