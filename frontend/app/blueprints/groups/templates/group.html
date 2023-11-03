@@ -49,12 +49,6 @@
         <div id="data-table"></div>
     </div>
 </div>
-<form id="open-tree-form" action="{{ url_for('cluster.tree') }}" method="POST" hidden target="_blank">
-    <input type="text" name="newick" id="newick-content">
-    <input type="text" name="typing_data" id="typing-data-content">
-    <input type="text" name="metadata" id="metadata-content">
-    <input type="submit" value="">
-</form>
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
     import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
@@ -124,7 +118,7 @@
 
     window.getSelectedRows = () => grid.getSelection()
     grid.render()
-</script>
+</form>
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
     // template code for adding to basket

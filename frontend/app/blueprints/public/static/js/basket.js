@@ -1,5 +1,16 @@
 // functions relating to the sample basket and navbar
-async function startClusteringJob() {
+async function openGrapeTree({newick, sampleIds, clusterMethod}) {
+    // Open grape tree
+    const form = document.getElementById("open-tree-form")
+    // add metadata and newick file to form
+    const newickInput = form.querySelector("#newick-content")
+    newickInput.setAttribute("value", newick)
+    const metadataInput = form.querySelector("#metadata-content")
+    const typingDataInput = form.querySelector("#typing-data-content")
+    typingDataInput.setAttribute("value", clusterMethod)
+    metadataInput.setAttribute("value", JSON.stringify({sample_id: sampleIds}))
+    const submitBnt = form.querySelector("input[type=submit]")
+    submitBnt.click()
 }
 
 // cluter all samples in basket
@@ -8,7 +19,7 @@ async function clusterSamplesInBasket(element) {
     // base dropdown element
     const baseElement = document.querySelector("#basket-cluster-samples")
     const btn = baseElement.querySelector(".btn")
-    const treeApiRoute = baseElement.getAttribute("data-bi-tree-route") 
+    const clusterApiRoute = baseElement.getAttribute("data-bi-cluster-route") 
     const sampleIds = JSON.parse(baseElement.querySelector("input[name=sample-ids]").value)
     // construct body to pass
     let body
@@ -37,7 +48,7 @@ async function clusterSamplesInBasket(element) {
     // submit job to API
     showSpinner(btn)
     try {
-        const response = await fetch(treeApiRoute, {
+        const response = await fetch(clusterApiRoute, {
             method: "POST",
             headers: { 
                 'Accept': 'application/json',
@@ -61,7 +72,11 @@ async function clusterSamplesInBasket(element) {
         )
         hideSpinner(btn)
         // open dendrogram
-        drawDendrogram(result, sampleId)
+        openGrapeTree({
+            newick: result,  // newick string
+            sampleIds: sampleIds.map(sample => sample.sample_id),  // get sampleIds from seesion
+            clusterMethod: body.cluster_method  // which cluster method to display
+        })
     } catch (error) {
         throwSmallToast('A problem occured during clustering', 'error')
         hideSpinner(btn)

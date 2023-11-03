@@ -140,12 +140,12 @@ def cluster():
         ]
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
-        LOG.error(f"sid: {sample_ids}; method: {typing_method}, cluster: {cluster_method}, body: {body}")
+        LOG.error(f"Got cluster request, samples: {sample_ids}; method: {typing_method}, cluster: {cluster_method}")
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
             job = cluster_samples(
-                token, sample_ids=sample_ids, typing_method=typing_method, cluster_method=cluster_method
+                token, sample_ids=sample_ids, typing_method=typing_method, method=cluster_method
             )
         except HTTPError as error:
             flash(str(error), "danger")
