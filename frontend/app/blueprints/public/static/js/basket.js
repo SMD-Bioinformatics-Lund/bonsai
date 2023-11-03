@@ -76,7 +76,7 @@ async function clusterSamplesInBasket(element) {
         openGrapeTree({
             newick: result,  // newick string
             sampleIds: sampleIds.map(sample => sample.sample_id),  // get sampleIds from seesion
-            clusterMethod: body.cluster_method  // which cluster method to display
+            clusterMethod: body.typing_method  // which cluster method to display
         })
     } catch (error) {
         throwSmallToast('A problem occured during clustering', 'error')
