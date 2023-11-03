@@ -42,6 +42,7 @@ async function clusterSamplesInBasket(element) {
             body = {
                 sample_ids: sampleIds,
                 typing_method: typingMethod,
+                cluster_method: "single",
             }
             break
     }
