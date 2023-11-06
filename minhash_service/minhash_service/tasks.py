@@ -16,7 +16,11 @@ def add_signature(sample_id: str, signature) -> str:
     """
     Find signatures similar to reference signature.
 
-    Retun list of similar signatures that describe signature and similarity.
+    :param sample_id str: the sample_id
+    :param signature Dict[str, str]: sourmash signature file in JSON format
+
+    :return: path to the signature
+    :rtype: str
     """
     signature_path = write_signature(sample_id, signature)
     return str(signature_path)
@@ -24,16 +28,26 @@ def add_signature(sample_id: str, signature) -> str:
 
 def remove_signature(sample_id: str) -> Dict[str, str | bool]:
     """
-    Find signatures similar to reference signature.
+    Remove a signature from the database and index.
 
-    Retun list of similar signatures that describe signature and similarity.
+    :param sample_id str: the sample_id of the signature to remove
+
+    :return: The status of the removed job
+    :rtype: Dict[str, str | bool]
     """
     status: bool = remove_signature_file(sample_id)
     return {"sample_id": sample_id, "removed": status}
 
 
-def index(signature_files: List[Path]):
-    """Index sourmash signatures."""
+def index(signature_files: List[Path]) -> str:
+    """
+    Add signatures to sourmash SBT index.
+    
+    :param signature_files List[Path]: The path to multiple signature files
+
+    :return: result message
+    :rtype: str
+    """
     LOG.info("Indexing signatures...")
     res = add_signatures_to_index(signature_files)
     signatures = ", ".join([file.name for file in signature_files])
@@ -50,7 +64,12 @@ def similar(
     """
     Find signatures similar to reference signature.
 
-    Retun list of similar signatures that describe signature and similarity.
+    :param sample_id str: The id of reference sample
+    :param min_similarity float: Minimum similarity score
+    :param limit int | None: Limit the result to x samples, default to None
+
+    :return: list of the similar signatures
+    :rtype: SimilarSignatures
     """
     samples = get_similar_signatures(
         sample_id, min_similarity=min_similarity, limit=limit
@@ -63,7 +82,17 @@ def similar(
 
 
 def cluster(sample_ids: List[str], cluster_method: str = "single") -> str:
-    """Cluster multiple sample on their sourmash signatures."""
+    """
+    Cluster multiple sample on their sourmash signatures.
+
+    :param sample_ids List[str]: The sample ids to cluster
+    :param cluster_method int: The linkage or clustering method to use, default to single
+
+    :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
+
+    :return: clustering result in newick format
+    :rtype: str
+    """
     # validate input
     try:
         method = ClusterMethod(cluster_method)
@@ -82,7 +111,19 @@ def find_similar_and_cluster(
     limit: int | None = None,
     cluster_method: str = "single",
 ) -> str:
-    """Find similar samples and cluster them on their minhash profile."""
+    """
+    Find similar samples and cluster them on their minhash profile.
+
+    :param sample_id str: The id of reference sample
+    :param min_similarity float: Minimum similarity score
+    :param limit int | None: Limit the result to x samples, default to None
+    :param cluster_method int: The linkage or clustering method to use, default to single
+
+    :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
+
+    :return: clustering result in newick format
+    :rtype: str
+    """
     # validate input
     try:
         method = ClusterMethod(cluster_method)

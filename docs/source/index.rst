@@ -15,6 +15,8 @@ Bonsai
    :caption: Developer guide
 
    /dev/index
+   /dev/minhash
+   /dev/allele_clustering
 
 .. toctree::
    :maxdepth: 2

@@ -1,4 +1,12 @@
 # Configuration file for the Sphinx documentation builder.
+import pathlib
+import sys
+
+# add apps to PATH
+apps = ["frontend", "api", "minhash_service", "allele_cluster_service"]
+base_dir = pathlib.Path.cwd().parent.parent
+for app in apps:
+    sys.path.insert(0, str(base_dir.joinpath(app)))
 
 # -- Project information
 project = 'Bonsai'
@@ -17,8 +25,10 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.intersphinx',
     'sphinx.ext.graphviz',
+    'sphinx.ext.napoleon',
     'myst_parser',
 ]
+autosummary_generate = True
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
@@ -31,6 +41,11 @@ templates_path = ['_templates']
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
+html_static_path = ['_static']
+html_logo = 'img/logo.png'
+html_theme_options = {
+    'logo_only': True,
+}
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
