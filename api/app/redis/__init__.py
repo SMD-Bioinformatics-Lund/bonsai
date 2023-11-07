@@ -1,8 +1,9 @@
 """Module for setting up the redis queue and scheduling jobs."""
 
+from enum import Enum
+
 from ..models.base import RWModel
 from .queue import redis
-from enum import Enum
 
 
 class SubmittedJob(RWModel):

@@ -4,10 +4,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-from bson.objectid import ObjectId
-
 import sourmash
 from app import config
+from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 
 from ..crud.location import get_location
@@ -106,11 +105,11 @@ async def get_samples_summary(
     results = await cursor.to_list(None)
 
     if include_mlst:
-        # replace mlst with the nested result as a work around 
+        # replace mlst with the nested result as a work around
         # for mongo version < 5
         upd_results = []
         for res in results:
-            res['mlst'] = res['mlst']['result']
+            res["mlst"] = res["mlst"]["result"]
             upd_results.append(res)
         results = upd_results.copy()
     return results
@@ -350,13 +349,17 @@ async def get_typing_profiles(
     return results
 
 
-async def get_signature_path_for_samples(db: Database, sample_ids: list[str]) -> TypingProfileOutput:
+async def get_signature_path_for_samples(
+    db: Database, sample_ids: list[str]
+) -> TypingProfileOutput:
     """Get genome signature paths for samples."""
     LOG.info("Get signatures for samples")
-    query = {"$and": [                             # query for documents with
-            {"sample_id": {"$in": sample_ids}},    # matching sample ids
-            {"genome_signature": {"$ne": None}},   # AND genome_signatures not null
-        ]}
+    query = {
+        "$and": [  # query for documents with
+            {"sample_id": {"$in": sample_ids}},  # matching sample ids
+            {"genome_signature": {"$ne": None}},  # AND genome_signatures not null
+        ]
+    }
     projection = {"_id": 0, "sample_id": 1, "genome_signature": 1}  # projection
     LOG.debug(f"Query: {query}; projection: {projection}")
     cursor = db.sample_collection.find(query, projection)
@@ -375,20 +378,20 @@ def get_samples_similar_to_reference(
     """
 
     # load sourmash index
-    LOG.debug(f'Getting samples similar to: {sample_id}')
+    LOG.debug(f"Getting samples similar to: {sample_id}")
     signature_dir = Path(config.GENOME_SIGNATURE_DIR)
     index_path = signature_dir.joinpath(f"genomes.sbt.zip")
     # ensure that index exist
     if not index_path.is_file():
         raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
-    LOG.debug(f'Load index file to memory')
+    LOG.debug(f"Load index file to memory")
     tree = sourmash.load_file_as_index(str(index_path))
 
     # load reference sequence
     query_signature_path = signature_dir.joinpath(f"{sample_id}.sig")
     if not query_signature_path.is_file():
         raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
-    LOG.debug(f'Loading signatures in path: {str(query_signature_path)}')
+    LOG.debug(f"Loading signatures in path: {str(query_signature_path)}")
     query_signature = list(
         sourmash.load_file_as_signatures(str(query_signature_path), ksize=kmer_size)
     )
@@ -398,12 +401,12 @@ def get_samples_similar_to_reference(
         query_signature = query_signature[0]
 
     # query for similar sequences
-    LOG.debug(f'Searching for signatures with similarity > {min_similarity}')
+    LOG.debug(f"Searching for signatures with similarity > {min_similarity}")
     result = tree.search(query_signature, threshold=min_similarity)
 
     # read sample information of similar samples
     samples = []
-    LOG.debug(f'Applying limit: {limit}')
+    LOG.debug(f"Applying limit: {limit}")
     for itr_no, (similarity, found_sig, _) in enumerate(result):
         # limit the number of samples
         if limit and limit < itr_no:

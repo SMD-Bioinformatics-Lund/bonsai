@@ -4,7 +4,6 @@ from gzip import READ
 from typing import List
 
 from bson import ObjectId
-
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import (HTTPBasic, HTTPBasicCredentials,

@@ -1,17 +1,18 @@
 """Declaration of views for samples"""
 from itertools import chain, groupby
-from requests.exceptions import HTTPError
-
-from flask import Blueprint, flash, redirect, render_template, request, url_for, current_app
-from flask_login import current_user, login_required
 
 from app.bonsai import (TokenObject, cgmlst_cluster_samples,
-                        find_samples_similar_to_reference, find_and_cluster_similar_samples, 
-                        get_group_by_id, get_sample_by_id, 
-                        post_comment_to_sample, remove_comment_from_sample,
+                        find_and_cluster_similar_samples,
+                        find_samples_similar_to_reference, get_group_by_id,
+                        get_sample_by_id, post_comment_to_sample,
+                        remove_comment_from_sample,
                         update_sample_qc_classification)
 from app.models import (NT_TO_AA, BadSampleQualityAction, ElementType,
                         PredictionSoftware)
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, url_for)
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
 
 samples_bp = Blueprint(
     "samples",
@@ -40,7 +41,7 @@ def samples():
 def sample(sample_id):
     """Samples view."""
     config = current_app.config
-    current_app.logger.debug('Removing non-validated genes from input')
+    current_app.logger.debug("Removing non-validated genes from input")
     token = TokenObject(**current_user.get_id())
     # get sample
     sample = get_sample_by_id(token, sample_id=sample_id)
@@ -53,7 +54,7 @@ def sample(sample_id):
         validated_genes = group.get("validatedGenes", {})
         # remove non validated genes from output
         for category, valid_genes in validated_genes.items():
-            current_app.logger.debug('Removing non-validated genes from input')
+            current_app.logger.debug("Removing non-validated genes from input")
             pred_res = next(
                 iter([r for r in sample["phenotypeResult"] if r["type"] == category])
             )
@@ -99,7 +100,7 @@ def sample(sample_id):
     # summarize predicted antimicrobial resistance
     amr_summary = {}
     resistance_info = {"genes": {}, "mutations": {}}
-    current_app.logger.debug('Make AMR prediction summary table')
+    current_app.logger.debug("Make AMR prediction summary table")
     for pred_res in sample["element_type_result"]:
         # only get AMR resistance
         if pred_res["type"] == ElementType.AMR.value:
@@ -168,11 +169,12 @@ def sample(sample_id):
     # Get the most similar samples and calculate the pair-wise similaity
     typing_method = config["SAMPLE_VIEW_TYPING_METHOD"]
     job = find_and_cluster_similar_samples(
-        token, sample_id=sample_id, 
-        limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"], 
+        token,
+        sample_id=sample_id,
+        limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"],
         similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"],
         typing_method=typing_method,
-        cluster_method=config["SAMPLE_VIEW_CLUSTER_METHOD"]
+        cluster_method=config["SAMPLE_VIEW_CLUSTER_METHOD"],
     )
     simiar_samples = {"job": job.model_dump(), "typing_method": typing_method}
 

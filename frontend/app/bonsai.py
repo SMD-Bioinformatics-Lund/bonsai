@@ -1,17 +1,17 @@
 """Handlers for api services."""
+import logging
 from email import header
 from functools import wraps
 
 import requests
 from flask import current_app
+from pydantic import BaseModel
 from requests.structures import CaseInsensitiveDict
 
-from pydantic import BaseModel
-
 from .models import SampleBasketObject, SubmittedJob
-import logging
 
 LOG = logging.getLogger(__name__)
+
 
 class TokenObject(BaseModel):
     """Token object"""
@@ -283,7 +283,9 @@ def find_samples_similar_to_reference(headers, **kwargs) -> SubmittedJob:
     limit: int = kwargs.get("limit", None)
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
-    current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
+    current_app.logger.debug(
+        f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}'
+    )
     resp = requests.post(
         url,
         headers=headers,
@@ -306,13 +308,19 @@ def find_and_cluster_similar_samples(headers, **kwargs) -> SubmittedJob:
 
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
-    current_app.logger.debug(f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}')
+    current_app.logger.debug(
+        f'Query API for samples similar to "{sample_id}", similarity: {similarity}, limit: {limit}'
+    )
     resp = requests.post(
         url,
         headers=headers,
-        json={"sample_id": sample_id, "similarity": similarity, 
-              "limit": limit, "cluster": True, "cluster_method": cluster_method, 
-              "typing_method": typing_method,
+        json={
+            "sample_id": sample_id,
+            "similarity": similarity,
+            "limit": limit,
+            "cluster": True,
+            "cluster_method": cluster_method,
+            "typing_method": typing_method,
         },
     )
     resp.raise_for_status()

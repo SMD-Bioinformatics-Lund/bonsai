@@ -42,7 +42,7 @@ def remove_signature(sample_id: str) -> Dict[str, str | bool]:
 def index(sample_ids: List[str]) -> str:
     """
     Add signatures to sourmash SBT index.
-    
+
     :param sample_ids List[str]: The path to multiple signature files
 
     :return: result message

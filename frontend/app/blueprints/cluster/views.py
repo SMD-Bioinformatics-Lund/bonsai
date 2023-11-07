@@ -1,15 +1,14 @@
 """Declaration of views for samples"""
 import json
+import logging
 from enum import Enum
 from typing import Dict
 
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
-
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from pydantic import BaseModel
-import logging
+from requests.exceptions import HTTPError
 
 LOG = logging.getLogger(__name__)
 
@@ -122,7 +121,10 @@ def tree():
         metadata = gather_metadata(sample_summary["records"])
         data = dict(nwk=newick, **metadata.dict())
         return render_template(
-            "ms_tree.html", title=f"{typing_data} cluster", typing_data=typing_data, data=json.dumps(data)
+            "ms_tree.html",
+            title=f"{typing_data} cluster",
+            typing_data=typing_data,
+            data=json.dumps(data),
         )
     return url_for("public.index")
 
@@ -132,23 +134,24 @@ def tree():
 def cluster():
     """Cluster samples and display results in a view."""
     if request.method == "POST":
-
         body = request.get_json()
-        sample_ids = [
-            sample["sample_id"]
-            for sample in body["sample_ids"]
-        ]
+        sample_ids = [sample["sample_id"] for sample in body["sample_ids"]]
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
-        LOG.error(f"Got cluster request, samples: {sample_ids}; method: {typing_method}, cluster: {cluster_method}")
+        LOG.error(
+            f"Got cluster request, samples: {sample_ids}; method: {typing_method}, cluster: {cluster_method}"
+        )
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
             job = cluster_samples(
-                token, sample_ids=sample_ids, typing_method=typing_method, method=cluster_method
+                token,
+                sample_ids=sample_ids,
+                typing_method=typing_method,
+                method=cluster_method,
             )
         except HTTPError as error:
             flash(str(error), "danger")
         else:
-            return job.model_dump(mode='json')
+            return job.model_dump(mode="json")
     return redirect(url_for("public.index"))

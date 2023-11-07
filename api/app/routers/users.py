@@ -3,9 +3,8 @@
 from datetime import datetime
 from typing import Dict, List, Union
 
-from pymongo.errors import DuplicateKeyError
-
 from fastapi import APIRouter, HTTPException, Security, status
+from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.user import (add_samples_to_user_basket, create_user,

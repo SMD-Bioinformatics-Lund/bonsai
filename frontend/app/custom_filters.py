@@ -1,9 +1,10 @@
 """Custom jinja3 template tests."""
 from collections import defaultdict
 from itertools import chain
-from dateutil.parser import parse
 
+from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
+
 from .config import ANTIBIOTIC_CLASSES
 from .models import TAG_LIST, Severity, Tag, TagType, VirulenceTag
 
@@ -12,11 +13,13 @@ def is_list(value) -> bool:
     """Check if value is a list"""
     return isinstance(value, list)
 
+
 def json_path(json_blob, json_path):
     """Get data from json blob with JSONpath."""
     jsonpath_expr = JsonPath.parse_str(json_path)
     for match in jsonpath_expr.match(json_blob):
         return match.current_value
+
 
 def has_arg(amr_result, arg_name: str) -> bool:
     """Check if an antimicrobial resistance gene with NAME has been predicted."""
@@ -25,6 +28,7 @@ def has_arg(amr_result, arg_name: str) -> bool:
         if gene["name"] == arg_name:
             return True
     return False
+
 
 def get_pvl_tag(vir_result) -> TAG_LIST:
     """Check if sample is PVL positive."""
@@ -42,9 +46,7 @@ def get_pvl_tag(vir_result) -> TAG_LIST:
     elif any([has_lukF and not has_lukS, has_lukS and not has_lukF]):
         tag = Tag(
             type=TagType.VIRULENCE,
-            label=VirulenceTag.PVL_LUKF_POS
-            if has_lukF
-            else VirulenceTag.PVL_LUKS_POS,
+            label=VirulenceTag.PVL_LUKF_POS if has_lukF else VirulenceTag.PVL_LUKS_POS,
             description="",
             severity=Severity.WARNING,
         )
@@ -56,6 +58,7 @@ def get_pvl_tag(vir_result) -> TAG_LIST:
             severity=Severity.PASSED,
         )
     return tag
+
 
 def get_all_phenotypes(res):
     susceptible = res["result"]["phenotypes"]["susceptible"]
@@ -77,6 +80,7 @@ def _jinja2_filter_datetime(date, fmt=None):
 
 def cgmlst_count_called(alleles):
     return sum(1 for allele in alleles.values() if allele is not None)
+
 
 def cgmlst_count_missing(alleles):
     return sum(1 for allele in alleles.values() if allele is None)
@@ -164,9 +168,7 @@ def nt_to_aa(nt_seq):
 def groupby_antib_class(antibiotics):
     # todo lookup antibiotic classes in database
     antibiotic_class_lookup = {
-        antib.lower(): k
-        for k, v in ANTIBIOTIC_CLASSES
-        for antib in v
+        antib.lower(): k for k, v in ANTIBIOTIC_CLASSES for antib in v
     }
     result = defaultdict(list)
     for antib in antibiotics:

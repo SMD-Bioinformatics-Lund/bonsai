@@ -1,15 +1,17 @@
 """Functions for managing redis connections."""
-from rq import Queue
-from rq.job import Job
-from redis import Redis
-from pydantic import BaseModel
-from app.config import REDIS_HOST, REDIS_PORT
-from typing import Any
+import logging
 from datetime import datetime
 from enum import Enum
-import logging
+from typing import Any
+
+from app.config import REDIS_HOST, REDIS_PORT
+from pydantic import BaseModel
+from redis import Redis
+from rq import Queue
+from rq.job import Job
 
 LOG = logging.getLogger(__name__)
+
 
 class RedisQueue:
     """Worker queue interface."""
@@ -17,25 +19,29 @@ class RedisQueue:
     def __init__(self):
         """Setup connection and define queues."""
         self.connection = Redis(REDIS_HOST, REDIS_PORT)
-        self.minhash: Queue = Queue('minhash', connection=self.connection)
-        self.allele: Queue = Queue('allele_cluster', connection=self.connection)
+        self.minhash: Queue = Queue("minhash", connection=self.connection)
+        self.allele: Queue = Queue("allele_cluster", connection=self.connection)
 
 
 redis = RedisQueue()
 
+
 class JobStatusCodes(str, Enum):
     """Container for RQ status codes"""
+
     QUEUED = "queued"
-    STARTED = "started" 
+    STARTED = "started"
     DEFERRED = "deferred"
     FINISHED = "finished"
-    STOPPED = "stopped" 
+    STOPPED = "stopped"
     SCHEDULED = "scheduled"
     CANCELED = "canceled"
     FAILED = "failed"
 
+
 class JobStatus(BaseModel):
     """Container for basic job information."""
+
     status: JobStatusCodes
     queue: str
     result: Any

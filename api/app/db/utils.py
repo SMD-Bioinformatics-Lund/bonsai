@@ -7,6 +7,7 @@ from .db import db
 
 LOG = logging.getLogger(__name__)
 
+
 def connect_to_mongo():
     """Setup connection to mongo database."""
     LOG.info("Initiate connection to mongo database")

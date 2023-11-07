@@ -1,19 +1,22 @@
 """Entrypoints for starting clustering jobs."""
-from enum import Enum
 import logging
+from enum import Enum
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import Field
-from pathlib import Path
 
 from ..crud.errors import EntryNotFound
-from ..crud.sample import TypingProfileOutput, get_typing_profiles, get_signature_path_for_samples
-from ..redis import DistanceMethod, ClusterMethod, TypingMethod, MsTreeMethods
-from ..redis.minhash import schedule_add_genome_signature_to_index
-from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
-from ..redis.allele_cluster import schedule_cluster_samples as schedule_allele_cluster_samples
+from ..crud.sample import (TypingProfileOutput, get_signature_path_for_samples,
+                           get_typing_profiles)
 from ..db import db
 from ..models.base import RWModel
+from ..redis import ClusterMethod, DistanceMethod, MsTreeMethods, TypingMethod
+from ..redis.allele_cluster import \
+    schedule_cluster_samples as schedule_allele_cluster_samples
+from ..redis.minhash import schedule_add_genome_signature_to_index
+from ..redis.minhash import \
+    schedule_cluster_samples as schedule_minhash_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,7 +41,9 @@ class clusterInput(RWModel):
 #        get_current_active_user, scopes=[WRITE_PERMISSION]
 #    ),
 @router.post(
-    "/cluster/{typing_method}/", status_code=status.HTTP_201_CREATED, tags=["minhash", *DEFAULT_TAGS]
+    "/cluster/{typing_method}/",
+    status_code=status.HTTP_201_CREATED,
+    tags=["minhash", *DEFAULT_TAGS],
 )
 async def cluster_samples(
     typing_method: TypingMethod,
@@ -49,7 +54,9 @@ async def cluster_samples(
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
     """
     if typing_method == TypingMethod.MINHASH:
-        job = schedule_minhash_cluster_samples(clusterInput.sample_ids, clusterInput.method)
+        job = schedule_minhash_cluster_samples(
+            clusterInput.sample_ids, clusterInput.method
+        )
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(
@@ -87,6 +94,6 @@ async def index_genome_signatures(index_input: indexInput):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=msg,
         )
-    signature_paths = [Path(sig['genome_signature']) for sig in signatures]
+    signature_paths = [Path(sig["genome_signature"]) for sig in signatures]
     job_id: str = schedule_add_genome_signature_to_index(signature_paths)
     return {"job_id": job_id}

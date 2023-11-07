@@ -1,25 +1,17 @@
 import logging
 from typing import Annotated, Dict, List
 
-from pymongo.errors import DuplicateKeyError
-
-from pydantic import BaseModel, Field
 from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
                      Security, status)
+from pydantic import BaseModel, Field
+from pymongo.errors import DuplicateKeyError
 
-from ..crud.sample import (EntryNotFound, add_comment, add_location)
+from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
 from ..crud.sample import update_sample_qc_classification
-from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (schedule_add_genome_signature, 
-                            schedule_add_genome_signature_to_index,
-                            schedule_find_similar_samples,
-                            schedule_find_similar_and_cluster,
-                            SubmittedJob
-                            )
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
@@ -27,10 +19,16 @@ from ..models.qc import QcClassification
 from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
                              PipelineResult, SampleInCreate)
 from ..models.user import UserOutputDatabase
+from ..redis import ClusterMethod, TypingMethod
+from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
+                             schedule_add_genome_signature_to_index,
+                             schedule_find_similar_and_cluster,
+                             schedule_find_similar_samples)
 from ..utils import format_error_message
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
+
 
 class SearchParams(BaseModel):
     """Parameters for searching for samples."""
@@ -98,8 +96,10 @@ async def create_sample(
 @router.post("/samples/search", tags=DEFAULT_TAGS)
 async def search_samples(
     body: SearchBody,
-    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION]),
-    ):
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
     """Search for multiple samples."""
     sample_ids = body.params.sample_id
     # to list if sample ids is a string
@@ -184,7 +184,8 @@ async def create_genome_signatures_sample(
 
     add_sig_job = schedule_add_genome_signature(sample_id, signature)
     index_job = schedule_add_genome_signature_to_index(
-        [sample_id], depends_on=[add_sig_job.id], 
+        [sample_id],
+        depends_on=[add_sig_job.id],
     )
 
     # updated sample in database with signature object jobid
@@ -321,11 +322,17 @@ class SimilarSamplesInput(BaseModel):
     limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")
     similarity: float = Field(default=0.5, gt=0, title="Similarity threshold")
     cluster: bool = Field(default=False, title="Cluster the similar")
-    typing_method: TypingMethod | None = Field(None, title="Cluster using a specific typing method")
+    typing_method: TypingMethod | None = Field(
+        None, title="Cluster using a specific typing method"
+    )
     cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar")
 
 
-@router.post("/samples/{sample_id}/similar", response_model=SubmittedJob, tags=["minhash", *DEFAULT_TAGS])
+@router.post(
+    "/samples/{sample_id}/similar",
+    response_model=SubmittedJob,
+    tags=["minhash", *DEFAULT_TAGS],
+)
 async def read_sample(
     body: SimilarSamplesInput,
     sample_id: str = Path(

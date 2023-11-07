@@ -1,8 +1,7 @@
 from typing import List
 
-from pymongo.errors import DuplicateKeyError
-
 from fastapi import APIRouter, HTTPException, Path, Query, Security, status
+from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound
 from ..crud.location import create_location as create_location_from_db

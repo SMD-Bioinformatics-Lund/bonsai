@@ -1,7 +1,9 @@
 """Routes for interacting with submitted jobs."""
-from ..redis.queue import check_redis_job_status, JobStatus
-from fastapi import APIRouter, status
 import logging
+
+from fastapi import APIRouter, status
+
+from ..redis.queue import JobStatus, check_redis_job_status
 
 LOG = logging.getLogger(__name__)
 
@@ -12,6 +14,7 @@ READ_PERMISSION = "job:read"
 WRITE_PERMISSION = "job:write"
 
 router = APIRouter()
+
 
 @router.get("/job/status/{job_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def check_job_status(job_id: str) -> JobStatus:

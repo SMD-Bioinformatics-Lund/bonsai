@@ -4,8 +4,8 @@ import logging
 import pathlib
 from typing import List
 
-import sourmash
 import fasteners
+import sourmash
 from app import config
 
 LOG = logging.getLogger(__name__)

@@ -1,12 +1,11 @@
 """Declaration of flask api entrypoints"""
 import json
 
-from flask import Blueprint, flash, jsonify, request, session
-from flask_login import current_user, login_required
-
 from app.bonsai import (TokenObject, add_samples_to_basket,
                         remove_samples_from_basket)
 from app.models import SampleBasketObject
+from flask import Blueprint, flash, jsonify, request, session
+from flask_login import current_user, login_required
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
 

@@ -2,10 +2,9 @@
 
 from typing import List
 
-from pymongo.errors import DuplicateKeyError
-
 from fastapi import (APIRouter, Depends, File, HTTPException, Path, Security,
                      status)
+from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group

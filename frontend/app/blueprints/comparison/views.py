@@ -1,9 +1,8 @@
 """Views for comparing multiple samples."""
 
+from app.mimer import TokenObject
 from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
-
-from app.mimer import TokenObject
 
 comparison_bp = Blueprint(
     "comparison",
