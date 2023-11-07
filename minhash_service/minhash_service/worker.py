@@ -2,9 +2,10 @@
 import logging
 from logging.config import dictConfig
 
-from app import config, tasks
 from redis import Redis
 from rq import Connection, Queue, Worker
+
+from . import config, tasks
 
 dictConfig(config.DICT_CONFIG)
 LOG = logging.getLogger(__name__)

@@ -1,6 +1,5 @@
 """Define reddis tasks."""
 import logging
-from pathlib import Path
 from typing import Dict, List
 
 from .minhash.cluster import ClusterMethod, cluster_signatures
@@ -50,7 +49,7 @@ def index(sample_ids: List[str]) -> str:
     """
     LOG.info("Indexing signatures...")
     res = add_signatures_to_index(sample_ids)
-    signatures = ", ".join([sid for sid in sample_ids])
+    signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
     else:
@@ -75,7 +74,8 @@ def similar(
         sample_id, min_similarity=min_similarity, limit=limit
     )
     LOG.info(
-        f"Finding samples similar to {sample_id} with min similarity {min_similarity}; limit {limit}"
+        "Finding samples similar to %s with min similarity %s; limit %s",
+        sample_id, min_similarity, limit
     )
     results = [s.model_dump() for s in samples]
     return results

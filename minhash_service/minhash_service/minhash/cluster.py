@@ -24,16 +24,16 @@ def to_newick(node, newick, parentdist, leaf_names) -> str:
     """Convert hierarcical tree representation to newick format."""
 
     if node.is_leaf():
-        return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
+        return f"{leaf_names[node.id]}:{parentdist - node.dist:.2f}{newick}%.2f%s"
+
+    if len(newick) > 0:
+        newick = f"):{parentdist - node.dist:.2f}{newick}"
     else:
-        if len(newick) > 0:
-            newick = "):%.2f%s" % (parentdist - node.dist, newick)
-        else:
-            newick = ");"
-        newick = to_newick(node.get_left(), newick, node.dist, leaf_names)
-        newick = to_newick(node.get_right(), f",{newick}", node.dist, leaf_names)
-        newick = f"({newick}"
-        return newick
+        newick = ");"
+    newick = to_newick(node.get_left(), newick, node.dist, leaf_names)
+    newick = to_newick(node.get_right(), f",{newick}", node.dist, leaf_names)
+    newick = f"({newick}"
+    return newick
 
 
 def cluster_signatures(sample_ids: List[str], method: ClusterMethod):
@@ -50,8 +50,8 @@ def cluster_signatures(sample_ids: List[str], method: ClusterMethod):
         siglist, ignore_abundance=True, n_jobs=1, return_ani=False
     )
     # cluster on similarity matrix
-    Z = hierarchy.linkage(similarity, method=method.value)
-    tree = hierarchy.to_tree(Z, False)
+    linkage = hierarchy.linkage(similarity, method=method.value)
+    tree = hierarchy.to_tree(linkage, False)
     # creae newick tree
     labeltext = [str(item).replace(".fasta", "") for item in siglist]
     newick_tree = to_newick(tree, "", tree.dist, labeltext)

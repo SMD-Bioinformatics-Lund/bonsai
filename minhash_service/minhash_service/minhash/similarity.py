@@ -3,12 +3,11 @@ import logging
 import pathlib
 from typing import List
 
-import fasteners
 import sourmash
 from app import config
 from pydantic import BaseModel
 
-from .io import get_sbt_index, read_signature
+from .io import get_sbt_index, read_signature, SIGNATURES
 
 LOG = logging.getLogger(__name__)
 
@@ -31,26 +30,28 @@ def get_similar_signatures(
     min_similarity - minimum similarity score to be included
     """
     LOG.info(
-        f"Finding similar: {sample_id}; similarity: {min_similarity}, limit: {limit}"
+        "Finding similar: %s; similarity: %f, limit: %d",
+        sample_id, min_similarity, limit
     )
 
     # load sourmash index
-    LOG.debug(f"Getting samples similar to: {sample_id}")
+    LOG.debug("Getting samples similar to: %s", sample_id)
     index_path: pathlib.Path = get_sbt_index()
-    LOG.debug(f"Load index file to memory")
+    LOG.debug("Load index file to memory")
     db = sourmash.load_file_as_index(index_path)
 
     # load reference sequence
-    query_signature = read_signature(sample_id)
+    query_signature: SIGNATURES = read_signature(sample_id)
+    query_signature = query_signature[0]
     if len(query_signature) == 0:
-        raise ValueError(
-            f"No signature in: {query_signature.filename} with kmer size: {config.SIGNATURE_KMER_SIZE}"
+        msg = (
+            f"No signature in: {query_signature.filename}" \
+            f"with kmer size: {config.SIGNATURE_KMER_SIZE}"
         )
-    else:
-        query_signature = query_signature[0]
+        raise ValueError(msg)
 
     # query for similar sequences
-    LOG.debug(f"Searching for signatures with similarity > {min_similarity}")
+    LOG.debug("Searching for signatures with similarity > %f", min_similarity)
     result = db.search(
         query_signature, threshold=min_similarity
     )  # read sample information of similar samples
@@ -66,5 +67,5 @@ def get_similar_signatures(
         # break iteration if limit is reached
         if isinstance(limit, int) and limit == itr_no:
             break
-    LOG.info(f"Found {len(samples)} samples similar to {sample_id}")
+    LOG.info("Found %d samples similar to %s", len(samples), sample_id)
     return samples
