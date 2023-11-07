@@ -39,18 +39,18 @@ def remove_signature(sample_id: str) -> Dict[str, str | bool]:
     return {"sample_id": sample_id, "removed": status}
 
 
-def index(signature_files: List[Path]) -> str:
+def index(sample_ids: List[str]) -> str:
     """
     Add signatures to sourmash SBT index.
     
-    :param signature_files List[Path]: The path to multiple signature files
+    :param sample_ids List[str]: The path to multiple signature files
 
     :return: result message
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = add_signatures_to_index(signature_files)
-    signatures = ", ".join([file.name for file in signature_files])
+    res = add_signatures_to_index(sample_ids)
+    signatures = ", ".join([sid for sid in sample_ids])
     if res:
         msg = f"Appended {signatures}"
     else:

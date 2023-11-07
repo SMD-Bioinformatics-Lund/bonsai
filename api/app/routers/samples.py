@@ -183,15 +183,17 @@ async def create_genome_signatures_sample(
         raise sig_exist_err
 
     add_sig_job = schedule_add_genome_signature(sample_id, signature)
-    index_job = schedule_add_genome_signature_to_index([sample_id], depends_on=[add_sig_job.id])
+    index_job = schedule_add_genome_signature_to_index(
+        [sample_id], depends_on=[add_sig_job.id], 
+    )
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
     upd_sample_data = SampleInCreate(
         **{**sample.dict(), **{"genome_signature": add_sig_job.id}}
     )
-    status = await crud_update_sample(db, upd_sample_data)
-    LOG.error(f"status {status}")
+    await crud_update_sample(db, upd_sample_data)
+    LOG.error(f"status {add_sig_job.id}")
 
     return {
         "id": sample_id,

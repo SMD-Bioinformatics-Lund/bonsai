@@ -5,6 +5,7 @@ import pathlib
 from typing import List
 
 import sourmash
+import fasteners
 from app import config
 
 LOG = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
         signature_db.mkdir(parents=True, exist_ok=True)
 
     # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id)
+    signature_file = get_signature_path(sample_id, check=False)
 
     # check if compressed and decompress data
     LOG.info("Check if signature is compressed")
@@ -93,7 +94,7 @@ def remove_signature(sample_id: str) -> bool:
     signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
 
     # get genome index
-    sbt_filename = _get_sbt_index()
+    sbt_filename = get_sbt_index()
 
     # check that signature doesnt exist
     # Get signature path and check if it exists
@@ -136,11 +137,11 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
     genome_index = get_sbt_index(check=False)
     sbt_lock_path = f"{genome_index}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
-    LOG.debug("Using lock: {sbt_lock_path}")
+    LOG.debug(f"Using lock: {sbt_lock_path}")
 
     signatures = []
     for sample_id in sample_ids:
-        signature = _load_signature(sample_id)
+        signature = read_signature(sample_id)
         signatures.append(signature[0])
 
     # add signature to existing index
