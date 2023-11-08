@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-import sourmash
 from app import config
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -366,54 +365,3 @@ async def get_signature_path_for_samples(
     results = await cursor.to_list(None)
     LOG.debug(f"Found {len(results)} signatures")
     return results
-
-
-def get_samples_similar_to_reference(
-    sample_id: str, min_similarity: float, kmer_size: int, limit: int | None = None
-):
-    """Get find samples that are similar to reference sample.
-
-    min_similarity - minimum similarity score to be included
-
-    """
-
-    # load sourmash index
-    LOG.debug(f"Getting samples similar to: {sample_id}")
-    signature_dir = Path(config.GENOME_SIGNATURE_DIR)
-    index_path = signature_dir.joinpath(f"genomes.sbt.zip")
-    # ensure that index exist
-    if not index_path.is_file():
-        raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
-    LOG.debug(f"Load index file to memory")
-    tree = sourmash.load_file_as_index(str(index_path))
-
-    # load reference sequence
-    query_signature_path = signature_dir.joinpath(f"{sample_id}.sig")
-    if not query_signature_path.is_file():
-        raise FileNotFoundError(f"Signature file not found, {query_signature_path}")
-    LOG.debug(f"Loading signatures in path: {str(query_signature_path)}")
-    query_signature = list(
-        sourmash.load_file_as_signatures(str(query_signature_path), ksize=kmer_size)
-    )
-    if len(query_signature) == 0:
-        raise ValueError(f"No signature in: {sample_id} with kmer size: {kmer_size}")
-    else:
-        query_signature = query_signature[0]
-
-    # query for similar sequences
-    LOG.debug(f"Searching for signatures with similarity > {min_similarity}")
-    result = tree.search(query_signature, threshold=min_similarity)
-
-    # read sample information of similar samples
-    samples = []
-    LOG.debug(f"Applying limit: {limit}")
-    for itr_no, (similarity, found_sig, _) in enumerate(result):
-        # limit the number of samples
-        if limit and limit < itr_no:
-            break
-        # read sample results
-        hit_fname = Path(found_sig.filename)
-        # extract sample id from sample name
-        base_fname = hit_fname.name[: -len(hit_fname.suffix)]
-        samples.append({"sample_id": base_fname, "similarity": similarity})
-    return samples
