@@ -7,7 +7,7 @@ from typing import List
 import fasteners
 import sourmash
 from sourmash.signature import FrozenSourmashSignature
-from app import config
+from .. import config
 
 LOG = logging.getLogger(__name__)
 SIGNATURES = List[FrozenSourmashSignature]
