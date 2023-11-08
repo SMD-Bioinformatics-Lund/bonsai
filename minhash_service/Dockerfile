@@ -9,7 +9,7 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 
 # copy project dir
 WORKDIR /home/worker/app
-COPY --chown=worker:worker app app/
+COPY --chown=worker:worker minhash_service minhash_servics/
 COPY --chown=worker:worker README.md pyproject.toml setup.py setup.cfg ./
 
 # install dependancies

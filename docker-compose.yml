@@ -23,7 +23,7 @@ services:
   api:
     container_name: api
     build: 
-      context: server
+      context: api
       network: host
     depends_on:
       - mongodb
@@ -42,7 +42,7 @@ services:
   frontend:
     container_name: frontend
     build: 
-      context: client
+      context: frontend
       network: host
     depends_on:
       - mongodb
@@ -78,7 +78,7 @@ services:
       context: allele_cluster_service
       network: host
     depends_on:
-      - bonsai_redis
+      - redis
     volumes:
       - "./allele_cluster_service/allele_cluster_service:/home/worker/app/app"
     networks:
