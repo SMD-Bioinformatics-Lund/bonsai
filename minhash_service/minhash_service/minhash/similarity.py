@@ -4,7 +4,7 @@ import pathlib
 from typing import List
 
 import sourmash
-from app import config
+from minhash_service import config
 from pydantic import BaseModel
 
 from .io import get_sbt_index, read_signature, SIGNATURES
