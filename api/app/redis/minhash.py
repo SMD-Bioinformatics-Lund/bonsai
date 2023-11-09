@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 
 def schedule_add_genome_signature(sample_id: str, signature) -> SubmittedJob | str:
     """Schedule adding signature to index."""
-    TASK = "app.tasks.add_signature"
+    TASK = "minhash_service.tasks.add_signature"
     job = redis.minhash.enqueue(
         TASK, sample_id=sample_id, signature=signature, job_timeout="30m"
     )
@@ -29,7 +29,7 @@ def schedule_add_genome_signature_to_index(
 
     The job can depend on the completion of previous jobs by providing a job_id
     """
-    TASK = "app.tasks.index"
+    TASK = "minhash_service.tasks.index"
     submit_kwargs = {
         "retry": Retry(max=3, interval=60),
         **enqueue_kwargs,
@@ -57,7 +57,7 @@ def schedule_find_similar_samples(
 
     min_similarity - minimum similarity score to be included
     """
-    TASK = "app.tasks.similar"
+    TASK = "minhash_service.tasks.similar"
     job = redis.minhash.enqueue(
         TASK,
         sample_id=sample_id,
@@ -76,7 +76,7 @@ def schedule_cluster_samples(
 
     min_similarity - minimum similarity score to be included
     """
-    TASK = "app.tasks.cluster"
+    TASK = "minhash_service.tasks.cluster"
     job = redis.minhash.enqueue(
         TASK,
         sample_ids=sample_ids,
@@ -101,7 +101,7 @@ def schedule_find_similar_and_cluster(
     linkage - the linkage function to use when clustering
     """
     if typing_method == TypingMethod.MINHASH:
-        TASK = "app.tasks.find_similar_and_cluster"
+        TASK = "minhash_service.tasks.find_similar_and_cluster"
         job = redis.minhash.enqueue(
             TASK,
             sample_id=sample_id,

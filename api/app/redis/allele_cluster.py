@@ -14,7 +14,7 @@ def schedule_cluster_samples(
     profiles: List[str], cluster_method: ClusterMethod
 ) -> SubmittedJob:
     """Schedule clustering on the provided allele profile."""
-    TASK = "app.tasks.cluster"
+    TASK = "allele_cluster_service.tasks.cluster"
     # convert the allele profile object to two arrays, one with names and another with
     # a tsv representation of the profile
     sample_ids = []
