@@ -3,6 +3,7 @@
 from enum import Enum
 
 from ..models.base import RWModel
+from ..models.cluster import TypingMethod, DistanceMethod
 from .queue import redis
 
 
@@ -11,13 +12,6 @@ class SubmittedJob(RWModel):
 
     id: str
     task: str
-
-
-class DistanceMethod(Enum):
-    """Index of methods for calculating the distance matrix during hierarchical clustering of samples."""
-
-    JACCARD = "jaccard"
-    HAMMING = "hamming"
 
 
 class ClusterMethod(Enum):
@@ -36,9 +30,3 @@ class MsTreeMethods(Enum):
     NEIGHBOR_JOINING = "NJ"
     RAPID_NJ = "RapidNJ"
     NINJA = "ninja"
-
-
-class TypingMethod(str, Enum):
-    MLST = "mlst"
-    CGMLST = "cgmlst"
-    MINHASH = "minhash"
