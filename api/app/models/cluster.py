@@ -19,6 +19,7 @@ class ClusterMethod(Enum):
 
 
 class TypingMethod(str, Enum):
+    """Supported typing methods."""
     MLST = "mlst"
     CGMLST = "cgmlst"
     MINHASH = "minhash"
