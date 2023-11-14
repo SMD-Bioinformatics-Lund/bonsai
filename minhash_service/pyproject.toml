@@ -4,4 +4,4 @@ build-backend = "setuptools.build_meta"
 
 [tool.isort]
 profile = "black"
-src_paths = ["isort", "test"]
+src_paths = ["minhash_service"]
