@@ -157,7 +157,7 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
 
     # add signature to existing index
     # acquire lock to append signatures to database
-    LOG.debug("Attempt to acquire lock to append %d to index...", signatures)
+    LOG.debug("Attempt to acquire lock to append %s to index...", signatures)
     with lock:
         # check if index already exist
         try:
