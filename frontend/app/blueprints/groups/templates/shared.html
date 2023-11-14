@@ -72,7 +72,6 @@ async function getSimilarSamples() {
             credentials: 'same-origin'
         })
         const jsonData = await response.json()
-        // check return code
         if ( !response.ok ) {
             console.log(`Error while finding similar samples: ${jsonData.details}`)
             return false
@@ -86,13 +85,10 @@ async function getSimilarSamples() {
 }
 
 async function getSimilarSamplesAndCheckRows(btn) {
-    // get similar samples and check rows
     const parentElem = btn.parentElement.parentElement
     showSpinner(parentElem)
-    // start query
     getSimilarSamples().then( async (job) => {
         if ( job ) {
-            //async () => await fetchJobStatus(job.id),  // function to get job status
             try {
                 let result = await poll(
                     async () => fetchJobStatus(job.id),  // function to get job status
@@ -113,7 +109,8 @@ async function getSimilarSamplesAndCheckRows(btn) {
     })
 }
 
-document.getElementById("similar-samples-threshold").addEventListener("input", (elem) => {
-    document.getElementById("similar-samples-button").disabled = isNaN(parseInt(elem.data))
+document.getElementById("similar-samples-threshold").addEventListener("input", (thresholdElem) => {
+    const thresholdValue = thresholdElem.data
+    document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
 });
 {% endmacro %}
