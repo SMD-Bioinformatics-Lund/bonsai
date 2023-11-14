@@ -182,9 +182,8 @@ async def create_genome_signatures_sample(
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
-    upd_sample_data = SampleInCreate(
-        **{**sample.dict(), **{"genome_signature": add_sig_job.id}}
-    )
+    sample_obj = {**sample.dict(), **{"genome_signature": add_sig_job.id}}
+    upd_sample_data = SampleInCreate(**sample_obj)
     await crud_update_sample(db, upd_sample_data)
     LOG.error(f"status {add_sig_job.id}")
 
