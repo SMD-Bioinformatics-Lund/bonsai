@@ -82,8 +82,10 @@ async def index_genome_signatures(index_input: indexInput):
     try:
         signatures = await get_signature_path_for_samples(db, index_input.sample_ids)
     except Exception as error:
-        LOG.error(error)
-        raise error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error)
+        )
 
     # verify results
     if len(signatures) == 0:
