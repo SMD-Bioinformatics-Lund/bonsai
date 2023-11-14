@@ -154,14 +154,6 @@ async def update_sample(
     ),
 ):
     return {"sample_id": sample_id, "sample": sample, "location": location}
-    try:
-        comment_obj = await add_location(db, sample_id, location_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
-    return comment_obj
 
 
 @router.post("/samples/{sample_id}/signature", tags=DEFAULT_TAGS)
