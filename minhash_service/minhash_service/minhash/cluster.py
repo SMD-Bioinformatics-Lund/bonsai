@@ -24,7 +24,7 @@ def to_newick(node, newick, parentdist, leaf_names) -> str:
     """Convert hierarcical tree representation to newick format."""
 
     if node.is_leaf():
-        return f"{leaf_names[node.id]}:{parentdist - node.dist:.2f}{newick}%.2f%s"
+        return f"{leaf_names[node.id]}:{parentdist - node.dist:.2f}{newick}"
 
     if len(newick) > 0:
         newick = f"):{parentdist - node.dist:.2f}{newick}"
