@@ -67,12 +67,6 @@
         grid: {
             name: 'grid',
             box: '#data-table',
-            //url: `${apiURL}/samples`,
-            //dataType: 'HTTP',
-            //httpHeaders: {
-            //    'Authorization': "Bearer {{token}}",
-            //    'Content-Type': 'application/json'
-            //},
             show: {
                 footer: false,
                 toolbar: true,
@@ -151,18 +145,6 @@
                     )
                 );
             },
-            //onLoad(event) {
-            //    //event.preventDefault()
-            //    let data = w2utils.clone(event.detail.data)
-            //    let fmtRecords = data.records.map( sample => {
-            //        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-            //        columns["recid"] = sample["sampleId"]
-            //        return columns
-            //    })
-            //    event.detail.records
-            //    //grid.records.push(...fmtRecords)
-            //    //grid.refresh()
-            //}
         },
     }
     // setup grid
