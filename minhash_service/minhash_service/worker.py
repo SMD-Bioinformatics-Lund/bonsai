@@ -5,7 +5,7 @@ from logging.config import dictConfig
 from redis import Redis
 from rq import Connection, Queue, Worker
 
-from . import config, tasks
+from . import config
 
 dictConfig(config.DICT_CONFIG)
 LOG = logging.getLogger(__name__)
