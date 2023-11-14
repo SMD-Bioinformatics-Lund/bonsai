@@ -1,13 +1,13 @@
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
-        onclick="addSelctedSamplesToBasket(this)" disabled>
+        onclick="addSelectedSamplesToBasket(this)" disabled>
     <i class="bi bi-plus-lg"></i>
     <span>Add to basket</span>
 </button>
 {% endmacro %}
 
 {% macro add_to_basket_js() %}
-function addSelctedSamplesToBasket(btn) {
+function addSelectedSamplesToBasket(btn) {
     // add selected samples from table to session storage
     const body = {
         selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
