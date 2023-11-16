@@ -1,0 +1,47 @@
+#comment-container {
+  max-height: 40em;
+}
+
+.sidebar-heading {
+  font-size: .75rem;
+}
+
+.comment-box:hover {
+  box-shadow: .4rem .225rem .80rem rgba(0,0,0,.095) !important;
+}
+
+.toc {
+  top: 5rem;
+  right: 0;
+  z-index: 2;
+  overflow-y: auto;
+}
+
+#toc-contents a {
+  font-size: .875rem;
+  color:#343a40;
+  border-left: .125rem solid transparent;
+}
+
+#toc-contents a:hover, a.active {
+  color: #198754 !important;
+  border-left-color: #198754 !important;
+}
+
+.toc-collapse {
+  display: block !important;
+}
+
+.card {
+  border-radius: 0 !important;
+  margin-bottom: 0.850rem;
+}
+
+.tag {
+  height: 50%;
+}
+
+#similar-samples-cluster .spinner-border {
+  width: 4rem;
+  height: 4rem;
+}

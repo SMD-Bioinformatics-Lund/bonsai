@@ -1,0 +1,116 @@
+{% macro add_to_basket_btn() %}
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
+        onclick="addSelectedSamplesToBasket(this)" disabled>
+    <i class="bi bi-plus-lg"></i>
+    <span>Add to basket</span>
+</button>
+{% endmacro %}
+
+{% macro add_to_basket_js() %}
+function addSelectedSamplesToBasket(btn) {
+    // add selected samples from table to session storage
+    const body = {
+        selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+    }
+    const baseUrl = {{ request.script_root|tojson }}
+    fetch(`${baseUrl}/api/basket/add`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+            'Accept': 'application/json', 
+            'Content-Type': 'application/json' 
+        },
+        credentials: 'same-origin'
+    }).then(response => {location.reload()})
+}
+{% endmacro %}
+
+{% macro search_similar_btn() %}
+<div id="find-similar-dropdown" class="dropdown">
+    <button id="select-similar-samples-btn" 
+            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
+            data-bs-toggle="dropdown" disabled>
+        <span class="content">
+            <i class="bi bi-search"></i>
+            <span>Find similar</span>
+        </span>
+        <span class="loading align-middle d-none">
+            <span class="spinner-grow text-success spinner-grow-sm" role="status"></span>
+            Loading...
+        </span>
+    </button>
+    <form class="dropdown-menu dropdown-menu-end p-2 needs-validation">
+        <input type="text" name="similar-samples-limit" 
+                id="similar-samples-limit" class="form-control form-control-sm" 
+                placeholder="Number of samples" required>
+        <input type="text" name="similar-samples-threshold" 
+                id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
+                placeholder="Min similarity" value="0.95" required>
+        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2"
+                onclick="getSimilarSamplesAndCheckRows(this)">
+            <i class="bi bi-search"></i>
+            Search
+        </button>
+    </form>
+</div>
+{% endmacro %}
+
+{% macro search_similar_js() %}
+async function getSimilarSamples() {
+    const sampleId=window.getSelectedRows()[0]
+    const limit=document.getElementById("similar-samples-limit").value
+    const similarity=document.getElementById("similar-samples-threshold").value
+    const baseUrl = {{ request.script_root|tojson }}
+    try {
+        const response = await fetch(`${baseUrl}/samples/${sampleId}/similar`, {
+            method: "POST",
+            body: JSON.stringify({limit: limit, similarity: similarity}),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        })
+        const jsonData = await response.json()
+        if ( !response.ok ) {
+            console.log(`Error while finding similar samples: ${jsonData.details}`)
+            return false
+        } else {
+            return jsonData
+        }
+    } catch ( error ) {
+        console.error("Error:", error)
+        return false
+    }
+}
+
+async function getSimilarSamplesAndCheckRows(btn) {
+    const parentElem = btn.parentElement.parentElement
+    showSpinner(parentElem)
+    getSimilarSamples().then( async (job) => {
+        if ( job ) {
+            try {
+                let result = await poll(
+                    async () => fetchJobStatus(job.id),  // function to get job status
+                    validateJobStatus,  // validator
+                    resultParser,       // parse results
+                    3000                // interval time
+                )
+                window.action('select', result.map(sample => sample.sample_id))
+                hideSpinner(parentElem)
+            } catch (err) {
+                throwSmallToast("Error while finding similar samples")
+                hideSpinner(parentElem)
+            }
+        } else {
+            throwSmallToast("Error while finding similar samples")
+            hideSpinner(parentElem)
+        }
+    })
+}
+
+document.getElementById("similar-samples-threshold").addEventListener("input", (thresholdElem) => {
+    const thresholdValue = thresholdElem.data
+    document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
+});
+{% endmacro %}

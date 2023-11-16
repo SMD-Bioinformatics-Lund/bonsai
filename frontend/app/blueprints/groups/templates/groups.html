@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
+<link rel="stylesheet" href="{{url_for('groups.static', filename='groups.css')}}">
+{% endblock css %}
+
+{% block content %}
+<div class="card bg-white mt-4 w-75 position-absolute translate-middle-x start-50">
+    <div class="card-body">
+        <h5 class="card-title text-uppercase fw-light">Groups</h5>
+        <hr class="mt-2 col-md-2 border border-success border-2">
+        {% if groups %}
+        <div class="d-flex justify-content-start">
+            <div class="row">
+                {% for group in groups %}
+                    <div class="col-sm-6 col-md-4 col-lg-auto py-2">
+                        {{ group_card(group, current_user.is_admin) }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        <h5 class="card-title text-uppercase fw-light pt-4">All samples</h5>
+        <hr class="mt-2 col-md-2 border border-success border-2">
+        <nav class="navbar bg-light">
+            <div class="container-fluid justify-content-start">
+                <span class="navbar-text">
+                    <i>Selected samples:</i>
+                    <span id="n-selected-samples-counter">0</span>
+                </span>
+                {{ add_to_basket_btn() }}
+                {{ search_similar_btn() }}
+                {% if current_user.is_admin %}
+                    <a href={{ url_for('groups.edit_groups') }} class="btn btn-sm btn-secondary ms-2">
+                        Create group
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+        <div id="data-table"></div>
+    </div>
+</div>
+<script type="module">
+    import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
+    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+
+    // define formatters
+    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
+    w2utils.formatters['tags']  = formatTag
+    w2utils.formatters['sampleid']  = (val, data) => {
+        const baseUrl = {{ request.script_root|tojson }}
+        let element = document.createElement('a')
+        let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
+        element.setAttribute('href', `${baseUrl}/${path}`)
+        element.innerText = val
+        return element.outerHTML
+    }
+    // define constants
+    const apiURL = "{{ config.BONSAI_API_URL }}"
+    const samples = {{ samples | tojson }}
+
+    let tableConfig = {
+        grid: {
+            name: 'grid',
+            box: '#data-table',
+            show: {
+                footer: false,
+                toolbar: true,
+                selectColumn: true,
+                lineNumbers: false,
+            },
+            //limit: 100,
+            multiSelect: true,
+            liveSearch: true,
+            columns: [
+                {
+                    field: 'sample_id',
+                    text: 'Sample Id',
+                    sortable: true,
+                    searchable: true,
+                    render: 'sampleid',
+                    path: '$.sample_id',
+                },
+                {
+                    field: 'tags',
+                    text: 'Tags',
+                    sortable: false,
+                    searchable: true,
+                    render: 'tags',
+                    path: '$.tags'
+                },
+                {
+                    field: 'specie',
+                    text: 'Major species',
+                    sortable: true,
+                    searchable: true,
+                    render: 'taxonomic_name',
+                    path: '$.species_prediction.scientific_name'
+                },
+                {
+                    field: 'qc',
+                    text: 'QC',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.qc_status.status'
+                },
+                {
+                    field: 'mlst-st',
+                    text: 'MLST St',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.mlst.sequence_type'
+                },
+                {
+                    field: 'profile',
+                    text: 'Analysis profile',
+                    sortable: true,
+                    searchable: true,
+                    path: '$.profile'
+                },
+                {
+                    field: 'cdate',
+                    text: 'Upload date',
+                    sortable: true,
+                    render: 'date',
+                    path: '$.created_at'
+                },
+            ],
+            async onSelect(event) {
+                await event.complete
+                // enable add to basket button when some rows are selected
+                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                // enable find simiar samples button when ONE row is selected
+                document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
+                // update slected samples counter
+                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                sessionStorage.setItem(
+                    "selectedSamples", 
+                    JSON.stringify(
+                        this.get(this.getSelection()).map(row => {return {sample_id: row.sample_id, analysis_profile: row.profile}}) 
+                    )
+                );
+            },
+        },
+    }
+    // setup grid
+    let grid = new w2grid(tableConfig.grid)
+   
+    // append samples to grid
+    grid.records = samples.records.map( sample => {
+        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+        columns["recid"] = sample["sample_id"]
+        return columns
+    })
+    window.getSelectedRows = () => grid.getSelection()
+    window.action = function (method, param1, param2, param3) {
+        grid[method](param1, param2, param3)
+    }
+    window.refreshGrid = function(auto) {
+        grid.autoLoad = auto
+        grid.skip(0)
+    }
+    grid.render()
+    refreshGrid(true)
+</script>
+
+<script>
+    const apiURL = "{{ config.BONSAI_API_URL }}"
+    // template code for adding to basket
+    {{ add_to_basket_js() }}
+    // template code for searching similar samples
+    {{ search_similar_js() }}
+
+</script>
+{% endblock content %}
+
+{% macro group_card(group, is_admin=False) %}
+<div class="card group-card position-relative">
+    {% if is_admin %}
+        <a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle"
+                role="button"
+                href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}">
+            <i class="bi bi-pencil"></i>
+        </a>
+    {% endif %}
+    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
+        <div class="card-body">
+            <h5 class="card-title mb-0">{{ group.display_name }}</h5>
+            <span class="text-muted text-uppercase fw-semibold n-samples">Samples: {{ group.included_samples | length }}</span>
+            {% if group.description %}
+                <p class="card-text text-wrap">{{ group.description }}</p>
+            {% endif %}
+        </div>
+        <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
+            <span class="last-update text-uppercase fw-semibold text-muted">Updated: {{ group.modified_at | strftime }}</span>
+        </div>
+    </a>
+</div>
+{% endmacro %}

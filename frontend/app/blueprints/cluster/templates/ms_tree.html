@@ -1,0 +1,872 @@
+{% from "tree_sidebar.html" import sidebar %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" href="">
+	<link rel="apple-touch-icon" sizes="180x180" href="{{url_for('public.favicon', filename='apple-touch-icon.png')}}">
+	<link rel="icon" type="image/png" sizes="32x32" href="{{url_for('public.favicon', filename='favicon-32x32.png')}}">
+	<link rel="icon" type="image/png" sizes="16x16" href="{{url_for('public.favicon', filename='favicon-16x16.png')}}">
+	<link rel="manifest" href="{{url_for('public.webmanifest')}}">
+	<title>
+	{% block title %}
+		{% if title %}
+			{{ title }} - Orange
+		{% else %}
+			Welcome to Project Orange
+		{% endif %}
+	{% endblock title %}
+	</title>
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='js/jquery-ui-1.11.4/jquery-ui.min.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='css/bootstrap.min.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='css/grapetree.css')}}">
+</head>
+
+<body>
+	<!--metadata div-->
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='js/SlickGrid/slick.grid.css')}}">
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='js/SlickGrid/examples/examples.css')}}">
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/firebugx.js')}}"></script>
+
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-1.11.2.min.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-ui-1.11.3.min.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery.event.drag-2.3.0.js')}}"></script>
+
+	<script src="{{url_for('cluster.static', filename='js/tree/context.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/tree/grid.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/tree/help.js')}}"></script>
+
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/slick.core.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/plugins/slick.cellrangedecorator.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/plugins/slick.cellrangeselector.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/plugins/slick.cellselectionmodel.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/slick.formatters.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/slick.editors.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/slick.grid.js')}}"></script>
+	<script src="{{url_for('cluster.static', filename='js/SlickGrid/slick.dataview.js')}}"></script>
+
+	<script src="{{url_for('cluster.static', filename='js/spectrum/spectrum.min.js')}}"></script>
+	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='js/spectrum/spectrum.css')}}">
+	<!--information divs-->
+	<div id='welcome-div' style='background:white;padding:10px'>
+		<span id='welcome-div-close' class="glyphicon glyphicon-remove"
+			style="float:right;margin-right:5px;zoom:1.5;display:none" onclick="$('#welcome-div').hide()"></span>
+		<div id='welcome-div-text'></div>
+	</div>
+
+	<div id='information-div' class="modal fade" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content modal-sm">
+				<div id="modal-header" class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+							aria-hidden="true">&times;</span></button>
+					<p align='center'><img id='waiting-image' style='display:none'
+							src="{{url_for('cluster.static', filename='js/img/ms_failed_1.png')}}"></img></p>
+					<span id='modal-title'></span>
+				</div>
+				<div class="modal-body">
+					<p id='waiting-information'></p>
+					<div id='param-panel' style='display:none'>
+						<label>Method</label>
+						<select id='method-select'>
+							<option class='show-tooltip'
+								title='NINJA is a scalable alternative to Neighbor-Joining algorithm' value='ninja'>
+								NINJA NJ</option>
+							<option class='show-tooltip' title='MSTreeV2 uses a directed graph to handle missing data'
+								value='MSTreeV2'>MSTreeV2</option>
+							<option class='show-tooltip' title='A traditional Minimum spanning tree + eBurst weighting'
+								value='MSTree'>MSTree</option>
+							<option class='show-tooltip'
+								title='A standard Neighbor-Joining algorithm implemented in FastME V2.0' value='NJ'>
+								Standard Neighbour Joining</option>
+							<option class='show-tooltip' title='Rapid Neighbour Joining for very large datasets'
+								value='RapidNJ'>RapidNJ</option>
+						</select>
+						<label><input id='check-memory' type="checkbox" checked /> Check memory usage</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="modal-ok-button" type="button" class="btn btn-default"
+						data-dismiss="modal">Close</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+		<script charset="utf-8">
+			$("#modal-ok-button").click(function (e) {
+				var profile_file = $(this).data("profile_file")
+				if (profile_file) {
+					processProfileFile(profile_file);
+					$(this).data("profile_file", null);
+					$("#modal-ok-button").html("Close");
+					$("#param-panel").hide();
+					e.stopImmediatePropagation();
+					$("#modal-title").hide();
+					showWaitingDialog("Processing Profiles");
+				}
+			});
+
+			$("#method-select").change(function (e) {
+				if ($(this).val() == "MSTree") $("#MST-option").show();
+				else $("#MST-option").hide();
+			});
+
+			$("#matrix-select").change(function (e) {
+				if ($(this).val() == "symmetric") $("#symmetric-option").show();
+				else $("#symmetric-option").hide();
+			});
+		</script>
+	</div><!-- /.modal -->
+
+	{{ sidebar(typing_data) }}
+	<div id="graph-div" class="graph-overlay"></div>
+
+	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/tree/base_tree.js')}}"></script>
+	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/tree/d3_m_tree.js')}}"></script>
+	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/tree/grapetree_fileHandler.js')}}"></script>
+
+	<script src="{{url_for('cluster.static', filename='js/main/bootstrap.min.js')}}"></script>
+	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/main/d3.min.js')}}"></script>
+	<script charset="utf-8" src="{{url_for('cluster.static', filename='js/main/spin.min.js')}}"></script>
+	<script> var tree_id = null</script>
+
+	<script charset="utf-8">
+		var context_menu = null;
+		var metadata_grid = null;
+		var the_tree = null;
+
+		//getHelpBox('load_files');
+		var tree_raw = {};
+		var current_metadata_file = null;
+
+		var waiting_spinner = null;
+		var metadata_categories = {};
+
+		var cannot_connect = false;
+
+		var default_control_panel_values = {
+			max_link_scale: 500,
+			base_node_size: 10,
+			max_link_length: "",
+			size_power: 0.5,
+			log_link_scale: false,
+			show_individual_segments: false,
+			link_font_size: 14,
+			show_link_labels: false,
+			show_node_labels: false,
+			node_font_size: 12,
+			hide_link_length: "",
+			node_collapsed_value: 0
+		};
+
+		var tooltip_div = d3.select("body")
+			.append("div")
+			.attr("class", "tooltip")
+			.style("opacity", 0)
+			.style("z-index", 9)
+
+		var legend_colour_chooser = $("<input>").spectrum({
+			//type: "flat",
+			togglePaletteOnly: "true",
+			showInput: "true",
+			showInitial: "true",
+			allowEmpty: "false",
+			showAlpha: "false",
+			change: function (e) {
+				var cc = $(this);
+				the_tree.setColour(cc.data("category"), cc.data("value"), cc.val());
+				the_tree.changeCategory(cc.data("category"));
+			}
+		})
+			.hide();
+
+		$("body").append(legend_colour_chooser);
+
+		//a map of group to another map of name to label
+		var metadata_options = {};
+		var file_chooser = new MSFileChooser(".nwk");
+
+		//update all the select options
+		function addMetadataOptions(options) {
+			var fields = Object.keys(options).sort(function (m, n) { return m === 'nothing' ? -1 : n === 'nothing' ? 1 : ((m < n) ? -1 : 1) });
+			for (var fld_id in fields) {
+				var value = fields[fld_id];
+				var obj = options[value];
+				var category = null;
+				var label = ""
+				if (typeof obj === 'object') {
+					label = obj['label'];
+					category = obj['category'];
+
+				}
+				else {
+					label = obj;
+				}
+				var append_to_1 = $("#metadata-select");
+				var append_to_2 = $("#node-label-text")
+				if (category) {
+					if (!metadata_categories[category]) {
+						metadata_categories[category] = true;
+						append_to_1 = $("<optgroup>").attr("label", category);
+						append_to_2 = $("<optgroup>").attr("label", category);
+						$("#metadata-select").append(append_to_1);
+						$("#node-label-text").append(append_to_2);
+					}
+					else {
+						var to_find = "[label='" + category + "']";
+						append_to_1 = $("#metadata-select").find(to_find);
+						append_to_2 = $("#node-label-text").find(to_find);
+
+					}
+
+				}
+				append_to_1.append($("<option>").attr("value", value).text(label));
+				append_to_2.append($("<option>").attr("value", value).text(label));
+			}
+		}
+
+		function deleteMetadataCategory() {
+			var category = $("#add-new-values-select").val();
+			the_tree.removeCategory(category);
+			$("#metadata-select option[value='" + category + "']").remove();
+			$("#node-label-text option[value='" + category + "']").remove();
+			$("#add-new-values-select option[value='" + category + "']").remove();
+			delete metadata_options[category];
+		}
+
+		function showToolTip(msg, e) {
+			if (!e) { e = d3.event; }
+			tooltip_div.transition()
+				.duration(200)
+				.style("opacity", .9);
+			tooltip_div.html(msg)
+				.style("left", (e.pageX) + "px")
+				.style("top", (e.pageY - 28) + "px")
+				.style("height", "auto");
+			setTimeout(hideToolTip, 2000);
+		}
+
+		function hideToolTip() {
+			tooltip_div.transition()
+				.duration(500)
+				.style("opacity", 0);
+		}
+
+
+		function treeLoaded(tree) {
+			//add the extra functionality
+			metadata_grid = new D3MSMetadataTable(tree);
+			if (tree_id) {
+				metadata_grid.setAddColumnFunction(function (name) {
+					addCustomColumn(name);
+				})
+			}
+			context_menu = new D3MSTreeContextMenu(tree, metadata_grid);
+			metadata_grid.updateMetadataTable();
+			//add the ability to show/hide grid, 
+
+			//update the dropdowns if new options added
+			tree.addTreeChangedListener(function (type, data) {
+				if (type === 'metadata_options_altered') {
+					addMetadataOptions(data);
+				}
+				else if (type === 'nodes_collapased') {
+					$("#spinner-collapse-nodes").val(data);
+					$("#spinner-collapse-nodes").spinner('value', data);
+					var v = parseFloat(data);
+					$("#slider-collapse-nodes").slider('value', Math.log(v) * 1000);
+				}
+			});
+
+			tree.addDisplayChangedListener(function (type, data) {
+				if (type === 'category_changed') {
+					$("#metadata-select").val(data);
+				}
+			});
+
+			tree.legendItemClicked = function (data) {
+				legend_colour_chooser.spectrum("set", data.colour);
+				//.css({"left":0,"top":0})
+				//.val(data.colour)
+				legend_colour_chooser.data({ "value": data.value.split("  [")[0], "category": data.category });
+				//legend_colour_chooser.spectrum("show");
+				setTimeout(function () { legend_colour_chooser.spectrum("show"); }, 50);
+			};
+
+			$("#spinner-link-length").spinner({
+				min: 0,
+				max: tree.max_link_distance,
+				step: Math.max(1e-6, (tree.max_link_distance / 1000.0).toPrecision(1)),
+			});
+			$("#spinner-collapse-nodes").data('branches', $.unique(tree.original_links.map(function (d) { return d.distance }).sort(function (d1, d2) { return d1 - d2 })));
+			$("#spinner-collapse-nodes").spinner({
+				min: 0,
+				max: tree.max_link_distance,
+				value: tree.node_collapsed_value,
+				step: 1e-6,
+			});
+
+			$("#slider-collapse-nodes").slider({
+				min: Math.log(1e-7) * 1000,
+				max: Math.log(tree.max_link_distance + 0.01) * 1000,
+				value: Math.log(tree.node_collapsed_value) * 1000,
+			});
+			tree.centerGraph();
+			// $(waiting_spinner.el).hide();
+			// 		 $("#waiting-information").text("Complete. Tree has "+tree.force_nodes.length+" nodes");
+			// 		$("#waiting-image").attr("src","static/js/img/ms_complete_1.png").show();
+			// legend_colour_chooser.hide();
+			$("#information-div").modal("hide");
+		}
+
+		function setControlPanel(data) {
+		$("#slider-linklength").slider({
+			value: Math.log(data['max_link_scale'] / 5.) * 1000.0,
+		});
+		$("#spinner-linklength").val(data['max_link_scale'] / 5.);
+
+		$("#slider-nodesize").slider({value: data['base_node_size'] * 10});
+		$("#spinner-nodesize").val(data['base_node_size'] * 10);
+
+		if (data['max_link_length']) {
+			$("#spinner-link-length").val(data['max_link_length']);
+			$("#handle-long-branch-hide").prop("checked", true);
+		} else if (data['hide_link_length']) {
+			$("#spinner-link-length").val(data['hide-link-length']);
+			$("#handle-long-branch-cap").prop("checked", true);
+		}
+
+		if (data['size_power']) {
+			$("#slider-relative-nodesize").slider({value: data['size_power'] * 200.0});
+			$("#spinner-relative-nodesize").val(data['size_power'] * 200.0);
+		}
+
+		if (data['log_link_scale']) {
+			$('#link-log-scale').prop('checked', true);
+		}
+		if (data['show_individual_segments']) {
+			$("#show-individual-segments").prop("checked", true);
+		}
+		if (data['link_font_size']) {
+			$("#slider-linkfontsize").slider({value:data['link_font_size']})
+			$("#spinner-linkfontsize").spinner({value: data['link_font_size']})
+		}
+		let sll = true;
+		if (data['show_link_labels'] === false) {
+			sll = false;
+		}
+		$("#show-link-labels").prop("checked", sll);
+		$("#show-node-labels").prop("checked", data['show_node_labels']);
+		if (data['node_font_size']) {
+			$("#slider-node-fontsize").slider({value: data['node_font_size']})
+			$("#spinner-node-fontsize").spinner({value: data['node_font_size']});
+		}
+		const columnValue = data['node_collapsed_value'] ? data['node_collapsed_value'] : 0;
+		$("#slider-collapse-nodes").slider({value: Math.log(columnValue) * 1000})
+		$("#spinner-collapse-nodes").val(columnValue);
+		}
+
+		function loadMSTree(data) {
+			metadata_options = {};
+			if (the_tree) {
+				the_tree.svg.remove();
+				the_tree.legend_div[0].remove();
+				$("#metadata-select").find("option").remove();
+				$("#node-label-text").find("option").remove();
+				$("#metadata-div").remove();
+				$("#context-menu").remove();
+			}
+			$("#waiting-information").text("Loading Data");
+
+			function treeLoading(tree, msg) {
+				if (msg === 'complete') {
+					treeLoaded(tree);
+				} else {
+					$("#waiting-information").text(msg);
+				}
+			}
+
+			the_tree = null;
+			the_tree = new D3MSTree(
+				"graph-div", JSON.parse(JSON.stringify(data)), function (tree, msg) {
+					treeLoading(tree, msg);
+				});
+
+			the_tree.addSegmentOverListener(function (d) {
+				if ($("#show-node-tooltip").prop("checked")) {
+					if (the_tree.display_category === 'nothing') {
+						var node_ids = the_tree.grouped_nodes[d.data.idx];
+						var value = $.map(node_ids, function (idx) { return the_tree.metadata[idx].Name ? the_tree.metadata[idx].Name : the_tree.metadata[idx].ID }).join('<br>');
+						showToolTip(value);
+					} else {
+						var display = d.data.type;
+						showToolTip(display + "(" + d.data.value + ")");
+					}
+				}
+			});
+			the_tree.addSegmentOutListener(function (d) {
+				hideToolTip();
+			});
+			the_tree.addLinkOverListener(function (d) {
+				if ($("#show-node-tooltip").prop("checked")) {
+					showToolTip("length:" + d.value);
+				}
+			});
+			the_tree.addLinkOutListener(function (d) {
+				hideToolTip();
+			});
+			//the_tree.resize();
+
+			if (the_tree.metadata_info) {
+				addMetadataOptions(the_tree.metadata_info);
+			}
+			$("#node-label-text").val('ID');
+
+			if (data['initial_category']) {
+				$("#metadata-select").val(data['initial_category']);
+			} else {
+				$("#metadata-select").val('nothing');
+			}
+			if (data['layout_data'] && data['layout_data']['nodes_links']) {
+				setControlPanel(data['layout_data']['nodes_links'])
+			} else {
+				setControlPanel(default_control_panel_values);
+			}
+			if (current_metadata_file) {
+				loadMetadataText(current_metadata_file);
+			}
+
+			$('.panel-default').find('input, textarea, button, select, div, span').css("opacity", 1.0).prop('disabled', false);
+		}
+
+
+		function initiateLoading(msg) {
+			$("#welcome-div-close").show();
+			$("#welcome-div").draggable().css({ position: 'relative', border: '1px solid black', margin: '10px', 'z-index': 9999 }).hide();
+			$("#graph-div").empty();
+			$("#metadata-select").empty();
+			$("#add-new-values-select").empty();
+			metadata_options = {};
+			showWaitingDialog(msg);
+		};
+
+		function showWaitingDialog(msg) {
+			$("#information-div").modal("show");
+			$("#waiting-image").hide();
+			$(waiting_spinner.el).show();
+			$("#waiting-information").text(msg).show();
+		};
+
+
+		window.onload = function () {
+			$(".open-context").on('click', function (e, ui) {
+				var id = e.target.id;
+				context_menu._trigger_context(id.substring(0, id.length - 2), e);
+			});
+
+			$(".show-tooltip").on('mouseenter', function (e) {
+				showToolTip($(this).attr('title'), {
+					pageX: $(this).offset().left + $(this).width() + 10,
+					pageY: $(this).offset().top + $(this).height() / 2 + 10
+				});
+			}).on('mouseleave', function (e) {
+				setTimeout(hideToolTip, 200);
+			});
+
+			//allow dragging and dropping files
+			dropFiles($("#graph-div"));
+
+			$(".render-method").on("change", function (e) {
+				if (this.value == 'static') {
+					the_tree.fixAllNodes(document.getElementById("correct_link_length").checked);
+				} else if (this.value == 'automatic') {
+					the_tree.unfixSelectedNodes(!$("#render-selected-only").is(":checked"));
+				}
+			});
+			$("#handle-long-branch-display, #handle-long-branch-hide, #handle-long-branch-cap").on("change", function (e) {
+				var max = $("#spinner-link-length").val();
+				if (!max) {
+					max = the_tree.max_link_distance + 1;
+				}
+				if (this.value == 'hide') {
+					the_tree.setMaxLinkLength(the_tree.max_link_distance + 1);
+					the_tree.setHideLinkLength(max);
+				} else if (this.value == 'cap') {
+					the_tree.setHideLinkLength(the_tree.max_link_distance + 1);
+					the_tree.setMaxLinkLength(max);
+				} else {
+					the_tree.setMaxLinkLength(the_tree.max_link_distance + 1);
+					the_tree.setHideLinkLength(the_tree.max_link_distance + 1);
+				}
+			});
+			$("#spinner-link-length").on('change', function (e, ui) {
+				var max = $("#spinner-link-length").val();
+				if (!max) {
+					max = the_tree.max_link_distance + 1;
+				}
+				var method = null;
+				if ($("#handle-long-branch-hide").prop("checked")) {
+					method = 'hide';
+				} else if ($("#handle-long-branch-cap").prop("checked")) {
+					method = 'cap';
+				}
+				if (method == 'hide') {
+					the_tree.setMaxLinkLength(the_tree.max_link_distance + 1);
+					the_tree.setHideLinkLength(max);
+				} else if (method == 'cap') {
+					the_tree.setHideLinkLength(the_tree.max_link_distance + 1);
+					the_tree.setMaxLinkLength(max);
+				}
+			});
+
+			$("#metadata-select").on("change", function (e) {
+				the_tree.changeCategory($(this).val());
+			});
+			$("#node-label-text").change(function (e) {
+				the_tree.setNodeText($(this).val());
+			});
+
+			$("#mst-download-svg").click(function (e) {
+				saveTextAsFile(the_tree.getSVG(), "MSTree.svg");
+			});
+
+			$(".panel-body").hide();
+
+			// all slider spinners
+			$(function sliderSpinners() {
+				$(".slider-class").slider({
+					slide: function (e) {
+						$(this).trigger('change');
+					},
+					change: function (e) {
+						if (e.originalEvent) {
+							$(this).trigger('change');
+						}
+					}
+				});
+				$(".spin-group").spinner({
+					spin: function (e, ui) {
+						$(this).spinner("value", ui.value);
+					},
+					change: function (e) {
+						$(this).trigger('change', e);
+					}
+				}).keypress(function (e) {
+					if (e.which === 13) {
+						$(this).trigger('change', e);
+					}
+				});
+				$("#slider-linklength").on("change", function (e) {
+					var brlen = Math.exp($(this).slider("value") / 1000.0);
+					$("#spinner-linklength").spinner('value', brlen);
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 1609,
+						max: 9903,
+						value: 4605,
+					});
+
+				$("#spinner-linklength").on("change", function (e) {
+					var brlen = parseInt($(this).val());
+					$("#slider-linklength").slider('value', Math.log(brlen) * 1000.0);
+					the_tree.setLinkLength(brlen * 5.0);
+				})
+					.spinner({
+						min: 5,
+						max: 20000,
+						value: 100,
+						step: 1,
+					});
+
+				$("#slider-nodesize").on("change", function (e) {
+					$("#spinner-nodesize").spinner("value", $(this).slider("value"));
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 20,
+						max: 500,
+						value: 100,
+					});
+				$("#spinner-nodesize").on('change', function () {
+					the_tree.setNodeSize(parseInt($(this).val()) / 10.);
+					$("#slider-nodesize").slider("value", parseInt($(this).val()));
+				})
+					.spinner({
+						min: 20,
+						max: 500,
+						value: 100,
+					});
+
+
+				$("#slider-relative-nodesize").on("change", function (e) {
+					$("#spinner-relative-nodesize").spinner("value", $(this).slider("value"));
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 30,
+						max: 150,
+						value: 100,
+						step: 1,
+					})
+				$("#spinner-relative-nodesize").on("change", function (e) {
+					the_tree.setRelativeNodeSize(parseInt($(this).val()) / 200.0);
+					$("#slider-relative-nodesize").slider("value", parseInt($(this).val()));
+				})
+					.spinner({
+						min: 30,
+						max: 150,
+						value: 100,
+						step: 1,
+					});
+
+				$("#slider-node-fontsize").on("change", function (e) {
+					$("#spinner-node-fontsize").spinner('value', $(this).slider("value"));
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 6,
+						max: 30,
+						value: 12,
+					});
+				$("#spinner-node-fontsize").on("change", function (e) {
+					$("#slider-node-fontsize").slider('value', parseInt($(this).val()));
+					the_tree.setNodeFontSize(parseInt($(this).val()));
+				})
+					.spinner({
+						min: 6,
+						max: 30,
+						value: 12,
+					});
+
+				$("#slider-linkfontsize").on("change", function (e) {
+					$("#spinner-linkfontsize").spinner('value', $("#slider-linkfontsize").slider("value"));
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 6,
+						max: 30,
+						value: 14,
+					});
+				$("#spinner-linkfontsize").on("change", function (e) {
+					$("#slider-linkfontsize").slider('value', parseInt($(this).val()));
+					the_tree.setLinkFontSize(parseInt($(this).val()));
+				})
+					.spinner({
+						min: 6,
+						max: 30,
+						value: 14,
+					});
+
+
+				$("#slider-charge").on("change", function (e) {
+					the_tree.alterCharge($("#slider-charge").slider("value"));
+					$(this).prop("title", $(this).slider("value"));
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 0,
+						max: 30,
+					});
+
+				$("#slider-collapse-nodes").on("change", function (e) {
+					var val = Math.exp($(this).slider('value') / 1000);
+					$("#spinner-collapse-nodes").spinner('value', val);
+				})
+					.slider({
+						orientation: "horizontal",
+						min: 0,
+						max: 100,
+						value: 0,
+					});
+
+				$("#spinner-collapse-nodes").on("change", function (e, ui) {
+					var v = parseFloat($("#spinner-collapse-nodes").val());
+					if (v != $(this).data.v) {
+						$(this).data.v = v;
+						$("#slider-collapse-nodes").slider('value', Math.log(v) * 1000);
+						the_tree.collapseNodes(v);
+					}
+				})
+					.spinner({
+						min: 0,
+						value: 0
+					});
+			});
+
+			$("#node-label-text").change(function (e) {
+				var val = $(this).val();
+				if (val === "cat") {
+					val = the_tree.display_category;
+				}
+				the_tree.setNodeText(val);
+			});
+
+			$("#show-link-labels").click(function (e) {
+				the_tree.showLinkLabels($(this).is(":checked"))
+			});
+			$("#show-node-labels").click(function (e) {
+				the_tree.showNodeLabels($(this).is(":checked"));
+			});
+			$("#show-individual-segments").click(function (e) {
+				the_tree.showIndividualSegments($(this).is(":checked"));
+			});
+
+			$("#show-node-tooltip").click(function (e) {
+				show_node_tooltips = $(this).is(":checked");
+			});
+
+			$("#link-log-scale").click(function (e) {
+				the_tree.setLogLinkScale($(this).is(":checked"));
+			});
+
+			$("#button-files").click(function (e) {
+				var diag = $('<div id="read-text" title="Paste or read files"></div>').appendTo($('body'))
+					.append("<p><label>Paste a tree, profile or metadata here: </label></p>")
+					.append("<textarea id='paste-text' rows='10' cols='100'>")
+					.append("<p><label>Or load the files directly: </label></p>")
+					.append("<button title='Handles trees, profiles and metadata files' id = 'button-load-nwk' class = 'show-tooltip'> Load Files</button>");
+				$("#button-load-nwk").click(function (e) {
+					file_chooser.setFilter("");
+					file_chooser.showOpenDialog(function (files) {
+						filesDropped(files);
+						diag.dialog("close");
+					});
+				});
+
+				diag.dialog({
+					width: "auto",
+					resizable: false,
+					height: "auto",
+					modal: false,
+					close: function () {
+						$("#read-text").dialog('destroy').remove();
+					},
+					buttons: {
+						Confirm: function () {
+							distributeFile($("#paste-text").val(), '');
+							$(this).dialog("close");
+						},
+						Cancel: function () {
+							$(this).dialog("close");
+						}
+					}
+				});
+			});
+
+			$("#save-tree-json").click(function (e) {
+				saveTextAsFile(JSON.stringify(the_tree.getTreeAsObject()), "ms_tree.json");
+			});
+
+			$("#save-tree-nwk").click(function (e) {
+				saveTextAsFile(the_tree.getTreeAsNewick(), "ms_tree.nwk");
+			});
+
+			$("#show-in-microreact").click(function (e) {
+				showWaitingDialog("Sending tree and metadata to MicroReact");
+				metadata_grid.sendToMicroReact(function () {
+					$("#information-div").modal("hide");
+				}, !cannot_connect);
+			});
+
+			$("#center-graph-button").click(function (e) {
+				the_tree.centerGraph();
+			});
+
+			$("#button-refresh").click(function () {
+				showWaitingDialog("Refreshing The Tree");
+				setTimeout(function () {
+					the_tree.refreshGraph();
+					$("#information-div").modal("hide");
+				}, 500);
+			});
+
+			$("#rotation-icon").draggable({
+				containment: "#sidebar",
+				scroll: false,
+				start: function (e) {
+					the_tree._dragStarted(the_tree.force_nodes[0], [$("#rotation-icon").position().left, $("#rotation-icon").position().top]);
+				},
+				drag: function (e) {
+					the_tree._dragging(the_tree.force_nodes[0], [e.clientX, e.clientY]);
+				},
+				stop: function (e) {
+					the_tree._dragEnded(the_tree.force_nodes[0], [e.clientX, e.clientY]);
+				},
+				revert: true,
+				revertDuration: 10,
+				helper: function () { return $("<div style='cursor:none'><label id='angle-text'></label></div>") },
+			});
+			$("#rotation-icon").on("drag", function (event, ui) {
+				var x_dif = ui.helper.position().left - $("#rotation-icon").position().left;
+				var y_dif = $("#rotation-icon").position().top - ui.helper.position().top;
+				var angle = y_dif !== 0 ? Math.atan(x_dif / y_dif) / Math.PI * 180 : (x_dif === 0 ? 0 : (x_dif > 0 ? 90 : -90));
+				if (y_dif < 0) {
+					angle = 180 + angle;
+				} else if (x_dif < 0) {
+					angle = 360 + angle;
+				}
+				ui.helper.select('.angle-text').text(Math.round(angle) + '\xB0').css({
+					'font-size': '1.2em',
+					'font-style': 'bold',
+				});
+			});
+
+
+			$("#search-metadata-icon").click(function (e) {
+				var keyword = $("#search-metadata-input").val();
+				if (keyword) {
+					var ids = the_tree.searchMetadata(keyword, $("#node-label-text").val());
+					the_tree.highlightNodes(ids);
+				}
+			});
+
+			$("#graph-div").on('dblclick', function (e) {
+				if (the_tree) the_tree.clearSelection();
+			});
+
+			var target = document.getElementById('modal-header');
+			waiting_spinner = new Spinner({ color: 'black', lines: 12, top: "13%" }).spin(target);
+
+
+			// $('.panel-default').find('input, textarea, button, select, span, div').css("opacity", 0.3).prop('disabled',true);
+
+			window.addEventListener("beforeunload", function (e) {
+				if (the_tree) {
+					var confirmationMessage = 'All the modifications will lost if you have not saved the GrapeTree as a local file.';
+					(e || window.event).returnValue = confirmationMessage;
+					return confirmationMessage;
+				}
+			});
+
+			$("#file-menu-panel").css("opacity", 1.0).addClass("open-menu-panel").show();
+			$("#button-files").parent().css('opacity', 1.0);
+			$("#button-files").css("opacity", 1.0).prop("disabled", false).trigger('mouseenter');
+
+			$(".mst-menu-title").click(function (e) {
+				if ($(this).prop("disabled") === true) {
+					return;
+				}
+				var id = $(this).attr("id");
+				var this_panel = $("#" + id + "-panel");
+				var icon = $("#" + id + "-icon");
+				if (this_panel.hasClass("open-menu-panel")) {
+					this_panel.toggle("50");
+					this_panel.removeClass("open-menu-panel");
+					icon.attr("class", "glyphicon glyphicon-menu-right");
+				}
+				else {
+					this_panel.toggle("50");
+					this_panel.addClass("open-menu-panel");
+					icon.attr("class", "glyphicon glyphicon-menu-down");
+				}
+			});
+		};
+	</script>
+	<script>
+		let data = {{ data| safe }}
+		loadMSTree(data)
+	</script>
+</body>
+</html>

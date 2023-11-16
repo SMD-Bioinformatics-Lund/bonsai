@@ -14,27 +14,35 @@ services:
       - "./volumes/mongodb:/data/db"
     networks:
       - bonsai-net
+
+  redis:
+    image: redis:7.0.10
+    networks:
+      - bonsai-net
+
   api:
     container_name: api
     build: 
-      context: server
+      context: api
       network: host
     depends_on:
       - mongodb
+      - minhash_service
+      - allele_cluster_service
     ports: 
       - "8011:8000"
     environment:
       - ALLOWED_ORIGINS=*
     volumes:
-      - "./server/app:/home/worker/app/app"
-      # - "./volumes/api/genome_signatures:/data/signature_db"
+      - "./api/app:/home/worker/app/app"
     networks:
       - bonsai-net
     command: "uvicorn app.main:app --reload --host 0.0.0.0"
-  app:
-    container_name: app
+
+  frontend:
+    container_name: frontend
     build: 
-      context: client
+      context: frontend
       network: host
     depends_on:
       - mongodb
@@ -45,10 +53,37 @@ services:
       - FLASK_APP=app.app:create_app
       - FLASK_ENV=development 
     volumes:
-      - "./client/app:/home/worker/app/app"
+      - "./frontend/app:/home/worker/app/app"
     networks:
       - bonsai-net
     command: "flask run --host 0.0.0.0"
+
+  minhash_service:
+    container_name: minhash_service
+    build: 
+      context: minhash_service
+      network: host
+    depends_on:
+      - redis
+    volumes:
+      - "./minhash_service/minhash_service:/home/worker/app/app"
+      - "./volumes/api/genome_signatures:/data/signature_db"
+    networks:
+      - bonsai-net
+    command: "minhash_service"
+
+  allele_cluster_service:
+    container_name: allele_cluster_service
+    build: 
+      context: allele_cluster_service
+      network: host
+    depends_on:
+      - redis
+    volumes:
+      - "./allele_cluster_service/allele_cluster_service:/home/worker/app/app"
+    networks:
+      - bonsai-net
+    command: "cluster_service"
 
 networks:
   bonsai-net:
