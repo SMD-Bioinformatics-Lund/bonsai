@@ -1,12 +1,17 @@
 """Custom jinja3 template tests."""
+import logging
+import math
 from collections import defaultdict
 from itertools import chain
+from typing import Dict
 
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES
 from .models import TAG_LIST, Severity, Tag, TagType, VirulenceTag
+
+LOG = logging.getLogger(__name__)
 
 
 def is_list(value) -> bool:
@@ -78,12 +83,32 @@ def _jinja2_filter_datetime(date, fmt=None):
     return native.strftime(format)
 
 
-def cgmlst_count_called(alleles):
-    return sum(1 for allele in alleles.values() if allele is not None)
+def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
+    """Return the number of called alleles
+    
+    Values other than integers are treated as failed calls and are not counted.
+
+    :param alleles: called alleles
+    :type alleles: Dict[str, int | str | None]
+    :return: The number of called alleles
+    :rtype: int
+    """
+    return sum(1 for allele in alleles.values() if isinstance(allele, int))
 
 
-def cgmlst_count_missing(alleles):
-    return sum(1 for allele in alleles.values() if allele is None)
+def cgmlst_count_missing(alleles: Dict[str, int | str | None]) -> int:
+    """Count the number of missing alleles.
+
+    Strings and null values are treated as failed calls.
+
+    :param alleles: called alleles
+    :type alleles: Dict[str, int  |  str  |  None]
+    :return: Number of missing alleles
+    :rtype: int
+    """
+    return sum(
+        1 for allele in alleles.values() if isinstance(allele, str) or allele is None
+    )
 
 
 def nt_to_aa(nt_seq):
@@ -202,6 +227,43 @@ def has_same_analysis_profile(samples):
     return len(set(profiles)) == 1
 
 
+def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
+    """Large number to human readable version.
+
+    E.g 2345000 -> 2.35 Mega
+
+    :param number: large number to convert
+    :type number: float
+    :param decimals: number of decimals to round number to, defaults to 2
+    :type decimals: int, optional
+    :return: rounded human readable number with SI prefix
+    :rtype: str
+    """
+    power = math.floor(math.log10(number))
+    # source: https://sv.wikipedia.org/wiki/SI-prefix
+    SI_PREFIXES = {
+        1: "Kilo",
+        2: "Mega",
+        3: "Giga",
+        4: "Tera",
+        5: "Peta",
+        6: "Exa",
+        7: "Zetta",
+        8: "Yotta",
+        9: "Ronna",
+        10: "Quetta",
+    }
+    order = power // 3
+    # long number to rounded short number, 1230 -> 1.23 Kilo
+    short_number = round(number / math.pow(10, 3 * order), decimals)
+    prefix = SI_PREFIXES.get(order)
+    if prefix:
+        res = f"{short_number} {prefix}"
+    else: 
+        res = str(short_number)
+    return res
+
+
 TESTS = {
     "list": is_list,
 }
@@ -220,4 +282,5 @@ FILTERS = {
     "fmt_null_values": fmt_null_values,
     "has_same_analysis_profile": has_same_analysis_profile,
     "get_pvl_tag": get_pvl_tag,
+    "fmt_to_human_readable": human_readable_large_numbers,
 }
