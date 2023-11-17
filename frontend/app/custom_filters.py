@@ -84,9 +84,11 @@ def _jinja2_filter_datetime(date, fmt=None):
 
 
 def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
-    """Return the number of called allleles
+    """Return the number of called alleles
+    
+    Values other than integers are treated as failed calls and are not counted.
 
-    :param alleles: called allleles
+    :param alleles: called alleles
     :type alleles: Dict[str, int | str | None]
     :return: The number of called alleles
     :rtype: int
