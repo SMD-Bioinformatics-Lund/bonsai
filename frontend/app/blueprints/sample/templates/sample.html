@@ -245,7 +245,7 @@
             </tr>
             <tr>
                 <th scope="row">N Missing Alleles</th>
-                <td>{{ result.result.alleles | cgmlst_count_missing }}</td>
+                <td>{{ result.result.alleles | cgmlst_count_missing - result.result.n_novel }}</td>
             </tr>
         </table>
     </div>
