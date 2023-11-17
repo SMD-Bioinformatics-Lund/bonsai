@@ -30,7 +30,7 @@
 {% endmacro %}
 
 
-{% macro qc_classificaion(cls, bad_qc_actions, sample_id) %}
+{% macro qc_classification(cls, bad_qc_actions, sample_id) %}
 <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
 <form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" 
       method="post" name="qc-classification" class="form-control">
@@ -95,7 +95,7 @@
         </li>
     </ul>
 
-    {{ qc_classificaion(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+    {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
     <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
     {{ comment_area(sample) }}
 </div>
