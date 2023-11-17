@@ -1,4 +1,5 @@
 """Custom jinja3 template tests."""
+import math
 from collections import defaultdict
 from itertools import chain
 
@@ -202,6 +203,39 @@ def has_same_analysis_profile(samples):
     return len(set(profiles)) == 1
 
 
+def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
+    """Large number to human readable version.
+
+    E.g 2345000 -> 2.35 Mega
+
+    :param number: large number to convert
+    :type number: float
+    :param decimals: number of decimals to round number to, defaults to 2
+    :type decimals: int, optional
+    :return: rounded human readable number with SI prefix
+    :rtype: str
+    """
+    power = math.floor(math.log10(number))
+    # source: https://sv.wikipedia.org/wiki/SI-prefix
+    SI_PREFIXES = {
+        1: "Kilo",
+        2: "Mega",
+        3: "Giga",
+        4: "Tera",
+        5: "Peta",
+        6: "Exa",
+        7: "Zetta",
+        8: "Yotta",
+        9: "Ronna",
+        10: "Quetta",
+    }
+    order = power // 3
+    # long number to rounded short number, 1230 -> 1.23 Kilo
+    short_number = round(number / math.pow(10, 3 * order), decimals)
+    prefix = SI_PREFIXES[order]
+    return f"{short_number} {prefix[0]}"
+
+
 TESTS = {
     "list": is_list,
 }
@@ -220,4 +254,5 @@ FILTERS = {
     "fmt_null_values": fmt_null_values,
     "has_same_analysis_profile": has_same_analysis_profile,
     "get_pvl_tag": get_pvl_tag,
+    "fmt_to_human_readable": human_readable_large_numbers,
 }

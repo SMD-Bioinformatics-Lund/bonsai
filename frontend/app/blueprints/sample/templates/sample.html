@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, table_of_content %}
-{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card %}
+{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card %}
 
 {% block css %}
 {{ super() }}
@@ -312,6 +312,11 @@
                 </div>
                 <div class="col-sm-12 col-md-10 order-md-0 mt-2">
                     {{ sample_header(sample) }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 col-md-auto">
+                    {{ species_prediction_card(sample.species_prediction) }}
                 </div>
             </div>
             <div class="col col-sm-12 col-md-10 order-md-2">
