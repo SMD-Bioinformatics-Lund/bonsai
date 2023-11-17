@@ -254,8 +254,12 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     order = power // 3
     # long number to rounded short number, 1230 -> 1.23 Kilo
     short_number = round(number / math.pow(10, 3 * order), decimals)
-    prefix = SI_PREFIXES[order]
-    return f"{short_number} {prefix[0]}"
+    prefix = SI_PREFIXES.get(order)
+    if prefix:
+        res = f"{short_number} {prefix}"
+    else: 
+        res = str(short_number)
+    return res
 
 
 TESTS = {
