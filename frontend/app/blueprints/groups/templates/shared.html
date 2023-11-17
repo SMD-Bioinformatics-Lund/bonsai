@@ -114,3 +114,100 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
     document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
 });
 {% endmacro %}
+
+{% macro qc_bulk_toggle(bad_qc_actions) %}
+    {#
+
+        Button interacting with sample list in groups. Activates pop up dialog when used.
+
+        Inputs:
+            - bad_qc_actions : List[str]    List of selectable follow-up actions for failed samples
+
+    #}
+    <div id="find-similar-dropdown" class="dropdown">
+        <button
+            id="toggle-qc-btn"
+            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside" enabled>
+        Toggle QC
+        </button>
+        <form class="dropdown-menu dropdown-menu-end p-2 needs-validation" action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" method="post">
+            <span class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
+                <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
+                <input
+                    type="radio"
+                    class="btn-check btn-sm"
+                    name="qc-validation"
+                    id="passed-qc-btn"
+                    autocomplete="off"
+                    value="passed"
+                >
+                <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
+                <input
+                    type="radio"
+                    class="btn-check btn-sm"
+                    name="qc-validation"
+                    id="failed-qc-btn"
+                    autocomplete="off"
+                    value="failed"
+                >
+            </span>
+            <fieldset id="failed-qc-controls">
+                <div class="row pb-2">
+                    <div class="col-auto d-flex flex-row">
+                        <select
+                            id="failed-qc-action"
+                            class="form-select form-select-sm"
+                            name="qc-action"
+                            aria-label="Action on failed sample"
+                            disabled
+                            hidden
+                        >
+                            <option selected disabled>Select action</option>
+                            {% for action in bad_qc_actions %}
+                            <option value="{{action}}">{{action | capitalize}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div id="failed-qc-comment-container" class="row">
+                    <div id="" class="col-auto">
+                        <label class="text-muted" for="failed-qc-comment">Comment</label>
+                        <textarea
+                            type="text"
+                            class="form-control"
+                            name="qc-comment"
+                            id="failed-qc-comment"
+                        ></textarea>
+                    </div>
+                </div>
+            </fieldset>
+            <div class="row">
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Confirm</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script>
+     // QC Dropdown event listeners
+     document.getElementById("passed-qc-btn").addEventListener("click", (e) => {
+        // disable selection of actions to take after passing a sample
+         e.stopPropagation();
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = true
+        select.hidden = true
+        select.value = null
+        const textArea = document.getElementById("failed-qc-comment-container")
+        textArea.hidden = true
+        select.value = null
+    })
+     document.getElementById("failed-qc-btn").addEventListener("click", (e) => {
+        // enable selections of actions to take after rejecting a sample
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = false
+        select.hidden = false
+        document.getElementById("failed-qc-comment-container").hidden = false
+    })
+    </script>
+{% endmacro %}
