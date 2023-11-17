@@ -1,6 +1,6 @@
 """Custom jinja3 template tests."""
-import math
 import logging
+import math
 from collections import defaultdict
 from itertools import chain
 from typing import Dict
@@ -90,21 +90,23 @@ def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
     :type alleles: Dict[str, int | str | None]
     :return: The number of called alleles
     :rtype: int
-    """    
+    """
     return sum(1 for allele in alleles.values() if isinstance(allele, int))
 
 
 def cgmlst_count_missing(alleles: Dict[str, int | str | None]) -> int:
     """Count the number of missing alleles.
-     
+
     Strings and null values are treated as failed calls.
 
     :param alleles: called alleles
     :type alleles: Dict[str, int  |  str  |  None]
     :return: Number of missing alleles
     :rtype: int
-    """    
-    return sum(1 for allele in alleles.values() if isinstance(allele, str) or allele is None)
+    """
+    return sum(
+        1 for allele in alleles.values() if isinstance(allele, str) or allele is None
+    )
 
 
 def nt_to_aa(nt_seq):
