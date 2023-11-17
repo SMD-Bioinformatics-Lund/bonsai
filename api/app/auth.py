@@ -1,6 +1,5 @@
 """Authentication."""
 from datetime import datetime, timedelta
-from http.client import HTTPException
 
 from jose import jwt
 from passlib.context import CryptContext

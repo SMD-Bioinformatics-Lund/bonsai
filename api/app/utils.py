@@ -1,3 +1,5 @@
+"""Utililty functions for shared by functions in the API."""
+
 def format_error_message(exception: Exception) -> str:
     """Format exception message."""
     proc_args = []
