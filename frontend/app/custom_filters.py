@@ -1,13 +1,17 @@
 """Custom jinja3 template tests."""
 import math
+import logging
 from collections import defaultdict
 from itertools import chain
+from typing import Dict
 
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES
 from .models import TAG_LIST, Severity, Tag, TagType, VirulenceTag
+
+LOG = logging.getLogger(__name__)
 
 
 def is_list(value) -> bool:
@@ -79,12 +83,28 @@ def _jinja2_filter_datetime(date, fmt=None):
     return native.strftime(format)
 
 
-def cgmlst_count_called(alleles):
-    return sum(1 for allele in alleles.values() if allele is not None)
+def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
+    """Return the number of called allleles
+
+    :param alleles: called allleles
+    :type alleles: Dict[str, int | str | None]
+    :return: The number of called alleles
+    :rtype: int
+    """    
+    return sum(1 for allele in alleles.values() if isinstance(allele, int))
 
 
-def cgmlst_count_missing(alleles):
-    return sum(1 for allele in alleles.values() if allele is None)
+def cgmlst_count_missing(alleles: Dict[str, int | str | None]) -> int:
+    """Count the number of missing alleles.
+     
+    Strings and null values are treated as failed calls.
+
+    :param alleles: called alleles
+    :type alleles: Dict[str, int  |  str  |  None]
+    :return: Number of missing alleles
+    :rtype: int
+    """    
+    return sum(1 for allele in alleles.values() if isinstance(allele, str) or allele is None)
 
 
 def nt_to_aa(nt_seq):
