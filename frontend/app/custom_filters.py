@@ -19,7 +19,7 @@ def is_list(value) -> bool:
     return isinstance(value, list)
 
 
-def json_path(json_blob, json_path):
+def get_json_path(json_blob, json_path):
     """Get data from json blob with JSONpath."""
     jsonpath_expr = JsonPath.parse_str(json_path)
     for match in jsonpath_expr.match(json_blob):
@@ -259,7 +259,7 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     prefix = SI_PREFIXES.get(order)
     if prefix:
         res = f"{short_number} {prefix[0]}"
-    else: 
+    else:
         res = str(short_number)
     return res
 
@@ -269,7 +269,7 @@ TESTS = {
 }
 
 FILTERS = {
-    "json_path": json_path,
+    "json_path": get_json_path,
     "has_arg": has_arg,
     "get_all_phenotypes": get_all_phenotypes,
     "camelcase_to_text": camelcase_to_text,
