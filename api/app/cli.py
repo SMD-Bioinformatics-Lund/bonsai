@@ -61,7 +61,7 @@ def setup(ctx):
     type=click.Choice(list(USER_ROLES.keys())),
     help="User role which dictates persmission.",
 )
-def create_user(ctx, username, password, role):
+def create_user(ctx, username, password, role):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     user = UserInputCreate(
@@ -80,7 +80,7 @@ def create_user(ctx, username, password, role):
 
 @cli.command()
 @click.pass_context
-def index(ctx):
+def index(ctx):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
     for collection_name, indexes in INDEXES.items():
         collection = getattr(db, f"{collection_name}_collection")

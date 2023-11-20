@@ -1,22 +1,31 @@
 """Entrypoints for starting clustering jobs."""
 import logging
-from enum import Enum
 from pathlib import Path
+from typing import Dict
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import Field
 
 from ..crud.errors import EntryNotFound
-from ..crud.sample import (TypingProfileOutput, get_signature_path_for_samples,
-                           get_typing_profiles)
+from ..crud.sample import (
+    TypingProfileOutput,
+    get_signature_path_for_samples,
+    get_typing_profiles,
+)
 from ..db import db
 from ..models.base import RWModel
-from ..redis import ClusterMethod, DistanceMethod, MsTreeMethods, TypingMethod
-from ..redis.allele_cluster import \
-    schedule_cluster_samples as schedule_allele_cluster_samples
+from ..redis import (
+    ClusterMethod,
+    DistanceMethod,
+    MsTreeMethods,
+    TypingMethod,
+    SubmittedJob,
+)
+from ..redis.allele_cluster import (
+    schedule_cluster_samples as schedule_allele_cluster_samples,
+)
 from ..redis.minhash import schedule_add_genome_signature_to_index
-from ..redis.minhash import \
-    schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -28,64 +37,89 @@ READ_PERMISSION = "cluster:read"
 WRITE_PERMISSION = "cluster:write"
 
 
-class clusterInput(RWModel):
+class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
+    """Input data model for cluster entrypoint
+
+    :param RWModel: Generic read write base model
+    :type RWModel: Generic basemodel for read/ write
+    """
+
     sample_ids: list[str] = Field(..., min_length=2, alias="sampleIds")
     distance: DistanceMethod | None = None
     method: ClusterMethod | MsTreeMethods
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Model configuration class."""
+
         use_enum_values = False
 
 
-#    current_user: UserOutputDatabase = Security(
-#        get_current_active_user, scopes=[WRITE_PERMISSION]
-#    ),
 @router.post(
     "/cluster/{typing_method}/",
     status_code=status.HTTP_201_CREATED,
+    response_model=SubmittedJob,
     tags=["minhash", *DEFAULT_TAGS],
 )
 async def cluster_samples(
     typing_method: TypingMethod,
-    clusterInput: clusterInput,
-):
+    cluster_input: ClusterInput,
+) -> SubmittedJob:
     """Cluster samples on their cgmlst profile.
 
     In order to cluster the samples, all samples need to have a profile and be of the same specie.
+
+    :param typing_method: clustering typing method
+    :type typing_method: TypingMethod
+    :param cluster_input: clustering input data
+    :type cluster_input: ClusterInput
+    :raises HTTPException: Raised if some sample was not found
+    :return: Information on scheduled job
+    :rtype: SubmittedJob
     """
     if typing_method == TypingMethod.MINHASH:
         job = schedule_minhash_cluster_samples(
-            clusterInput.sample_ids, clusterInput.method
+            cluster_input.sample_ids, cluster_input.method
         )
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(
-                db, clusterInput.sample_ids, typing_method.value
+                db, cluster_input.sample_ids, typing_method.value
             )
         except EntryNotFound as error:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=str(error),
-            )
-        job = schedule_allele_cluster_samples(profiles, clusterInput.method)
+                detail=error,
+            ) from error
+        job = schedule_allele_cluster_samples(profiles, cluster_input.method)
     return job
 
 
-class indexInput(RWModel):
+class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
+    """Input data model for index entrypoint.
+
+    :param RWModel: Generic read write base model
+    :type RWModel: Generic basemodel for read/ write
+    """
+
     sample_ids: list[str] = Field(..., min_length=1)
     force: bool = False
 
 
 @router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
-async def index_genome_signatures(index_input: indexInput):
-    """Entrypoint for scheduling indexing of sourmash signatures."""
+async def index_genome_signatures(index_input: IndexInput) -> Dict[str, str]:
+    """Entrypoint for scheduling indexing of sourmash signatures.
+
+    :raises HTTPException: Return 500 HTTP error signature path cant be generated
+    :raises HTTPException: Return 404 HTTP error if no signatures were found
+    :return: Indexing job id
+    :rtype: Dict[str, str]
+    """
     try:
         signatures = await get_signature_path_for_samples(db, index_input.sample_ids)
     except Exception as error:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(error)
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error
+        ) from error
 
     # verify results
     if len(signatures) == 0:

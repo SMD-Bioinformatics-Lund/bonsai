@@ -14,8 +14,13 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (Comment, CommentInDatabase, PipelineResult,
-                             SampleInCreate, SampleInDatabase)
+from ..models.sample import (
+    Comment,
+    CommentInDatabase,
+    PipelineResult,
+    SampleInCreate,
+    SampleInDatabase,
+)
 from ..models.typing import CGMLST_ALLELES
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError

@@ -3,7 +3,7 @@
 from enum import Enum
 
 from ..models.base import RWModel
-from ..models.cluster import TypingMethod, DistanceMethod
+from ..models.cluster import DistanceMethod, TypingMethod
 from .queue import redis
 
 

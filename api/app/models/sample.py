@@ -10,8 +10,7 @@ from .metadata import RunMetadata
 from .phenotype import ElementType, ElementTypeResult, PredictionSoftware
 from .qc import QcClassification, QcMethodIndex
 from .tags import Tag
-from .typing import (TypingMethod, TypingResultCgMlst, TypingResultMlst,
-                     TypingSoftware)
+from .typing import TypingMethod, TypingResultCgMlst, TypingResultMlst, TypingSoftware
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"

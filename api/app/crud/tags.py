@@ -3,8 +3,14 @@ from multiprocessing.sharedctypes import Value
 
 from ..models.phenotype import ElementType, ElementTypeResult
 from ..models.sample import SampleInDatabase
-from ..models.tags import (TAG_LIST, ResistanceTag, Tag, TagSeverity, TagType,
-                           VirulenceTag)
+from ..models.tags import (
+    TAG_LIST,
+    ResistanceTag,
+    Tag,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+)
 
 
 # Phenotypic tags

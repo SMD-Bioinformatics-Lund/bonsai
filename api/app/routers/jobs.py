@@ -18,6 +18,12 @@ router = APIRouter()
 
 @router.get("/job/status/{job_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def check_job_status(job_id: str) -> JobStatus:
-    """Entrypoint for checking status of running jobs."""
+    """Entrypoint for checking status of running jobs.
+
+    :param job_id: Redis job id
+    :type job_id: str
+    :return: Job information.
+    :rtype: JobStatus
+    """
     info = check_redis_job_status(job_id=job_id)
     return info

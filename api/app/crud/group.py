@@ -8,8 +8,7 @@ from bson.objectid import ObjectId
 from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import (GroupInCreate, GroupInfoDatabase,
-                            UpdateIncludedSamples)
+from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
 from ..models.sample import SampleSummary
 from ..models.tags import TAG_LIST
 from ..models.typing import TypingMethod
