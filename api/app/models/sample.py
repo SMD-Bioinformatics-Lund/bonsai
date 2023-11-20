@@ -14,10 +14,11 @@ from .typing import TypingMethod, TypingResultCgMlst, TypingResultMlst, TypingSo
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
-# , regex=SAMPLE_ID_PATTERN
 
 
 class TaxLevel(Enum):
+    """Taxonomic levels."""
+
     P = "phylum"
     C = "class"
     O = "order"
@@ -26,7 +27,9 @@ class TaxLevel(Enum):
     S = "species"
 
 
-class SpeciesPrediction(RWModel):
+class SpeciesPrediction(RWModel):  # pylint: disable=too-few-public-methods
+    """Definition of species prediction results."""
+
     scientific_name: str
     taxonomy_id: int
     taxonomy_lvl: TaxLevel
@@ -35,7 +38,7 @@ class SpeciesPrediction(RWModel):
     fraction_total_reads: float
 
 
-class MethodIndex(RWModel):
+class MethodIndex(RWModel):  # pylint: disable=too-few-public-methods
     """Container for key-value lookup of analytical results."""
 
     type: ElementType | TypingMethod
@@ -43,7 +46,7 @@ class MethodIndex(RWModel):
     result: ElementTypeResult | TypingResultMlst | TypingResultCgMlst
 
 
-class PipelineResult(RWModel):
+class PipelineResult(RWModel):  # pylint: disable=too-few-public-methods
     """Input format of sample object from pipeline."""
 
     sample_id: str = Field(..., min_length=3, max_length=100)
@@ -59,7 +62,7 @@ class PipelineResult(RWModel):
     element_type_result: List[MethodIndex] = Field(...)
 
 
-class Comment(BaseModel):
+class Comment(BaseModel):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
 
     username: str = Field(..., min_length=0)
@@ -68,13 +71,13 @@ class Comment(BaseModel):
     displayed: bool = True
 
 
-class CommentInDatabase(Comment):
+class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     """Comment data structure in database."""
 
     id: int = Field(..., alias="id")
 
 
-class SampleBase(ModifiedAtRWModel):
+class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     patient_id: str | None = Field(None)
@@ -87,19 +90,21 @@ class SampleBase(ModifiedAtRWModel):
     genome_signature: str | None = Field(None, description="Genome signature name")
 
 
-class SampleInCreate(SampleBase, PipelineResult):
+class SampleInCreate(
+    SampleBase, PipelineResult
+):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
-    pass
 
-
-class SampleInDatabase(DBModelMixin, SampleBase, PipelineResult):
+class SampleInDatabase(
+    DBModelMixin, SampleBase, PipelineResult
+):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
 
-    pass
 
-
-class SampleSummary(DBModelMixin, SampleBase, PipelineResult):
+class SampleSummary(
+    DBModelMixin, SampleBase, PipelineResult
+):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
 
     major_specie: SpeciesPrediction = Field(...)

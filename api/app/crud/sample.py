@@ -1,10 +1,8 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from pathlib import Path
 from typing import List
 
-from app import config
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 
@@ -14,6 +12,7 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
+from ..models.tags import TagList
 from ..models.sample import (
     Comment,
     CommentInDatabase,
@@ -21,7 +20,7 @@ from ..models.sample import (
     SampleInCreate,
     SampleInDatabase,
 )
-from ..models.typing import CGMLST_ALLELES
+from ..models.typing import CgmlstAlleles
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -29,11 +28,11 @@ LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
 
 
-class TypingProfileAggregate(RWModel):
+class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
     sample_id: str
-    typing_result: CGMLST_ALLELES
+    typing_result: CgmlstAlleles
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -58,9 +57,6 @@ async def get_samples_summary(
     include: List[str] | None = None,
     include_qc: bool = True,
     include_mlst: bool = True,
-    include_cgmlst: bool = True,
-    include_amr: bool = True,
-    include_virulence: bool = True,
 ) -> List[SampleInDatabase]:
     """Get a summay of several samples."""
     # build query pipeline
@@ -136,9 +132,8 @@ async def get_samples(
             **samp,
         )
         # Compute tags
-        tags: TAG_LIST = compute_phenotype_tags(sample)
+        tags: TagList = compute_phenotype_tags(sample)
         sample.tags = tags
-        # TODO replace with aggregation pipeline
         if include is not None and sample.sample_id not in include:
             continue
         samp_objs.append(sample)
@@ -148,9 +143,7 @@ async def get_samples(
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
-    sample_db_fmt: SampleDatabaseInput = SampleInCreate(
-        in_collections=[], **sample.dict()
-    )
+    sample_db_fmt: SampleInDatabase = SampleInCreate(in_collections=[], **sample.dict())
     # store data in database
     doc = await db.sample_collection.insert_one(jsonable_encoder(sample_db_fmt))
     # print(sample_db_fmt.dict(by_alias=True))
@@ -167,7 +160,7 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
 async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     """Replace an existing sample in the database with an updated version."""
     sample_id = updated_data.sample_id
-    LOG.debug(f"Updating sample: {sample_id} in database")
+    LOG.debug("Updating sample: %s in database", sample_id)
 
     # store data in database
     try:
@@ -176,7 +169,9 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
         )
     except Exception as err:
         LOG.error(
-            f"Error when updating sample: {sample_id} - {format_error_message(err)}"
+            "Error when updating sample: %s{sample_id} - %s",
+            sample_id,
+            format_error_message(err),
         )
         raise err
 
@@ -200,7 +195,7 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
         **db_obj,
     )
     # Compute tags
-    tags: TAG_LIST = compute_phenotype_tags(sample_obj)
+    tags: TagList = compute_phenotype_tags(sample_obj)
     sample_obj.tags = tags
     return sample_obj
 
@@ -232,13 +227,11 @@ async def add_comment(
         raise EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
-    LOG.info(f"Added comment to {sample_id}")
+    LOG.info("Added comment to %s", sample_id)
     return [comment_obj.dict()] + sample.comments
 
 
-async def hide_comment(
-    db: Database, sample_id: str, comment_id: int
-) -> List[CommentInDatabase]:
+async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     update_obj = await db.sample_collection.update_one(
@@ -254,13 +247,9 @@ async def hide_comment(
         raise EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
-    LOG.info(f"Hide comment {comment_id} for {sample_id}")
+    LOG.info("Hide comment %s for %s", comment_id, sample_id)
     # update comments in return object
-    comments = []
-    for cmt in comments:
-        cmd.displayed = False if cmt.id == comment_id else cmt.displayed
-        comments.append(cmt)
-    return comments
+    return True
 
 
 async def update_sample_qc_classification(
@@ -297,12 +286,13 @@ async def add_location(
         location_obj = await get_location(db, location_id)
     except EntryNotFound as err:
         LOG.warning(
-            f"Tried to add location: {location_id} to sample {sample_id}, location not found"
+            "Tried to add location: %s to sample %s, location not found",
+            location_id,
+            sample_id,
         )
         raise err
 
     # Add location to samples
-    fields = SampleInDatabase.__fields__
     update_obj = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
@@ -316,7 +306,7 @@ async def add_location(
         raise EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
-    LOG.info(f"Added location {location_obj.display_name} to {sample_id}")
+    LOG.info("Added location %s to %s", location_obj.display_name, sample_id)
     return location_obj
 
 
@@ -345,10 +335,8 @@ async def get_typing_profiles(
     ]
     missing_samples = set(sample_idx) - {s.sample_id for s in results}
     if len(missing_samples) > 0:
-        msg = 'The samples "%s" didnt have %s typing result.' % (
-            ", ".join(list(missing_samples)),
-            typing_method,
-        )
+        sample_ids = ", ".join(list(missing_samples))
+        msg = f'The samples "{sample_ids}" didnt have {typing_method} typing result.'
         raise EntryNotFound(msg)
     return results
 
@@ -365,8 +353,8 @@ async def get_signature_path_for_samples(
         ]
     }
     projection = {"_id": 0, "sample_id": 1, "genome_signature": 1}  # projection
-    LOG.debug(f"Query: {query}; projection: {projection}")
+    LOG.debug("Query: %s; projection: %s", query, projection)
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
-    LOG.debug(f"Found {len(results)} signatures")
+    LOG.debug("Found %d signatures", len(results))
     return results

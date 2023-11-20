@@ -41,13 +41,13 @@ LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 
-class SearchParams(BaseModel): # pylint: disable=too-few-public-methods
+class SearchParams(BaseModel):  # pylint: disable=too-few-public-methods
     """Parameters for searching for samples."""
 
     sample_id: str | List[str]
 
 
-class SearchBody(BaseModel): # pylint: disable=too-few-public-methods
+class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
     """Parameters for searching for samples."""
 
     params: SearchParams
@@ -69,7 +69,7 @@ async def read_samples(
     skip: int = Query(0, gt=-1),
     include_qc: bool = Query(True),
     include_mlst: bool = Query(True),
-    current_user: UserOutputDatabase = Security( # pylint: disable=unused-argument
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
@@ -385,9 +385,7 @@ async def hide_comment(
     :rtype: CommentsObj
     """
     try:
-        comments: CommentsObj = await hide_comment_for_sample(
-            db, sample_id, comment_id
-        )
+        comments: CommentsObj = await hide_comment_for_sample(db, sample_id, comment_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -438,7 +436,7 @@ async def update_location(
     return location_obj
 
 
-class SimilarSamplesInput(BaseModel): # pylint: disable=too-few-public-methods
+class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
     """Input parameters for finding similar samples."""
 
     limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")

@@ -13,12 +13,12 @@ LOG = logging.getLogger(__name__)
 
 def schedule_add_genome_signature(sample_id: str, signature) -> SubmittedJob | str:
     """Schedule adding signature to index."""
-    TASK = "minhash_service.tasks.add_signature"
+    task = "minhash_service.tasks.add_signature"
     job = redis.minhash.enqueue(
-        TASK, sample_id=sample_id, signature=signature, job_timeout="30m"
+        task, sample_id=sample_id, signature=signature, job_timeout="30m"
     )
-    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
-    return SubmittedJob(id=job.id, task=TASK)
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
 
 
 def schedule_add_genome_signature_to_index(
@@ -29,7 +29,7 @@ def schedule_add_genome_signature_to_index(
 
     The job can depend on the completion of previous jobs by providing a job_id
     """
-    TASK = "minhash_service.tasks.index"
+    task = "minhash_service.tasks.index"
     submit_kwargs = {
         "retry": Retry(max=3, interval=60),
         **enqueue_kwargs,
@@ -44,10 +44,10 @@ def schedule_add_genome_signature_to_index(
 
     # submit job
     job = redis.minhash.enqueue(
-        TASK, sample_ids=sample_ids, job_timeout="30m", **submit_kwargs
+        task, sample_ids=sample_ids, job_timeout="30m", **submit_kwargs
     )
-    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
-    return SubmittedJob(id=job.id, task=TASK)
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
 
 
 def schedule_find_similar_samples(
@@ -57,16 +57,16 @@ def schedule_find_similar_samples(
 
     min_similarity - minimum similarity score to be included
     """
-    TASK = "minhash_service.tasks.similar"
+    task = "minhash_service.tasks.similar"
     job = redis.minhash.enqueue(
-        TASK,
+        task,
         sample_id=sample_id,
         min_similarity=min_similarity,
         limit=limit,
         job_timeout="30m",
     )
-    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
-    return SubmittedJob(id=job.id, task=TASK)
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
 
 
 def schedule_cluster_samples(
@@ -76,15 +76,15 @@ def schedule_cluster_samples(
 
     min_similarity - minimum similarity score to be included
     """
-    TASK = "minhash_service.tasks.cluster"
+    task = "minhash_service.tasks.cluster"
     job = redis.minhash.enqueue(
-        TASK,
+        task,
         sample_ids=sample_ids,
         cluster_method=cluster_method.value,
         job_timeout="30m",
     )
-    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}; {job}")
-    return SubmittedJob(id=job.id, task=TASK)
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
 
 
 def schedule_find_similar_and_cluster(
@@ -101,16 +101,16 @@ def schedule_find_similar_and_cluster(
     linkage - the linkage function to use when clustering
     """
     if typing_method == TypingMethod.MINHASH:
-        TASK = "minhash_service.tasks.find_similar_and_cluster"
+        task = "minhash_service.tasks.find_similar_and_cluster"
         job = redis.minhash.enqueue(
-            TASK,
+            task,
             sample_id=sample_id,
             min_similarity=min_similarity,
             limit=limit,
             cluster_method=cluster_method.value,
             job_timeout="30m",
         )
-        LOG.debug(f"Submitting job, {TASK} to {job.worker_name}")
+        LOG.debug("Submitting job, %s to %s", task, job.worker_name)
     else:
         raise ValueError(f"{typing_method} is not implemented yet")
-    return SubmittedJob(id=job.id, task=TASK)
+    return SubmittedJob(id=job.id, task=task)

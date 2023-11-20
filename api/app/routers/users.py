@@ -1,18 +1,21 @@
 """Routes for interacting with user data."""
 
-from datetime import datetime
-from typing import Dict, List, Union
+from typing import List
 
 from fastapi import APIRouter, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.user import (add_samples_to_user_basket, create_user,
-                         get_current_active_user, get_samples_in_user_basket,
-                         get_user, remove_samples_from_user_basket)
+from ..crud.user import (
+    add_samples_to_user_basket,
+    create_user,
+    get_current_active_user,
+    get_samples_in_user_basket,
+    get_user,
+    remove_samples_from_user_basket,
+)
 from ..db import db
-from ..models.user import (SampleBasketObject, UserInputCreate,
-                           UserOutputDatabase)
+from ..models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
 
 router = APIRouter()
 
@@ -62,13 +65,13 @@ async def add_samples_to_basket(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     return basket_obj
 
 
@@ -87,20 +90,20 @@ async def remove_samples_from_basket(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     return basket_obj
 
 
 @router.get("/users/{username}", tags=DEFAULT_TAGS)
 async def get_user_in_db(
     username: str,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ) -> UserOutputDatabase:
@@ -110,15 +113,15 @@ async def get_user_in_db(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     return user
 
 
 @router.post("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_user_in_db(
     user: UserInputCreate,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> UserOutputDatabase:
@@ -129,5 +132,5 @@ async def create_user_in_db(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=error.details["errmsg"],
-        )
+        ) from error
     return db_obj

@@ -1,3 +1,4 @@
+"""Helper functions for setup and teardown of database connections."""
 import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient

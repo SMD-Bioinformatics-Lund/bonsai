@@ -1,16 +1,13 @@
 """Functions for conducting CURD operations on group collection"""
 import logging
 from datetime import datetime
-from multiprocessing.sharedctypes import Value
 from typing import Any, Dict, List
 
-from bson.objectid import ObjectId
 from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase, UpdateIncludedSamples
+from ..models.group import GroupInCreate, GroupInfoDatabase
 from ..models.sample import SampleSummary
-from ..models.tags import TAG_LIST
 from ..models.typing import TypingMethod
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
@@ -84,9 +81,9 @@ async def get_group(
     async for group in db.sample_group_collection.aggregate(pipeline):
         # compute tags for samples if samples are included
         if lookup_samples:
-            for sample in group[included_samples_field]:
+            for sample in group["included_samples"]:
                 # cast as static object
-                tags: TAG_LIST = compute_phenotype_tags(SampleSummary(**sample))
+                group["tags"] = compute_phenotype_tags(SampleSummary(**sample))
         return group_document_to_db_object(group)
 
 
@@ -118,8 +115,7 @@ async def update_group(
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
-            "$set": {"modified_at": datetime.now()},
-            "$set": group_record.dict(),
+            "$set": {"modified_at": datetime.now() ** group_record.dict()},
         },
     )
 

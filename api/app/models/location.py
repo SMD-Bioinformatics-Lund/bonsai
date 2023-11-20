@@ -1,3 +1,5 @@
+"""Data modules for location information."""
+
 from typing import List, Tuple
 
 from pydantic import BaseModel, Field, validator
@@ -18,14 +20,16 @@ def check_coordinates_polygon(coords: List[COORDS]) -> COORDS:
 def check_coordinates(coords: COORDS) -> COORDS:
     """Check that coordinates are valid."""
     long, lat = coords
-    if not (-180 < long < 180):
+    if not -180 < long < 180:
         raise ValueError(f"Invalid longitude coordinate {long}")
-    if not (-90 < lat < 90):
+    if not -90 < lat < 90:
         raise ValueError(f"Invalid latitude coordinate {lat}")
     return coords
 
 
-class GeoJSONPoint(BaseModel):
+class GeoJSONPoint(BaseModel):  # pylint: disable=too-few-public-methods
+    """Container of a GeoJSON representation of a point."""
+
     type: str = "Point"
     coordinates: COORDS
 
@@ -33,7 +37,9 @@ class GeoJSONPoint(BaseModel):
     _validate_coords = validator("coordinates", allow_reuse=True)(check_coordinates)
 
 
-class GeoJSONPolygon(BaseModel):
+class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
+    """Container of a GeoJSON representation of a polygon."""
+
     type: str = "Polygon"
 
     coordinates: List[List[COORDS]]
@@ -44,8 +50,11 @@ class GeoJSONPolygon(BaseModel):
     )
 
     @validator("coordinates")
-    def check_closed_polygon(cls, coords):
+    def check_closed_polygon(
+        cls, coords
+    ):  # pylint: disable=too-few-public-methods,no-self-argument
         """Verify that polygon is closed."""
+
         base_message = "Invalid Polygon GeoJSON object"
         for poly_obj in coords:
             if len(poly_obj) < 4:
@@ -58,14 +67,14 @@ class GeoJSONPolygon(BaseModel):
         return coords
 
 
-class LocationBase(ModifiedAtRWModel):
+class LocationBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
 
     display_name: str = Field(..., min_length=0, alias="displayName")
     disabled: bool = False
 
 
-class LocationInputCreate(LocationBase):
+class LocationInputCreate(LocationBase):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
 
     coordinates: Tuple[float, float]
@@ -74,13 +83,13 @@ class LocationInputCreate(LocationBase):
     _validate_coords = validator("coordinates", allow_reuse=True)(check_coordinates)
 
 
-class LocationInputDatabase(LocationBase):
+class LocationInputDatabase(LocationBase):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
 
     location: GeoJSONPoint = Field(..., alias="geoLocation")
 
 
-class LocationOutputDatabase(LocationInputDatabase, DBModelMixin):
+class LocationOutputDatabase(
+    LocationInputDatabase, DBModelMixin
+):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
-
-    pass

@@ -75,7 +75,7 @@ async def get_location_bbox(
     bottom: float,
     right: float,
     top: float,
-    current_user: UserOutputDatabase = Security( # pylint: disable=unused-argument
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ) -> List[LocationOutputDatabase]:
@@ -108,7 +108,7 @@ async def get_location_bbox(
 @router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
 async def get_location(
     location_id: str,
-    current_user: UserOutputDatabase = Security( # pylint: disable=unused-argument
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ) -> LocationOutputDatabase:

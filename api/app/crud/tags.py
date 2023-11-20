@@ -1,10 +1,8 @@
 """Functions for computing tags."""
-from multiprocessing.sharedctypes import Value
-
 from ..models.phenotype import ElementType, ElementTypeResult
 from ..models.sample import SampleInDatabase
 from ..models.tags import (
-    TAG_LIST,
+    TagList,
     ResistanceTag,
     Tag,
     TagSeverity,
@@ -14,7 +12,7 @@ from ..models.tags import (
 
 
 # Phenotypic tags
-def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
+def add_pvl(tags: TagList, sample: SampleInDatabase) -> Tag:
     """Check if sample is PVL toxin positive."""
     virs = [
         pred
@@ -23,26 +21,26 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
     ]
     if len(virs) > 0:
         vir_result: ElementTypeResult = virs[0].result
-        has_lukS = any(gene.gene_symbol.startswith("lukS") for gene in vir_result.genes)
-        has_lukF = any(gene.gene_symbol.startswith("lukF") for gene in vir_result.genes)
+        has_luks = any(gene.gene_symbol.startswith("lukS") for gene in vir_result.genes)
+        has_lukf = any(gene.gene_symbol.startswith("lukF") for gene in vir_result.genes)
         # classify PVL
-        if has_lukF and has_lukS:
+        if has_lukf and has_luks:
             tag = Tag(
                 type=TagType.VIRULENCE,
                 label=VirulenceTag.PVL_ALL_POS,
                 description="Both lukF and lukS were identified",
                 severity=TagSeverity.DANGER,
             )
-        elif any([has_lukF and not has_lukS, has_lukS and not has_lukF]):
+        elif any([has_lukf and not has_luks, has_luks and not has_lukf]):
             tag = Tag(
                 type=TagType.VIRULENCE,
                 label=VirulenceTag.PVL_LUKF_POS
-                if has_lukF
+                if has_lukf
                 else VirulenceTag.PVL_LUKS_POS,
                 description="One of the luk sub-units identified",
                 severity=TagSeverity.WARNING,
             )
-        elif not has_lukF and not has_lukS:
+        elif not has_lukf and not has_luks:
             tag = Tag(
                 type=TagType.VIRULENCE,
                 label=VirulenceTag.PVL_ALL_NEG,
@@ -52,7 +50,7 @@ def add_pvl(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
         tags.append(tag)
 
 
-def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
+def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
     """Check if sample is MRSA.
 
     An SA is classified as MRSA if it carries either mecA, mecB or mecC.
@@ -95,7 +93,7 @@ def add_mrsa(tags: TAG_LIST, sample: SampleInDatabase) -> Tag:
 ALL_TAG_FUNCS = [add_pvl, add_mrsa]
 
 
-def compute_phenotype_tags(sample: SampleInDatabase) -> TAG_LIST:
+def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
     """Compute tags based on phenotype prediction."""
     tags = []
     # iterate over tag functions to build up list of tags

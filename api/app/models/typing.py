@@ -35,23 +35,23 @@ class MlstErrors(str, Enum):
     PARTIAL = "partial"
 
 
-CGMLST_ALLELES = Dict[str, int | None | ChewbbacaErrors | MlstErrors | List[int]]
+CgmlstAlleles = Dict[str, int | None | ChewbbacaErrors | MlstErrors | List[int]]
 
 
-class ResultMlstBase(RWModel):
+class ResultMlstBase(RWModel):  # pylint: disable=too-few-public-methods
     """Base class for storing MLST-like typing results"""
 
-    alleles: CGMLST_ALLELES
+    alleles: CgmlstAlleles
 
 
-class TypingResultMlst(ResultMlstBase):
+class TypingResultMlst(ResultMlstBase):  # pylint: disable=too-few-public-methods
     """MLST results"""
 
     scheme: str
     sequence_type: int | None = Field(None)
 
 
-class TypingResultCgMlst(ResultMlstBase):
+class TypingResultCgMlst(ResultMlstBase):  # pylint: disable=too-few-public-methods
     """MLST results"""
 
     n_novel: int = Field(0)
@@ -65,7 +65,7 @@ class TypingMethod(Enum):
     CGMLST = "cgmlst"
 
 
-class TypingResultIndex(RWModel):
+class TypingResultIndex(RWModel):  # pylint: disable=too-few-public-methods
     """Basic key-value index for analysis results."""
 
     type: TypingMethod

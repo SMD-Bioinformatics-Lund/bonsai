@@ -7,14 +7,14 @@ from pydantic import EmailStr
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
 
-class SampleBasketObject(RWModel):
+class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
     """Contaner for sample baskt content."""
 
     sample_id: str
     analysis_profile: str
 
 
-class UserBase(RWModel):
+class UserBase(RWModel):  # pylint: disable=too-few-public-methods
     """Base user model"""
 
     username: str
@@ -26,7 +26,7 @@ class UserBase(RWModel):
     basket: List[SampleBasketObject] = []
 
 
-class UserInputCreate(UserBase):
+class UserInputCreate(UserBase):  # pylint: disable=too-few-public-methods
     """
     User data sent over API.
     """
@@ -34,7 +34,9 @@ class UserInputCreate(UserBase):
     password: str
 
 
-class UserInputDatabase(UserBase, ModifiedAtRWModel):
+class UserInputDatabase(
+    UserBase, ModifiedAtRWModel
+):  # pylint: disable=too-few-public-methods
     """User data to be written to database.
 
     Includes modified timestamp.
@@ -43,10 +45,10 @@ class UserInputDatabase(UserBase, ModifiedAtRWModel):
     hashed_password: str
 
 
-class UserOutputDatabase(UserBase, DBModelMixin):
+class UserOutputDatabase(
+    UserBase, DBModelMixin
+):  # pylint: disable=too-few-public-methods
     """Representation of the userdata in the database.
 
     Information returned by API.
     """
-
-    pass
