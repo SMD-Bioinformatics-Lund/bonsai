@@ -258,7 +258,7 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     short_number = round(number / math.pow(10, 3 * order), decimals)
     prefix = SI_PREFIXES.get(order)
     if prefix:
-        res = f"{short_number} {prefix}"
+        res = f"{short_number} {prefix[0]}"
     else: 
         res = str(short_number)
     return res
