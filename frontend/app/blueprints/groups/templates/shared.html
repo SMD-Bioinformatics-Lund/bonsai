@@ -227,7 +227,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
              var input = document.createElement('input');
              input.type = 'hidden';
              input.name = 'qc-selected-samples'; // Adjust the name as needed
-             input.value = sampleId;
+             input.value = sampleId['sample_id'];
 
              // Append the input element to the form
              form.appendChild(input);
