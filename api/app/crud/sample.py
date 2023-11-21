@@ -12,7 +12,6 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.tags import TagList
 from ..models.sample import (
     Comment,
     CommentInDatabase,
@@ -20,6 +19,7 @@ from ..models.sample import (
     SampleInCreate,
     SampleInDatabase,
 )
+from ..models.tags import TagList
 from ..models.typing import CgmlstAlleles
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError

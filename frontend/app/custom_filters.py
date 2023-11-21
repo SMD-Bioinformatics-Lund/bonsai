@@ -3,13 +3,13 @@ import logging
 import math
 from collections import defaultdict
 from itertools import chain
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES
-from .models import TagList, Severity, Tag, TagType, VirulenceTag
+from .models import Severity, Tag, TagList, TagType, VirulenceTag
 
 LOG = logging.getLogger(__name__)
 
@@ -245,7 +245,6 @@ def groupby_antib_class(antibiotics: List[str]) -> Dict[str, str]:
     :return: Antibiotics grouped by antibiotic class
     :rtype: Dict[str, str]
     """
-    # todo lookup antibiotic classes in database
     antibiotic_class_lookup = {
         antib.lower(): k for k, v in ANTIBIOTIC_CLASSES for antib in v
     }

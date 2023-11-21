@@ -1,4 +1,5 @@
 """MStrees V2. Forked from GrapeTree https://github.com/achtman-lab/GrapeTree/"""
+# pylint: skip-file
 import argparse
 import gzip
 import os

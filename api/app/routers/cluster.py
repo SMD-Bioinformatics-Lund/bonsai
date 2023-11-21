@@ -18,8 +18,8 @@ from ..redis import (
     ClusterMethod,
     DistanceMethod,
     MsTreeMethods,
-    TypingMethod,
     SubmittedJob,
+    TypingMethod,
 )
 from ..redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,

@@ -2,14 +2,13 @@
 import json
 import logging
 from enum import Enum
-from typing import Dict, Any
+from typing import Any, Dict
 
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
-
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 
 LOG = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ class DataType(str, Enum):
     CATEGORY = "category"
 
 
-class DataPointStyle(BaseModel): # pylint: disable=too-few-public-methods
+class DataPointStyle(BaseModel):  # pylint: disable=too-few-public-methods
     """Styling for a grapetree column."""
 
     label: str
@@ -29,12 +28,13 @@ class DataPointStyle(BaseModel): # pylint: disable=too-few-public-methods
     grouptype: str = "alphabetic"
     colorscheme: DataType
 
-    class Config: # pylint: disable=too-few-public-methods
+    class Config:  # pylint: disable=too-few-public-methods
         """Configure model to resolve Enum values."""
+
         use_enum_values = True
 
 
-class MetaData(BaseModel): # pylint: disable=too-few-public-methods
+class MetaData(BaseModel):  # pylint: disable=too-few-public-methods
     """Structure of metadata options"""
 
     metadata: Dict[str, Dict[str, str | int | float]]
@@ -150,8 +150,10 @@ def cluster():
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
         LOG.error(
-            "Got cluster request, samples: %s; method: %s, cluster: %s", 
-            sample_ids, typing_method, cluster_method
+            "Got cluster request, samples: %s; method: %s, cluster: %s",
+            sample_ids,
+            typing_method,
+            cluster_method,
         )
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api

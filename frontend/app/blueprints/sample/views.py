@@ -1,18 +1,6 @@
 """Declaration of views for samples"""
 from typing import Any, Dict, Tuple
 
-from flask import (
-    Blueprint,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
-
 from app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
@@ -25,6 +13,17 @@ from app.bonsai import (
     update_sample_qc_classification,
 )
 from app.models import BadSampleQualityAction
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
 
 from .controllers import create_amr_summary
 

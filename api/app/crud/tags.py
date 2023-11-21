@@ -2,9 +2,9 @@
 from ..models.phenotype import ElementType, ElementTypeResult
 from ..models.sample import SampleInDatabase
 from ..models.tags import (
-    TagList,
     ResistanceTag,
     Tag,
+    TagList,
     TagSeverity,
     TagType,
     VirulenceTag,

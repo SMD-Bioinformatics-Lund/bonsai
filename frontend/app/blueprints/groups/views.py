@@ -2,10 +2,6 @@
 import json
 import logging
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
-
 from app.bonsai import (
     TokenObject,
     create_group,
@@ -17,6 +13,9 @@ from app.bonsai import (
     update_group,
 )
 from app.models import PhenotypeType
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
 
 LOG = logging.getLogger(__name__)
 

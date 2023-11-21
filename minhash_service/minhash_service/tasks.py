@@ -75,7 +75,9 @@ def similar(
     )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
-        sample_id, min_similarity, limit
+        sample_id,
+        min_similarity,
+        limit,
     )
     results = [s.model_dump() for s in samples]
     return results
@@ -96,10 +98,10 @@ def cluster(sample_ids: List[str], cluster_method: str = "single") -> str:
     # validate input
     try:
         method = ClusterMethod(cluster_method)
-    except ValueError:
+    except ValueError as error:
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
-        raise ValueError(msg)
+        raise ValueError(msg) from error
     # cluster
     newick: str = cluster_signatures(sample_ids, method)
     return newick
@@ -127,17 +129,17 @@ def find_similar_and_cluster(
     # validate input
     try:
         method = ClusterMethod(cluster_method)
-    except ValueError:
+    except ValueError as error:
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
-        raise ValueError(msg)
+        raise ValueError(msg) from error
     sample_ids = get_similar_signatures(
         sample_id, min_similarity=min_similarity, limit=limit
     )
 
     # if 1 or 0 samples were found, return emtpy newick
     if len(sample_ids) < 2:
-        LOG.warning(f"{len(sample_ids)}")
+        LOG.warning("Invalid number of samples found, %d", len(sample_ids))
         return "()"
     # cluster samples
     newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method)

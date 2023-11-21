@@ -3,11 +3,7 @@ from typing import List
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
-from fastapi.security import (
-    HTTPBasic,
-    OAuth2PasswordBearer,
-    SecurityScopes,
-)
+from fastapi.security import HTTPBasic, OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
