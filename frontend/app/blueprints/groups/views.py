@@ -51,6 +51,9 @@ def groups() -> str:
     basket = session
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
+    selected_samples = request.args.getlist("samples")
+
+    current_app.logger.debug(selected_samples)
 
     return render_template(
         "groups.html",
@@ -60,6 +63,7 @@ def groups() -> str:
         basket=basket,
         token=current_user.get_id().get("token"),
         bad_qc_actions=bad_qc_actions,
+        selected_samples=selected_samples,
     )
 
 
@@ -151,14 +155,20 @@ def group(group_id: str) -> str:
 @groups_bp.route("/groups/qc_status", methods=["POST"])
 @login_required
 def update_qc_classification():
-    """Update the quality control report of one or more samples."""
+    """Update the quality control report of one or more samples.
+
+    Redirects back to groups.groups and preserves table selection
+    """
 
     selected_samples = request.form.getlist("qc-selected-samples")
 
+    current_app.logger.debug("Processing request to set QC for %s", selected_samples)
+
     if not selected_samples:
-        raise ValueError(
-            "No selected samples found in the request. "
-            "Ensure that 'selectedSamples' is provided and contains at least one sample."
+        current_app.logger.warning("Received request to set QC but no selected samples")
+        flash(
+            "No samples selected for QC status update. Please choose at least one sample.",
+            "warning",
         )
 
     token = TokenObject(**current_user.get_id())
@@ -189,4 +199,4 @@ def update_qc_classification():
             )
             flash(str(error), "danger")
 
-    return redirect(url_for("groups.groups"))
+    return redirect(url_for("groups.groups", samples=selected_samples))
