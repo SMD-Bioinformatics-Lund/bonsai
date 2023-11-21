@@ -3,7 +3,7 @@
 from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
-from app.mimer import TokenObject
+from app.bonsai import TokenObject, get_samples_by_id
 
 comparison_bp = Blueprint(
     "comparison",
@@ -28,6 +28,8 @@ def compare_res_page():
 
     token = TokenObject(**current_user.get_id())
     sample_ids = session["samples"]
-    samples = get_samples_by_id(token, limit=0, skip=0)
+    samples = get_samples_by_id(token, sample_ids=sample_ids, limit=0, skip=0)
 
-    return render_template("resistance_compare.html", title="Resistance")
+    return render_template(
+        "resistance_compare.html", title="Resistance", samples=samples
+    )

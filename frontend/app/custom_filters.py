@@ -3,59 +3,79 @@ import logging
 import math
 from collections import defaultdict
 from itertools import chain
-from typing import Dict
+from typing import Dict, Any, List
 
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES
-from .models import TAG_LIST, Severity, Tag, TagType, VirulenceTag
+from .models import TagList, Severity, Tag, TagType, VirulenceTag
 
 LOG = logging.getLogger(__name__)
 
 
-def is_list(value) -> bool:
-    """Check if value is a list"""
-    return isinstance(value, list)
+def is_list(element: Any) -> bool:
+    """Check if element is a list.
+
+    :return: True if element is a list
+    :rtype: bool
+    """
+    return isinstance(element, list)
 
 
-def get_json_path(json_blob, json_path):
-    """Get data from json blob with JSONpath."""
+def get_json_path(json_blob: Dict[str, Any], json_path: str) -> Any:
+    """Get data from json object using a JSONpath
+
+    JSONpath reference, https://github.com/json-path/JsonPath
+
+    :param json_blob: python JSON object
+    :type json_blob: Dict[str, Any]
+    :param json_path: JSONpath
+    :type json_path: str
+    :return: JSON content
+    :rtype: Any
+    """
     jsonpath_expr = JsonPath.parse_str(json_path)
     for match in jsonpath_expr.match(json_blob):
         return match.current_value
 
 
 def has_arg(amr_result, arg_name: str) -> bool:
-    """Check if an antimicrobial resistance gene with NAME has been predicted."""
-    # next(JsonPath.parse_str("$.typingResult[?(@.type='mlst')]").match(json_blob)).current_value
+    """Check if AMR prediction contains a gene with arg_name.
+
+    :param amr_result: AMR prediction result from the db.
+    :param arg_name: Resistance gene name
+    :type arg_name: str
+    :return: Return True if result contains gene name.
+    :rtype: bool
+    """
     for gene in amr_result["genes"]:
         if gene["name"] == arg_name:
             return True
     return False
 
 
-def get_pvl_tag(vir_result) -> TAG_LIST:
+def get_pvl_tag(vir_result) -> TagList:
     """Check if sample is PVL positive."""
-    has_lukS = any(gene["name"] == "lukS-PV" for gene in vir_result["genes"])
-    has_lukF = any(gene["name"] == "lukF-PV" for gene in vir_result["genes"])
+    has_luks = any(gene["name"] == "lukS-PV" for gene in vir_result["genes"])
+    has_lukf = any(gene["name"] == "lukF-PV" for gene in vir_result["genes"])
 
     # get the tags
-    if has_lukF and has_lukS:
+    if has_lukf and has_luks:
         tag = Tag(
             type=TagType.VIRULENCE,
             label=VirulenceTag.PVL_ALL_POS,
             description="",
             severity=Severity.DANGER,
         )
-    elif any([has_lukF and not has_lukS, has_lukS and not has_lukF]):
+    elif any([has_lukf and not has_luks, has_luks and not has_lukf]):
         tag = Tag(
             type=TagType.VIRULENCE,
-            label=VirulenceTag.PVL_LUKF_POS if has_lukF else VirulenceTag.PVL_LUKS_POS,
+            label=VirulenceTag.PVL_LUKF_POS if has_lukf else VirulenceTag.PVL_LUKS_POS,
             description="",
             severity=Severity.WARNING,
         )
-    elif not has_lukF and not has_lukS:
+    elif not has_lukf and not has_luks:
         tag = Tag(
             type=TagType.VIRULENCE,
             label=VirulenceTag.PVL_ALL_NEG,
@@ -65,27 +85,48 @@ def get_pvl_tag(vir_result) -> TAG_LIST:
     return tag
 
 
-def get_all_phenotypes(res):
+def get_all_phenotypes(res) -> str:
+    """Get all phenotypes from phenotypic prediction.
+
+    :param res: Prediction result
+    :return: concatinated list of all phenotypes.
+    :rtype: str
+    """
     susceptible = res["result"]["phenotypes"]["susceptible"]
     resistant = res["result"]["phenotypes"]["resistant"]
     all_phenotypes = ", ".join(chain(susceptible, resistant))
     return f"All phenotypes: {all_phenotypes}"
 
 
-def camelcase_to_text(text):
+def camelcase_to_text(text: str) -> str:
+    """Convert camel_case to plain text.
+
+    :param text: camel_case formatted text.
+    :type text: str
+    :return: Plain text text.
+    :rtype: str
+    """
     return text.replace("_", " ")
 
 
-def _jinja2_filter_datetime(date, fmt=None):
+def _jinja2_filter_datetime(date: str, fmt: str = r"%b %d, %Y") -> str:
+    """Format date and time string.
+
+    :param date: String representation of a date or time
+    :type date: str
+    :param fmt: formatting argument, defaults to None
+    :type fmt: str, optional
+    :return: reformatted datetime
+    :rtype: str
+    """
     date = parse(date)
     native = date.replace(tzinfo=None)
-    format = "%b %d, %Y"
-    return native.strftime(format)
+    return native.strftime(fmt)
 
 
 def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
     """Return the number of called alleles
-    
+
     Values other than integers are treated as failed calls and are not counted.
 
     :param alleles: called alleles
@@ -111,9 +152,15 @@ def cgmlst_count_missing(alleles: Dict[str, int | str | None]) -> int:
     )
 
 
-def nt_to_aa(nt_seq):
-    """Translate nucleotide sequence to aa sequence"""
-    TABLE = {
+def nt_to_aa(nt_seq: str) -> str:
+    """Translate nucleotide sequence to amino acid sequence.
+
+    :param nt_seq: Nucleotide sequence.
+    :type nt_seq: str
+    :return: Amino acid sequence.
+    :rtype: str
+    """
+    table = {
         "TTT": "F",
         "TTC": "F",
         "TTA": "L",
@@ -186,11 +233,18 @@ def nt_to_aa(nt_seq):
         elif codon in stop_codons:
             aa_seq += "STOP"
         else:
-            aa_seq += TABLE[codon]
+            aa_seq += table[codon]
     return aa_seq
 
 
-def groupby_antib_class(antibiotics):
+def groupby_antib_class(antibiotics: List[str]) -> Dict[str, str]:
+    """Group resistance genes on antibiotic class.
+
+    :param antibiotics: List of antibiotics
+    :type antibiotics: List[str]
+    :return: Antibiotics grouped by antibiotic class
+    :rtype: Dict[str, str]
+    """
     # todo lookup antibiotic classes in database
     antibiotic_class_lookup = {
         antib.lower(): k for k, v in ANTIBIOTIC_CLASSES for antib in v
@@ -203,26 +257,42 @@ def groupby_antib_class(antibiotics):
     return result
 
 
-def fmt_number(num, sig_digits=None):
-    """Format number by adding a thousand separator
+def fmt_number(num: int | float, sig_digits: int | None = None) -> str:
+    """Format numbers by adding a thousand seperator.
 
-    Has option to round values to X signifiacnt digits."""
+    Has option to round values to C significant digits.
+
+    100000 -> 100,000
+
+    :param num: Number to format
+    :type num: int | float
+    :param sig_digits: Optional round to N digits, defaults to None
+    :type sig_digits: int | None, optional
+    :return: Rounded number with thousand seperator
+    :rtype: str
+    """
     if isinstance(num, (int, float)):
         if sig_digits is not None:
             num = round(num, sig_digits)
-        num = "{:,}".format(num)
+        num = f"{num:,}"
     return num
 
 
-def fmt_null_values(value):
+def fmt_null_values(value: int | str | None) -> int | str:
     """Replace null values with -."""
     if value is None:
         value = "–"
     return value
 
 
-def has_same_analysis_profile(samples):
-    """Check if all samples from session cache have the same analysis profile."""
+def has_same_analysis_profile(samples: List[Dict[str, Any]]) -> bool:
+    """Check if all samples from session cache have the same analysis profile.
+
+    :param samples: List of samples
+    :type samples: List[Dict[str, Any]]
+    :return: True if all samples have the same analysis profile.
+    :rtype: bool
+    """
     profiles = [sample["analysis_profile"] for sample in samples]
     return len(set(profiles)) == 1
 
@@ -241,7 +311,7 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     """
     power = math.floor(math.log10(number))
     # source: https://sv.wikipedia.org/wiki/SI-prefix
-    SI_PREFIXES = {
+    si_prefixes = {
         1: "Kilo",
         2: "Mega",
         3: "Giga",
@@ -256,7 +326,7 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     order = power // 3
     # long number to rounded short number, 1230 -> 1.23 Kilo
     short_number = round(number / math.pow(10, 3 * order), decimals)
-    prefix = SI_PREFIXES.get(order)
+    prefix = si_prefixes.get(order)
     if prefix:
         res = f"{short_number} {prefix[0]}"
     else:

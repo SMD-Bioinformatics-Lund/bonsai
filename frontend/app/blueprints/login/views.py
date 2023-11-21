@@ -1,10 +1,24 @@
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+"""Manage user authentication."""
+import logging
+
+from flask import (
+    Blueprint,
+    Response,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from flask_login import UserMixin, login_required, login_user, logout_user
 from requests.exceptions import HTTPError
 
 from app import __version__ as VERSION
 from app.bonsai import TokenObject, get_auth_token, get_current_user
 from app.extensions import login_manager
+
+LOG = logging.getLogger(__name__)
 
 login_bp = Blueprint(
     "login",
@@ -16,6 +30,8 @@ login_bp = Blueprint(
 
 
 class LoginUser(UserMixin):
+    """Container for user data and perform login."""
+
     def __init__(self, user_data, token_data):
         """Create a new user object."""
         self.roles = []
@@ -25,6 +41,7 @@ class LoginUser(UserMixin):
         self.token = token_data
 
     def get_id(self):
+        """Get user auth token"""
         return self.token.dict()
 
     @property
@@ -68,8 +85,6 @@ def login():
         if err.response.status_code == 401:
             flash("Invalid login credentials", "danger")
         else:
-            # TODO redirect to report bug page
-            # TODO log errors...
             flash("Sorry, you could not log in due to an internal error", "warning")
 
         return redirect(url_for("public.index"))
@@ -85,14 +100,24 @@ def load_user(user_id):
     token = TokenObject(**user_id)
     try:
         user_obj = get_current_user(token)
-    except HTTPError as error:
+    except HTTPError:
         return None
 
     user = LoginUser(user_obj, token) if user_obj else None
     return user
 
 
-def perform_login(user):
+def perform_login(user: LoginUser) -> Response:
+    """Login user.
+
+    :param user: User
+    :type user: LoginUser
+    :return: redirect user to /groups if login is successfull
+    :rtype: Response
+    """
+    LOG.error(
+        [redirect(url_for("public.index")), type(redirect(url_for("public.index")))]
+    )
     if login_user(user):
         next_url = session.pop("next_url", None)
         return redirect(
@@ -101,9 +126,15 @@ def perform_login(user):
 
     # could not log in
     flash("sorry, you could not log in", "warning")
+    LOG.warning("User authentication failed.")
     return redirect(url_for("public.index"))
 
 
 @login_manager.unauthorized_handler
-def unauthorized_handler():
+def unauthorized_handler() -> Response:
+    """Define function for handeling unauthorized users.
+
+    :return: redirect failed auth attempt to login page
+    :rtype: Response
+    """
     return redirect(url_for("login.login_page"))

@@ -2,7 +2,7 @@
 import json
 import logging
 from enum import Enum
-from typing import Dict
+from typing import Dict, Any
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -21,7 +21,7 @@ class DataType(str, Enum):
     CATEGORY = "category"
 
 
-class DataPointStyle(BaseModel):
+class DataPointStyle(BaseModel): # pylint: disable=too-few-public-methods
     """Styling for a grapetree column."""
 
     label: str
@@ -29,11 +29,12 @@ class DataPointStyle(BaseModel):
     grouptype: str = "alphabetic"
     colorscheme: DataType
 
-    class Config:
+    class Config: # pylint: disable=too-few-public-methods
+        """Configure model to resolve Enum values."""
         use_enum_values = True
 
 
-class MetaData(BaseModel):
+class MetaData(BaseModel): # pylint: disable=too-few-public-methods
     """Structure of metadata options"""
 
     metadata: Dict[str, Dict[str, str | int | float]]
@@ -50,7 +51,16 @@ cluster_bp = Blueprint(
 )
 
 
-def get_value(sample, value):
+def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | float:
+    """Get value from object.
+
+    :param sample: Sample infomation as dict
+    :type sample: Dict[str  |  int, Any]
+    :param value: Field name
+    :type value: str | int
+    :return: The content of the field name.
+    :rtype: str | int | float
+    """
     val = sample.get(value)
     return "-" if val is None else val
 
@@ -86,7 +96,7 @@ def gather_metadata(samples) -> MetaData:
     # build metadata list
     metadata_list = set()
     for meta in metadata.values():
-        metadata_list.update({name for name in meta})
+        metadata_list.update(set(meta))
     metadata_list = list(metadata_list)
     # build styling for metadata point
     opts = {}
@@ -120,7 +130,7 @@ def tree():
         token = TokenObject(**current_user.get_id())
         sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
         metadata = gather_metadata(sample_summary["records"])
-        data = dict(nwk=newick, **metadata.dict())
+        data = {"nwk": newick, **metadata.dict()}
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
@@ -140,7 +150,8 @@ def cluster():
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
         LOG.error(
-            f"Got cluster request, samples: {sample_ids}; method: {typing_method}, cluster: {cluster_method}"
+            "Got cluster request, samples: %s; method: %s, cluster: %s", 
+            sample_ids, typing_method, cluster_method
         )
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api

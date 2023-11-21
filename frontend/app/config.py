@@ -90,11 +90,6 @@ ANTIBIOTIC_CLASSES = {
         "Tebipenem",
     ],
     "Carboxypenicillins": ["Carbenicillin", "Temocillin", "Ticarcillin"],
-    # "1st-gen cephalosporins": ["Cefacetrile", "Cefadroxil", "Cefalexin", "Cefalotin", "Cefapirin", "Cefatrizine", "Cefazedone", "Cefazolin", "Cefradine", "Cefroxadine", "Ceftezole"],
-    # "2nd-gen cephalosporins": ["Cefaclor", "Cefamandole", "Cefbuperazone", "Cefmetazole", "Cefminox", "Cefonicid", "Ceforanide", "Cefotetan", "Cefotiam", "Cefotiam hexetil", "Cefoxitin", "Cefprozil", "Cefuroxime", "Flomoxef"],
-    # "3rd-gen cephalosporins": ["Cefcapene pivoxil", "Cefdinir", "Cefditoren pivoxil", "Cefetamet pivoxil", "Cefixime", "Cefmenoxime", "Cefodizime", "Cefoperazone", "Cefotaxime", "Cefpiramide", "Cefpodoxime proxetil", "Ceftazidime", "Ceftazidime-avibactam", "Cefteram pivoxil", "Ceftibuten", "Ceftizoxime", "Ceftriaxone", "Latamoxef"],
-    # "4th-gen cephalosporins": ["Cefepime", "Cefoselis", "Cefozopran", "Cefpirome"],
-    # "5th-gen cephalosporins": ["Ceftaroline fosamil", "Ceftobiprole medocaril", "Ceftolozane-tazobactam"],
     "Cephalosporins": [
         "Cefcapene pivoxil",
         "Cefdinir",

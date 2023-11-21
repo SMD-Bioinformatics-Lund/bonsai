@@ -1,8 +1,9 @@
 """Declaration of flask api entrypoints"""
 import json
 
-from flask import Blueprint, flash, jsonify, request, session
+from flask import Blueprint, flash, jsonify, request
 from flask_login import current_user, login_required
+import requests
 
 from app.bonsai import TokenObject, add_samples_to_basket, remove_samples_from_basket
 from app.models import SampleBasketObject
@@ -25,11 +26,13 @@ def add_sample_to_basket():
     try:
         token = TokenObject(**current_user.get_id())
         add_samples_to_basket(token, samples=samples_to_add)
-    except Exception as error:
+        message = "Added"
+        return_code = 200
+    except requests.exceptions.HTTPError as error:
         flash(str(error), "warning")
-        return "Error", 500
-    else:
-        return "Added", 200
+        message = "Error"
+        return_code = 200
+    return message, return_code
 
 
 @api_bp.route("/api/basket/remove", methods=["POST"])
