@@ -175,10 +175,10 @@ def update_qc_classification():
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
-    if result == QualityControlResult.PASSED:
+    if result == QualityControlResult.PASSED.value:
         action = None
         comment = ""
-    elif result == QualityControlResult.FAILED:
+    elif result == QualityControlResult.FAILED.value:
         comment = request.form.get("qc-comment", "")
         action = request.form.get("qc-action", "")
     else:
