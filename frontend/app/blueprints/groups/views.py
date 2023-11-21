@@ -17,7 +17,7 @@ from app.bonsai import (
     update_group,
     update_sample_qc_classification,
 )
-from app.models import PhenotypeType
+from app.models import PhenotypeType, BadSampleQualityAction
 
 LOG = logging.getLogger(__name__)
 
@@ -50,6 +50,8 @@ def groups() -> str:
     all_samples = get_samples(token, limit=0, skip=0)
     basket = session
 
+    bad_qc_actions = [member.value for member in BadSampleQualityAction]
+
     return render_template(
         "groups.html",
         title="Groups",
@@ -57,6 +59,7 @@ def groups() -> str:
         samples=all_samples,
         basket=basket,
         token=current_user.get_id().get("token"),
+        bad_qc_actions=bad_qc_actions,
     )
 
 
@@ -181,6 +184,9 @@ def update_qc_classification():
                 comment=comment,
             )
         except Exception as error:
+            current_app.logger.exception(
+                "Encountered error when updating QC status for sample %s", sample_id
+            )
             flash(str(error), "danger")
 
     return redirect(url_for("groups.groups"))

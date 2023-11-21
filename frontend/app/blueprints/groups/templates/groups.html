@@ -38,7 +38,7 @@
                         Create group
                     </a>
                 {% endif %}
-                {{ qc_bulk_toggle(['foo', 'bar'])}}
+                {{ qc_bulk_toggle(bad_qc_actions)}}
             </div>
         </nav>
         <div id="data-table"></div>
@@ -175,7 +175,6 @@
     {{ add_to_basket_js() }}
     // template code for searching similar samples
     {{ search_similar_js() }}
-
 </script>
 {% endblock content %}
 
