@@ -124,72 +124,116 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             - bad_qc_actions : List[str]    List of selectable follow-up actions for failed samples
 
     #}
-    <div id="find-similar-dropdown" class="dropdown">
-        <button
-            id="toggle-qc-btn"
-            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4"
-            data-bs-toggle="dropdown" data-bs-auto-close="outside" enabled>
+<div id="find-similar-dropdown" class="dropdown">
+    <button
+        id="toggle-qc-btn"
+        class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4"
+        data-bs-toggle="dropdown" data-bs-auto-close="outside" enabled>
         Toggle QC
-        </button>
-        <form class="dropdown-menu dropdown-menu-end p-2 needs-validation" action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" method="post">
-            <span class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
-                <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
-                <input
-                    type="radio"
-                    class="btn-check btn-sm"
-                    name="qc-validation"
-                    id="passed-qc-btn"
-                    autocomplete="off"
-                    value="passed"
-                >
-                <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
-                <input
-                    type="radio"
-                    class="btn-check btn-sm"
-                    name="qc-validation"
-                    id="failed-qc-btn"
-                    autocomplete="off"
-                    value="failed"
-                >
-            </span>
-            <fieldset id="failed-qc-controls">
-                <div class="row pb-2">
-                    <div class="col-auto d-flex flex-row">
-                        <select
-                            id="failed-qc-action"
-                            class="form-select form-select-sm"
-                            name="qc-action"
-                            aria-label="Action on failed sample"
-                            disabled
-                            hidden
-                        >
-                            <option selected disabled>Select action</option>
-                            {% for action in bad_qc_actions %}
-                            <option value="{{action}}">{{action | capitalize}}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+    </button>
+    <form
+        class="needs-validation"
+        method="post"
+        id="qc-form-control"
+        action="{{ url_for('groups.update_qc_classification') }}"
+    >
+        <div id="qc-dropdown-contents" class="dropdown-menu dropdown-menu-end p-2">
+            <div class ="row pb-2">
+                <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
+                    <input
+                        type="radio"
+                        class="btn-check btn-sm"
+                        name="qc-validation"
+                        id="passed-qc-btn"
+                        autocomplete="off"
+                        value="passed"
+                    >
+                    <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
+                    <input
+                        type="radio"
+                        class="btn-check btn-sm"
+                        name="qc-validation"
+                        id="failed-qc-btn"
+                        autocomplete="off"
+                        value="failed"
+                    >
+                    <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
                 </div>
-                <div id="failed-qc-comment-container" class="row">
-                    <div id="" class="col-auto">
-                        <label class="text-muted" for="failed-qc-comment">Comment</label>
-                        <textarea
-                            type="text"
-                            class="form-control"
-                            name="qc-comment"
-                            id="failed-qc-comment"
-                        ></textarea>
-                    </div>
+                <div class="col-auto d-flex flex-row">
+                    <select
+                        id="failed-qc-action"
+                        class="form-select form-select-sm"
+                        name="qc-action"
+                        aria-label="Action on failed sample"
+                        disabled
+                        hidden
+                    >
+                        <option selected disabled>Select action</option>
+                        {% for action in bad_qc_actions %}
+                        <option value="{{action}}">{{action | capitalize}}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-            </fieldset>
+                <div class="col-auto">
+                    <label class="text-muted" for="failed-qc-comment">Comment</label>
+                    <textarea
+                        type="text"
+                        class="form-control"
+                        name="qc-comment"
+                        id="failed-qc-comment"
+                        disabled
+                        hidden
+                    ></textarea>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-auto">
                     <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Confirm</button>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
+</div>
     <script>
+
+     let qcForm = document.getElementById("qc-form-control");
+
+     qcForm.addEventListener("submit", (e) => {
+         e.preventDefault();
+         addSelectedSamplesToQcForm(qcForm)
+         qcForm.submit()
+     });
+
+     /**
+      * Adds selected samples to HTML form by creating and appending
+      * hidden input elements with the sample IDs.
+      *
+      * @param   {HTMLFormElement}  form    The HTML form element to which the selected samples will be added.
+      */
+     function addSelectedSamplesToQcForm(form) {
+         // Retrieve selected samples from sessionStorage
+         var selectedSamples = JSON.parse(sessionStorage.getItem("selectedSamples"));
+
+         // Remove existing hidden inputs with the name 'qc-selected-samples'
+         var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
+         existingInputs.forEach(function(existingInput) {
+             existingInput.parentNode.removeChild(existingInput);
+         });
+
+         // Iterate over the selectedSamples array and add as hidden inputs to the form
+         selectedSamples.forEach(function(sampleId) {
+             // Create a hidden input element
+             var input = document.createElement('input');
+             input.type = 'hidden';
+             input.name = 'qc-selected-samples'; // Adjust the name as needed
+             input.value = sampleId;
+
+             // Append the input element to the form
+             form.appendChild(input);
+         });
+     }
+
      // QC Dropdown event listeners
      document.getElementById("passed-qc-btn").addEventListener("click", (e) => {
         // disable selection of actions to take after passing a sample
