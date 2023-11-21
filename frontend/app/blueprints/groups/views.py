@@ -17,7 +17,7 @@ from app.bonsai import (
     update_group,
     update_sample_qc_classification,
 )
-from app.models import PhenotypeType, BadSampleQualityAction
+from app.models import PhenotypeType, BadSampleQualityAction, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 
@@ -175,10 +175,10 @@ def update_qc_classification():
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
-    if result == "passed":
+    if result == QualityControlResult.PASSED:
         action = None
         comment = ""
-    elif result == "failed":
+    elif result == QualityControlResult.FAILED:
         comment = request.form.get("qc-comment", "")
         action = request.form.get("qc-action", "")
     else:
