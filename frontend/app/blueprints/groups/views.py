@@ -51,9 +51,9 @@ def groups() -> str:
     basket = session
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
-    selected_samples = request.args.getlist("samples")
 
-    current_app.logger.debug(selected_samples)
+    # Pre-select samples in sample table:
+    selected_samples = request.args.getlist("samples")
 
     return render_template(
         "groups.html",
@@ -195,7 +195,7 @@ def update_qc_classification():
             )
         except Exception as error:
             current_app.logger.exception(
-                "Encountered error when updating QC status for sample %s", sample_id
+                "Encountered error when updating QC status for sample %s:", sample_id
             )
             flash(str(error), "danger")
 
