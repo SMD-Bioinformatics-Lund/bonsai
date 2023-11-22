@@ -131,7 +131,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             data-bs-toggle="dropdown" data-bs-auto-close="outside"
             disabled
         >
-            Toggle QC
+            Set QC status
         </button>
         <form
             class="needs-validation"
@@ -169,7 +169,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
                             aria-label="Action on failed sample"
                             hidden
                         >
-                            <option selected disabled>Select action</option>
+                            <option selected value="0" disabled>Select action</option>
                             {% for action in bad_qc_actions %}
                             <option value="{{action}}">{{action | capitalize}}</option>
                             {% endfor %}
@@ -187,16 +187,21 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
                         </div>
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Confirm</button>
+                        <button
+                            id="qc-submit-btn"
+                            type="submit"
+                            class="btn btn-sm btn-outline-secondary mt-2"
+                            disabled
+                        >Confirm</button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
     <script>
+     // Add data from JS table to qc bulk edit form before submit
      let qcForm = document.getElementById("qc-form-control");
      qcForm.addEventListener("submit", (e) => {
          e.preventDefault();
@@ -235,15 +240,17 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
 
      // QC Dropdown event listeners
      document.getElementById("passed-qc-btn").addEventListener("click", (e) => {
-         // disable selection of actions to take after passing a sample
-         e.stopPropagation();
+         // Clear QC-fail fields
          const select = document.getElementById("failed-qc-action")
          select.disabled = true
          select.hidden = true
-         select.value = null
+         select.value = "0"
          const textArea = document.getElementById("failed-qc-comment-container")
          textArea.hidden = true
 
+         // Enable submit
+         const submitButton = document.getElementById("qc-submit-btn")
+         submitButton.disabled = false;
      })
      document.getElementById("failed-qc-btn").addEventListener("click", (e) => {
          // enable selections of actions to take after rejecting a sample
@@ -252,6 +259,23 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
          select.hidden = false
          const textArea = document.getElementById("failed-qc-comment-container")
          textArea.hidden = false
+
+         // Do not allow form submit unless follow-up action selected
+         const submitButton = document.getElementById("qc-submit-btn")
+         if (select.value === '0') {
+             submitButton.disabled = true;
+         }
+
+     })
+     // Force followup action selection when failing samples:
+     document.getElementById("failed-qc-action").addEventListener("change", (e) => {
+         const select = document.getElementById("failed-qc-action")
+         const submitButton = document.getElementById("qc-submit-btn")
+         if (select.value === '0') {
+             submitButton.disabled = true;
+         } else {
+             submitButton.disabled = false;
+         }
      })
     </script>
 {% endmacro %}
