@@ -133,8 +133,9 @@
             ],
             async onSelect(event) {
                 await event.complete
-                // enable add to basket button when some rows are selected
+                // enable add to basket + toggle qc buttons when user selects at least one row
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 // enable find simiar samples button when ONE row is selected
                 document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
                 // update slected samples counter
