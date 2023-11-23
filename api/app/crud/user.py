@@ -17,8 +17,9 @@ from ..models.user import (
     UserOutputDatabase,
 )
 from .errors import EntryNotFound, UpdateDocumentError
+import logging
 
-security = HTTPBasic()
+LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
 
 
@@ -149,8 +150,8 @@ async def add_samples_to_user_basket(
 
 
 async def remove_samples_from_user_basket(
-    sample_ids: List[SampleBasketObject],
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+    sample_ids: List[SampleBasketObject] = [],
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(
