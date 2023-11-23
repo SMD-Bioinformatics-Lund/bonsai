@@ -202,7 +202,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
     </div>
     <script>
      // Add data from JS table to qc bulk edit form before submit
-     let qcForm = document.getElementById("qc-form-control");
+     const qcForm = document.getElementById("qc-form-control");
      qcForm.addEventListener("submit", (e) => {
          e.preventDefault();
          addSelectedSamplesToQcForm(qcForm)
@@ -217,7 +217,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
       */
      function addSelectedSamplesToQcForm(form) {
          // Retrieve selected samples from sessionStorage
-         var selectedSamples = window.getSelectedRows()
+         let selectedSamples = window.getSelectedRows()
 
          // Remove existing hidden inputs with the name 'qc-selected-samples'
          var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
