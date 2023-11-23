@@ -221,12 +221,12 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
 
          // Remove existing hidden inputs with the name 'qc-selected-samples'
          var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
-         existingInputs.forEach(function(existingInput) {
+         existingInputs.forEach(existingInput => {
              existingInput.parentNode.removeChild(existingInput);
          });
 
          // Iterate over the selectedSamples array and add as hidden inputs to the form
-         selectedSamples.forEach(function(sampleId) {
+         selectedSamples.forEach(sampleId => {
              // Create a hidden input element
              var input = document.createElement('input');
              input.type = 'hidden';
