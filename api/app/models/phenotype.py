@@ -8,6 +8,8 @@ from .base import RWModel
 
 
 class VariantType(Enum):
+    """Types of called variants."""
+
     SUBSTITUTION = "substitution"
 
 
@@ -21,11 +23,15 @@ class PredictionSoftware(Enum):
 
 
 class Strand(Enum):
+    """Nomenclature of forward and reverse strand."""
+
     FORWARD = "+"
     REVERSE = "-"
 
 
 class ElementType(Enum):
+    """Prediction categories."""
+
     AMR = "AMR"
     ACID = "STRESS_ACID"
     BIOCIDE = "STRESS_BIOCIDE"
@@ -34,12 +40,14 @@ class ElementType(Enum):
     VIR = "VIRULENCE"
 
 
-class DatabaseReference(RWModel):
+class DatabaseReference(RWModel):  # pylint: disable=too-few-public-methods
+    """Gene reference object."""
+
     ref_database: str | None
     ref_id: str | None
 
 
-class GeneBase(BaseModel):
+class GeneBase(BaseModel):  # pylint: disable=too-few-public-methods
     """Container for gene information"""
 
     gene_symbol: str | None
@@ -63,7 +71,9 @@ class GeneBase(BaseModel):
     element_subtype: str | None
 
 
-class ResistanceGene(GeneBase, DatabaseReference):
+class ResistanceGene(
+    GeneBase, DatabaseReference
+):  # pylint: disable=too-few-public-methods
     """Container for resistance gene information"""
 
     phenotypes: List[str]
@@ -71,13 +81,15 @@ class ResistanceGene(GeneBase, DatabaseReference):
     res_subclass: str | None
 
 
-class VirulenceGene(GeneBase, DatabaseReference):
+class VirulenceGene(
+    GeneBase, DatabaseReference
+):  # pylint: disable=too-few-public-methods
     """Container for virulence gene information"""
 
     virulence_category: str | None
 
 
-class VariantBase(DatabaseReference):
+class VariantBase(DatabaseReference):  # pylint: disable=too-few-public-methods
     """Container for mutation information"""
 
     variant_type: VariantType
@@ -89,13 +101,13 @@ class VariantBase(DatabaseReference):
     depth: float
 
 
-class ResistanceVariant(VariantBase):
+class ResistanceVariant(VariantBase):  # pylint: disable=too-few-public-methods
     """Container for resistance variant information"""
 
     phenotypes: List[str]
 
 
-class ElementTypeResult(BaseModel):
+class ElementTypeResult(BaseModel):  # pylint: disable=too-few-public-methods
     """Phenotype result data model.
 
     A phenotype result is a generic data structure that stores predicted genes,

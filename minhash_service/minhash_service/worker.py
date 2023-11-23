@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 def create_app():
     """Start a new worker instance."""
     LOG.info("Preparing to start worker")
-    LOG.info(f"Setup redis connection: {config.REDIS_HOST}:{config.REDIS_PORT}")
+    LOG.info("Setup redis connection: %s:%s", config.REDIS_HOST, config.REDIS_PORT)
     redis = Redis(host=config.REDIS_HOST, port=config.REDIS_PORT)
 
     # start worker with json serializer

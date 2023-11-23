@@ -4,15 +4,16 @@ import pathlib
 from typing import List
 
 import sourmash
-from minhash_service import config
 from pydantic import BaseModel
 
-from .io import get_sbt_index, read_signature, SIGNATURES
+from minhash_service import config
+
+from .io import SIGNATURES, get_sbt_index, read_signature
 
 LOG = logging.getLogger(__name__)
 
 
-class SimilarSignature(BaseModel):
+class SimilarSignature(BaseModel):  # pydantic: disable=too-few-public-methods
     """Container for similar signature result"""
 
     sample_id: str
@@ -31,7 +32,9 @@ def get_similar_signatures(
     """
     LOG.info(
         "Finding similar: %s; similarity: %f, limit: %d",
-        sample_id, min_similarity, limit
+        sample_id,
+        min_similarity,
+        limit,
     )
 
     # load sourmash index
@@ -45,7 +48,7 @@ def get_similar_signatures(
     query_signature = query_signature[0]
     if len(query_signature) == 0:
         msg = (
-            f"No signature in: {query_signature.filename}" \
+            f"No signature in: {query_signature.filename}"
             f"with kmer size: {config.SIGNATURE_KMER_SIZE}"
         )
         raise ValueError(msg)

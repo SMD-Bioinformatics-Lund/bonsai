@@ -13,7 +13,7 @@ from rq.job import Job
 LOG = logging.getLogger(__name__)
 
 
-class RedisQueue:
+class RedisQueue:  # pylint: disable=too-few-public-methods
     """Worker queue interface."""
 
     def __init__(self):
@@ -39,7 +39,7 @@ class JobStatusCodes(str, Enum):
     FAILED = "failed"
 
 
-class JobStatus(BaseModel):
+class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
     """Container for basic job information."""
 
     status: JobStatusCodes
@@ -64,5 +64,5 @@ def check_redis_job_status(job_id: str) -> JobStatus:
     )
     # LOG stacktraces for failed jobs
     if job_info.status == JobStatusCodes.FAILED:
-        LOG.warning(f"Redis job {JobStatusCodes.FAILED}; {job.exc_info}")
+        LOG.warning("Redis job %s; %s", JobStatusCodes.FAILED, job.exc_info)
     return job_info

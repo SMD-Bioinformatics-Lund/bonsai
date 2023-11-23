@@ -3,18 +3,18 @@
 from enum import Enum
 
 from ..models.base import RWModel
-from ..models.cluster import TypingMethod, DistanceMethod
+from ..models.cluster import DistanceMethod, TypingMethod
 from .queue import redis
 
 
-class SubmittedJob(RWModel):
+class SubmittedJob(RWModel):  # pylint: disable=too-few-public-methods
     """Container for submitted jobs."""
 
     id: str
     task: str
 
 
-class ClusterMethod(Enum):
+class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
     """Index of methods for hierarchical clustering of samples."""
 
     SINGLE = "single"
@@ -22,7 +22,7 @@ class ClusterMethod(Enum):
     AVERAGE = "average"
 
 
-class MsTreeMethods(Enum):
+class MsTreeMethods(Enum):  # pylint: disable=too-few-public-methods
     """Valid cluter methods."""
 
     MSTREE_V1 = "MSTree"

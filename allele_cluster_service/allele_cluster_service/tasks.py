@@ -20,9 +20,9 @@ def cluster(profile: str, method: str) -> str:
     """
     try:
         method = ClusterMethod(method)
-    except ValueError:
+    except ValueError as error:
         msg = f'"{method}" is not a valid cluster method'
         LOG.error(msg)
-        raise ValueError(msg)
+        raise ValueError(msg) from error
     newick = backend(profile=profile, method=method.value)
     return newick

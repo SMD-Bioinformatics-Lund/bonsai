@@ -2,14 +2,14 @@
 from enum import Enum
 
 
-class DistanceMethod(Enum):
-    """Index of methods for calculating the distance matrix during hierarchical clustering of samples."""
+class DistanceMethod(Enum):  # pylint: disable=too-few-public-methods
+    """Valid distance methods for hierarchical clustering of samples."""
 
     JACCARD = "jaccard"
     HAMMING = "hamming"
 
 
-class ClusterMethod(Enum):
+class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
     """Index of methods for hierarchical clustering of samples."""
 
     SINGLE = "single"
@@ -18,8 +18,9 @@ class ClusterMethod(Enum):
     NJ = "neighbor_joining"
 
 
-class TypingMethod(str, Enum):
+class TypingMethod(str, Enum):  # pylint: disable=too-few-public-methods
     """Supported typing methods."""
+
     MLST = "mlst"
     CGMLST = "cgmlst"
     MINHASH = "minhash"

@@ -7,6 +7,7 @@ from typing import List
 import fasteners
 import sourmash
 from sourmash.signature import FrozenSourmashSignature
+
 from minhash_service import config
 
 LOG = logging.getLogger(__name__)
@@ -16,7 +17,7 @@ SIGNATURES = List[FrozenSourmashSignature]
 def get_sbt_index(check: bool = True) -> str:
     """Get sourmash SBT index file."""
     signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    index_path = signature_dir.joinpath(f"genomes.sbt.zip")
+    index_path = signature_dir.joinpath("genomes.sbt.zip")
 
     # Check if file exist
     if check:
@@ -28,8 +29,8 @@ def get_sbt_index(check: bool = True) -> str:
 
 def get_signature_path(sample_id: str, check=True) -> str:
     """
-    Get path to a sample signature file. 
-    
+    Get path to a sample signature file.
+
     :param sample_id str: Sample id
     :param check bool: if it should check if file is present
 
@@ -90,10 +91,10 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     try:
         with open(signature_file, "w", encoding="utf-8") as out:
             print(signature.decode("utf-8"), file=out)
-    except PermissionError:
+    except PermissionError as error:
         msg = f"Dont have permission to write file to disk, {signature_file}"
         LOG.error(msg)
-        raise PermissionError(msg)
+        raise PermissionError(msg) from error
 
     return signature_file
 

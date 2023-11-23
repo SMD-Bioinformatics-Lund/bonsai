@@ -1,19 +1,22 @@
+"""Data modules shared by the application."""
 from enum import Enum
 from typing import List
 
 from pydantic import BaseConfig, BaseModel
 
 
-class RWModel(BaseModel):
+class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     """Base model for read/ write operations"""
 
-    class Config(BaseConfig):
+    class Config(BaseConfig):  # pylint: disable=too-few-public-methods
+        """Configure base read write module."""
+
         allow_population_by_alias = True
         populate_by_name = True
         use_enum_values = True
 
 
-class SampleBasketObject(RWModel):
+class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
     """Contaner for sample baskt content."""
 
     sample_id: str
@@ -39,6 +42,8 @@ class PredictionSoftware(Enum):
 
 
 class ElementType(Enum):
+    """Prediction categories."""
+
     AMR = "AMR"
     ACID = "STRESS_ACID"
     BIOCIDE = "STRESS_BIOCIDE"
@@ -48,18 +53,25 @@ class ElementType(Enum):
 
 
 class TagType(Enum):
+    """Tag categories."""
+
     VIRULENCE = "virulence"
     RESISTANCE = "resistane"
     QC = "qc"
 
 
 class ResistanceTag(Enum):
+    """Tags associated with AMR."""
+
     VRE = "VRE"
     ESBL = "ESBL"
     MRSA = "MRSA"
+    MSSA = "MSSA"
 
 
 class VirulenceTag(Enum):
+    """Virulence associated tags."""
+
     PVL_ALL_POS = "pos"
     PVL_LUKS_POS = "neg/pos"
     PVL_LUKF_POS = "pos/neg"
@@ -75,16 +87,13 @@ class Severity(Enum):
     DANGER = "danger"
 
 
-class Tag(RWModel):
+class Tag(RWModel):  # pylint: disable=too-few-public-methods
     """Tag data structure."""
 
     type: TagType
     label: VirulenceTag | ResistanceTag
     description: str
     severity: Severity
-
-
-TAG_LIST = List[Tag]
 
 
 class PhenotypeType(Enum):
@@ -96,7 +105,7 @@ class PhenotypeType(Enum):
     VIRULENCE = "virulence"
 
 
-class SubmittedJob(RWModel):
+class SubmittedJob(RWModel):  # pylint: disable=too-few-public-methods
     """Container for submitted jobs."""
 
     id: str
@@ -107,7 +116,6 @@ NT_TO_AA = {
     "TTT": "F",
     "TTC": "F",
     "TTA": "L",
-    "TTG": "L",
     "TCT": "S",
     "TCC": "S",
     "TCA": "S",
@@ -120,7 +128,6 @@ NT_TO_AA = {
     "CTT": "L",
     "CTC": "L",
     "CTA": "L",
-    "CTG": "L",
     "CCT": "P",
     "CCC": "P",
     "CCA": "P",
@@ -133,10 +140,6 @@ NT_TO_AA = {
     "CGC": "R",
     "CGA": "R",
     "CGG": "R",
-    "ATT": "I",
-    "ATC": "I",
-    "ATA": "I",
-    "ATG": "M",
     "ACT": "T",
     "ACC": "T",
     "ACA": "T",
@@ -152,7 +155,6 @@ NT_TO_AA = {
     "GTT": "V",
     "GTC": "V",
     "GTA": "V",
-    "GTG": "V",
     "GCT": "A",
     "GCC": "A",
     "GCA": "A",
@@ -176,3 +178,5 @@ NT_TO_AA = {
     "ATG": "M",
     "GTG": "M",
 }
+
+TagList = List[Tag]

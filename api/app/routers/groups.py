@@ -2,8 +2,7 @@
 
 from typing import List
 
-from fastapi import (APIRouter, Depends, File, HTTPException, Path, Security,
-                     status)
+from fastapi import APIRouter, HTTPException, Path, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -26,7 +25,7 @@ WRITE_PERMISSION = "groups:write"
 
 @router.get("/groups/", response_model=List[GroupInfoDatabase], tags=DEFAULT_TAGS)
 async def get_groups_in_db(
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     )
 ):
@@ -43,7 +42,7 @@ async def get_groups_in_db(
 )
 async def create_group(
     group_info: GroupInCreate,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
@@ -55,7 +54,7 @@ async def create_group(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=error.details["errmsg"],
-        )
+        ) from error
     return result
 
 
@@ -67,7 +66,7 @@ async def create_group(
 async def get_group_in_db(
     group_id: str,
     lookup_samples: bool = False,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
@@ -83,17 +82,17 @@ async def get_group_in_db(
 )
 async def delete_group_from_db(
     group_id: str,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Delete a group from the database."""
     try:
         result = await delete_group(db, group_id)
-    except EntryNotFound as err:
+    except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
-        )
+        ) from error
     return result
 
 
@@ -101,18 +100,18 @@ async def delete_group_from_db(
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Update information of an group in the database."""
     # cast input information as group db object
     try:
-        result = await update_group(db, group_id, group_info)
-    except EntryNotFound as err:
+        await update_group(db, group_id, group_info)
+    except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
-        )
+        ) from error
     return {"id": group_id, "group_info": group_info}
 
 
@@ -122,7 +121,7 @@ async def update_group_info(
 async def add_sample_to_group(
     sample_id: str,
     group_id: str = Path(..., tilte="The id of the group to get"),
-    current_user: UserOutputDatabase = Security(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
@@ -133,10 +132,10 @@ async def add_sample_to_group(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=str(error),
-        )
+            detail=error,
+        ) from error

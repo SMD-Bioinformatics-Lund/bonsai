@@ -1,6 +1,6 @@
-from flask import Blueprint, current_app, render_template, request, send_from_directory
-
+"""Public accessable assets and views."""
 from app import __version__ as VERSION
+from flask import Blueprint, render_template, request, send_from_directory
 
 public_bp = Blueprint(
     "public",
@@ -19,9 +19,11 @@ def index():
 
 @public_bp.route("/favicon", methods=["GET"])
 def favicon():
+    """Route for accessing favicon."""
     return send_from_directory(public_bp.static_folder, request.args.get("filename"))
 
 
 @public_bp.route("/webmanifest")
 def webmanifest():
+    """Route for accessing webmanifest."""
     return send_from_directory(public_bp.static_folder, "site.webmanifest")

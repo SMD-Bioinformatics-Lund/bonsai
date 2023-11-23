@@ -1,3 +1,5 @@
+"""Routers for API entrypoints."""
+
 from .groups import READ_PERMISSION as GROUPS_READ_PERMISSION
 from .groups import WRITE_PERMISSION as GROUPS_WRITE_PERMISSION
 from .jobs import READ_PERMISSION as JOB_READ_PERMISSION

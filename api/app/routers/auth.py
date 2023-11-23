@@ -1,7 +1,6 @@
 """Routes for handeling authentication."""
 
 from datetime import timedelta
-from multiprocessing.sharedctypes import Value
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm

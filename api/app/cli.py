@@ -13,7 +13,7 @@ from .crud.user import create_user as create_user_in_db
 from .db import db
 from .db.index import INDEXES
 from .db.utils import connect_to_mongo
-from .models.user import UserInputCreate, UserOutputDatabase
+from .models.user import UserInputCreate
 
 LOG = getLogger(__name__)
 
@@ -39,7 +39,6 @@ def cli(ctx):
 def setup(ctx):
     """Setup a new database instance by creating collections and indexes."""
     # create collections
-    db = ctx.obj["DB"]
     click.secho("Start database setup...", fg="green")
     ctx.forward(index)
     ctx.invoke(create_user, username="admin", role="admin")
@@ -62,10 +61,9 @@ def setup(ctx):
     type=click.Choice(list(USER_ROLES.keys())),
     help="User role which dictates persmission.",
 )
-def create_user(ctx, username, password, role):
+def create_user(ctx, username, password, role):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
-    db = ctx.obj["DB"]
     user = UserInputCreate(
         username=username,
         first_name="",
@@ -82,11 +80,10 @@ def create_user(ctx, username, password, role):
 
 @cli.command()
 @click.pass_context
-def index(ctx):
+def index(ctx):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
-    db = ctx.obj["DB"]
     for collection_name, indexes in INDEXES.items():
         collection = getattr(db, f"{collection_name}_collection")
         click.secho(f"Creating index for: {collection.name}")
-        for index in indexes:
-            collection.create_index(index["definition"], **index["options"])
+        for idx in indexes:
+            collection.create_index(idx["definition"], **idx["options"])

@@ -2,7 +2,7 @@
 from os import getenv
 
 # Sourmash variables
-SIGNATURE_KMER_SIZE = int(getenv("KMER_SIZE", 31))
+SIGNATURE_KMER_SIZE = int(getenv("KMER_SIZE", "31"))
 GENOME_SIGNATURE_DIR = getenv("DB_PATH", "/data/signature_db")
 
 # Sourmash variables

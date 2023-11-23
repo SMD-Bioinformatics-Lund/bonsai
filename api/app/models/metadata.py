@@ -3,17 +3,21 @@ from datetime import datetime
 from enum import Enum
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from .base import RWModel
 
 
 class SoupType(Enum):
+    """Type of software of unkown provenance."""
+
     DB = "database"
     SW = "software"
 
 
 class SequencingPlatform(Enum):
+    """Valid sequencing platform names."""
+
     ILLUMINA = "illumina"
     ION_TORRENT = "ion torrent"
     ONP = "oxford nanopore"
@@ -21,11 +25,13 @@ class SequencingPlatform(Enum):
 
 
 class SequencingType(Enum):
+    """Sequencing methods."""
+
     SINGLE_END = "SE"
     PAIRED_END = "PE"
 
 
-class SoupVersion(RWModel):
+class SoupVersion(RWModel):  # pylint: disable=too-few-public-methods
     """Version of Software of Unknown Provenance."""
 
     name: str
@@ -33,7 +39,7 @@ class SoupVersion(RWModel):
     type: SoupType
 
 
-class RunInformation(RWModel):
+class RunInformation(RWModel):  # pylint: disable=too-few-public-methods
     """Store information on a run how the run was conducted."""
 
     pipeline: str
@@ -52,7 +58,7 @@ class RunInformation(RWModel):
 SoupVersions = List[SoupVersion]
 
 
-class RunMetadata(BaseModel):
+class RunMetadata(BaseModel):  # pylint: disable=too-few-public-methods
     """Run metadata"""
 
     run: RunInformation

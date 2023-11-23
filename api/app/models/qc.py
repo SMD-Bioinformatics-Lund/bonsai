@@ -24,7 +24,7 @@ class BadSampleQualityAction(Enum):
     FAILED = "permanent fail"
 
 
-class QcClassification(RWModel):
+class QcClassification(RWModel):  # pylint: disable=too-few-public-methods
     """The classification of sample quality."""
 
     status: SampleQcClassification = SampleQcClassification.UNPROCESSED
@@ -40,7 +40,7 @@ class QcSoftware(Enum):
     POSTALIGNQC = "postalignqc"
 
 
-class QuastQcResult(BaseModel):
+class QuastQcResult(BaseModel):  # pylint: disable=too-few-public-methods
     """Assembly QC metrics."""
 
     total_length: int
@@ -53,7 +53,7 @@ class QuastQcResult(BaseModel):
     duplication_ratio: float
 
 
-class PostAlingQcResult(BaseModel):
+class PostAlingQcResult(BaseModel):  # pylint: disable=too-few-public-methods
     """PostAlignQc workflow results."""
 
     ins_size: int = Field(..., description="Average insert size")
@@ -67,7 +67,12 @@ class PostAlingQcResult(BaseModel):
     dup_reads: int = Field(..., description="Number of duplicated reads")
 
 
-class QcMethodIndex(RWModel):
+class QcMethodIndex(RWModel):  # pylint: disable=too-few-public-methods
+    """QC results container.  Based on Mongo db Attribute pattern.
+
+    Reference: https://www.mongodb.com/developer/products/mongodb/attribute-pattern/
+    """
+
     software: QcSoftware
     version: str | None
     result: QuastQcResult | PostAlingQcResult

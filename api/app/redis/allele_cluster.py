@@ -13,8 +13,12 @@ LOG = logging.getLogger(__name__)
 def schedule_cluster_samples(
     profiles: List[str], cluster_method: ClusterMethod
 ) -> SubmittedJob:
-    """Schedule clustering on the provided allele profile."""
-    TASK = "allele_cluster_service.tasks.cluster"
+    """Schedule clustering on the provided allele profile.
+
+    :return: Information of submitted job
+    :rtype: SubmittedJob
+    """
+    task = "allele_cluster_service.tasks.cluster"
     # convert the allele profile object to two arrays, one with names and another with
     # a tsv representation of the profile
     sample_ids = []
@@ -25,7 +29,7 @@ def schedule_cluster_samples(
     # convert to pandas dataframe
     profile_tsv = pd.DataFrame(allele_profile, dtype="UInt64").to_csv(sep="\t")
     job = redis.allele.enqueue(
-        TASK, profile=profile_tsv, method=cluster_method.value, job_timeout="30m"
+        task, profile=profile_tsv, method=cluster_method.value, job_timeout="30m"
     )
-    LOG.debug(f"Submitting job, {TASK} to {job.worker_name}; {job}")
-    return SubmittedJob(id=job.id, task=TASK)
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)

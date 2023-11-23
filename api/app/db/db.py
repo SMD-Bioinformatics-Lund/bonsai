@@ -1,3 +1,4 @@
+"""Code for setting up a database connection."""
 import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
@@ -7,8 +8,17 @@ from ..config import DATABASE_NAME
 LOG = logging.getLogger(__name__)
 
 
-class Database:
-    client: AsyncIOMotorClient = None
+class Database:  # pylint: disable=too-few-public-methods
+    """Container for database connection and collections."""
+
+    def __init__(self) -> None:
+        """Constructor function."""
+        self.client: AsyncIOMotorClient = None
+        self.db = None
+        self.sample_group_collection: AsyncIOMotorCollection | None = None
+        self.sample_collection: AsyncIOMotorCollection | None = None
+        self.location_collection: AsyncIOMotorCollection | None = None
+        self.user_collection: AsyncIOMotorCollection | None = None
 
     def setup(self):
         """setupt collection handler."""
