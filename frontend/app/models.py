@@ -28,6 +28,7 @@ class QualityControlResult(Enum):
 
     PASSED = "passed"
     FAILED = "failed"
+    UNPROCESSED = "unprocessed"
 
 
 class BadSampleQualityAction(Enum):
