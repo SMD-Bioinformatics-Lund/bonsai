@@ -162,10 +162,10 @@ def update_qc_classification():
 
     selected_samples = request.form.getlist("qc-selected-samples")
 
-    current_app.logger.debug("Processing request to set QC for %s", selected_samples)
+    LOG.debug("Processing request to set QC for %s", selected_samples)
 
     if not selected_samples:
-        current_app.logger.warning("Received request to set QC but no selected samples")
+        LOG.warning("Received request to set QC but no selected samples")
         flash(
             "No samples selected for QC status update. Please choose at least one sample.",
             "warning",
@@ -194,7 +194,7 @@ def update_qc_classification():
                 comment=comment,
             )
         except Exception as error:
-            current_app.logger.exception(
+            LOG.exception(
                 "Encountered error when updating QC status for sample %s:", sample_id
             )
             flash(str(error), "danger")
