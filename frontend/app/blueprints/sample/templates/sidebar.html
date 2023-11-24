@@ -29,51 +29,108 @@
 </form>
 {% endmacro %}
 
+{% macro qc_classification_form_fields(bad_qc_actions, selected_qc_status, selected_action, comment_text) %}
+    {#
 
-{% macro qc_classification(cls, bad_qc_actions, sample_id) %}
-<h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
-<form action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}" 
-      method="post" name="qc-classification" class="form-control">
-    <div class="row pb-2">
-        <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
-            <input 
-                type="radio" class="btn-check btn-sm" name="qc-validation" 
-                id="passed-qc-btn" autocomplete="off" value="passed"
-                {% if cls.status == "passed" %}checked{% endif  %}
-            >
-            <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
-            <input type="radio" class="btn-check btn-sm" name="qc-validation"
-                id="failed-qc-btn" autocomplete="off" value="failed"
-                {% if cls.status == "failed" %}checked{% endif  %}
-            >
-            <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
-        </div>
-        <div class="col-auto d-flex flex-row">
-            <select id="failed-qc-action" class="form-select form-select-sm" 
-                    name="qc-action" aria-label="Action on failed sample" disabled hidden>
-                <option selected disabled>Select action</option>
-                {% for action in bad_qc_actions %}
-                    <option 
+        Form fields for setting QC status.
+
+        Inputs:
+        - bad_qc_actions:       List[str]   List of selectable follow-up actions for failed samples
+        - selected_qc_status:   str | None  Sample QC status used for pre-selecting QC checkbox.
+        - selected_action:      str | None  Selected follow-up action for failed samples.
+        - comment_text:         str | None  Comment text.
+
+    #}
+    <fieldset id="qc-form-fields">
+        <div class="row pb-2">
+            <div
+                class="btn-group btn-group-sm col-auto"
+                role="group"
+                aria-label="Sample qc rejection group">
+                <input
+                    type="radio" class="btn-check btn-sm" name="qc-validation"
+                    id="passed-qc-btn" autocomplete="off" value="passed"
+                    {% if selected_qc_status == "passed" %}checked{% endif %}
+                >
+                <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
+                <input type="radio" class="btn-check btn-sm" name="qc-validation"
+                       id="failed-qc-btn" autocomplete="off" value="failed"
+                       {% if selected_qc_status == "failed" %}checked{% endif %}
+                >
+                <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
+            </div>
+            <div class="col-auto d-flex flex-row">
+                <select
+                    id="failed-qc-action"
+                    class="form-select form-select-sm"
+                    name="qc-action"
+                    aria-label="Action on failed sample"
+                    {% if selected_qc_status != "failed" %}
+                    disabled
+                    hidden
+                    {% endif  %}
+                >
+                    <option
+                        value=""
+                        selected
+                        disabled
+                    >
+                        Select action
+                    </option>
+                    {% for action in bad_qc_actions %}
+                    <option
                         value="{{action}}"
-                        {% if cls.action == action %}selected{% endif %}
+                        {% if selected_action == action %}selected{% endif %}
                     >{{action | capitalize}}</option>
-                {% endfor %}
-            </select>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-    </div>
-    <div id="failed-qc-comment-container" class="row" {% if cls.status != "failed" %}hidden{% endif %}>
-        <div id="" class="col-auto">
-            <label class="text-muted" for="failed-qc-comment">Comment</label>
-            <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment"
-            >{{cls.comment}}</textarea>
+        <div id="failed-qc-comment-container" class="row" {% if selected_qc_status != "failed" %}hidden{% endif %}>
+            <div id="" class="col-auto">
+                <label class="text-muted" for="failed-qc-comment">Comment</label>
+                <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment"
+                >{{comment_text}}</textarea>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Confirm</button>
+        <div class="row">
+            <div class="col-auto">
+                <button
+                    id="qc-submit-btn"
+                    type="submit"
+                    class="btn btn-sm btn-outline-secondary mt-2"
+                    disabled
+                >Confirm</button>
+            </div>
         </div>
-    </div>
-</form>
+    </fieldset>
+{% endmacro %}
+
+{% macro qc_classification(sample_qc_classification_obj, bad_qc_actions, sample_id) %}
+    {#
+
+        Sidebar UI section for setting QC status in sample-view sidebar
+
+        Inputs:
+        - qc_classification_obj     SampleQcClassification  Sample QC settings
+        - bad_qc_actions:           List[str]               List of selectable follow-up actions for failed samples
+        - sample_id:                str                     Current sample id
+
+    #}
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
+    <form
+        action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}"
+        method="post"
+        name="qc-classification"
+        class="form-control"
+    >
+        {{ qc_classification_form_fields(
+        bad_qc_actions=bad_qc_actions,
+        selected_qc_status=sample_qc_classification_obj.status,
+        selected_action=sample_qc_classification_obj.action,
+        comment_text=sample_qc_classification_obj.comment
+        ) }}
+    </form>
 {% endmacro %}
 
 {% macro sidebar(sample, bad_qc_actions) %}

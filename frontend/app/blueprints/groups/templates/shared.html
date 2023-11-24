@@ -1,3 +1,5 @@
+{% from  'sidebar.html' import qc_classification_form_fields  %}
+
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
         onclick="addSelectedSamplesToBasket(this)" disabled>
@@ -140,63 +142,12 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             action="{{ url_for('groups.update_qc_classification') }}"
         >
             <div id="qc-dropdown-contents" class="dropdown-menu dropdown-menu-end p-2">
-                <div class ="row pb-2">
-                    <div class="btn-group btn-group-sm col-auto" role="group" aria-label="Sample qc rejection group">
-                        <input
-                            type="radio"
-                            class="btn-check btn-sm"
-                            name="qc-validation"
-                            id="passed-qc-btn"
-                            autocomplete="off"
-                            value="passed"
-                        >
-                        <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
-                        <input
-                            type="radio"
-                            class="btn-check btn-sm"
-                            name="qc-validation"
-                            id="failed-qc-btn"
-                            autocomplete="off"
-                            value="failed"
-                        >
-                        <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
-                    </div>
-                    <div class="col-auto d-flex flex-row">
-                        <select
-                            id="failed-qc-action"
-                            class="form-select form-select-sm"
-                            name="qc-action"
-                            aria-label="Action on failed sample"
-                            hidden
-                        >
-                            <option selected value="0" disabled>Select action</option>
-                            {% for action in bad_qc_actions %}
-                            <option value="{{action}}">{{action | capitalize}}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div id="failed-qc-comment-container" class="row" hidden>
-                        <div class="col-auto">
-                            <label class="text-muted" for="failed-qc-comment">Comment</label>
-                            <textarea
-                                type="text"
-                                class="form-control"
-                                name="qc-comment"
-                                id="failed-qc-comment"
-                            ></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-auto">
-                        <button
-                            id="qc-submit-btn"
-                            type="submit"
-                            class="btn btn-sm btn-outline-secondary mt-2"
-                            disabled
-                        >Confirm</button>
-                    </div>
-                </div>
+                {{ qc_classification_form_fields(
+                    bad_qc_actions=bad_qc_actions,
+                    selected_qc_status = None,
+                    selected_action = None,
+                    comment_text = None
+                ) }}
             </div>
         </form>
     </div>
