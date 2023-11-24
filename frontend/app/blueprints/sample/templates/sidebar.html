@@ -106,6 +106,60 @@
     </fieldset>
 {% endmacro %}
 
+{% macro qc_form_controls_js() %}
+    {#
+
+       JS enhancements for QC form controls.
+
+        - Reset controls when toggling QC status in QC form
+        - Disable/enable form submit btn based on input validation
+
+    #}
+
+    // When passing samples:
+    document.getElementById("passed-qc-btn").addEventListener("click", (e) => {
+        // Clear QC-fail fields
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = true
+        select.hidden = true
+        select.value = "0"
+        const textArea = document.getElementById("failed-qc-comment-container")
+        textArea.hidden = true
+
+        // Enable submit button
+        const submitButton = document.getElementById("qc-submit-btn")
+        submitButton.disabled = false;
+    })
+
+    // When failing samples:
+    document.getElementById("failed-qc-btn").addEventListener("click", (e) => {
+        // Enable selections of actions to take after rejecting a sample:
+        const select = document.getElementById("failed-qc-action")
+        select.disabled = false
+        select.hidden = false
+        const textArea = document.getElementById("failed-qc-comment-container")
+        textArea.hidden = false
+
+        // Do not enable submit unless follow-up action selected
+        const submitButton = document.getElementById("qc-submit-btn")
+        if (select.value === '0') {
+            submitButton.disabled = true;
+        }
+     })
+
+     // Force followup action selection when failing samples:
+     document.getElementById("failed-qc-action").addEventListener("change", (e) => {
+         const select = document.getElementById("failed-qc-action")
+         const submitButton = document.getElementById("qc-submit-btn")
+         if (select.value === '0') {
+             submitButton.disabled = true;
+         } else {
+             submitButton.disabled = false;
+         }
+     })
+{% endmacro %}
+
+
 {% macro qc_classification(sample_qc_classification_obj, bad_qc_actions, sample_id) %}
     {#
 

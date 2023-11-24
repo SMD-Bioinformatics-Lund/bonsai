@@ -1,4 +1,4 @@
-{% from  'sidebar.html' import qc_classification_form_fields  %}
+{% from  'sidebar.html' import qc_classification_form_fields, qc_form_controls_js  %}
 
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
@@ -152,7 +152,10 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
         </form>
     </div>
     <script>
-     // Add data from JS table to qc bulk edit form before submit
+     // QC form controls:
+     {{ qc_form_controls_js() }}
+
+     // Add data from JS table to QC form before dispatching POST
      const qcForm = document.getElementById("qc-form-control");
      qcForm.addEventListener("submit", (e) => {
          e.preventDefault();
@@ -188,45 +191,5 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
              form.appendChild(input);
          });
      }
-
-     // QC Dropdown event listeners
-     document.getElementById("passed-qc-btn").addEventListener("click", (e) => {
-         // Clear QC-fail fields
-         const select = document.getElementById("failed-qc-action")
-         select.disabled = true
-         select.hidden = true
-         select.value = "0"
-         const textArea = document.getElementById("failed-qc-comment-container")
-         textArea.hidden = true
-
-         // Enable submit
-         const submitButton = document.getElementById("qc-submit-btn")
-         submitButton.disabled = false;
-     })
-     document.getElementById("failed-qc-btn").addEventListener("click", (e) => {
-         // enable selections of actions to take after rejecting a sample
-         const select = document.getElementById("failed-qc-action")
-         select.disabled = false
-         select.hidden = false
-         const textArea = document.getElementById("failed-qc-comment-container")
-         textArea.hidden = false
-
-         // Do not allow form submit unless follow-up action selected
-         const submitButton = document.getElementById("qc-submit-btn")
-         if (select.value === '0') {
-             submitButton.disabled = true;
-         }
-
-     })
-     // Force followup action selection when failing samples:
-     document.getElementById("failed-qc-action").addEventListener("change", (e) => {
-         const select = document.getElementById("failed-qc-action")
-         const submitButton = document.getElementById("qc-submit-btn")
-         if (select.value === '0') {
-             submitButton.disabled = true;
-         } else {
-             submitButton.disabled = false;
-         }
-     })
     </script>
 {% endmacro %}
