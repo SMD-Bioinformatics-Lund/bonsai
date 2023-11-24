@@ -144,9 +144,9 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             <div id="qc-dropdown-contents" class="dropdown-menu dropdown-menu-end p-2">
                 {{ qc_classification_form_fields(
                     bad_qc_actions=bad_qc_actions,
-                    selected_qc_status = None,
-                    selected_action = None,
-                    comment_text = None
+                    selected_qc_status = "",
+                    selected_action = "",
+                    comment_text = ""
                 ) }}
             </div>
         </form>
