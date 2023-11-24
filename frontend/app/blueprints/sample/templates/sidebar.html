@@ -125,10 +125,6 @@
         select.value = "0"
         const textArea = document.getElementById("failed-qc-comment-container")
         textArea.hidden = true
-
-        // Enable submit button
-        const submitButton = document.getElementById("qc-submit-btn")
-        submitButton.disabled = false;
     })
 
     // When failing samples:
@@ -139,24 +135,22 @@
         select.hidden = false
         const textArea = document.getElementById("failed-qc-comment-container")
         textArea.hidden = false
+     })
 
-        // Do not enable submit unless follow-up action selected
+    //On any change in the form:
+    document.getElementById("qc-form-fields").addEventListener("change", (e) => {
+        // Force followup action selection when failing samples by disabling submit btn:
+        const qc_status = document.querySelector("input[name='qc-validation']:checked").value
+        const select = document.getElementById("failed-qc-action")
         const submitButton = document.getElementById("qc-submit-btn")
-        if (select.value === '0') {
-            submitButton.disabled = true;
-        }
-     })
 
-     // Force followup action selection when failing samples:
-     document.getElementById("failed-qc-action").addEventListener("change", (e) => {
-         const select = document.getElementById("failed-qc-action")
-         const submitButton = document.getElementById("qc-submit-btn")
-         if (select.value === '0') {
-             submitButton.disabled = true;
-         } else {
-             submitButton.disabled = false;
-         }
-     })
+        if (select.value === '' && qc_status === "failed") {
+            submitButton.disabled = true;
+        } else {
+            submitButton.disabled = false;
+        }
+    })
+
 {% endmacro %}
 
 
