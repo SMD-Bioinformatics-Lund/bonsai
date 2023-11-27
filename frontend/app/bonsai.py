@@ -264,7 +264,7 @@ def remove_comment_from_sample(headers: CaseInsensitiveDict, **kwargs):
 
 @api_authentication
 def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
-    """Update the qc classificaiton of a sample"""
+    """Update the qc classification of a sample"""
     if "sample_id" not in kwargs:
         raise ValueError("Sample id is required for this entrypoint")
     sample_id = kwargs["sample_id"]

@@ -1,3 +1,5 @@
+{% from  'sidebar.html' import qc_classification_form_fields, qc_form_controls_js  %}
+
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success ms-4" 
         onclick="addSelectedSamplesToBasket(this)" disabled>
@@ -113,4 +115,81 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
     const thresholdValue = thresholdElem.data
     document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
 });
+{% endmacro %}
+
+{% macro qc_bulk_toggle(bad_qc_actions) %}
+    {#
+
+        Button interacting with sample list in groups. Activates pop up dialog when used.
+
+        Inputs:
+            - bad_qc_actions : List[str]    List of selectable follow-up actions for failed samples
+
+    #}
+    <div id="qc-menu-dropdown" class="dropdown">
+        <button
+            id="toggle-qc-btn"
+            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4"
+            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+            disabled
+        >
+            Set QC status
+        </button>
+        <form
+            class="needs-validation"
+            method="post"
+            id="qc-form-control"
+            action="{{ url_for('groups.update_qc_classification') }}"
+        >
+            <div id="qc-dropdown-contents" class="dropdown-menu dropdown-menu-end p-2">
+                {{ qc_classification_form_fields(
+                    bad_qc_actions=bad_qc_actions,
+                    selected_qc_status = "",
+                    selected_action = "",
+                    comment_text = ""
+                ) }}
+            </div>
+        </form>
+    </div>
+    <script>
+     // QC form controls:
+     {{ qc_form_controls_js() }}
+
+     // Add data from JS table to QC form before dispatching POST
+     const qcForm = document.getElementById("qc-form-control");
+     qcForm.addEventListener("submit", (e) => {
+         e.preventDefault();
+         addSelectedSamplesToQcForm(qcForm)
+         qcForm.submit()
+     });
+
+     /**
+      * Adds selected samples to HTML form by creating and appending
+      * hidden input elements with the sample IDs.
+      *
+      * @param   {HTMLFormElement}  form    The HTML form element to which the selected samples will be added.
+      */
+     function addSelectedSamplesToQcForm(form) {
+         // Retrieve selected samples from sessionStorage
+         let selectedSamples = window.getSelectedRows()
+
+         // Remove existing hidden inputs with the name 'qc-selected-samples'
+         var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
+         existingInputs.forEach(existingInput => {
+             existingInput.parentNode.removeChild(existingInput);
+         });
+
+         // Iterate over the selectedSamples array and add as hidden inputs to the form
+         selectedSamples.forEach(sampleId => {
+             // Create a hidden input element
+             var input = document.createElement('input');
+             input.type = 'hidden';
+             input.name = 'qc-selected-samples'; // Adjust the name as needed
+             input.value = sampleId
+
+             // Append the input element to the form
+             form.appendChild(input);
+         });
+     }
+    </script>
 {% endmacro %}

@@ -23,6 +23,14 @@ class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
     analysis_profile: str
 
 
+class QualityControlResult(Enum):
+    """QC statuses"""
+
+    PASSED = "passed"
+    FAILED = "failed"
+    UNPROCESSED = "unprocessed"
+
+
 class BadSampleQualityAction(Enum):
     """Actions that could be taken if a sample have low quality."""
 

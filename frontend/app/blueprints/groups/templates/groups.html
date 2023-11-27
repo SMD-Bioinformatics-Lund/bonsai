@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle %}
 
 {% block css %}
 {{ super() }}
@@ -38,6 +38,7 @@
                         Create group
                     </a>
                 {% endif %}
+                {{ qc_bulk_toggle(bad_qc_actions)}}
             </div>
         </nav>
         <div id="data-table"></div>
@@ -132,8 +133,9 @@
             ],
             async onSelect(event) {
                 await event.complete
-                // enable add to basket button when some rows are selected
+                // enable add to basket + toggle qc buttons when user selects at least one row
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 // enable find simiar samples button when ONE row is selected
                 document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
                 // update slected samples counter
@@ -164,6 +166,11 @@
         grid.autoLoad = auto
         grid.skip(0)
     }
+
+    const selected_samples = {{selected_samples | tojson |safe }}
+    if (selected_samples.length > 0) {
+        window.action('select', selected_samples.map(sample => sample))
+    }
     grid.render()
     refreshGrid(true)
 </script>
@@ -174,7 +181,6 @@
     {{ add_to_basket_js() }}
     // template code for searching similar samples
     {{ search_similar_js() }}
-
 </script>
 {% endblock content %}
 

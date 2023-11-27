@@ -2,6 +2,10 @@
 import json
 import logging
 
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
+
 from app.bonsai import (
     TokenObject,
     create_group,
@@ -11,11 +15,9 @@ from app.bonsai import (
     get_samples_by_id,
     get_samples_in_group,
     update_group,
+    update_sample_qc_classification,
 )
-from app.models import PhenotypeType
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
+from app.models import PhenotypeType, BadSampleQualityAction, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 
@@ -48,6 +50,11 @@ def groups() -> str:
     all_samples = get_samples(token, limit=0, skip=0)
     basket = session
 
+    bad_qc_actions = [member.value for member in BadSampleQualityAction]
+
+    # Pre-select samples in sample table:
+    selected_samples = request.args.getlist("samples")
+
     return render_template(
         "groups.html",
         title="Groups",
@@ -55,6 +62,8 @@ def groups() -> str:
         samples=all_samples,
         basket=basket,
         token=current_user.get_id().get("token"),
+        bad_qc_actions=bad_qc_actions,
+        selected_samples=selected_samples,
     )
 
 
@@ -141,3 +150,53 @@ def group(group_id: str) -> str:
         modified=group_info["modified_at"],
         table_definition=table_definition,
     )
+
+
+@groups_bp.route("/groups/qc_status", methods=["POST"])
+@login_required
+def update_qc_classification():
+    """Update the quality control report of one or more samples.
+
+    Redirects back to groups.groups and preserves table selection
+    """
+
+    selected_samples = request.form.getlist("qc-selected-samples")
+
+    LOG.debug("Processing request to set QC for %s", selected_samples)
+
+    if not selected_samples:
+        LOG.warning("Received request to set QC but no selected samples")
+        flash(
+            "No samples selected for QC status update. Please choose at least one sample.",
+            "warning",
+        )
+
+    token = TokenObject(**current_user.get_id())
+
+    # build data to store in db
+    result = request.form.get("qc-validation", None)
+    if result == QualityControlResult.PASSED.value:
+        action = None
+        comment = ""
+    elif result == QualityControlResult.FAILED.value:
+        comment = request.form.get("qc-comment", "")
+        action = request.form.get("qc-action", "")
+    else:
+        raise ValueError(f"Unknown value of qc classification, {result}")
+
+    for sample_id in selected_samples:
+        try:
+            update_sample_qc_classification(
+                token,
+                sample_id=sample_id,
+                status=result,
+                action=action,
+                comment=comment,
+            )
+        except Exception as error:
+            LOG.exception(
+                "Encountered error when updating QC status for sample %s:", sample_id
+            )
+            flash(str(error), "danger")
+
+    return redirect(url_for("groups.groups", samples=selected_samples))

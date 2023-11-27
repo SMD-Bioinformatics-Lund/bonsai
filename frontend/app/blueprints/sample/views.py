@@ -12,7 +12,9 @@ from app.bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
 )
-from app.models import BadSampleQualityAction
+
+from app.models import BadSampleQualityAction, QualityControlResult
+
 from flask import (
     Blueprint,
     current_app,
@@ -151,10 +153,10 @@ def update_qc_classification(sample_id: str) -> str:
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
-    if result == "passed":
+    if result == QualityControlResult.PASSED.value:
         action = None
         comment = ""
-    elif result == "failed":
+    elif result == QualityControlResult.FAILED.value:
         comment = request.form.get("qc-comment", "")
         action = request.form.get("qc-action", "")
     else:

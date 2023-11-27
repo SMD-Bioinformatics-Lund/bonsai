@@ -7,7 +7,7 @@ from .base import RWModel
 
 
 class SampleQcClassification(Enum):
-    """Actions that could be taken if a sample have low quality."""
+    """QC statuses."""
 
     # phenotype
     PASSED = "passed"

@@ -24,6 +24,10 @@ def create_app():
     app.jinja_env.add_extension("jinja2.ext.do")
     app.jinja_env.globals.update(zip_longest=zip_longest)
 
+    # whitespace control:
+    app.jinja_env.trim_blocks = True
+    app.jinja_env.lstrip_blocks = True
+
     # configure pages etc
     register_blueprints(app)
     register_filters(app)

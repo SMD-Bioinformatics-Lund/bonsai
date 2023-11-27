@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "sidebar.html" import sidebar, table_of_content %}
+{% from "sidebar.html" import sidebar, table_of_content, qc_form_controls_js %}
 {% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card %}
 
 {% block css %}
@@ -460,6 +460,8 @@
     //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
+    {{ qc_form_controls_js() }}
+
     function removeComment(btn) {
         // remove comment from sample
         const apiURL = "{{ config.BONSAI_API_URL }}"
@@ -470,23 +472,6 @@
         })
     }
 
-    // handle sample qc rejections
-    document.getElementById("passed-qc-btn").addEventListener("click", () => {
-        // enable selction of actions to take after rejecting a sample
-        const select = document.getElementById("failed-qc-action")
-        select.disabled = true
-        select.hidden = true
-        select.value = null
-        const textArea = document.getElementById("failed-qc-comment-container")
-        textArea.hidden = true
-        select.value = null
-    })
-    document.getElementById("failed-qc-btn").addEventListener("click", () => {
-        // enable selction of actions to take after rejecting a sample
-        const select = document.getElementById("failed-qc-action")
-        select.disabled = false
-        select.hidden = false
-        document.getElementById("failed-qc-comment-container").hidden = false
-    })
+
 </script>
 {% endblock content %}
