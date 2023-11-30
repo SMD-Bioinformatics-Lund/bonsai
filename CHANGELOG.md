@@ -18,3 +18,4 @@
  - Renamed cgvis to Bonsai
  - Complete rewrite of the project
  - Removed N novel cgmlst alleles from cgmlst qc card
+ - Use data models from JASEN Pipleine Result Processing application
