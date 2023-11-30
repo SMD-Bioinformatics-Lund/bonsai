@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List
 
 from prp.models import PipelineResult
-from prp.models.species import SpeciesPredictionResult
+from prp.models.species import SpeciesPrediction
 from prp.models.tags import Tag
 from pydantic import BaseModel, Field
 
