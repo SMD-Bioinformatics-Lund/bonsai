@@ -144,7 +144,7 @@ def create_group(headers: CaseInsensitiveDict, **kwargs):
 def add_samples_to_basket(headers: CaseInsensitiveDict, **kwargs):
     """create new group."""
     samples: List[SampleBasketObject] = kwargs.get("samples")
-    samples = [smp.dict() for smp in samples]
+    samples = [smp.model_dump() for smp in samples]
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
     resp = requests.put(url, json=samples, headers=headers, timeout=TIMEOUT)
