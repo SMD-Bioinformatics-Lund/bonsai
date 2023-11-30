@@ -1,7 +1,6 @@
 """Functions for computing tags."""
-from ..models.phenotype import ElementType, ElementTypeResult
-from ..models.sample import SampleInDatabase
-from ..models.tags import (
+from prp.models.phenotype import ElementType, ElementTypeResult
+from prp.models.tags import (
     ResistanceTag,
     Tag,
     TagList,
@@ -9,6 +8,8 @@ from ..models.tags import (
     TagType,
     VirulenceTag,
 )
+
+from ..models.sample import SampleInDatabase
 
 
 # Phenotypic tags

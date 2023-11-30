@@ -4,6 +4,7 @@ import logging
 from typing import Annotated, Dict, List
 
 from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
+from prp.models import PipelineResult
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -21,7 +22,6 @@ from ..models.sample import (
     SAMPLE_ID_PATTERN,
     Comment,
     CommentInDatabase,
-    PipelineResult,
     SampleInCreate,
     SampleInDatabase,
 )

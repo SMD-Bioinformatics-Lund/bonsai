@@ -1,4 +1,5 @@
 """User CRUD operations."""
+import logging
 from typing import List
 
 from fastapi import Depends, HTTPException, Security, status
@@ -17,7 +18,6 @@ from ..models.user import (
     UserOutputDatabase,
 )
 from .errors import EntryNotFound, UpdateDocumentError
-import logging
 
 LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})

@@ -1,10 +1,10 @@
 """Routes related to collections of samples."""
 from typing import Dict, List
 
+from prp.models.phenotype import ElementType
 from pydantic import BaseModel, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId
-from .phenotype import ElementType
 from .sample import SampleSummary
 
 FilterParams = List[Dict[str, str | int | float],]

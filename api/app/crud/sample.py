@@ -5,6 +5,9 @@ from typing import List
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
+from prp.models import PipelineResult
+from prp.models.tags import TagList
+from prp.models.typing import CgmlstAlleles
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -12,15 +15,7 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    PipelineResult,
-    SampleInCreate,
-    SampleInDatabase,
-)
-from ..models.tags import TagList
-from ..models.typing import CgmlstAlleles
+from ..models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
