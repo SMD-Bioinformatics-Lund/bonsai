@@ -131,7 +131,7 @@ async def add_samples_to_user_basket(
         {
             "$addToSet": {
                 "basket": {
-                    "$each": jsonable_encoder(sample_ids),
+                    "$each": jsonable_encoder(sample_ids, by_alias=False),
                 },
             },
         },

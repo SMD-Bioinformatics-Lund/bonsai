@@ -140,7 +140,7 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
     # validate data format
     sample_db_fmt: SampleInDatabase = SampleInCreate(in_collections=[], **sample.model_dump())
     # store data in database
-    doc = await db.sample_collection.insert_one(jsonable_encoder(sample_db_fmt))
+    doc = await db.sample_collection.insert_one(jsonable_encoder(sample_db_fmt, by_alias=False))
 
     # create object representing the dataformat in database
     inserted_id = doc.inserted_id
@@ -159,7 +159,7 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     # store data in database
     try:
         doc = await db.sample_collection.replace_one(
-            {"sample_id": sample_id}, updated_data.model_dump()
+            {"sample_id": sample_id}, jsonable_encoder(updated_data, by_alias=False)
         )
     except Exception as err:
         LOG.error(
@@ -210,7 +210,7 @@ async def add_comment(
             "$set": {"modified_at": datetime.now()},
             "$push": {
                 "comments": {
-                    "$each": [jsonable_encoder(comment_obj)],
+                    "$each": [jsonable_encoder(comment_obj, by_alias=False)],
                     "$position": 0,
                 }
             },
@@ -257,7 +257,7 @@ async def update_sample_qc_classification(
         {
             "$set": {
                 "modified_at": datetime.now(),
-                "qc_status": jsonable_encoder(classification),
+                "qc_status": jsonable_encoder(classification, by_alias=False),
             }
         },
     )
