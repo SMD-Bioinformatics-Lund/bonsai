@@ -115,7 +115,7 @@ async def update_group(
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
-            "$set": {"modified_at": datetime.now() ** group_record.model_dump()},
+            "$set": {"modified_at": datetime.now(), **group_record.model_dump()},
         },
     )
 
