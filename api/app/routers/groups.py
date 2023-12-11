@@ -47,7 +47,6 @@ async def create_group(
     ),
 ):
     """Create a new group document in the database"""
-    # cast input information as group db object
     try:
         result = await create_group_record(db, group_info)
     except DuplicateKeyError as error:

@@ -54,7 +54,7 @@
                     <td scope="col">Software</td>
                 </tr>
             </thead>
-            <td>
+            <tbody>
                 {% for gene_symbol, genes in resistance.genes.items() %}
                     <tr>
                         <td rowspan="{{ genes | length }}">{{gene_symbol}}</td>
@@ -77,14 +77,23 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <td scope="col">Mutation</td>
-                        <td scope="col">Change</td>
-                        <td scope="col">Type</td>
                         <td scope="col">Gene</td>
+                        <td scope="col">Variant</td>
                         <td scope="col">Depth</td>
+                        <td scope="col">Software</td>
                     </tr>
                 </thead>
                 <tbody>
+                    {% for gene_symbol, variants in resistance.mutations.items() %}
+                        {% for variant in variants %}
+                            <tr>
+                                <td>{{gene_symbol}}</td>
+                                <td>{{variant.name}}</td>
+                                <td>{{variant.depth}}</td>
+                                <td class="fst-italic fw-lighter">{{variant.ref_database}}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
                 </tbody>
             </table>
         {% endif %}

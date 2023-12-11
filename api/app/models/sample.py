@@ -1,6 +1,5 @@
 """Data model definition of input/ output data"""
 from datetime import datetime
-from enum import Enum
 from typing import List
 
 from prp.models import PipelineResult

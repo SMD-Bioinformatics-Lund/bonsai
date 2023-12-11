@@ -63,7 +63,7 @@ READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 
 
-@router.get("/samples/", tags=DEFAULT_TAGS)
+@router.get("/samples/", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_samples(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
@@ -100,7 +100,6 @@ async def read_samples(
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
-@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_sample(
     sample: PipelineResult,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -157,7 +156,9 @@ async def search_samples(
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
-@router.get("/samples/{sample_id}", tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}", 
+            response_model_by_alias=False,
+            tags=DEFAULT_TAGS)
 async def read_sample(
     sample_id: str = Path(
         ...,
