@@ -100,6 +100,7 @@ async def read_samples(
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
+@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_sample(
     sample: PipelineResult,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
