@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, table_of_content, qc_form_controls_js %}
-{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card %}
+{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card %}
 
 {% block css %}
 {{ super() }}
@@ -262,9 +262,9 @@
                 <span 
                     class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
                     data-bs-toggle="tooltip" data-bs-placement="top"
-                    data-bs-title="{{ tag.description }}"
+                    {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
                 >
-                    {{tag.label}}
+                    {{tag.label | upper }}
                 </span>
             {% endfor %}
         </div>
@@ -303,7 +303,7 @@
         <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" 
             data-bs-spy="scroll" data-bs-target="#toc-contents">
             <div class="row">
-                <div class="col-lg-2 order-md-1 sticky-top">
+                <div class="col-lg-2 order-md-1">
                     {{ table_of_content() }}
                 </div>
                 <div class="col-sm-12 col-md-10 order-md-0 mt-2">
@@ -341,15 +341,21 @@
                     <p>No predicted resistance determinants.</p>
                 {% else %}
                     <div class="col-md-auto">
-                    {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
+                        {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
                     </div>
                 {% endif %}
+                {% for elem in sample.element_type_result %}
+                    {% if elem.type != 'VIRULENCE' %}
+                        <div class="col-md-auto">
+                            {{ amr_prediction_card(elem) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
                 {# Add supplementary resistance info #}
                 {% for elem in sample.element_type_result %}
                     {% if elem.type.startswith('STRESS') %}
                         {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
                         <div class="col-md-auto">
-                            {{ resistance_table_card(elem) }}
                         </div>
                         {% endif %}
                     {% endif %}
@@ -457,7 +463,6 @@
     }
 </script>
 <script>
-    //const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
     {{ qc_form_controls_js() }}
@@ -471,7 +476,9 @@
             btn.parentElement.remove()
         })
     }
-
+    // init popovers
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 </script>
 {% endblock content %}

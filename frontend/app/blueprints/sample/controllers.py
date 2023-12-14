@@ -151,8 +151,8 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
                     },
                 )
                 if mutation["variant_type"] == "substitution":
-                    ref_aa = NT_TO_AA[mutation["ref_nt"].upper()]
-                    alt_aa = NT_TO_AA[mutation["alt_nt"].upper()]
+                    ref_aa = mutation["ref_aa"].upper()
+                    alt_aa = mutation["alt_aa"].upper()
                     gene_entry["change"] = f"{ref_aa}{mutation['position']}{alt_aa}"
                 else:
                     raise ValueError

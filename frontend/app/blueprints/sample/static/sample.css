@@ -45,3 +45,11 @@
   width: 4rem;
   height: 4rem;
 }
+
+.tbl-border-left {
+  border-left: #343a40 2px solid;
+}
+
+.tbl-border-right {
+  border-right: #343a40 2px solid;
+}

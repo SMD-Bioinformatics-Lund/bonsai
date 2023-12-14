@@ -333,6 +333,17 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     return res
 
 
+def get_resistance_profile(prediction, level):
+    """Get non redundant resistance profile."""
+    result = []
+    for res in prediction:
+        fallback = res["name"]
+        result.append(
+            res.get(level, fallback).capitalize()
+        )
+    return ", ".join(result)
+
+
 TESTS = {
     "list": is_list,
 }
@@ -352,4 +363,5 @@ FILTERS = {
     "has_same_analysis_profile": has_same_analysis_profile,
     "get_pvl_tag": get_pvl_tag,
     "fmt_to_human_readable": human_readable_large_numbers,
+    "get_resistance_profile": get_resistance_profile,
 }
