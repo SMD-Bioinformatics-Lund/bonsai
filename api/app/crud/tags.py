@@ -1,4 +1,5 @@
 """Functions for computing tags."""
+import logging 
 from prp.models.phenotype import ElementType, ElementTypeResult
 from prp.models.tags import (
     ResistanceTag,
@@ -10,6 +11,8 @@ from prp.models.tags import (
 )
 
 from ..models.sample import SampleInDatabase
+
+LOG = logging.getLogger(__name__)
 
 
 # Phenotypic tags
@@ -91,7 +94,11 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
     tags.append(tag)
 
 
-ALL_TAG_FUNCS = [add_pvl, add_mrsa]
+# Tagging functions with the species they are applicable for
+ALL_TAG_FUNCS = [
+    {'species': ['Staphylococcus aureus'],'func': add_pvl}, 
+    {'species': ['Staphylococcus aureus'],'func': add_mrsa},
+]
 
 
 def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
@@ -99,5 +106,8 @@ def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
     tags = []
     # iterate over tag functions to build up list of tags
     for tag_func in ALL_TAG_FUNCS:
-        tag_func(tags, sample)
+        major_spp = sample.species_prediction[1].scientific_name 
+        LOG.debug("Major spp %s in %s", major_spp, str(tag_func['species']))
+        if major_spp in tag_func['species']:
+            tag_func['func'](tags, sample)
     return tags
