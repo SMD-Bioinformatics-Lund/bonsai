@@ -1,7 +1,7 @@
 """Routers for reading or manipulating sample information."""
 
 import logging
-from typing import Annotated, Dict, List
+from typing import Annotated, Dict, List, Any
 
 from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
 from prp.models import PipelineResult
@@ -133,7 +133,7 @@ async def search_samples(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-) -> Dict[str, str | int | List[SampleInDatabase]]:
+) -> Dict[str, str | int | List[Dict[str, Any]]]:
     """Entrypoint for searching the database for multiple samples.
 
     :param body: Query information

@@ -1,7 +1,7 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Any
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -52,7 +52,7 @@ async def get_samples_summary(
     include: List[str] | None = None,
     include_qc: bool = True,
     include_mlst: bool = True,
-) -> List[SampleInDatabase]:
+) -> List[Dict[str, Any]]:
     """Get a summay of several samples."""
     # build query pipeline
     pipeline = []
