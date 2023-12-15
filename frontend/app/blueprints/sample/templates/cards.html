@@ -122,34 +122,93 @@
 </div>
 {% endmacro %}
 
-{% macro virulence_card(res) %}
+
+{% macro virulence_card(pred) %}
 <div class="card">
+    <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
-        <table class="table">
-            <thead>
-                <tr>
-                    <td scope="col">Gene</td>
-                    <td scope="col">Type</td>
-                    <td scope="col">Description</td>
-                    <td scope="col">Identity</td>
-                    <td scope="col">Coverage</td>
-                </tr>
-            </thead>
-            <tbody>
-            {% for gene in res.genes %}
-            <tr>
-                <td>{{ gene.gene_symbol }}</td>
-                <td class="text-lowercase">{{ gene.element_subtype }}</td>
-                <td>{{ gene.sequence_name }}</td>
-                <td>{{ gene.coverage }}%</td>
-                <td>{{ gene.identity }}%</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    {% if pred.software == "virulencefinder" %}
+        {{ virulencefinder_prediction(pred.result) }}
+    {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
+        {{ amrfinder_virulence_prediction(pred.result) }}
+    {% endif %}
     </div>
 </div>
 {% endmacro %}
+
+
+{% macro amrfinder_virulence_prediction(res, extended=False) %}
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <td scope="col">Gene</td>
+            <td scope="col">Method</td>
+            {% if extended %}
+                <td>Contig</td>
+                <td>Start/ End</td>
+            {% endif  %}
+            <td scope="col">Identity</td>
+            <td scope="col">Coverage</td>
+            <td scope="col">Name</td>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+    {% for gene in res.genes %}
+    <tr>
+        <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+        <td>
+            {{ gene.method }}
+            <i class="bi bi-question-circle"
+                data-bs-toggle="tooltip"
+                data-bs-placement="top"
+                data-bs-html="true"
+                data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+        </td>
+        {% if extended %}
+            <td class="tbl-border-left">{{ gene.contig_id }}</td>
+            <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+        {% endif  %}
+        <td>{{ gene.coverage }}%</td>
+        <td>{{ gene.identity }}%</td>
+        <td>{{ gene.sequence_name  | capitalize }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro virulencefinder_prediction(res, extended=False) %}
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <td scope="col">Gene</td>
+            {% if extended %}
+                <td>Contig</td>
+                <td>Start/ End</td>
+            {% endif  %}
+            <td scope="col">Identity</td>
+            <td scope="col">Coverage</td>
+            <td scope="col">Function</td>
+        </tr>
+    </thead>
+    <tbody class="table-group-divider">
+    {% for gene in res.genes %}
+    <tr>
+        <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+        {% if extended %}
+            <td class="tbl-border-left">{{ gene.contig_id }}</td>
+            <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+        {% endif  %}
+        <td>{{ gene.coverage }}%</td>
+        <td>{{ gene.identity }}%</td>
+        <td>{{ gene.sequence_name | capitalize }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
 
 {% macro species_prediction_card(predictions) %}
 <div class="card">
