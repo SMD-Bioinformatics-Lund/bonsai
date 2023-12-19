@@ -5,7 +5,7 @@
             {% if comment.displayed %}
             <div class="comment-box m-2 p-1 bg-white shadow-sm rounded">
                 <form action={{ url_for('samples.hide_comment', sample_id=sample.sample_id, comment_id=comment.id) }} method="POST">
-                    <button class="float-end float-top btn btn-sm btn-link" aria-label="Remove" type="submit"><i class="bi bi-trash3"></i></button>
+                    <button class="float-end float-top btn btn-sm btn-link text-success" aria-label="Remove" type="submit"><i class="bi bi-trash3"></i></button>
                 </form>
                 <p class="ps-2 text-sm text-break fw-light">{{ comment.comment }}</p>
                 <span class="text-sm text-muted">- {{ comment.username }}, {{ comment.created_at | strftime }}</span>
