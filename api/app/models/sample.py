@@ -4,9 +4,9 @@ from typing import List
 
 from prp.models import PipelineResult
 from prp.models.species import SpeciesPrediction
-from ..models.tags import Tag
 from pydantic import BaseModel, Field
 
+from ..models.tags import Tag
 from .base import DBModelMixin, ModifiedAtRWModel
 from .qc import QcClassification
 

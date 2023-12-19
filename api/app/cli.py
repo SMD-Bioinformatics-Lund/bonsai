@@ -3,21 +3,20 @@ import asyncio
 import json
 import random
 import string
-import asyncio
 from logging import getLogger
 
 import click
 
 from .__version__ import VERSION as version
 from .config import USER_ROLES
-from .crud.user import create_user as create_user_in_db
 from .crud.sample import get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
+from .crud.user import create_user as create_user_in_db
 from .db import db
 from .db.index import INDEXES
 from .db.utils import connect_to_mongo
-from .models.user import UserInputCreate
 from .models.sample import SampleInCreate
+from .models.user import UserInputCreate
 
 LOG = getLogger(__name__)
 
