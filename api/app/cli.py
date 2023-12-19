@@ -3,6 +3,7 @@ import asyncio
 import json
 import random
 import string
+import asyncio
 from logging import getLogger
 
 import click
@@ -10,10 +11,13 @@ import click
 from .__version__ import VERSION as version
 from .config import USER_ROLES
 from .crud.user import create_user as create_user_in_db
+from .crud.sample import get_samples, update_sample
+from .crud.tags import compute_phenotype_tags
 from .db import db
 from .db.index import INDEXES
 from .db.utils import connect_to_mongo
 from .models.user import UserInputCreate
+from .models.sample import SampleInCreate
 
 LOG = getLogger(__name__)
 
@@ -87,3 +91,22 @@ def index(ctx):  # pylint: disable=unused-argument
         click.secho(f"Creating index for: {collection.name}")
         for idx in indexes:
             collection.create_index(idx["definition"], **idx["options"])
+
+
+@cli.command()
+@click.pass_context
+def update_tags(ctx):  # pylint: disable=unused-argument
+    """Update the tags for samples in the database."""
+    LOG.info("Updating tags...")
+    loop = asyncio.get_event_loop()
+    func = get_samples(db)
+    samples = loop.run_until_complete(func)
+    with click.progressbar(samples, length=len(samples), label="Updating tags") as bar:
+        for sample in bar:
+            upd_tags = compute_phenotype_tags(sample)
+            upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
+            # update sample as sync function
+            loop = asyncio.get_event_loop()
+            func = update_sample(db, upd_sample)
+            samples = loop.run_until_complete(func)
+    click.secho("Updated tags for all samples", fg="green")
