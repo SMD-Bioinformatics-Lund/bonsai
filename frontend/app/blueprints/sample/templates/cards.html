@@ -422,7 +422,9 @@
 
 {% macro stx_card(pred) %}
 <div class="card col-md-auto">
-    <div class="card-header">{{ pred.type | upper }} typing</div>
+    <div class="card-header">
+        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+    </div>
     <div class="card-body">
         <table class="table table-sm">
             <thead>
