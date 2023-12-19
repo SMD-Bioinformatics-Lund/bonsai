@@ -1,7 +1,7 @@
 """Functions that generate data rendered by views."""
 import logging
-from itertools import chain, groupby
 from collections import defaultdict
+from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
 from app.models import NT_TO_AA, ElementType, PredictionSoftware
@@ -158,7 +158,7 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
                     raise ValueError
                 # store object
                 amr_summary[gene_name] = gene_entry
-                mutation['name'] = to_hgvs_nomenclature(mutation)
+                mutation["name"] = to_hgvs_nomenclature(mutation)
                 resistance_info["mutations"][gene_name].append(mutation)
 
     # group summary by res_class

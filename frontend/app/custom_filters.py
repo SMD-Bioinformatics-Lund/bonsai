@@ -338,9 +338,7 @@ def get_resistance_profile(prediction, level):
     result = []
     for res in prediction:
         fallback = res["name"]
-        result.append(
-            res.get(level, fallback).capitalize()
-        )
+        result.append(res.get(level, fallback).capitalize())
     return ", ".join(result)
 
 

@@ -1,9 +1,10 @@
 """Routers for reading or manipulating sample information."""
 
 import logging
-from typing import Annotated, Dict, List, Any
+from typing import Annotated, Any, Dict, List
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
+from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
+                     Security, status)
 from prp.models import PipelineResult
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
@@ -18,22 +19,14 @@ from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (
-    SAMPLE_ID_PATTERN,
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-)
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             SampleInCreate, SampleInDatabase)
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-)
+from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
+                             schedule_add_genome_signature_to_index,
+                             schedule_find_similar_and_cluster,
+                             schedule_find_similar_samples)
 from ..utils import format_error_message
 
 CommentsObj = List[CommentInDatabase]
@@ -157,9 +150,7 @@ async def search_samples(
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
-@router.get("/samples/{sample_id}", 
-            response_model_by_alias=False,
-            tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_sample(
     sample_id: str = Path(
         ...,

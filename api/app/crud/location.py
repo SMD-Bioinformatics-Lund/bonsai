@@ -4,12 +4,8 @@ from typing import List
 from bson import ObjectId
 
 from ..db import Database
-from ..models.location import (
-    GeoJSONPolygon,
-    LocationInputCreate,
-    LocationInputDatabase,
-    LocationOutputDatabase,
-)
+from ..models.location import (GeoJSONPolygon, LocationInputCreate,
+                               LocationInputDatabase, LocationOutputDatabase)
 from .errors import EntryNotFound
 
 
@@ -69,7 +65,11 @@ async def get_locations_within_bbox(
     param_location = fields["location"]
     # query database
     cursor = db.location_collection.find(
-        {f"{param_location}.coordinates": {"$geoWithin": {"$geometry": bbox.model_dump()}}}
+        {
+            f"{param_location}.coordinates": {
+                "$geoWithin": {"$geometry": bbox.model_dump()}
+            }
+        }
     )
     # convert locations to db representations object
     return [_document_to_db_obj(loc) for loc in await cursor.to_list(None)]
