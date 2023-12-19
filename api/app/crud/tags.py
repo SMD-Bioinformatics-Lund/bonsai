@@ -2,10 +2,11 @@
 import logging
 
 from prp.models.phenotype import ElementType, ElementTypeResult
-from prp.models.tags import (ResistanceTag, Tag, TagList, TagSeverity, TagType,
+from prp.models.typing import TypingMethod
+from ..models.tags import (ResistanceTag, Tag, TagList, TagSeverity, TagType,
                              VirulenceTag)
 
-from ..models.sample import SampleInDatabase, SampleSummary
+from ..models.sample import SampleInDatabase
 
 LOG = logging.getLogger(__name__)
 
@@ -89,10 +90,24 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
     tags.append(tag)
 
 
+def add_sxt_type(tags: TagList, sample: SampleInDatabase) -> Tag:
+    """Check if sample SXT type."""
+    for type_res in sample.typing_result:
+        if type_res.type == TypingMethod.STX.value:
+            tag = Tag(
+                type=TagType.TYPING,
+                label=type_res.result.gene_symbol.upper(),
+                description="",
+                severity=TagSeverity.INFO,
+            )
+            tags.append(tag)
+
+
 # Tagging functions with the species they are applicable for
 ALL_TAG_FUNCS = [
     {"species": ["Staphylococcus aureus"], "func": add_pvl},
     {"species": ["Staphylococcus aureus"], "func": add_mrsa},
+    {"species": ["Escherichia coli"], "func": add_sxt_type},
 ]
 
 

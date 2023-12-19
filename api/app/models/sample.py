@@ -4,7 +4,7 @@ from typing import List
 
 from prp.models import PipelineResult
 from prp.models.species import SpeciesPrediction
-from prp.models.tags import Tag
+from ..models.tags import Tag
 from pydantic import BaseModel, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel
