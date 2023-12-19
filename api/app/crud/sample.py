@@ -5,6 +5,9 @@ from typing import List
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
+from prp.models import PipelineResult
+from prp.models.tags import TagList
+from prp.models.typing import CgmlstAlleles
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -12,15 +15,8 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    PipelineResult,
-    SampleInCreate,
-    SampleInDatabase,
-)
-from ..models.tags import TagList
-from ..models.typing import CgmlstAlleles
+from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
+                             SampleInDatabase, SampleSummary)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -57,7 +53,7 @@ async def get_samples_summary(
     include: List[str] | None = None,
     include_qc: bool = True,
     include_mlst: bool = True,
-) -> List[SampleInDatabase]:
+) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
     pipeline = []
@@ -143,16 +139,21 @@ async def get_samples(
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
-    sample_db_fmt: SampleInDatabase = SampleInCreate(in_collections=[], **sample.dict())
+    sample_db_fmt = SampleInCreate(
+        in_collections=[],
+        tags=compute_phenotype_tags(sample),
+        **sample.model_dump(),
+    )
     # store data in database
-    doc = await db.sample_collection.insert_one(jsonable_encoder(sample_db_fmt))
-    # print(sample_db_fmt.dict(by_alias=True))
+    doc = await db.sample_collection.insert_one(
+        jsonable_encoder(sample_db_fmt, by_alias=False)
+    )
 
     # create object representing the dataformat in database
     inserted_id = doc.inserted_id
     db_obj = SampleInDatabase(
         id=str(inserted_id),
-        **sample_db_fmt.dict(),
+        **sample_db_fmt.model_dump(),
     )
     return db_obj
 
@@ -165,7 +166,7 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     # store data in database
     try:
         doc = await db.sample_collection.replace_one(
-            {"sample_id": sample_id}, updated_data.dict()
+            {"sample_id": sample_id}, jsonable_encoder(updated_data, by_alias=False)
         )
     except Exception as err:
         LOG.error(
@@ -182,7 +183,7 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
 
 async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
     """Get sample with sample_id."""
-    db_obj: SampleInCreate = await db.sample_collection.find_one(
+    db_obj: SampleInDatabase = await db.sample_collection.find_one(
         {"sample_id": sample_id}
     )
 
@@ -191,12 +192,8 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
 
     inserted_id = db_obj["_id"]
     sample_obj = SampleInDatabase(
-        id=str(inserted_id),
         **db_obj,
     )
-    # Compute tags
-    tags: TagList = compute_phenotype_tags(sample_obj)
-    sample_obj.tags = tags
     return sample_obj
 
 
@@ -209,14 +206,14 @@ async def add_comment(
     comment_id = (
         max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
     )
-    comment_obj = CommentInDatabase(id=comment_id, **comment.dict())
+    comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
     update_obj = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
             "$set": {"modified_at": datetime.now()},
             "$push": {
                 "comments": {
-                    "$each": [jsonable_encoder(comment_obj)],
+                    "$each": [jsonable_encoder(comment_obj, by_alias=False)],
                     "$position": 0,
                 }
             },
@@ -228,7 +225,7 @@ async def add_comment(
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
     LOG.info("Added comment to %s", sample_id)
-    return [comment_obj.dict()] + sample.comments
+    return [comment_obj.model_dump()] + sample.comments
 
 
 async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
@@ -263,7 +260,7 @@ async def update_sample_qc_classification(
         {
             "$set": {
                 "modified_at": datetime.now(),
-                "qc_status": jsonable_encoder(classification),
+                "qc_status": jsonable_encoder(classification, by_alias=False),
             }
         },
     )

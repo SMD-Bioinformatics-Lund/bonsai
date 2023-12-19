@@ -1,4 +1,4 @@
-"""Definition of tag information."""
+"""Definition of tags."""
 
 from enum import Enum
 from typing import List
@@ -6,16 +6,17 @@ from typing import List
 from .base import RWModel
 
 
-class TagType(Enum):  # pylint: disable=too-few-public-methods
-    """Tag categories."""
+class TagType(Enum):
+    """Categories of tags."""
 
     VIRULENCE = "virulence"
     RESISTANCE = "resistane"
     QC = "qc"
+    TYPING = "typing"
 
 
-class ResistanceTag(Enum):  # pylint: disable=too-few-public-methods
-    """Tags associated with AMR."""
+class ResistanceTag(Enum):
+    """AMR associated tags."""
 
     VRE = "VRE"
     ESBL = "ESBL"
@@ -23,16 +24,16 @@ class ResistanceTag(Enum):  # pylint: disable=too-few-public-methods
     MSSA = "MSSA"
 
 
-class VirulenceTag(Enum):  # pylint: disable=too-few-public-methods
+class VirulenceTag(Enum):
     """Virulence associated tags."""
 
-    PVL_ALL_POS = "PVL pos"
-    PVL_LUKS_POS = "PVL neg/pos"
-    PVL_LUKF_POS = "PVL pos/neg"
-    PVL_ALL_NEG = "PVL neg"
+    PVL_ALL_POS = "pos"
+    PVL_LUKS_POS = "neg/pos"
+    PVL_LUKF_POS = "pos/neg"
+    PVL_ALL_NEG = "neg"
 
 
-class TagSeverity(Enum):  # pylint: disable=too-few-public-methods
+class TagSeverity(Enum):
     """Defined severity classes of tags"""
 
     INFO = "info"
@@ -41,11 +42,11 @@ class TagSeverity(Enum):  # pylint: disable=too-few-public-methods
     DANGER = "danger"
 
 
-class Tag(RWModel):  # pylint: disable=too-few-public-methods
+class Tag(RWModel):
     """Tag data structure."""
 
     type: TagType
-    label: VirulenceTag | ResistanceTag
+    label: VirulenceTag | ResistanceTag | str
     description: str
     severity: TagSeverity
 

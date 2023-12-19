@@ -1,9 +1,11 @@
 """Routers for reading or manipulating sample information."""
 
 import logging
-from typing import Annotated, Dict, List
+from typing import Annotated, Any, Dict, List
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
+from fastapi import (APIRouter, Body, File, HTTPException, Path, Query,
+                     Security, status)
+from prp.models import PipelineResult
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -17,23 +19,14 @@ from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (
-    SAMPLE_ID_PATTERN,
-    Comment,
-    CommentInDatabase,
-    PipelineResult,
-    SampleInCreate,
-    SampleInDatabase,
-)
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             SampleInCreate, SampleInDatabase)
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-)
+from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
+                             schedule_add_genome_signature_to_index,
+                             schedule_find_similar_and_cluster,
+                             schedule_find_similar_samples)
 from ..utils import format_error_message
 
 CommentsObj = List[CommentInDatabase]
@@ -63,7 +56,7 @@ READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 
 
-@router.get("/samples/", tags=DEFAULT_TAGS)
+@router.get("/samples/", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_samples(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
@@ -133,7 +126,7 @@ async def search_samples(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-) -> Dict[str, str | int | List[SampleInDatabase]]:
+) -> Dict[str, str | int | List[Dict[str, Any]]]:
     """Entrypoint for searching the database for multiple samples.
 
     :param body: Query information
@@ -157,7 +150,7 @@ async def search_samples(
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
-@router.get("/samples/{sample_id}", tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_sample(
     sample_id: str = Path(
         ...,
@@ -260,7 +253,7 @@ async def create_genome_signatures_sample(
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
-    sample_obj = {**sample.dict(), **{"genome_signature": add_sig_job.id}}
+    sample_obj = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
     upd_sample_data = SampleInCreate(**sample_obj)
     await crud_update_sample(db, upd_sample_data)
     LOG.error("status %s", add_sig_job.id)

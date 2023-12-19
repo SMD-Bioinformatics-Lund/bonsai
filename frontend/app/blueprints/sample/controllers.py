@@ -1,5 +1,6 @@
 """Functions that generate data rendered by views."""
 import logging
+from collections import defaultdict
 from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
@@ -70,6 +71,26 @@ def filter_validated_genes(validated_genes, sample: SampleObj):
     return pred_res
 
 
+def to_hgvs_nomenclature(variant):
+    """Format variant to HGVS variant nomenclature."""
+    ref_gene = ""
+    if variant["ref_id"] is not None:
+        _, _, raw_accnr = variant["ref_id"].split(";;")
+        accnr = raw_accnr.split("_")[0]
+        ref_gene = f"{accnr}:g."
+    pos = variant["position"]
+    ref_nt = variant["ref_nt"]
+    alt_nt = variant["alt_nt"]
+    match variant["variant_type"]:
+        case "substitution":
+            description = f"{pos}{ref_nt}>{alt_nt}"
+        case "deletion":
+            description = f"{pos}_{pos + len(ref_nt)}del"
+        case "insertion":
+            description = f"{pos}_{pos + len(alt_nt)}int{alt_nt.upper()}"
+    return f"{ref_gene}{description}"
+
+
 def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Summarize antimicrobial resistance prediction.
 
@@ -81,7 +102,7 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
     :rtype: Tuple[Dict[str, Any], Dict[str, Any]]
     """
     amr_summary = {}
-    resistance_info = {"genes": {}, "mutations": {}}
+    resistance_info = {"genes": {}, "mutations": defaultdict(list)}
     LOG.debug("Make AMR prediction summary table")
     for pred_res in sample["element_type_result"]:
         # only get AMR resistance
@@ -130,13 +151,15 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
                     },
                 )
                 if mutation["variant_type"] == "substitution":
-                    ref_aa = NT_TO_AA[mutation["ref_codon"].upper()]
-                    alt_aa = NT_TO_AA[mutation["alt_codon"].upper()]
+                    ref_aa = mutation["ref_aa"].upper()
+                    alt_aa = mutation["alt_aa"].upper()
                     gene_entry["change"] = f"{ref_aa}{mutation['position']}{alt_aa}"
                 else:
                     raise ValueError
                 # store object
                 amr_summary[gene_name] = gene_entry
+                mutation["name"] = to_hgvs_nomenclature(mutation)
+                resistance_info["mutations"][gene_name].append(mutation)
 
     # group summary by res_class
     amr_summary = {

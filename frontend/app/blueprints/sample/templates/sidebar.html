@@ -182,33 +182,35 @@
 {% endmacro %}
 
 {% macro sidebar(sample, bad_qc_actions) %}
-<div id="sample-sidebar" 
-     class="shadow bg-light pb-2 vh-md-100 col-md-3 col-lg-2 sticky-top sidebar collapse d-md-block">
-    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
-    <ul class="nav flex-column">
-        <li class="nav-item mb-2" disabled>
-            <a class="link-secondary link-underline-success" href="#">
-                <i class="bi bi-bar-chart"></i>
-                Outbreak
-            </a>
-        </li>
-        <li class="nav-item mb-2">
-            <a class="link-secondary link-underline-success" href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
-                <i class="bi bi-bar-chart"></i>
-                Resistance
-            </a>
-        </li>
-    </ul>
+<aside class="br-sidebar">
+    <div>
+        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
+        <ul class="nav flex-column">
+            <li class="nav-item mb-2" disabled>
+                <a class="link-secondary link-underline-success" href="#">
+                    <i class="bi bi-bar-chart"></i>
+                    Outbreak
+                </a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="link-secondary link-underline-success" 
+                   href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
+                    <i class="bi bi-bar-chart"></i>
+                    Resistance
+                </a>
+            </li>
+        </ul>
 
-    {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
-    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
-    {{ comment_area(sample) }}
-</div>
+        {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
+        {{ comment_area(sample) }}
+    </div>
+</aside>
 {% endmacro %}
 
 
 {% macro table_of_content() %}
-<div class="toc mt-3 my-lg-0 px-sm-1 text-body-secondary">
+<div class="br-toc y-lg-0 px-sm-1 text-body-secondary">
     <h6 class="sidebar-heading d-none d-md-block h6 my-2 ms-3 text-muted text-uppercase">On this page</h6>
     <hr class="d-none d-md-block my-2 ms-3">
     <div id="toc-contents" class="collapse d-md-block">

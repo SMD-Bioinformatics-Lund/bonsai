@@ -3,12 +3,12 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
+from prp.models.typing import TypingMethod
 from pymongo import ASCENDING
 
 from ..db import Database
 from ..models.group import GroupInCreate, GroupInfoDatabase
 from ..models.sample import SampleSummary
-from ..models.typing import TypingMethod
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
 from .tags import compute_phenotype_tags
@@ -90,11 +90,11 @@ async def get_group(
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:
     """Create a new group document."""
     # cast input data as the type expected to insert in the database
-    doc = await db.sample_group_collection.insert_one(group_record.dict())
+    doc = await db.sample_group_collection.insert_one(group_record.model_dump())
     inserted_id = doc.inserted_id
     db_obj = GroupInfoDatabase(
         id=str(inserted_id),
-        **group_record.dict(),
+        **group_record.model_dump(),
     )
     return db_obj
 
@@ -115,7 +115,7 @@ async def update_group(
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
-            "$set": {"modified_at": datetime.now() ** group_record.dict()},
+            "$set": {"modified_at": datetime.now(), **group_record.model_dump()},
         },
     )
 
@@ -130,7 +130,7 @@ async def update_group(
 async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     """Create a new collection document."""
     # cast input data as the type expected to insert in the database
-    db_obj = await db.sample_group_collection.insert_one(image.dict())
+    db_obj = await db.sample_group_collection.insert_one(image.model_dump())
     return db_obj
 
 

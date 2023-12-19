@@ -1,4 +1,5 @@
 """User CRUD operations."""
+import logging
 from typing import List
 
 from fastapi import Depends, HTTPException, Security, status
@@ -10,14 +11,9 @@ from ..auth import get_password_hash, verify_password
 from ..config import ALGORITHM, SECRET_KEY, USER_ROLES
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import (
-    SampleBasketObject,
-    UserInputCreate,
-    UserInputDatabase,
-    UserOutputDatabase,
-)
+from ..models.user import (SampleBasketObject, UserInputCreate,
+                           UserInputDatabase, UserOutputDatabase)
 from .errors import EntryNotFound, UpdateDocumentError
-import logging
 
 LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
@@ -39,14 +35,14 @@ async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputData
     # create hash for password
     hashed_password = get_password_hash(user.password)
     user_db_fmt: UserInputDatabase = UserInputDatabase(
-        hashed_password=hashed_password, **user.dict()
+        hashed_password=hashed_password, **user.model_dump()
     )
     # store data in database
-    await db.user_collection.insert_one(user_db_fmt.dict())
+    await db.user_collection.insert_one(user_db_fmt.model_dump())
     inserted_id = db_obj.inserted_id
     user_obj = UserInputDatabase(
         id=str(inserted_id),
-        **user_db_fmt.dict(),
+        **user_db_fmt.model_dump(),
     )
     return user_obj
 
@@ -131,7 +127,7 @@ async def add_samples_to_user_basket(
         {
             "$addToSet": {
                 "basket": {
-                    "$each": jsonable_encoder(sample_ids),
+                    "$each": jsonable_encoder(sample_ids, by_alias=False),
                 },
             },
         },

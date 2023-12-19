@@ -2,22 +2,15 @@
 import json
 import logging
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from app.bonsai import (TokenObject, create_group, delete_group, get_groups,
+                        get_samples, get_samples_by_id, get_samples_in_group,
+                        update_group, update_sample_qc_classification)
+from app.models import (BadSampleQualityAction, PhenotypeType,
+                        QualityControlResult)
+from flask import (Blueprint, flash, redirect, render_template, request,
+                   session, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
-
-from app.bonsai import (
-    TokenObject,
-    create_group,
-    delete_group,
-    get_groups,
-    get_samples,
-    get_samples_by_id,
-    get_samples_in_group,
-    update_group,
-    update_sample_qc_classification,
-)
-from app.models import PhenotypeType, BadSampleQualityAction, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 
@@ -88,30 +81,29 @@ def edit_groups(group_id: str | None = None) -> str:
     # remove group from database
     if request.method == "POST":
         # if a group should be removed
-        match request.form:
-            case "input-remove-group":
-                try:
-                    delete_group(token, group_id=request.form.get("input-remove-group"))
-                    flash("Group updated", "success")
-                except HTTPError as err:
-                    flash(f"An error occured when updating group, {err}", "danger")
+        if "input-remove-group" in request.form:
+            try:
+                delete_group(token, group_id=request.form.get("input-remove-group"))
+                flash("Group updated", "success")
+            except HTTPError as err:
+                flash(f"An error occured when updating group, {err}", "danger")
+            return redirect(url_for("groups.edit_groups"))
+        elif "input-update-group" in request.form:
+            updated_data = json.loads(request.form.get("input-update-group"))
+            try:
+                update_group(token, group_id=group_id, data=updated_data)
+                flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups"))
-            case "input-update-group":
-                updated_data = json.loads(request.form.get("input-update-group"))
-                try:
-                    update_group(token, group_id=group_id, data=updated_data)
-                    flash("Group updated", "success")
-                    return redirect(url_for("groups.edit_groups"))
-                except HTTPError as err:
-                    flash(f"An error occured when updating group, {err}", "danger")
-            case "input-create-group":
-                input_data = json.loads(request.form.get("input-create-group", {}))
-                try:
-                    create_group(token, data=input_data)
-                    flash("Group updated", "success")
-                    return redirect(url_for("groups.edit_groups"))
-                except HTTPError as err:
-                    flash(f"An error occured when updating group, {err}", "danger")
+            except HTTPError as err:
+                flash(f"An error occured when updating group, {err}", "danger")
+        elif "input-create-group" in request.form:
+            input_data = json.loads(request.form.get("input-create-group", {}))
+            try:
+                create_group(token, data=input_data)
+                flash("Group updated", "success")
+                return redirect(url_for("groups.edit_groups"))
+            except HTTPError as err:
+                flash(f"An error occured when updating group, {err}", "danger")
     # get valid phenotypes
     valid_phenotypes = {
         entry.name.lower().capitalize().replace("_", " "): entry.value
