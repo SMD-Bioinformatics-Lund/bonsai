@@ -349,7 +349,6 @@ async def post_comment(
 
 @router.delete(
     "/samples/{sample_id}/comment/{comment_id}",
-    response_model=CommentsObj,
     tags=DEFAULT_TAGS,
 )
 async def hide_comment(
@@ -364,7 +363,7 @@ async def hide_comment(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
-) -> CommentsObj:
+) -> bool:
     """Hide a comment in a sample from users.
 
     :param sample_id: Sample id, defaults to Path
@@ -374,17 +373,17 @@ async def hide_comment(
     :param current_user: for authentication, defaults to Security
     :type current_user: UserOutputDatabase, optional
     :raises HTTPException: Return 404 error if comment or sample is not in the database.
-    :return: All comments.
-    :rtype: CommentsObj
+    :return: operation status.
+    :rtype: bool
     """
     try:
-        comments: CommentsObj = await hide_comment_for_sample(db, sample_id, comment_id)
+        status: bool = await hide_comment_for_sample(db, sample_id, comment_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error,
         ) from error
-    return comments
+    return status
 
 
 @router.put(
