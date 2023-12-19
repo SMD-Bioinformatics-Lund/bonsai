@@ -63,13 +63,18 @@
 }
 
 .br-toc {
-  position: sticky;
-  top: 6rem;
-  right: 0;
-  z-index: 2;
-  height: calc(100vh - 7rem);
-  overflow-y: auto;
   grid-area: toc;
+}
+
+@media (min-width: 992px) {
+  .br-toc {
+    position: sticky;
+    top: 6rem;
+    right: 0;
+    z-index: 2;
+    height: calc(100vh - 7rem);
+    overflow-y: auto;
+  }
 }
 
 #toc-contents a {
