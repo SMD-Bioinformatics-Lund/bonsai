@@ -1,3 +1,14 @@
+{% macro make_db_link(db) %}
+{% if db.name == 'resfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/resfinder_db/commits" %}
+{% elif db.name == 'virulencefinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/virulencefinder_db/commits" %}
+{% elif db.name == 'pointfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
+{% endif %}
+<a class="link-dark link-underline-success" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+{% endmacro %}
+
 {% macro accession_link(accession, name=None) %}
     <a class="text-dark" target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/{{accession}}">
         {% if name == None %}
@@ -442,6 +453,230 @@
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
             </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro analysis_meta_pipeline(sample_info) %}
+{% set meta=sample_info["run_metadata"] %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>
+            <a class="link-dark link-underline-success" href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
+                Pipeline
+            </a>
+        </h5>
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>Pipeline</th>
+                    <td>{{ meta.run.pipeline }}</td>
+                </tr>
+                <tr>
+                    <th>Version</th>
+                    <td>{{ meta.run.version }}</td>
+                </tr>
+                <tr>
+                    <th>Profile</th>
+                    <td>{{ meta.run.analysis_profile }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro analysis_meta_databases(sample_info) %}
+{% set meta=sample_info["run_metadata"]%}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in meta["databases"] %}
+                <tr>
+                    <th>{{ db["name"] }}</th>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro mlst_card(mlst) %}
+<div class="card col-md-auto">
+    <div class="card-header">MLST</div>
+    <div class="card-body">
+        <div class="p-2">
+            <strong>ST</strong>
+            {{ mlst.sequence_type }}
+        </div>
+        <div class="p-2">
+            <table class="table table-sm">
+                <thead>
+                    <th>Gene</th>
+                    {% for name in mlst.alleles %}
+                        <td scope="col">{{name}}</td>
+                    {% endfor %}
+                </thead>
+                <tbody class="table-group-divider">
+                    <th>Allele No</th>
+                    {% for value in mlst.alleles.values() %}
+                        {% if value is list %}
+                            <td class="fst-italic">{{ value | join("/") }}</td>
+                        {% else %}
+                            <td>{{ value }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro similar_samples_card(data) %}
+<div id="similar-samples-card"
+     class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
+     style="width: 24rem;">
+    <div class="card-header">
+        Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}
+    </div>
+    <div id="similar-samples-cluster" class="card-body" data-job-id="{{data.job.id}}">
+        <div class="d-flex justify-content-center loading my-5">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div class="content">
+            <div id="tree-body" class="job-success" 
+                 style="pointer-events: none;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro qc_card_postalign(qc_info) %}
+<div class="card">
+    <div class="card-header">PostQc Alignment</div>
+    <div class="card-body">
+        {% set pct_above_hist=qc_info.result.pct_above_x %}
+        {# create entries for tabular data #}
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+                {# skip data that should be plotted #}
+                {% if name != "pct_above_x" %}
+                    <tr>
+                        <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                        <td>{{ value | fmt_number(sig_digits=2) }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+            </tbody>
+        </table>
+        <div id="qcPlot"></div>
+        <script>
+            //const qcPlot = document.getElementById("qc-plot")
+            const rawData = {{pct_above_hist | tojson }}
+            const data = {
+                type: 'bar',
+                x: Object.keys(rawData).map(k => `${k}X`), 
+                y: Object.values(rawData).map(Number), 
+                text: Object.values(rawData).map(num  => `${Math.round(Number(num), 1)}%`),
+                textposition: 'auto',
+                marker: {
+                    color: "#c0ddd1",
+                    line: { width: 4}
+                }
+            };
+            const layout = { 
+                title: 'Genome coverage', 
+                autosize: false,
+                width: 400,
+                height: 200,
+                margin: {
+                    l: 10,
+                    r: 10,
+                    b: 30,
+                    t: 30,
+                    pad: 4
+                },
+                hoverinfo: '',
+                yaxis: {
+                    title: "Percent bases",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                xaxis: {
+                    title: "Coverage",
+                    titlefont: { size: 12 },
+                    automargin: true
+                },
+                font: { size: 12 }}
+            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: true} )
+        </script>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro qc_card_generic(qc_info) %}
+<div class="card">
+    <div class="card-header">{{qc_info.software | capitalize}}</div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Metric</th>
+                    <th scope="col">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for name, value in qc_info.result.items() %}
+            <tr>
+                <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
+                <td>{{ value | fmt_number(sig_digits=2) }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro cgmlst_qc_card(result) %}
+<div class="card">
+    <div class="card-header">
+        {{ result.type }} QC
+    </div>
+    <div class="card-body">
+        <table class="table table-sm table-striped">
+            <tr>
+                <th scope="row">N Called Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_called }}</td>
+            </tr>
+            <tr>
+                <th scope="row">N Missing Alleles</th>
+                <td>{{ result.result.alleles | cgmlst_count_missing - result.result.n_novel }}</td>
+            </tr>
         </table>
     </div>
 </div>

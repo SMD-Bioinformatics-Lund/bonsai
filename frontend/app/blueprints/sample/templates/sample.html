@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, table_of_content, qc_form_controls_js %}
-{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card %}
+{% from "cards.html" import resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
 
 {% block css %}
 {{ super() }}
@@ -14,267 +14,35 @@
 <script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
 {% endblock scripts %}
 
-{% macro make_db_link(db) %}
-{% if db.name == 'resfinder' %}
-    {% set base_url="bitbucket.org/genomicepidemiology/resfinder_db/commits" %}
-{% elif db.name == 'virulencefinder' %}
-    {% set base_url="bitbucket.org/genomicepidemiology/virulencefinder_db/commits" %}
-{% elif db.name == 'pointfinder' %}
-    {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
-{% endif %}
-<a class="link-dark link-underline-success" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
-{% endmacro %}
-
-{% macro analysis_meta_pipeline(sample_info) %}
-{% set meta=sample["run_metadata"]%}
-<div class="card">
-    <div class="card-body">
-        <h6 class="card-title">
-            <i class="bi bi-server me-2"></i>
-            <a class="link-dark link-underline-success" href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
-                Pipeline
-            </a>
-        </h5>
-        <table class="table">
-            <tbody>
-                <tr>
-                    <th>Pipeline</th>
-                    <td>{{ meta.run.pipeline }}</td>
-                </tr>
-                <tr>
-                    <th>Version</th>
-                    <td>{{ meta.run.version }}</td>
-                </tr>
-                <tr>
-                    <th>Profile</th>
-                    <td>{{ meta.run.analysis_profile }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endmacro %}
-
-{% macro analysis_meta_databases(sample_info) %}
-{% set meta=sample["run_metadata"]%}
-<div class="card">
-    <div class="card-body">
-        <h6 class="card-title">
-            <i class="bi bi-server me-2"></i>Databases
-        </h6>
-        <table class="table">
-            <tbody>
-                {% for db in meta["databases"] %}
-                <tr>
-                    <th>{{ db["name"] }}</th>
-                    <td>{{ make_db_link(db) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endmacro %}
-
-{% macro mlst_card(mlst) %}
-<div class="card col-md-auto">
-    <div class="card-header">MLST</div>
-    <div class="card-body">
-        <div class="p-2">
-            <strong>ST</strong>
-            {{ mlst.sequence_type }}
-        </div>
-        <div class="p-2">
-            <table class="table table-sm">
-                <thead>
-                    <th>Gene</th>
-                    {% for name in mlst.alleles %}
-                        <td scope="col">{{name}}</td>
-                    {% endfor %}
-                </thead>
-                <tbody class="table-group-divider">
-                    <th>Allele No</th>
-                    {% for value in mlst.alleles.values() %}
-                        {% if value is list %}
-                            <td class="fst-italic">{{ value | join("/") }}</td>
-                        {% else %}
-                            <td>{{ value }}</td>
-                        {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endmacro %}
-
-
-{% macro similar_samples_card(data) %}
-<div id="similar-samples-card"
-     class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
-     style="width: 24rem;">
-    <div class="card-header">
-        Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}
-    </div>
-    <div id="similar-samples-cluster" class="card-body" data-job-id="{{data.job.id}}">
-        <div class="d-flex justify-content-center loading my-5">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-        <div class="content">
-            <div id="tree-body" class="job-success" 
-                 style="pointer-events: none;">
-            </div>
-        </div>
-    </div>
-</div>
-{% endmacro %}
-
-
-{% macro qc_card_postalign(qc_info) %}
-<div class="card">
-    <div class="card-header">PostQc Alignment</div>
-    <div class="card-body">
-        {% set pct_above_hist=qc_info.result.pct_above_x %}
-        {# create entries for tabular data #}
-        <table class="table table-sm table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col">Value</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for name, value in qc_info.result.items() %}
-                {# skip data that should be plotted #}
-                {% if name != "pct_above_x" %}
-                    <tr>
-                        <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
-                        <td>{{ value | fmt_number(sig_digits=2) }}</td>
-                    </tr>
-                {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
-        <div id="qcPlot"></div>
-        <script>
-            //const qcPlot = document.getElementById("qc-plot")
-            const rawData = {{pct_above_hist | tojson }}
-            const data = {
-                type: 'bar',
-                x: Object.keys(rawData).map(k => `${k}X`), 
-                y: Object.values(rawData).map(Number), 
-                text: Object.values(rawData).map(num  => `${Math.round(Number(num), 1)}%`),
-                textposition: 'auto',
-                marker: {
-                    color: "#c0ddd1",
-                    line: { width: 4}
-                }
-            };
-            const layout = { 
-                title: 'Genome coverage', 
-                autosize: false,
-                width: 400,
-                height: 200,
-                margin: {
-                    l: 10,
-                    r: 10,
-                    b: 30,
-                    t: 30,
-                    pad: 4
-                },
-                hoverinfo: '',
-                yaxis: {
-                    title: "Percent bases",
-                    titlefont: { size: 12 },
-                    automargin: true
-                },
-                xaxis: {
-                    title: "Coverage",
-                    titlefont: { size: 12 },
-                    automargin: true
-                },
-                font: { size: 12 }}
-            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: true} )
-        </script>
-    </div>
-</div>
-{% endmacro %}
-
-
-{% macro qc_card_generic(qc_info) %}
-<div class="card">
-    <div class="card-header">{{qc_info.software | capitalize}}</div>
-    <div class="card-body">
-        <table class="table table-sm table-striped">
-            <thead>
-                <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col">Value</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for name, value in qc_info.result.items() %}
-            <tr>
-                <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
-                <td>{{ value | fmt_number(sig_digits=2) }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endmacro %}
-
-
-{% macro cgmlst_qc_card(result) %}
-<div class="card">
-    <div class="card-header">
-        {{ result.type }} QC
-    </div>
-    <div class="card-body">
-        <table class="table table-sm table-striped">
-            <tr>
-                <th scope="row">N Called Alleles</th>
-                <td>{{ result.result.alleles | cgmlst_count_called }}</td>
-            </tr>
-            <tr>
-                <th scope="row">N Missing Alleles</th>
-                <td>{{ result.result.alleles | cgmlst_count_missing - result.result.n_novel }}</td>
-            </tr>
-        </table>
-    </div>
-</div>
-{% endmacro %}
-
 {% macro sample_header(sample) %}
-<div class="card">
-    <div class="card-body">
-        <div class="d-flex">
-            <h4 id="sample-id-heading" class="card-title">{{sample.sample_id}}</h4>
-            {% for tag in sample.tags %}
-                {% if tag.type == "virulence" %}
-                    {% set heading="virulence-heading" %}
-                {% else %}
-                    {% set heading="phenotype-heading" %}
-                {% endif %}
-                <span 
-                    class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
-                    data-bs-toggle="tooltip" data-bs-placement="top"
-                    {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
-                >
-                    {{tag.label | upper }}
-                </span>
-            {% endfor %}
-        </div>
-        <div class="row gx-5">
-            <div class="col-md-auto">
-                Upload date: {{sample.created_at | strftime}}
-                <br>
-                <p class="card-text">
-                    QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
-                </p>
+<div class="br-header p-2">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex">
+                <h4 id="sample-id-heading" class="card-title">{{sample.sample_id}}</h4>
+                {% for tag in sample.tags %}
+                    {% if tag.type == "virulence" %}
+                        {% set heading="virulence-heading" %}
+                    {% else %}
+                        {% set heading="phenotype-heading" %}
+                    {% endif %}
+                    <span 
+                        class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
+                        data-bs-toggle="tooltip" data-bs-placement="top"
+                        {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
+                    >
+                        {{tag.label | upper }}
+                    </span>
+                {% endfor %}
+            </div>
+            <div class="row gx-5">
+                <div class="col-md-auto">
+                    Upload date: {{sample.created_at | strftime}}
+                    <br>
+                    <p class="card-text">
+                        QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -297,43 +65,35 @@
         </button>
     </div>
 </div>
-<div class="container-fluid">
-    <div class="row">
-        {{ sidebar(sample, bad_qc_actions) }}
-        <div class="col-md-9 ms-sm-auto col-lg-10 bg-white px-md-4 container" 
-            data-bs-spy="scroll" data-bs-target="#toc-contents">
-            <div class="row">
-                <div class="col-lg-2 order-md-1">
-                    {{ table_of_content() }}
-                </div>
-                <div class="col-sm-12 col-md-10 order-md-0 mt-2">
-                    {{ sample_header(sample) }}
-                </div>
-            </div>
-            <div class="row">
+<div class="container-fluid br-layout">
+    {{ sidebar(sample, bad_qc_actions) }}
+    <main class="br-main order-1" 
+        data-bs-spy="scroll" data-bs-target="#toc-contents">
+        {{ sample_header(sample) }}
+        {{ table_of_content() }}
+        <div class="container-fluid">
+            <div id="spp-heading" class="row justify-content-md-center">
                 <div class="col-sm-12 col-md-auto">
                     {{ species_prediction_card(sample.species_prediction) }}
                 </div>
             </div>
-            <div class="col col-sm-12 col-md-10 order-md-2">
-                <h5>Epidemiological Typing</h5>
-                <hr class="mt-2 col-md-3 border border-success border-2">
-                <div id="epi-typing-heading" class="row justify-content-md-center">
-                    <div class="col-md-auto">
-                        {{ similar_samples_card(similar_samples) }}
-                    </div>
-                    {% for res in sample.typing_result %}
-                        {% if res.type == "mlst" %}
-                            <div class="col-md-auto">
-                            {{ mlst_card(res.result) }}
-                            </div>
-                        {% elif res.type == "stx" %}
-                            <div class="col-md-auto">
-                            {{ stx_card(res) }}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+            <h5>Epidemiological Typing</h5>
+            <hr class="mt-2 col-md-3 border border-success border-2">
+            <div id="epi-typing-heading" class="row justify-content-md-center">
+                <div class="col-md-auto">
+                    {{ similar_samples_card(similar_samples) }}
                 </div>
+                {% for res in sample.typing_result %}
+                    {% if res.type == "mlst" %}
+                        <div class="col-md-auto">
+                        {{ mlst_card(res.result) }}
+                        </div>
+                    {% elif res.type == "stx" %}
+                        <div class="col-md-auto">
+                        {{ stx_card(res) }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
             <h5>Phenotype prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
@@ -412,7 +172,7 @@
                 </hr>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
