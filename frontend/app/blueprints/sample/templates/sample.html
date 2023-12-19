@@ -40,7 +40,13 @@
                     Upload date: {{sample.created_at | strftime}}
                     <br>
                     <p class="card-text">
-                        QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>{% if sample.qc_status.status == "failed" %}; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}{% endif %}
+                        {% if sample.qc_status.status == "passed" %}
+                            QC: <strong class="text-success">{{ sample.qc_status.status | capitalize }}</strong>
+                        {% elif sample.qc_status.status == "failed" %}
+                            QC: <strong class="text-danger">{{ sample.qc_status.status | capitalize }}</strong>; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}
+                        {% else %}
+                            QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>
+                        {% endif %}
                     </p>
                 </div>
             </div>
