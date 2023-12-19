@@ -1,13 +1,12 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Any
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.models import PipelineResult
 from prp.models.tags import TagList
-from prp.models.typing import CgmlstAlleles
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -28,7 +27,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
     sample_id: str
-    typing_result: CgmlstAlleles
+    typing_result: Dict[str, Any]
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -36,6 +35,8 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
         for gene, allele in self.typing_result.items():
             if isinstance(allele, int):
                 profile[gene] = allele
+            elif isinstance(allele, str) and allele.startswith('*'):
+                profile[gene] = int(allele[1:])
             elif strip_errors:
                 profile[gene] = None
             else:
