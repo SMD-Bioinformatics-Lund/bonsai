@@ -1,6 +1,12 @@
+.br-main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 8rem);
+}
+
 #data-table {
     width: 100%;
-    height: 40em;
+    flex-grow: 1;
 }
 
 .card-body .table {
