@@ -1,0 +1,7 @@
+.br-groups {
+  border-right: .5rem solid transparent !important;
+}
+
+.br-groups a:hover, a.selected {
+  border-right-color: #198754 !important;
+}
