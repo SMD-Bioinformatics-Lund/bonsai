@@ -35,20 +35,67 @@ class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
 class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     """Definition of how to display and function of overview table."""
 
-    hidden: bool = Field(False)
-    type: str
-    path: str
-    label: str
-    sortable: bool = Field(False)
-    filterable: bool = Field(False)
-    filter_type: str | None = Field(None)
-    filter_param: str | None = Field(None)
+    hidden: bool = False
+    type: str = Field(..., description="Data type")
+    path: str = Field(..., description="JSONpath describing how to access the data")
+    label: str = Field(..., description="Display name")
+    sortable: bool = False
+    filterable: bool = False
+    filter_type: str | None = None
+    filter_param: str | None = None
+
+
+VALID_COLUMNS = [
+    OverviewTableColumn(
+        label="Sample Id",
+        type="sampleid",
+        path='$.sample_id',
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        label="Tags",
+        type="tags",
+        path='$.tags',
+    ),
+    OverviewTableColumn(
+        label="Major species",
+        type="taxonomic_name",
+        path='$.species_prediction.scientific_name',
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        label="QC",
+        type="qc",
+        path='$.qc_status.status',
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        label="MLST ST",
+        type="text",
+        path='$.created_at',
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
+        label="Analysis profile",
+        type="text",
+        path='$.profile',
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
+        label="Date",
+        type="date",
+        path='$.created_at',
+        sortable=True,
+    ),
+]
 
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    table_columns: List[OverviewTableColumn] = Field(...)
+    table_columns: List[OverviewTableColumn] = Field(description="Columns to display")
     validated_genes: Dict[ElementType, List[str]] | None = Field({})
 
 

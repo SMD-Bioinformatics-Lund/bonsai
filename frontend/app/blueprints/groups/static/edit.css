@@ -1,7 +1,48 @@
-.br-groups {
-  border-right: .5rem solid transparent !important;
+.br-groups a {
+  border-right: .250rem solid transparent !important;
 }
 
 .br-groups a:hover, a.selected {
   border-right-color: #198754 !important;
+}
+
+@media (min-width: 992px) {
+  .br-layout {
+    display:grid;
+    grid-template-areas:"sidebar main";
+    grid-template-columns:1.5fr 5fr;
+    gap:0.5rem
+  }
+}
+
+@media (min-width: 992px) {
+  .br-sidebar {
+    position:-webkit-sticky;
+    position:sticky;
+    top: 6rem;
+    display:block !important;
+    height: calc(100vh - 5.5rem);
+    padding-left:.25rem;
+    margin-left:-.25rem;
+    overflow-y:auto
+  }
+}
+
+.br-sidebar {
+  grid-area: sidebar;
+}
+
+.br-main {
+  grid-area: main;
+}
+
+@media (max-width: 992px) {
+  .br-main {
+    max-width:760px;
+    margin-inline:auto
+  }
+}
+
+.active {
+  border-color: green;
 }

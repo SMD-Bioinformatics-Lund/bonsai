@@ -358,3 +358,11 @@ def find_and_cluster_similar_samples(
     )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
+
+
+def get_valid_group_columns():
+    """Query API for valid group columns."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/groups/default/columns'
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json()

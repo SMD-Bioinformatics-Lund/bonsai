@@ -4,7 +4,7 @@ import logging
 
 from app.bonsai import (TokenObject, create_group, delete_group, get_groups,
                         get_samples, get_samples_by_id, get_samples_in_group,
-                        update_group, update_sample_qc_classification)
+                        update_group, update_sample_qc_classification, get_valid_group_columns)
 from app.models import (BadSampleQualityAction, PhenotypeType,
                         QualityControlResult)
 from flask import (Blueprint, flash, redirect, render_template, request,
@@ -93,27 +93,41 @@ def edit_groups(group_id: str | None = None) -> str:
             try:
                 update_group(token, group_id=group_id, data=updated_data)
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups"))
+                return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occured when updating group, {err}", "danger")
         elif "input-create-group" in request.form:
             input_data = json.loads(request.form.get("input-create-group", {}))
             try:
+                group_id = input_data['group_id']
                 create_group(token, data=input_data)
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups"))
+                return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occured when updating group, {err}", "danger")
+
     # get valid phenotypes
     valid_phenotypes = {
         entry.name.lower().capitalize().replace("_", " "): entry.value
         for entry in PhenotypeType.__members__.values()
     }
+
+    # get valid columns and set used cols as checked
+    valid_cols = get_valid_group_columns()
+    if group_id is not None:
+        selected_group = next(iter(group for group in all_groups if group["group_id"] == group_id))
+        cols_in_group = [gr["path"] for gr in selected_group['table_columns']]
+    else: 
+        cols_in_group = []
+    # annotate if column previously have been selected
+    for column in valid_cols:
+        column['selected'] = column['path'] in cols_in_group
     return render_template(
         "edit_groups.html",
         title="Groups",
         selected_group=group_id,
         groups=all_groups,
+        valid_columns=valid_cols,
         valid_phenotypes=valid_phenotypes,
     )
 

@@ -3,6 +3,7 @@
 from typing import List
 
 from fastapi import APIRouter, HTTPException, Path, Security, status
+from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -11,7 +12,7 @@ from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.user import get_current_active_user
 from ..db import db
-from ..models.group import GroupInCreate, GroupInfoDatabase
+from ..models.group import GroupInCreate, GroupInfoDatabase, VALID_COLUMNS
 from ..models.user import UserOutputDatabase
 
 router = APIRouter()
@@ -21,6 +22,12 @@ DEFAULT_TAGS = [
 ]
 READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
+
+
+@router.get("/groups/default/columns", tags=DEFAULT_TAGS)
+async def get_valid_columns():
+    """Get group info schema."""
+    return jsonable_encoder(VALID_COLUMNS)
 
 
 @router.get("/groups/", response_model=List[GroupInfoDatabase], tags=DEFAULT_TAGS)

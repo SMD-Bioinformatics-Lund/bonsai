@@ -7,7 +7,7 @@ from prp.models.typing import TypingMethod
 from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase
+from ..models.group import GroupInCreate, GroupInfoDatabase, OverviewTableColumn
 from ..models.sample import SampleSummary
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
@@ -89,7 +89,7 @@ async def get_group(
 
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:
     """Create a new group document."""
-    # cast input data as the type expected to insert in the database
+    # add to db
     doc = await db.sample_group_collection.insert_one(group_record.model_dump())
     inserted_id = doc.inserted_id
     db_obj = GroupInfoDatabase(

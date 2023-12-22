@@ -64,18 +64,22 @@ const updateGroup = (event, method) => {
         // stop submit event and break function execution
         return
     }
-    // get all cards
+    // parse selected columns
     const list = document.querySelectorAll('.column-card')
-    const groupColumns = Array.from(list).map(column => {
+    const groupColumns = Array
+        .from(list)
+        .filter(column => column.querySelector('input[role="switch"]').checked)
+        .map(column => {
             return {
-                label: column.querySelector('#input-col-label').value,
-                type: column.querySelector('#input-col-data-type').value,
-                path: column.querySelector('#input-col-data-path').value,
-                sortable: column.querySelector('#sortable-check').checked,
-                searchable: column.querySelector('#searchable-check').checked,
-                hidden: column.querySelector('#hidden-check').checked
+                label: column['dataset'].label,
+                type: column['dataset'].dtype,
+                path: column['dataset'].path,
+                sortable: column.querySelector('input[name="sortable"]').checked,
+                searchable: column.querySelector('input[name="searchable"]').checked,
+                hidden: column.querySelector('input[name="hidden"]').checked
             }
-    })
+        })
+    // parse samples and validated genes
     const samplesList = document.querySelectorAll('#added-samples-list li')
     let validatedGenes = {}
     for (const list of document.querySelectorAll('.validated-genes-list')) {
@@ -93,4 +97,16 @@ const updateGroup = (event, method) => {
         validated_genes: validatedGenes,
         included_samples: addedSamples
     })
+}
+
+
+const toggleDisabled = (input) => {
+    const parent = input.parentElement.parentElement.parentElement
+    // select all inputs
+    parent.querySelectorAll('.display-params-input input').forEach(elem => elem.disabled = !input.checked)
+    if ( input.checked ) {
+        parent.classList.add('active')
+    } else {
+        parent.classList.remove('active')
+    }
 }
