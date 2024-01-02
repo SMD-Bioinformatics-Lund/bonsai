@@ -114,7 +114,8 @@ def edit_groups(group_id: str | None = None) -> str:
 
     # get valid columns and set used cols as checked
     valid_cols = get_valid_group_columns()
-    if group_id is not None and len(all_groups) > 0:
+    all_group_ids = [group['group_id'] for group in all_groups]
+    if group_id is not None and group_id in all_group_ids:
         selected_group = next(iter(group for group in all_groups if group["group_id"] == group_id))
         cols_in_group = [gr["path"] for gr in selected_group['table_columns']]
     else: 
