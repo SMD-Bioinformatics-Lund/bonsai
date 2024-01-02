@@ -41,7 +41,7 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     path: str = Field(..., description="JSONpath describing how to access the data")
     # display params
     hidden: bool = False
-    type: str = Field('string', description="Data type")
+    type: str = Field("string", description="Data type")
     sortable: bool = False
     filterable: bool = False
     filter_type: str | None = None
@@ -53,39 +53,39 @@ VALID_COLUMNS = [
         id="sample_id",
         label="Sample Id",
         type="sampleid",
-        path='$.sample_id',
+        path="$.sample_id",
         sortable=True,
     ),
     OverviewTableColumn(
         id="tags",
         label="Tags",
         type="tags",
-        path='$.tags',
+        path="$.tags",
     ),
     OverviewTableColumn(
         id="taxonomic_name",
         label="Major species",
         type="taxonomic_name",
-        path='$.species_prediction.scientific_name',
+        path="$.species_prediction.scientific_name",
         sortable=True,
     ),
     OverviewTableColumn(
         id="qc",
         label="QC",
-        path='$.qc_status.status',
+        path="$.qc_status.status",
         sortable=True,
     ),
     OverviewTableColumn(
         id="mlst",
         label="MLST ST",
-        path='$.mlst.sequence_type',
+        path="$.mlst.sequence_type",
         sortable=True,
         filterable=True,
     ),
     OverviewTableColumn(
         id="profile",
         label="Analysis profile",
-        path='$.profile',
+        path="$.profile",
         sortable=True,
         filterable=True,
     ),
@@ -93,7 +93,7 @@ VALID_COLUMNS = [
         id="cdate",
         label="Date",
         type="date",
-        path='$.created_at',
+        path="$.created_at",
         sortable=True,
     ),
 ]

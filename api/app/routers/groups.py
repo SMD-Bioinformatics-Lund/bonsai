@@ -12,7 +12,7 @@ from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.user import get_current_active_user
 from ..db import db
-from ..models.group import GroupInCreate, GroupInfoDatabase, VALID_COLUMNS
+from ..models.group import VALID_COLUMNS, GroupInCreate, GroupInfoDatabase
 from ..models.user import UserOutputDatabase
 
 router = APIRouter()
