@@ -109,6 +109,17 @@ def camelcase_to_text(text: str) -> str:
     return text.replace("_", " ")
 
 
+def text_to_camelcase(text: str) -> str:
+    """Convert camel_case to plain text.
+
+    :param text: camel_case formatted text.
+    :type text: str
+    :return: Plain text text.
+    :rtype: str
+    """
+    return text.replace(" ", "_")
+
+
 def _jinja2_filter_datetime(date: str, fmt: str = r"%b %d, %Y") -> str:
     """Format date and time string.
 
@@ -351,6 +362,7 @@ FILTERS = {
     "has_arg": has_arg,
     "get_all_phenotypes": get_all_phenotypes,
     "camelcase_to_text": camelcase_to_text,
+    "text_to_camelcase": text_to_camelcase,
     "strftime": _jinja2_filter_datetime,
     "cgmlst_count_called": cgmlst_count_called,
     "cgmlst_count_missing": cgmlst_count_missing,

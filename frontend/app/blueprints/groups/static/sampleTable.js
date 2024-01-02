@@ -23,3 +23,19 @@ export const formatTag = (val, params, data) => {
     })
     return elements.join('')
 }
+
+export async function getDefaultCols (apiUrl) {
+    const resp = await fetch(`${apiUrl}/groups/default/columns`)
+    const apiTableConfig = await resp.json()
+    const columns = apiTableConfig.map(col => {
+        return {
+            field: col.id,
+            text: col.label,
+            path: col.path,
+            sortable: col.sortable,
+            hidden: col.hidden,
+            render: col.type.toLowerCase() === 'string' ? null : col.type.toLowerCase(),
+        }
+    })
+    return columns
+}

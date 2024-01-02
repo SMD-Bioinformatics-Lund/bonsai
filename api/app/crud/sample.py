@@ -1,7 +1,7 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -35,7 +35,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
         for gene, allele in self.typing_result.items():
             if isinstance(allele, int):
                 profile[gene] = allele
-            elif isinstance(allele, str) and allele.startswith('*'):
+            elif isinstance(allele, str) and allele.startswith("*"):
                 profile[gene] = int(allele[1:])
             elif strip_errors:
                 profile[gene] = None

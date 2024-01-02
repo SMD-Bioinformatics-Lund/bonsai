@@ -23,7 +23,7 @@
   .br-sidebar {
     position:-webkit-sticky;
     position:sticky;
-    top: 5.5rem;
+    top: 6rem;
     display:block !important;
     height: calc(100vh - 5.5rem);
     padding-left:.25rem;

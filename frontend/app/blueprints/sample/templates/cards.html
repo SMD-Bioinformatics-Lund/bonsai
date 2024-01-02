@@ -32,7 +32,7 @@
     <div class="card-header">AMR profile summary</div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-sm table-hover">
+            <table class="table table-hover">
                 <thead>
                     {% for antib_class in summary %}
                         <th>{{ antib_class | capitalize }}</th>
@@ -149,7 +149,7 @@
 
 
 {% macro amrfinder_virulence_prediction(res, extended=False) %}
-<table class="table table-sm table-striped">
+<table class="table table-striped">
     <thead>
         <tr>
             <td scope="col">Gene</td>
@@ -190,7 +190,7 @@
 
 
 {% macro virulencefinder_prediction(res, extended=False) %}
-<table class="table table-sm table-striped">
+<table class="table table-striped">
     <thead>
         <tr>
             <td scope="col">Gene</td>
@@ -267,7 +267,7 @@
 {% macro resfinder_prediction(result) %}
 <div>
     <h5 class="card-title">Genes</h5>
-    <table class="table table-sm table-striped">
+    <table class="table table-striped">
         <caption>Database: {{result.genes[0].ref_database}}</caption>
         <thead>
             <td scope="col">Gene</td>
@@ -328,7 +328,7 @@
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
     {% else %}
-    <table class="table table-sm table-striped">
+    <table class="table table-striped fs-6">
         <thead>
             <td scope="col">Gene</td>
             <td scope="col">Method</td>
@@ -380,7 +380,7 @@
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
     {% else %}
-    <table class="table table-sm table-striped">
+    <table class="table table-striped">
         <thead>
             <td scope="col">Gene</td>
             <td scope="col">Type</td>

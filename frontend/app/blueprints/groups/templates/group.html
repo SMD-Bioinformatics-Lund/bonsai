@@ -13,7 +13,7 @@
     <div class="card-body br-main">
         <h4 class="card-title me-auto fw-light">{{group_name}}</h4>
         <hr class="mt-2 col-md-2 border border-success border-2">
-        {# <p class="card-text mb-2">feugiat vivamus at augue eget arcu dictum varius duis at consectetur lorem</p> #}
+        <p class="card-text mb-2">{{group_desc}}</p>
         <table class="table table-sm w-auto">
             <thead><tr><th>Samples</th><th>Updated</th></tr></thead>
             <tbody>
@@ -52,14 +52,12 @@
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
     import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
-    import { formatTaxonomicName, formatSampleId } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
 
     // define formatters
-    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
-    w2utils.formatters['mrsa'] = (val, params) => typeof val === 'undefined' ? '-' : val
-    w2utils.formatters['mlst'] = (val, params) => typeof val === 'undefined' ? '-' : val
-    w2utils.formatters['pvl'] = (val, params) => typeof val === 'undefined' ? '-' : val
     w2utils.formatters['sampleid']  = (val, data) => {
+    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
+    w2utils.formatters['tags']  = formatTag
         const baseUrl = {{ request.script_root|tojson }}
         let element = document.createElement('a')
         let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
@@ -74,11 +72,11 @@
     // create table
     const columns = apiTableConfig.map(col => {
         return {
-            field: col.type,
+            field: col.id,
             text: col.label,
             sortable: col.sortable,
             hidden: col.hidden,
-            render: col.type.toLowerCase(),
+            render: col.type.toLowerCase() === 'string' ? null : col.type.toLowerCase(),
         }
     })
     // configure table
@@ -107,12 +105,11 @@
     let grid = new w2grid(tableConfig.grid)
 
     // get data
-    const testSamples = {{ samples | tojson}}
-    grid.records = testSamples.map(
+    const groupSamples = {{ samples | tojson}}
+    grid.records = groupSamples.map(
         sample => {
-            let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.type]: JSONPath({path: col.path, json: sample})[0]}), {}) 
+            let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.id]: JSONPath({path: col.path, json: sample})[0]}), {}) 
             columns["recid"] = sample["sample_id"]
-            columns["groupId"] = groupId
             return columns
     }) 
 
@@ -221,6 +218,6 @@
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
 
-</script>
+</div>
 {% endblock content %}
 

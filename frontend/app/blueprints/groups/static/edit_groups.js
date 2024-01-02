@@ -27,11 +27,24 @@ const addNewColumnToList = (element) => {
 }
 
 
-function validateFilledInput(input, minLength = 1) {
+function validateFilledInput(input, minLength = 1, maxLength = null) {
     // validate that input element is filled
+    let isError = false
+    let errorMsg = ""
+    // test min length
     if ( input.value === "" || input.value.length < minLength ) {
+        isError = true
+        errorMsg = `input must be longer than ${minLength} characters`
+    // test max length
+    } else if ( maxLength !== null && maxLength < input.value.length ) {
+        isError = true
+        errorMsg = `input can't be longer than ${maxLength} characters`
+    }
+    // thow error
+    if ( isError ) {
         input.classList.add("is-invalid")
-        throw new Error("Input is empty")
+        input.parentElement.querySelector('.invalid-feedback').innerText = errorMsg
+        throw new Error(`Input faild validation: ${errorMsg}`)
     }
 }
 
@@ -40,6 +53,7 @@ const updateGroup = (event, method) => {
     // collect information to be sumbitted
     let groupId = document.getElementById('input-group-id')
     let groupName = document.getElementById('input-group-name')
+    let groupDesc = document.getElementById('input-group-description')
     let failedValidation = false // controller for validation
     // validate group id
     try {
@@ -51,7 +65,7 @@ const updateGroup = (event, method) => {
     }
     // validate group name
     try {
-        validateFilledInput(groupName, 1)
+        validateFilledInput(groupName, 1, 45)
         groupName = groupName.value
     } catch (error) {
         console.log(error) // throw error
@@ -64,18 +78,24 @@ const updateGroup = (event, method) => {
         // stop submit event and break function execution
         return
     }
-    // get all cards
+    // parse selected columns
     const list = document.querySelectorAll('.column-card')
-    const groupColumns = Array.from(list).map(column => {
+    const groupColumns = Array
+        .from(list)
+        .filter(column => column.querySelector('input[role="switch"]').checked)
+        .map(column => {
+            
             return {
-                label: column.querySelector('#input-col-label').value,
-                type: column.querySelector('#input-col-data-type').value,
-                path: column.querySelector('#input-col-data-path').value,
-                sortable: column.querySelector('#sortable-check').checked,
-                searchable: column.querySelector('#searchable-check').checked,
-                hidden: column.querySelector('#hidden-check').checked
+                id: column['dataset'].id,
+                label: column['dataset'].label,
+                type: column['dataset'].dtype,
+                path: column['dataset'].path,
+                sortable: column.querySelector('input[name="sortable"]').checked,
+                searchable: column.querySelector('input[name="searchable"]').checked,
+                hidden: column.querySelector('input[name="hidden"]').checked
             }
-    })
+        })
+    // parse samples and validated genes
     const samplesList = document.querySelectorAll('#added-samples-list li')
     let validatedGenes = {}
     for (const list of document.querySelectorAll('.validated-genes-list')) {
@@ -89,8 +109,21 @@ const updateGroup = (event, method) => {
     result.value = JSON.stringify({
         group_id: groupId, 
         display_name: groupName,
+        description: groupDesc.value,
         table_columns: groupColumns,
         validated_genes: validatedGenes,
         included_samples: addedSamples
     })
+}
+
+
+const toggleDisabled = (input) => {
+    const parent = input.parentElement.parentElement.parentElement
+    // select all inputs
+    parent.querySelectorAll('.display-params-input input').forEach(elem => elem.disabled = !input.checked)
+    if ( input.checked ) {
+        parent.classList.add('active')
+    } else {
+        parent.classList.remove('active')
+    }
 }

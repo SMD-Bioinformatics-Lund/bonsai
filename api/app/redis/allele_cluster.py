@@ -27,10 +27,11 @@ def schedule_cluster_samples(
         sample_ids.append(profile.sample_id)
         allele_profile.append(profile.allele_profile())
     # convert to pandas dataframe
-    profile_tsv = (pd.DataFrame(allele_profile)
-                   .dropna(axis=1, how='all')  # remove cols with all nulls
-                   .fillna('-')  # replace nulls with MStree null char, "-"
-                   .to_csv(sep="\t")  # convert to tsv string
+    profile_tsv = (
+        pd.DataFrame(allele_profile)
+        .dropna(axis=1, how="all")  # remove cols with all nulls
+        .fillna("-")  # replace nulls with MStree null char, "-"
+        .to_csv(sep="\t")  # convert to tsv string
     )
     job = redis.allele.enqueue(
         task, profile=profile_tsv, method=cluster_method.value, job_timeout="30m"
