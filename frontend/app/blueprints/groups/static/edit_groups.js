@@ -84,7 +84,9 @@ const updateGroup = (event, method) => {
         .from(list)
         .filter(column => column.querySelector('input[role="switch"]').checked)
         .map(column => {
+            
             return {
+                id: column['dataset'].id,
                 label: column['dataset'].label,
                 type: column['dataset'].dtype,
                 path: column['dataset'].path,
