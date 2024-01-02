@@ -29,7 +29,8 @@ class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
     """Basic specie information."""
 
     group_id: str = Field(..., min_length=5)
-    display_name: str = Field(..., min_length=1)
+    display_name: str = Field(..., min_length=1, max_length=45)
+    description: str | None = None
 
 
 class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
