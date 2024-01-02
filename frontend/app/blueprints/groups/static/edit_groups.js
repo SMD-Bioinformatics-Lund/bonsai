@@ -27,11 +27,24 @@ const addNewColumnToList = (element) => {
 }
 
 
-function validateFilledInput(input, minLength = 1) {
+function validateFilledInput(input, minLength = 1, maxLength = null) {
     // validate that input element is filled
+    let isError = false
+    let errorMsg = ""
+    // test min length
     if ( input.value === "" || input.value.length < minLength ) {
+        isError = true
+        errorMsg = `input must be longer than ${minLength} characters`
+    // test max length
+    } else if ( maxLength !== null && maxLength < input.value.length ) {
+        isError = true
+        errorMsg = `input can't be longer than ${maxLength} characters`
+    }
+    // thow error
+    if ( isError ) {
         input.classList.add("is-invalid")
-        throw new Error("Input is empty")
+        input.parentElement.querySelector('.invalid-feedback').innerText = errorMsg
+        throw new Error(`Input faild validation: ${errorMsg}`)
     }
 }
 
@@ -40,6 +53,7 @@ const updateGroup = (event, method) => {
     // collect information to be sumbitted
     let groupId = document.getElementById('input-group-id')
     let groupName = document.getElementById('input-group-name')
+    let groupDesc = document.getElementById('input-group-description')
     let failedValidation = false // controller for validation
     // validate group id
     try {
@@ -51,7 +65,7 @@ const updateGroup = (event, method) => {
     }
     // validate group name
     try {
-        validateFilledInput(groupName, 1)
+        validateFilledInput(groupName, 1, 45)
         groupName = groupName.value
     } catch (error) {
         console.log(error) // throw error
@@ -93,6 +107,7 @@ const updateGroup = (event, method) => {
     result.value = JSON.stringify({
         group_id: groupId, 
         display_name: groupName,
+        description: groupDesc,
         table_columns: groupColumns,
         validated_genes: validatedGenes,
         included_samples: addedSamples
