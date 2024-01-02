@@ -129,11 +129,13 @@
 {% if group == None %}
     {% set group_id = "" %}
     {% set display_name = "" %}
+    {% set description = "Group description" %}
     {% set table_columns = [] %}
     {% set included_samples = [] %}
 {% else %}
     {% set group_id = group.group_id %}
     {% set display_name = group.display_name %}
+    {% set description = group.description %}
     {% set table_columns = group.table_columns %}
     {% set included_samples = group.included_samples %}
 {% endif %}
@@ -178,8 +180,12 @@
     </div>
     <div class="col-auto">
         {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
-        <div class="invalid-feedback">Please provide a valid group name</div>
+        <div class="invalid-feedback"></div>
     </div>
+</div>
+<div class="form-floating pt-2">
+    <textarea class="form-control" placeholder="Group description" id="group-description"></textarea>
+    <label for="input-group-description">{{ description }}</label>
 </div>
 <hr>
 <div class="row g-3">
@@ -274,7 +280,7 @@
                     >
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <div><strong>{{group.display_name}}</strong></div>
+                                <div><strong>{{group.display_name | truncate(30) }}</strong></div>
                                 <div><small>{{group.modified_at | strftime }}</small></div>
                             </div>
                             <span class="badge bg-dark">{{group.included_samples | length}} samples</span>
