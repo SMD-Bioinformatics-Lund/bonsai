@@ -130,7 +130,7 @@ def tree():
         token = TokenObject(**current_user.get_id())
         sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
         metadata = gather_metadata(sample_summary["records"])
-        data = {"nwk": newick, **metadata.dict()}
+        data = {"nwk": newick, **metadata.model_dump()}
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
@@ -149,12 +149,6 @@ def cluster():
         sample_ids = [sample["sample_id"] for sample in body["sample_ids"]]
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
-        LOG.error(
-            "Got cluster request, samples: %s; method: %s, cluster: %s",
-            sample_ids,
-            typing_method,
-            cluster_method,
-        )
         token = TokenObject(**current_user.get_id())
         # trigger clustering on api
         try:
