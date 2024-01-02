@@ -46,3 +46,7 @@
 .active {
   border-color: green;
 }
+
+#input-group-description {
+  height: 8rem;
+}

@@ -107,7 +107,7 @@ const updateGroup = (event, method) => {
     result.value = JSON.stringify({
         group_id: groupId, 
         display_name: groupName,
-        description: groupDesc,
+        description: groupDesc.value,
         table_columns: groupColumns,
         validated_genes: validatedGenes,
         included_samples: addedSamples

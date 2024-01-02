@@ -198,7 +198,7 @@
             <h5 class="card-title mb-0">{{ group.display_name }}</h5>
             <span class="text-muted text-uppercase fw-semibold n-samples">Samples: {{ group.included_samples | length }}</span>
             {% if group.description %}
-                <p class="card-text text-wrap">{{ group.description }}</p>
+                <p class="card-text text-wrap">{{ group.description | truncate(40) }}</p>
             {% endif %}
         </div>
         <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">

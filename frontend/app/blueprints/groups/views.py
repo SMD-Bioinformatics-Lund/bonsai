@@ -152,6 +152,7 @@ def group(group_id: str) -> str:
         "group.html",
         title=group_id,
         group_name=group_info["display_name"],
+        group_desc=group_info["description"],
         samples=samples["records"],
         modified=group_info["modified_at"],
         table_definition=table_definition,

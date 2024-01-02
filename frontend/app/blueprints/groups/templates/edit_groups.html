@@ -129,7 +129,7 @@
 {% if group == None %}
     {% set group_id = "" %}
     {% set display_name = "" %}
-    {% set description = "Group description" %}
+    {% set description = "" %}
     {% set table_columns = [] %}
     {% set included_samples = [] %}
 {% else %}
@@ -184,8 +184,8 @@
     </div>
 </div>
 <div class="form-floating pt-2">
-    <textarea class="form-control" placeholder="Group description" id="group-description"></textarea>
-    <label for="input-group-description">{{ description }}</label>
+    <textarea class="form-control" placeholder="Group description" id="input-group-description">{{ description }}</textarea>
+    <label for="input-group-description">Group description</label>
 </div>
 <hr>
 <div class="row g-3">
