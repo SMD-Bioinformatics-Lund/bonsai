@@ -28,7 +28,7 @@ def schedule_cluster_samples(
         allele_profile.append(profile.allele_profile())
     # convert to pandas dataframe
     profile_tsv = (
-        pd.DataFrame(allele_profile)
+        pd.DataFrame(allele_profile, index=sample_ids)
         .dropna(axis=1, how="all")  # remove cols with all nulls
         .fillna("-")  # replace nulls with MStree null char, "-"
         .to_csv(sep="\t")  # convert to tsv string
