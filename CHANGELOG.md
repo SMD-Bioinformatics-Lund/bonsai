@@ -13,6 +13,7 @@
 ### Fixed
 
  - Fixed calculation of missing and novel cgmlst alleles
+ - Fixed so sample metadata is displayed in GrapeTree
 
 ### Changed
 
