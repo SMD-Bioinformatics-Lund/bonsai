@@ -1043,8 +1043,7 @@ D3MSTree.prototype._setNodeText = function(){
     if (! this.show_node_labels){
         return;
     }
-    var node_text = this.node_elements.filter(node => (!node.hypothetical || self.show_hypothetical_nodes))
-    append('text').attr('class', 'node-group-number').
+    var node_text = this.node_elements.filter(node => (!node.hypothetical || self.show_hypothetical_nodes)).append('text').attr('class', 'node-group-number').
     attr('dy', ".71em").attr('text-anchor', 'middle').attr('font-size', this.node_font_size).
     attr('font-family', 'sans-serif').attr('transform', function(it){
         return "translate(0," + -self.node_font_size / 3 + ")";
