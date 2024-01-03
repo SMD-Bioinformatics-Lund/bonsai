@@ -5,6 +5,7 @@
 ### Fixed
 
  - Resistance_report now render work in progress page
+ - Removed old project name from GrapeTree header
 
 ### Changed
 

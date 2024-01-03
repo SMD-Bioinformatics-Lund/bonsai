@@ -10,15 +10,7 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="{{url_for('public.favicon', filename='favicon-32x32.png')}}">
 	<link rel="icon" type="image/png" sizes="16x16" href="{{url_for('public.favicon', filename='favicon-16x16.png')}}">
 	<link rel="manifest" href="{{url_for('public.webmanifest')}}">
-	<title>
-	{% block title %}
-		{% if title %}
-			{{ title }} - Orange
-		{% else %}
-			Welcome to Project Orange
-		{% endif %}
-	{% endblock title %}
-	</title>
+	<title>Bonsai - GrapeTree</title>
 	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='js/jquery-ui-1.11.4/jquery-ui.min.css')}}">
 	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='css/bootstrap.min.css')}}">
 	<link rel="stylesheet" type="text/css" href="{{url_for('cluster.static', filename='css/grapetree.css')}}">
