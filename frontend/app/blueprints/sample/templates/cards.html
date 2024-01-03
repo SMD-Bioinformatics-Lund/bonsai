@@ -9,6 +9,49 @@
 <a class="link-dark link-underline-success" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
 {% endmacro %}
 
+
+{% macro sample_header(sample) %}
+<div class="br-header p-2">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex">
+                <h4 id="sample-id-heading" class="card-title">{{sample.sample_id}}</h4>
+                {% for tag in sample.tags %}
+                    {% if tag.type == "virulence" %}
+                        {% set heading="virulence-heading" %}
+                    {% else %}
+                        {% set heading="phenotype-heading" %}
+                    {% endif %}
+                    <span 
+                        class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
+                        data-bs-toggle="tooltip" data-bs-placement="top"
+                        {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
+                    >
+                        {{tag.label | upper }}
+                    </span>
+                {% endfor %}
+            </div>
+            <div class="row gx-5">
+                <div class="col-md-auto">
+                    Upload date: {{sample.created_at | strftime}}
+                    <br>
+                    <p class="card-text">
+                        {% if sample.qc_status.status == "passed" %}
+                            QC: <strong class="text-success">{{ sample.qc_status.status | capitalize }}</strong>
+                        {% elif sample.qc_status.status == "failed" %}
+                            QC: <strong class="text-danger">{{ sample.qc_status.status | capitalize }}</strong>; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}
+                        {% else %}
+                            QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro accession_link(accession, name=None) %}
     <a class="text-dark" target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/{{accession}}">
         {% if name == None %}
