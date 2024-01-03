@@ -4,6 +4,8 @@
 
 ### Fixed
 
+ - Resistance_report now render work in progress page
+
 ### Changed
 
 ## [v0.1.0]
