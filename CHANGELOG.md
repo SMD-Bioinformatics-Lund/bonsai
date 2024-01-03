@@ -2,6 +2,14 @@
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [v0.1.0]
+
+### Added
+
  - Find similar samples by calculating MinHash distance
  - Added async similarity searches and clustering
  - User can choose clustering method from the sample basket
