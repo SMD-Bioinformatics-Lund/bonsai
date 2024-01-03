@@ -6,4 +6,4 @@ Intended to visualize results from [JASEN](https://github.com/genomic-medicine-s
 
 ## Installation
 
-See the [documentation](./docs/index.rst) for instructions on how to install and configure Bonsai.
+See the [documentation](https://bonsai-wgs.readthedocs.io/en/latest/) for instructions on how to install and configure Bonsai.
