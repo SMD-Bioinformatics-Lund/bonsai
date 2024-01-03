@@ -6,6 +6,7 @@
 
  - Resistance_report now render work in progress page
  - Removed old project name from GrapeTree header
+ - Fixed issue that prevented node labels in GrapeTree from being displayed.
 
 ### Changed
 
