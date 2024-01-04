@@ -57,6 +57,7 @@
         let element = document.createElement('a')
         let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
         element.setAttribute('href', `${baseUrl}/${path}`)
+        element.classList.add('br-link')
         element.innerText = val
         return element.outerHTML
     }

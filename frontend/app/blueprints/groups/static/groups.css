@@ -1,3 +1,8 @@
+.br-link {
+  color: steelblue;
+  text-decoration: underline;
+}
+
 .group-card a:hover {
   box-shadow: .4rem .225rem .80rem rgba(0,0,0,.095) !important;
 }
