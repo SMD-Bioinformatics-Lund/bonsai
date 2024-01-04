@@ -2,6 +2,8 @@
 
 ### Added
 
+ - Improved output of create_user API CLI command
+
 ### Fixed
 
  - Resistance_report now render work in progress page

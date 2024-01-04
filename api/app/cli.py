@@ -6,6 +6,7 @@ import string
 from logging import getLogger
 
 import click
+from pymongo.errors import DuplicateKeyError
 
 from .__version__ import VERSION as version
 from .config import USER_ROLES
@@ -75,10 +76,13 @@ def create_user(ctx, username, password, role):  # pylint: disable=unused-argume
         email="placeholder@email.com",
         roles=[role],
     )
-    loop = asyncio.get_event_loop()
-    func = create_user_in_db(db, user)
-    loop.run_until_complete(func)
-    click.secho(json.dumps(dict(user)))
+    try:
+        loop = asyncio.get_event_loop()
+        func = create_user_in_db(db, user)
+        loop.run_until_complete(func)
+    except DuplicateKeyError as error:
+        raise click.UsageError(f"Username \"{username}\" is already taken") from error
+    click.secho(f"Successfully created the user \"{user.username}\"", fg="green")
 
 
 @cli.command()
@@ -100,8 +104,8 @@ def update_tags(ctx):  # pylint: disable=unused-argument
     loop = asyncio.get_event_loop()
     func = get_samples(db)
     samples = loop.run_until_complete(func)
-    with click.progressbar(samples, length=len(samples), label="Updating tags") as bar:
-        for sample in bar:
+    with click.progressbar(samples, length=len(samples), label="Updating tags") as prog_bar:
+        for sample in prog_bar:
             upd_tags = compute_phenotype_tags(sample)
             upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
             # update sample as sync function
