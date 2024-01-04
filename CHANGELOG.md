@@ -4,6 +4,7 @@
 
  - Improved output of create_user API CLI command
  - bonsai_api create-user command have options for mail, first name and last name.
+ - Open samples by clicking on labels in the similar samples card in the samples view.
 
 ### Fixed
 

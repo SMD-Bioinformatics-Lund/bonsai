@@ -153,10 +153,20 @@
             mode: "square",
             ruler: false,
             leafLabels: true,
-            margin: [10, 10, 70, 30]
+            margin: [10, 10, 80, 10]
         });
         // hightlight current sample
         tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
+        // leaves
+        const leaves = tree.data.getLeafs()
+        tree.eachLeafLabel(label => {
+            label.style['cursor'] = 'pointer'  // set mouse pointer style
+            label.onclick = () => openSamplePage(label.innerHTML);
+        })
+    }
+
+    function openSamplePage(sampleId) {
+        window.open(`/samples/${sampleId}`)
     }
 
     async function fetchNewickAndDrawDendrogram() {
