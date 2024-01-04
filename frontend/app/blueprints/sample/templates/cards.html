@@ -301,6 +301,8 @@
         {{ amrfinder_amr_prediction(pred.result) }}
     {% elif pred.software == "amrfinder" and pred.type == "STRESS" %}
         {{ amrfinder_stress_prediction(pred.result) }}
+    {% elif pred.software == "mykrobe" %}
+        {{ mykrobe_amr_prediction(pred.result) }}
     {% endif %}
     </div>
 </div>
@@ -471,6 +473,98 @@
     {% else %}
         <p>Test {{method}}</p>
     {% endif %}
+{% endmacro %}
+
+
+{% macro mykrobe_amr_prediction(result, extended=False) %}
+<div>
+    <h5 class="card-title">Genes</h5>
+    {% if result.genes | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+    {% else %}
+    <table class="table table-striped fs-6">
+        <thead>
+            <td scope="col">Gene</td>
+            <td scope="col">Method</td>
+            {% if extended %}
+                <td>Contig</td>
+                <td>Start/ End</td>
+            {% endif  %}
+            <td scope="col">Identity</td>
+            <td scope="col">Coverage</td>
+            <td scope="col">Antibiotics</td>
+            {% if extended %}
+                <td>Name</td>
+            {% endif  %}
+        </thead>
+        <tbody class="table-group-divider">
+        {% for gene in result.genes %}
+            <tr>
+                <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+                <td>
+                    {{ gene.method }}
+                    <i class="bi bi-question-circle"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-html="true"
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                </td>
+                {% if extended %}
+                    <td class="tbl-border-left">{{ gene.contig_id }}</td>
+                    <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+                {% endif  %}
+                <td>{{ gene.coverage }}%</td>
+                <td>{{ gene.identity }}%</td>
+                <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
+                {% if extended %}
+                <td>{{ gene.close_seq_name }}</td>
+                {% endif  %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {# resistance variants #}
+    <h5 class="card-title">Variants</h5>
+    {% if result.mutations | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+    {% else %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td scope="col">Variant</td>
+                    <td scope="col">Type</td>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Protein change</td>
+                    <td scope="col">Method</td>
+                    <td scope="col">KMER Depth</td>
+                    <td scope="col">Confidence</td>
+                    <td scope="col">Antibiotics</td>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for variant in result.mutations %}
+                    <tr>
+                        <td>{{ variant.nucleotide_change }}</td>
+                        <td>{{ variant.variant_type }}</td>
+                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        {% if variant.variant_type == 'substitution' %}
+                            <td>{{ variant.ref_aa | upper }}>{{variant.alt_aa | upper }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        <td>{{ variant.method }}</td>
+                        <td>
+                            {{ variant.ref_kmer_count | fmt_number }} / {{ variant.alt_kmer_count | fmt_number }}
+                        </td>
+                        <td>{{ variant.conf }}</td>
+                        <td>{{ variant.drugs[0] | capitalize }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
 {% endmacro %}
 
 
