@@ -106,7 +106,8 @@ async def get_samples_summary(
         # for mongo version < 5
         upd_results = []
         for res in results:
-            res["mlst"] = res["mlst"]["result"]
+            if "mlst" in res:
+                res["mlst"] = res["mlst"]["result"]
             upd_results.append(res)
         results = upd_results.copy()
     return results
