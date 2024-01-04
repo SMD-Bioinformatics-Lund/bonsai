@@ -2,6 +2,11 @@
   max-height: 40em;
 }
 
+.br-card-link {
+  color: steelblue;
+  text-decoration: underline;
+}
+
 .sidebar-heading {
   font-size: .75rem;
 }

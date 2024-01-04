@@ -6,7 +6,7 @@
 {% elif db.name == 'pointfinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
 {% endif %}
-<a class="link-dark link-underline-success" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+<a class="br-card-link" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
 {% endmacro %}
 
 
@@ -53,7 +53,7 @@
 
 
 {% macro accession_link(accession, name=None) %}
-    <a class="text-dark" target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/{{accession}}">
+    <a class="br-card-link" target="_blank" href="https://www.ncbi.nlm.nih.gov/protein/{{accession}}">
         {% if name == None %}
             {{ accession }}
         {% else %}
@@ -277,7 +277,7 @@
             <tbody>
                 {% for pred in predictions %}
                     <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
-                        <td> <a class="text-decoration-underline text-dark fst-italic" 
+                        <td> <a class="br-card-link fst-italic" 
                                href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
                                target="_blank">{{pred.scientific_name}}</a></td>
                         <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
@@ -508,7 +508,7 @@
     <div class="card-body">
         <h6 class="card-title">
             <i class="bi bi-server me-2"></i>
-            <a class="link-dark link-underline-success" href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
+            <a class="br-card-link" href="https://github.com/genomic-medicine-sweden/JASEN" target="_blank">
                 Pipeline
             </a>
         </h5>
