@@ -3,6 +3,7 @@
 ### Added
 
  - Improved output of create_user API CLI command
+ - bonsai_api create-user command have options for mail, first name and last name.
 
 ### Fixed
 

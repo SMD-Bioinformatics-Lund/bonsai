@@ -25,7 +25,7 @@ Users are also created through the API. You must specify the username, password,
 .. code-block::bash
 
    # normal command
-   $ bonsai_api create-user --u <username> -p <password> --role <admin|user|uploader>
+   $ bonsai_api create-user --u <username> -p <password> -m <email> --role <admin|user|uploader>
 
 Upload samples
 --------------

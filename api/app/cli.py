@@ -52,6 +52,9 @@ def setup(ctx):
 @cli.command()
 @click.pass_context
 @click.option("-u", "--username", required=True, help="Desired username.")
+@click.option("--fname", help="Fist name")
+@click.option("--lname", help="Last name")
+@click.option("-m", "--email", required=True, help="E-mail.")
 @click.option(
     "-p",
     "--password",
@@ -65,15 +68,15 @@ def setup(ctx):
     type=click.Choice(list(USER_ROLES.keys())),
     help="User role which dictates persmission.",
 )
-def create_user(ctx, username, password, role):  # pylint: disable=unused-argument
+def create_user(ctx, username, email, password, role, fname, lname):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     user = UserInputCreate(
         username=username,
-        first_name="",
-        last_name="",
+        first_name=fname,
+        last_name=lname,
         password=password,
-        email="placeholder@email.com",
+        email=email,
         roles=[role],
     )
     try:

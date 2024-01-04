@@ -18,8 +18,8 @@ class UserBase(RWModel):  # pylint: disable=too-few-public-methods
     """Base user model"""
 
     username: str
-    first_name: str
-    last_name: str
+    first_name: str | None = None
+    last_name: str | None = None
     email: EmailStr
     disabled: bool = False
     roles: List[str] = []
