@@ -38,8 +38,8 @@ async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputData
         hashed_password=hashed_password, **user.model_dump()
     )
     # store data in database
-    await db.user_collection.insert_one(user_db_fmt.model_dump())
-    inserted_id = db_obj.inserted_id
+    resp_obj = await db.user_collection.insert_one(user_db_fmt.model_dump())
+    inserted_id = resp_obj.inserted_id
     user_obj = UserInputDatabase(
         id=str(inserted_id),
         **user_db_fmt.model_dump(),
