@@ -1,0 +1,1 @@
+/data/bnf/scripts/jasen/upload_sample.sh --api http://mtlucmds1.lund.skane.se/bonsai/api/v1 --group saureus -u $BONSAI_USER -p $BONSAI_PASSWD --input /fs1/results_dev/jasen/saureus/analysis_result/MT23000659_result.json
