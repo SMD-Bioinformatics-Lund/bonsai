@@ -54,6 +54,7 @@ DEFAULT_TAGS = [
 ]
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
+UPDATE_PERMISSION = "samples:update"
 
 
 @router.get("/samples/", response_model_by_alias=False, tags=DEFAULT_TAGS)
@@ -195,7 +196,7 @@ async def update_sample(
     sample: Dict | PipelineResult = Body({}),
     location: Dict = Body({}, embed=True),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> Dict[str, str | SampleInDatabase]:
     """Update sample with sample id from database.
@@ -280,7 +281,7 @@ async def update_qc_status(
         regex=SAMPLE_ID_PATTERN,
     ),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> bool:
     """Update sample QC status
@@ -322,7 +323,7 @@ async def post_comment(
         regex=SAMPLE_ID_PATTERN,
     ),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> CommentsObj:
     """Add a commet to a sample.
@@ -401,7 +402,7 @@ async def update_location(
         regex=SAMPLE_ID_PATTERN,
     ),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> LocationOutputDatabase:
     """Update the location of a sample.

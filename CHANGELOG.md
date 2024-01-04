@@ -13,6 +13,8 @@
 
 ### Changed
 
+ - The role "user" have permission to comment and classify QC
+
 ## [v0.1.0]
 
 ### Added
