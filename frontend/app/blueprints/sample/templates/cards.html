@@ -303,6 +303,8 @@
         {{ amrfinder_stress_prediction(pred.result) }}
     {% elif pred.software == "mykrobe" %}
         {{ mykrobe_amr_prediction(pred.result) }}
+    {% elif pred.software == "tbprofiler" %}
+        {{ tbprofiler_amr_prediction(pred.result) }}
     {% endif %}
     </div>
 </div>
@@ -559,6 +561,47 @@
                         </td>
                         <td>{{ variant.conf }}</td>
                         <td>{{ variant.drugs[0] | capitalize }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro tbprofiler_amr_prediction(result, extended=False) %}
+<div>
+    {# resistance variants #}
+    <h5 class="card-title">Variants</h5>
+    {% if result.mutations | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+    {% else %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td scope="col">Variant</td>
+                    <td scope="col">Protein change</td>
+                    <td scope="col">Type</td>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Depth</td>
+                    <td scope="col">Freq</td>
+                    <td scope="col">Antibiotics</td>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {{ result.mutations[0] }}
+                {% for variant in result.mutations %}
+                    <tr>
+                        <td>{{ variant.nucleotide_change }}</td>
+                        {% if variant.variant_type == 'substitution' %}
+                            <td>{{ variant.protein_change }}</td>
+                        {% endif %}
+                        <td>{{ variant.variant_type }}</td>
+                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        <td>{{ variant.depth | int }}</td>
+                        <td>{{ variant.freq | round(3) }}</td>
+                        <td>{{ variant.drugs[0].drug | capitalize }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
