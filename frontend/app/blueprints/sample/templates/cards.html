@@ -539,16 +539,18 @@
                     <td scope="col">Gene</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Method</td>
-                    <td scope="col">KMER Depth</td>
+                    <td scope="col">KMER Depth (Alt / Ref)</td>
                     <td scope="col">Confidence</td>
                     <td scope="col">Antibiotics</td>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
                 {% for variant in result.mutations %}
+                    {% set alt_depth=(variant.frequency * variant.depth) %}
+                    {% set ref_depth=(variant.depth * (1 - variant.frequency)) %}
                     <tr>
-                        <td>{{ variant.nucleotide_change }}</td>
-                        <td>{{ variant.variant_type }}</td>
+                        <td>{{ variant.ref_nt | upper }}>{{variant.alt_nt | upper }}</td>
+                        <td>{{ variant.variant_type[:3] }}</td>
                         <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
                         {% if variant.variant_type == 'substitution' %}
                             <td>{{ variant.ref_aa | upper }}>{{variant.alt_aa | upper }}</td>
@@ -556,11 +558,9 @@
                             <td>-</td>
                         {% endif %}
                         <td>{{ variant.method }}</td>
-                        <td>
-                            {{ variant.ref_kmer_count | fmt_number }} / {{ variant.alt_kmer_count | fmt_number }}
-                        </td>
-                        <td>{{ variant.conf }}</td>
-                        <td>{{ variant.drugs[0] | capitalize }}</td>
+                        <td>{{ alt_depth | int | fmt_number  }} / {{ ref_depth | int | fmt_number }}</td>
+                        <td>{{ variant.confidence }}</td>
+                        <td>{{ variant.phenotypes[0].name | capitalize }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
