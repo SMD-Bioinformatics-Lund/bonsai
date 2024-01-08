@@ -57,7 +57,7 @@ def sample(sample_id: str) -> str:
         # validated_genes = group.get("validatedGenes", {})
 
     # summarize predicted antimicrobial resistance
-    amr_summary, resistance_info = create_amr_summary(sample_info)
+    #amr_summary, resistance_info = create_amr_summary(sample_info)
 
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
@@ -77,8 +77,6 @@ def sample(sample_id: str) -> str:
     return render_template(
         "sample.html",
         sample=sample_info,
-        amr_summary=amr_summary,
-        resistance_info=resistance_info,
         title=sample_id,
         is_filtered=bool(group_id),
         similar_samples=simiar_samples,

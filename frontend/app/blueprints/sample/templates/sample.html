@@ -71,7 +71,8 @@
                     <p>No predicted resistance determinants.</p>
                 {% else %}
                     <div class="col-md-auto">
-                        {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
+                        {# {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }} #}
+                        
                     </div>
                 {% endif %}
                 {% for elem in sample.element_type_result %}
