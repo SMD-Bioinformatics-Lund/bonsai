@@ -581,27 +581,29 @@
             <thead>
                 <tr>
                     <td scope="col">Variant</td>
-                    <td scope="col">Protein change</td>
                     <td scope="col">Type</td>
                     <td scope="col">Gene</td>
-                    <td scope="col">Depth</td>
+                    <td scope="col">Read depth</td>
                     <td scope="col">Freq</td>
+                    <td scope="col">Passed QC</td>
                     <td scope="col">Antibiotics</td>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {{ result.mutations[0] }}
                 {% for variant in result.mutations %}
                     <tr>
-                        <td>{{ variant.nucleotide_change }}</td>
-                        {% if variant.variant_type == 'substitution' %}
-                            <td>{{ variant.protein_change }}</td>
-                        {% endif %}
-                        <td>{{ variant.variant_type }}</td>
+                        <td>{{ variant.ref_nt }}>{{ variant.alt_nt }}</td>
+                        <td>{{ variant.variant_type[:3] }}</td>
                         <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
                         <td>{{ variant.depth | int }}</td>
-                        <td>{{ variant.freq | round(3) }}</td>
-                        <td>{{ variant.drugs[0].drug | capitalize }}</td>
+                        <td>{{ variant.frequency | round(3) }}</td>
+                        {% if variant.passed_qc  %}
+                            <td><i class="bi bi-check text-success"></i></td>
+                        {% else  %}
+                            <td><i class="bi bi-x text-danger"></i></td>
+                        {% endif  %}
+                        <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
+
                     </tr>
                 {% endfor %}
             </tbody>
