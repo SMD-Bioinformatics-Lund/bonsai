@@ -40,7 +40,7 @@
         <div class="container-fluid">
             <div id="spp-heading" class="row justify-content-md-center">
                 <div class="col-sm-12 col-md-auto">
-                    {{ species_prediction_card(sample.species_prediction) }}
+                    {{ species_prediction_card(sample.species_prediction, extended=extended) }}
                 </div>
             </div>
             <h5>Epidemiological Typing</h5>
@@ -78,7 +78,7 @@
                 {% for elem in sample.element_type_result %}
                     {% if elem.type != 'VIRULENCE' %}
                         <div class="col-md-auto">
-                            {{ amr_prediction_card(elem) }}
+                            {{ amr_prediction_card(elem, extended=extended) }}
                         </div>
                     {% endif %}
                 {% endfor %}

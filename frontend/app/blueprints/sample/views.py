@@ -49,6 +49,9 @@ def sample(sample_id: str) -> str:
     # get sample
     sample_info = get_sample_by_id(token, sample_id=sample_id)
 
+    # if verbose output should be rendered 
+    extended = bool(request.args.get("extended", False))
+
     # if a sample was accessed from a group it can pass the group_id as parameter
     # group_id is used to fetch information on validated genes and resitances
     group_id = request.args.get("group_id")
@@ -81,6 +84,7 @@ def sample(sample_id: str) -> str:
         is_filtered=bool(group_id),
         similar_samples=simiar_samples,
         bad_qc_actions=bad_qc_actions,
+        extended=extended,
     )
 
 

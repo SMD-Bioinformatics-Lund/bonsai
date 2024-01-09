@@ -362,6 +362,12 @@ def count_results(results, type=None):
     return n_results
 
 
+def n_results_with_resistance(results):
+    """Count the number of prediction results yeilding resistance."""
+    n_results = len([res for res in results if len(res['phenotypes']) > 0])
+    return n_results
+
+
 TESTS = {
     "list": is_list,
 }
@@ -384,4 +390,5 @@ FILTERS = {
     "fmt_to_human_readable": human_readable_large_numbers,
     "get_resistance_profile": get_resistance_profile,
     "count_results": count_results,
+    "n_results_with_resistance": n_results_with_resistance,
 }
