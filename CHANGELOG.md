@@ -5,6 +5,7 @@
  - Improved output of create_user API CLI command
  - bonsai_api create-user command have options for mail, first name and last name.
  - Open samples by clicking on labels in the similar samples card in the samples view.
+ - Optional "extended" HTTP argument to sample view to view extended prediction info
 
 ### Fixed
 
@@ -16,6 +17,7 @@
 ### Changed
 
  - The role "user" have permission to comment and classify QC
+ - Updated PRP to version 0.3.0
 
 ## [v0.1.0]
 
