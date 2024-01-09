@@ -62,6 +62,14 @@ def sample(sample_id: str) -> str:
     # summarize predicted antimicrobial resistance
     #amr_summary, resistance_info = create_amr_summary(sample_info)
 
+    # sort phenotypic predictions so Tb is first
+    order = {"tbprofiler": 10, "mykrobe": 1}
+    sample_info["element_type_result"] = sorted(
+        sample_info["element_type_result"], 
+        key=lambda res: order.get(res["software"], 0),
+        reverse=True
+    )
+
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
