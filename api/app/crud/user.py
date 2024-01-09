@@ -11,8 +11,12 @@ from ..auth import get_password_hash, verify_password
 from ..config import ALGORITHM, SECRET_KEY, USER_ROLES
 from ..db import Database, db
 from ..models.auth import TokenData
-from ..models.user import (SampleBasketObject, UserInputCreate,
-                           UserInputDatabase, UserOutputDatabase)
+from ..models.user import (
+    SampleBasketObject,
+    UserInputCreate,
+    UserInputDatabase,
+    UserOutputDatabase,
+)
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)

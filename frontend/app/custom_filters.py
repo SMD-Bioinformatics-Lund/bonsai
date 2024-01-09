@@ -358,13 +358,13 @@ def count_results(results, type=None):
     if type is None:
         n_results = len(results)
     else:
-        n_results = len([res for res in results if res['type'] == type])
+        n_results = len([res for res in results if res["type"] == type])
     return n_results
 
 
 def n_results_with_resistance(results):
     """Count the number of prediction results yeilding resistance."""
-    n_results = len([res for res in results if len(res['phenotypes']) > 0])
+    n_results = len([res for res in results if len(res["phenotypes"]) > 0])
     return n_results
 
 

@@ -5,8 +5,14 @@ from prp.models.phenotype import ElementType, ElementTypeResult
 from prp.models.typing import TypingMethod
 
 from ..models.sample import SampleInDatabase
-from ..models.tags import (ResistanceTag, Tag, TagList, TagSeverity, TagType,
-                           VirulenceTag)
+from ..models.tags import (
+    ResistanceTag,
+    Tag,
+    TagList,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+)
 
 LOG = logging.getLogger(__name__)
 

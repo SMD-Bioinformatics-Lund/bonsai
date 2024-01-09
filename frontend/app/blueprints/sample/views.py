@@ -1,17 +1,30 @@
 """Declaration of views for samples"""
 from typing import Any, Dict, Tuple
 
-from app.bonsai import (TokenObject, cgmlst_cluster_samples,
-                        find_and_cluster_similar_samples,
-                        find_samples_similar_to_reference, get_group_by_id,
-                        get_sample_by_id, post_comment_to_sample,
-                        remove_comment_from_sample,
-                        update_sample_qc_classification)
-from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (Blueprint, current_app, flash, redirect, render_template,
-                   request, url_for)
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
+
+from app.bonsai import (
+    TokenObject,
+    cgmlst_cluster_samples,
+    find_and_cluster_similar_samples,
+    find_samples_similar_to_reference,
+    get_group_by_id,
+    get_sample_by_id,
+    post_comment_to_sample,
+    remove_comment_from_sample,
+    update_sample_qc_classification,
+)
+from app.models import BadSampleQualityAction, QualityControlResult
 
 from .controllers import create_amr_summary
 
@@ -49,7 +62,7 @@ def sample(sample_id: str) -> str:
     # get sample
     sample_info = get_sample_by_id(token, sample_id=sample_id)
 
-    # if verbose output should be rendered 
+    # if verbose output should be rendered
     extended = bool(request.args.get("extended", False))
 
     # if a sample was accessed from a group it can pass the group_id as parameter
@@ -60,14 +73,14 @@ def sample(sample_id: str) -> str:
         # validated_genes = group.get("validatedGenes", {})
 
     # summarize predicted antimicrobial resistance
-    #amr_summary, resistance_info = create_amr_summary(sample_info)
+    # amr_summary, resistance_info = create_amr_summary(sample_info)
 
     # sort phenotypic predictions so Tb is first
     order = {"tbprofiler": 10, "mykrobe": 1}
     sample_info["element_type_result"] = sorted(
-        sample_info["element_type_result"], 
+        sample_info["element_type_result"],
         key=lambda res: order.get(res["software"], 0),
-        reverse=True
+        reverse=True,
     )
 
     # get all actions if sample fail qc

@@ -7,17 +7,25 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import Field
 
 from ..crud.errors import EntryNotFound
-from ..crud.sample import (TypingProfileOutput, get_signature_path_for_samples,
-                           get_typing_profiles)
+from ..crud.sample import (
+    TypingProfileOutput,
+    get_signature_path_for_samples,
+    get_typing_profiles,
+)
 from ..db import db
 from ..models.base import RWModel
-from ..redis import (ClusterMethod, DistanceMethod, MsTreeMethods,
-                     SubmittedJob, TypingMethod)
-from ..redis.allele_cluster import \
-    schedule_cluster_samples as schedule_allele_cluster_samples
+from ..redis import (
+    ClusterMethod,
+    DistanceMethod,
+    MsTreeMethods,
+    SubmittedJob,
+    TypingMethod,
+)
+from ..redis.allele_cluster import (
+    schedule_cluster_samples as schedule_allele_cluster_samples,
+)
 from ..redis.minhash import schedule_add_genome_signature_to_index
-from ..redis.minhash import \
-    schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()

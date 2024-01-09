@@ -7,8 +7,7 @@ from prp.models.typing import TypingMethod
 from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import (GroupInCreate, GroupInfoDatabase,
-                            OverviewTableColumn)
+from ..models.group import GroupInCreate, GroupInfoDatabase, OverviewTableColumn
 from ..models.sample import SampleSummary
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
