@@ -27,10 +27,10 @@ class ResistanceTag(Enum):
 class VirulenceTag(Enum):
     """Virulence associated tags."""
 
-    PVL_ALL_POS = "pos"
-    PVL_LUKS_POS = "neg/pos"
-    PVL_LUKF_POS = "pos/neg"
-    PVL_ALL_NEG = "neg"
+    PVL_ALL_POS = "PVL pos"
+    PVL_LUKS_POS = "LukS Pos"
+    PVL_LUKF_POS = "LukF Pos"
+    PVL_ALL_NEG = "PVL neg"
 
 
 class TagSeverity(Enum):
