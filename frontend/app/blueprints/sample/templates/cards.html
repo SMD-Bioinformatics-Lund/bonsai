@@ -264,7 +264,7 @@
 {% endmacro %}
 
 
-{% macro species_prediction_card(predictions) %}
+{% macro species_prediction_card(predictions, extended=False) %}
 <div class="card">
     <div class="card-header">Species prediction</div>
     <div class="card-body">
@@ -276,13 +276,15 @@
             </thead>
             <tbody>
                 {% for pred in predictions %}
-                    <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
-                        <td> <a class="br-card-link fst-italic" 
-                               href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
-                               target="_blank">{{pred.scientific_name}}</a></td>
-                        <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
-                        <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
-                    </tr>
+                    {% if extended or pred.fraction_total_reads > 0.001 %}
+                        <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
+                            <td> <a class="br-card-link fst-italic" 
+                                href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
+                                target="_blank">{{pred.scientific_name}}</a></td>
+                            <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
+                            <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
