@@ -68,7 +68,9 @@ def setup(ctx):
     type=click.Choice(list(USER_ROLES.keys())),
     help="User role which dictates persmission.",
 )
-def create_user(ctx, username, email, password, role, fname, lname):  # pylint: disable=unused-argument
+def create_user(
+    ctx, username, email, password, role, fname, lname
+):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     user = UserInputCreate(
@@ -84,8 +86,8 @@ def create_user(ctx, username, email, password, role, fname, lname):  # pylint: 
         func = create_user_in_db(db, user)
         loop.run_until_complete(func)
     except DuplicateKeyError as error:
-        raise click.UsageError(f"Username \"{username}\" is already taken") from error
-    click.secho(f"Successfully created the user \"{user.username}\"", fg="green")
+        raise click.UsageError(f'Username "{username}" is already taken') from error
+    click.secho(f'Successfully created the user "{user.username}"', fg="green")
 
 
 @cli.command()
@@ -107,7 +109,9 @@ def update_tags(ctx):  # pylint: disable=unused-argument
     loop = asyncio.get_event_loop()
     func = get_samples(db)
     samples = loop.run_until_complete(func)
-    with click.progressbar(samples, length=len(samples), label="Updating tags") as prog_bar:
+    with click.progressbar(
+        samples, length=len(samples), label="Updating tags"
+    ) as prog_bar:
         for sample in prog_bar:
             upd_tags = compute_phenotype_tags(sample)
             upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})

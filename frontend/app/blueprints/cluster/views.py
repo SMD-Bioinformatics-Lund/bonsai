@@ -4,11 +4,12 @@ import logging
 from enum import Enum
 from typing import Any, Dict
 
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
+
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 
 LOG = logging.getLogger(__name__)
 

@@ -139,6 +139,8 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
 
             # iterate over mutations and populate resistance summaries
             for mutation in pred_res["result"]["mutations"]:
+                if mutation["ref_id"] is None:
+                    continue
                 gene_name, *_ = mutation["ref_id"].split(";;")
                 # gene entries
                 gene_entry = amr_summary.get(

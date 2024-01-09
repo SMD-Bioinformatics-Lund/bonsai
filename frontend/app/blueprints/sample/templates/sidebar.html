@@ -42,7 +42,7 @@
 
     #}
     <fieldset id="qc-form-fields">
-        <div class="row pb-2">
+        <div class="row">
             <div
                 class="btn-group btn-group-sm col-auto pb-1"
                 role="group"
@@ -87,7 +87,7 @@
             </div>
         </div>
         <div id="failed-qc-comment-container" class="row" {% if selected_qc_status != "failed" %}hidden{% endif %}>
-            <div id="" class="col-auto">
+            <div class="col-auto pb-1">
                 <label class="text-muted" for="failed-qc-comment">Comment</label>
                 <textarea type="text" class="form-control" name="qc-comment" id="failed-qc-comment"
                 >{{comment_text}}</textarea>
@@ -98,7 +98,7 @@
                 <button
                     id="qc-submit-btn"
                     type="submit"
-                    class="btn btn-sm btn-outline-secondary mt-2"
+                    class="btn btn-sm btn-outline-secondary"
                     disabled
                 >Confirm</button>
             </div>

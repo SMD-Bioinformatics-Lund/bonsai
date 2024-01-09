@@ -14,8 +14,13 @@ from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification
-from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
-                             SampleInDatabase, SampleSummary)
+from ..models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+    SampleSummary,
+)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -106,7 +111,8 @@ async def get_samples_summary(
         # for mongo version < 5
         upd_results = []
         for res in results:
-            res["mlst"] = res["mlst"]["result"]
+            if "mlst" in res:
+                res["mlst"] = res["mlst"]["result"]
             upd_results.append(res)
         results = upd_results.copy()
     return results

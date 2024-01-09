@@ -353,6 +353,21 @@ def get_resistance_profile(prediction, level):
     return ", ".join(result)
 
 
+def count_results(results, type=None):
+    """Count the number of prediction results of type."""
+    if type is None:
+        n_results = len(results)
+    else:
+        n_results = len([res for res in results if res["type"] == type])
+    return n_results
+
+
+def n_results_with_resistance(results):
+    """Count the number of prediction results yeilding resistance."""
+    n_results = len([res for res in results if len(res["phenotypes"]) > 0])
+    return n_results
+
+
 TESTS = {
     "list": is_list,
 }
@@ -374,4 +389,6 @@ FILTERS = {
     "get_pvl_tag": get_pvl_tag,
     "fmt_to_human_readable": human_readable_large_numbers,
     "get_resistance_profile": get_resistance_profile,
+    "count_results": count_results,
+    "n_results_with_resistance": n_results_with_resistance,
 }

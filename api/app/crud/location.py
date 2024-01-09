@@ -4,8 +4,12 @@ from typing import List
 from bson import ObjectId
 
 from ..db import Database
-from ..models.location import (GeoJSONPolygon, LocationInputCreate,
-                               LocationInputDatabase, LocationOutputDatabase)
+from ..models.location import (
+    GeoJSONPolygon,
+    LocationInputCreate,
+    LocationInputDatabase,
+    LocationOutputDatabase,
+)
 from .errors import EntryNotFound
 
 

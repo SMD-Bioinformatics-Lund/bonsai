@@ -138,10 +138,10 @@ async def add_sample_to_group(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=sample_id,
         ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=error,
+            detail=sample_id,
         ) from error

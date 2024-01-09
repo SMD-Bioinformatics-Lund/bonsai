@@ -40,7 +40,7 @@
         <div class="container-fluid">
             <div id="spp-heading" class="row justify-content-md-center">
                 <div class="col-sm-12 col-md-auto">
-                    {{ species_prediction_card(sample.species_prediction) }}
+                    {{ species_prediction_card(sample.species_prediction, extended=extended) }}
                 </div>
             </div>
             <h5>Epidemiological Typing</h5>
@@ -64,20 +64,21 @@
             <h5>Phenotype prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
-                {% set n_res=amr_summary | length %}
+                {% set n_res=sample.element_type_result | count_results("AMR") %}
                 {% if is_filtered and n_res == 0 %}
                     <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
                 {% elif n_res == 0 %}
                     <p>No predicted resistance determinants.</p>
                 {% else %}
                     <div class="col-md-auto">
-                        {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }}
+                        {# {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }} #}
+                        
                     </div>
                 {% endif %}
                 {% for elem in sample.element_type_result %}
                     {% if elem.type != 'VIRULENCE' %}
                         <div class="col-md-auto">
-                            {{ amr_prediction_card(elem) }}
+                            {{ amr_prediction_card(elem, extended=extended) }}
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -94,20 +95,25 @@
             <h5>Virulence</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="virulence-heading" class="row justify-content-md-center">
-                {% for res in sample.element_type_result %}
-                    {% if res.type == "VIRULENCE" %}
-                        {% set n_genes=res.result.genes | length %}
-                        {% if is_filtered and n_genes == 0 %}
-                            <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
-                        {% elif n_genes == 0 %}
-                            <p>No validated virulence factors identified.</p>
-                        {% else %}
-                        <div class="col-md-auto">
-                        {{ virulence_card(res) }}
-                        </div>
+                {% set n_virulence_pred=sample.element_type_result | count_results("VIRULENCE") %}
+                {% if n_virulence_pred == 0 %}
+                    <p>No virulence factors identified.</p>
+                {% else %}
+                    {% for res in sample.element_type_result %}
+                        {% if res.type == "VIRULENCE" %}
+                            {% set n_genes=res.result.genes | length %}
+                            {% if is_filtered and n_genes == 0 %}
+                                <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
+                            {% elif n_genes == 0 %}
+                                <p>No validated virulence factors identified.</p>
+                            {% else %}
+                            <div class="col-md-auto">
+                            {{ virulence_card(res) }}
+                            </div>
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                {% endfor %}
+                    {% endfor %}
+                {% endif %}
             </div>
             <h5>Quality</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">

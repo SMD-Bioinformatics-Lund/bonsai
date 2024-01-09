@@ -264,7 +264,7 @@
 {% endmacro %}
 
 
-{% macro species_prediction_card(predictions) %}
+{% macro species_prediction_card(predictions, extended=False) %}
 <div class="card">
     <div class="card-header">Species prediction</div>
     <div class="card-body">
@@ -276,13 +276,15 @@
             </thead>
             <tbody>
                 {% for pred in predictions %}
-                    <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
-                        <td> <a class="br-card-link fst-italic" 
-                               href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
-                               target="_blank">{{pred.scientific_name}}</a></td>
-                        <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
-                        <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
-                    </tr>
+                    {% if extended or pred.fraction_total_reads > 0.001 %}
+                        <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
+                            <td> <a class="br-card-link fst-italic" 
+                                href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
+                                target="_blank">{{pred.scientific_name}}</a></td>
+                            <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
+                            <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
+                        </tr>
+                    {% endif %}
                 {% endfor %}
             </tbody>
         </table>
@@ -291,23 +293,27 @@
 {% endmacro %}
 
 
-{% macro amr_prediction_card(pred) %}
+{% macro amr_prediction_card(pred, extended=False) %}
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
     {% if pred.software == "resfinder" %}
-        {{ resfinder_prediction(pred.result) }}
+        {{ resfinder_prediction(pred.result, extended=extended) }}
     {% elif pred.software == "amrfinder" and pred.type == "AMR" %}
-        {{ amrfinder_amr_prediction(pred.result) }}
+        {{ amrfinder_amr_prediction(pred.result, extended=extended) }}
     {% elif pred.software == "amrfinder" and pred.type == "STRESS" %}
-        {{ amrfinder_stress_prediction(pred.result) }}
+        {{ amrfinder_stress_prediction(pred.result, extended=extended) }}
+    {% elif pred.software == "mykrobe" %}
+        {{ mykrobe_amr_prediction(pred.result, extended=extended) }}
+    {% elif pred.software == "tbprofiler" %}
+        {{ tbprofiler_amr_prediction(pred.result, extended=extended) }}
     {% endif %}
     </div>
 </div>
 {% endmacro %}
 
 
-{% macro resfinder_prediction(result) %}
+{% macro resfinder_prediction(result, extended=False) %}
 <div>
     <h5 class="card-title">Genes</h5>
     <table class="table table-striped">
@@ -334,11 +340,11 @@
         </tbody>
     </table>
     <h5 class="card-title">Variants</h5>
-    {% if result.mutations | length == 0 %}
+    {% if result.variants | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
     {% else %}
         <table class="table table-striped">
-            <caption>Database: {{ result.mutations[0].ref_database }}</caption>
+            <caption>Database: {{ result.variants[0].ref_database }}</caption>
             <thead>
                 <tr>
                     <td scope="col">Variant</td>
@@ -349,7 +355,7 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                {% for variant in result.mutations %}
+                {% for variant in result.variants %}
                     <tr>
                         <td>{{ variant.name }}</td>
                         <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
@@ -417,7 +423,7 @@
 {% endmacro %}
 
 
-{% macro amrfinder_stress_prediction(result) %}
+{% macro amrfinder_stress_prediction(result, extended=False) %}
 <div>
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
@@ -471,6 +477,146 @@
     {% else %}
         <p>Test {{method}}</p>
     {% endif %}
+{% endmacro %}
+
+
+{% macro mykrobe_amr_prediction(result, extended=False) %}
+<div>
+    <h5 class="card-title">Genes</h5>
+    {% if result.genes | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+    {% else %}
+    <table class="table table-striped fs-6">
+        <thead>
+            <td scope="col">Gene</td>
+            <td scope="col">Method</td>
+            {% if extended %}
+                <td>Contig</td>
+                <td>Start/ End</td>
+            {% endif  %}
+            <td scope="col">Identity</td>
+            <td scope="col">Coverage</td>
+            <td scope="col">Antibiotics</td>
+            {% if extended %}
+                <td>Name</td>
+            {% endif  %}
+        </thead>
+        <tbody class="table-group-divider">
+        {% for gene in result.genes %}
+            <tr>
+                <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+                <td>
+                    {{ gene.method }}
+                    <i class="bi bi-question-circle"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-html="true"
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                </td>
+                {% if extended %}
+                    <td class="tbl-border-left">{{ gene.contig_id }}</td>
+                    <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+                {% endif  %}
+                <td>{{ gene.coverage }}%</td>
+                <td>{{ gene.identity }}%</td>
+                <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
+                {% if extended %}
+                <td>{{ gene.close_seq_name }}</td>
+                {% endif  %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {# resistance variants #}
+    <h5 class="card-title">Variants</h5>
+    {% if result.variants | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+    {% else %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td scope="col">Variant</td>
+                    <td scope="col">Type</td>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Protein change</td>
+                    <td scope="col">Method</td>
+                    <td scope="col">KMER Depth<br/>(Alt / Ref)</td>
+                    <td scope="col">Confidence</td>
+                    <td scope="col">Antibiotics</td>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for variant in result.variants %}
+                    {% set alt_depth=(variant.frequency * variant.depth) %}
+                    {% set ref_depth=(variant.depth * (1 - variant.frequency)) %}
+                    <tr>
+                        <td>{{ variant.ref_nt | upper }}>{{variant.alt_nt | upper }}</td>
+                        <td>{{ variant.variant_type[:3] }}</td>
+                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        {% if variant.variant_type == 'substitution' %}
+                            <td>{{ variant.ref_aa | upper }}>{{variant.alt_aa | upper }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        <td>{{ variant.method }}</td>
+                        <td>{{ alt_depth | int | fmt_number  }} / {{ ref_depth | int | fmt_number }}</td>
+                        <td>{{ variant.confidence }}</td>
+                        <td>{{ variant.phenotypes[0].name | capitalize }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro tbprofiler_amr_prediction(result, extended=False) %}
+<div>
+    {# resistance variants #}
+    <h5 class="card-title">Variants</h5>
+    {% if result.variants | n_results_with_resistance == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+    {% else %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <td scope="col">Variant</td>
+                    <td scope="col">Protien change</td>
+                    <td scope="col">Gene</td>
+                    <td scope="col">Read depth</td>
+                    <td scope="col">Freq</td>
+                    <td scope="col">Passed QC</td>
+                    <td scope="col">Antibiotics</td>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for variant in result.variants %}
+                    {% if variant.phenotypes | length > 0 or extended %}
+                    <tr>
+                        <td>{{ variant.hgvs_nt_change }}</td>
+                        {% if variant.hgvs_aa_change %}
+                            <td>{{ variant.hgvs_aa_change }}</td>
+                        {% else %}
+                            <td>-</td>
+                        {% endif %}
+                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        <td>{{ variant.depth | int }}</td>
+                        <td>{{ variant.frequency | round(3) }}</td>
+                        {% if variant.passed_qc  %}
+                            <td><i class="bi bi-check text-success"></i></td>
+                        {% else  %}
+                            <td><i class="bi bi-x text-danger"></i></td>
+                        {% endif  %}
+                        <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
 {% endmacro %}
 
 
