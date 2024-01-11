@@ -126,12 +126,15 @@ def tree():
     if request.method == "POST":
         newick = request.form.get("newick")
         typing_data = request.form.get("typing_data")
-        samples = json.loads(request.form.get("metadata"))
+        samples = json.loads(request.form.get("metadata", "{}"))
         # query for sample metadata
-        token = TokenObject(**current_user.get_id())
-        sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
-        metadata = gather_metadata(sample_summary["records"])
-        data = {"nwk": newick, **metadata.model_dump()}
+        if samples == {}:
+            metadata = {}
+        else:
+            token = TokenObject(**current_user.get_id())
+            sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
+            metadata = gather_metadata(sample_summary["records"]).model_dump()
+        data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
