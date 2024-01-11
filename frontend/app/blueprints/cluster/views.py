@@ -89,11 +89,9 @@ def gather_metadata(samples) -> MetaData:
         # add sample to metadata list
         # store metadata
         sample_id = sample["sample_id"]
-        metadata[sample_id] = {
-            # "location": get_value(sample, "location"),
-            "time": sample["created_at"],
-            "st": sample.get('mlst', '-'),
-        }
+        metadata[sample_id] = {"time": sample["created_at"]}
+        if "mlst" in sample:
+            metadata[sample_id]['MLST ST'] = get_value(sample['mlst'], 'sequence_type')
     # build metadata list
     metadata_list = set()
     for meta in metadata.values():
