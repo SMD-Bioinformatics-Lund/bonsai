@@ -4,6 +4,9 @@
 
 ### Fixed
 
+ - Fixed crash when clustering on samples without a MLST profile
+ - Fixed bug that prevented adding samples to the basket in groups without "analysis profile" column
+
 ### Changed
 
 ## [v0.2.0]
