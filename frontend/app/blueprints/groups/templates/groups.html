@@ -87,7 +87,7 @@
                 document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 // enable find simiar samples button when ONE row is selected
                 document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
-                // update slected samples counter
+                // update selected samples counter
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
                 sessionStorage.setItem(
                     "selectedSamples", 
