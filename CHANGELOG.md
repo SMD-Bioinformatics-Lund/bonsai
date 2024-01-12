@@ -6,6 +6,7 @@
 
  - Fixed crash when clustering on samples without a MLST profile
  - Fixed bug that prevented adding samples to the basket in groups without "analysis profile" column
+ - Fixed issue that prevented finding similar samples in group view
 
 ### Changed
 
