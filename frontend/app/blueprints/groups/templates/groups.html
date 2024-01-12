@@ -38,7 +38,7 @@
                         Create group
                     </a>
                 {% endif %}
-                {{ qc_bulk_toggle(bad_qc_actions)}}
+                {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
         <div id="data-table"></div>
@@ -78,6 +78,7 @@
             },
             //limit: 100,
             multiSelect: true,
+            multiSearch: true,
             liveSearch: true,
             columns: columns,
             async onSelect(event) {

@@ -2,6 +2,8 @@
 
 ### Added
 
+ - Bulk QC status dropdown in group view
+
 ### Fixed
 
  - Fixed crash when clustering on samples without a MLST profile
