@@ -118,6 +118,13 @@
     }) 
 
     window.getSelectedRows = () => grid.getSelection()
+    window.action = function (method, param1, param2, param3) {
+        grid[method](param1, param2, param3)
+    }
+    window.refreshGrid = function(auto) {
+        grid.autoLoad = auto
+        grid.skip(0)
+    }
     grid.render()
 </script>
 <script>
