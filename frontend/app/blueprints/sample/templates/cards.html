@@ -272,7 +272,12 @@
             <thead>
                 <th>Specie</th>
                 <th>Fraction of reads</th>
-                <th>N reads</th>
+                {% if extended %}
+                    <th>Assigned reads</th>
+                    <th>Added reads</th>
+                {% else %}
+                    <th>N reads</th>
+                {% endif %}
             </thead>
             <tbody>
                 {% for pred in predictions %}
@@ -282,7 +287,14 @@
                                 href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
                                 target="_blank">{{pred.scientific_name}}</a></td>
                             <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
-                            <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
+                            {% if extended %}
+                                <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
+                                <td>{{ pred.added_reads | fmt_to_human_readable }}</td>
+                            {% else %}
+                                <td>
+                                    {{ (pred.kraken_assigned_reads + pred.added_reads) | fmt_to_human_readable }}
+                                </td>
+                            {% endif %}
                         </tr>
                     {% endif %}
                 {% endfor %}
