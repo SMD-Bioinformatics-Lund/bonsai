@@ -12,6 +12,8 @@
 
 ### Changed
 
+ - Display the sum of kraken assigned reads and added reads in spp card by default.
+
 ## [v0.2.0]
 
 ### Added
