@@ -39,6 +39,13 @@ Use the :doc:`upload_sample.py <../scripts/upload_sample.sh>` script to add anal
       -p <password>                                                  \
       --input /path/to/input.json
 
+Accessing the web interface
+---------------------------
+
+To access the web interface, access the URL https://localhost:8010 in your web browser.
+
+(If this doesn't work, you might want to run ``docker container ls`` and make sure that a container based on the image ``bonsai_frontend`` is available in the list).
+
 Data persistance
 ----------------
 
