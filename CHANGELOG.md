@@ -2,6 +2,22 @@
 
 ### Added
 
+ - Bulk QC status dropdown in group view
+
+### Fixed
+
+ - Fixed crash when clustering on samples without a MLST profile
+ - Fixed bug that prevented adding samples to the basket in groups without "analysis profile" column
+ - Fixed issue that prevented finding similar samples in group view
+
+### Changed
+
+ - Display the sum of kraken assigned reads and added reads in spp card by default.
+
+## [v0.2.0]
+
+### Added
+
  - Improved output of create_user API CLI command
  - bonsai_api create-user command have options for mail, first name and last name.
  - Open samples by clicking on labels in the similar samples card in the samples view.

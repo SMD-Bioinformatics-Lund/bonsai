@@ -38,7 +38,7 @@
                         Create group
                     </a>
                 {% endif %}
-                {{ qc_bulk_toggle(bad_qc_actions)}}
+                {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
         <div id="data-table"></div>
@@ -78,6 +78,7 @@
             },
             //limit: 100,
             multiSelect: true,
+            multiSearch: true,
             liveSearch: true,
             columns: columns,
             async onSelect(event) {
@@ -87,12 +88,12 @@
                 document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 // enable find simiar samples button when ONE row is selected
                 document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
-                // update slected samples counter
+                // update selected samples counter
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
                 sessionStorage.setItem(
                     "selectedSamples", 
                     JSON.stringify(
-                        this.get(this.getSelection()).map(row => {return {sample_id: row.sample_id, analysis_profile: row.profile}}) 
+                        this.get(this.getSelection()).map(row => row.sample_id) 
                     )
                 );
             },
@@ -123,7 +124,6 @@
     grid.render()
     refreshGrid(true)
 </script>
-
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
     // template code for adding to basket

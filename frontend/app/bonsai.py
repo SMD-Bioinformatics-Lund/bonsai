@@ -307,7 +307,7 @@ def find_samples_similar_to_reference(
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/similar'
     current_app.logger.debug(
-        "Query API for samples similar to %s, similarity: %f, limit: %d",
+        "Query API for samples similar to %s, similarity: %s, limit: %s",
         sample_id,
         similarity,
         limit,

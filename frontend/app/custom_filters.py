@@ -319,6 +319,9 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     :return: rounded human readable number with SI prefix
     :rtype: str
     """
+    if number == 0:
+        return number
+
     power = math.floor(math.log10(number))
     # source: https://sv.wikipedia.org/wiki/SI-prefix
     si_prefixes = {

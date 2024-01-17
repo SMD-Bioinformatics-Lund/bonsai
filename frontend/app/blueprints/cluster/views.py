@@ -89,11 +89,9 @@ def gather_metadata(samples) -> MetaData:
         # add sample to metadata list
         # store metadata
         sample_id = sample["sample_id"]
-        metadata[sample_id] = {
-            # "location": get_value(sample, "location"),
-            "time": sample["created_at"],
-            "st": get_value(sample["mlst"], "sequence_type"),
-        }
+        metadata[sample_id] = {"time": sample["created_at"]}
+        if "mlst" in sample:
+            metadata[sample_id]['MLST ST'] = get_value(sample['mlst'], 'sequence_type')
     # build metadata list
     metadata_list = set()
     for meta in metadata.values():
@@ -126,12 +124,15 @@ def tree():
     if request.method == "POST":
         newick = request.form.get("newick")
         typing_data = request.form.get("typing_data")
-        samples = json.loads(request.form.get("metadata"))
+        samples = json.loads(request.form.get("metadata", "{}"))
         # query for sample metadata
-        token = TokenObject(**current_user.get_id())
-        sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
-        metadata = gather_metadata(sample_summary["records"])
-        data = {"nwk": newick, **metadata.model_dump()}
+        if samples == {}:
+            metadata = {}
+        else:
+            token = TokenObject(**current_user.get_id())
+            sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
+            metadata = gather_metadata(sample_summary["records"]).model_dump()
+        data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",

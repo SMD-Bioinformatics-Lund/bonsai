@@ -7,6 +7,7 @@ from flask_login import current_user, login_required
 
 from app.bonsai import TokenObject, add_samples_to_basket, remove_samples_from_basket
 from app.models import SampleBasketObject
+from app.bonsai import get_samples_by_id
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
 
@@ -20,11 +21,28 @@ def add_sample_to_basket():
         return jsonify("Not authenticated"), 401
 
     # add samples to basket
-    raw_samples = json.loads(request.data).get("selectedSamples")
-    # cast to correct type
-    samples_to_add = [SampleBasketObject(**smp) for smp in raw_samples]
+    sample_ids = json.loads(request.data).get("selectedSamples", [])
+
+    # get auth token
+    token = TokenObject(**current_user.get_id())
+
+    # lookup analysis profile for samples
     try:
-        token = TokenObject(**current_user.get_id())
+        response = get_samples_by_id(token, sample_ids=sample_ids)
+    except requests.exceptions.HTTPError as error:
+        flash(str(error), "warning")
+        message = "Error"
+        return_code = 200
+        raise ValueError(sample_ids)
+
+    # store sample informaiton in required format
+    samples_to_add = []
+    for sample in response["records"]:
+        samples_to_add.append(SampleBasketObject(
+            sample_id=sample['sample_id'], analysis_profile=sample["profile"]
+        ))
+
+    try:
         add_samples_to_basket(token, samples=samples_to_add)
         message = "Added"
         return_code = 200

@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% import "cell_fmt.html" as cell_format %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle %}
 
 {% block css %}
     {{ super() }}
@@ -28,6 +28,7 @@
                 </span>
                 {{ add_to_basket_btn() }}
                 {{ search_similar_btn() }}
+                {{ qc_bulk_toggle(bad_qc_actions)}}
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
@@ -91,14 +92,19 @@
                 selectColumn: true,
             },
             multiSelect: true,
+            multiSearch: true,
             liveSearch: true,
             columns: columns,
             async onSelect(event) {
                 await event.complete
                 document.getElementById("cluster-button").disabled = 2 > this.getSelection().length
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
+                document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                // update selected samples counter
                 sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
+                // enable find simiar samples button when ONE row is selected
+                document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
             }
         },
     }
@@ -115,6 +121,19 @@
     }) 
 
     window.getSelectedRows = () => grid.getSelection()
+    window.action = function (method, param1, param2, param3) {
+        grid[method](param1, param2, param3)
+    }
+
+    const selected_samples = {{selected_samples | tojson |safe }}
+    if (selected_samples.length > 0) {
+        window.action('select', selected_samples.map(sample => sample))
+    }
+
+    window.refreshGrid = function(auto) {
+        grid.autoLoad = auto
+        grid.skip(0)
+    }
     grid.render()
 </script>
 <script>
@@ -218,7 +237,6 @@
         window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
-
-</div>
+</script>
 {% endblock content %}
 

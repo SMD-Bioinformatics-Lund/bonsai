@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
+from urllib.parse import urlparse
 
 from app.bonsai import (
     TokenObject,
@@ -159,10 +160,17 @@ def group(group_id: str) -> str:
     samples = get_samples_by_id(
         token, limit=0, skip=0, sample_ids=group_info["included_samples"]
     )
+
+    # Pre-select samples in sample table:
+    selected_samples = request.args.getlist("samples")
+
+    bad_qc_actions = [member.value for member in BadSampleQualityAction]
     return render_template(
         "group.html",
         title=group_id,
         group_name=group_info["display_name"],
+        bad_qc_actions=bad_qc_actions,
+        selected_samples=selected_samples,
         group_desc=group_info["description"],
         samples=samples["records"],
         modified=group_info["modified_at"],
@@ -217,4 +225,9 @@ def update_qc_classification():
             )
             flash(str(error), "danger")
 
-    return redirect(url_for("groups.groups", samples=selected_samples))
+    #return redirect(url_for("groups.groups", samples=selected_samples))
+    # add sample ids as params to referrer url
+    url = urlparse(request.referrer)
+    sample_id_param = "&".join([f"samples={sid}" for sid in selected_samples])
+    upd_url = url._replace(query=sample_id_param).geturl()
+    return redirect(upd_url)
