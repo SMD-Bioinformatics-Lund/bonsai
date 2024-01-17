@@ -13,6 +13,8 @@
 ### Changed
 
  - Display the sum of kraken assigned reads and added reads in spp card by default.
+ - Froze uvicorn to version 0.25.0
+ - Updated fastapi to version 0.108.0
 
 ## [v0.2.0]
 
