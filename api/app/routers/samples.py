@@ -264,7 +264,6 @@ async def create_genome_signatures_sample(
     sample_obj = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
     upd_sample_data = SampleInCreate(**sample_obj)
     await crud_update_sample(db, upd_sample_data)
-    LOG.error("status %s", add_sig_job.id)
 
     return {
         "id": sample_id,
