@@ -1,5 +1,6 @@
 """Declaration of views for samples"""
 from typing import Any, Dict, Tuple
+import json
 
 from flask import (
     Blueprint,
@@ -24,6 +25,7 @@ from app.bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
 )
+from app.bonsai import delete_samples
 from app.models import BadSampleQualityAction, QualityControlResult
 
 from .controllers import create_amr_summary
@@ -44,7 +46,34 @@ def samples():
     return render_template("samples.html")
 
 
-@samples_bp.route("/samples/<sample_id>")
+@samples_bp.route("/samples/remove", methods=["POST"])
+@login_required
+def remove_samples():
+    """Remove samples."""
+    if current_user.is_admin:
+        token = TokenObject(**current_user.get_id())
+
+        sample_ids = json.loads(request.form.get("sample-ids", "[]"))
+        if len(sample_ids) > 0:
+            delete_samples(token, sample_id=sample_ids)
+    else:
+        flash("You dont have permission to remove samples", "warning")
+    return redirect(request.referrer)
+
+
+@samples_bp.route("/samples/cluster/", methods=["GET", "POST"])
+@login_required
+def cluster(sample_id: str) -> str:
+    """Samples view."""
+    token = TokenObject(**current_user.get_id())
+
+    if request.method == "POST":
+        samples_info = request.body["samples"]
+        cgmlst_cluster_samples(token, samples=samples_info)
+    return render_template("sample.html", sample_id=sample_id)
+
+
+@samples_bp.route("/sample/<sample_id>")
 @login_required
 def sample(sample_id: str) -> str:
     """Generate sample page.
@@ -109,7 +138,7 @@ def sample(sample_id: str) -> str:
     )
 
 
-@samples_bp.route("/samples/<sample_id>/similar", methods=["POST"])
+@samples_bp.route("/sample/<sample_id>/similar", methods=["POST"])
 @login_required
 def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
     """Find samples that are similar."""
@@ -125,7 +154,7 @@ def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
     return resp.model_dump(), 200
 
 
-@samples_bp.route("/samples/<sample_id>/comment", methods=["POST"])
+@samples_bp.route("/sample/<sample_id>/comment", methods=["POST"])
 @login_required
 def add_comment(sample_id: str) -> str:
     """Post sample."""
@@ -141,7 +170,7 @@ def add_comment(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/samples/<sample_id>/comment/<comment_id>", methods=["POST"])
+@samples_bp.route("/sample/<sample_id>/comment/<comment_id>", methods=["POST"])
 @login_required
 def hide_comment(sample_id: str, comment_id: str) -> str:
     """Hist comment for sample."""
@@ -154,7 +183,7 @@ def hide_comment(sample_id: str, comment_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/samples/<sample_id>/qc_status", methods=["POST"])
+@samples_bp.route("/sample/<sample_id>/qc_status", methods=["POST"])
 @login_required
 def update_qc_classification(sample_id: str) -> str:
     """Update the quality control report of a sample."""
@@ -180,7 +209,7 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/samples/<sample_id>/resistance_report")
+@samples_bp.route("/sample/<sample_id>/resistance_report")
 @login_required
 def resistance_report(sample_id: str) -> str:
     """Samples view."""
@@ -189,15 +218,3 @@ def resistance_report(sample_id: str) -> str:
     return render_template(
         "resistance_report.html", title=f"{sample_id} resistance", sample=sample_info
     )
-
-
-@samples_bp.route("/cluster/", methods=["GET", "POST"])
-@login_required
-def cluster(sample_id: str) -> str:
-    """Samples view."""
-    token = TokenObject(**current_user.get_id())
-
-    if request.method == "POST":
-        samples_info = request.body["samples"]
-        cgmlst_cluster_samples(token, samples=samples_info)
-    return render_template("sample.html", sample_id=sample_id)
