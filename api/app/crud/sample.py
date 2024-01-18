@@ -21,6 +21,7 @@ from ..models.sample import (
     SampleInDatabase,
     SampleSummary,
 )
+from ..redis.minhash import schedule_remove_genome_signature
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -186,6 +187,50 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     # verify that only one sample found and one document was modified
     is_updated = doc.matched_count == 1 and doc.modified_count == 1
     return is_updated
+
+
+async def delete_sample(db: Database, sample_id: str) -> bool:
+    """Delete a sample from the database, remove it from groups, and remove its signature."""
+
+    async with db.client.start_session() as session:
+        async with session.start_transaction():
+            # remove sample from database
+            resp_rm_sample = await db.sample_collection.delete_one(
+                {"sample_id": sample_id}, session=session
+            )
+            # verify that only one sample found and one document was modified
+            sample_is_deleted = (
+                resp_rm_sample.matched_count == 1 and resp_rm_sample.deleted_count == 1
+            )
+            LOG.info("Removing sample: %s; status: %s", sample_id, sample_is_deleted)
+
+            # remove sample from group
+            resp_rm_group = await db.sample_group_collection.updateMany(
+                {"included_samples": {"$in": [sample_id]}},  # filter
+                {
+                    "$pull": {
+                        "included_samples": {"$in": [sample_id]}
+                    },  # remove samples from group
+                    "$set": {"modified_at": datetime.now()},  # update modified at
+                },
+                session=session,
+            )
+            # verify that number of modified groups and samples match
+            sample_is_removed_from_group = (
+                resp_rm_group.matched_count == resp_rm_group.modified_count
+            )
+            LOG.info(
+                "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
+                sample_id,
+                resp_rm_group.matched_count,
+                resp_rm_group.modified_count,
+            )
+
+    # remove signature from database
+    if sample_is_deleted and sample_is_removed_from_group:
+        submitted_job = schedule_remove_genome_signature(sample_id)
+
+    return sample_is_deleted and sample_is_removed_from_group, submitted_job
 
 
 async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:

@@ -194,6 +194,16 @@ def get_samples(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
+def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
+    """Remove samples from database."""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/'
+    resp = requests.delete(url, headers=headers, json=sample_ids, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+@api_authentication
 def get_samples_by_id(headers: CaseInsensitiveDict, **kwargs):
     """Search the database for multiple samples"""
     # conduct query

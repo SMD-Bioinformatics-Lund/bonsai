@@ -21,6 +21,14 @@ def schedule_add_genome_signature(sample_id: str, signature) -> SubmittedJob | s
     return SubmittedJob(id=job.id, task=task)
 
 
+def schedule_remove_genome_signature(sample_id: str) -> SubmittedJob | str:
+    """Schedule adding signature to index."""
+    task = "minhash_service.tasks.remove_signature"
+    job = redis.minhash.enqueue(task, sample_id=sample_id, job_timeout="30m")
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
+
+
 def schedule_add_genome_signature_to_index(
     sample_ids: List[str], depends_on: List[str] = None, **enqueue_kwargs
 ) -> SubmittedJob:
