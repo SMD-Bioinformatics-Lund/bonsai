@@ -239,13 +239,13 @@ async def delete_sample(
     ),
 ):
     try:
-        await delete_sample_from_db(db, sample_id)
+        result = await delete_sample_from_db(db, sample_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
-    return {"sample_id": sample_id}
+    return result
 
 
 @router.post("/samples/{sample_id}/signature", tags=DEFAULT_TAGS)

@@ -192,37 +192,46 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
 async def delete_sample(db: Database, sample_id: str) -> bool:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
 
+    result = {
+        "sample_id": sample_id,
+        "sample_deleted": False,
+        "removed_from_groups": False,
+        "remove_signature_job": None,
+    }
     # remove sample from database
     resp = await db.sample_collection.delete_one({"sample_id": sample_id})
     # verify that only one sample found and one document was modified
-    sample_is_deleted = resp.matched_count == 1 and resp.deleted_count == 1
-    LOG.info("Removing sample: %s; status: %s", sample_id, sample_is_deleted)
+    sample_was_deleted = resp.deleted_count == 1
+    result["sample_deleted"] = sample_was_deleted
+    if not sample_was_deleted:
+        raise EntryNotFound(f"Sample {sample_id} was not in database")
+    LOG.info("Removing sample: %s; status: %s", sample_id, sample_was_deleted)
 
     # remove sample from group if sample was deleted
-    if sample_is_deleted:
-        resp = await db.sample_group_collection.updateMany(
-            {"included_samples": {"$in": [sample_id]}},  # filter
-            {
-                "$pull": {
-                    "included_samples": {"$in": [sample_id]}
-                },  # remove samples from group
-                "$set": {"modified_at": datetime.now()},  # update modified at
-            },
-        )
-        # verify that number of modified groups and samples match
-        sample_is_removed_from_group = resp.matched_count == resp.modified_count
-        LOG.info(
-            "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
-            sample_id,
-            resp.matched_count,
-            resp.modified_count,
-        )
+    resp = await db.sample_group_collection.update_many(
+        {"included_samples": {"$in": [sample_id]}},  # filter
+        {
+            "$pull": {
+                "included_samples": {"$in": [sample_id]}
+            },  # remove samples from group
+            "$set": {"modified_at": datetime.now()},  # update modified at
+        },
+    )
+    # verify that number of modified groups and samples match
+    sample_is_removed_from_group = resp.matched_count == resp.modified_count
+    result["removed_from_groups"] = sample_is_removed_from_group
+    LOG.info(
+        "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
+        sample_id,
+        resp.matched_count,
+        resp.modified_count,
+    )
 
     # remove signature from database
-    if sample_is_deleted and sample_is_removed_from_group:
+    if sample_was_deleted and sample_is_removed_from_group:
         submitted_job = schedule_remove_genome_signature(sample_id)
-
-    return sample_is_deleted and sample_is_removed_from_group, submitted_job
+        result["remove_signature_job"] = submitted_job.id
+    return result
 
 
 async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
