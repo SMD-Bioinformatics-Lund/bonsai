@@ -181,3 +181,38 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
             raise err
 
     return True
+
+
+def remove_signatures_from_index(sample_ids: List[str]) -> bool:
+    """Add genome signature file to sourmash index"""
+
+    genome_index = get_sbt_index(check=False)
+    sbt_lock_path = f"{genome_index}.lock"
+    lock = fasteners.InterProcessLock(sbt_lock_path)
+    LOG.debug("Using lock: %s", sbt_lock_path)
+
+    # remove signature from existing index
+    # acquire lock to remove signatures from database
+    LOG.debug("Attempt to acquire lock to append %s to index...", sample_ids)
+    with lock:
+        # check if index already exist
+        index_path = get_sbt_index()
+        old_index = sourmash.load_file_as_index(index_path)
+
+        # add signatures not among the sample ids a new index
+        LOG.info("Removing %d genome signatures to index", len(sample_ids))
+        new_index = sourmash.sbtmh.create_sbt_index()
+        for sig in old_index.signatures():
+            sample_id = sig.filename.split(".")[0]
+            if sample_id not in sample_ids:
+                new_index.add(sig)
+
+        # save new bloom tree
+        try:
+            index_path = get_sbt_index(check=False)
+            new_index.save(index_path)
+        except PermissionError as err:
+            LOG.error("Dont have permission to write file to disk")
+            raise err
+
+    return True
