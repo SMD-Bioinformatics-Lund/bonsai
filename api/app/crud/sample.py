@@ -21,7 +21,10 @@ from ..models.sample import (
     SampleInDatabase,
     SampleSummary,
 )
-from ..redis.minhash import schedule_remove_genome_signature
+from ..redis.minhash import (
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
+)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -189,48 +192,55 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_sample(db: Database, sample_id: str) -> bool:
+async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
 
     result = {
-        "sample_id": sample_id,
-        "sample_deleted": False,
-        "removed_from_groups": False,
-        "remove_signature_job": None,
+        "sample_ids": sample_ids,
+        "n_deleted": 0,
+        "removed_from_n_groups": 0,
+        "remove_signature_jobs": None,
+        "update_index_job": None,
     }
     # remove sample from database
-    resp = await db.sample_collection.delete_one({"sample_id": sample_id})
+    resp = await db.sample_collection.delete_many({"sample_id": {"$in": sample_ids}})
     # verify that only one sample found and one document was modified
-    sample_was_deleted = resp.deleted_count == 1
-    result["sample_deleted"] = sample_was_deleted
-    if not sample_was_deleted:
-        raise EntryNotFound(f"Sample {sample_id} was not in database")
-    LOG.info("Removing sample: %s; status: %s", sample_id, sample_was_deleted)
+    result["n_deleted"] = resp.deleted_count
+    all_deleted = resp.deleted_count == len(sample_ids)
+    LOG.info("Removing samples: %s; status: %s", ", ".join(sample_ids), all_deleted)
 
     # remove sample from group if sample was deleted
     resp = await db.sample_group_collection.update_many(
-        {"included_samples": {"$in": [sample_id]}},  # filter
+        {"included_samples": {"$in": sample_ids}},  # filter
         {
             "$pull": {
-                "included_samples": {"$in": [sample_id]}
+                "included_samples": {"$in": sample_ids}
             },  # remove samples from group
             "$set": {"modified_at": datetime.now()},  # update modified at
         },
     )
     # verify that number of modified groups and samples match
-    sample_is_removed_from_group = resp.matched_count == resp.modified_count
-    result["removed_from_groups"] = sample_is_removed_from_group
+    result["removed_from_n_groups"] = resp.modified_count
     LOG.info(
         "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
-        sample_id,
+        ", ".join(sample_ids),
         resp.matched_count,
         resp.modified_count,
     )
 
-    # remove signature from database
-    if sample_was_deleted and sample_is_removed_from_group:
-        submitted_job = schedule_remove_genome_signature(sample_id)
-        result["remove_signature_job"] = submitted_job.id
+    # remove signature from database and reindex database
+    if result["n_deleted"] > 0:
+        # remove signatures
+        job_ids = []
+        for sample_id in sample_ids:
+            submitted_job = schedule_remove_genome_signature(sample_id)
+            job_ids.append(submitted_job.job_id)
+        result["remove_signature_jobs"] = job_ids
+        # remove reindex
+        index_job = schedule_remove_genome_signature_from_index(
+            sample_ids, depends_on=job_ids
+        )
+        result["update_index_job"] = index_job.job_id
     return result
 
 
