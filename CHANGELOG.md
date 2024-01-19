@@ -2,7 +2,12 @@
 
 ### Added
 
+ - Add button to remove samples from the group- and groups view.
+
 ### Fixed
+
+ - 500 error when trying to get a sample removed from the database
+ - Frontend properly handles non-existing samples and group
 
 ### Changed
 
@@ -11,15 +16,12 @@
 ### Added
 
  - Bulk QC status dropdown in group view
- - Add button to remove samples from the group- and groups view.
 
 ### Fixed
 
  - Fixed crash when clustering on samples without a MLST profile
  - Fixed bug that prevented adding samples to the basket in groups without "analysis profile" column
  - Fixed issue that prevented finding similar samples in group view
- - 500 error when trying to get a sample removed from the database
- - Frontend properly handles non-existing samples and group
 
 ### Changed
 
