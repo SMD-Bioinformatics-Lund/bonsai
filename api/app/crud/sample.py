@@ -234,13 +234,13 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
         job_ids = []
         for sample_id in sample_ids:
             submitted_job = schedule_remove_genome_signature(sample_id)
-            job_ids.append(submitted_job.job_id)
+            job_ids.append(submitted_job.id)
         result["remove_signature_jobs"] = job_ids
         # remove reindex
         index_job = schedule_remove_genome_signature_from_index(
             sample_ids, depends_on=job_ids
         )
-        result["update_index_job"] = index_job.job_id
+        result["update_index_job"] = index_job.id
     return result
 
 

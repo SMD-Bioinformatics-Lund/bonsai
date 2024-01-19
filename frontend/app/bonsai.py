@@ -203,6 +203,7 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
     resp.raise_for_status()
     return resp.json()
 
+
 @api_authentication
 def get_samples_by_id(headers: CaseInsensitiveDict, **kwargs):
     """Search the database for multiple samples"""
