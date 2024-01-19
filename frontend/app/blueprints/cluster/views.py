@@ -4,12 +4,11 @@ import logging
 from enum import Enum
 from typing import Any, Dict
 
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
-
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
 
 LOG = logging.getLogger(__name__)
 
@@ -91,7 +90,7 @@ def gather_metadata(samples) -> MetaData:
         sample_id = sample["sample_id"]
         metadata[sample_id] = {"time": sample["created_at"]}
         if "mlst" in sample:
-            metadata[sample_id]['MLST ST'] = get_value(sample['mlst'], 'sequence_type')
+            metadata[sample_id]["MLST ST"] = get_value(sample["mlst"], "sequence_type")
     # build metadata list
     metadata_list = set()
     for meta in metadata.values():

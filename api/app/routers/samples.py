@@ -205,7 +205,7 @@ async def read_sample(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return sample_obj
 
@@ -355,7 +355,7 @@ async def update_qc_status(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return status_obj
 

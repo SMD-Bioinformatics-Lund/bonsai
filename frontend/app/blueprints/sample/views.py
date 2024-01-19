@@ -1,9 +1,23 @@
 """Declaration of views for samples"""
-from typing import Any, Dict, Tuple
 import json
+from typing import Any, Dict, Tuple
 
+from app.bonsai import (
+    TokenObject,
+    cgmlst_cluster_samples,
+    delete_samples,
+    find_and_cluster_similar_samples,
+    find_samples_similar_to_reference,
+    get_group_by_id,
+    get_sample_by_id,
+    post_comment_to_sample,
+    remove_comment_from_sample,
+    update_sample_qc_classification,
+)
+from app.models import BadSampleQualityAction, QualityControlResult
 from flask import (
     Blueprint,
+    abort,
     current_app,
     flash,
     redirect,
@@ -13,20 +27,6 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
-
-from app.bonsai import (
-    TokenObject,
-    cgmlst_cluster_samples,
-    find_and_cluster_similar_samples,
-    find_samples_similar_to_reference,
-    get_group_by_id,
-    get_sample_by_id,
-    post_comment_to_sample,
-    remove_comment_from_sample,
-    update_sample_qc_classification,
-)
-from app.bonsai import delete_samples
-from app.models import BadSampleQualityAction, QualityControlResult
 
 from .controllers import create_amr_summary
 
@@ -89,7 +89,11 @@ def sample(sample_id: str) -> str:
     current_app.logger.debug("Removing non-validated genes from input")
     token = TokenObject(**current_user.get_id())
     # get sample
-    sample_info = get_sample_by_id(token, sample_id=sample_id)
+    try:
+        sample_info = get_sample_by_id(token, sample_id=sample_id)
+    except HTTPError as error:
+        # throw proper error page
+        abort(error.response.status_code)
 
     # if verbose output should be rendered
     extended = bool(request.args.get("extended", False))
