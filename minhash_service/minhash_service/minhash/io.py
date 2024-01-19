@@ -121,24 +121,6 @@ def remove_signature(sample_id: str) -> bool:
 
     # remove file
     pathlib.Path(signature_file).unlink()
-
-    # remove signature to existing index
-    sbt_filename = signature_db.joinpath("genomes.sbt.zip")
-    if sbt_filename.is_file():
-        LOG.debug("Append to existing file")
-        tree = sourmash.load_file_as_index(str(sbt_filename))
-
-        # add generated signature to bloom tree
-        LOG.info("Adding genome signatures to index")
-        leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-        tree.remove_many(leaf)
-
-        try:
-            tree.save(str(sbt_filename.resolve()))
-        except PermissionError as err:
-            LOG.error("Dont have permission to write file to disk")
-            raise err
-        return True
     LOG.info("Signature file: %s was removed", signature_file)
     return False
 
@@ -202,10 +184,11 @@ def remove_signatures_from_index(sample_ids: List[str]) -> bool:
         # add signatures not among the sample ids a new index
         LOG.info("Removing %d genome signatures to index", len(sample_ids))
         new_index = sourmash.sbtmh.create_sbt_index()
-        for sig in old_index.signatures():
-            sample_id = sig.filename.split(".")[0]
+        for signature in old_index.signatures():
+            sample_id = signature.filename.split(".")[0]
             if sample_id not in sample_ids:
-                new_index.add(sig)
+                leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
+                new_index.add_node(leaf)
 
         # save new bloom tree
         try:

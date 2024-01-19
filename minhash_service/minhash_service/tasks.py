@@ -3,9 +3,9 @@ import logging
 from typing import Dict, List
 
 from .minhash.cluster import ClusterMethod, cluster_signatures
-from .minhash.io import add_signatures_to_index, remove_signatures_from_index
+from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
-from .minhash.io import write_signature
+from .minhash.io import remove_signatures_from_index, write_signature
 from .minhash.similarity import SimilarSignatures, get_similar_signatures
 
 LOG = logging.getLogger(__name__)
