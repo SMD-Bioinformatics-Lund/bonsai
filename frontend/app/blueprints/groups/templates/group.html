@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% import "cell_fmt.html" as cell_format %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn %}
 
 {% block css %}
     {{ super() }}
@@ -27,6 +27,9 @@
                     <span id="n-selected-samples-counter">0</span>
                 </span>
                 {{ add_to_basket_btn() }}
+                {% if current_user.is_admin %}
+                    {{ delete_samples_btn() }}
+                {% endif %}
                 {{ search_similar_btn() }}
                 {{ qc_bulk_toggle(bad_qc_actions)}}
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
@@ -101,6 +104,10 @@
                 document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
                 document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
+                // enable remove samples btn
+                if (document.getElementById("remove-samples-btn") !== null) {
+                  document.getElementById("remove-samples-btn").disabled = 0 > this.getSelection().length
+                }
                 // update selected samples counter
                 sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
                 // enable find simiar samples button when ONE row is selected

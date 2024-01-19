@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn %}
 
 {% block css %}
 {{ super() }}
@@ -33,23 +33,7 @@
                 </span>
                 {{ add_to_basket_btn() }}
                 {% if current_user.is_admin %}
-                    <form id="remove-samples-form" method=POST action={{ url_for("samples.remove_samples") }}>
-                        <input type="text" name="sample-ids" hidden>
-                        <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" 
-                                type="submit" disabled>
-                            <i class="bi bi-trash"></i>
-                            <span>Remove samples</span>
-                        </button>
-                    </form>
-                    <script>
-                      const removeSamplesForm = document.getElementById("remove-samples-form")
-                      removeSamplesForm.addEventListener("submit", event => {
-                        event.preventDefault()
-                        // add selected samples to form
-                        event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows())
-                        removeSamplesForm.submit()
-                      })
-                    </script>
+                    {{ delete_samples_btn() }}
                 {% endif %}
                 {{ search_similar_btn() }}
                 {% if current_user.is_admin %}
