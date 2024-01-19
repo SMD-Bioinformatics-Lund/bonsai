@@ -2,6 +2,14 @@
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [v0.2.1]
+
+### Added
+
  - Bulk QC status dropdown in group view
 
 ### Fixed
