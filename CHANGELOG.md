@@ -11,6 +11,7 @@
 ### Added
 
  - Bulk QC status dropdown in group view
+ - Add button to remove samples from the group- and groups view.
 
 ### Fixed
 
