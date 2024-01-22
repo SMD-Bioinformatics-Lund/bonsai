@@ -65,7 +65,7 @@ def create_user():
     if request.method == "POST" and form.validate():
         flash("Created new user", "success")
     # get all users
-    return render_template("create_user.html", form=form)
+    return render_template("create_user.html", method='create', form=form)
 
 
 @admin_bp.route("/admin/users/<username>", methods=["GET", "POST"])
@@ -91,4 +91,4 @@ def edit_user(username):
     if request.method == "POST" and form.validate():
         flash("Updated existing user", "success")
     # get all users
-    return render_template("create_user.html", form=form)
+    return render_template("create_user.html", method='edit', form=form)

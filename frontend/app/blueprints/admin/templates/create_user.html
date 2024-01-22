@@ -9,9 +9,15 @@
 
 {% block admin_panel_content %}
 <div class="container-fluid">
-    <h2 class="pt-2">Create user</h2>
-    <hr class="mt-2 mb-0 col-md-3 border border-success border-2">
-    <p>Create a new user with the selected user roles.</p>
+    {% if method == "create" %}
+        <h2 class="pt-2">Create user</h2>
+        <hr class="mt-2 mb-0 col-md-3 border border-success border-2">
+        <p>Create a new user with the selected user roles.</p>
+    {% else %}
+        <h2 class="pt-2">Update: {{ form.username.data }}</h2>
+        <hr class="mt-2 mb-0 col-md-3 border border-success border-2">
+        <p>Edit the user credentials or roles.</p>
+    {% endif %}
     <div class="card col-md-10">
         <div class="card-body">
             <form class="form" action={{ url_for("admin.create_user") }} method="post">
@@ -46,10 +52,17 @@
                 <h5 class="card-title pt-2">Roles</h5>
                 {{ form.roles }}
                 <div>
+                {% if method == "create" %}
                     <button  class="btn mt-2 btn-success">
                         <i class="bi bi-person-fill-add"></i>
-                        Create user
+                        Create
                     </button>
+                {% else %}
+                    <button  class="btn mt-2 btn-warning">
+                        <i class="bi bi-person-fill-up"></i>
+                        Update
+                    </button>
+                {% endif %}
                 </div>
             </form>
         </div>
