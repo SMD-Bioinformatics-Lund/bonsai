@@ -72,6 +72,18 @@ def get_users(headers: CaseInsensitiveDict):
     return resp.json()
 
 
+@api_authentication
+def get_user(headers: CaseInsensitiveDict, username: str):
+    """Get current user from token"""
+    #username = kwargs.get("username")
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
+    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
 def get_auth_token(username: str, password: str) -> TokenObject:
     """Get authentication token from api"""
     # configure header
