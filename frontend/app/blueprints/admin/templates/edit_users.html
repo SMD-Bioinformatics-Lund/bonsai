@@ -1,0 +1,50 @@
+{% extends "admin_panel_base.html" %}
+
+{% block css %}
+{{ super() }}
+{% endblock css %}
+
+{% block admin_panel_content %}
+<div class="container-fluid">
+    <div class="pt-2">
+        <button class="btn btn-outline-success">
+            <i class="bi bi-person-fill-add"></i>
+            Create user
+        </button>
+        <button class="btn btn-outline-danger">
+            <i class="bi bi-pencil-square"></i>
+            Delete users
+        </button>
+    </div>
+    <table class="table table-hover">
+        <thead>
+            <th colspan="2">Username</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th colspan="2">Roles</th>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td><input type="checkbox" name="select-user" data-sample-id="{{ user.username }}"></td>
+                <td>{{ user.username }}</td>
+                <td>{{user.first_name}} {{user.last_name}}</td>
+                <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                <td>
+                    {% for role in user.roles %}
+                        {{ role }}
+                        <br>
+                    {% endfor %}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-warning">
+                        Edit
+                        <i class="bi bi-pencil-square"></i>
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock admin_panel_content %}

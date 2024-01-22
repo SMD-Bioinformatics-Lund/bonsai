@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block css %}
+{{ super() }}
+{% endblock css %}
+
+{% block content %}
+<div class="container-fluid br-layout">
+    <aside class="br-sidebar border-end pe-2">
+        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Edit</h6>
+        <ul class="nav flex-column">
+            <li class="nav-item mb-2" disabled>
+                <a class="link-secondary"
+                    href={{ url_for('groups.edit_groups') }}>
+                    <i class="bi bi-collection"></i>
+                    Groups
+                </a>
+            </li>
+            <li class="nav-item mb-2">
+                <a class="link-secondary" href={{ url_for('admin.edit_users') }}>
+                    <i class="bi bi-people"></i>
+                    Users
+                </a>
+            </li>
+        </ul>
+    </aside>
+    <main class="br-main order-1">
+        {% block admin_panel_content %}
+        {% endblock admin_panel_content %}
+    </main>
+</div>
+{% endblock content %}
