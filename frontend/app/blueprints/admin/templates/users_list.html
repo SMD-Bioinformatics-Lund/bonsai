@@ -7,18 +7,19 @@
 {% block admin_panel_content %}
 <div class="container-fluid">
     <div class="pt-2">
-        <button class="btn btn-outline-success">
+        <a  class="btn btn-outline-success" href={{ url_for("admin.create_user") }}>
             <i class="bi bi-person-fill-add"></i>
             Create user
-        </button>
+        </a>
         <button class="btn btn-outline-danger">
-            <i class="bi bi-pencil-square"></i>
+            <i class="bi bi-person-fill-x"></i>
             Delete users
         </button>
     </div>
     <table class="table table-hover">
         <thead>
-            <th colspan="2">Username</th>
+            <th></th>
+            <th>Username</th>
             <th>Name</th>
             <th>Email</th>
             <th colspan="2">Roles</th>
@@ -28,7 +29,13 @@
             <tr>
                 <td><input type="checkbox" name="select-user" data-sample-id="{{ user.username }}"></td>
                 <td>{{ user.username }}</td>
-                <td>{{user.first_name}} {{user.last_name}}</td>
+                <td>
+                    {% if user.first_name == "" or user.first_name == None %}
+                     -
+                    {% else %}
+                    {{ user.first_name }} {{ user.last_name }}
+                    {% endif %}
+                </td>
                 <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
                 <td>
                     {% for role in user.roles %}
@@ -37,9 +44,11 @@
                     {% endfor %}
                 </td>
                 <td>
-                    <button class="btn btn-sm btn-warning">
-                        Edit
+                    <a class="btn btn-sm btn-warning" href={{ url_for("admin.edit_user", username=user.username) }}>
                         <i class="bi bi-pencil-square"></i>
+                    </a>
+                    <button class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash3"></i>
                     </button>
                 </td>
             </tr>
