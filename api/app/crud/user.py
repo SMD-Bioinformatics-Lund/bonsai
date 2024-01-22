@@ -23,14 +23,25 @@ LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
 
 
-async def get_user(db_obj: Database, username: str) -> UserOutputDatabase:
-    """Get user by username from database."""
-    user_obj = await db_obj.user_collection.find_one({"username": username})
-    if user_obj is None:
-        raise EntryNotFound(f"User {username} not in database")
+async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
+    """Get user from database"""
 
-    inserted_id = user_obj["_id"]
-    upd_user_obj = UserInputDatabase(id=str(inserted_id), **user_obj)
+    users = await get_users(db_obj, usernames=[username])
+    if len(users) == 0:
+        raise EntryNotFound(username)
+    return users[0]
+
+
+async def get_users(db_obj: Database, usernames: List[str] | None = None) -> List[UserInputDatabase]:
+    """Get multiple users by username from database."""
+    query = {}
+    if usernames is not None:
+        query["username"] = {"$in": usernames}
+
+    upd_user_obj = [] 
+    async for user in db_obj.user_collection.find(query):
+        inserted_id = user["_id"]
+        upd_user_obj.append(UserInputDatabase(id=str(inserted_id), **user))
     return upd_user_obj
 
 
@@ -58,9 +69,7 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
     except EntryNotFound:
         return False
 
-    if not verify_password(password, user.hashed_password):
-        return False
-    return True
+    return verify_password(password, user.hashed_password)
 
 
 async def get_current_user(

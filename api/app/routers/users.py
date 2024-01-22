@@ -12,6 +12,7 @@ from ..crud.user import (
     get_current_active_user,
     get_samples_in_user_basket,
     get_user,
+    get_users,
     remove_samples_from_user_basket,
 )
 from ..db import db
@@ -113,9 +114,20 @@ async def get_user_in_db(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return user
+
+
+@router.get("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+async def get_users_in_db(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+) -> List[UserOutputDatabase]:
+    """Create a new user."""
+    users = await get_users(db)
+    return users
 
 
 @router.post("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
