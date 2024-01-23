@@ -20,7 +20,7 @@ def admin_panel():
         flash("You dont have permission to view this page", "warning")
         return redirect(url_for('public.home'))
 
-    return render_template("admin_panel.html")
+    return redirect(url_for('admin.view_users'))
 
 
 @admin_bp.route("/admin/users")
