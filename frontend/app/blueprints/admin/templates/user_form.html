@@ -20,8 +20,13 @@
     {% endif %}
     <div class="card col-md-10">
         <div class="card-body">
-            <form class="form" action={{ url_for("admin.create_user") }} method="post">
-                <div class="row g-3">
+            {% if method == "create" %}
+                {% set action_url=url_for("admin.create_user") %}
+            {% else %}
+                {% set action_url=url_for("admin.update_user", username=form.username.data) %}
+            {% endif %}
+            <form class="form" action={{ action_url }} method="post">
+                <div class="row g-1">
                     <div class="col-md">
                         {{ bootstrap_field(form.first_name) }}
                     </div>
@@ -51,17 +56,25 @@
                 </div>
                 <h5 class="card-title pt-2">Roles</h5>
                 {{ form.roles }}
-                <div>
+                <div class="row g-2 mt-2">
                 {% if method == "create" %}
                     <button  class="btn mt-2 btn-success">
-                        <i class="bi bi-person-fill-add"></i>
-                        Create
+                            <i class="bi bi-person-fill-add"></i>
+                            Create
                     </button>
-                {% else %}
-                    <button  class="btn mt-2 btn-warning">
-                        <i class="bi bi-person-fill-up"></i>
-                        Update
-                    </button>
+               {% else %}
+                    <div class="col-auto">
+                        <button class="btn btn-warning" type="submit" name="update">
+                            <i class="bi bi-person-fill-up"></i>
+                            Update
+                        </button>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-danger" type="submit" name="delete">
+                            <i class="bi bi-person-fill-x"></i>
+                            Delete
+                        </button>
+                    </div>
                 {% endif %}
                 </div>
             </form>

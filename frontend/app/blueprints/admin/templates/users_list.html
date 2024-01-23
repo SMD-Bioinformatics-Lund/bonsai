@@ -6,54 +6,52 @@
 
 {% block admin_panel_content %}
 <div class="container-fluid">
-    <div class="pt-2">
-        <a  class="btn btn-outline-success" href={{ url_for("admin.create_user") }}>
-            <i class="bi bi-person-fill-add"></i>
-            Create user
-        </a>
-        <button class="btn btn-outline-danger">
-            <i class="bi bi-person-fill-x"></i>
-            Delete users
-        </button>
-    </div>
-    <table class="table table-hover">
-        <thead>
-            <th></th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th colspan="2">Roles</th>
-        </thead>
-        <tbody>
-        {% for user in users %}
-            <tr>
-                <td><input type="checkbox" name="select-user" data-sample-id="{{ user.username }}"></td>
-                <td>{{ user.username }}</td>
-                <td>
-                    {% if user.first_name == "" or user.first_name == None %}
-                     -
-                    {% else %}
-                    {{ user.first_name }} {{ user.last_name }}
-                    {% endif %}
-                </td>
-                <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
-                <td>
-                    {% for role in user.roles %}
-                        {{ role }}
-                        <br>
-                    {% endfor %}
-                </td>
-                <td>
-                    <a class="btn btn-sm btn-warning" href={{ url_for("admin.edit_user", username=user.username) }}>
-                        <i class="bi bi-pencil-square"></i>
-                    </a>
-                    <button class="btn btn-sm btn-danger">
-                        <i class="bi bi-trash3"></i>
-                    </button>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <form action={{ url_for("admin.delete_users") }} method="post">
+        <div class="pt-2">
+            <a  class="btn btn-outline-success" href={{ url_for("admin.create_user") }}>
+                <i class="bi bi-person-fill-add"></i>
+                Create user
+            </a>
+            <button class="btn btn-outline-danger" type="submit">
+                <i class="bi bi-person-fill-x"></i>
+                Delete users
+            </button>
+        </div>
+        <table class="table table-hover">
+            <thead>
+                <th></th>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Roles</th>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td><input type="checkbox" name="{{ user.username }}"></td>
+                    <td>
+                        <a class="text-success" href={{ url_for("admin.update_user", username=user.username) }}>
+                            {{ user.username }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if user.first_name == "" or user.first_name == None %}
+                        -
+                        {% else %}
+                        {{ user.first_name }} {{ user.last_name }}
+                        {% endif %}
+                    </td>
+                    <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                    <td>
+                        {% for role in user.roles %}
+                            {{ role }}
+                            <br>
+                        {% endfor %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </form>
 </div>
 {% endblock admin_panel_content %}
