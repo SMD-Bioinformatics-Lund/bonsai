@@ -6,6 +6,7 @@
 
 {% block admin_panel_content %}
 <div class="container-fluid">
+    <h2 class="pt-2">Manage users</h2>
     <form action={{ url_for("admin.delete_users") }} method="post">
         <div class="pt-2">
             <a  class="btn btn-outline-success" href={{ url_for("admin.create_user") }}>
