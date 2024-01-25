@@ -2,7 +2,12 @@
 
 ### Added
 
+ - Add button to remove samples from the group- and groups view.
+
 ### Fixed
+
+ - 500 error when trying to get a sample removed from the database
+ - Frontend properly handles non-existing samples and group
 
 ### Changed
 

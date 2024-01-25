@@ -2,12 +2,15 @@
 import json
 
 import requests
+from app.bonsai import (
+    TokenObject,
+    add_samples_to_basket,
+    get_samples_by_id,
+    remove_samples_from_basket,
+)
+from app.models import SampleBasketObject
 from flask import Blueprint, flash, jsonify, request
 from flask_login import current_user, login_required
-
-from app.bonsai import TokenObject, add_samples_to_basket, remove_samples_from_basket
-from app.models import SampleBasketObject
-from app.bonsai import get_samples_by_id
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
 
@@ -38,9 +41,11 @@ def add_sample_to_basket():
     # store sample informaiton in required format
     samples_to_add = []
     for sample in response["records"]:
-        samples_to_add.append(SampleBasketObject(
-            sample_id=sample['sample_id'], analysis_profile=sample["profile"]
-        ))
+        samples_to_add.append(
+            SampleBasketObject(
+                sample_id=sample["sample_id"], analysis_profile=sample["profile"]
+            )
+        )
 
     try:
         add_samples_to_basket(token, samples=samples_to_add)

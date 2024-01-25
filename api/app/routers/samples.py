@@ -10,6 +10,7 @@ from pymongo.errors import DuplicateKeyError
 
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import create_sample as create_sample_record
+from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
@@ -128,6 +129,24 @@ async def create_sample(
     return {"type": "success", "id": db_obj.id}
 
 
+@router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
+async def delete_many_samples(
+    sample_ids: List[str] = [],
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
+    ),
+):
+    """Delete multiple samples from the database."""
+    try:
+        result = await delete_samples_from_db(db, sample_ids)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    return result
+
+
 @router.post("/samples/search", tags=DEFAULT_TAGS)
 async def search_samples(
     body: SearchBody,
@@ -186,7 +205,7 @@ async def read_sample(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return sample_obj
 
@@ -220,6 +239,33 @@ async def update_sample(
     :rtype: Dict[str, str | SampleInDatabase]
     """
     return {"sample_id": sample_id, "sample": sample, "location": location}
+
+
+@router.delete(
+    "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
+)
+async def delete_sample(
+    sample_id: str = Path(
+        ...,
+        title="ID of the sample to get",
+        min_length=3,
+        max_length=100,
+        regex=SAMPLE_ID_PATTERN,
+    ),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
+    ),
+):
+    """Delete the specific sample."""
+    return {"sample_id": sample_id}
+    try:
+        result = await delete_samples_from_db(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    return result
 
 
 @router.post("/samples/{sample_id}/signature", tags=DEFAULT_TAGS)
@@ -309,7 +355,7 @@ async def update_qc_status(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return status_obj
 

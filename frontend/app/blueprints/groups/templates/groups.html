@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn %}
 
 {% block css %}
 {{ super() }}
@@ -32,6 +32,9 @@
                     <span id="n-selected-samples-counter">0</span>
                 </span>
                 {{ add_to_basket_btn() }}
+                {% if current_user.is_admin %}
+                    {{ delete_samples_btn() }}
+                {% endif %}
                 {{ search_similar_btn() }}
                 {% if current_user.is_admin %}
                     <a href={{ url_for('groups.edit_groups') }} class="btn btn-sm btn-secondary ms-2">
@@ -55,7 +58,7 @@
     w2utils.formatters['sampleid']  = (val, data) => {
         const baseUrl = {{ request.script_root|tojson }}
         let element = document.createElement('a')
-        let path = data.groupId ? `samples/${val}?group_id=${data.groupId}` : `samples/${val}`
+        let path = data.groupId ? `sample/${val}?group_id=${data.groupId}` : `sample/${val}`
         element.setAttribute('href', `${baseUrl}/${path}`)
         element.classList.add('br-link')
         element.innerText = val
@@ -88,6 +91,10 @@
                 document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
                 // enable find simiar samples button when ONE row is selected
                 document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
+                // enable remove samples btn
+                if (document.getElementById("remove-samples-btn") !== null) {
+                  document.getElementById("remove-samples-btn").disabled = 0 > this.getSelection().length
+                }
                 // update selected samples counter
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
                 sessionStorage.setItem(
@@ -123,6 +130,24 @@
     }
     grid.render()
     refreshGrid(true)
+</script>
+<script>
+    function removeSelectedSamples(btn) {
+        // add selected samples from table to session storage
+        const body = {
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        const baseUrl = {{ request.script_root|tojson }}
+        fetch(`${baseUrl}/api/basket/add`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {location.reload()})
+    }
 </script>
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"

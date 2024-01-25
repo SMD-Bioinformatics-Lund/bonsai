@@ -21,6 +21,10 @@ from ..models.sample import (
     SampleInDatabase,
     SampleSummary,
 )
+from ..redis.minhash import (
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
+)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -186,6 +190,58 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     # verify that only one sample found and one document was modified
     is_updated = doc.matched_count == 1 and doc.modified_count == 1
     return is_updated
+
+
+async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
+    """Delete a sample from the database, remove it from groups, and remove its signature."""
+
+    result = {
+        "sample_ids": sample_ids,
+        "n_deleted": 0,
+        "removed_from_n_groups": 0,
+        "remove_signature_jobs": None,
+        "update_index_job": None,
+    }
+    # remove sample from database
+    resp = await db.sample_collection.delete_many({"sample_id": {"$in": sample_ids}})
+    # verify that only one sample found and one document was modified
+    result["n_deleted"] = resp.deleted_count
+    all_deleted = resp.deleted_count == len(sample_ids)
+    LOG.info("Removing samples: %s; status: %s", ", ".join(sample_ids), all_deleted)
+
+    # remove sample from group if sample was deleted
+    resp = await db.sample_group_collection.update_many(
+        {"included_samples": {"$in": sample_ids}},  # filter
+        {
+            "$pull": {
+                "included_samples": {"$in": sample_ids}
+            },  # remove samples from group
+            "$set": {"modified_at": datetime.now()},  # update modified at
+        },
+    )
+    # verify that number of modified groups and samples match
+    result["removed_from_n_groups"] = resp.modified_count
+    LOG.info(
+        "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
+        ", ".join(sample_ids),
+        resp.matched_count,
+        resp.modified_count,
+    )
+
+    # remove signature from database and reindex database
+    if result["n_deleted"] > 0:
+        # remove signatures
+        job_ids = []
+        for sample_id in sample_ids:
+            submitted_job = schedule_remove_genome_signature(sample_id)
+            job_ids.append(submitted_job.id)
+        result["remove_signature_jobs"] = job_ids
+        # remove reindex
+        index_job = schedule_remove_genome_signature_from_index(
+            sample_ids, depends_on=job_ids
+        )
+        result["update_index_job"] = index_job.id
+    return result
 
 
 async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:

@@ -5,7 +5,7 @@ from typing import Dict, List
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
-from .minhash.io import write_signature
+from .minhash.io import remove_signatures_from_index, write_signature
 from .minhash.similarity import SimilarSignatures, get_similar_signatures
 
 LOG = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def remove_signature(sample_id: str) -> Dict[str, str | bool]:
     return {"sample_id": sample_id, "removed": status}
 
 
-def index(sample_ids: List[str]) -> str:
+def add_to_index(sample_ids: List[str]) -> str:
     """
     Add signatures to sourmash SBT index.
 
@@ -54,6 +54,25 @@ def index(sample_ids: List[str]) -> str:
         msg = f"Appended {signatures}"
     else:
         msg = f"Failed to append signatures, {signatures}"
+    return msg
+
+
+def remove_from_index(sample_ids: List[str]) -> str:
+    """
+    Remove signatures from sourmash SBT index.
+
+    :param sample_ids List[str]: Sample ids of signatures to remove
+
+    :return: result message
+    :rtype: str
+    """
+    LOG.info("Indexing signatures...")
+    res = remove_signatures_from_index(sample_ids)
+    signatures = ", ".join(list(sample_ids))
+    if res:
+        msg = f"Removed {signatures}"
+    else:
+        msg = f"Failed to remove signatures, {signatures}"
     return msg
 
 
