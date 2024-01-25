@@ -61,6 +61,15 @@ class UserInfoForm(Form):
     
     confirm = PasswordField('Repeat Password')
     roles = MultiCheckboxField('Roles', choices=['admin', 'user', 'uploader'])
+        
+    def validate_roles(form, field):
+        """Validate that one or more roles is selected."""
+        if field.data is None or len(field.data) == 0:
+            raise ValidationError("At least one role must be selected")
+
+class UserRegistrationForm(UserInfoForm):
+
+    password = PasswordField('Password', PASSWORD_VALIDATORS)
 
     def validate_username(form, field):
         """Check if username already exists."""
@@ -76,11 +85,6 @@ class UserInfoForm(Form):
                 raise error
         if user_exists:
             raise ValidationError(f"An user with username {username} already exists")
-
-
-class UserRegistrationForm(UserInfoForm):
-
-    password = PasswordField('Password', PASSWORD_VALIDATORS)
 
 
 @admin_bp.route("/admin/users/new", methods=["GET", "POST"])
@@ -149,8 +153,10 @@ def update_user(username):
     user = get_user(token, username=username)
     form = UserInfoForm(request.form)
 
-    if request.method == "POST" and form.validate():
-        if "update" in request.form:
+    if request.method == "POST":
+        if not form.validate():
+            flash("Invalid input data", "warning")
+        elif "update" in request.form:
             try:
                 update_user_info(token, username=username, user=form.data)
             except Exception as error:
@@ -166,7 +172,7 @@ def update_user(username):
                 flash(f"An error occurred when removing {username}", "warning")
             else:
                 flash(f"Removed user {username}", "success")
-    else:
+    elif request.method == "GET":
         # populate form with deafults from the database
         form.username.data = user['username']
         form.first_name.data = user['first_name']
