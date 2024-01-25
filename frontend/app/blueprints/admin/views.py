@@ -5,7 +5,8 @@ from app.bonsai import get_user, get_users, TokenObject
 from app.bonsai import delete_user as delete_user_from_db
 from app.bonsai import update_user as update_user_info
 from app.bonsai import create_user as create_new_user
-from wtforms import Form, StringField, PasswordField, validators, widgets, SelectMultipleField
+from wtforms import Form, StringField, PasswordField, validators, widgets, SelectMultipleField, ValidationError
+from requests.exceptions import HTTPError
 
 
 admin_bp = Blueprint("admin", __name__, template_folder="templates", static_folder="static", static_url_path="/admin/static")
@@ -61,6 +62,21 @@ class UserInfoForm(Form):
     confirm = PasswordField('Repeat Password')
     roles = MultiCheckboxField('Roles', choices=['admin', 'user', 'uploader'])
 
+    def validate_username(form, field):
+        """Check if username already exists."""
+        username = field.data
+        token = TokenObject(**current_user.get_id())
+        user_exists = True
+        try:
+            get_user(token, username=username)
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                user_exists = False
+            else:
+                raise error
+        if user_exists:
+            raise ValidationError(f"An user with username {username} already exists")
+
 
 class UserRegistrationForm(UserInfoForm):
 
@@ -79,8 +95,12 @@ def create_user():
     form = UserRegistrationForm(request.form)
     if request.method == "POST" and form.validate():
         token = TokenObject(**current_user.get_id())
-        status = create_new_user(token, user_obj=form.data)
-        flash("Created new user", "success")
+        try:
+            status = create_new_user(token, user_obj=form.data)
+        except HTTPError as error:
+            flash(f"Error when creating a new user, {error.response.status_code}", "warning")
+        else:
+            flash("Created new user", "success")
         return redirect(url_for("admin.view_users"))
     # get all users
     return render_template("user_form.html", method='create', form=form)
