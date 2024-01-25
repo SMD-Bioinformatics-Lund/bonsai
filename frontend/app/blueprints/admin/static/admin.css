@@ -9,3 +9,7 @@
     display: inline;
     padding-right: 1rem;
 }
+
+.user-form input:invalid {
+    border: 2px solid #e0505e;
+}

@@ -37,6 +37,15 @@ def view_users():
     users = get_users(token)
     return render_template("users_list.html", users=users)
 
+
+PASSWORD_VALIDATORS = [
+    validators.Length(min=8, max=72),
+    validators.Regexp(
+        r"^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).+)\S$", 
+        message="The password must include upper- and lower case letters with at leats one number."),
+    validators.EqualTo('confirm', message='Passwords must match')
+]
+
 class MultiCheckboxField(SelectMultipleField):
     widget = widgets.ListWidget(prefix_label=False)
     option_widget = widgets.CheckboxInput()
@@ -44,22 +53,18 @@ class MultiCheckboxField(SelectMultipleField):
 class UserInfoForm(Form):
     """Register a new user."""
     username = StringField('Username', [validators.Length(min=4, max=25)])
-    first_name = StringField('First name', [validators.Length(min=4, max=50)])
-    last_name = StringField('Last name', [validators.Length(min=4, max=50)])
-    email = StringField('Email Address', [validators.Length(min=6, max=35)])
-    password = PasswordField('Password', [
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
+    first_name = StringField('First name', [validators.Length(min=2, max=50)])
+    last_name = StringField('Last name', [validators.Length(min=2, max=50)])
+    email = StringField('Email Address', [validators.Email()])
+    password = PasswordField('Password', [validators.Optional(), *PASSWORD_VALIDATORS])
+    
     confirm = PasswordField('Repeat Password')
     roles = MultiCheckboxField('Roles', choices=['admin', 'user', 'uploader'])
 
 
 class UserRegistrationForm(UserInfoForm):
 
-    password = PasswordField('Password', [
-        validators.DataRequired(),
-        validators.EqualTo('confirm', message='Passwords must match')
-    ])
+    password = PasswordField('Password', PASSWORD_VALIDATORS)
 
 
 @admin_bp.route("/admin/users/new", methods=["GET", "POST"])
