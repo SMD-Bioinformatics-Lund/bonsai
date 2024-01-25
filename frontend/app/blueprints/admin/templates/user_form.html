@@ -19,7 +19,7 @@
         <p>Edit the user credentials or roles.</p>
     {% endif %}
     <div class="card col-md-10">
-        <div class="card-body">
+        <div class="card-body user-form">
             {% if method == "create" %}
                 {% set action_url=url_for("admin.create_user") %}
             {% else %}
@@ -109,7 +109,7 @@
 
     {%- if horizontal %}
         {%- if field.errors -%}
-             {% set field_output = field_output + '<span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span><span class="sr-only">(error)</span>' %}
+             {% set field_output = field_output + '<span class="bi bi-remove form-control-feedback" aria-hidden="true"></span><span class="sr-only">(error)</span>' %}
         {%- endif %}
 
         {%- if field.type not in ['SubmitField', 'BooleanField'] -%}
@@ -131,10 +131,7 @@
 
     {% set form_group_classes = 'form-group' %}
     {%- if field.errors -%}
-        {% set form_group_classes = form_group_classes + ' has-error has-feedback' %}
-        {%- if form_group and not horizontal -%}
-            {% set field_output = field_output + '<span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span><span class="sr-only">(error)</span>' %}
-        {%- endif -%}
+        {% set form_group_classes = form_group_classes + ' is-invalid' %}
     {%- endif -%}
 
     {%- if field.flags.required -%}
@@ -165,11 +162,11 @@
                 <div class="col-sm-10 col-sm-offset-2">
             {% endif %}
             {%- if field.errors|count == 1 -%}
-                <p class="text-danger">{{ field.errors[0] }}</p>
+                <div class="invalid-feedback">{{ field.errors[0] }}</div>
             {%- else -%}
                 <ul>
                 {%- for error in field.errors -%}
-                    <li class="text-danger">{{ error }}</li>
+                    <li class="invalid-feedback">{{ error }}</li>
                 {%- endfor -%}
                 </ul>
             {%- endif %}
