@@ -23,16 +23,40 @@ LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
 
 
-async def get_user(db_obj: Database, username: str) -> UserOutputDatabase:
-    """Get user by username from database."""
-    user_obj = await db_obj.user_collection.find_one({"username": username})
-    if user_obj is None:
-        raise EntryNotFound(f"User {username} not in database")
+async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
+    """Get user from database"""
 
-    inserted_id = user_obj["_id"]
-    upd_user_obj = UserInputDatabase(id=str(inserted_id), **user_obj)
-    return upd_user_obj
+    users = await get_users(db_obj, usernames=[username])
+    if len(users) == 0:
+        raise EntryNotFound(username)
+    return users[0]
 
+
+async def delete_user(db_obj: Database, username: str):
+    """Delete user from the database"""
+    resp = await db_obj.user_collection.delete_one({"username": username})
+    if resp.deleted_count == 0:
+        raise EntryNotFound(username)
+    return username
+
+
+async def update_user(db_obj: Database, username: str, user: UserInputCreate):
+    """Delete user from the database"""
+    # get old user object
+    new_user_info = user.model_dump()
+    if len(user.password) > 0:
+        # create hash for new password
+        LOG.info("Changed password for %s", username)
+        new_user_info["hashed_password"] = get_password_hash(user.password)
+
+    user_in_db = await get_user(db_obj, username=username)
+    # update changed fields in created user object
+    upd_user_info = user_in_db.model_copy(update=new_user_info)
+    resp = await db_obj.user_collection.replace_one({"username": username}, upd_user_info.model_dump())
+    if resp.matched_count == 0:
+        raise EntryNotFound(username)
+    elif resp.modified_count == 0:
+        raise UpdateDocumentError(username)
 
 async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputDatabase:
     """Create new user in the database."""
@@ -51,6 +75,19 @@ async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputData
     return user_obj
 
 
+async def get_users(db_obj: Database, usernames: List[str] | None = None) -> List[UserInputDatabase]:
+    """Get multiple users by username from database."""
+    query = {}
+    if usernames is not None:
+        query["username"] = {"$in": usernames}
+
+    upd_user_obj = [] 
+    async for user in db_obj.user_collection.find(query):
+        inserted_id = user["_id"]
+        upd_user_obj.append(UserInputDatabase(id=str(inserted_id), **user))
+    return upd_user_obj
+
+
 async def authenticate_user(db_obj: Database, username: str, password: str) -> bool:
     """Authenticate user login atempt."""
     try:
@@ -58,9 +95,7 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
     except EntryNotFound:
         return False
 
-    if not verify_password(password, user.hashed_password):
-        return False
-    return True
+    return verify_password(password, user.hashed_password)
 
 
 async def get_current_user(

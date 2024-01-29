@@ -1,0 +1,15 @@
+#roles {
+    display: inline;
+    list-style-type: none; /* Remove bullets */
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margins */
+}
+
+#roles li {
+    display: inline;
+    padding-right: 1rem;
+}
+
+.user-form input:invalid {
+    border: 2px solid #e0505e;
+}

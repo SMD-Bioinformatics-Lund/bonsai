@@ -10,9 +10,6 @@
     width: 25em;
 }
 
-/* CSS OVERRIDES */
-/* Prevent search ui from pushing table data off screen */
-/* when applying search filters in /groups              */
 div#grid_grid_searches.w2ui-grid-searches {
     margin-right:0!important
 }
@@ -20,4 +17,79 @@ div#grid_grid_searches.w2ui-grid-searches {
 .br-navbar {
     background-color: #c0ddd1;
     padding: 0.75rem 0;
+}
+
+@media (min-width: 992px) {
+  .br-layout {
+    display:grid;
+    grid-template-areas:"sidebar main";
+    grid-template-columns:1fr 6fr;
+    gap:0.5rem
+  }
+}
+
+@media (min-width: 992px) {
+  .br-sidebar {
+    position:-webkit-sticky;
+    position:sticky;
+    top: 6rem;
+    display:block !important;
+    height: calc(100vh - 5.5rem);
+    padding-left:.25rem;
+    margin-left:-.25rem;
+    overflow-y:auto
+  }
+}
+
+.br-sidebar {
+  grid-area: sidebar;
+}
+
+.br-main {
+  grid-area: main;
+}
+
+@media (max-width: 991.98px) {
+  .br-main {
+    max-width:760px;
+    margin-inline:auto
+  }
+}
+@media (min-width: 768px) {
+  .br-main {
+    display:grid;
+    grid-template-areas:"header" "toc" "content";
+    grid-template-rows:auto auto 1fr;
+    gap:inherit
+  }
+}
+@media (min-width: 992px) {
+  .br-main {
+    grid-template-areas:"header toc" "content toc";
+    grid-template-rows:auto 1fr;
+    grid-template-columns:5fr 1fr
+  }
+}
+
+.br-toc {
+  grid-area: toc;
+}
+
+@media (min-width: 992px) {
+  .br-toc {
+    position: sticky;
+    top: 6rem;
+    right: 0;
+    z-index: 2;
+    height: calc(100vh - 7rem);
+    overflow-y: auto;
+  }
+}
+
+.br-header {
+  grid-area: header;
+}
+
+.toc-collapse {
+  display: block !important;
 }

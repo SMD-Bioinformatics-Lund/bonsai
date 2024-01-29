@@ -1,6 +1,6 @@
 """Routes for interacting with user data."""
 
-from typing import List
+from typing import List, Dict, Any
 
 from fastapi import APIRouter, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
@@ -12,10 +12,16 @@ from ..crud.user import (
     get_current_active_user,
     get_samples_in_user_basket,
     get_user,
+    delete_user,
+    update_user,
+    get_users,
     remove_samples_from_user_basket,
 )
 from ..db import db
 from ..models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
+import logging
+
+LOG = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -113,9 +119,68 @@ async def get_user_in_db(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     return user
+
+
+@router.delete("/users/{username}", tags=DEFAULT_TAGS)
+async def delete_user_from_db(
+    username: str,
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Delete user with username from the database."""
+    try:
+        user = await delete_user(db, username=username)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        ) from error
+    return user
+
+
+@router.put("/users/{username}", tags=DEFAULT_TAGS)
+async def update_user_info(
+    username: str,
+    user: UserInputCreate,
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Delete user with username from the database."""
+    try:
+        user = await update_user(db, username=username, user=user)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    except Exception as error:
+        LOG.error(str(error))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error),
+        ) from error
+    return user
+
+
+@router.get("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+async def get_users_in_db(
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+) -> List[UserOutputDatabase]:
+    """Create a new user."""
+    users = await get_users(db)
+    return users
 
 
 @router.post("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)

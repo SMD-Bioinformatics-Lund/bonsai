@@ -61,6 +61,62 @@ def get_current_user(headers: CaseInsensitiveDict):
     return resp.json()
 
 
+@api_authentication
+def get_users(headers: CaseInsensitiveDict):
+    """Get current user from the database."""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users'
+    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def create_user(headers: CaseInsensitiveDict, user_obj: str):
+    """Create a new user."""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users'
+    resp = requests.post(url, headers=headers, json=user_obj, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def get_user(headers: CaseInsensitiveDict, username: str):
+    """Get current user from token"""
+    #username = kwargs.get("username")
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
+    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def update_user(headers: CaseInsensitiveDict, username: str, user):
+    """Delete the user from the database."""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
+    resp = requests.put(url, headers=headers, json=user, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def delete_user(headers: CaseInsensitiveDict, username: str):
+    """Delete the user from the database."""
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
+    resp = requests.delete(url, headers=headers, timeout=TIMEOUT)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
 def get_auth_token(username: str, password: str) -> TokenObject:
     """Get authentication token from api"""
     # configure header

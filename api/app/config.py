@@ -31,6 +31,7 @@ USER_ROLES = {
     "admin": [
         "users:me",
         "users:read",
+        "users:write",
         "groups:read",
         "groups:write",
         "samples:read",

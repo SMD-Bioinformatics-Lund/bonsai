@@ -22,6 +22,9 @@
             {{ navbar_link('Home', 'public.index') }}
             {{ navbar_link('Groups', 'groups.groups') }}
             {{ navbar_link('Locations', 'groups.groups', True) }}
+            {% if current_user.is_admin %}
+                {{ navbar_link('Admin', 'admin.admin_panel') }}
+            {% endif %}
         </ul>
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
