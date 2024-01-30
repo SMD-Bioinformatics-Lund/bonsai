@@ -8,6 +8,7 @@
 
  - 500 error when trying to get a sample removed from the database
  - Frontend properly handles non-existing samples and group
+ - Fixed typo in similar samples card that caused invalid URLs
 
 ### Changed
 
