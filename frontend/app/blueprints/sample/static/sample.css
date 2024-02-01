@@ -47,3 +47,14 @@
 .tbl-border-right {
   border-right: #343a40 2px solid;
 }
+
+.ext-main {
+  grid-area: main;
+}
+
+.ext-main-footer {
+  position:fixed;
+  grid-area: main;
+  width: 100%;
+  bottom: 0;
+}

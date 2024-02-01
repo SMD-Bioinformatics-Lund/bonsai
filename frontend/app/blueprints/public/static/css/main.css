@@ -24,7 +24,6 @@ div#grid_grid_searches.w2ui-grid-searches {
     display:grid;
     grid-template-areas:"sidebar main";
     grid-template-columns:1fr 6fr;
-    gap:0.5rem
   }
 }
 

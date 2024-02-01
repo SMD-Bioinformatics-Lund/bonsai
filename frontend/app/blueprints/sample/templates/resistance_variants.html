@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar, table_of_content %}
+{% from "cards.html" import sample_header, amr_prediction_card, virulence_card %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% macro sv_variants(variants) %}
+<div class="card col-md-auto">
+    <div class="card-header">Structural variants</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Subtype</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Quality</th>
+                    <th>Method</th>
+                    <th>Region</th>
+                    <th>Functions</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variant in variants %}
+                <tr>
+                    <td><input type="checkbox" name="sv-{{ loop.index }}" id=""></td>
+                    <td>{{ variant.variant_subtype }}</td>
+                    <td>{{ variant.start }}</td>
+                    <td>{{ variant.end }}</td>
+                    <td>{{ variant.confidence }}</td>
+                    <td>{{ variant.method }}</td>
+                    <td>gene a, gene b</td>
+                    <td>gene function</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" type="button">IGV</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid br-layout">
+    {{ sidebar(sample) }}
+    <main class="ext-main order-1">
+        {{ sample_header(sample, class_names="") }}
+        <button class="btn btn-warning ms-2" type="button">Export verified variants</button>
+        <div class="container-fluid pb-5">
+            <h5>Resistance prediction</h5>
+            <hr class="mt-2 col-md-3 border border-success border-2">
+            <div id="phenotype-heading" class="row justify-content-md-center">
+                {% set n_res=sample.element_type_result | count_results("AMR") %}
+                {% if is_filtered and n_res == 0 %}
+                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                {% elif n_res == 0 %}
+                    <p>No predicted resistance determinants.</p>
+                {% else %}
+                    {% for elem in sample.element_type_result %}
+                        {% if elem.type != 'VIRULENCE' and elem.software == 'tbprofiler' %}
+                            <div class="col-md-auto">
+                                {{ amr_prediction_card(elem, extended=True) }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <h5>Variant calling result</h5>
+            <hr class="mt-2 col-md-3 border border-success border-2">
+            {{ sv_variants(sample.sv_vcf) }}
+        </div>
+        <div class="ext-main-footer bg-white ps-2 py-1 border-top">
+            <div class="row align-items-center">
+                <div class="col-auto fw-bold">Verify variants</div>
+                <div class="col-auto fw-light">Selected variants: <span>0</span></div>
+                <div class="col-auto">
+                    <div class="input-group">
+                        <button class="btn btn-outline-success" type="radio">
+                            Accept
+                        </button>
+                        <button class="btn btn-outline-danger" type="radio">
+                            Dismiss
+                        </button>
+                        <select class="form-select" id="inputGroupSelect03">
+                            <option placeholder selected hidden>Choose...</option>
+                            <option value="1">Artifact</option>
+                            <option value="2">Non-pathogenic</option>
+                            <option value="3">Low coverage</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-success" type="button">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script>
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+</div>
+{% endblock content %}

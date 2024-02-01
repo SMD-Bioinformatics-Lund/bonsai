@@ -10,8 +10,8 @@
 {% endmacro %}
 
 
-{% macro sample_header(sample) %}
-<div class="br-header p-2">
+{% macro sample_header(sample, class_names="br-header") %}
+<div class="p-2 {{class_names}}">
     <div class="card">
         <div class="card-body">
             <div class="d-flex">
@@ -594,6 +594,9 @@
         <table class="table table-striped">
             <thead>
                 <tr>
+                    {% if extended %}
+                        <td scope="col"></td>
+                    {% endif %}
                     <td scope="col">Variant</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Gene</td>
@@ -601,19 +604,28 @@
                     <td scope="col">Freq</td>
                     <td scope="col">Passed QC</td>
                     <td scope="col">Antibiotics</td>
+                    {% if extended %}
+                        <td scope="col">Class</td>
+                        <td scope="col"></td>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody class="table-group-divider">
                 {% for variant in result.variants %}
                     {% if variant.phenotypes | length > 0 or extended %}
                     <tr>
+                        {% if extended %}
+                            <td>
+                                <input type="checkbox" name="tbprofiler-{{ loop.index }}" id="">
+                            </td>
+                        {% endif %}
                         <td>{{ variant.hgvs_nt_change }}</td>
                         {% if variant.hgvs_aa_change %}
                             <td>{{ variant.hgvs_aa_change }}</td>
                         {% else %}
                             <td>-</td>
                         {% endif %}
-                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        <td>{{ accession_link(variant.close_seq_name, name=variant.reference_sequence) }}</td>
                         <td>{{ variant.depth | int }}</td>
                         <td>{{ variant.frequency | round(3) }}</td>
                         {% if variant.passed_qc  %}
@@ -622,6 +634,12 @@
                             <td><i class="bi bi-x text-danger"></i></td>
                         {% endif  %}
                         <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
+                        {% if extended %}
+                            <td>{{ variant.phenotypes | get_resistance_profile(level="note")}}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" type="button">IGV</button>
+                            </td>
+                        {% endif %}
                     </tr>
                     {% endif %}
                 {% endfor %}

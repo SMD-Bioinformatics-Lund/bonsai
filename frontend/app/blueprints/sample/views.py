@@ -218,12 +218,12 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/sample/<sample_id>/resistance_report")
+@samples_bp.route("/samples/<sample_id>/resistance/variants")
 @login_required
-def resistance_report(sample_id: str) -> str:
+def resistance_variants(sample_id: str) -> str:
     """Samples view."""
     token = TokenObject(**current_user.get_id())
     sample_info = get_sample_by_id(token, sample_id=sample_id)
     return render_template(
-        "resistance_report.html", title=f"{sample_id} resistance", sample=sample_info
+        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info
     )

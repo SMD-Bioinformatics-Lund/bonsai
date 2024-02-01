@@ -318,6 +318,29 @@ async def create_genome_signatures_sample(
     }
 
 
+@router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+async def add_vcf_to_sample(
+    sample_id: str,
+    vcf: Annotated[bytes, File()],
+) -> Dict[str, str]:
+    """Entrypoint for uploading varants in vcf format to the sample."""
+    # verify that sample are in database
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # updated sample in database with signature object jobid
+    # recast the data to proper object
+    sample_obj = {**sample.model_dump(), **{"str_variants": ""}}
+    upd_sample_data = SampleInCreate(**sample_obj)
+    await crud_update_sample(db, upd_sample_data)
+
+    return {"id": sample_id, "n_variants": 0}
+
+
 @router.put(
     "/samples/{sample_id}/qc_status",
     response_model=QcClassification,

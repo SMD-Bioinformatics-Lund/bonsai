@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar, table_of_content, qc_form_controls_js %}
+{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
+{% endblock scripts %}
+
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="d-md-none d-sm-block sticky-top bg-secondary">
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-link fs-2 text-white text-decoration-none"
+                type="button" data-bs-toggle="collapse" data-bs-target="#sample-sidebar" 
+                aria-expanded="false" aria-controls="sample-sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <button class="btn btn-link fs-2 text-white"
+                type="button" data-bs-toggle="collapse" data-bs-target="#toc-contents" 
+                aria-expanded="false" aria-controls="toc-contents">
+            <i class="bi bi-three-dots"></i>
+        </button>
+    </div>
+</div>
+<div class="container-fluid br-layout">
+    {{ sidebar(sample, bad_qc_actions) }}
+    <main class="br-main order-1" 
+        data-bs-spy="scroll" data-bs-target="#toc-contents">
+        {{ sample_header(sample) }}
+        {{ table_of_content() }}
+        <div class="container-fluid">
+            {% block sample_conent %}
+            {% endblock sample_conent %}
+        </div>
+    </main>
+</div>
+{% endblock content %}
