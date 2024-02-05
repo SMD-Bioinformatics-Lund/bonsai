@@ -30,7 +30,7 @@ services:
       - minhash_service
       - allele_cluster_service
     ports: 
-      - "8011:8000"
+      - "8001:8000"
     environment:
       - ALLOWED_ORIGINS=*
     volumes:
@@ -48,7 +48,7 @@ services:
       - mongodb
       - api
     ports: 
-      - "8010:5000"
+      - "8000:5000"
     environment:
       - FLASK_APP=app.app:create_app
       - FLASK_ENV=development 
