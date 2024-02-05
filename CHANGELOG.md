@@ -9,8 +9,11 @@
  - 500 error when trying to get a sample removed from the database
  - Frontend properly handles non-existing samples and group
  - Fixed typo in similar samples card that caused invalid URLs
+ - Fixed default fontend config to work with default docker-compose file
 
 ### Changed
+
+ - Changed default app port to 8000 and api port to 8001
 
 ## [v0.2.1]
 
