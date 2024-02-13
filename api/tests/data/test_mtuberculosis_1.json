@@ -1,0 +1,2014 @@
+{
+  "sample_id": "test_mtuberculosis_1",
+  "run_metadata": {
+    "run": {
+      "pipeline": "main.nf",
+      "version": "1.0.0",
+      "commit": "null",
+      "analysis_profile": "mycobacterium_tuberculosis",
+      "configuration_files": [
+        "/fs1/pipelines/jasen/nextflow.config"
+      ],
+      "workflow_name": "shrivelled_bassi",
+      "sample_name": "test_mtuberculosis_1",
+      "sequencing_platform": "illumina",
+      "sequencing_type": "PE",
+      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev -resume",
+      "date": "2023-12-27T13:52:15.507160+01:00"
+    },
+    "databases": [
+      {
+        "name": "mykrobe-predictor",
+        "version": "v0.12.2",
+        "type": "database"
+      },
+      {
+        "name": "tbdb",
+        "version": "c2fb9a2",
+        "type": "database"
+      }
+    ]
+  },
+  "qc": [
+    {
+      "software": "quast",
+      "version": null,
+      "result": {
+        "total_length": 4279497,
+        "reference_length": 4411532,
+        "largest_contig": 121726,
+        "n_contigs": 262,
+        "n50": 34433,
+        "assembly_gc": 65.44,
+        "reference_gc": 65.61,
+        "duplication_ratio": 1.0
+      }
+    },
+    {
+      "software": "postalignqc",
+      "version": null,
+      "result": {
+        "ins_size": 264,
+        "ins_size_dev": 213,
+        "mean_cov": 199,
+        "pct_above_x": {
+          "10": 99.9898416844028,
+          "250": 12.4392427641267,
+          "1": 100.0,
+          "1000": 0.0,
+          "30": 99.8976462131901,
+          "500": 0.0275675668101908,
+          "100": 98.3363831632575
+        },
+        "mapped_reads": 6022294,
+        "tot_reads": 6136081,
+        "iqr_median": 0.292929292929293
+      }
+    }
+  ],
+  "species_prediction": [
+    {
+      "scientific_name": "Mycobacterium tuberculosis",
+      "taxonomy_id": 1773,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 308488,
+      "added_reads": 5518842,
+      "fraction_total_reads": 0.98023
+    },
+    {
+      "scientific_name": "Mycobacterium sp. 3/86Rv",
+      "taxonomy_id": 2041046,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 322,
+      "added_reads": 35106,
+      "fraction_total_reads": 0.00596
+    },
+    {
+      "scientific_name": "Mycobacterium canettii",
+      "taxonomy_id": 78331,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 28588,
+      "added_reads": 6553,
+      "fraction_total_reads": 0.00591
+    },
+    {
+      "scientific_name": "Homo sapiens",
+      "taxonomy_id": 9606,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 11046,
+      "added_reads": 22,
+      "fraction_total_reads": 0.00186
+    },
+    {
+      "scientific_name": "Rothia mucilaginosa",
+      "taxonomy_id": 43675,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 6301,
+      "added_reads": 167,
+      "fraction_total_reads": 0.00109
+    },
+    {
+      "scientific_name": "Mycobacterium kansasii",
+      "taxonomy_id": 1768,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 2832,
+      "added_reads": 10,
+      "fraction_total_reads": 0.00048
+    },
+    {
+      "scientific_name": "Mycobacterium haemophilum",
+      "taxonomy_id": 29311,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 2260,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00038
+    },
+    {
+      "scientific_name": "Mycobacterium basiliense",
+      "taxonomy_id": 2094119,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 2158,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00036
+    },
+    {
+      "scientific_name": "Mycobacterium paragordonae",
+      "taxonomy_id": 1389713,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 1758,
+      "added_reads": 3,
+      "fraction_total_reads": 0.0003
+    },
+    {
+      "scientific_name": "Mycobacterium avium",
+      "taxonomy_id": 1764,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 1090,
+      "added_reads": 448,
+      "fraction_total_reads": 0.00026
+    },
+    {
+      "scientific_name": "Mycobacterium shigaense",
+      "taxonomy_id": 722731,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 1348,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00023
+    },
+    {
+      "scientific_name": "Mycobacterium colombiense",
+      "taxonomy_id": 339268,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 1157,
+      "added_reads": 3,
+      "fraction_total_reads": 0.0002
+    },
+    {
+      "scientific_name": "Mycobacterium intracellulare",
+      "taxonomy_id": 1767,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 295,
+      "added_reads": 858,
+      "fraction_total_reads": 0.00019
+    },
+    {
+      "scientific_name": "Streptococcus sp. NPS 308",
+      "taxonomy_id": 1902136,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 877,
+      "added_reads": 153,
+      "fraction_total_reads": 0.00017
+    },
+    {
+      "scientific_name": "Streptococcus oralis",
+      "taxonomy_id": 1303,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 793,
+      "added_reads": 238,
+      "fraction_total_reads": 0.00017
+    },
+    {
+      "scientific_name": "Schaalia odontolytica",
+      "taxonomy_id": 1660,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 853,
+      "added_reads": 22,
+      "fraction_total_reads": 0.00015
+    },
+    {
+      "scientific_name": "Mycobacterium marseillense",
+      "taxonomy_id": 701042,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 801,
+      "added_reads": 19,
+      "fraction_total_reads": 0.00014
+    },
+    {
+      "scientific_name": "Mycobacterium sp. JS623",
+      "taxonomy_id": 212767,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 714,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00012
+    },
+    {
+      "scientific_name": "Mycobacterium chimaera",
+      "taxonomy_id": 222805,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 286,
+      "added_reads": 394,
+      "fraction_total_reads": 0.00011
+    },
+    {
+      "scientific_name": "Mycobacterium leprae",
+      "taxonomy_id": 1769,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 632,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00011
+    },
+    {
+      "scientific_name": "Mycobacterium marinum",
+      "taxonomy_id": 1781,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 601,
+      "added_reads": 61,
+      "fraction_total_reads": 0.00011
+    },
+    {
+      "scientific_name": "Mycobacterium sp. KMS",
+      "taxonomy_id": 189918,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 441,
+      "added_reads": 14,
+      "fraction_total_reads": 0.00008
+    },
+    {
+      "scientific_name": "Streptococcus mitis",
+      "taxonomy_id": 28037,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 371,
+      "added_reads": 68,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Streptomyces sp. ICC4",
+      "taxonomy_id": 2099584,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 353,
+      "added_reads": 85,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Mycobacterium sp. THAF192",
+      "taxonomy_id": 2587868,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 387,
+      "added_reads": 3,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Mycobacterium sp. MS1601",
+      "taxonomy_id": 1936029,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 415,
+      "added_reads": 1,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Mycobacterium dioxanotrophicus",
+      "taxonomy_id": 482462,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 431,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Mycobacterium grossiae",
+      "taxonomy_id": 1552759,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 387,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00007
+    },
+    {
+      "scientific_name": "Mycobacterium sp. EPa45",
+      "taxonomy_id": 1545728,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 341,
+      "added_reads": 8,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium sp. WY10",
+      "taxonomy_id": 1920667,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 74,
+      "added_reads": 261,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium lepraemurium",
+      "taxonomy_id": 64667,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 289,
+      "added_reads": 56,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Streptococcus pneumoniae",
+      "taxonomy_id": 1313,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 209,
+      "added_reads": 155,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium sp. DL90",
+      "taxonomy_id": 2487344,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 358,
+      "added_reads": 1,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium sp. YC-RL4",
+      "taxonomy_id": 1682113,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 362,
+      "added_reads": 4,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium sp. ELW1",
+      "taxonomy_id": 1547487,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 361,
+      "added_reads": 7,
+      "fraction_total_reads": 0.00006
+    },
+    {
+      "scientific_name": "Mycobacterium sp. PYR15",
+      "taxonomy_id": 2051552,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 72,
+      "added_reads": 254,
+      "fraction_total_reads": 0.00005
+    },
+    {
+      "scientific_name": "Mycobacterium ulcerans",
+      "taxonomy_id": 1809,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 159,
+      "added_reads": 60,
+      "fraction_total_reads": 0.00004
+    },
+    {
+      "scientific_name": "Streptomyces sp. ICC1",
+      "taxonomy_id": 2099583,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 181,
+      "added_reads": 39,
+      "fraction_total_reads": 0.00004
+    },
+    {
+      "scientific_name": "Actinomyces pacaensis",
+      "taxonomy_id": 1852377,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 172,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00003
+    },
+    {
+      "scientific_name": "Streptococcus sp. 1643",
+      "taxonomy_id": 2576376,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 120,
+      "added_reads": 53,
+      "fraction_total_reads": 0.00003
+    },
+    {
+      "scientific_name": "Veillonella dispar",
+      "taxonomy_id": 39778,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 154,
+      "added_reads": 20,
+      "fraction_total_reads": 0.00003
+    },
+    {
+      "scientific_name": "Streptococcus australis",
+      "taxonomy_id": 113107,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 137,
+      "added_reads": 25,
+      "fraction_total_reads": 0.00003
+    },
+    {
+      "scientific_name": "Pseudopropionibacterium propionicum",
+      "taxonomy_id": 1750,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 143,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00002
+    },
+    {
+      "scientific_name": "Streptococcus sp. oral taxon 064",
+      "taxonomy_id": 712624,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 46,
+      "added_reads": 60,
+      "fraction_total_reads": 0.00002
+    },
+    {
+      "scientific_name": "Mycobacterium paraintracellulare",
+      "taxonomy_id": 1138383,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 19,
+      "added_reads": 83,
+      "fraction_total_reads": 0.00002
+    },
+    {
+      "scientific_name": "Streptococcus sanguinis",
+      "taxonomy_id": 1305,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 104,
+      "added_reads": 3,
+      "fraction_total_reads": 0.00002
+    },
+    {
+      "scientific_name": "Schaalia meyeri",
+      "taxonomy_id": 52773,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 46,
+      "added_reads": 1,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus sp. ChDC B345",
+      "taxonomy_id": 1433513,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 51,
+      "added_reads": 12,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Olsenella sp. oral taxon 807",
+      "taxonomy_id": 712411,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 40,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Olsenella uli",
+      "taxonomy_id": 133926,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 43,
+      "added_reads": 0,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus sp. oral taxon 431",
+      "taxonomy_id": 712633,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 38,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus sp. 116-D4",
+      "taxonomy_id": 2598453,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 45,
+      "added_reads": 5,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus pseudopneumoniae",
+      "taxonomy_id": 257758,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 40,
+      "added_reads": 14,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Rothia dentocariosa",
+      "taxonomy_id": 2047,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 32,
+      "added_reads": 1,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Rhodococcus opacus",
+      "taxonomy_id": 37919,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 12,
+      "added_reads": 27,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus gordonii",
+      "taxonomy_id": 1302,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 60,
+      "added_reads": 2,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus salivarius",
+      "taxonomy_id": 1304,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 36,
+      "added_reads": 22,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Veillonella parvula",
+      "taxonomy_id": 29466,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 79,
+      "added_reads": 6,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Sorangium cellulosum",
+      "taxonomy_id": 56,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 13,
+      "added_reads": 50,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Mycobacterium pseudoshottsii",
+      "taxonomy_id": 265949,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 38,
+      "added_reads": 25,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Mycobacterium liflandii",
+      "taxonomy_id": 261524,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 43,
+      "added_reads": 40,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Mycobacterium sp. MOTT36Y",
+      "taxonomy_id": 1168287,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 22,
+      "added_reads": 29,
+      "fraction_total_reads": 0.00001
+    },
+    {
+      "scientific_name": "Streptococcus cristatus",
+      "taxonomy_id": 45634,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 10,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Staphylococcus epidermidis",
+      "taxonomy_id": 1282,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 16,
+      "added_reads": 5,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Staphylococcus aureus",
+      "taxonomy_id": 1280,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 13,
+      "added_reads": 12,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Leptospira santarosai",
+      "taxonomy_id": 28183,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 16,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Veillonella atypica",
+      "taxonomy_id": 39777,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 17,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycobacteroides abscessus",
+      "taxonomy_id": 36809,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 15,
+      "added_reads": 2,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Pseudonocardia sp. HH130630-07",
+      "taxonomy_id": 1690815,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 12,
+      "added_reads": 13,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium chitae",
+      "taxonomy_id": 1792,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 14,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycobacterium sp. QIA-37",
+      "taxonomy_id": 1561223,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 15,
+      "added_reads": 5,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium aurum",
+      "taxonomy_id": 1791,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 19,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium fortuitum",
+      "taxonomy_id": 1766,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 18,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium hassiacum",
+      "taxonomy_id": 46351,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 18,
+      "added_reads": 7,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium gilvum",
+      "taxonomy_id": 1804,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 17,
+      "added_reads": 2,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium thermoresistibile",
+      "taxonomy_id": 1797,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 16,
+      "added_reads": 2,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium smegmatis",
+      "taxonomy_id": 1772,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 15,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium rhodesiae",
+      "taxonomy_id": 36814,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 15,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium goodii",
+      "taxonomy_id": 134601,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 12,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Nocardioides dokdonensis",
+      "taxonomy_id": 450734,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 11,
+      "added_reads": 2,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacterium vanbaalenii",
+      "taxonomy_id": 110539,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 11,
+      "added_reads": 2,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacter sinensis",
+      "taxonomy_id": 875328,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 21,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Corynebacterium sphenisci",
+      "taxonomy_id": 191493,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 12,
+      "added_reads": 15,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Rothia aeria",
+      "taxonomy_id": 172042,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 23,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Actinomyces hongkongensis",
+      "taxonomy_id": 178339,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 15,
+      "added_reads": 6,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Streptomyces venezuelae",
+      "taxonomy_id": 54571,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 14,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Cutibacterium acnes",
+      "taxonomy_id": 1747,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 24,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Nocardioides sp. SB3-45",
+      "taxonomy_id": 2558918,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 10,
+      "added_reads": 1,
+      "fraction_total_reads": 0.0
+    },
+    {
+      "scientific_name": "Mycolicibacter terrae",
+      "taxonomy_id": 1788,
+      "taxonomy_lvl": "species",
+      "kraken_assigned_reads": 29,
+      "added_reads": 0,
+      "fraction_total_reads": 0.0
+    }
+  ],
+  "schema_version": 1,
+  "typing_result": [
+    {
+      "type": "lineage",
+      "software": "mykrobe",
+      "result": {
+        "lineages": [
+          {
+            "lin": null,
+            "family": null,
+            "spoligotype": null,
+            "rd": null,
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          },
+          {
+            "lin": null,
+            "family": null,
+            "spoligotype": null,
+            "rd": null,
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          },
+          {
+            "lin": null,
+            "family": null,
+            "spoligotype": null,
+            "rd": null,
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          }
+        ],
+        "main_lin": "lineage2",
+        "sublin": "lineage2.2.4"
+      }
+    },
+    {
+      "type": "lineage",
+      "software": "tbprofiler",
+      "result": {
+        "lineages": [
+          {
+            "lin": "lineage2",
+            "family": "East-Asian",
+            "spoligotype": "Beijing",
+            "rd": "RD105",
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          },
+          {
+            "lin": "lineage2.2",
+            "family": "East-Asian (Beijing)",
+            "spoligotype": "Beijing-RD207",
+            "rd": "RD105;RD207",
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          },
+          {
+            "lin": "lineage2.2.1",
+            "family": "East-Asian (Beijing)",
+            "spoligotype": "Beijing-RD181",
+            "rd": "RD105;RD207;RD181",
+            "fraction": null,
+            "variant": null,
+            "coverage": null
+          }
+        ],
+        "main_lin": "lineage2",
+        "sublin": "lineage2.2.1"
+      }
+    }
+  ],
+  "element_type_result": [
+    {
+      "type": "AMR",
+      "software": "mykrobe",
+      "result": {
+        "phenotypes": {
+          "susceptible": [
+            "Ethionamide",
+            "Linezolid",
+            "Capreomycin",
+            "Delamanid",
+            "Moxifloxacin",
+            "Ofloxacin",
+            "Ciprofloxacin",
+            "Pyrazinamide",
+            "Amikacin",
+            "Levofloxacin",
+            "Kanamycin",
+            "Ethambutol"
+          ],
+          "resistant": [
+            "Isoniazid",
+            "Rifampicin",
+            "Streptomycin"
+          ]
+        },
+        "genes": [],
+        "variants": [
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "Streptomycin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "gid",
+            "accession": null,
+            "position": 4407684,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": "E",
+            "alt_aa": "*",
+            "depth": 3269.0,
+            "frequency": 0.9486081370449678,
+            "confidence": 18476,
+            "method": "kmer_count",
+            "passed_qc": true
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "Isoniazid",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "katG",
+            "accession": null,
+            "position": 2155167,
+            "ref_nt": "C",
+            "alt_nt": "G",
+            "ref_aa": "S",
+            "alt_aa": "T",
+            "depth": 2624.0,
+            "frequency": 1.0,
+            "confidence": 17362,
+            "method": "kmer_count",
+            "passed_qc": true
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [
+              {
+                "name": "Rifampicin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "rpoB",
+            "accession": null,
+            "position": 761094,
+            "ref_nt": "CTGAGCCAATTCATGGACCAGAACAACCC",
+            "alt_nt": "CTGAGCCAATTCCAGAACAACCC",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 2506.0,
+            "frequency": 0.9996009577015164,
+            "confidence": 16677,
+            "method": "kmer_count",
+            "passed_qc": true
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [
+              {
+                "name": "Rifampicin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "rpoB",
+            "accession": null,
+            "position": 761103,
+            "ref_nt": "TTCATGGA",
+            "alt_nt": "TT",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 2281.0,
+            "frequency": 0.8671635247698378,
+            "confidence": 13279,
+            "method": "kmer_count",
+            "passed_qc": true
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [
+              {
+                "name": "Rifampicin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "rpoB",
+            "accession": null,
+            "position": 761104,
+            "ref_nt": "TCATGGA",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 2260.0,
+            "frequency": 0.9327433628318584,
+            "confidence": 14397,
+            "method": "kmer_count",
+            "passed_qc": true
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "Streptomycin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": null
+              }
+            ],
+            "gene_symbol": "rpsL",
+            "accession": null,
+            "position": 781821,
+            "ref_nt": "A",
+            "alt_nt": "G",
+            "ref_aa": "K",
+            "alt_aa": "R",
+            "depth": 3776.0,
+            "frequency": 0.9954978813559322,
+            "confidence": 16769,
+            "method": "kmer_count",
+            "passed_qc": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "AMR",
+      "software": "tbprofiler",
+      "result": {
+        "phenotypes": {
+          "susceptible": [
+            "ofloxacin",
+            "moxifloxacin",
+            "delamanid",
+            "kanamycin",
+            "amikacin",
+            "ethambutol",
+            "ethionamide",
+            "ciprofloxacin",
+            "levofloxacin",
+            "pyrazinamide",
+            "linezolid",
+            "capreomycin"
+          ],
+          "resistant": [
+            "isoniazid",
+            "rifampicin",
+            "streptomycin"
+          ]
+        },
+        "genes": [],
+        "variants": [
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "PPE35",
+            "accession": "CCP44685",
+            "position": 2167926,
+            "ref_nt": "A",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 142.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2687T>C",
+            "hgvs_aa_change": "p.Leu896Ser"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "PPE35",
+            "accession": "CCP44685",
+            "position": 2170086,
+            "ref_nt": "G",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 44.0,
+            "frequency": 0.11363636363636363,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.527C>G",
+            "hgvs_aa_change": "p.Ala176Gly"
+          },
+          {
+            "variant_type": "insertion",
+            "phenotypes": [],
+            "gene_symbol": "Rv1258c",
+            "accession": "CCP44014",
+            "position": 1406760,
+            "ref_nt": "T",
+            "alt_nt": "TG",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 193.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "frameshift_variant",
+            "hgvs_nt_change": "c.580_581insC",
+            "hgvs_aa_change": "p.Glu194fs"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "Rv1979c",
+            "accession": "CCP44748",
+            "position": 2223293,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 163.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-129A>G",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "Rv3236c",
+            "accession": "CCP46055",
+            "position": 3612813,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 118.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.304A>G",
+            "hgvs_aa_change": "p.Thr102Ala"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "aftB",
+            "accession": "CCP46634",
+            "position": 4267647,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 125.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.1190A>G",
+            "hgvs_aa_change": "p.Asp397Gly"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "ald",
+            "accession": "CCP45579",
+            "position": 3086788,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 168.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-32T>C",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "ccsA",
+            "accession": "CCP43266",
+            "position": 620625,
+            "ref_nt": "A",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 186.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.735A>G",
+            "hgvs_aa_change": "p.Ile245Met"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "clpC1",
+            "accession": "CCP46419",
+            "position": 4038955,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 131.0,
+            "frequency": 0.1450381679389313,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "stop_gained",
+            "hgvs_nt_change": "c.1750G>T",
+            "hgvs_aa_change": "p.Glu584*"
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [],
+            "gene_symbol": "eis",
+            "accession": "CCP45207",
+            "position": 2714526,
+            "ref_nt": "GGT",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 196.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "frameshift_variant",
+            "hgvs_nt_change": "c.805_806delAC",
+            "hgvs_aa_change": "p.Thr269fs"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "embA",
+            "accession": "CCP46623",
+            "position": 4242643,
+            "ref_nt": "C",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 158.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-590C>T",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "embA",
+            "accession": "CCP46623",
+            "position": 4243460,
+            "ref_nt": "C",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 177.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.228C>T",
+            "hgvs_aa_change": "p.Cys76Cys"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "embB",
+            "accession": "CCP46624",
+            "position": 4247015,
+            "ref_nt": "T",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 94.0,
+            "frequency": 0.1702127659574468,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.502T>G",
+            "hgvs_aa_change": "p.Ser168Ala"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "embB",
+            "accession": "CCP46624",
+            "position": 4247028,
+            "ref_nt": "T",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 86.0,
+            "frequency": 0.16279069767441862,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.515T>G",
+            "hgvs_aa_change": "p.Leu172Arg"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "fbiD",
+            "accession": "CCP45788",
+            "position": 3339726,
+            "ref_nt": "A",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 56.0,
+            "frequency": 0.16071428571428573,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.609A>T",
+            "hgvs_aa_change": "p.Val203Val"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "fbiD",
+            "accession": "CCP45788",
+            "position": 3339744,
+            "ref_nt": "A",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 31.0,
+            "frequency": 0.12903225806451613,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.627A>T",
+            "hgvs_aa_change": "p.Arg209Arg"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "fbiD",
+            "accession": "CCP45788",
+            "position": 3339750,
+            "ref_nt": "C",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 38.0,
+            "frequency": 0.15789473684210525,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.633C>G",
+            "hgvs_aa_change": "p.Val211Val"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "fgd1",
+            "accession": "CCP43138",
+            "position": 491742,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 149.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.960T>C",
+            "hgvs_aa_change": "p.Phe320Phe"
+          },
+          {
+            "variant_type": "insertion",
+            "phenotypes": [],
+            "gene_symbol": "fprA",
+            "accession": "CCP45916",
+            "position": 3473996,
+            "ref_nt": "G",
+            "alt_nt": "GA",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 154.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-11_-10insA",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gid",
+            "accession": "CCP46748",
+            "position": 4407588,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 233.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.615A>G",
+            "hgvs_aa_change": "p.Ala205Ala"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "streptomycin",
+                "group": null,
+                "type": "AMR",
+                "reference": [
+                  "https://www.who.int/publications/i/item/9789240028173"
+                ],
+                "note": "Assoc w R - interim"
+              }
+            ],
+            "gene_symbol": "gid",
+            "accession": "CCP46748",
+            "position": 4407686,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 221.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "stop_gained",
+            "hgvs_nt_change": "c.517G>T",
+            "hgvs_aa_change": "p.Glu173*"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gid",
+            "accession": "CCP46748",
+            "position": 4407927,
+            "ref_nt": "T",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 247.0,
+            "frequency": 0.9959514170040485,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.276A>C",
+            "hgvs_aa_change": "p.Glu92Asp"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 7296,
+            "ref_nt": "G",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 160.0,
+            "frequency": 0.1125,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-6G>T",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 7362,
+            "ref_nt": "G",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 181.0,
+            "frequency": 0.994475138121547,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.61G>C",
+            "hgvs_aa_change": "p.Glu21Gln"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 7585,
+            "ref_nt": "G",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 212.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.284G>C",
+            "hgvs_aa_change": "p.Ser95Thr"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 9304,
+            "ref_nt": "G",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 221.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2003G>A",
+            "hgvs_aa_change": "p.Gly668Asp"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 9653,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 160.0,
+            "frequency": 0.1625,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.2352C>A",
+            "hgvs_aa_change": "p.Ile784Ile"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "gyrA",
+            "accession": "CCP42728",
+            "position": 9675,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 139.0,
+            "frequency": 0.11510791366906475,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2374C>A",
+            "hgvs_aa_change": "p.Arg792Ser"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "katG",
+            "accession": "CCP44675",
+            "position": 2154724,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 212.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.1388G>T",
+            "hgvs_aa_change": "p.Arg463Leu"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "isoniazid",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": "Assoc w R"
+              }
+            ],
+            "gene_symbol": "katG",
+            "accession": "CCP44675",
+            "position": 2155168,
+            "ref_nt": "C",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 152.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.944G>C",
+            "hgvs_aa_change": "p.Ser315Thr"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mmpL5",
+            "accession": "CCP43419",
+            "position": 775639,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 207.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2842A>G",
+            "hgvs_aa_change": "p.Ile948Val"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mmpL5",
+            "accession": "CCP43419",
+            "position": 776100,
+            "ref_nt": "G",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 198.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2381C>T",
+            "hgvs_aa_change": "p.Thr794Ile"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mmpL5",
+            "accession": "CCP43419",
+            "position": 776182,
+            "ref_nt": "C",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 157.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.2299G>A",
+            "hgvs_aa_change": "p.Asp767Asn"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mmpS5",
+            "accession": "CCP43420",
+            "position": 779615,
+            "ref_nt": "G",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 195.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-710C>G",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mshA",
+            "accession": "CCP43220",
+            "position": 575907,
+            "ref_nt": "C",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 252.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.560C>T",
+            "hgvs_aa_change": "p.Ala187Val"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mshA",
+            "accession": "CCP43220",
+            "position": 576626,
+            "ref_nt": "A",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 79.0,
+            "frequency": 0.11392405063291139,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.1279A>C",
+            "hgvs_aa_change": "p.Thr427Pro"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "mshA",
+            "accession": "CCP43220",
+            "position": 576631,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 83.0,
+            "frequency": 0.13253012048192772,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.1284C>A",
+            "hgvs_aa_change": "p.Phe428Leu"
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [
+              {
+                "name": "rifampicin",
+                "group": null,
+                "type": "AMR",
+                "reference": [
+                  "https://www.who.int/publications/i/item/9789240028173"
+                ],
+                "note": "Assoc w R - interim"
+              }
+            ],
+            "gene_symbol": "rpoB",
+            "accession": "CCP43410",
+            "position": 761104,
+            "ref_nt": "TCATGGA",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 151.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "conservative_inframe_deletion",
+            "hgvs_nt_change": "c.1300_1305delATGGAC",
+            "hgvs_aa_change": "p.Met434_Asp435del"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "rpoC",
+            "accession": "CCP43411",
+            "position": 763031,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 215.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-339T>C",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "rpsA",
+            "accession": "CCP44394",
+            "position": 1834177,
+            "ref_nt": "A",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 246.0,
+            "frequency": 0.991869918699187,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.636A>C",
+            "hgvs_aa_change": "p.Arg212Arg"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "rpsL",
+            "accession": "CCP43425",
+            "position": 781395,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 224.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-165T>C",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [
+              {
+                "name": "streptomycin",
+                "group": null,
+                "type": "AMR",
+                "reference": [],
+                "note": "Assoc w R"
+              }
+            ],
+            "gene_symbol": "rpsL",
+            "accession": "CCP43425",
+            "position": 781822,
+            "ref_nt": "A",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 236.0,
+            "frequency": 0.9957627118644068,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.263A>G",
+            "hgvs_aa_change": "p.Lys88Arg"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "rrs",
+            "accession": "EBG00000313325-1",
+            "position": 1471659,
+            "ref_nt": "C",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 142.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "n.-187C>T",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "tlyA",
+            "accession": "CCP44459",
+            "position": 1917972,
+            "ref_nt": "A",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 166.0,
+            "frequency": 1.0,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.33A>G",
+            "hgvs_aa_change": "p.Leu11Leu"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "whiB6",
+            "accession": "CCP46691",
+            "position": 4338219,
+            "ref_nt": "G",
+            "alt_nt": "T",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 137.0,
+            "frequency": 0.11678832116788321,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.303C>A",
+            "hgvs_aa_change": "p.Arg101Arg"
+          },
+          {
+            "variant_type": "deletion",
+            "phenotypes": [],
+            "gene_symbol": "whiB6",
+            "accession": "CCP46691",
+            "position": 4338595,
+            "ref_nt": "GC",
+            "alt_nt": "G",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 224.0,
+            "frequency": 0.9955357142857143,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "upstream_gene_variant",
+            "hgvs_nt_change": "c.-75delG",
+            "hgvs_aa_change": ""
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "whiB7",
+            "accession": "CCP46011",
+            "position": 3568428,
+            "ref_nt": "T",
+            "alt_nt": "C",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 87.0,
+            "frequency": 0.1839080459770115,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "synonymous_variant",
+            "hgvs_nt_change": "c.252A>G",
+            "hgvs_aa_change": "p.Gly84Gly"
+          },
+          {
+            "variant_type": "substitution",
+            "phenotypes": [],
+            "gene_symbol": "whiB7",
+            "accession": "CCP46011",
+            "position": 3568473,
+            "ref_nt": "C",
+            "alt_nt": "A",
+            "ref_aa": null,
+            "alt_aa": null,
+            "depth": 103.0,
+            "frequency": 0.14563106796116504,
+            "confidence": null,
+            "method": "freebayes",
+            "passed_qc": true,
+            "variant_effect": "missense_variant",
+            "hgvs_nt_change": "c.207G>T",
+            "hgvs_aa_change": "p.Glu69Asp"
+          }
+        ]
+      }
+    }
+  ]
+}
