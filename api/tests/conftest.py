@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 import json
-from mongomock import MongoClient
+from mongomock_motor import AsyncMongoMockClient
 
 from .data import *
 from app.crud.sample import create_sample
@@ -15,9 +15,10 @@ DATABASE = "testdb"
 def mongo_database():
     """Setup Bonsai database instance."""
     db = Database()
-    db.client = MongoClient()
+    db.client = AsyncMongoMockClient()
     # setup mock database
     db.setup()
+    return db
 
 
 @pytest.fixture(scope="function")
@@ -29,7 +30,6 @@ def mtuberculosis_sample(mtuberculosis_sample_path):
 
 
 @pytest.fixture(scope="function")
-@pytest.mark.asyncio()
 async def sample_database(mongo_database, mtuberculosis_sample_path):
     """Returns a database client with loaded test data."""
 
@@ -38,3 +38,4 @@ async def sample_database(mongo_database, mtuberculosis_sample_path):
         data = PipelineResult(**json.load(inpt))
         # create sample in database
         sample = await create_sample(db=mongo_database, sample=data)
+        return mongo_database
