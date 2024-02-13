@@ -28,7 +28,7 @@ def _sort_motifs_on_phenotype(prediction: List[GeneBase | VariantBase]):
             # add variant to all phenotypes
             for phenotype in motif.phenotypes:
                 # make a copy with only one phenotypes
-                upd_motif = motif.copy(update={"phenotypes": [phenotype]})
+                upd_motif = motif.model_copy(update={"phenotypes": [phenotype]})
                 result[phenotype.name].append(upd_motif)
     return result
 
