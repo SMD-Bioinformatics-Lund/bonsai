@@ -9,6 +9,14 @@ from pydantic import BaseModel
 
 from .models.sample import SampleInDatabase
 
+TARGETED_ANTIBIOTICS = {
+    "rifampicin": "rif",
+    "isoniazid": "inh",
+    "pyrazinamide": "pza",
+    "ethambutol": "etm",
+    "amikacin": "ami",
+    "levofloxacin": "lev",
+}
 
 def _sort_motifs_on_phenotype(prediction: List[GeneBase | VariantBase]):
     """Sort resistance genes and variants by the antibiotics they yeid resistance to."""
@@ -54,14 +62,6 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     :param sample: Prediction results
     :type sample: SampleInDatabase
     """
-    TARGETED_ANTIBIOTICS = {
-        "rifampicin": "rif",
-        "isoniazid": "inh",
-        "pyrazinamide": "pza",
-        "ethambutol": "etm",
-        "amikacin": "ami",
-        "levofloxacin": "lev",
-    }
     for pred_res in sample.element_type_result:
         # only include TBprofiler result
         if not pred_res.software == PredictionSoftware.TBPROFILER.value:
