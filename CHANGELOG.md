@@ -3,6 +3,7 @@
 ### Added
 
  - Add button to remove samples from the group- and groups view.
+ - Added CLI command for exporting AMR prediction to a LIMS tsv file
 
 ### Fixed
 
