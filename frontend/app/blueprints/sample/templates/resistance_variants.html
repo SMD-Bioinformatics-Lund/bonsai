@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "sidebar.html" import sidebar, sidebar_header, table_of_content %}
+{% from "sidebar.html" import sidebar, sidebar_header %}
 {% from "cards.html" import sample_header, amr_prediction_card, virulence_card %}
 
 {% macro export_btn() %}
@@ -56,11 +56,39 @@
 {% endmacro %}
 
 
+{% macro variant_filters() %}
+<div class="br-toc y-lg-0 px-sm-1 text-body-secondary">
+    {{ sidebar_header("Filter variants") }}
+    <form action="">
+        <div class="form-group">
+            <label class="form-label" for="variant-position">Position</label>
+            <input class="form-control" type="number" name="variant-position" id="variant-position">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="minimum-quality">Quality</label>
+            <input class="form-control" type="number" name="min-qual" id="minimum-quality">
+        </div>
+        <label class="form-label" for="select-genes">Select genes</label>
+        <select class="form-control" id="select-genes" class="form-select form-select-sm" aria-label=".form-select-sm example">
+            <option selected hidden>Open this select menu</option>
+            <option value="1">One</option>
+            <option value="2">Two</option>
+            <option value="3">Three</option>
+        </select>
+        <input type="checkbox" name="Hide dismissed" id="hide-dissmissed">
+        <label for="hide-dissmissed">Hide dismissed</label>
+        <button class="btn btn-primary mt-2" type="submit">Filter variants</button>
+    </form>
+</div>
+{% endmacro %}
+
+
 {% block content %}
 {% set footnotes = [] %}
 <div class="container-fluid br-layout">
     {{ sidebar(sample, optional_macro=export_btn) }}
-    <main class="ext-main order-1">
+    <main class="br-main order-1">
+        {{ variant_filters() }}
         {{ sample_header(sample, class_names="") }}
         <div class="container-fluid pb-5">
             <h5>Resistance prediction</h5>
