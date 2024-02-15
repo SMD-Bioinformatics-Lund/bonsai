@@ -199,12 +199,13 @@
                     Variants
                 </a>
             </li>
-        </ul>
-
-        {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
-        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
-        {{ comment_area(sample) }}
-    </div>
+        </ol>
+    {% endif %}
+    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Reports</h6>
+    <ul class="nav flex-column">
+        {{ report_link('samples.sample', sample_id=sample.sample_id, name='Summary') }}
+        {{ report_link('samples.resistance_variants', sample_id=sample.sample_id, name='Variants') }}
+    </ul>
 </aside>
 {% endmacro %}
 

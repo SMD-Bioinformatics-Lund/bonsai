@@ -58,3 +58,7 @@
   width: 100%;
   bottom: 0;
 }
+
+.active {
+  font-weight: bold;
+}
