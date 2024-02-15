@@ -1,6 +1,14 @@
 {% extends "layout.html" %}
-{% from "sidebar.html" import sidebar, table_of_content %}
+{% from "sidebar.html" import sidebar, sidebar_header, table_of_content %}
 {% from "cards.html" import sample_header, amr_prediction_card, virulence_card %}
+
+{% macro export_btn() %}
+    {{ sidebar_header("Action") }}
+    <button class="btn btn-sm btn-warning ms-2" type="button">
+        <i class="bi bi-box-arrow-up"></i>
+        Export to LIMS
+    </button>
+{% endmacro %}
 
 {% block css %}
 {{ super() }}
@@ -51,10 +59,9 @@
 {% block content %}
 {% set footnotes = [] %}
 <div class="container-fluid br-layout">
-    {{ sidebar(sample) }}
+    {{ sidebar(sample, optional_macro=export_btn) }}
     <main class="ext-main order-1">
         {{ sample_header(sample, class_names="") }}
-        <button class="btn btn-warning ms-2" type="button">Export verified variants</button>
         <div class="container-fluid pb-5">
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
@@ -80,7 +87,6 @@
         </div>
         <div class="ext-main-footer bg-white ps-2 py-1 border-top">
             <div class="row align-items-center">
-                <div class="col-auto fw-bold">Verify variants</div>
                 <div class="col-auto fw-light">Selected variants: <span>0</span></div>
                 <div class="col-auto">
                     <div class="input-group">
