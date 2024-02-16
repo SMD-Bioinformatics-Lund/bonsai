@@ -65,8 +65,8 @@
             <input class="form-control form-control-sm" type="number" name="min-frequency" id="min-frequency" min="0" max="100" placeholder="%" value="{{ request.form.get('min-frequency') }}" default="">
         </div>
         <div class="form-group">
-            <label class="form-label" for="min-quality">Quality</label>
-            <input class="form-control form-control-sm" type="number" name="min-qual" id="minimum-quality" min="0">
+            <label class="form-label" for="min-depth">Depth</label>
+            <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ request.form.get('min-depth') }}" default="">
         </div>
         <label class="form-label" for="filter-genes">Select genes</label>
         <select name="filter-genes" id="filter-genes" class="form-control form-select form-select-sm" aria-label=".form-select-sm example" multiple>
@@ -79,8 +79,24 @@
                 </option>
             {% endfor %}
         </select>
-        <input type="checkbox" name="hide-dismissed" id="hide-dismissed">
-        <label for="hide-dismissed">Hide dismissed</label>
+        {# Checkboxes #}
+        <div class="row">
+            <div class="col-auto">
+                <input type="checkbox" name="yeild-resistance" id="yeild-resistance"
+                       {% if request.form.get('yeild-resistance') %}checked{% endif %}
+                >
+                <label for="yeild-resistance">Yeild resistance</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-auto">
+                <input type="checkbox" name="hide-dismissed" id="hide-dismissed"
+                       {% if request.form.get('hide-dismissed') %}checked{% endif %}
+                >
+                <label for="hide-dismissed">Hide dismissed</label>
+            </div>
+        </div>
+        {# Confirm filters #}
         <div class="md-d-flex justify-content-md-center flex-column">
             <button class="btn btn-sm btn-primary mt-2" type="submit">Filter variants</button>
         </div>

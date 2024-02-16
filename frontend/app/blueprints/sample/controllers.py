@@ -186,13 +186,16 @@ def filter_variants(sample_info, form: float | None = None):
                 LOG.error("%s == %s", min_freq, variant['frequency'] * 100)
                 continue
 
-            min_qual = form.get('min-quality')
-            if min_qual and variant['quality'] < int(min_qual):
-                LOG.error("%s == %s", min_qual, variant['quality'])
+            min_depth = form.get('min-depth')
+            if min_depth and variant['depth'] < int(min_depth):
                 continue
 
             # hide variant that have been manually dismissed
             if bool(form.get('hide-dismissed')) and variant.get('dismissed', False):
+                continue
+
+            # hide varians without resistance
+            if bool(form.get('yeild-resistance')) and len(variant.get('phenotypes', [])) == 0:
                 continue
 
             # only inlcude variants in selected genes
