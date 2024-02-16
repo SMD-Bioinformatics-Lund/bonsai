@@ -171,3 +171,48 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
         )
     }
     return amr_summary, resistance_info
+
+
+def filter_variants(sample_info, form: float | None = None):
+    for prediction in sample_info['element_type_result']:
+        variants = prediction['result']['variants']
+        if len(variants) == 0:
+            continue
+        # build up a new variant list that passes all filtering criteria
+        filtered_variants = []
+        for variant in variants:
+            min_freq = form.get('min-frequency')
+            if min_freq and (variant['frequency'] * 100) < int(min_freq):
+                LOG.error("%s == %s", min_freq, variant['frequency'] * 100)
+                continue
+
+            min_qual = form.get('min-quality')
+            if min_qual and variant['quality'] < int(min_qual):
+                LOG.error("%s == %s", min_qual, variant['quality'])
+                continue
+
+            # hide variant that have been manually dismissed
+            if bool(form.get('hide-dismissed')) and variant.get('dismissed', False):
+                continue
+
+            # only inlcude variants in selected genes
+            selected_genes = form.getlist('filter-genes')
+            if selected_genes and variant['reference_sequence'] not in selected_genes:
+                continue
+
+            filtered_variants.append(variant)
+        # replace variants with filtered variants
+        prediction['result']['variants'] = filtered_variants
+    return sample_info
+
+
+def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
+    genes = set()
+    for prediction in sample_info['element_type_result']:
+        # skip predictions that are not madew with the desired software
+        if software and software == prediction['type']:
+            continue
+        # skip predictions withouht variants
+        variants = prediction['result']['variants']
+        genes.update({variant["reference_sequence"] for variant in variants})
+    return tuple(sorted(genes))

@@ -28,7 +28,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from .controllers import create_amr_summary
+from .controllers import filter_variants, get_variant_genes
 
 samples_bp = Blueprint(
     "samples",
@@ -218,12 +218,20 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/samples/<sample_id>/resistance/variants")
+@samples_bp.route("/samples/<sample_id>/resistance/variants", methods=["GET", "POST"])
 @login_required
 def resistance_variants(sample_id: str) -> str:
     """Samples view."""
     token = TokenObject(**current_user.get_id())
     sample_info = get_sample_by_id(token, sample_id=sample_id)
+
+    # populate form for filter varaints
+    form_data = {
+        "filter_genes": get_variant_genes(sample_info, software='tbprofiler')
+    }
+
+    if request.method == "POST":
+        sample_info = filter_variants(sample_info, form=request.form)
     return render_template(
-        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info
+        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data
     )

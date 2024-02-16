@@ -195,30 +195,31 @@
     </li>
 {% endmacro %}
 
-{% macro sidebar_header(text) %}
-    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">{{text}}</h6>
+{% macro sidebar_header(text, class_names="mt-4 mb-1 ") %}
+    <h6 class="sidebar-heading text-muted text-uppercase {{class_names}}">{{text}}</h6>
 {% endmacro %}
 
 {% macro sidebar(sample, bad_qc_actions, optional_macro=None) %}
 <aside class="br-sidebar border-end pe-2">
+    <div>
+        {{ sidebar_header("Reports")}}
+        <ul class="nav flex-column">
+            {{ report_link('samples.sample', sample_id=sample.sample_id, name='Summary') }}
+            {{ report_link('samples.resistance_variants', sample_id=sample.sample_id, name='Variants') }}
+        </ul>
 
-    {{ sidebar_header("Reports")}}
-    <ul class="nav flex-column">
-        {{ report_link('samples.sample', sample_id=sample.sample_id, name='Summary') }}
-        {{ report_link('samples.resistance_variants', sample_id=sample.sample_id, name='Variants') }}
-    </ul>
+        {{ sidebar_header("Quality control")}}
+        {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
 
-    {{ sidebar_header("Quality control")}}
-    {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+        {# optional specific to certain views #}
+        {% if optional_macro %}
+            {{ optional_macro() }}
+        {% endif %}
 
-    {# optional specific to certain views #}
-    {% if optional_macro %}
-        {{ optional_macro() }}
-    {% endif %}
-
-    {# comment area #}
-    {{ sidebar_header("Comments")}}
-    {{ comment_area(sample) }}
+        {# comment area #}
+        {{ sidebar_header("Comments")}}
+        {{ comment_area(sample) }}
+    </div>
 </aside>
 {% endmacro %}
 

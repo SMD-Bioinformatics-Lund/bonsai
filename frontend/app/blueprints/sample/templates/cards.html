@@ -588,7 +588,7 @@
 <div>
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
-    {% if result.variants | n_results_with_resistance == 0 %}
+    {% if result.variants | n_results_with_resistance == 0 and not extended %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
     {% else %}
         <table class="table table-striped">
@@ -627,7 +627,7 @@
                         {% endif %}
                         <td>{{ accession_link(variant.close_seq_name, name=variant.reference_sequence) }}</td>
                         <td>{{ variant.depth | int }}</td>
-                        <td>{{ variant.frequency | round(3) }}</td>
+                        <td>{{ variant.frequency | round(3) * 100 }}</td>
                         {% if variant.passed_qc  %}
                             <td><i class="bi bi-check text-success"></i></td>
                         {% else  %}

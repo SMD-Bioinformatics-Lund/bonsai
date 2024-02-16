@@ -56,28 +56,34 @@
 {% endmacro %}
 
 
-{% macro variant_filters() %}
-<div class="br-toc y-lg-0 px-sm-1 text-body-secondary">
-    {{ sidebar_header("Filter variants") }}
-    <form action="">
+{% macro variant_filters(form_data) %}
+<div id="variant-filters" class="br-toc y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
+    {{ sidebar_header("Filter variants", "") }}
+    <form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-filter">
         <div class="form-group">
-            <label class="form-label" for="variant-position">Position</label>
-            <input class="form-control" type="number" name="variant-position" id="variant-position">
+            <label class="form-label" for="min-frequency">Frequency</label>
+            <input class="form-control form-control-sm" type="number" name="min-frequency" id="min-frequency" min="0" max="100" placeholder="%" value="{{ request.form.get('min-frequency') }}" default="">
         </div>
         <div class="form-group">
-            <label class="form-label" for="minimum-quality">Quality</label>
-            <input class="form-control" type="number" name="min-qual" id="minimum-quality">
+            <label class="form-label" for="min-quality">Quality</label>
+            <input class="form-control form-control-sm" type="number" name="min-qual" id="minimum-quality" min="0">
         </div>
-        <label class="form-label" for="select-genes">Select genes</label>
-        <select class="form-control" id="select-genes" class="form-select form-select-sm" aria-label=".form-select-sm example">
-            <option selected hidden>Open this select menu</option>
-            <option value="1">One</option>
-            <option value="2">Two</option>
-            <option value="3">Three</option>
+        <label class="form-label" for="filter-genes">Select genes</label>
+        <select name="filter-genes" id="filter-genes" class="form-control form-select form-select-sm" aria-label=".form-select-sm example" multiple>
+            {% if not request.form.get('filtered-genes')%}
+                <option value="" disabled selected>Select gene</option>
+            {% endif %}
+            {% for gene in form_data.get('filter_genes', []) %}
+                <option value="{{gene}}" {% if gene in request.form.getlist('filter-genes') %}selected{% endif %}>
+                    {{gene}}
+                </option>
+            {% endfor %}
         </select>
-        <input type="checkbox" name="Hide dismissed" id="hide-dissmissed">
-        <label for="hide-dissmissed">Hide dismissed</label>
-        <button class="btn btn-primary mt-2" type="submit">Filter variants</button>
+        <input type="checkbox" name="hide-dismissed" id="hide-dismissed">
+        <label for="hide-dismissed">Hide dismissed</label>
+        <div class="md-d-flex justify-content-md-center flex-column">
+            <button class="btn btn-sm btn-primary mt-2" type="submit">Filter variants</button>
+        </div>
     </form>
 </div>
 {% endmacro %}
@@ -88,9 +94,9 @@
 <div class="container-fluid br-layout">
     {{ sidebar(sample, optional_macro=export_btn) }}
     <main class="br-main order-1">
-        {{ variant_filters() }}
+        {{ variant_filters(form_data) }}
         {{ sample_header(sample, class_names="") }}
-        <div class="container-fluid pb-5">
+        <div class="br-content container-fluid pb-5">
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
