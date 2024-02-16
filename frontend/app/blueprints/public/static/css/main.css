@@ -50,16 +50,15 @@ div#grid_grid_searches.w2ui-grid-searches {
 
 @media (max-width: 991.98px) {
   .br-main {
-    max-width:760px;
     margin-inline:auto
   }
 }
 @media (min-width: 768px) {
   .br-main {
     display:grid;
-    grid-template-areas:"header" "toc" "content";
+    grid-template-areas: "toc" "header" "content";
     grid-template-rows:auto auto 1fr;
-    gap:inherit
+    gap:inherit;
   }
 }
 @media (min-width: 992px) {
@@ -72,6 +71,10 @@ div#grid_grid_searches.w2ui-grid-searches {
 
 .br-toc {
   grid-area: toc;
+}
+
+.br-content {
+  grid-area: content;
 }
 
 @media (min-width: 992px) {

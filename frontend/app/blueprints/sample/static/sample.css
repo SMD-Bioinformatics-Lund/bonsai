@@ -62,3 +62,8 @@
 .active {
   font-weight: bold;
 }
+
+#variant-filters {
+  padding: 1rem !important;
+  height: fit-content !important; 
+}
