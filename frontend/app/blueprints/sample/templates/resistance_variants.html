@@ -138,9 +138,9 @@
                 <select class="form-select form-select-sm" id="antibiotic-group">
                     <option placeholder selected hidden>Annotate AMR</option>
                     {% for family, amrs in antibiotics.items() %}
-                    <optgroup label="{{ family }}">
+                    <optgroup label="{{ family | capitalize }}">
                         {% for amr in amrs %}
-                        <option value="{{ amr.name }}">{{ amr.name }}</option>
+                        <option value="{{ amr.name }}">{{ amr.name | capitalize }}</option>
                         {% endfor %}
                     </optgroup>
                     {% endfor %}
