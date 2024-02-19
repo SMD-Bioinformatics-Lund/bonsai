@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from .db.utils import close_mongo_connection, connect_to_mongo
 from .internal.middlewares import configure_cors
-from .routers import auth, cluster, groups, jobs, locations, root, samples, users
+from .routers import auth, cluster, groups, jobs, locations, root, samples, users, resources
 
 dictConfig(
     {
@@ -44,5 +44,6 @@ app.include_router(samples.router)
 app.include_router(groups.router)
 app.include_router(locations.router)
 app.include_router(cluster.router)
+app.include_router(resources.router)
 app.include_router(auth.router)
 app.include_router(jobs.router)
