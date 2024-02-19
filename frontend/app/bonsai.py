@@ -433,3 +433,11 @@ def get_valid_group_columns():
     resp = requests.get(url)
     resp.raise_for_status()
     return resp.json()
+
+
+def get_antibiotics():
+    """Query the API for antibiotics."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/resources/antibiotics'
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json()

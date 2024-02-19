@@ -1,6 +1,7 @@
 """Declaration of views for samples"""
 import json
 from typing import Any, Dict, Tuple
+from itertools import groupby
 
 from app.bonsai import (
     TokenObject,
@@ -13,6 +14,7 @@ from app.bonsai import (
     post_comment_to_sample,
     remove_comment_from_sample,
     update_sample_qc_classification,
+    get_antibiotics
 )
 from app.models import BadSampleQualityAction, QualityControlResult
 from flask import (
@@ -226,6 +228,13 @@ def resistance_variants(sample_id: str) -> str:
     sample_info = get_sample_by_id(token, sample_id=sample_id)
 
     # populate form for filter varaints
+    antibiotics = {
+        fam: list(amrs) 
+        for fam, amrs 
+        in groupby(get_antibiotics(), key=lambda ant: ant['family'])
+    }
+
+    # populate form for filter varaints
     form_data = {
         "filter_genes": get_variant_genes(sample_info, software='tbprofiler')
     }
@@ -233,5 +242,5 @@ def resistance_variants(sample_id: str) -> str:
     if request.method == "POST":
         sample_info = filter_variants(sample_info, form=request.form)
     return render_template(
-        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data
+        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics
     )

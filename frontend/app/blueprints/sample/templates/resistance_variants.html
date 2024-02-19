@@ -55,6 +55,9 @@
 </div>
 {% endmacro %}
 
+<form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}">
+    <input value="{{ request.form.get('input-name') }}">
+</form>
 
 {% macro variant_filters(form_data) %}
 <div id="variant-filters" class="br-toc y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
@@ -80,6 +83,7 @@
             {% endfor %}
         </select>
         {# Checkboxes #}
+        <hr>
         <div class="row">
             <div class="col-auto">
                 <input type="checkbox" name="yeild-resistance" id="yeild-resistance"
@@ -104,6 +108,55 @@
 </div>
 {% endmacro %}
 
+{% macro footer(antibiotics=[]) %}
+{# Footer with controlls for evaulating variants #}
+<div class="ext-main-footer bg-white ps-2 py-1 border-top">
+    <div class="row align-items-center">
+        <div class="col-auto fw-light">Selected variants: <span id="n-selected-variants">0</span></div>
+
+        <form method="post" action="#" class="row col-auto">
+            {# Varaint rejection section #}
+            <div class="col-auto">
+                <div class="d-flex justify-content-md-center">
+                    <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off">
+                    <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
+
+                    <input type="radio" name="verify-variant-btn" class="btn-check"  id="reject-variant-btn" autocomplete="off">
+                    <label class="btn btn-sm btn-outline-danger me-2" for="reject-variant-btn">Reject</label>
+
+                    <select class="form-select form-select-sm" id="rejection-reason-group">
+                        <option placeholder selected hidden>Choose...</option>
+                        <option value="1">Artifact</option>
+                        <option value="2">Non-pathogenic</option>
+                        <option value="3">Low coverage</option>
+                    </select>
+                </div>
+            </div>
+
+            {# Varaint rejection section #}
+            <div class="col-auto">
+                <select class="form-select form-select-sm" id="antibiotic-group">
+                    <option placeholder selected hidden>Annotate AMR</option>
+                    {% for family, amrs in antibiotics.items() %}
+                    <optgroup label="{{ family }}">
+                        {% for amr in amrs %}
+                        <option value="{{ amr.name }}">{{ amr.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {# Confirm annotation #}
+            <div class="col-auto">
+                <button class="btn btn-sm btn-success" type="submit">
+                    Confirm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endmacro %}
 
 {% block content %}
 {% set footnotes = [] %}
@@ -135,32 +188,7 @@
             <hr class="mt-2 col-md-3 border border-success border-2">
             {{ sv_variants(sample.sv_vcf) }}
         </div>
-        <div class="ext-main-footer bg-white ps-2 py-1 border-top">
-            <div class="row align-items-center">
-                <div class="col-auto fw-light">Selected variants: <span>0</span></div>
-                <div class="col-auto">
-                    <div class="input-group">
-                        <button class="btn btn-outline-success" type="radio">
-                            Accept
-                        </button>
-                        <button class="btn btn-outline-danger" type="radio">
-                            Dismiss
-                        </button>
-                        <select class="form-select" id="inputGroupSelect03">
-                            <option placeholder selected hidden>Choose...</option>
-                            <option value="1">Artifact</option>
-                            <option value="2">Non-pathogenic</option>
-                            <option value="3">Low coverage</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-outline-success" type="button">
-                        Confirm
-                    </button>
-                </div>
-            </div>
-        </div>
+        {{ footer(antibiotics) }}
     </main>
 </div>
 <script>
