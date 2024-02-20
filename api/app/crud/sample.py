@@ -13,7 +13,7 @@ from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification
+from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
     Comment,
     CommentInDatabase,
@@ -335,6 +335,32 @@ async def update_sample_qc_classification(
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
     return classification
+
+
+async def update_variant_annotation_for_sample(
+    db: Database, sample_id: str, classification: VariantAnnotation
+) ->  SampleInDatabase:
+    """Update annotations of variants for a sample."""
+    sample_info = await get_sample(db=db, sample_id=sample_id)
+    """
+    update_obj = await db.sample_collection.update_one(
+        query,
+        {
+            "$set": {
+                "modified_at": datetime.now(),
+                "qc_status": jsonable_encoder(classification, by_alias=False),
+            }
+        },
+    )
+    # verify successful update
+    # if sample is not fund
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(sample_id)
+    # if not modifed
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(sample_id)
+    """
+    return sample_info
 
 
 async def add_location(

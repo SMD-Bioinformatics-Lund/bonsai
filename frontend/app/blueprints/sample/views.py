@@ -14,6 +14,7 @@ from app.bonsai import (
     post_comment_to_sample,
     remove_comment_from_sample,
     update_sample_qc_classification,
+    update_variant_info,
     get_antibiotics
 )
 from app.models import BadSampleQualityAction, QualityControlResult
@@ -240,7 +241,21 @@ def resistance_variants(sample_id: str) -> str:
     }
 
     if request.method == "POST":
-        sample_info = filter_variants(sample_info, form=request.form)
+        # check if which form deposited data
+        if 'classify-variant' in request.form:
+            token = TokenObject(**current_user.get_id())
+            variant_ids = json.loads(request.form.get("variant-ids"))
+            resistance = request.form.get("annotate-amr")
+            # parse resistance
+            status = {
+                "status": request.form.get("verify-variant-btn", "unprocessed"),
+                "reason": request.form.get("rejection-reason"),
+                "phenotypes": [resistance] if resistance is not None else None,
+            }
+            sample_info = update_variant_info(
+                token, sample_id=sample_id, variant_ids=variant_ids, status=status)
+        else:
+            sample_info = filter_variants(sample_info, form=request.form)
     return render_template(
         "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics
     )

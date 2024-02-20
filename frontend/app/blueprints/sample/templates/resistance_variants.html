@@ -112,31 +112,33 @@
 {# Footer with controlls for evaulating variants #}
 <div class="ext-main-footer bg-white ps-2 py-1 border-top">
     <div class="row align-items-center">
-        <div class="col-auto fw-light">Selected variants: <span id="n-selected-variants">0</span></div>
+        <div class="col-auto fw-light">Selected variants: <span id="selected-variants-counter">0</span></div>
 
-        <form method="post" action="#" class="row col-auto">
+        <form method="post" action="{{ url_for(request.endpoint, **request.view_args) }}" 
+              class="row col-auto" name="variant-classification">
             {# Varaint rejection section #}
             <div class="col-auto">
                 <div class="d-flex justify-content-md-center">
-                    <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off">
+                    <input name="variant-ids" id="variant-ids-input" autocomplete="off">
+
+                    <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="passed">
                     <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
 
-                    <input type="radio" name="verify-variant-btn" class="btn-check"  id="reject-variant-btn" autocomplete="off">
+                    <input type="radio" name="verify-variant-btn" class="btn-check"  id="reject-variant-btn" autocomplete="off" value="failed">
                     <label class="btn btn-sm btn-outline-danger me-2" for="reject-variant-btn">Reject</label>
 
-                    <select class="form-select form-select-sm" id="rejection-reason-group">
-                        <option placeholder selected hidden>Choose...</option>
-                        <option value="1">Artifact</option>
-                        <option value="2">Non-pathogenic</option>
-                        <option value="3">Low coverage</option>
+                    <select name="rejection-reason" class="form-select form-select-sm" id="rejection-reason-group">
+                        <option placeholder selected hidden disabled value="">Choose...</option>
+                        <option value="likley-artifact" value="artifact">Artifact</option>
+                        <option value="low-coverage" value="low-coverage">Low coverage</option>
                     </select>
                 </div>
             </div>
 
             {# Varaint rejection section #}
             <div class="col-auto">
-                <select class="form-select form-select-sm" id="antibiotic-group">
-                    <option placeholder selected hidden>Annotate AMR</option>
+                <select name="annotate-amr" class="form-select form-select-sm" id="antibiotic-group">
+                    <option placeholder selected hidden disabled value="">Annotate AMR</option>
                     {% for family, amrs in antibiotics.items() %}
                     <optgroup label="{{ family | capitalize }}">
                         {% for amr in amrs %}
@@ -149,9 +151,7 @@
 
             {# Confirm annotation #}
             <div class="col-auto">
-                <button class="btn btn-sm btn-success" type="submit">
-                    Confirm
-                </button>
+                <input class="btn btn-sm btn-success" type="submit" value="Confirm" name="classify-variant">
             </div>
         </form>
     </div>
@@ -192,7 +192,34 @@
     </main>
 </div>
 <script>
+    window.addEventListener("load", () => {
+        // reset selected variants on page load and reload
+        window.localStorage.setItem("selectedVariants", JSON.stringify([]))
+    })
+
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-</div>
+
+    const selectVariant = (element) => {
+        let selectedVariants
+        // get selected variants
+        if (window.localStorage.getItem("selectedVariants")) {
+            selectedVariants = new Set(JSON.parse(localStorage.getItem("selectedVariants")))
+        } else {
+            selectedVariants = new Set([])
+        }
+        // update selected variants
+        if ( element.checked ) {
+            selectedVariants.add(element.name)
+        } else {
+            selectedVariants.delete(element.name)
+        }
+        // update selected variant counter
+        document.getElementById("selected-variants-counter").innerHTML = selectedVariants.size
+        const variantsObj = JSON.stringify(Array.from(selectedVariants))
+        document.getElementById("variant-ids-input").value = variantsObj // store the selected variants
+        window.localStorage.setItem("selectedVariants", variantsObj)
+    }
+    // reset selected varants on page load
+</script>
 {% endblock content %}

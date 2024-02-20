@@ -1,7 +1,9 @@
 """QC data models."""
 from enum import Enum
+from typing import List
 
 from .base import RWModel
+from .antibiotics import AntibioticInfo
 
 
 class SampleQcClassification(Enum):
@@ -28,3 +30,12 @@ class QcClassification(RWModel):  # pylint: disable=too-few-public-methods
     status: SampleQcClassification = SampleQcClassification.UNPROCESSED
     action: BadSampleQualityAction | None = None
     comment: str = ""
+
+
+class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
+    """User variant annotation."""
+
+    variant_ids: List[str]
+    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+    reason: str | None = None
+    phenotypes: List[str] | None = None

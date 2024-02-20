@@ -348,6 +348,20 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
+def update_variant_info(headers: CaseInsensitiveDict, sample_id, variant_ids = [], status={}):
+    """Update annotation of resitance variants for a sample"""
+    data = {
+        "variant_ids": variant_ids,
+        **status,
+    }
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/annotate_variants'
+    resp = requests.put(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def cluster_samples(headers: CaseInsensitiveDict, **kwargs) -> SubmittedJob:
     """Cluster samples on selected typing result."""
     typing_method = kwargs.get("typing_method", "cgmslt")

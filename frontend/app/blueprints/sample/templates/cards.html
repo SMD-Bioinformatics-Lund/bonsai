@@ -616,7 +616,7 @@
                     <tr>
                         {% if extended %}
                             <td>
-                                <input type="checkbox" name="tbprofiler-{{ loop.index }}" id="">
+                                <input type="checkbox" name="tbprofiler-{{ loop.index }}" id="" onclick="selectVariant(this)">
                             </td>
                         {% endif %}
                         <td>{{ variant.hgvs_nt_change }}</td>

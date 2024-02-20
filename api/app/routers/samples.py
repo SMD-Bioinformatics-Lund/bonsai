@@ -14,11 +14,11 @@ from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import update_sample_qc_classification
+from ..crud.sample import update_sample_qc_classification, update_variant_annotation_for_sample
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification
+from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
     SAMPLE_ID_PATTERN,
     Comment,
@@ -381,6 +381,37 @@ async def update_qc_status(
             detail=str(error),
         ) from error
     return status_obj
+
+
+@router.put(
+    "/samples/{sample_id}/annotate_variants",
+    response_model_by_alias=False,
+    tags=DEFAULT_TAGS,
+)
+async def update_variant_annotation(
+    classification: VariantAnnotation,
+    sample_id: str = Path(
+        ...,
+        title="ID of the sample",
+        min_length=3,
+        max_length=100,
+        regex=SAMPLE_ID_PATTERN,
+    ),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
+    ),
+) -> SampleInDatabase:
+    """Update manual annotation of one or more variants."""
+    try:
+        sample_info: SampleInDatabase = await update_variant_annotation_for_sample(
+            db, sample_id, classification
+        )
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    return sample_info
 
 
 @router.post(
