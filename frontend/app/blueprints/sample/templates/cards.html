@@ -621,7 +621,16 @@
                     <tr class="{{ row_class }}">
                         {% if extended %}
                             <td>
-                                <input type="checkbox" name="tbprofiler-{{ variant.id }}" id="" onclick="selectVariant(this)">
+                                <div class="d-flex">
+                                    <input type="checkbox" name="tbprofiler-{{ variant.id }}" id="" onclick="selectVariant(this)">
+                                    {% if variant.verified == "failed" and variant.reason %}
+                                        <span class="ms-2 badge text-bg-dark"
+                                              data-bs-toggle="tooltip" data-bs-placement="top"
+                                              data-bs-title="{{ variant.reason | capitalize }}" >
+                                            {{ variant.reason[0] | upper }}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </td>
                         {% endif %}
                         <td>{{ variant.hgvs_nt_change }}</td>
