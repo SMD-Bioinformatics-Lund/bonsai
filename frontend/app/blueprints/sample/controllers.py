@@ -173,6 +173,17 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
     return amr_summary, resistance_info
 
 
+def sort_variants(sample_info):
+    SORT_ORDER = {"passed": 1, "unprocessed": 2, "failed": 3}
+    # sort the filtered variants by verification status and then gene name
+    for pred_res in sample_info['element_type_result']:
+        sorted_variants = sorted(
+            pred_res['result']['variants'], 
+            key=lambda var: (SORT_ORDER[var['verified']], var['reference_sequence']))
+        pred_res['result']['variants'] = sorted_variants
+    return sample_info
+
+
 def filter_variants(sample_info, form: float | None = None):
     for prediction in sample_info['element_type_result']:
         variants = prediction['result']['variants']
@@ -191,7 +202,7 @@ def filter_variants(sample_info, form: float | None = None):
                 continue
 
             # hide variant that have been manually dismissed
-            if bool(form.get('hide-dismissed')) and variant.get('dismissed', False):
+            if bool(form.get('hide-dismissed')) and variant["verified"] == "failed":
                 continue
 
             # hide varians without resistance

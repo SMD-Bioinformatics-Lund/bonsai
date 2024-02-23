@@ -31,7 +31,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from .controllers import filter_variants, get_variant_genes
+from .controllers import filter_variants, get_variant_genes, sort_variants
 
 samples_bp = Blueprint(
     "samples",
@@ -227,6 +227,7 @@ def resistance_variants(sample_id: str) -> str:
     """Samples view."""
     token = TokenObject(**current_user.get_id())
     sample_info = get_sample_by_id(token, sample_id=sample_id)
+    sample_info = sort_variants(sample_info)
 
     # populate form for filter varaints
     antibiotics = {
@@ -248,7 +249,7 @@ def resistance_variants(sample_id: str) -> str:
             resistance = request.form.get("annotate-amr")
             # parse resistance
             status = {
-                "status": request.form.get("verify-variant-btn", "unprocessed"),
+                "verified": request.form.get("verify-variant-btn"),
                 "reason": request.form.get("rejection-reason"),
                 "phenotypes": [resistance] if resistance is not None else None,
             }
@@ -256,6 +257,8 @@ def resistance_variants(sample_id: str) -> str:
                 token, sample_id=sample_id, variant_ids=variant_ids, status=status)
         else:
             sample_info = filter_variants(sample_info, form=request.form)
+        # resort variants after processing
+        sample_info = sort_variants(sample_info)
     return render_template(
         "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics
     )
