@@ -2,6 +2,7 @@
 import logging
 from datetime import datetime
 from typing import Any, Dict, List
+from itertools import groupby
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -342,13 +343,52 @@ async def update_variant_annotation_for_sample(
 ) ->  SampleInDatabase:
     """Update annotations of variants for a sample."""
     sample_info = await get_sample(db=db, sample_id=sample_id)
-    """
+    # create variant group lookup table
+    variant_id_gr = {
+        gr_name: [int(id.split("-")[1]) for id in ids] for gr_name, ids 
+        in groupby(classification.variant_ids, key=lambda variant: variant.split("-")[0])
+    }
+    # update element type results
+    upd_results = []
+    for pred_res in sample_info.element_type_result:
+        # just store results that are not modified
+        LOG.debug(
+            "sw: %s; gr_sw: %s; sw not in gr ? %s", 
+            pred_res.software.value, list(variant_id_gr),
+            pred_res.software.value not in variant_id_gr
+        )
+        if pred_res.software.value not in variant_id_gr:
+            upd_results.append(pred_res)
+            continue
+        # update individual variants
+        upd_variants = []
+        for variant in pred_res.result.variants:
+            # add unmodified variant if it should not be updated
+            if variant.id not in variant_id_gr[pred_res.software.value]:
+                upd_variants.append(variant)
+            else:
+                # update variant with selected annotations
+                upd_variant = variant.model_copy(update={
+                        "verified": classification.verified,
+                        "reason": classification.reason
+                    })
+                LOG.debug("cals: %s", classification)
+                upd_variants.append(upd_variant)
+        # update prediction and add to list of updated results
+        upd_results.append(
+            pred_res.model_copy(
+                update={"result": pred_res.result.model_copy(
+                    update={"variants": upd_variants}
+                )
+            })
+        )
+    # update phenotypic prediction information in the database
     update_obj = await db.sample_collection.update_one(
-        query,
+        {"sample_id": sample_id},
         {
             "$set": {
                 "modified_at": datetime.now(),
-                "qc_status": jsonable_encoder(classification, by_alias=False),
+                "element_type_result": jsonable_encoder(upd_results, by_alias=False),
             }
         },
     )
@@ -359,8 +399,9 @@ async def update_variant_annotation_for_sample(
     # if not modifed
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
-    """
-    return sample_info
+    # make a copy of updated result and return it
+    upd_sample_info = sample_info.model_copy(update={"element_type_result": upd_results})
+    return upd_sample_info
 
 
 async def add_location(
