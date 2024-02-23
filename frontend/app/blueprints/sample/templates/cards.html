@@ -613,7 +613,12 @@
             <tbody class="table-group-divider">
                 {% for variant in result.variants %}
                     {% if variant.phenotypes | length > 0 or extended %}
-                    <tr>
+                    {% if variant.verified == "passed" %}
+                        {% set row_class = "table-success" %}
+                    {% elif variant.verified == "failed" %}
+                        {% set row_class = "table-danger" %}
+                    {% endif %}
+                    <tr class="{{ row_class }}">
                         {% if extended %}
                             <td>
                                 <input type="checkbox" name="tbprofiler-{{ variant.id }}" id="" onclick="selectVariant(this)">
