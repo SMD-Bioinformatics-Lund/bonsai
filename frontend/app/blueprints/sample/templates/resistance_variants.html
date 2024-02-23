@@ -196,7 +196,10 @@
 <script>
     window.addEventListener("load", () => {
         // reset selected variants on page load and reload
-        window.localStorage.setItem("selectedVariants", JSON.stringify([]))
+        checkedVariants = Array.from(
+            document.querySelectorAll('.br-content input[type="checkbox"]')
+            ).filter(input => input.checked).map(input => input.id)
+        window.localStorage.setItem("selectedVariants", JSON.stringify(checkedVariants))
     })
 
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
