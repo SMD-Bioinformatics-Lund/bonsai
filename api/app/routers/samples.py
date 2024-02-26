@@ -384,7 +384,7 @@ async def update_qc_status(
 
 
 @router.put(
-    "/samples/{sample_id}/annotate_variants",
+    "/samples/{sample_id}/resistance/variants",
     response_model_by_alias=False,
     tags=DEFAULT_TAGS,
 )
@@ -404,7 +404,7 @@ async def update_variant_annotation(
     """Update manual annotation of one or more variants."""
     try:
         sample_info: SampleInDatabase = await update_variant_annotation_for_sample(
-            db, sample_id, classification
+            db, sample_id, classification, username=current_user.username
         )
     except EntryNotFound as error:
         raise HTTPException(

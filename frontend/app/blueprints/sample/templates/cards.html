@@ -597,6 +597,7 @@
                     {% if extended %}
                         <td scope="col"></td>
                     {% endif %}
+                    <td scope="col">Tags</td>
                     <td scope="col">Variant</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Gene</td>
@@ -620,19 +621,31 @@
                     <tr class="{{ row_class }}">
                         {% if extended %}
                             <td>
-                                <div class="d-flex">
-                                    <input type="checkbox" name="tbprofiler-{{ variant.id }}" id="" onclick="selectVariant(this)">
-                                    {% if variant.verified == "failed" and variant.reason %}
-                                        <span class="ms-2 badge text-bg-dark"
-                                              data-bs-toggle="tooltip" data-bs-placement="top"
-                                              data-bs-title="{{ variant.reason | capitalize }}" >
-                                            {{ variant.reason[0] | upper }}
-                                        </span>
-                                    {% endif %}
-                                </div>
+                                <input type="checkbox" class="form-check-input col-auto" name="tbprofiler-{{ variant.id }}" id="tbprofiler-{{ variant.id }}" onclick="selectVariant(this)">
                             </td>
                         {% endif %}
-                        <td>{{ variant.hgvs_nt_change }}</td>
+                        <td>
+                            {% if variant.verified == "failed" and variant.reason %}
+                                <span class="ms-2 badge text-bg-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ variant.reason | capitalize }}" >
+                                    {{ variant.reason[0] | upper }}
+                                </span>
+                            {% endif %}
+                            {# Add WHO class as badges #}
+                            {% for phenotype in variant.phenotypes %}
+                                {% if phenotype.note and phenotype.note != "" %}
+                                    <span class="badge text-bg-secondary"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ phenotype.note }}">
+                                        {{ phenotype.note | lookup_who_group }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {{ variant.hgvs_nt_change }}
+                        </td>
                         {% if variant.hgvs_aa_change %}
                             <td>{{ variant.hgvs_aa_change }}</td>
                         {% else %}
@@ -647,13 +660,24 @@
                             <td><i class="bi bi-x text-danger"></i></td>
                         {% endif  %}
                         <td>
-                            {{ variant.phenotypes | get_resistance_profile(level="name") }}
-                            {% set note=variant.phenotypes | get_resistance_profile(level="note") %}
-                            {% if extended and note != "" %}
-                                <span class="badge text-bg-secondary"
-                                    data-bs-toggle="tooltip" data-bs-placement="top"
-                                    data-bs-title="{{ note }}">{{ note | lookup_who_group }}</span>
-                            {% endif %}
+                            <ul class="no-bullets">
+                            {% for phenotype in variant.phenotypes %}
+                                <li>
+                                <span data-bs-toggle="tooltip" data-bs-placement="top" 
+                                      data-bs-title="{{ phenotype.group }}">
+                                    {{ phenotype.name | capitalize }}
+                                </span>
+                                {# Add tag if antibiotic is user annotated #}
+                                {% if phenotype.annotation_type == "user" %}
+                                    <span class="badge text-bg-primary"
+                                          data-bs-toggle="tooltip" data-bs-placement="top"
+                                          data-bs-title="{{ phenotype.annotation_author }}">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
+                                {% endif %}
+                                </li>
+                            {% endfor %}
+                            </ul>
                         </td>
                         {% if extended %}
                             <td>

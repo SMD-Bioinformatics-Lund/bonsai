@@ -355,7 +355,7 @@ def update_variant_info(headers: CaseInsensitiveDict, sample_id, variant_ids = [
         **status,
     }
     # conduct query
-    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/annotate_variants'
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/resistance/variants'
     resp = requests.put(url, headers=headers, json=data, timeout=TIMEOUT)
     resp.raise_for_status()
     return resp.json()

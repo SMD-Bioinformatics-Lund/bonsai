@@ -36,6 +36,6 @@ class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
     """User variant annotation."""
 
     variant_ids: List[str]
-    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+    verified: SampleQcClassification | None = None
     reason: str | None = None
     phenotypes: List[str] | None = None

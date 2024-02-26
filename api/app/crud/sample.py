@@ -7,6 +7,7 @@ from itertools import groupby
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.models import PipelineResult
+from prp.models.phenotype import PhenotypeInfo, AnnotationType, ElementType
 from prp.models.tags import TagList
 
 from ..crud.location import get_location
@@ -22,6 +23,7 @@ from ..models.sample import (
     SampleInDatabase,
     SampleSummary,
 )
+from ..models.antibiotics import ANTIBIOTICS
 from ..redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
@@ -338,8 +340,51 @@ async def update_sample_qc_classification(
     return classification
 
 
+def update_variant_verificaton(variant, info):
+    # update variant with selected annotations
+    if info.verified is not None:
+        LOG.debug("cals: %s", info)
+        variant = variant.model_copy(update={
+                "verified": info.verified,
+                "reason": info.reason
+            })
+    return variant
+
+
+def update_variant_phenotype(variant, info, username):
+    # update variant with selected annotations
+    predicted_pheno = [phe for phe in variant.phenotypes if phe.annotation_type == AnnotationType.TOOL.value]
+    LOG.error(variant.phenotypes)
+    if info.phenotypes is not None:
+        annotated_pheno = []
+        antibiotics_lookup = {ant.name: ant for ant in ANTIBIOTICS}
+        for phenotype in info.phenotypes:
+            # uppdate phenotypic annotation
+            if phenotype in antibiotics_lookup:
+                pheno = PhenotypeInfo(
+                    name=phenotype,
+                    group=antibiotics_lookup[phenotype].family,
+                    type=ElementType.AMR,
+                    annotation_type=AnnotationType.USER,
+                    annotation_author=username)
+            else:
+                pheno = PhenotypeInfo(
+                    name=phenotype,
+                    group="",
+                    type=ElementType.AMR,
+                    annotation_type=AnnotationType.USER,
+                    annotation_author=username)
+            LOG.error(pheno)
+            annotated_pheno.append(pheno)
+        # update variant info
+        variant = variant.model_copy(update={
+                "phenotypes": predicted_pheno + annotated_pheno,
+            })
+    return variant
+
+
 async def update_variant_annotation_for_sample(
-    db: Database, sample_id: str, classification: VariantAnnotation
+    db: Database, sample_id: str, classification: VariantAnnotation, username: str
 ) ->  SampleInDatabase:
     """Update annotations of variants for a sample."""
     sample_info = await get_sample(db=db, sample_id=sample_id)
@@ -363,17 +408,12 @@ async def update_variant_annotation_for_sample(
         # update individual variants
         upd_variants = []
         for variant in pred_res.result.variants:
-            # add unmodified variant if it should not be updated
-            if variant.id not in variant_id_gr[pred_res.software.value]:
-                upd_variants.append(variant)
-            else:
-                # update variant with selected annotations
-                upd_variant = variant.model_copy(update={
-                        "verified": classification.verified,
-                        "reason": classification.reason
-                    })
-                LOG.debug("cals: %s", classification)
-                upd_variants.append(upd_variant)
+            # update varaint if its id is in the list
+            if variant.id in variant_id_gr[pred_res.software.value]:
+                variant = update_variant_verificaton(variant, classification)
+                variant = update_variant_phenotype(variant, classification, username)
+            upd_variants.append(variant)
+
         # update prediction and add to list of updated results
         upd_results.append(
             pred_res.model_copy(

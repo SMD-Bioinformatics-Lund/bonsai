@@ -63,6 +63,11 @@
   font-weight: bold;
 }
 
+.no-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
 #variant-filters {
   padding: 1rem !important;
   height: fit-content !important; 

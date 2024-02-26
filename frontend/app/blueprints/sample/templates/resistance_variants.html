@@ -72,10 +72,7 @@
             <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ request.form.get('min-depth') }}" default="">
         </div>
         <label class="form-label" for="filter-genes">Select genes</label>
-        <select name="filter-genes" id="filter-genes" class="form-control form-select form-select-sm" aria-label=".form-select-sm example" multiple>
-            {% if not request.form.get('filtered-genes')%}
-                <option value="" disabled selected>Select gene</option>
-            {% endif %}
+        <select name="filter-genes" id="filter-genes" class="form-control form-select form-select-sm" data-placeholder="Select gene" data-close-on-select="false" multiple>
             {% for gene in form_data.get('filter_genes', []) %}
                 <option value="{{gene}}" {% if gene in request.form.getlist('filter-genes') %}selected{% endif %}>
                     {{gene}}
@@ -119,15 +116,15 @@
             {# Varaint rejection section #}
             <div class="col-auto">
                 <div class="d-flex justify-content-md-center">
-                    <input hidden name="variant-ids" id="variant-ids-input" autocomplete="off">
+                    <input name="variant-ids" id="variant-ids-input" autocomplete="off" minlength="2" value="[]" hidden>
 
-                    <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="passed">
+                    <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="passed" onclick="">
                     <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
 
                     <input type="radio" name="verify-variant-btn" class="btn-check"  id="reject-variant-btn" autocomplete="off" value="failed">
                     <label class="btn btn-sm btn-outline-danger me-2" for="reject-variant-btn">Reject</label>
 
-                    <select name="rejection-reason" class="form-select form-select-sm" id="rejection-reason-group">
+                    <select name="rejection-reason" class="form-select form-select-sm" id="rejection-reason-group" disabled>
                         <option placeholder selected hidden disabled value="">Choose...</option>
                         <option value="likley-artifact" value="artifact">Artifact</option>
                         <option value="low-coverage" value="low-coverage">Low coverage</option>
@@ -137,8 +134,7 @@
 
             {# Varaint rejection section #}
             <div class="col-auto">
-                <select name="annotate-amr" class="form-select form-select-sm" id="antibiotic-group">
-                    <option placeholder selected hidden disabled value="">Annotate AMR</option>
+                <select name="amrs" class="form-control form-select" id="antibiotic-group" multiple="multiple" data-placeholder="Select antibiotic" data-close-on-select="false">
                     {% for family, amrs in antibiotics.items() %}
                     <optgroup label="{{ family | capitalize }}">
                         {% for amr in amrs %}
@@ -194,6 +190,14 @@
     </main>
 </div>
 <script>
+    $(document).ready(() => { 
+        // ready select2
+        $("#antibiotic-group").select2()
+        $("#filter-genes").select2()
+        // 
+        $("#accept-variant-btn").click(() => $("#rejection-reason-group").prop('disabled', true))
+        $("#reject-variant-btn").click(() => $("#rejection-reason-group").prop('disabled', false))
+    })
     window.addEventListener("load", () => {
         // reset selected variants on page load and reload
         checkedVariants = Array.from(

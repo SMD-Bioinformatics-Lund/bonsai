@@ -245,13 +245,13 @@ def resistance_variants(sample_id: str) -> str:
         # check if which form deposited data
         if 'classify-variant' in request.form:
             token = TokenObject(**current_user.get_id())
-            variant_ids = json.loads(request.form.get("variant-ids"))
-            resistance = request.form.get("annotate-amr")
-            # parse resistance
+            variant_ids = json.loads(request.form.get("variant-ids", "[]"))
+            resistance = request.form.getlist("amrs")
+            # parse resistanc
             status = {
                 "verified": request.form.get("verify-variant-btn"),
                 "reason": request.form.get("rejection-reason"),
-                "phenotypes": [resistance] if resistance is not None else None,
+                "phenotypes": resistance if resistance is not None else None,
             }
             sample_info = update_variant_info(
                 token, sample_id=sample_id, variant_ids=variant_ids, status=status)
