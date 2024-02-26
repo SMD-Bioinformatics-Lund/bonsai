@@ -605,7 +605,6 @@
                     <td scope="col">Passed QC</td>
                     <td scope="col">Antibiotics</td>
                     {% if extended %}
-                        <td scope="col">Class</td>
                         <td scope="col"></td>
                     {% endif %}
                 </tr>
@@ -647,9 +646,16 @@
                         {% else  %}
                             <td><i class="bi bi-x text-danger"></i></td>
                         {% endif  %}
-                        <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
+                        <td>
+                            {{ variant.phenotypes | get_resistance_profile(level="name") }}
+                            {% set note=variant.phenotypes | get_resistance_profile(level="note") %}
+                            {% if extended and note != "" %}
+                                <span class="badge text-bg-secondary"
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    data-bs-title="{{ note }}">{{ note | lookup_who_group }}</span>
+                            {% endif %}
+                        </td>
                         {% if extended %}
-                            <td>{{ variant.phenotypes | get_resistance_profile(level="note")}}</td>
                             <td>
                                 <button class="btn btn-sm btn-secondary" type="button">IGV</button>
                             </td>
