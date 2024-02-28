@@ -3,7 +3,7 @@ from itertools import zip_longest
 
 from flask import Flask
 
-from .blueprints import api, cluster, groups, login, public, sample, admin
+from .blueprints import api, cluster, groups, login, public, sample, admin, alignviewers
 from .custom_filters import FILTERS as JINJA_FILTERS
 from .custom_filters import TESTS as JINJA_TESTS
 from .extensions import login_manager
@@ -41,6 +41,7 @@ def register_blueprints(app):
     app.register_blueprint(public.public_bp)
     app.register_blueprint(login.login_bp)
     app.register_blueprint(sample.samples_bp)
+    app.register_blueprint(alignviewers.alignviewers_bp)
     app.register_blueprint(groups.groups_bp)
     app.register_blueprint(cluster.cluster_bp)
     app.register_blueprint(api.api_bp)

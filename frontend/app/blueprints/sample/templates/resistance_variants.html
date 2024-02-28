@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, sidebar_header %}
-{% from "cards.html" import sample_header, amr_prediction_card, virulence_card %}
+{% from "cards.html" import sample_header, virulence_card %}
+{% from "cards.html" import amr_prediction_card with context %}
 
 {% macro export_btn() %}
     {{ sidebar_header("Action") }}
