@@ -74,23 +74,30 @@ def make_igv_tracks(
     )
 
     # set annotation tracks
-    tracks = []
-    for order, annot in enumerate(sample_obj["genome_annotation"], start=1):
-        file = Path(annot)
-        match file.suffix:
-            case ".bam":
-                index_url = url_for("alignviewers.remote_static", _external=True, file=f"{annot}.bai")
-            case ".bed":
-                index_url = None
-            case ".vcf":
-                index_url = None
+    tracks = [
+        IgvBaseTrack(
+            name="Genes",
+            source_type="file",
+            url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["genes"]),
+            order=1,
+        ),
+        IgvBaseTrack(
+            name="Read mapping",
+            source_type="file",
+            url=url_for("alignviewers.remote_static", _external=True, file=sample_obj["read_mapping"]),
+            index_url=url_for("alignviewers.remote_static", _external=True, file=f"{sample_obj['read_mapping']}.bai"),
+            order=2,
+        ),
+    ]
+    # set additional annotation tracks
+    for order, annot in enumerate(sample_obj["genome_annotation"], start=3):
+        file = Path(annot["file"])
         # add track
         tracks.append(
             IgvBaseTrack(
-                name=annot.split(".")[0],
+                name=annot["name"],
                 source_type="file",
-                url=url_for("alignviewers.remote_static", _external=True, file=annot),
-                index_url=index_url,
+                url=url_for("alignviewers.remote_static", _external=True, file=annot["file"]),
                 order=order,
             )
         )
