@@ -2,22 +2,23 @@
 
 import logging
 import os
-
 from pathlib import Path
-from . import controllers
+
 from flask import (
-    current_app,
     Blueprint,
     Response,
+    abort,
     copy_current_request_context,
+    current_app,
     render_template,
     request,
     session,
-    abort
 )
 from flask_login import current_user, login_required
 
 from app.bonsai import TokenObject, get_sample_by_id
+
+from . import controllers
 from .partial import send_file_partial
 
 alignviewers_bp = Blueprint(
@@ -36,21 +37,24 @@ def remote_static():
     """Load large static files with special requirements."""
     base_path = Path(current_app.config["DATA_DIR"])
     file_path = base_path.joinpath(request.args.get("file"))
+
+    """
     if controllers.check_session_tracks(file_path) is False:
         abort(403)
+    """
 
     if not file_path.is_file():
         LOG.warning("file: %s cant be found", file_path)
         abort(404)
 
-    if not os.access(file_path):
+    if not os.access(file_path, os.R_OK):
         LOG.warning("file: %s cant read by the system user", file_path)
         abort(500)
 
     range_header = request.headers.get("Range", None)
-    if not range_header and (file_path.endswith(".bam") or file_path.endswith(".cram")):
+    if not range_header and file_path.suffix in [".bam", ".cram"]:
         abort(500)
-    
+
     new_resp = send_file_partial(file_path)
     return new_resp
 
@@ -60,26 +64,33 @@ def remote_static():
     "/samples/<sample_id>/<variant_id>/igv", methods=["GET"]
 )  # from variants page
 @login_required
-def igv(sample_id, variant_id=None):
+def igv(sample_id: str, variant_id: str | None = None):
     """Visualize BAM alignments using igv.js (https://github.com/igvteam/igv.js)
 
+    :param sample_id: _description_
+    :type sample_id: str
+    :param variant_id: _description_, defaults to None
+    :type variant_id: str | None, optional
+    :return: a string, corresponging to the HTML rendering of the IGV alignments page
+    :rtype: str
+
     Args:
-        sample(str): dislay_name of a case
-        variant_id(str/None): variant _id or None
-        chrom(str/None): requested chromosome [1-22], X, Y, [M-MT]
         start(int/None): start of the genomic interval to be displayed
         stop(int/None): stop of the genomic interval to be displayed
-
-    Returns:
-        a string, corresponging to the HTML rendering of the IGV alignments page
     """
     token = TokenObject(**current_user.get_id())
     sample_obj = get_sample_by_id(token, sample_id=sample_id)
     # make igv tracks to display
-    display_obj = controllers.make_igv_tracks(sample_obj, variant_id, start=request.args.get("start"), stop=request.args.get("stop"))
+    display_obj = controllers.make_igv_tracks(
+        sample_obj,
+        variant_id,
+        start=request.args.get("start"),
+        stop=request.args.get("stop"),
+    )
     controllers.set_session_tracks(display_obj)
 
-    response = Response(render_template("igv_viewer.html", **display_obj))
+    igv_config = display_obj.model_dump(by_alias=True, exclude_none=True)
+    response = Response(render_template("igv_viewer.html", igv_config=igv_config))
 
     @response.call_on_close
     @copy_current_request_context

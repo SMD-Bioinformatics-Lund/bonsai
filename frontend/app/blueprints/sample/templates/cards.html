@@ -679,10 +679,13 @@
                             {% endfor %}
                             </ul>
                         </td>
-                        {% if extended %}
+                        {% if extended and display_igv %}
                             <td>
                                 {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
-                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}" target="_blank" class="btn btn-sm btn-secondary" type="button">IGV</a>
+                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                   target="_blank" class="btn btn-sm btn-secondary" type="button">
+                                   IGV
+                                </a>
                             </td>
                         {% endif %}
                     </tr>

@@ -229,6 +229,12 @@ def resistance_variants(sample_id: str) -> str:
     sample_info = get_sample_by_id(token, sample_id=sample_id)
     sample_info = sort_variants(sample_info)
 
+    # check if IGV should be enabled
+    display_genome_browser = all([
+        sample_info["reference_genome"] is not None, 
+        sample_info["read_mapping"] is not None
+    ])
+
     # populate form for filter varaints
     antibiotics = {
         fam: list(amrs) 
@@ -260,5 +266,5 @@ def resistance_variants(sample_id: str) -> str:
         # resort variants after processing
         sample_info = sort_variants(sample_info)
     return render_template(
-        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics
+        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics, display_igv=display_genome_browser
     )
