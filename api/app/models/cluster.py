@@ -24,3 +24,6 @@ class TypingMethod(str, Enum):  # pylint: disable=too-few-public-methods
     MLST = "mlst"
     CGMLST = "cgmlst"
     MINHASH = "minhash"
+    STX = "stx"
+    OTYPE = "O_type"
+    HTYPE = "H_type"
