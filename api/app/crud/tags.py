@@ -96,10 +96,23 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
     tags.append(tag)
 
 
-def add_sxt_type(tags: TagList, sample: SampleInDatabase) -> Tag:
-    """Check if sample SXT type."""
+def add_stx_type(tags: TagList, sample: SampleInDatabase) -> Tag:
+    """Check if sample STX type."""
     for type_res in sample.typing_result:
         if type_res.type == TypingMethod.STX.value:
+            tag = Tag(
+                type=TagType.TYPING,
+                label=type_res.result.gene_symbol.upper(),
+                description="",
+                severity=TagSeverity.INFO,
+            )
+            tags.append(tag)
+
+
+def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
+    """Check if sample OH type."""
+    for type_res in sample.typing_result:
+        if type_res.type == TypingMethod.OTYPE.value or type_res.type == TypingMethod.HTYPE.value:
             tag = Tag(
                 type=TagType.TYPING,
                 label=type_res.result.gene_symbol.upper(),
@@ -113,7 +126,8 @@ def add_sxt_type(tags: TagList, sample: SampleInDatabase) -> Tag:
 ALL_TAG_FUNCS = [
     {"species": ["Staphylococcus aureus"], "func": add_pvl},
     {"species": ["Staphylococcus aureus"], "func": add_mrsa},
-    {"species": ["Escherichia coli"], "func": add_sxt_type},
+    {"species": ["Escherichia coli"], "func": add_stx_type},
+    {"species": ["Escherichia coli"], "func": add_oh_type},
 ]
 
 
