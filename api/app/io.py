@@ -1,10 +1,13 @@
 """File IO operations."""
 import mimetypes
 import os
+import pathlib
 import re
+import logging
 
 from fastapi.responses import Response
 
+LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
 
 
@@ -14,6 +17,27 @@ class InvalidRangeError(Exception):
 
 class RangeOutOfBoundsError(Exception):
     pass
+
+
+
+def is_file_readable(file_path: str) -> bool:
+    """Check if file exist and is readable.
+
+    :param file_path: File path object
+    :type file_path: str
+    :return: True if readable and exist
+    :rtype: bool
+    """
+    path = pathlib.Path(file_path)
+    if not path.is_file():
+        LOG.warning("trying to access missing reference genome data: %s", file_path)
+        return False
+
+    if not os.access(path, os.R_OK):
+        LOG.warning("file: %s cant read by the system user", file_path)
+        return False
+
+    return True
 
 
 def parse_byte_range(byte_range):

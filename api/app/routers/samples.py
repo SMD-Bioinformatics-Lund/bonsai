@@ -2,12 +2,15 @@
 
 import logging
 from typing import Annotated, Any, Dict, List
+import pathlib
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
+from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status, Header
+from fastapi.responses import FileResponse
 from prp.models import PipelineResult
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
+from app.io import InvalidRangeError, RangeOutOfBoundsError, send_partial_file, is_file_readable
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import delete_samples as delete_samples_from_db
@@ -257,7 +260,6 @@ async def delete_sample(
     ),
 ):
     """Delete the specific sample."""
-    return {"sample_id": sample_id}
     try:
         result = await delete_samples_from_db(db, sample_id)
     except EntryNotFound as error:
@@ -316,6 +318,55 @@ async def create_genome_signatures_sample(
         "add_signature_job": add_sig_job.id,
         "index_job": index_job.id,
     }
+
+
+@router.get("/samples/{sample_id}/alignment", tags=DEFAULT_TAGS)
+async def get_sample_read_mapping(
+    sample_id: str,
+    index: bool = Query(False),
+    range: Annotated[str | None, Header()] = None,
+) -> str:
+    """Get read mapping results for a sample."""
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=format_error_message(error)
+        ) from error
+    
+    if sample.read_mapping is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No read mapping results associated with sample"
+        )
+
+    # build path to either bam or the index
+    if index:
+        file_path = pathlib.Path(f"{sample.read_mapping}.bai")
+    else:
+        file_path = pathlib.Path(sample.read_mapping)
+    # test if file is readable
+    if not is_file_readable(str(file_path)):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Alignment file could not be processed"
+        )
+
+    # send file if byte range is not set
+    if range is None:
+        response = FileResponse(file_path)
+    else:
+        try:
+            response = send_partial_file(file_path, range)
+        except InvalidRangeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except RangeOutOfBoundsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail=str(error),
+            ) from error
+    return response
 
 
 @router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)

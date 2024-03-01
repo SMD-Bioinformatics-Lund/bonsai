@@ -93,18 +93,23 @@ def make_igv_tracks(
     else:
         locus = ""
 
-    # set annotation tracks
+    # generate read mapping track
+    bam_entrypoint_url = os.path.join(BONSAI_API_URL, 'samples', sample_obj['sample_id'], 'alignment')
     tracks = [
         IgvBaseTrack(
             name="Read mapping",
             source_type="file",
-            url=url_for("alignviewers.remote_static", _external=True, file=sample_obj["read_mapping"]),
-            index_url=url_for("alignviewers.remote_static", _external=True, file=f"{sample_obj['read_mapping']}.bai"),
+            type="alignment",
+            url=bam_entrypoint_url,
+            index_url=f"{bam_entrypoint_url}?index=true",
             auto_height=True,
             max_height=450,
             display_mode=IgvDisplayMode.SQUISHED,
             order=1,
         ),
+    ]
+    # add gene track
+    tracks.append(
         IgvBaseTrack(
             name="Genes",
             source_type="file",
@@ -112,7 +117,7 @@ def make_igv_tracks(
             height=70,
             order=2,
         ),
-    ]
+    )
     # set additional annotation tracks
     for order, annot in enumerate(sample_obj["genome_annotation"], start=3):
         file = Path(annot["file"])

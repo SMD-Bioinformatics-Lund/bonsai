@@ -38,11 +38,6 @@ def remote_static():
     base_path = Path(current_app.config["DATA_DIR"])
     file_path = base_path.joinpath(request.args.get("file"))
 
-    """
-    if controllers.check_session_tracks(file_path) is False:
-        abort(403)
-    """
-
     if not file_path.is_file():
         LOG.warning("file: %s cant be found", file_path)
         abort(404)
