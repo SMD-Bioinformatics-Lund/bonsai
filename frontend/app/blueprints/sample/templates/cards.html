@@ -5,6 +5,8 @@
     {% set base_url="bitbucket.org/genomicepidemiology/virulencefinder_db/commits" %}
 {% elif db.name == 'pointfinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
+{% elif db.name == 'serotypefinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/serotypefinder_db/commits" %}
 {% endif %}
 <a class="br-card-link" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
 {% endmacro %}
@@ -636,6 +638,34 @@
 <div class="card col-md-auto">
     <div class="card-header">
         {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+    </div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <thead>
+                <td>Gene</td>
+                <td>Coverage</td>
+                <td>Identity</td>
+                <td>Name</td>
+            </thead>
+            <tbody class="table-group-divider">
+                {% set gene=pred.result %}
+                <tr>
+                    <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+                    <td>{{ gene.coverage }}%</td>
+                    <td>{{ gene.identity }}%</td>
+                    <td>{{ gene.sequence_name | capitalize }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro oh_card(pred) %}
+<div class="card col-md-auto">
+    <div class="card-header">
+        {{ pred.type | capitalize }} typing [<i>{{ pred.software }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
