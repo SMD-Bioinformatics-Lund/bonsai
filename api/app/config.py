@@ -16,6 +16,9 @@ MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS", "10"))
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = os.getenv("REDIS_PORT", "6379")
 
+# Reference genome directory
+REFERENCE_GENOMES_DIR = '/tmp/reference_genomes'
+
 # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
 # https://fastapi.tiangolo.com/tutorial/cors/
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
