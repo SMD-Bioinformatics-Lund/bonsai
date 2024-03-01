@@ -14,7 +14,10 @@ LOG = logging.getLogger(__name__)
 
 
 class IgvBaseTrack(RWModel):
-    """Track information for IGV."""
+    """Track information for IGV.
+
+    For full description of the track options, https://github.com/igvteam/igv.js/wiki/Tracks-2.0
+    """
 
     name: str
     type: str | None = None
@@ -24,6 +27,10 @@ class IgvBaseTrack(RWModel):
     index_url: str | None = Field(None, alias="indexURL")
     order: int = 1
     height: int = 50
+    auto_height: bool = Field(False, alias="autoHeight")
+    min_height: int = Field(50, alias="minHeight")
+    max_height: int = Field(500, alias="maxHeight")
+    display_mode: str = Field("COLLAPSED", alias="displayMode")
 
 
 class IgvReferenceGenome(RWModel):
@@ -77,16 +84,20 @@ def make_igv_tracks(
     # set annotation tracks
     tracks = [
         IgvBaseTrack(
-            name="Genes",
-            source_type="file",
-            url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["genes"]),
-            order=1,
-        ),
-        IgvBaseTrack(
             name="Read mapping",
             source_type="file",
             url=url_for("alignviewers.remote_static", _external=True, file=sample_obj["read_mapping"]),
             index_url=url_for("alignviewers.remote_static", _external=True, file=f"{sample_obj['read_mapping']}.bai"),
+            auto_height=True,
+            max_height=450,
+            display_mode="SQUISHED",
+            order=1,
+        ),
+        IgvBaseTrack(
+            name="Genes",
+            source_type="file",
+            url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["genes"]),
+            height=70,
             order=2,
         ),
     ]
