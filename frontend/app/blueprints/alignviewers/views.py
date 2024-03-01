@@ -89,7 +89,7 @@ def igv(sample_id: str, variant_id: str | None = None):
     )
     controllers.set_session_tracks(display_obj)
 
-    igv_config = display_obj.model_dump(by_alias=True, exclude_none=True)
+    igv_config = display_obj.model_dump(mode='json', by_alias=True, exclude_none=True)
     response = Response(render_template("igv_viewer.html", igv_config=igv_config))
 
     @response.call_on_close

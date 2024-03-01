@@ -1,6 +1,7 @@
 """View controller functions."""
 
 import logging
+import os
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List
@@ -10,6 +11,7 @@ from flask_login import current_user
 from pydantic import BaseModel, Field
 
 from app.models import RWModel
+from app.config import BONSAI_API_URL
 
 LOG = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ class IgvBaseTrack(RWModel):
     auto_height: bool = Field(False, alias="autoHeight")
     min_height: int = Field(50, alias="minHeight")
     max_height: int = Field(500, alias="maxHeight")
-    display_mode: IgvDisplayMode = Field(IgvDisplayMode.COLLAPSED, alias="displayMode")
+    display_mode: IgvDisplayMode = Field(IgvDisplayMode.COLLAPSED.value, alias="displayMode")
 
 
 class IgvReferenceGenome(RWModel):
@@ -49,7 +51,7 @@ class IgvReferenceGenome(RWModel):
     cytoband_url: str | None = Field(None, alias="cytobandURL")
 
 
-class IgvData(BaseModel):
+class IgvData(RWModel):
     locus: str
     reference: IgvReferenceGenome
     tracks: List[IgvBaseTrack] = []
@@ -75,10 +77,11 @@ def make_igv_tracks(
 ) -> IgvData:
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
+    entrypoint_url = os.path.join(BONSAI_API_URL, 'resources', 'genome', ref_genome['accession'], 'download')
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
-        fasta_url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["fasta"]),
-        index_url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["fasta_index"]),
+        fasta_url=f"{entrypoint_url}?annotation_type=fasta",
+        index_url=f"{entrypoint_url}?annotation_type=fasta_index",
     )
 
     # narrow view to given locus
