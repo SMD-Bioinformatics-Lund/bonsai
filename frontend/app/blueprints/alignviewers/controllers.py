@@ -1,6 +1,7 @@
 """View controller functions."""
 
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Dict, List
 
@@ -11,6 +12,14 @@ from pydantic import BaseModel, Field
 from app.models import RWModel
 
 LOG = logging.getLogger(__name__)
+
+
+class IgvDisplayMode(Enum):
+    """Valid display modes."""
+
+    COLLAPSED = "COLLAPSED"
+    EXPANDED = "EXPANDED"
+    SQUISHED = "SQUISHED"
 
 
 class IgvBaseTrack(RWModel):
@@ -30,7 +39,7 @@ class IgvBaseTrack(RWModel):
     auto_height: bool = Field(False, alias="autoHeight")
     min_height: int = Field(50, alias="minHeight")
     max_height: int = Field(500, alias="maxHeight")
-    display_mode: str = Field("COLLAPSED", alias="displayMode")
+    display_mode: IgvDisplayMode = Field(IgvDisplayMode.COLLAPSED, alias="displayMode")
 
 
 class IgvReferenceGenome(RWModel):
@@ -90,7 +99,7 @@ def make_igv_tracks(
             index_url=url_for("alignviewers.remote_static", _external=True, file=f"{sample_obj['read_mapping']}.bai"),
             auto_height=True,
             max_height=450,
-            display_mode="SQUISHED",
+            display_mode=IgvDisplayMode.SQUISHED,
             order=1,
         ),
         IgvBaseTrack(
@@ -109,7 +118,7 @@ def make_igv_tracks(
             IgvBaseTrack(
                 name=annot["name"],
                 source_type="file",
-                url=url_for("alignviewers.remote_static", _external=True, file=annot["file"]),
+                url=url_for("alignviewers.remote_static", _external=True, file=file.name),
                 order=order,
             )
         )
