@@ -57,21 +57,22 @@ def get_variant(sample_obj, variant_id: str):
 def make_igv_tracks(
     sample_obj, variant_id: str, start: int | None = None, stop: int | None = None
 ) -> IgvData:
-    variant_obj = get_variant(sample_obj, variant_id)
-    if variant_obj:
-        start = start or variant_obj["start"]
-        stop = stop or variant_obj["start"]
-        locus = f"Chromosome:{start}-{stop}"
-    else:
-        locus = ""
-
-    # set reference genome
+    # get reference genome
     ref_genome = sample_obj["reference_genome"]
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
         fasta_url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["fasta"]),
         index_url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["fasta_index"]),
     )
+
+    # narrow view to given locus
+    variant_obj = get_variant(sample_obj, variant_id)
+    if variant_obj:
+        start = start or variant_obj["start"]
+        stop = stop or variant_obj["start"]
+        locus = f"{reference.name}:{start}-{stop}"
+    else:
+        locus = ""
 
     # set annotation tracks
     tracks = [
