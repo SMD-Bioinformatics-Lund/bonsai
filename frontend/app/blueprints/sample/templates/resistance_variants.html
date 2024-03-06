@@ -60,9 +60,15 @@
                         <td>{{ variant.method }}</td>
                         <td>gene a, gene b</td>
                         <td>gene function</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" type="button">IGV</button>
-                        </td>
+                        {% if display_igv %}
+                            <td>
+                                {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
+                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                   target="_blank" class="btn btn-sm btn-secondary" type="button">
+                                   IGV
+                                </a>
+                            </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>
