@@ -1,24 +1,42 @@
 """Routers for reading or manipulating sample information."""
 
 import logging
-from typing import Annotated, Any, Dict, List
 import pathlib
+from typing import Annotated, Any, Dict, List
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status, Header
+from app.io import (
+    InvalidRangeError,
+    RangeOutOfBoundsError,
+    is_file_readable,
+    send_partial_file,
+)
+from fastapi import (
+    APIRouter,
+    Body,
+    File,
+    Header,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+    status,
+)
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import VariantType
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from app.io import InvalidRangeError, RangeOutOfBoundsError, send_partial_file, is_file_readable
 from ..crud.sample import EntryNotFound, add_comment, add_location
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import update_sample_qc_classification, update_variant_annotation_for_sample
+from ..crud.sample import (
+    update_sample_qc_classification,
+    update_variant_annotation_for_sample,
+)
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
@@ -334,10 +352,11 @@ async def get_sample_read_mapping(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=format_error_message(error)
         ) from error
-    
+
     if sample.read_mapping is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No read mapping results associated with sample"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No read mapping results associated with sample",
         )
 
     # build path to either bam or the index
@@ -348,7 +367,8 @@ async def get_sample_read_mapping(
     # test if file is readable
     if not is_file_readable(str(file_path)):
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Alignment file could not be processed"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Alignment file could not be processed",
         )
 
     # send file if byte range is not set
@@ -395,12 +415,14 @@ async def get_vcf_files_for_sample(
 
     if file_path is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No read mapping results associated with sample"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No read mapping results associated with sample",
         )
     # test if file is readable
     if not is_file_readable(str(file_path)):
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Alignment file could not be processed"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Alignment file could not be processed",
         )
 
     # send file if byte range is not set
@@ -420,7 +442,6 @@ async def get_vcf_files_for_sample(
                 detail=str(error),
             ) from error
     return response
-
 
 
 @router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)

@@ -2,8 +2,8 @@
 from enum import Enum
 from typing import List
 
-from .base import RWModel
 from .antibiotics import AntibioticInfo
+from .base import RWModel
 
 
 class SampleQcClassification(Enum):

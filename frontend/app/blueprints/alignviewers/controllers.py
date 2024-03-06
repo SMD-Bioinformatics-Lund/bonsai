@@ -10,8 +10,8 @@ from flask import session
 from flask_login import current_user
 from pydantic import BaseModel, Field
 
-from app.models import RWModel
 from app.config import BONSAI_API_URL
+from app.models import RWModel
 
 LOG = logging.getLogger(__name__)
 
@@ -127,8 +127,8 @@ def make_igv_tracks(
     ]
     # add gene track
     gene_url = build_api_url(
-                    f"/resources/genome/{ref_genome['accession']}/info", annotation_type="gff"
-                )
+        f"/resources/genome/{ref_genome['accession']}/info", annotation_type="gff"
+    )
     tracks.append(
         IgvBaseTrack(
             name="Genes",
@@ -146,7 +146,8 @@ def make_igv_tracks(
         match file.suffix:
             case ".bed":
                 url = build_api_url(
-                    f"/resources/genome/{ref_genome['accession']}/annotation", file=file.name
+                    f"/resources/genome/{ref_genome['accession']}/annotation",
+                    file=file.name,
                 )
                 track = IgvBaseTrack(
                     name=annot["name"],
@@ -157,8 +158,10 @@ def make_igv_tracks(
                 )
             case ".vcf":
                 variant_type_suffix, _ = file.suffixes
-                url = build_api_url(f"/samples/{sample_obj['sample_id']}/vcf", 
-                                      variant_type=variant_type_suffix[1:].upper())  # strip leading .
+                url = build_api_url(
+                    f"/samples/{sample_obj['sample_id']}/vcf",
+                    variant_type=variant_type_suffix[1:].upper(),
+                )  # strip leading .
                 track = IgvBaseTrack(
                     name=annot["name"],
                     source_type="file",

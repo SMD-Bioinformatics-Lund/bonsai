@@ -1,10 +1,18 @@
 """Data model definition of input/ output data"""
 from datetime import datetime
-from typing import List, Dict, Union, Optional
+from typing import Dict, List, Optional, Union
 
 from prp.models import PipelineResult
+from prp.models.phenotype import (
+    AmrFinderGene,
+    AmrFinderResistanceGene,
+    ElementType,
+    PredictionSoftware,
+    ResfinderGene,
+    VariantBase,
+    VirulenceGene,
+)
 from prp.models.species import SpeciesPrediction
-from prp.models.phenotype import VariantBase, AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene, ElementType, PredictionSoftware
 from prp.models.typing import (
     TypingMethod,
     TypingResultCgMlst,
@@ -15,8 +23,8 @@ from prp.models.typing import (
 )
 from pydantic import BaseModel, Field
 
+from ..models.qc import SampleQcClassification
 from ..models.tags import Tag
-from ..models.qc import  SampleQcClassification
 from .base import DBModelMixin, ModifiedAtRWModel
 from .qc import QcClassification
 
@@ -83,7 +91,9 @@ class ElementTypeResult(BaseModel):
     """
 
     phenotypes: Dict[str, List[str]]
-    genes: List[Union[AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene]]
+    genes: List[
+        Union[AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene]
+    ]
     variants: List[Union[TbProfilerVariant, MykrobeVariant, ResfinderVariant]]
 
 
@@ -101,13 +111,13 @@ class MethodIndex(BaseModel):
     ]
 
 
-
 class SampleInCreate(
     SampleBase, PipelineResult
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
     element_type_result: List[MethodIndex]
+
 
 class SampleInDatabase(
     DBModelMixin, SampleBase, PipelineResult

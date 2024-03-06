@@ -1,9 +1,9 @@
 """File IO operations."""
+import logging
 import mimetypes
 import os
 import pathlib
 import re
-import logging
 
 from fastapi.responses import Response
 
@@ -17,7 +17,6 @@ class InvalidRangeError(Exception):
 
 class RangeOutOfBoundsError(Exception):
     pass
-
 
 
 def is_file_readable(file_path: str) -> bool:

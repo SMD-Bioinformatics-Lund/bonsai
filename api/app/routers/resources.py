@@ -5,8 +5,13 @@ import pathlib
 from enum import Enum
 from typing import Annotated
 
-from app.config import REFERENCE_GENOMES_DIR, ANNOTATIONS_DIR
-from app.io import InvalidRangeError, RangeOutOfBoundsError, send_partial_file, is_file_readable
+from app.config import ANNOTATIONS_DIR, REFERENCE_GENOMES_DIR
+from app.io import (
+    InvalidRangeError,
+    RangeOutOfBoundsError,
+    is_file_readable,
+    send_partial_file,
+)
 from fastapi import APIRouter, Header, HTTPException, Path, Query, status
 from fastapi.responses import FileResponse, Response
 

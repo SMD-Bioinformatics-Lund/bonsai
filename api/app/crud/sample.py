@@ -1,18 +1,19 @@
 """Functions for performing CURD operations on sample collection."""
 import logging
 from datetime import datetime
-from typing import Any, Dict, List
 from itertools import groupby
+from typing import Any, Dict, List
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.models import PipelineResult
-from prp.models.phenotype import PhenotypeInfo, AnnotationType, ElementType
+from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
+from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
@@ -23,7 +24,6 @@ from ..models.sample import (
     SampleInDatabase,
     SampleSummary,
 )
-from ..models.antibiotics import ANTIBIOTICS
 from ..redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
@@ -344,16 +344,19 @@ def update_variant_verificaton(variant, info):
     # update variant with selected annotations
     if info.verified is not None:
         LOG.debug("cals: %s", info)
-        variant = variant.model_copy(update={
-                "verified": info.verified,
-                "reason": info.reason
-            })
+        variant = variant.model_copy(
+            update={"verified": info.verified, "reason": info.reason}
+        )
     return variant
 
 
 def update_variant_phenotype(variant, info, username):
     # update variant with selected annotations
-    predicted_pheno = [phe for phe in variant.phenotypes if phe.annotation_type == AnnotationType.TOOL.value]
+    predicted_pheno = [
+        phe
+        for phe in variant.phenotypes
+        if phe.annotation_type == AnnotationType.TOOL.value
+    ]
     LOG.error(variant.phenotypes)
     if info.phenotypes is not None:
         annotated_pheno = []
@@ -366,41 +369,48 @@ def update_variant_phenotype(variant, info, username):
                     group=antibiotics_lookup[phenotype].family,
                     type=ElementType.AMR,
                     annotation_type=AnnotationType.USER,
-                    annotation_author=username)
+                    annotation_author=username,
+                )
             else:
                 pheno = PhenotypeInfo(
                     name=phenotype,
                     group="",
                     type=ElementType.AMR,
                     annotation_type=AnnotationType.USER,
-                    annotation_author=username)
+                    annotation_author=username,
+                )
             LOG.error(pheno)
             annotated_pheno.append(pheno)
         # update variant info
-        variant = variant.model_copy(update={
+        variant = variant.model_copy(
+            update={
                 "phenotypes": predicted_pheno + annotated_pheno,
-            })
+            }
+        )
     return variant
 
 
 async def update_variant_annotation_for_sample(
     db: Database, sample_id: str, classification: VariantAnnotation, username: str
-) ->  SampleInDatabase:
+) -> SampleInDatabase:
     """Update annotations of variants for a sample."""
     sample_info = await get_sample(db=db, sample_id=sample_id)
     # create variant group lookup table
     variant_id_gr = {
-        gr_name: [int(id.split("-")[1]) for id in ids] for gr_name, ids 
-        in groupby(classification.variant_ids, key=lambda variant: variant.split("-")[0])
+        gr_name: [int(id.split("-")[1]) for id in ids]
+        for gr_name, ids in groupby(
+            classification.variant_ids, key=lambda variant: variant.split("-")[0]
+        )
     }
     # update element type results
     upd_results = []
     for pred_res in sample_info.element_type_result:
         # just store results that are not modified
         LOG.debug(
-            "sw: %s; gr_sw: %s; sw not in gr ? %s", 
-            pred_res.software.value, list(variant_id_gr),
-            pred_res.software.value not in variant_id_gr
+            "sw: %s; gr_sw: %s; sw not in gr ? %s",
+            pred_res.software.value,
+            list(variant_id_gr),
+            pred_res.software.value not in variant_id_gr,
         )
         if pred_res.software.value not in variant_id_gr:
             upd_results.append(pred_res)
@@ -417,10 +427,12 @@ async def update_variant_annotation_for_sample(
         # update prediction and add to list of updated results
         upd_results.append(
             pred_res.model_copy(
-                update={"result": pred_res.result.model_copy(
-                    update={"variants": upd_variants}
-                )
-            })
+                update={
+                    "result": pred_res.result.model_copy(
+                        update={"variants": upd_variants}
+                    )
+                }
+            )
         )
     # update phenotypic prediction information in the database
     update_obj = await db.sample_collection.update_one(
@@ -440,7 +452,9 @@ async def update_variant_annotation_for_sample(
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
     # make a copy of updated result and return it
-    upd_sample_info = sample_info.model_copy(update={"element_type_result": upd_results})
+    upd_sample_info = sample_info.model_copy(
+        update={"element_type_result": upd_results}
+    )
     return upd_sample_info
 
 
