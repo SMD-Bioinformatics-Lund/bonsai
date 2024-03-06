@@ -3,6 +3,12 @@
 ### Added
 
  - Add button to remove samples from the group- and groups view.
+ - Added view for analyszing variants with filtering
+ - Added IGV genome browser integration to variant analysis view.
+ - Bonsai support display of SV and SNV variants.
+ - A user can classify variant as accepted or as rejected based and annotate why it was dissmissed.
+ - A user can annotate that a variant yeilds resistance to additional anitbiotics
+ - Placeholder Export to LIMBS button to the sidebar in the variants view
 
 ### Fixed
 
@@ -11,6 +17,8 @@
  - Fixed typo in similar samples card that caused invalid URLs
 
 ### Changed
+
+ - Removed "passed qc" column from tbprofiler result
 
 ## [v0.2.1]
 
