@@ -1,12 +1,11 @@
 """Public resources and constants."""
 
 import logging
-import os
 import pathlib
 from enum import Enum
 from typing import Annotated
 
-from app.config import REFERENCE_GENOMES_DIR
+from app.config import REFERENCE_GENOMES_DIR, ANNOTATIONS_DIR
 from app.io import InvalidRangeError, RangeOutOfBoundsError, send_partial_file, is_file_readable
 from fastapi import APIRouter, Header, HTTPException, Path, Query, status
 from fastapi.responses import FileResponse, Response
@@ -40,13 +39,13 @@ class AnnotationType(Enum):
     GFF = "gff"
 
 
-@router.get("/resources/genome/{accession_no}/download", tags=DEFAULT_TAGS)
+@router.get("/resources/genome/{accession_no}/info", tags=DEFAULT_TAGS)
 async def get_genome_resources(
     accession_no: str = Path(..., title="Genome accession number", min_length=3),
     annotation_type: AnnotationType = Query(...),
     range: Annotated[str | None, Header()] = None,
 ) -> str:
-    """Get resources for reference genome."""
+    """Genome sequence and annotated genes for a given reference genome."""
     base_path = pathlib.Path(REFERENCE_GENOMES_DIR)
     match annotation_type:
         case AnnotationType.FASTA:
@@ -68,7 +67,41 @@ async def get_genome_resources(
 
     # send file if byte range is not set
     if range is None:
-        response = FileResponse(file_path)
+        response = FileResponse(file_path, filename=file_path.name)
+    else:
+        try:
+            response = send_partial_file(file_path, range)
+        except InvalidRangeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except RangeOutOfBoundsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail=str(error),
+            ) from error
+    return response
+
+
+@router.get("/resources/genome/{accession_no}/annotation", tags=DEFAULT_TAGS)
+async def get_genome_annotation(
+    accession_no: str = Path(..., title="Genome accession number", min_length=3),
+    file: str = Query(..., description="Name of the annotation file with suffix"),
+    range: Annotated[str | None, Header()] = None,
+) -> str:
+    """Get additional genomic annotation for a reference genome."""
+    # check if resource exist
+    file_path = pathlib.Path(ANNOTATIONS_DIR).joinpath(file)
+    if not is_file_readable(str(file_path)):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error occured reading {accession_no} data",
+        )
+
+    # send file if byte range is not set
+    if range is None:
+        response = FileResponse(file_path, filename=file_path.name)
     else:
         try:
             response = send_partial_file(file_path, range)

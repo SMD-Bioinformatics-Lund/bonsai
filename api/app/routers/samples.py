@@ -7,6 +7,7 @@ import pathlib
 from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status, Header
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
+from prp.models.phenotype import VariantType
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -367,6 +368,59 @@ async def get_sample_read_mapping(
                 detail=str(error),
             ) from error
     return response
+
+
+@router.get("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+async def get_vcf_files_for_sample(
+    sample_id: str = Path(...),
+    variant_type: VariantType = Query(...),
+    range: Annotated[str | None, Header()] = None,
+) -> str:
+    """Get vcfs associated with the sample."""
+    # verify that sample are in database
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # build path to either bam or the index
+    file_path = None
+    for annot in sample.genome_annotation:
+        path = pathlib.Path(annot["file"])
+        # if file exist
+        if f".{variant_type.value.lower()}" in path.suffixes:
+            file_path = path
+
+    if file_path is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No read mapping results associated with sample"
+        )
+    # test if file is readable
+    if not is_file_readable(str(file_path)):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Alignment file could not be processed"
+        )
+
+    # send file if byte range is not set
+    if range is None:
+        response = FileResponse(file_path)
+    else:
+        try:
+            response = send_partial_file(file_path, range)
+        except InvalidRangeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except RangeOutOfBoundsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail=str(error),
+            ) from error
+    return response
+
 
 
 @router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)

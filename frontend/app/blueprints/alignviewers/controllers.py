@@ -6,7 +6,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List
 
-from flask import session, url_for
+from flask import session
 from flask_login import current_user
 from pydantic import BaseModel, Field
 
@@ -41,7 +41,9 @@ class IgvBaseTrack(RWModel):
     auto_height: bool = Field(False, alias="autoHeight")
     min_height: int = Field(50, alias="minHeight")
     max_height: int = Field(500, alias="maxHeight")
-    display_mode: IgvDisplayMode = Field(IgvDisplayMode.COLLAPSED.value, alias="displayMode")
+    display_mode: IgvDisplayMode = Field(
+        IgvDisplayMode.COLLAPSED.value, alias="displayMode"
+    )
 
 
 class IgvReferenceGenome(RWModel):
@@ -63,6 +65,17 @@ class IgvData(RWModel):
     show_cursor_track_guide: bool = Field(False, alias="showCursorTrackGuide")
 
 
+def build_api_url(path, **kwargs):
+    # namedtuple to match the internal signature of urlunparse
+    base_url = f"{BONSAI_API_URL}{path}"
+    params = [f"{key}={val}" for key, val in kwargs.items()]
+    if len(params) > 0:
+        url = f"{base_url}?{'&'.join(params)}"
+    else:
+        url = base_url
+    return url
+
+
 def get_variant(sample_obj, variant_id: str):
     software, variant_id = variant_id.split("-")
     for pred_res in sample_obj["element_type_result"]:
@@ -77,7 +90,9 @@ def make_igv_tracks(
 ) -> IgvData:
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
-    entrypoint_url = os.path.join(BONSAI_API_URL, 'resources', 'genome', ref_genome['accession'], 'download')
+    entrypoint_url = os.path.join(
+        BONSAI_API_URL, "resources", "genome", ref_genome["accession"], "info"
+    )
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
         fasta_url=f"{entrypoint_url}?annotation_type=fasta",
@@ -94,7 +109,9 @@ def make_igv_tracks(
         locus = ""
 
     # generate read mapping track
-    bam_entrypoint_url = os.path.join(BONSAI_API_URL, 'samples', sample_obj['sample_id'], 'alignment')
+    bam_entrypoint_url = os.path.join(
+        BONSAI_API_URL, "samples", sample_obj["sample_id"], "alignment"
+    )
     tracks = [
         IgvBaseTrack(
             name="Read mapping",
@@ -109,11 +126,16 @@ def make_igv_tracks(
         ),
     ]
     # add gene track
+    gene_url = build_api_url(
+                    f"/resources/genome/{ref_genome['accession']}/info", annotation_type="gff"
+                )
     tracks.append(
         IgvBaseTrack(
             name="Genes",
             source_type="file",
-            url=url_for("alignviewers.remote_static", _external=True, file=ref_genome["genes"]),
+            format="gff",
+            type="annotation",
+            url=gene_url,
             height=70,
             order=2,
         ),
@@ -121,15 +143,31 @@ def make_igv_tracks(
     # set additional annotation tracks
     for order, annot in enumerate(sample_obj["genome_annotation"], start=3):
         file = Path(annot["file"])
+        match file.suffix:
+            case ".bed":
+                url = build_api_url(
+                    f"/resources/genome/{ref_genome['accession']}/annotation", file=file.name
+                )
+                track = IgvBaseTrack(
+                    name=annot["name"],
+                    source_type="file",
+                    type="annotation",
+                    url=url,
+                    order=order,
+                )
+            case ".vcf":
+                variant_type_suffix, _ = file.suffixes
+                url = build_api_url(f"/samples/{sample_obj['sample_id']}/vcf", 
+                                      variant_type=variant_type_suffix[1:].upper())  # strip leading .
+                track = IgvBaseTrack(
+                    name=annot["name"],
+                    source_type="file",
+                    type="variant",
+                    url=url,
+                    order=order,
+                )
         # add track
-        tracks.append(
-            IgvBaseTrack(
-                name=annot["name"],
-                source_type="file",
-                url=url_for("alignviewers.remote_static", _external=True, file=file.name),
-                order=order,
-            )
-        )
+        tracks.append(track)
     display_obj = IgvData(locus=locus, reference=reference, tracks=tracks)
     return display_obj
 
