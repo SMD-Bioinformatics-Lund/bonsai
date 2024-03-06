@@ -87,7 +87,7 @@ status=$(curl -X 'POST' -s            \
   -H 'Content-Type: application/json' \
   -w %{http_code}                     \
   -o "${RESPONSE}"                    \
-  -d "${sample}")
+  -d @${input_file})
 
 # check upload status
 check_curl_status $status

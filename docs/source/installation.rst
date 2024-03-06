@@ -10,9 +10,9 @@ To install Bonsai, first clone the repository and start the softwares.
 .. code-block:: bash
 
    # clone Bonsai
-   git clone git@github.com:Clinical-Genomics-Lund/cgviz.git
+   git clone git@github.com:Clinical-Genomics-Lund/bonsai.git
    # navigate to project directory
-   cd cgviz
+   cd bonsai
    # start the bonsai software stack
    docker-compose up -d
 
@@ -26,7 +26,12 @@ Create an admin user with the CLI. There are three built in user roles (*user*, 
 
 .. code-block:: bash
 
-   docker-compose exec api bonsai_api create-user -u admin -p admin -r admin
+   docker-compose exec api bonsai_api create-user -u admin                 \
+                                                  -p admin                 \
+                                                  --fname Place            \
+                                                  --lname Holder           \
+                                                  -m place.holder@mail.com \
+                                                  -r admin
 
 Use the :doc:`upload_sample.py <../scripts/upload_sample.sh>` script to add analysis result and genome signature file to the database.
 
@@ -42,7 +47,7 @@ Use the :doc:`upload_sample.py <../scripts/upload_sample.sh>` script to add anal
 Accessing the web interface
 ---------------------------
 
-To access the web interface, access the URL https://localhost:8010 in your web browser.
+To access the web interface, access the URL https://localhost:8000 in your web browser.
 
 (If this doesn't work, you might want to run ``docker container ls`` and make sure that a container based on the image ``bonsai_frontend`` is available in the list).
 

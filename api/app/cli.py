@@ -10,12 +10,13 @@ from pymongo.errors import DuplicateKeyError
 
 from .__version__ import VERSION as version
 from .config import USER_ROLES
-from .crud.sample import get_samples, update_sample
+from .crud.sample import get_sample, get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
 from .crud.user import create_user as create_user_in_db
 from .db import db
 from .db.index import INDEXES
 from .db.utils import connect_to_mongo
+from .io import sample_to_kmlims
 from .models.sample import SampleInCreate
 from .models.user import UserInputCreate
 
@@ -99,6 +100,28 @@ def index(ctx):  # pylint: disable=unused-argument
         click.secho(f"Creating index for: {collection.name}")
         for idx in indexes:
             collection.create_index(idx["definition"], **idx["options"])
+
+
+@cli.command()
+@click.pass_context
+@click.option("-i", "--sample-id", required=True, help="Sample id")
+@click.argument("output", type=click.File("w"), default="-")
+def export(ctx, sample_id, output):  # pylint: disable=unused-argument
+    """Export resistance results in TSV format."""
+    # get sample from database
+    loop = asyncio.get_event_loop()
+    func = get_sample(db, sample_id)
+    sample = loop.run_until_complete(func)
+
+    try:
+        lims_data = sample_to_kmlims(sample)
+    except NotImplementedError as error:
+        click.secho(error, fg="yellow")
+        raise click.Abort(error) from error
+
+    # write lims formatted data
+    lims_data.to_csv(output, sep="\t", index=False)
+    click.secho(f"Exported {sample_id}", fg="green", err=True)
 
 
 @cli.command()

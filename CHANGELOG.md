@@ -9,16 +9,19 @@
  - A user can classify variant as accepted or as rejected based and annotate why it was dissmissed.
  - A user can annotate that a variant yeilds resistance to additional anitbiotics
  - Placeholder Export to LIMBS button to the sidebar in the variants view
+ - Added CLI command for exporting AMR prediction to a LIMS tsv file
 
 ### Fixed
 
  - 500 error when trying to get a sample removed from the database
  - Frontend properly handles non-existing samples and group
  - Fixed typo in similar samples card that caused invalid URLs
+ - Fixed default fontend config to work with default docker-compose file
 
 ### Changed
 
  - Removed "passed qc" column from tbprofiler result
+ - Changed default app port to 8000 and api port to 8001
 
 ## [v0.2.1]
 
