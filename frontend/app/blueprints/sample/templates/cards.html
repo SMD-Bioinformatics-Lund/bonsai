@@ -603,7 +603,6 @@
                     <td scope="col">Gene</td>
                     <td scope="col">Read depth</td>
                     <td scope="col">Freq</td>
-                    <td scope="col">Passed QC</td>
                     <td scope="col">Antibiotics</td>
                     {% if extended %}
                         <td scope="col"></td>
@@ -654,11 +653,6 @@
                         <td>{{ accession_link(variant.close_seq_name, name=variant.reference_sequence) }}</td>
                         <td>{{ variant.depth | int }}</td>
                         <td>{{ (variant.frequency * 100) | round(1) }}</td>
-                        {% if variant.passed_qc  %}
-                            <td><i class="bi bi-check text-success"></i></td>
-                        {% else  %}
-                            <td><i class="bi bi-x text-danger"></i></td>
-                        {% endif  %}
                         <td>
                             <ul class="no-bullets">
                             {% for phenotype in variant.phenotypes %}
