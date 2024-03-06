@@ -181,10 +181,10 @@
                     {% endfor %}
                 {% endif %}
             </div>
-            {% if sample.sv_vcf %}
+            {% if sample.sv_variants %}
                 <h5>Variant calling result</h5>
                 <hr class="mt-2 col-md-3 border border-success border-2">
-                {{ sv_variants(sample.sv_vcf) }}
+                {{ sv_variants(sample.sv_variants) }}
             {% endif %}
         </div>
         {{ footer(antibiotics) }}
