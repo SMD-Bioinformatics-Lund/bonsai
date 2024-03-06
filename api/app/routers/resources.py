@@ -16,6 +16,7 @@ from fastapi import APIRouter, Header, HTTPException, Path, Query, status
 from fastapi.responses import FileResponse, Response
 
 from ..models.antibiotics import ANTIBIOTICS
+from ..models.qc import VARIANT_REJECTION_REASONS
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -35,7 +36,7 @@ async def get_antibiotics():
 @router.get("/resources/variant/rejection", tags=DEFAULT_TAGS)
 async def get_variant_rejection():
     """Get antibiotic names."""
-    return {}
+    return VARIANT_REJECTION_REASONS
 
 
 class AnnotationType(Enum):

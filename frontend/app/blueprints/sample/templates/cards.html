@@ -627,8 +627,8 @@
                             {% if variant.verified == "failed" and variant.reason %}
                                 <span class="ms-2 badge text-bg-warning"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-title="{{ variant.reason | capitalize }}" >
-                                    {{ variant.reason[0] | upper }}
+                                        data-bs-title="{{ variant.reason.description }}" >
+                                    {{ variant.reason.label | upper }}
                                 </span>
                             {% endif %}
                             {# Add WHO class as badges #}

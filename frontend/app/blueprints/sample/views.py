@@ -15,7 +15,8 @@ from app.bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
-    get_antibiotics
+    get_antibiotics,
+    get_variant_rejection_reasons
 )
 from app.models import BadSampleQualityAction, QualityControlResult
 from flask import (
@@ -241,6 +242,7 @@ def resistance_variants(sample_id: str) -> str:
         for fam, amrs 
         in groupby(get_antibiotics(), key=lambda ant: ant['family'])
     }
+    rejection_reasons = get_variant_rejection_reasons()
 
     # populate form for filter varaints
     form_data = {
@@ -253,10 +255,15 @@ def resistance_variants(sample_id: str) -> str:
             token = TokenObject(**current_user.get_id())
             variant_ids = json.loads(request.form.get("variant-ids", "[]"))
             resistance = request.form.getlist("amrs")
-            # parse resistanc
+            # expand rejection reason label to full db object
+            rej_reason = None
+            for reason in rejection_reasons:
+                if reason["label"] == request.form.get("rejection-reason"):
+                    rej_reason = reason
+            # parse updated variant classification
             status = {
                 "verified": request.form.get("verify-variant-btn"),
-                "reason": request.form.get("rejection-reason"),
+                "reason": rej_reason,
                 "phenotypes": resistance if resistance is not None else None,
             }
             sample_info = update_variant_info(
@@ -266,5 +273,5 @@ def resistance_variants(sample_id: str) -> str:
         # resort variants after processing
         sample_info = sort_variants(sample_info)
     return render_template(
-        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics, display_igv=display_genome_browser
+        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics, rejection_reasons=rejection_reasons, display_igv=display_genome_browser
     )

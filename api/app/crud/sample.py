@@ -434,13 +434,28 @@ async def update_variant_annotation_for_sample(
                 }
             )
         )
+    updated_data = {"element_type_result": upd_results}
+    # update SV variants
+    for variant_type in ["snv_variants", "sv_variants"]:
+        if variant_type in variant_id_gr:
+            upd_variants = []
+            for variant in getattr(sample_info, variant_type):
+                if variant.id in variant_id_gr[variant_type]:
+                    # update variant classification and annotation
+                    LOG.error('CLS: %s; Variant before update: %s', classification, variant)
+                    variant = update_variant_verificaton(variant, classification)
+                    variant = update_variant_phenotype(variant, classification, username)
+                    LOG.error('Variant after update: %s', variant)
+                upd_variants.append(variant)
+            updated_data[variant_type] = upd_variants
+
     # update phenotypic prediction information in the database
     update_obj = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
             "$set": {
                 "modified_at": datetime.now(),
-                "element_type_result": jsonable_encoder(upd_results, by_alias=False),
+                **{key: jsonable_encoder(value, by_alias=False) for key, value in updated_data.items()},
             }
         },
     )
@@ -453,7 +468,7 @@ async def update_variant_annotation_for_sample(
         raise UpdateDocumentError(sample_id)
     # make a copy of updated result and return it
     upd_sample_info = sample_info.model_copy(
-        update={"element_type_result": upd_results}
+        update=updated_data
     )
     return upd_sample_info
 

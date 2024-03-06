@@ -23,7 +23,7 @@ from prp.models.typing import (
 )
 from pydantic import BaseModel, Field
 
-from ..models.qc import SampleQcClassification
+from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
 from .base import DBModelMixin, ModifiedAtRWModel
 from .qc import QcClassification
@@ -49,7 +49,7 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
 
 class VariantInDb(VariantBase):
     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-    reason: Optional[str] = None
+    reason: Optional[VaraintRejectionReason] = None
 
 
 class ResfinderVariant(VariantInDb):
@@ -117,6 +117,8 @@ class SampleInCreate(
     """Sample data model used when creating new db entries."""
 
     element_type_result: List[MethodIndex]
+    sv_variants: List[VariantInDb]
+    snv_variants: List[VariantInDb]
 
 
 class SampleInDatabase(
@@ -125,6 +127,8 @@ class SampleInDatabase(
     """Sample database model outputed from the database."""
 
     element_type_result: List[MethodIndex]
+    sv_variants: List[VariantInDb]
+    snv_variants: List[VariantInDb]
 
 
 class SampleSummary(

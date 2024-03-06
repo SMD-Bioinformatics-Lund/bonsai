@@ -1,9 +1,24 @@
 """QC data models."""
+from pydantic import BaseModel
 from enum import Enum
 from typing import List
 
-from .antibiotics import AntibioticInfo
+from .tags import TagSeverity
 from .base import RWModel
+
+
+class VaraintRejectionReason(BaseModel):
+    
+    label: str
+    description: str
+    label_class: TagSeverity = TagSeverity.INFO
+
+
+VARIANT_REJECTION_REASONS = [
+    VaraintRejectionReason(label="LOW", description="Low coverage"),
+    VaraintRejectionReason(label="A", description="Likely artifact"),
+    VaraintRejectionReason(label="SYN", description="Synonymous mutation"),
+]
 
 
 class SampleQcClassification(Enum):
@@ -37,5 +52,5 @@ class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
 
     variant_ids: List[str]
     verified: SampleQcClassification | None = None
-    reason: str | None = None
+    reason: VaraintRejectionReason | None = None
     phenotypes: List[str] | None = None

@@ -24,6 +24,7 @@
             <thead>
                 <tr>
                     <th></th>
+                    <th>Info</th>
                     <th>Subtype</th>
                     <th>Start</th>
                     <th>End</th>
@@ -36,19 +37,33 @@
             </thead>
             <tbody>
                 {% for variant in variants %}
-                <tr>
-                    <td><input type="checkbox" name="sv-{{ loop.index }}" id=""></td>
-                    <td>{{ variant.variant_subtype }}</td>
-                    <td>{{ variant.start }}</td>
-                    <td>{{ variant.end }}</td>
-                    <td>{{ variant.confidence }}</td>
-                    <td>{{ variant.method }}</td>
-                    <td>gene a, gene b</td>
-                    <td>gene function</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" type="button">IGV</button>
-                    </td>
-                </tr>
+                    {% if variant.verified == "passed" %}
+                        {% set row_class = "table-success" %}
+                    {% elif variant.verified == "failed" %}
+                        {% set row_class = "table-danger" %}
+                    {% endif %}
+                    <tr class="{{ row_class }}">
+                        <td><input type="checkbox" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
+                        <td>
+                            {% if variant.verified == "failed" and variant.reason %}
+                                <span class="ms-2 badge text-bg-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ variant.reason.description }}" >
+                                    {{ variant.reason.label | upper }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ variant.variant_subtype }}</td>
+                        <td>{{ variant.start }}</td>
+                        <td>{{ variant.end }}</td>
+                        <td>{{ variant.confidence }}</td>
+                        <td>{{ variant.method }}</td>
+                        <td>gene a, gene b</td>
+                        <td>gene function</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" type="button">IGV</button>
+                        </td>
+                    </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -127,8 +142,9 @@
 
                     <select name="rejection-reason" class="form-select form-select-sm" id="rejection-reason-group" disabled>
                         <option placeholder selected hidden disabled value="">Choose...</option>
-                        <option value="likley-artifact" value="artifact">Artifact</option>
-                        <option value="low-coverage" value="low-coverage">Low coverage</option>
+                        {% for reason in rejection_reasons %}
+                            <option value="{{ reason.label }}">{{ reason.description }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>

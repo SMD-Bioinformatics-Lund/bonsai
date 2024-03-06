@@ -455,3 +455,11 @@ def get_antibiotics():
     resp = requests.get(url)
     resp.raise_for_status()
     return resp.json()
+
+
+def get_variant_rejection_reasons():
+    """Query the API for antibiotics."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/resources/variant/rejection'
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json()
