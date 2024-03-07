@@ -208,12 +208,18 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
     min_freq = form.get("min-frequency")
     if min_freq and variant.get("frequency") is not None:
         LOG.error("%s == %s", min_freq, variant["frequency"] * 100)
-        variant_passes_qc = variant["frequency"] * 100 > int(min_freq)
+        if form.get("freq-operator") == "gte":
+            variant_passes_qc = variant["frequency"] * 100 >= int(min_freq)
+        else:
+            variant_passes_qc = variant["frequency"] * 100 <= int(min_freq)
 
     # check read depth
     min_depth = form.get("min-depth")
     if min_depth and variant["depth"] is not None:
-        variant_passes_qc = variant["depth"] > int(min_depth)
+        if form.get("depth-operator") == "gte":
+            variant_passes_qc = variant["depth"] >= int(min_depth)
+        else:
+            variant_passes_qc = variant["depth"] <= int(min_depth)
 
     # hide variant that have been manually dismissed
     if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":

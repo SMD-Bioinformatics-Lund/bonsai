@@ -7,6 +7,10 @@
   text-decoration: underline;
 }
 
+.br-filter-select {
+  max-width: 40%;
+}
+
 .sidebar-heading {
   font-size: .75rem;
 }
