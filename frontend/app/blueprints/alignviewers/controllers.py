@@ -45,6 +45,16 @@ class IgvBaseTrack(RWModel):
     )
 
 
+class IgvAnnotationTrack(IgvBaseTrack):
+    """Configurations specific to Annotation tracks.
+    
+    reference: https://github.com/igvteam/igv.js/wiki/Annotation-Track
+    """
+
+    name_field: str | None = Field(None, alias="nameField")
+    filter_types: List[str] = Field(["chromosome", "gene"], alias="filterTypes")
+
+
 class IgvReferenceGenome(RWModel):
     name: str
     fasta_url: str = Field(..., alias="fastaURL")
@@ -55,7 +65,7 @@ class IgvReferenceGenome(RWModel):
 class IgvData(RWModel):
     locus: str
     reference: IgvReferenceGenome
-    tracks: List[IgvBaseTrack] = []
+    tracks: List[IgvAnnotationTrack | IgvBaseTrack] = []
     # IGV configuration
     show_ideogram: bool = Field(False, alias="showIdeogram")
     show_svg_button: bool = Field(True, alias="showSVGButton")
@@ -139,14 +149,16 @@ def make_igv_tracks(
         f"/resources/genome/{ref_genome['accession']}/info", annotation_type="gff"
     )
     tracks.append(
-        IgvBaseTrack(
+        IgvAnnotationTrack(
             name="Genes",
             source_type="file",
             format="gff",
             type="annotation",
             url=gene_url,
-            height=70,
+            height=120,
             order=2,
+            display_mode=IgvDisplayMode.EXPANDED,
+            name_field="gene",
         ),
     )
     # set additional annotation tracks
