@@ -115,7 +115,7 @@ def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
         if type_res.type == TypingMethod.OTYPE.value or type_res.type == TypingMethod.HTYPE.value:
             tag = Tag(
                 type=TagType.TYPING,
-                label=type_res.result.gene_symbol.upper(),
+                label=type_res.result.sequence_name.upper(),
                 description="",
                 severity=TagSeverity.INFO,
             )
