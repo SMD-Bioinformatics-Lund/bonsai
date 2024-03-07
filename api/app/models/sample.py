@@ -3,24 +3,13 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AmrFinderGene,
-    AmrFinderResistanceGene,
-    ElementType,
-    PredictionSoftware,
-    ResfinderGene,
-    VariantBase,
-    VirulenceGene,
-)
+from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
+                                  ElementType, PredictionSoftware,
+                                  ResfinderGene, VariantBase, VirulenceGene)
 from prp.models.species import SpeciesPrediction
-from prp.models.typing import (
-    TypingMethod,
-    TypingResultCgMlst,
-    TypingResultGeneAllele,
-    TypingResultLineage,
-    TypingResultMlst,
-    TypingSoftware,
-)
+from prp.models.typing import (TypingMethod, TypingResultCgMlst,
+                               TypingResultGeneAllele, TypingResultLineage,
+                               TypingResultMlst, TypingSoftware)
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason

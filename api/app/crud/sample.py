@@ -17,17 +17,10 @@ from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-    SampleSummary,
-)
-from ..redis.minhash import (
-    schedule_remove_genome_signature,
-    schedule_remove_genome_signature_from_index,
-)
+from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
+                             SampleInDatabase, SampleSummary)
+from ..redis.minhash import (schedule_remove_genome_signature,
+                             schedule_remove_genome_signature_from_index)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -442,10 +435,14 @@ async def update_variant_annotation_for_sample(
             for variant in getattr(sample_info, variant_type):
                 if variant.id in variant_id_gr[variant_type]:
                     # update variant classification and annotation
-                    LOG.error('CLS: %s; Variant before update: %s', classification, variant)
+                    LOG.error(
+                        "CLS: %s; Variant before update: %s", classification, variant
+                    )
                     variant = update_variant_verificaton(variant, classification)
-                    variant = update_variant_phenotype(variant, classification, username)
-                    LOG.error('Variant after update: %s', variant)
+                    variant = update_variant_phenotype(
+                        variant, classification, username
+                    )
+                    LOG.error("Variant after update: %s", variant)
                 upd_variants.append(variant)
             updated_data[variant_type] = upd_variants
 
@@ -455,7 +452,10 @@ async def update_variant_annotation_for_sample(
         {
             "$set": {
                 "modified_at": datetime.now(),
-                **{key: jsonable_encoder(value, by_alias=False) for key, value in updated_data.items()},
+                **{
+                    key: jsonable_encoder(value, by_alias=False)
+                    for key, value in updated_data.items()
+                },
             }
         },
     )
@@ -467,9 +467,7 @@ async def update_variant_annotation_for_sample(
     if not update_obj.modified_count == 1:
         raise UpdateDocumentError(sample_id)
     # make a copy of updated result and return it
-    upd_sample_info = sample_info.model_copy(
-        update=updated_data
-    )
+    upd_sample_info = sample_info.model_copy(update=updated_data)
     return upd_sample_info
 
 

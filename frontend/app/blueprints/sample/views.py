@@ -1,34 +1,18 @@
 """Declaration of views for samples"""
 import json
-from typing import Any, Dict, Tuple
 from itertools import groupby
+from typing import Any, Dict, Tuple
 
-from app.bonsai import (
-    TokenObject,
-    cgmlst_cluster_samples,
-    delete_samples,
-    find_and_cluster_similar_samples,
-    find_samples_similar_to_reference,
-    get_group_by_id,
-    get_sample_by_id,
-    post_comment_to_sample,
-    remove_comment_from_sample,
-    update_sample_qc_classification,
-    update_variant_info,
-    get_antibiotics,
-    get_variant_rejection_reasons
-)
+from app.bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
+                        find_and_cluster_similar_samples,
+                        find_samples_similar_to_reference, get_antibiotics,
+                        get_group_by_id, get_sample_by_id,
+                        get_variant_rejection_reasons, post_comment_to_sample,
+                        remove_comment_from_sample,
+                        update_sample_qc_classification, update_variant_info)
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, abort, current_app, flash, redirect,
+                   render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
@@ -231,27 +215,26 @@ def resistance_variants(sample_id: str) -> str:
     sample_info = sort_variants(sample_info)
 
     # check if IGV should be enabled
-    display_genome_browser = all([
-        sample_info["reference_genome"] is not None, 
-        sample_info["read_mapping"] is not None
-    ])
+    display_genome_browser = all(
+        [
+            sample_info["reference_genome"] is not None,
+            sample_info["read_mapping"] is not None,
+        ]
+    )
 
     # populate form for filter varaints
     antibiotics = {
-        fam: list(amrs) 
-        for fam, amrs 
-        in groupby(get_antibiotics(), key=lambda ant: ant['family'])
+        fam: list(amrs)
+        for fam, amrs in groupby(get_antibiotics(), key=lambda ant: ant["family"])
     }
     rejection_reasons = get_variant_rejection_reasons()
 
     # populate form for filter varaints
-    form_data = {
-        "filter_genes": get_variant_genes(sample_info, software='tbprofiler')
-    }
+    form_data = {"filter_genes": get_variant_genes(sample_info, software="tbprofiler")}
 
     if request.method == "POST":
         # check if which form deposited data
-        if 'classify-variant' in request.form:
+        if "classify-variant" in request.form:
             token = TokenObject(**current_user.get_id())
             variant_ids = json.loads(request.form.get("variant-ids", "[]"))
             resistance = request.form.getlist("amrs")
@@ -267,11 +250,18 @@ def resistance_variants(sample_id: str) -> str:
                 "phenotypes": resistance if resistance is not None else None,
             }
             sample_info = update_variant_info(
-                token, sample_id=sample_id, variant_ids=variant_ids, status=status)
+                token, sample_id=sample_id, variant_ids=variant_ids, status=status
+            )
         else:
             sample_info = filter_variants(sample_info, form=request.form)
         # resort variants after processing
         sample_info = sort_variants(sample_info)
     return render_template(
-        "resistance_variants.html", title=f"{sample_id} resistance", sample=sample_info, form_data=form_data, antibiotics=antibiotics, rejection_reasons=rejection_reasons, display_igv=display_genome_browser
+        "resistance_variants.html",
+        title=f"{sample_id} resistance",
+        sample=sample_info,
+        form_data=form_data,
+        antibiotics=antibiotics,
+        rejection_reasons=rejection_reasons,
+        display_igv=display_genome_browser,
     )

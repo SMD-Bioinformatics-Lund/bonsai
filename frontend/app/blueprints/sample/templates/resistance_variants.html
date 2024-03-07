@@ -62,7 +62,7 @@
                         <td>gene function</td>
                         {% if display_igv %}
                             <td>
-                                {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
+                                {% set variant_id = "sv_variants-{}".format(variant["id"]) %}
                                 <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
                                    target="_blank" class="btn btn-sm btn-secondary" type="button">
                                    IGV

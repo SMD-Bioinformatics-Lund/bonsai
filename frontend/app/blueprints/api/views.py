@@ -2,12 +2,8 @@
 import json
 
 import requests
-from app.bonsai import (
-    TokenObject,
-    add_samples_to_basket,
-    get_samples_by_id,
-    remove_samples_from_basket,
-)
+from app.bonsai import (TokenObject, add_samples_to_basket, get_samples_by_id,
+                        remove_samples_from_basket)
 from app.models import SampleBasketObject
 from flask import Blueprint, flash, jsonify, request
 from flask_login import current_user, login_required

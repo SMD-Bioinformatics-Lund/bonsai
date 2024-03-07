@@ -4,23 +4,10 @@ import logging
 import pathlib
 from typing import Annotated, Any, Dict, List
 
-from app.io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
-from fastapi import (
-    APIRouter,
-    Body,
-    File,
-    Header,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-)
+from app.io import (InvalidRangeError, RangeOutOfBoundsError, is_file_readable,
+                    send_partial_file)
+from fastapi import (APIRouter, Body, File, Header, HTTPException, Path, Query,
+                     Security, status)
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import VariantType
@@ -33,30 +20,20 @@ from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import (
-    update_sample_qc_classification,
-    update_variant_annotation_for_sample,
-)
+from ..crud.sample import (update_sample_qc_classification,
+                           update_variant_annotation_for_sample)
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
-    SAMPLE_ID_PATTERN,
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-)
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             SampleInCreate, SampleInDatabase)
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-)
+from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
+                             schedule_add_genome_signature_to_index,
+                             schedule_find_similar_and_cluster,
+                             schedule_find_similar_samples)
 from ..utils import format_error_message
 
 CommentsObj = List[CommentInDatabase]
@@ -398,6 +375,7 @@ async def get_vcf_files_for_sample(
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
+    LOG.error("--> Request for variant: %s - %s", sample_id, variant_type)
     try:
         sample = await get_sample(db, sample_id)
     except EntryNotFound as error:
@@ -414,12 +392,14 @@ async def get_vcf_files_for_sample(
             file_path = path
 
     if file_path is None:
+        LOG.error("HTTP 404: %s - %s", sample_id, variant_type)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No read mapping results associated with sample",
         )
     # test if file is readable
     if not is_file_readable(str(file_path)):
+        LOG.error("HTTP 500: %s - %s", sample_id, variant_type)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Alignment file could not be processed",

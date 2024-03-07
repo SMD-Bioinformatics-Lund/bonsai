@@ -4,14 +4,13 @@ import logging
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List
-
-from flask import session
-from flask_login import current_user
-from pydantic import BaseModel, Field
+from typing import Dict, List, Any
 
 from app.config import BONSAI_API_URL
 from app.models import RWModel
+from flask import session
+from flask_login import current_user
+from pydantic import BaseModel, Field
 
 LOG = logging.getLogger(__name__)
 
@@ -76,13 +75,18 @@ def build_api_url(path, **kwargs):
     return url
 
 
-def get_variant(sample_obj, variant_id: str):
+def get_variant(sample_obj: Dict[str, Any], variant_id: str) -> Dict[str, Any]:
     software, variant_id = variant_id.split("-")
-    for pred_res in sample_obj["element_type_result"]:
-        if pred_res["software"] == software:
-            for variant in pred_res["result"]["variants"]:
-                if variant["id"] == int(variant_id):
-                    return variant
+    if software in ["sv_variants", "snv_variants"]:
+        for variant in sample_obj[software]:
+            if variant["id"] == int(variant_id):
+                return variant
+    else:
+        for pred_res in sample_obj["element_type_result"]:
+            if pred_res["software"] == software:
+                for variant in pred_res["result"]["variants"]:
+                    if variant["id"] == int(variant_id):
+                        return variant
 
 
 def make_igv_tracks(
@@ -103,7 +107,12 @@ def make_igv_tracks(
     variant_obj = get_variant(sample_obj, variant_id)
     if variant_obj:
         start = start or variant_obj["start"]
-        stop = stop or variant_obj["start"]
+        stop = variant_obj.get("end") or variant_obj["start"]
+        # add padding to structural variants to show surrounding
+        if variant_obj["variant_type"] == "SV":
+            var_length = (stop - start) + 1
+            start = round(start - (var_length * 0.1), 0)
+            stop = round(stop + (var_length * 0.1), 0)
         locus = f"{reference.name}:{start}-{stop}"
     else:
         locus = ""

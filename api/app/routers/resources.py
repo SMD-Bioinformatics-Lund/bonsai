@@ -6,12 +6,8 @@ from enum import Enum
 from typing import Annotated
 
 from app.config import ANNOTATIONS_DIR, REFERENCE_GENOMES_DIR
-from app.io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
+from app.io import (InvalidRangeError, RangeOutOfBoundsError, is_file_readable,
+                    send_partial_file)
 from fastapi import APIRouter, Header, HTTPException, Path, Query, status
 from fastapi.responses import FileResponse, Response
 

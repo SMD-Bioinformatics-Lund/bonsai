@@ -86,7 +86,7 @@ def create_user(headers: CaseInsensitiveDict, user_obj: str):
 @api_authentication
 def get_user(headers: CaseInsensitiveDict, username: str):
     """Get current user from token"""
-    #username = kwargs.get("username")
+    # username = kwargs.get("username")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
     resp = requests.get(url, headers=headers, timeout=TIMEOUT)
@@ -348,7 +348,9 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def update_variant_info(headers: CaseInsensitiveDict, sample_id, variant_ids = [], status={}):
+def update_variant_info(
+    headers: CaseInsensitiveDict, sample_id, variant_ids=[], status={}
+):
     """Update annotation of resitance variants for a sample"""
     data = {
         "variant_ids": variant_ids,

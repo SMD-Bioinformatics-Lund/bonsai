@@ -1,14 +1,14 @@
 """QC data models."""
-from pydantic import BaseModel
 from enum import Enum
 from typing import List
 
-from .tags import TagSeverity
+from pydantic import BaseModel
+
 from .base import RWModel
+from .tags import TagSeverity
 
 
 class VaraintRejectionReason(BaseModel):
-    
     label: str
     description: str
     label_class: TagSeverity = TagSeverity.INFO
