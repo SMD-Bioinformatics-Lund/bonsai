@@ -63,6 +63,7 @@ async def get_samples_summary(
     include: List[str] | None = None,
     include_qc: bool = True,
     include_mlst: bool = True,
+    include_stx: bool = True,
 ) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
@@ -77,11 +78,17 @@ async def get_samples_summary(
     pipeline.append(
         {
             "$addFields": {
-                "typing_result": {
-                    "$filter": {
-                        "input": "$typing_result",
-                        "as": "res",
-                        "cond": {"$eq": ["$$res.type", "mlst"]},
+                "sequence_type": {
+                    "$cond": {
+                        "if": {"$eq": ["$typing_result.type", "mlst"]}, 
+                        "then": "$typing_result.result.sequence_type", "else": None
+                       }
+                },
+                "stx": {
+                    "$cond": {
+                        "if": {"$eq": ["$typing_result.type", "stx"]}, 
+                        "then": "$typing_result.result.gene_symbol", 
+                        "else": None
                     }
                 }
             }
@@ -102,6 +109,8 @@ async def get_samples_summary(
         optional_projecton["qc_status"] = 1
     if include_mlst:
         optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
+    if include_stx:
+        optional_projecton["stx"] = {"$arrayElemAt": ["$typing_result", 2]}
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
@@ -117,6 +126,15 @@ async def get_samples_summary(
         for res in results:
             if "mlst" in res:
                 res["mlst"] = res["mlst"]["result"]
+            upd_results.append(res)
+        results = upd_results.copy()
+    if include_stx:
+        # replace mlst with the nested result as a work around
+        # for mongo version < 5
+        upd_results = []
+        for res in results:
+            if "stx" in res:
+                res["stx"] = res["stx"]["result"]
             upd_results.append(res)
         results = upd_results.copy()
     return results

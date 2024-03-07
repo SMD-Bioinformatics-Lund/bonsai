@@ -83,6 +83,13 @@ VALID_COLUMNS = [
         filterable=True,
     ),
     OverviewTableColumn(
+        id="stx",
+        label="STX typing",
+        path="$.stx.gene_symbol",
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
         id="profile",
         label="Analysis profile",
         path="$.profile",
