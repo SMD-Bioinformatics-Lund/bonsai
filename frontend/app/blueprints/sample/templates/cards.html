@@ -601,6 +601,9 @@
                     <td scope="col">Variant</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Gene</td>
+                    {% if extended %}
+                        <td scope="col">Effect</td>
+                    {% endif %}
                     <td scope="col">Read depth</td>
                     <td scope="col">Freq</td>
                     <td scope="col">Antibiotics</td>
@@ -651,6 +654,9 @@
                             <td>-</td>
                         {% endif %}
                         <td>{{ accession_link(variant.accession, name=variant.reference_sequence) }}</td>
+                        {% if extended %}
+                            <td>{{ variant.variant_effect | replace("_", " ") | capitalize }}</td>
+                        {% endif %}
                         <td>{{ variant.depth | int }}</td>
                         <td>{{ (variant.frequency * 100) | round(1) }}</td>
                         <td>
