@@ -4,19 +4,10 @@ import logging
 import os
 from pathlib import Path
 
-from flask import (
-    Blueprint,
-    Response,
-    abort,
-    copy_current_request_context,
-    current_app,
-    render_template,
-    request,
-    session,
-)
-from flask_login import current_user, login_required
-
 from app.bonsai import TokenObject, get_sample_by_id
+from flask import (Blueprint, Response, abort, copy_current_request_context,
+                   current_app, render_template, request, session)
+from flask_login import current_user, login_required
 
 from . import controllers
 from .partial import send_file_partial
