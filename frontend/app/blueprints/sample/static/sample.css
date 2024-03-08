@@ -11,7 +11,11 @@
   max-width: 40%;
 }
 
-.sidebar-heading {
+.sidebar-heading-md {
+  font-size: .9rem;
+}
+
+.sidebar-heading-sm {
   font-size: .75rem;
 }
 
@@ -72,7 +76,7 @@
   padding-left: 0;
 }
 
-#variant-filters {
+.variant-options {
   padding: 1rem !important;
   height: fit-content !important; 
 }

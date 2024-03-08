@@ -195,8 +195,13 @@
     </li>
 {% endmacro %}
 
-{% macro sidebar_header(text, class_names="mt-4 mb-1 ") %}
-    <h6 class="sidebar-heading text-muted text-uppercase {{class_names}}">{{text}}</h6>
+{% macro sidebar_header(text, size="sm", class_names="mt-1 mb-1 ") %}
+    {% if size == "md" %}
+        {% set header_size="sidebar-heading-md" %}
+    {% else %}
+        {% set header_size="sidebar-heading-sm" %}
+    {% endif %}
+    <h6 class="{{ header_size }} text-muted text-uppercase {{ class_names }}">{{text}}</h6>
 {% endmacro %}
 
 {% macro sidebar(sample, bad_qc_actions, optional_macro=None) %}
@@ -226,7 +231,7 @@
 
 {% macro table_of_content() %}
 <div class="br-toc y-lg-0 px-sm-1 text-body-secondary">
-    <h6 class="sidebar-heading d-none d-md-block h6 my-2 ms-3 text-muted text-uppercase">On this page</h6>
+    {{ sidebar_header("On this page") }}
     <hr class="d-none d-md-block my-2 ms-3">
     <div id="toc-contents" class="collapse d-md-block">
         <ul class="nav nav-flush flex-column mb-auto text-left">
