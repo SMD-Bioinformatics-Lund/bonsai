@@ -30,7 +30,6 @@ class IgvBaseTrack(RWModel):
     """
 
     name: str
-    type: str | None = None
     format: str | None = None
     source_type: str = Field(..., alias="sourceType")
     url: str
@@ -51,8 +50,28 @@ class IgvAnnotationTrack(IgvBaseTrack):
     reference: https://github.com/igvteam/igv.js/wiki/Annotation-Track
     """
 
+    type: str = "annotation"
     name_field: str | None = Field(None, alias="nameField")
     filter_types: List[str] = Field(["chromosome", "gene"], alias="filterTypes")
+
+
+class IgvAlignmentTrack(IgvBaseTrack):
+    """Configurations specific to alignment tracks.
+    
+    reference: https://github.com/igvteam/igv.js/wiki/Alignment-Track
+    """
+
+    type: str = "alignment"
+    show_soft_clips: bool = Field(False, alias="showSoftClips")
+
+
+class IgvVariantTrack(IgvBaseTrack):
+    """Configurations specific to variant tracks.
+    
+    reference: https://github.com/igvteam/igv.js/wiki/Variant-Track
+    """
+
+    type: str = "variant"
 
 
 class IgvReferenceGenome(RWModel):
@@ -65,7 +84,7 @@ class IgvReferenceGenome(RWModel):
 class IgvData(RWModel):
     locus: str
     reference: IgvReferenceGenome
-    tracks: List[IgvAnnotationTrack | IgvBaseTrack] = []
+    tracks: List[IgvAnnotationTrack | IgvAlignmentTrack | IgvVariantTrack] = []
     # IGV configuration
     show_ideogram: bool = Field(False, alias="showIdeogram")
     show_svg_button: bool = Field(True, alias="showSVGButton")
@@ -132,16 +151,16 @@ def make_igv_tracks(
         BONSAI_API_URL, "samples", sample_obj["sample_id"], "alignment"
     )
     tracks = [
-        IgvBaseTrack(
+        IgvAlignmentTrack(
             name="Read mapping",
             source_type="file",
-            type="alignment",
             url=bam_entrypoint_url,
             index_url=f"{bam_entrypoint_url}?index=true",
             auto_height=True,
             max_height=450,
             display_mode=IgvDisplayMode.SQUISHED,
             order=1,
+            show_soft_clips=True
         ),
     ]
     # add gene track
@@ -153,12 +172,12 @@ def make_igv_tracks(
             name="Genes",
             source_type="file",
             format="gff",
-            type="annotation",
             url=gene_url,
             height=120,
             order=2,
             display_mode=IgvDisplayMode.EXPANDED,
             name_field="gene",
+            filter_types=["chromosome", "region", "gene", "exon"]
         ),
     )
     # set additional annotation tracks
@@ -170,10 +189,9 @@ def make_igv_tracks(
                     f"/resources/genome/{ref_genome['accession']}/annotation",
                     file=file.name,
                 )
-                track = IgvBaseTrack(
+                track = IgvAnnotationTrack(
                     name=annot["name"],
                     source_type="file",
-                    type="annotation",
                     url=url,
                     order=order,
                 )
@@ -183,10 +201,9 @@ def make_igv_tracks(
                     f"/samples/{sample_obj['sample_id']}/vcf",
                     variant_type=variant_type_suffix[1:].upper(),
                 )  # strip leading .
-                track = IgvBaseTrack(
+                track = IgvVariantTrack(
                     name=annot["name"],
                     source_type="file",
-                    type="variant",
                     url=url,
                     order=order,
                 )
