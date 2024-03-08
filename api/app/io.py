@@ -128,7 +128,7 @@ def _fmt_variant(variant):
         "Not assoc w R": 5,
     }
     var_type = variant.variant_type[:3]
-    variant_desc = f"{variant.gene_symbol}_{variant.position}_{var_type}"
+    variant_desc = f"{variant.reference_sequence}_{variant.start}_{var_type}"
     # annotate variant frequency for minority variants
     if variant.frequency < 1:
         variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
@@ -147,16 +147,16 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     :param sample: Prediction results
     :type sample: SampleInDatabase
     """
+    result = []
     for pred_res in sample.element_type_result:
         # only include TBprofiler result
-        if not pred_res.software == PredictionSoftware.TBPROFILER.value:
+        if not pred_res.software == PredictionSoftware.TBPROFILER:
             continue
 
         # reformat predicted resistance
         sorted_variants = _sort_motifs_on_phenotype(pred_res.result.variants)
 
         # create tabular result
-        result = []
         for antibiotic in TARGETED_ANTIBIOTICS:
             # concat variants
             if antibiotic in sorted_variants:

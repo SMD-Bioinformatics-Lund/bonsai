@@ -2,7 +2,7 @@
 
 from typing import List, Tuple
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from .base import DBModelMixin, ModifiedAtRWModel
 
@@ -17,24 +17,27 @@ def check_coordinates_polygon(coords: List[COORDS]) -> COORDS:
     return coords
 
 
-def check_coordinates(coords: COORDS) -> COORDS:
-    """Check that coordinates are valid."""
-    long, lat = coords
-    if not -180 < long < 180:
-        raise ValueError(f"Invalid longitude coordinate {long}")
-    if not -90 < lat < 90:
-        raise ValueError(f"Invalid latitude coordinate {lat}")
-    return coords
+class GeoCoordinate(BaseModel):  # pylint: disable=too-few-public-methods
+    """Container of coordinates."""
 
-
-class GeoJSONPoint(BaseModel):  # pylint: disable=too-few-public-methods
-    """Container of a GeoJSON representation of a point."""
-
-    type: str = "Point"
     coordinates: COORDS
 
     # validators
-    _validate_coords = validator("coordinates", allow_reuse=True)(check_coordinates)
+    @field_validator("coordinates")
+    @classmethod
+    def check_coordinates(cls, coords: COORDS) -> COORDS:
+        """Check that coordinates are valid."""
+        long, lat = coords
+        if not -180 < long < 180:
+            raise ValueError(f"Invalid longitude coordinate {long}")
+        if not -90 < lat < 90:
+            raise ValueError(f"Invalid latitude coordinate {lat}")
+        return coords
+
+class GeoJSONPoint(GeoCoordinate):  # pylint: disable=too-few-public-methods
+    """Container of a GeoJSON representation of a point."""
+
+    type: str = "Point"
 
 
 class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
@@ -44,12 +47,8 @@ class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
 
     coordinates: List[List[COORDS]]
 
-    # validators
-    _validate_coords = validator("coordinates", allow_reuse=True)(
-        check_coordinates_polygon
-    )
-
-    @validator("coordinates")
+    @field_validator("coordinates")
+    @classmethod
     def check_closed_polygon(
         cls, coords
     ):  # pylint: disable=too-few-public-methods,no-self-argument
@@ -74,13 +73,8 @@ class LocationBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     disabled: bool = False
 
 
-class LocationInputCreate(LocationBase):  # pylint: disable=too-few-public-methods
+class LocationInputCreate(GeoCoordinate):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
-
-    coordinates: Tuple[float, float]
-
-    # validators
-    _validate_coords = validator("coordinates", allow_reuse=True)(check_coordinates)
 
 
 class LocationInputDatabase(LocationBase):  # pylint: disable=too-few-public-methods
