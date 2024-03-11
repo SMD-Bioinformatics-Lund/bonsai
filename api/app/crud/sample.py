@@ -64,6 +64,7 @@ async def get_samples_summary(
     include_qc: bool = True,
     include_mlst: bool = True,
     include_stx: bool = True,
+    include_oh_type: bool = True,
 ) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
@@ -90,6 +91,35 @@ async def get_samples_summary(
                         "then": "$typing_result.result.gene_symbol", 
                         "else": None
                     }
+                },
+                'oh_type': {
+                    "$concat": [{
+                        "$arrayElemAt": [{
+                            "$map": {
+                            "input": {
+                                "$filter": {
+                                "input": "$typing_result",
+                                "cond": { "$eq": ["$$this.type", "O_type"] }
+                                }
+                            },
+                            "in": "$$this.result.sequence_name"
+                            }}, 0
+                        ]
+                    },
+                    ":",
+                    {
+                        "$arrayElemAt": [{
+                            "$map": {
+                                "input": {
+                                    "$filter": {
+                                    "input": "$typing_result",
+                                    "cond": { "$eq": ["$$this.type", "H_type"] }
+                                    }
+                                },
+                                "in": "$$this.result.sequence_name"
+                            }}, 0
+                        ]
+                    }]
                 }
             }
         }
@@ -111,6 +141,8 @@ async def get_samples_summary(
         optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
     if include_stx:
         optional_projecton["stx"] = {"$arrayElemAt": ["$typing_result", 2]}
+    if include_oh_type:
+        optional_projecton["oh_type"] = 1
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
