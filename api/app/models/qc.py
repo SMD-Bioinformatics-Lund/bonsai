@@ -39,6 +39,13 @@ class BadSampleQualityAction(Enum):
     FAILED = "permanent fail"
 
 
+class ResistanceLevel(Enum):
+    """The level of resistance a gene or variant yeilds."""
+
+    HIGH = "high"
+    LOW = "low"
+
+
 class QcClassification(RWModel):  # pylint: disable=too-few-public-methods
     """The classification of sample quality."""
 
@@ -54,3 +61,4 @@ class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
     verified: SampleQcClassification | None = None
     reason: VaraintRejectionReason | None = None
     phenotypes: List[str] | None = None
+    resistance_lvl: ResistanceLevel = ResistanceLevel.HIGH

@@ -443,6 +443,15 @@ def find_and_cluster_similar_samples(
     return SubmittedJob(**resp.json())
 
 
+@api_authentication
+def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
+    """Query the API for a lims export file."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/export/{sample_id}/lims'
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    return resp.text
+
+
 def get_valid_group_columns():
     """Query API for valid group columns."""
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/default/columns'

@@ -9,12 +9,15 @@ from app.bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
                         get_group_by_id, get_sample_by_id,
                         get_variant_rejection_reasons, post_comment_to_sample,
                         remove_comment_from_sample,
+                        get_lims_export_file,
                         update_sample_qc_classification, update_variant_info)
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (Blueprint, abort, current_app, flash, redirect,
+from flask import (Blueprint, abort, current_app, flash, redirect, make_response,
                    render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
+from io import StringIO
+from datetime import date
 
 from .controllers import filter_variants, get_variant_genes, sort_variants
 
@@ -206,6 +209,40 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
+@samples_bp.route("/samples/<sample_id>/resistance/variants/download", methods=["GET", "POST"])
+@login_required
+def download_lims(sample_id: str):
+    """Download a LIMS compatible file."""
+    # get user auth token
+    token = TokenObject(**current_user.get_id())
+
+    # default file name
+    today = date.today()
+    fname = request.args.get('filename', f'bonsai-lims-export_{today.isoformat()}')
+
+    # get data in tsv format and setup error handling
+    try:
+        data = get_lims_export_file(token, sample_id=sample_id)
+    except HTTPError as error:
+        # log errors
+        if error.response.status_code == 401:
+            current_app.logger.warning("LIMS export error - no permissoin %s", current_user.username)
+            flash("You dont have permission to export the result to LIMS", "warning")
+        else:
+            current_app.logger.error("LIMS export error - generic error: %s", error.response)
+            flash("Error when generating export file", "warning")
+        return redirect(request.referrer)
+
+    # convert string to IO buffer
+    buffer = StringIO(data)
+    response = make_response(buffer.getvalue())
+    # define headers and mimetype for a file
+    response.headers['Content-Disposition'] = f"attachment; filename={fname}.tsv"
+    response.mimetype = 'text/csv'
+    # return response object
+    return response
+
+
 @samples_bp.route("/samples/<sample_id>/resistance/variants", methods=["GET", "POST"])
 @login_required
 def resistance_variants(sample_id: str) -> str:
@@ -248,6 +285,7 @@ def resistance_variants(sample_id: str) -> str:
                 "verified": request.form.get("verify-variant-btn"),
                 "reason": rej_reason,
                 "phenotypes": resistance if resistance is not None else None,
+                "resistance_lvl": request.form.get("resistance-lvl-btn"),
             }
             sample_info = update_variant_info(
                 token, sample_id=sample_id, variant_ids=variant_ids, status=status

@@ -5,10 +5,12 @@
 
 {% macro export_btn() %}
     {{ sidebar_header("Action") }}
-    <button class="btn btn-sm btn-warning ms-2" type="button">
-        <i class="bi bi-box-arrow-up"></i>
-        Export to LIMS
-    </button>
+    <form action="{{ url_for('samples.download_lims', sample_id=sample.sample_id) }}">
+        <button class="btn btn-sm btn-warning ms-2" type="submit">
+            <i class="bi bi-box-arrow-up"></i>
+            Export to LIMS
+        </button>
+    </form>
 {% endmacro %}
 
 {% block css %}
@@ -168,7 +170,7 @@
         <hr>
         {{ sidebar_header("Annotate resistance") }}
         {# Annotate additional resistance #}
-        <div>
+        <div class="mb-2">
             <select name="amrs" class="form-control form-select" id="antibiotic-group" multiple="multiple" data-placeholder="Select antibiotic" data-close-on-select="false">
                 {% for family, amrs in antibiotics.items() %}
                 <optgroup label="{{ family | capitalize }}">
@@ -179,7 +181,18 @@
                 {% endfor %}
             </select>
         </div>
-
+        {# Annotate high / low level resistance #}
+        {{ sidebar_header("Resistance level") }}
+        <div class="d-flex justify-content-md-left mb-2">
+            <div>
+                <input type="radio" name="resistance-lvl-btn" class="btn-check" id="high-res-btn" autocomplete="off" value="high" checked>
+                <label class="btn btn-sm btn-outline-secondary me-2" for="high-res-btn">High</label>
+            </div>
+            <div>
+                <input type="radio" name="resistance-lvl-btn" class="btn-check"  id="low-res-btn" autocomplete="off" value="low">
+                <label class="btn btn-sm btn-outline-secondary me-2" for="low-res-btn">Low</label>
+            </div>
+        </div>
         {# Confirm annotation #}
         <hr>
         <div class="col-auto">
@@ -238,12 +251,16 @@
             $("#rejection-reason-group").prop('disabled', true)
             // enable antibiotic resistance annotation
             $("#antibiotic-group").prop('disabled', false)
+            $("#high-res-btn").prop('disabled', false)
+            $("#low-res-btn").prop('disabled', false)
         })
         $("#reject-variant-btn").click(() => {
             // enable rejection reason
             $("#rejection-reason-group").prop('disabled', false)
             // disable antibiotic resistance annotation
             $("#antibiotic-group").prop('disabled', true)
+            $("#high-res-btn").prop('disabled', true)
+            $("#low-res-btn").prop('disabled', true)
         })
     })
     window.addEventListener("load", () => {

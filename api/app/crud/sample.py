@@ -361,6 +361,7 @@ def update_variant_phenotype(variant, info, username):
                     name=phenotype,
                     group=antibiotics_lookup[phenotype].family,
                     type=ElementType.AMR,
+                    resistance_level=info.resistance_lvl,
                     annotation_type=AnnotationType.USER,
                     annotation_author=username,
                 )
@@ -369,6 +370,7 @@ def update_variant_phenotype(variant, info, username):
                     name=phenotype,
                     group="",
                     type=ElementType.AMR,
+                    resistance_level=info.resistance_lvl,
                     annotation_type=AnnotationType.USER,
                     annotation_author=username,
                 )

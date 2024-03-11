@@ -1,4 +1,5 @@
 """File IO operations."""
+import itertools
 import logging
 import mimetypes
 import os
@@ -6,25 +7,27 @@ import pathlib
 import re
 from collections import defaultdict
 from typing import List
+
 import pandas as pd
+from fastapi.responses import Response
 from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
+from prp.models.typing import TypingMethod
 from pydantic import BaseModel
 
 from .models.sample import SampleInDatabase
-
-from fastapi.responses import Response
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
 
 TARGETED_ANTIBIOTICS = {
-    "rifampicin": "rif",
-    "isoniazid": "inh",
-    "pyrazinamide": "pza",
-    "ethambutol": "etm",
-    "amikacin": "ami",
-    "levofloxacin": "lev",
+    "rifampicin": {"abbrev": "rif", "split_res_level": False},
+    "isoniazid": {"abbrev": "inh", "split_res_level": True},
+    "pyrazinamide": {"abbrev": "pza", "split_res_level": False},
+    "ethambutol": {"abbrev": "etm", "split_res_level": False},
+    "amikacin": {"abbrev": "ami", "split_res_level": False},
+    "levofloxacin": {"abbrev": "lev", "split_res_level": False},
 }
+
 
 class InvalidRangeError(Exception):
     pass
@@ -105,16 +108,16 @@ def send_partial_file(path, range_header):
 
 def _sort_motifs_on_phenotype(prediction: List[GeneBase | VariantBase]):
     """Sort resistance genes and variants by the antibiotics they yeid resistance to."""
-    result = defaultdict(list)
+    result = defaultdict(lambda: defaultdict(list))
     for motif in prediction:
         if len(motif.phenotypes) == 0:
-            result["none"].append(motif)
+            result["none"]["none"].append(motif)
         else:
             # add variant to all phenotypes
             for phenotype in motif.phenotypes:
                 # make a copy with only one phenotypes
                 upd_motif = motif.model_copy(update={"phenotypes": [phenotype]})
-                result[phenotype.name].append(upd_motif)
+                result[phenotype.name][phenotype.resistance_level].append(upd_motif)
     return result
 
 
@@ -127,7 +130,12 @@ def _fmt_variant(variant):
         "Not assoc w R - Interim": 4,
         "Not assoc w R": 5,
     }
-    var_type = variant.variant_type[:3]
+    try:
+        var_type = variant.variant_type[:3]
+    except:
+        import pdb
+
+        pdb.set_trace()
     variant_desc = f"{variant.reference_sequence}_{variant.start}_{var_type}"
     # annotate variant frequency for minority variants
     if variant.frequency < 1:
@@ -153,27 +161,78 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         if not pred_res.software == PredictionSoftware.TBPROFILER:
             continue
 
+        filtered_variants = [
+            var for var in pred_res.result.variants if var.verified == "passed"
+        ]
         # reformat predicted resistance
-        sorted_variants = _sort_motifs_on_phenotype(pred_res.result.variants)
+        sorted_variants = _sort_motifs_on_phenotype(filtered_variants)
 
         # create tabular result
+        positive = "Mutation påvisad"
+        negative = "Mutation ej påvisad"
         for antibiotic in TARGETED_ANTIBIOTICS:
             # concat variants
-            if antibiotic in sorted_variants:
-                call = "Mutation påvisad"
-                variants = ";".join(
-                    _fmt_variant(var) for var in sorted_variants[antibiotic]
-                )
+            if TARGETED_ANTIBIOTICS[antibiotic]["split_res_level"]:
+                for lvl in ["high", "low"]:
+                    abbrev = TARGETED_ANTIBIOTICS[antibiotic]["abbrev"]
+                    if (
+                        antibiotic in sorted_variants
+                        and len(sorted_variants[antibiotic][lvl]) > 0
+                    ):
+                        call = positive
+                        variants = ";".join(
+                            _fmt_variant(var)
+                            for var in sorted_variants[antibiotic][lvl]
+                        )
+                    else:
+                        # add non-called resistance
+                        call = negative
+                        variants = "-"
+                    result.append(
+                        {
+                            "parameter": f"{abbrev.upper()} NGS{lvl[0].upper()}",
+                            "result": call,
+                            "variants": variants,
+                        }
+                    )
             else:
-                # add non-called resistance
-                call = "Mutation ej påvisad"
-                variants = "-"
-            # add result
+                if antibiotic in sorted_variants:
+                    call = positive
+                    combined_variants = itertools.chain(
+                        *sorted_variants[antibiotic].values()
+                    )
+                    variants = ";".join(_fmt_variant(var) for var in combined_variants)
+                else:
+                    # add non-called resistance
+                    call = negative
+                    variants = "-"
+                # add result
+                result.append(
+                    {
+                        "parameter": f"{TARGETED_ANTIBIOTICS[antibiotic]['abbrev'].upper()} NGS",
+                        "result": call,
+                        "variants": variants,
+                    }
+                )
+    # annotate species prediction res
+    result.append(
+        {
+            "parameter": "MTBC ART",
+            "result": sample.species_prediction[0].scientific_name,
+        }
+    )
+    # annotate lineage
+    for type_res in sample.typing_result:
+        if (
+            type_res.type == TypingMethod.LINEAGE
+            and type_res.software == PredictionSoftware.TBPROFILER
+        ):
+            # get lineage with longest lineage string
+            lin = max(type_res.result.lineages, key=lambda x: len(x.lin))
             result.append(
                 {
-                    "parameter": f"{TARGETED_ANTIBIOTICS[antibiotic].upper()} NGS",
-                    "result": call,
-                    "variants": variants,
+                    "parameter": "MTBC LINEAGE",
+                    "result": lin.lin,
                 }
             )
     return pd.DataFrame(result)

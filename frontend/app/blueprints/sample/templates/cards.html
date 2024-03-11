@@ -667,6 +667,19 @@
                                       data-bs-title="{{ phenotype.group }}">
                                     {{ phenotype.name | capitalize }}
                                 </span>
+                                {# Add tag for expected resistance level #}
+                                {% if phenotype.resistance_level %}
+                                    {% if phenotype.resistance_level == "high" %}
+                                        {% set severity_class="text-bg-warning" %}
+                                    {% else %}
+                                        {% set severity_class="text-bg-secondary" %}
+                                    {% endif %}
+                                    <span class="badge {{ severity_class }}"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
+                                            {{ phenotype.resistance_level[:2].upper() }}
+                                    </span>
+                                {% endif %}
                                 {# Add tag if antibiotic is user annotated #}
                                 {% if phenotype.annotation_type == "user" %}
                                     <span class="badge text-bg-primary"
