@@ -79,47 +79,51 @@ async def get_samples_summary(
     pipeline.append(
         {
             "$addFields": {
-                "sequence_type": {
+                "mlst": {
                     "$cond": {
-                        "if": {"$eq": ["$typing_result.type", "mlst"]}, 
-                        "then": "$typing_result.result.sequence_type", "else": None
-                       }
+                        "if": {"$in": ["mlst", "$typing_result.type"]}, 
+                        "then": {"$arrayElemAt": ["$typing_result", 0]},
+                        "else": None
+                    }
                 },
                 "stx": {
                     "$cond": {
-                        "if": {"$eq": ["$typing_result.type", "stx"]}, 
-                        "then": "$typing_result.result.gene_symbol", 
-                        "else": None
+                        "if": {"$in": ["stx", "$typing_result.type"]},
+                        "then": {"$arrayElemAt": ["$typing_result", 2]}, 
+                        "else": "-"
                     }
                 },
                 'oh_type': {
                     "$concat": [{
-                        "$arrayElemAt": [{
-                            "$map": {
-                            "input": {
-                                "$filter": {
-                                "input": "$typing_result",
-                                "cond": { "$eq": ["$$this.type", "O_type"] }
-                                }
-                            },
-                            "in": "$$this.result.sequence_name"
-                            }}, 0
-                        ]
-                    },
-                    ":",
-                    {
-                        "$arrayElemAt": [{
-                            "$map": {
-                                "input": {
-                                    "$filter": {
-                                    "input": "$typing_result",
-                                    "cond": { "$eq": ["$$this.type", "H_type"] }
-                                    }
-                                },
-                                "in": "$$this.result.sequence_name"
-                            }}, 0
-                        ]
-                    }]
+                        "$ifNull": [{
+                            "$arrayElemAt": [{
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$typing_result",
+                                            "cond": { "$eq": ["$$this.type", "O_type"] }
+                                        }
+                                    },
+                                    "in": "$$this.result.sequence_name"
+                                }}, 0
+                            ]}, "-"
+                        ]},
+                        ":",
+                        {
+                        "$ifNull": [{
+                            "$arrayElemAt": [{
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$typing_result",
+                                            "cond": { "$eq": ["$$this.type", "H_type"] }
+                                        }
+                                    },
+                                    "in": "$$this.result.sequence_name"
+                                }}, 0
+                            ]}, "-"
+                        ]}
+                    ]
                 }
             }
         }
