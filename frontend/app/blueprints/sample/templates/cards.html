@@ -590,13 +590,8 @@
     {{ phenotype.name | capitalize }}
 </span>
 {# Add tag for expected resistance level #}
-{% if phenotype.resistance_level %}
-    {% if phenotype.resistance_level == "high" %}
-        {% set severity_class="text-bg-warning" %}
-    {% else %}
-        {% set severity_class="text-bg-secondary" %}
-    {% endif %}
-    <span class="badge {{ severity_class }}"
+{% if phenotype.resistance_level == "low" %}
+    <span class="badge text-bg-secondary"
             data-bs-toggle="tooltip" data-bs-placement="top"
             data-bs-title="{{ phenotype.resistance_level | capitalize }}">
             {{ phenotype.resistance_level[:2].upper() }}
