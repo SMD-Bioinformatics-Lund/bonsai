@@ -190,6 +190,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                         variants = "-"
                     result.append(
                         {
+                            "sample_id": sample.sample_id,
                             "parameter": f"{abbrev.upper()} NGS{lvl[0].upper()}",
                             "result": call,
                             "variants": variants,
@@ -209,6 +210,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                 # add result
                 result.append(
                     {
+                        "sample_id": sample.sample_id,
                         "parameter": f"{TARGETED_ANTIBIOTICS[antibiotic]['abbrev'].upper()} NGS",
                         "result": call,
                         "variants": variants,
@@ -217,8 +219,10 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     # annotate species prediction res
     result.append(
         {
+            "sample_id": sample.sample_id,
             "parameter": "MTBC ART",
             "result": sample.species_prediction[0].scientific_name,
+            "variants": "-",
         }
     )
     # annotate lineage
@@ -231,8 +235,10 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             lin = max(type_res.result.lineages, key=lambda x: len(x.lin))
             result.append(
                 {
+                    "sample_id": sample.sample_id,
                     "parameter": "MTBC LINEAGE",
                     "result": lin.lin,
+                    "variants": "-",
                 }
             )
     return pd.DataFrame(result)
