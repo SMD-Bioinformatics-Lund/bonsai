@@ -4,7 +4,7 @@ import logging
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from app.config import BONSAI_API_URL
 from app.models import RWModel
@@ -46,7 +46,7 @@ class IgvBaseTrack(RWModel):
 
 class IgvAnnotationTrack(IgvBaseTrack):
     """Configurations specific to Annotation tracks.
-    
+
     reference: https://github.com/igvteam/igv.js/wiki/Annotation-Track
     """
 
@@ -57,7 +57,7 @@ class IgvAnnotationTrack(IgvBaseTrack):
 
 class IgvAlignmentTrack(IgvBaseTrack):
     """Configurations specific to alignment tracks.
-    
+
     reference: https://github.com/igvteam/igv.js/wiki/Alignment-Track
     """
 
@@ -67,7 +67,7 @@ class IgvAlignmentTrack(IgvBaseTrack):
 
 class IgvVariantTrack(IgvBaseTrack):
     """Configurations specific to variant tracks.
-    
+
     reference: https://github.com/igvteam/igv.js/wiki/Variant-Track
     """
 
@@ -160,7 +160,7 @@ def make_igv_tracks(
             max_height=450,
             display_mode=IgvDisplayMode.SQUISHED,
             order=1,
-            show_soft_clips=True
+            show_soft_clips=True,
         ),
     ]
     # add gene track
@@ -177,7 +177,7 @@ def make_igv_tracks(
             order=2,
             display_mode=IgvDisplayMode.EXPANDED,
             name_field="gene",
-            filter_types=["chromosome", "region", "gene", "exon"]
+            filter_types=["chromosome", "region", "gene", "exon"],
         ),
     )
     # set additional annotation tracks

@@ -34,6 +34,7 @@ class GeoCoordinate(BaseModel):  # pylint: disable=too-few-public-methods
             raise ValueError(f"Invalid latitude coordinate {lat}")
         return coords
 
+
 class GeoJSONPoint(GeoCoordinate):  # pylint: disable=too-few-public-methods
     """Container of a GeoJSON representation of a point."""
 

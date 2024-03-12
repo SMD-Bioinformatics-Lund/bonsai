@@ -181,17 +181,19 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
     :return: Sample object with sorted variants.
     :rtype: Dict[str, Any]
     """
+
     def _sort_func(variant):
         """Sort on verfied status, by reference sequence name, and position."""
         SORT_ORDER = {"passed": 1, "unprocessed": 2, "failed": 3}
-        return (SORT_ORDER[variant["verified"]], variant["reference_sequence"], variant["start"])
+        return (
+            SORT_ORDER[variant["verified"]],
+            variant["reference_sequence"],
+            variant["start"],
+        )
 
     # sort the filtered variants by verification status and then gene name
     for pred_res in sample_info["element_type_result"]:
-        sorted_variants = sorted(
-            pred_res["result"]["variants"],
-            key=_sort_func
-        )
+        sorted_variants = sorted(pred_res["result"]["variants"], key=_sort_func)
         pred_res["result"]["variants"] = sorted_variants
 
     # sort SNV and SV variants
@@ -226,10 +228,7 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
         variant_passes_qc = False
 
     # hide varians without resistance
-    if (
-        bool(form.get("yeild-resistance"))
-        and len(variant.get("phenotypes", [])) == 0
-    ):
+    if bool(form.get("yeild-resistance")) and len(variant.get("phenotypes", [])) == 0:
         variant_passes_qc = False
 
     # only inlcude variants in selected genes
@@ -248,8 +247,7 @@ def filter_variants(sample_info, form: float | None = None):
             continue
         # build up a new variant list that passes all filtering criteria
         filtered_variants = [
-            variant for variant in variants 
-            if has_variant_passed_filters(variant, form)
+            variant for variant in variants if has_variant_passed_filters(variant, form)
         ]
         # replace variants with filtered variants
         prediction["result"]["variants"] = filtered_variants
@@ -257,9 +255,10 @@ def filter_variants(sample_info, form: float | None = None):
     # filter SNV and SV variants
     for variant_type in ["snv_variants", "sv_variants"]:
         variants = sample_info.get(variant_type)
-        if variants is not  None:
+        if variants is not None:
             filtered_variants = [
-                variant for variant in variants 
+                variant
+                for variant in variants
                 if has_variant_passed_filters(variant, form)
             ]
             sample_info[variant_type] = filtered_variants

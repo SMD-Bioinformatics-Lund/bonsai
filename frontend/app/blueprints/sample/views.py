@@ -1,23 +1,22 @@
 """Declaration of views for samples"""
 import json
+from datetime import date
+from io import StringIO
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
 from app.bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
                         find_and_cluster_similar_samples,
                         find_samples_similar_to_reference, get_antibiotics,
-                        get_group_by_id, get_sample_by_id,
-                        get_variant_rejection_reasons, post_comment_to_sample,
-                        remove_comment_from_sample,
-                        get_lims_export_file,
+                        get_group_by_id, get_lims_export_file,
+                        get_sample_by_id, get_variant_rejection_reasons,
+                        post_comment_to_sample, remove_comment_from_sample,
                         update_sample_qc_classification, update_variant_info)
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (Blueprint, abort, current_app, flash, redirect, make_response,
-                   render_template, request, url_for)
+from flask import (Blueprint, abort, current_app, flash, make_response,
+                   redirect, render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
-from io import StringIO
-from datetime import date
 
 from .controllers import filter_variants, get_variant_genes, sort_variants
 
@@ -209,7 +208,9 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/samples/<sample_id>/resistance/variants/download", methods=["GET", "POST"])
+@samples_bp.route(
+    "/samples/<sample_id>/resistance/variants/download", methods=["GET", "POST"]
+)
 @login_required
 def download_lims(sample_id: str):
     """Download a LIMS compatible file."""
@@ -218,7 +219,9 @@ def download_lims(sample_id: str):
 
     # default file name
     today = date.today()
-    fname = request.args.get('filename', f'bonsai-lims-export_{sample_id}_{today.isoformat()}')
+    fname = request.args.get(
+        "filename", f"bonsai-lims-export_{sample_id}_{today.isoformat()}"
+    )
 
     # get data in tsv format and setup error handling
     try:
@@ -226,10 +229,14 @@ def download_lims(sample_id: str):
     except HTTPError as error:
         # log errors
         if error.response.status_code == 401:
-            current_app.logger.warning("LIMS export error - no permissoin %s", current_user.username)
+            current_app.logger.warning(
+                "LIMS export error - no permissoin %s", current_user.username
+            )
             flash("You dont have permission to export the result to LIMS", "warning")
         else:
-            current_app.logger.error("LIMS export error - generic error: %s", error.response)
+            current_app.logger.error(
+                "LIMS export error - generic error: %s", error.response
+            )
             flash("Error when generating export file", "warning")
         return redirect(request.referrer)
 
@@ -237,8 +244,8 @@ def download_lims(sample_id: str):
     buffer = StringIO(data)
     response = make_response(buffer.getvalue())
     # define headers and mimetype for a file
-    response.headers['Content-Disposition'] = f"attachment; filename={fname}.tsv"
-    response.mimetype = 'text/csv'
+    response.headers["Content-Disposition"] = f"attachment; filename={fname}.tsv"
+    response.mimetype = "text/csv"
     # return response object
     return response
 
