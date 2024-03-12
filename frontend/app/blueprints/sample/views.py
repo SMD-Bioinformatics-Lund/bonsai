@@ -218,7 +218,7 @@ def download_lims(sample_id: str):
 
     # default file name
     today = date.today()
-    fname = request.args.get('filename', f'bonsai-lims-export_{today.isoformat()}')
+    fname = request.args.get('filename', f'bonsai-lims-export_{sample_id}_{today.isoformat()}')
 
     # get data in tsv format and setup error handling
     try:
