@@ -2287,19 +2287,19 @@
     "fasta_index": "NC_000962.3.fasta.fai",
     "genes": "NC_000962.3.gff"
   },
-  "read_mapping": "/tmp/sample_data/test_mtuberculosis_1.bam",
+  "read_mapping": "/tmp/samples/test_mtuberculosis_1.bam",
   "genome_annotation": [
     {
       "name": "annotation_1",
-      "file": "tbdb_fhom.bed"
+      "file": "tbdb_fohm.bed"
     },
     {
       "name": "SNVs",
-      "file": "/tmp/sample_data/test_mtuberculosis_1.snv.vcf"
+      "file": "/tmp/samples/test_mtuberculosis_1.snv.vcf"
     },
     {
       "name": "SVs",
-      "file": "/tmp/sample_data/test_mtuberculosis_1.sv.vcf"
+      "file": "/tmp/samples/test_mtuberculosis_1.sv.vcf"
     }
   ]
 }
