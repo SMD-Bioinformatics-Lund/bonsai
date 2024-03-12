@@ -171,3 +171,107 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
         )
     }
     return amr_summary, resistance_info
+
+
+def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
+    """Sort variants for a sample by verified status, ref sequence and position.
+
+    :param sample_info: Sample object.
+    :type sample_info: Dict[str, Any]
+    :return: Sample object with sorted variants.
+    :rtype: Dict[str, Any]
+    """
+
+    def _sort_func(variant):
+        """Sort on verfied status, by reference sequence name, and position."""
+        SORT_ORDER = {"passed": 1, "unprocessed": 2, "failed": 3}
+        return (
+            SORT_ORDER[variant["verified"]],
+            variant["reference_sequence"],
+            variant["start"],
+        )
+
+    # sort the filtered variants by verification status and then gene name
+    for pred_res in sample_info["element_type_result"]:
+        sorted_variants = sorted(pred_res["result"]["variants"], key=_sort_func)
+        pred_res["result"]["variants"] = sorted_variants
+
+    # sort SNV and SV variants
+    for variant_type in ["snv_variants", "sv_variants"]:
+        sample_info[variant_type] = sorted(sample_info[variant_type], key=_sort_func)
+
+    return sample_info
+
+
+def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) -> bool:
+    """Check if variant passes qc filters."""
+    variant_passes_qc = True
+    # check frequency
+    min_freq = form.get("min-frequency")
+    if min_freq and variant.get("frequency") is not None:
+        LOG.error("%s == %s", min_freq, variant["frequency"] * 100)
+        if form.get("freq-operator") == "gte":
+            variant_passes_qc = variant["frequency"] * 100 >= int(min_freq)
+        else:
+            variant_passes_qc = variant["frequency"] * 100 <= int(min_freq)
+
+    # check read depth
+    min_depth = form.get("min-depth")
+    if min_depth and variant["depth"] is not None:
+        if form.get("depth-operator") == "gte":
+            variant_passes_qc = variant["depth"] >= int(min_depth)
+        else:
+            variant_passes_qc = variant["depth"] <= int(min_depth)
+
+    # hide variant that have been manually dismissed
+    if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":
+        variant_passes_qc = False
+
+    # hide varians without resistance
+    if bool(form.get("yeild-resistance")) and len(variant.get("phenotypes", [])) == 0:
+        variant_passes_qc = False
+
+    # only inlcude variants in selected genes
+    selected_genes = form.getlist("filter-genes")
+    if selected_genes and variant["reference_sequence"] not in selected_genes:
+        variant_passes_qc = False
+
+    return variant_passes_qc
+
+
+def filter_variants(sample_info, form: float | None = None):
+    # filter resistance variants from prediction sw
+    for prediction in sample_info["element_type_result"]:
+        variants = prediction["result"]["variants"]
+        if len(variants) == 0:
+            continue
+        # build up a new variant list that passes all filtering criteria
+        filtered_variants = [
+            variant for variant in variants if has_variant_passed_filters(variant, form)
+        ]
+        # replace variants with filtered variants
+        prediction["result"]["variants"] = filtered_variants
+
+    # filter SNV and SV variants
+    for variant_type in ["snv_variants", "sv_variants"]:
+        variants = sample_info.get(variant_type)
+        if variants is not None:
+            filtered_variants = [
+                variant
+                for variant in variants
+                if has_variant_passed_filters(variant, form)
+            ]
+            sample_info[variant_type] = filtered_variants
+    return sample_info
+
+
+def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
+    genes = set()
+    for prediction in sample_info["element_type_result"]:
+        # skip predictions that are not madew with the desired software
+        if software and software == prediction["type"]:
+            continue
+        # skip predictions withouht variants
+        variants = prediction["result"]["variants"]
+        genes.update({variant["reference_sequence"] for variant in variants})
+    return tuple(sorted(genes))

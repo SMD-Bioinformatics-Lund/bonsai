@@ -86,7 +86,7 @@ def create_user(headers: CaseInsensitiveDict, user_obj: str):
 @api_authentication
 def get_user(headers: CaseInsensitiveDict, username: str):
     """Get current user from token"""
-    #username = kwargs.get("username")
+    # username = kwargs.get("username")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
     resp = requests.get(url, headers=headers, timeout=TIMEOUT)
@@ -348,6 +348,22 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
+def update_variant_info(
+    headers: CaseInsensitiveDict, sample_id, variant_ids=[], status={}
+):
+    """Update annotation of resitance variants for a sample"""
+    data = {
+        "variant_ids": variant_ids,
+        **status,
+    }
+    # conduct query
+    url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/resistance/variants'
+    resp = requests.put(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
 def cluster_samples(headers: CaseInsensitiveDict, **kwargs) -> SubmittedJob:
     """Cluster samples on selected typing result."""
     typing_method = kwargs.get("typing_method", "cgmslt")
@@ -427,9 +443,34 @@ def find_and_cluster_similar_samples(
     return SubmittedJob(**resp.json())
 
 
+@api_authentication
+def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
+    """Query the API for a lims export file."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/export/{sample_id}/lims'
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    return resp.text
+
+
 def get_valid_group_columns():
     """Query API for valid group columns."""
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/default/columns'
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_antibiotics():
+    """Query the API for antibiotics."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/resources/antibiotics'
+    resp = requests.get(url)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_variant_rejection_reasons():
+    """Query the API for antibiotics."""
+    url = f'{current_app.config["BONSAI_API_URL"]}/resources/variant/rejection'
     resp = requests.get(url)
     resp.raise_for_status()
     return resp.json()

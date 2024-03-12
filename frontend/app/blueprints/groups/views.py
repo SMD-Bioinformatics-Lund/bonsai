@@ -3,29 +3,14 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from app.bonsai import (
-    TokenObject,
-    create_group,
-    delete_group,
-    get_groups,
-    get_samples,
-    get_samples_by_id,
-    get_samples_in_group,
-    get_valid_group_columns,
-    update_group,
-    update_sample_qc_classification,
-)
-from app.models import BadSampleQualityAction, PhenotypeType, QualityControlResult
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from app.bonsai import (TokenObject, create_group, delete_group, get_groups,
+                        get_samples, get_samples_by_id, get_samples_in_group,
+                        get_valid_group_columns, update_group,
+                        update_sample_qc_classification)
+from app.models import (BadSampleQualityAction, PhenotypeType,
+                        QualityControlResult)
+from flask import (Blueprint, abort, flash, redirect, render_template, request,
+                   session, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 

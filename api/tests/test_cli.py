@@ -1,8 +1,7 @@
 """Test Bonsai CLI commands."""
 
-import pytest
 import pandas as pd
-
+import pytest
 from app.cli import export
 from app.io import TARGETED_ANTIBIOTICS
 from click.testing import CliRunner
@@ -26,4 +25,10 @@ def test_export_sample(mocker, sample_database):
 
         # test that the output contained one row per antibiotic
         df = pd.read_csv("test.tsv", sep="\t")
-        assert len(df) == len(TARGETED_ANTIBIOTICS)
+        n_antibiotics = sum(
+            [
+                2 if antib["split_res_level"] else 1
+                for antib in TARGETED_ANTIBIOTICS.values()
+            ]
+        )
+        assert len(df) == n_antibiotics + 2  # + lineage and spp pred

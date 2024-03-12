@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
-{% from "sidebar.html" import sidebar, table_of_content, qc_form_controls_js %}
-{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
+{% from "sidebar.html" import sidebar, table_of_content with context %}
+{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, tb_lineage_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
 
 {% block css %}
 {{ super() }}
@@ -57,6 +57,10 @@
                     {% elif res.type == "stx" %}
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
+                        </div>
+                    {% elif res.type == "lineage" %}
+                        <div class="col-md-auto">
+                            {{ tb_lineage_card(res) }}
                         </div>
                     {% endif %}
                 {% endfor %}
@@ -211,17 +215,7 @@
 <script>
     //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
-    {{ qc_form_controls_js() }}
 
-    function removeComment(btn) {
-        // remove comment from sample
-        const apiURL = "{{ config.BONSAI_API_URL }}"
-        fetch(`${apiURL}/samples/basket/add`, {
-
-        }).then(response => {
-            btn.parentElement.remove()
-        })
-    }
     // init popovers
     const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))

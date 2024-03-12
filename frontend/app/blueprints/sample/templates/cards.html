@@ -10,8 +10,8 @@
 {% endmacro %}
 
 
-{% macro sample_header(sample) %}
-<div class="br-header p-2">
+{% macro sample_header(sample, class_names="br-header") %}
+<div class="p-2 {{class_names}}">
     <div class="card">
         <div class="card-body">
             <div class="d-flex">
@@ -584,44 +584,121 @@
 {% endmacro %}
 
 
+{% macro fmt_resistance_info(phenotype) %}
+<span data-bs-toggle="tooltip" data-bs-placement="top" 
+        data-bs-title="{{ phenotype.group }}">
+    {{ phenotype.name | capitalize }}
+</span>
+{# Add tag for expected resistance level #}
+{% if phenotype.resistance_level == "low" %}
+    <span class="badge text-bg-secondary"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
+            {{ phenotype.resistance_level[:2].upper() }}
+    </span>
+{% endif %}
+{# Add tag if antibiotic is user annotated #}
+{% if phenotype.annotation_type == "user" %}
+    <span class="badge text-bg-primary"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            data-bs-title="{{ phenotype.annotation_author }}">
+        <i class="bi bi-person-fill"></i>
+    </span>
+{% endif %}
+{% endmacro %}
+
+
 {% macro tbprofiler_amr_prediction(result, extended=False) %}
 <div>
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
-    {% if result.variants | n_results_with_resistance == 0 %}
+    {% if result.variants | n_results_with_resistance == 0 and not extended %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
     {% else %}
         <table class="table table-striped">
             <thead>
                 <tr>
+                    {% if extended %}
+                        <td scope="col"></td>
+                    {% endif %}
+                    <td scope="col">Tags</td>
                     <td scope="col">Variant</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Gene</td>
+                    {% if extended %}
+                        <td scope="col">Effect</td>
+                    {% endif %}
                     <td scope="col">Read depth</td>
                     <td scope="col">Freq</td>
-                    <td scope="col">Passed QC</td>
                     <td scope="col">Antibiotics</td>
+                    {% if extended %}
+                        <td scope="col"></td>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody class="table-group-divider">
                 {% for variant in result.variants %}
                     {% if variant.phenotypes | length > 0 or extended %}
-                    <tr>
-                        <td>{{ variant.hgvs_nt_change }}</td>
+                    {% if variant.verified == "passed" %}
+                        {% set row_class = "table-success" %}
+                    {% elif variant.verified == "failed" %}
+                        {% set row_class = "table-danger" %}
+                    {% endif %}
+                    <tr class="{{ row_class }}">
+                        {% if extended %}
+                            <td>
+                                <input type="checkbox" class="form-check-input col-auto" name="tbprofiler-{{ variant.id }}" id="tbprofiler-{{ variant.id }}" onclick="selectVariant(this)">
+                            </td>
+                        {% endif %}
+                        <td>
+                            {% if variant.verified == "failed" and variant.reason %}
+                                <span class="ms-2 badge text-bg-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ variant.reason.description }}" >
+                                    {{ variant.reason.label | upper }}
+                                </span>
+                            {% endif %}
+                            {# Add WHO class as badges #}
+                            {% for phenotype in variant.phenotypes %}
+                                {% if phenotype.note and phenotype.note != "" %}
+                                    <span class="badge text-bg-secondary"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ phenotype.note }}">
+                                        {{ phenotype.note | lookup_who_group }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {{ variant.hgvs_nt_change }}
+                        </td>
                         {% if variant.hgvs_aa_change %}
                             <td>{{ variant.hgvs_aa_change }}</td>
                         {% else %}
                             <td>-</td>
                         {% endif %}
-                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        <td>{{ accession_link(variant.accession, name=variant.reference_sequence) }}</td>
+                        {% if extended %}
+                            <td>{{ variant.variant_effect | replace("_", " ") | capitalize }}</td>
+                        {% endif %}
                         <td>{{ variant.depth | int }}</td>
-                        <td>{{ variant.frequency | round(3) }}</td>
-                        {% if variant.passed_qc  %}
-                            <td><i class="bi bi-check text-success"></i></td>
-                        {% else  %}
-                            <td><i class="bi bi-x text-danger"></i></td>
-                        {% endif  %}
-                        <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
+                        <td>{{ (variant.frequency * 100) | round(1) }}</td>
+                        <td>
+                            <ul class="no-bullets">
+                            {% for phenotype in variant.phenotypes %}
+                                <li>{{ fmt_resistance_info(phenotype) }}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                        {% if extended and display_igv %}
+                            <td>
+                                {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
+                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                   target="_blank" class="btn btn-sm btn-secondary" type="button">
+                                   IGV
+                                </a>
+                            </td>
+                        {% endif %}
                     </tr>
                     {% endif %}
                 {% endfor %}
@@ -653,6 +730,49 @@
                     <td>{{ gene.identity }}%</td>
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro tb_lineage_row(pred, row_name="", lin="", has_spoligotype=False) %}
+<th scope="row">{{ row_name }}</th>
+    <td>
+        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+           data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+           {{ lin | replace('lineage', '') }}
+        </u>
+    </td>
+    {% if has_spoligotype %}
+        <td>{{ pred.spoligotype }}</td>
+    {% endif %}
+</tr>
+{% endmacro %}
+
+{% macro tb_lineage_card(pred) %}
+<div class="card col-md-auto">
+    <div class="card-header">
+        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+    </div>
+    <div class="card-body">
+        {% set has_spoligotype=pred.result.lineages[0].spoligotype != None %}
+        {% set has_sublin=pred.result.sublin != None %}
+        <table class="table table-sm">
+            <thead>
+                <th></th>
+                <th>ID</th>
+                {% if has_spoligotype %}
+                    <th>Spoligotype</th>
+                {% endif %}
+            </thead>
+            <tbody>
+                {{ tb_lineage_row(pred.result.lineages[0], "Lineage", pred.result.main_lin, has_spoligotype) }}
+                {% if has_sublin %}
+                    {{ tb_lineage_row(
+                        pred.result.lineages[-1], "Sub-lineage", pred.result.sublin, has_spoligotype) }}
+                {% endif %}
             </tbody>
         </table>
     </div>
