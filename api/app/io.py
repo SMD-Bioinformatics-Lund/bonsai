@@ -130,15 +130,13 @@ def _fmt_variant(variant):
         "Not assoc w R - Interim": 4,
         "Not assoc w R": 5,
     }
-    try:
-        var_type = variant.variant_type[:3]
-    except:
-        import pdb
-
-        pdb.set_trace()
-    variant_desc = f"{variant.reference_sequence}_{variant.start}_{var_type}"
+    var_type = variant.variant_type
+    if var_type == 'SV':
+        variant_desc = f"{var_type}_{variant.variant_subtype}_{variant.start}-{variant.end}"
+    else:
+        variant_desc = f"{variant.reference_sequence}_{variant.start}_{variant.variant_subtype}"
     # annotate variant frequency for minority variants
-    if variant.frequency < 1:
+    if variant.frequency is not None and variant.frequency < 1:
         variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
     # annotate WHO classification
     who_group = WHO_CLASSES.get(variant.phenotypes[0].note)
@@ -161,8 +159,13 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         if not pred_res.software == PredictionSoftware.TBPROFILER:
             continue
 
+        # combine tbprofiler variants, called SNV and called SV
         filtered_variants = [
-            var for var in pred_res.result.variants if var.verified == "passed"
+            var
+            for var in itertools.chain(
+                pred_res.result.variants, sample.sv_variants, sample.snv_variants
+            )
+            if var.verified == "passed"
         ]
         # reformat predicted resistance
         sorted_variants = _sort_motifs_on_phenotype(filtered_variants)
