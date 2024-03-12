@@ -1549,6 +1549,7 @@
                 "note": "Assoc w R - interim"
               }
             ],
+            "verified": "passed",
             "reference_sequence": "gid",
             "accession": "CCP46748",
             "start": 4407686,
@@ -1751,12 +1752,14 @@
                 "name": "isoniazid",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": "low",
                 "annotation_type": "tool",
                 "annotation_author": "tbprofiler",
                 "reference": [],
                 "note": "Assoc w R"
               }
             ],
+            "verified": "passed",
             "reference_sequence": "katG",
             "accession": "CCP44675",
             "start": 2155168,
@@ -1945,6 +1948,7 @@
                 "note": "Assoc w R - interim"
               }
             ],
+            "verified": "passed",
             "reference_sequence": "rpoB",
             "accession": "CCP43410",
             "start": 761104,
