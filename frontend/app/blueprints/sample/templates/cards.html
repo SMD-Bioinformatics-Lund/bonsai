@@ -584,6 +584,35 @@
 {% endmacro %}
 
 
+{% macro fmt_resistance_info(phenotype) %}
+<span data-bs-toggle="tooltip" data-bs-placement="top" 
+        data-bs-title="{{ phenotype.group }}">
+    {{ phenotype.name | capitalize }}
+</span>
+{# Add tag for expected resistance level #}
+{% if phenotype.resistance_level %}
+    {% if phenotype.resistance_level == "high" %}
+        {% set severity_class="text-bg-warning" %}
+    {% else %}
+        {% set severity_class="text-bg-secondary" %}
+    {% endif %}
+    <span class="badge {{ severity_class }}"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
+            {{ phenotype.resistance_level[:2].upper() }}
+    </span>
+{% endif %}
+{# Add tag if antibiotic is user annotated #}
+{% if phenotype.annotation_type == "user" %}
+    <span class="badge text-bg-primary"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            data-bs-title="{{ phenotype.annotation_author }}">
+        <i class="bi bi-person-fill"></i>
+    </span>
+{% endif %}
+{% endmacro %}
+
+
 {% macro tbprofiler_amr_prediction(result, extended=False) %}
 <div>
     {# resistance variants #}
@@ -662,33 +691,7 @@
                         <td>
                             <ul class="no-bullets">
                             {% for phenotype in variant.phenotypes %}
-                                <li>
-                                <span data-bs-toggle="tooltip" data-bs-placement="top" 
-                                      data-bs-title="{{ phenotype.group }}">
-                                    {{ phenotype.name | capitalize }}
-                                </span>
-                                {# Add tag for expected resistance level #}
-                                {% if phenotype.resistance_level %}
-                                    {% if phenotype.resistance_level == "high" %}
-                                        {% set severity_class="text-bg-warning" %}
-                                    {% else %}
-                                        {% set severity_class="text-bg-secondary" %}
-                                    {% endif %}
-                                    <span class="badge {{ severity_class }}"
-                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
-                                            {{ phenotype.resistance_level[:2].upper() }}
-                                    </span>
-                                {% endif %}
-                                {# Add tag if antibiotic is user annotated #}
-                                {% if phenotype.annotation_type == "user" %}
-                                    <span class="badge text-bg-primary"
-                                          data-bs-toggle="tooltip" data-bs-placement="top"
-                                          data-bs-title="{{ phenotype.annotation_author }}">
-                                        <i class="bi bi-person-fill"></i>
-                                    </span>
-                                {% endif %}
-                                </li>
+                                <li>{{ fmt_resistance_info(phenotype) }}</li>
                             {% endfor %}
                             </ul>
                         </td>
@@ -732,6 +735,49 @@
                     <td>{{ gene.identity }}%</td>
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro tb_lineage_row(pred, row_name="", lin="", has_spoligotype=False) %}
+<th scope="row">{{ row_name }}</th>
+    <td>
+        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+           data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+           {{ lin | replace('lineage', '') }}
+        </u>
+    </td>
+    {% if has_spoligotype %}
+        <td>{{ pred.spoligotype }}</td>
+    {% endif %}
+</tr>
+{% endmacro %}
+
+{% macro tb_lineage_card(pred) %}
+<div class="card col-md-auto">
+    <div class="card-header">
+        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+    </div>
+    <div class="card-body">
+        {% set has_spoligotype=pred.result.lineages[0].spoligotype != None %}
+        {% set has_sublin=pred.result.sublin != None %}
+        <table class="table table-sm">
+            <thead>
+                <th></th>
+                <th>ID</th>
+                {% if has_spoligotype %}
+                    <th>Spoligotype</th>
+                {% endif %}
+            </thead>
+            <tbody>
+                {{ tb_lineage_row(pred.result.lineages[0], "Lineage", pred.result.main_lin, has_spoligotype) }}
+                {% if has_sublin %}
+                    {{ tb_lineage_row(
+                        pred.result.lineages[-1], "Sub-lineage", pred.result.sublin, has_spoligotype) }}
+                {% endif %}
             </tbody>
         </table>
     </div>

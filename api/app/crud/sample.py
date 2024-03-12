@@ -350,7 +350,6 @@ def update_variant_phenotype(variant, info, username):
         for phe in variant.phenotypes
         if phe.annotation_type == AnnotationType.TOOL.value
     ]
-    LOG.error(variant.phenotypes)
     if info.phenotypes is not None:
         annotated_pheno = []
         antibiotics_lookup = {ant.name: ant for ant in ANTIBIOTICS}
@@ -374,7 +373,6 @@ def update_variant_phenotype(variant, info, username):
                     annotation_type=AnnotationType.USER,
                     annotation_author=username,
                 )
-            LOG.error(pheno)
             annotated_pheno.append(pheno)
         # update variant info
         variant = variant.model_copy(

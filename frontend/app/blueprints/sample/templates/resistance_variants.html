@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, sidebar_header %}
-{% from "cards.html" import sample_header, virulence_card %}
+{% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
 {% from "cards.html" import amr_prediction_card with context %}
 
 {% macro export_btn() %}
@@ -32,8 +32,7 @@
                     <th>End</th>
                     <th>Quality</th>
                     <th>Method</th>
-                    <th>Region</th>
-                    <th>Functions</th>
+                    <th>Phenotype</th>
                     <th></th>
                 </tr>
             </thead>
@@ -60,8 +59,13 @@
                         <td>{{ variant.end }}</td>
                         <td>{{ variant.confidence }}</td>
                         <td>{{ variant.method }}</td>
-                        <td>gene a, gene b</td>
-                        <td>gene function</td>
+                        <td>
+                            <ul class="no-bullets">
+                            {% for phenotype in variant.phenotypes %}
+                                <li>{{ fmt_resistance_info(phenotype) }}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
                         {% if display_igv %}
                             <td>
                                 {% set variant_id = "sv_variants-{}".format(variant["id"]) %}
