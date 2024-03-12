@@ -61,4 +61,4 @@ class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
     verified: SampleQcClassification | None = None
     reason: VaraintRejectionReason | None = None
     phenotypes: List[str] | None = None
-    resistance_lvl: ResistanceLevel = ResistanceLevel.HIGH
+    resistance_lvl: ResistanceLevel | None = None
