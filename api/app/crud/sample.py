@@ -75,59 +75,73 @@ async def get_samples_summary(
         pipeline.append({"$skip": skip})
     if limit > 0:
         pipeline.append({"$limit": limit})
-
-    pipeline.append(
-        {
-            "$addFields": {
-                "mlst": {
-                    "$cond": {
-                        "if": {"$in": ["mlst", "$typing_result.type"]}, 
-                        "then": {"$arrayElemAt": ["$typing_result", 0]},
-                        "else": None
+    if include_mlst:
+        pipeline.append(
+            {
+                "$addFields": {
+                    "mlst": {
+                        "$cond": {
+                            "if": {"$in": ["mlst", "$typing_result.type"]}, 
+                            "then": {"$arrayElemAt": ["$typing_result", 0]},
+                            "else": None
+                        }
                     }
-                },
-                "stx": {
-                    "$cond": {
-                        "if": {"$in": ["stx", "$typing_result.type"]},
-                        "then": {"$arrayElemAt": ["$typing_result", 2]}, 
-                        "else": "-"
-                    }
-                },
-                'oh_type': {
-                    "$concat": [{
-                        "$ifNull": [{
-                            "$arrayElemAt": [{
-                                "$map": {
-                                    "input": {
-                                        "$filter": {
-                                            "input": "$typing_result",
-                                            "cond": { "$eq": ["$$this.type", "O_type"] }
-                                        }
-                                    },
-                                    "in": "$$this.result.sequence_name"
-                                }}, 0
-                            ]}, "-"
-                        ]},
-                        ":",
-                        {
-                        "$ifNull": [{
-                            "$arrayElemAt": [{
-                                "$map": {
-                                    "input": {
-                                        "$filter": {
-                                            "input": "$typing_result",
-                                            "cond": { "$eq": ["$$this.type", "H_type"] }
-                                        }
-                                    },
-                                    "in": "$$this.result.sequence_name"
-                                }}, 0
-                            ]}, "-"
-                        ]}
-                    ]
                 }
             }
-        }
-    )
+        )
+    if include_stx:
+        pipeline.append(
+            {
+                "$addFields": {
+                    "stx": {
+                        "$cond": {
+                            "if": {"$in": ["stx", "$typing_result.type"]},
+                            "then": {"$arrayElemAt": ["$typing_result", 2]}, 
+                            "else": "-"
+                        }
+                    }
+                }
+            }
+        )
+    if include_oh_type:
+        pipeline.append(
+            {
+                "$addFields": {
+                    'oh_type': {
+                        "$concat": [{
+                            "$ifNull": [{
+                                "$arrayElemAt": [{
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": { "$eq": ["$$this.type", "O_type"] }
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name"
+                                    }}, 0
+                                ]}, "-"
+                            ]},
+                            ":",
+                            {
+                            "$ifNull": [{
+                                "$arrayElemAt": [{
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": { "$eq": ["$$this.type", "H_type"] }
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name"
+                                    }}, 0
+                                ]}, "-"
+                            ]}
+                        ]
+                    }
+                }
+            }
+        )
     base_projection = {
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
