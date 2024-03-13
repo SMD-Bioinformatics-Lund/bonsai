@@ -371,6 +371,21 @@ def n_results_with_resistance(results):
     return n_results
 
 
+def get_who_group_from_tbprofiler_comment(comment):
+    """Get WHO group from a comment from TbProfiler."""
+    # annotate WHO classification
+    WHO_CLASSES = {
+        "assoc w r": 1,
+        "assoc w r - interim": 2,
+        "uncertain significance": 3,
+        "not assoc w r - interim": 4,
+        "not assoc w r": 5,
+    }
+    who_group = WHO_CLASSES.get(comment.lower())
+    if who_group is not None:
+        return f"WHO-{who_group}"
+
+
 TESTS = {
     "list": is_list,
 }
@@ -394,4 +409,5 @@ FILTERS = {
     "get_resistance_profile": get_resistance_profile,
     "count_results": count_results,
     "n_results_with_resistance": n_results_with_resistance,
+    "lookup_who_group": get_who_group_from_tbprofiler_comment,
 }

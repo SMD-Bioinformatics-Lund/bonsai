@@ -1,10 +1,16 @@
 """Routers for reading or manipulating sample information."""
 
 import logging
+import pathlib
 from typing import Annotated, Any, Dict, List
 
-from fastapi import APIRouter, Body, File, HTTPException, Path, Query, Security, status
+from app.io import (InvalidRangeError, RangeOutOfBoundsError, is_file_readable,
+                    send_partial_file)
+from fastapi import (APIRouter, Body, File, Header, HTTPException, Path, Query,
+                     Security, status)
+from fastapi.responses import FileResponse
 from prp.models import PipelineResult
+from prp.models.phenotype import VariantType
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -14,27 +20,20 @@ from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import update_sample_qc_classification
+from ..crud.sample import (update_sample_qc_classification,
+                           update_variant_annotation_for_sample)
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification
-from ..models.sample import (
-    SAMPLE_ID_PATTERN,
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-)
+from ..models.qc import QcClassification, VariantAnnotation
+from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
+                             SampleInCreate, SampleInDatabase)
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-)
+from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
+                             schedule_add_genome_signature_to_index,
+                             schedule_find_similar_and_cluster,
+                             schedule_find_similar_samples)
 from ..utils import format_error_message
 
 CommentsObj = List[CommentInDatabase]
@@ -257,7 +256,6 @@ async def delete_sample(
     ),
 ):
     """Delete the specific sample."""
-    return {"sample_id": sample_id}
     try:
         result = await delete_samples_from_db(db, sample_id)
     except EntryNotFound as error:
@@ -318,6 +316,137 @@ async def create_genome_signatures_sample(
     }
 
 
+@router.get("/samples/{sample_id}/alignment", tags=DEFAULT_TAGS)
+async def get_sample_read_mapping(
+    sample_id: str,
+    index: bool = Query(False),
+    range: Annotated[str | None, Header()] = None,
+) -> str:
+    """Get read mapping results for a sample."""
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=format_error_message(error)
+        ) from error
+
+    if sample.read_mapping is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No read mapping results associated with sample",
+        )
+
+    # build path to either bam or the index
+    if index:
+        file_path = pathlib.Path(f"{sample.read_mapping}.bai")
+    else:
+        file_path = pathlib.Path(sample.read_mapping)
+    # test if file is readable
+    if not is_file_readable(str(file_path)):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Alignment file could not be processed",
+        )
+
+    # send file if byte range is not set
+    if range is None:
+        response = FileResponse(file_path)
+    else:
+        try:
+            response = send_partial_file(file_path, range)
+        except InvalidRangeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except RangeOutOfBoundsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail=str(error),
+            ) from error
+    return response
+
+
+@router.get("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+async def get_vcf_files_for_sample(
+    sample_id: str = Path(...),
+    variant_type: VariantType = Query(...),
+    range: Annotated[str | None, Header()] = None,
+) -> str:
+    """Get vcfs associated with the sample."""
+    # verify that sample are in database
+    LOG.error("--> Request for variant: %s - %s", sample_id, variant_type)
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # build path to either bam or the index
+    file_path = None
+    for annot in sample.genome_annotation:
+        path = pathlib.Path(annot["file"])
+        # if file exist
+        if f".{variant_type.value.lower()}" in path.suffixes:
+            file_path = path
+
+    if file_path is None:
+        LOG.error("HTTP 404: %s - %s", sample_id, variant_type)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No read mapping results associated with sample",
+        )
+    # test if file is readable
+    if not is_file_readable(str(file_path)):
+        LOG.error("HTTP 500: %s - %s", sample_id, variant_type)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Alignment file could not be processed",
+        )
+
+    # send file if byte range is not set
+    if range is None:
+        response = FileResponse(file_path)
+    else:
+        try:
+            response = send_partial_file(file_path, range)
+        except InvalidRangeError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error),
+            ) from error
+        except RangeOutOfBoundsError as error:
+            raise HTTPException(
+                status_code=status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                detail=str(error),
+            ) from error
+    return response
+
+
+@router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+async def add_vcf_to_sample(
+    sample_id: str,
+    vcf: Annotated[bytes, File()],
+) -> Dict[str, str]:
+    """Entrypoint for uploading varants in vcf format to the sample."""
+    # verify that sample are in database
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # updated sample in database with signature object jobid
+    # recast the data to proper object
+    sample_obj = {**sample.model_dump(), **{"str_variants": ""}}
+    upd_sample_data = SampleInCreate(**sample_obj)
+    await crud_update_sample(db, upd_sample_data)
+
+    return {"id": sample_id, "n_variants": 0}
+
+
 @router.put(
     "/samples/{sample_id}/qc_status",
     response_model=QcClassification,
@@ -358,6 +487,37 @@ async def update_qc_status(
             detail=str(error),
         ) from error
     return status_obj
+
+
+@router.put(
+    "/samples/{sample_id}/resistance/variants",
+    response_model_by_alias=False,
+    tags=DEFAULT_TAGS,
+)
+async def update_variant_annotation(
+    classification: VariantAnnotation,
+    sample_id: str = Path(
+        ...,
+        title="ID of the sample",
+        min_length=3,
+        max_length=100,
+        regex=SAMPLE_ID_PATTERN,
+    ),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
+    ),
+) -> SampleInDatabase:
+    """Update manual annotation of one or more variants."""
+    try:
+        sample_info: SampleInDatabase = await update_variant_annotation_for_sample(
+            db, sample_id, classification, username=current_user.username
+        )
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+    return sample_info
 
 
 @router.post(

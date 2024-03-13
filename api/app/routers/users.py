@@ -1,25 +1,19 @@
 """Routes for interacting with user data."""
 
-from typing import List, Dict, Any
+import logging
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.user import (
-    add_samples_to_user_basket,
-    create_user,
-    get_current_active_user,
-    get_samples_in_user_basket,
-    get_user,
-    delete_user,
-    update_user,
-    get_users,
-    remove_samples_from_user_basket,
-)
+from ..crud.user import (add_samples_to_user_basket, create_user, delete_user,
+                         get_current_active_user, get_samples_in_user_basket,
+                         get_user, get_users, remove_samples_from_user_basket,
+                         update_user)
 from ..db import db
-from ..models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
-import logging
+from ..models.user import (SampleBasketObject, UserInputCreate,
+                           UserOutputDatabase)
 
 LOG = logging.getLogger(__name__)
 

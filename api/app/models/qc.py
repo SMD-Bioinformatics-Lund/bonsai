@@ -1,7 +1,24 @@
 """QC data models."""
 from enum import Enum
+from typing import List
+
+from pydantic import BaseModel
 
 from .base import RWModel
+from .tags import TagSeverity
+
+
+class VaraintRejectionReason(BaseModel):
+    label: str
+    description: str
+    label_class: TagSeverity = TagSeverity.INFO
+
+
+VARIANT_REJECTION_REASONS = [
+    VaraintRejectionReason(label="LOW", description="Low coverage"),
+    VaraintRejectionReason(label="A", description="Likely artifact"),
+    VaraintRejectionReason(label="SYN", description="Synonymous mutation"),
+]
 
 
 class SampleQcClassification(Enum):
@@ -22,9 +39,26 @@ class BadSampleQualityAction(Enum):
     FAILED = "permanent fail"
 
 
+class ResistanceLevel(Enum):
+    """The level of resistance a gene or variant yeilds."""
+
+    HIGH = "high"
+    LOW = "low"
+
+
 class QcClassification(RWModel):  # pylint: disable=too-few-public-methods
     """The classification of sample quality."""
 
     status: SampleQcClassification = SampleQcClassification.UNPROCESSED
     action: BadSampleQualityAction | None = None
     comment: str = ""
+
+
+class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
+    """User variant annotation."""
+
+    variant_ids: List[str]
+    verified: SampleQcClassification | None = None
+    reason: VaraintRejectionReason | None = None
+    phenotypes: List[str] | None = None
+    resistance_lvl: ResistanceLevel | None = None

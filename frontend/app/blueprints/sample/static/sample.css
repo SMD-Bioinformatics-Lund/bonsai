@@ -7,7 +7,15 @@
   text-decoration: underline;
 }
 
-.sidebar-heading {
+.br-filter-select {
+  max-width: 40%;
+}
+
+.sidebar-heading-md {
+  font-size: .9rem;
+}
+
+.sidebar-heading-sm {
   font-size: .75rem;
 }
 
@@ -46,4 +54,29 @@
 
 .tbl-border-right {
   border-right: #343a40 2px solid;
+}
+
+.ext-main {
+  grid-area: main;
+}
+
+.ext-main-footer {
+  position:fixed;
+  grid-area: main;
+  width: 100%;
+  bottom: 0;
+}
+
+.active {
+  font-weight: bold;
+}
+
+.no-bullets {
+  list-style: none;
+  padding-left: 0;
+}
+
+.variant-options {
+  padding: 1rem !important;
+  height: fit-content !important; 
 }
