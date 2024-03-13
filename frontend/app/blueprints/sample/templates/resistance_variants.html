@@ -1,0 +1,303 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar, sidebar_header %}
+{% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
+{% from "cards.html" import amr_prediction_card with context %}
+
+{% macro export_btn() %}
+    {{ sidebar_header("Action") }}
+    <form action="{{ url_for('samples.download_lims', sample_id=sample.sample_id) }}">
+        <button class="btn btn-sm btn-warning ms-2" type="submit">
+            <i class="bi bi-box-arrow-up"></i>
+            Export to LIMS
+        </button>
+    </form>
+{% endmacro %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% macro sv_variants(variants) %}
+<div class="card col-md-auto">
+    <div class="card-header">Structural variants</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Info</th>
+                    <th>Subtype</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Quality</th>
+                    <th>Method</th>
+                    <th>Phenotype</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variant in variants %}
+                    {% if variant.verified == "passed" %}
+                        {% set row_class = "table-success" %}
+                    {% elif variant.verified == "failed" %}
+                        {% set row_class = "table-danger" %}
+                    {% endif %}
+                    <tr class="{{ row_class }}">
+                        <td><input type="checkbox" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
+                        <td>
+                            {% if variant.verified == "failed" and variant.reason %}
+                                <span class="ms-2 badge text-bg-warning"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="{{ variant.reason.description }}" >
+                                    {{ variant.reason.label | upper }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ variant.variant_subtype }}</td>
+                        <td>{{ variant.start }}</td>
+                        <td>{{ variant.end }}</td>
+                        <td>{{ variant.confidence }}</td>
+                        <td>{{ variant.method }}</td>
+                        <td>
+                            <ul class="no-bullets">
+                            {% for phenotype in variant.phenotypes %}
+                                <li>{{ fmt_resistance_info(phenotype) }}</li>
+                            {% endfor %}
+                            </ul>
+                        </td>
+                        {% if display_igv %}
+                            <td>
+                                {% set variant_id = "sv_variants-{}".format(variant["id"]) %}
+                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                   target="_blank" class="btn btn-sm btn-secondary" type="button">
+                                   IGV
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endmacro %}
+
+<form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}">
+    <input value="{{ request.form.get('input-name') }}">
+</form>
+
+{% macro variant_filters(form_data) %}
+<div class="variant-options y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
+    {{ sidebar_header("Filter variants", size="md") }}
+    <form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-filter">
+        <label class="form-label" for="min-frequency">Frequency</label>
+        <div class="input-group mb-2">
+            <select class="form-select form-select-sm br-filter-select" aria-label="Select comparison" name="freq-operator" >
+                <option selected value="gte">≥</option>
+                <option value="lte">≤</option>
+            </select>
+            <input class="form-control form-control-sm" type="number" name="min-frequency" id="min-frequency" min="0" max="100" placeholder="%" value="{{ request.form.get('min-frequency') }}" default="">
+        </div>
+        {# filter by gte or lte than frequency #}
+        <label class="form-label" for="min-depth">Depth</label>
+        <div class="input-group mb-2">
+            <select class="form-select form-select-sm br-filter-select" aria-label="Select comparison" name="depth-operator" >
+                <option selected value="gte">≥</option>
+                <option value="lte">≤</option>
+            </select>
+            <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ request.form.get('min-depth') }}" default="">
+        </div>
+        <label class="form-label" for="filter-genes">Select genes</label>
+        <select name="filter-genes" id="filter-genes" class="form-select form-select-sm" data-placeholder="Select gene" data-close-on-select="false" multiple>
+            {% for gene in form_data.get('filter_genes', []) %}
+                <option value="{{gene}}" {% if gene in request.form.getlist('filter-genes') %}selected{% endif %}>
+                    {{gene}}
+                </option>
+            {% endfor %}
+        </select>
+        {# Checkboxes #}
+        <hr>
+        <div class="row">
+            <div class="col-auto">
+                <input type="checkbox" name="yeild-resistance" id="yeild-resistance"
+                       {% if request.form.get('yeild-resistance') %}checked{% endif %}
+                >
+                <label for="yeild-resistance">Yield resistance</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-auto">
+                <input type="checkbox" name="hide-dismissed" id="hide-dismissed"
+                       {% if request.form.get('hide-dismissed') %}checked{% endif %}
+                >
+                <label for="hide-dismissed">Hide dismissed</label>
+            </div>
+        </div>
+        {# Confirm filters #}
+        <div class="md-d-flex justify-content-md-center flex-column">
+            <button class="btn btn-sm btn-primary mt-2" type="submit">Filter variants</button>
+        </div>
+    </form>
+</div>
+{% endmacro %}
+
+
+{% macro variant_classification() %}
+{# Section with controlls for evaulating variants #}
+<div class="variant-options mt-md-2 y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
+    {{ sidebar_header("Analyze variants", size="md") }}
+    <div class="fw-light mb-2">Selected: <span id="selected-variants-counter">0</span></div>
+    <form method="post" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-classification">
+        {# Varaint rejection section #}
+        {{ sidebar_header("verify prediction") }}
+        <div class="d-flex justify-content-md-left mb-2">
+            <input name="variant-ids" id="variant-ids-input" autocomplete="off" minlength="2" value="[]" hidden>
+            <div>
+                <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="passed" onclick="">
+                <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
+            </div>
+            <div>
+                <input type="radio" name="verify-variant-btn" class="btn-check"  id="reject-variant-btn" autocomplete="off" value="failed">
+                <label class="btn btn-sm btn-outline-danger me-2" for="reject-variant-btn">Reject</label>
+            </div>
+        </div>
+        {# Varaint rejection section #}
+        <div class="d-flex justify-content-md-center">
+            <select name="rejection-reason" class="form-select form-select-sm" id="rejection-reason-group" disabled>
+                <option placeholder selected hidden disabled value="">Choose...</option>
+                {% for reason in rejection_reasons %}
+                    <option value="{{ reason.label }}">{{ reason.description }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <hr>
+        {{ sidebar_header("Annotate resistance") }}
+        {# Annotate additional resistance #}
+        <div class="mb-2">
+            <select name="amrs" class="form-control form-select" id="antibiotic-group" multiple="multiple" data-placeholder="Select antibiotic" data-close-on-select="false">
+                {% for family, amrs in antibiotics.items() %}
+                <optgroup label="{{ family | capitalize }}">
+                    {% for amr in amrs %}
+                    <option value="{{ amr.name }}">{{ amr.name | capitalize }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endfor %}
+            </select>
+        </div>
+        {# Annotate high / low level resistance #}
+        {{ sidebar_header("Resistance level") }}
+        <div class="d-flex justify-content-md-left mb-2">
+            <div>
+                <input type="radio" name="resistance-lvl-btn" class="btn-check" id="high-res-btn" autocomplete="off" value="high" checked>
+                <label class="btn btn-sm btn-outline-secondary me-2" for="high-res-btn">High</label>
+            </div>
+            <div>
+                <input type="radio" name="resistance-lvl-btn" class="btn-check"  id="low-res-btn" autocomplete="off" value="low">
+                <label class="btn btn-sm btn-outline-secondary me-2" for="low-res-btn">Low</label>
+            </div>
+        </div>
+        {# Confirm annotation #}
+        <hr>
+        <div class="col-auto">
+            <input class="btn btn-sm btn-success" type="submit" value="Confirm" name="classify-variant">
+        </div>
+    </form>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid br-layout">
+    {{ sidebar(sample, optional_macro=export_btn) }}
+    <main class="br-main order-1">
+        <div class="br-toc">
+            {# right handed sidebar for filters and classification #}
+            {{ variant_filters(form_data) }}
+            {{ variant_classification() }}
+        </div>
+        {{ sample_header(sample, class_names="") }}
+        <div class="br-content container-fluid pb-5">
+            <h5>Resistance prediction</h5>
+            <hr class="mt-2 col-md-3 border border-success border-2">
+            <div id="phenotype-heading" class="row justify-content-md-center">
+                {% set n_res=sample.element_type_result | count_results("AMR") %}
+                {% if is_filtered and n_res == 0 %}
+                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                {% elif n_res == 0 %}
+                    <p>No predicted resistance determinants.</p>
+                {% else %}
+                    {% for elem in sample.element_type_result %}
+                        {% if elem.type != 'VIRULENCE' and elem.software == 'tbprofiler' %}
+                            <div class="col-md-auto">
+                                {{ amr_prediction_card(elem, extended=True) }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% if sample.sv_variants %}
+                <h5>Variant calling result</h5>
+                <hr class="mt-2 col-md-3 border border-success border-2">
+                {{ sv_variants(sample.sv_variants) }}
+            {% endif %}
+        </div>
+    </main>
+</div>
+<script>
+    $(document).ready(() => { 
+        // ready select2
+        $("#antibiotic-group").select2()
+        $("#filter-genes").select2()
+        // 
+        $("#accept-variant-btn").click(() => {
+            // disable rejection reason
+            $("#rejection-reason-group").prop('disabled', true)
+            // enable antibiotic resistance annotation
+            $("#antibiotic-group").prop('disabled', false)
+            $("#high-res-btn").prop('disabled', false)
+            $("#low-res-btn").prop('disabled', false)
+        })
+        $("#reject-variant-btn").click(() => {
+            // enable rejection reason
+            $("#rejection-reason-group").prop('disabled', false)
+            // disable antibiotic resistance annotation
+            $("#antibiotic-group").prop('disabled', true)
+            $("#high-res-btn").prop('disabled', true)
+            $("#low-res-btn").prop('disabled', true)
+        })
+    })
+    window.addEventListener("load", () => {
+        // reset selected variants on page load and reload
+        checkedVariants = Array.from(
+            document.querySelectorAll('.br-content input[type="checkbox"]')
+            ).filter(input => input.checked).map(input => input.id)
+        window.localStorage.setItem("selectedVariants", JSON.stringify(checkedVariants))
+    })
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+    const selectVariant = (element) => {
+        let selectedVariants
+        // get selected variants
+        if (window.localStorage.getItem("selectedVariants")) {
+            selectedVariants = new Set(JSON.parse(localStorage.getItem("selectedVariants")))
+        } else {
+            selectedVariants = new Set([])
+        }
+        // update selected variants
+        if ( element.checked ) {
+            selectedVariants.add(element.name)
+        } else {
+            selectedVariants.delete(element.name)
+        }
+        // update selected variant counter
+        document.getElementById("selected-variants-counter").innerHTML = selectedVariants.size
+        const variantsObj = JSON.stringify(Array.from(selectedVariants))
+        document.getElementById("variant-ids-input").value = variantsObj // store the selected variants
+        window.localStorage.setItem("selectedVariants", variantsObj)
+    }
+    // reset selected varants on page load
+</script>
+{% endblock content %}

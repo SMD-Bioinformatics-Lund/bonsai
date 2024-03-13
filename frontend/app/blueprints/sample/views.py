@@ -1,34 +1,24 @@
 """Declaration of views for samples"""
 import json
+from datetime import date
+from io import StringIO
+from itertools import groupby
 from typing import Any, Dict, Tuple
 
-from app.bonsai import (
-    TokenObject,
-    cgmlst_cluster_samples,
-    delete_samples,
-    find_and_cluster_similar_samples,
-    find_samples_similar_to_reference,
-    get_group_by_id,
-    get_sample_by_id,
-    post_comment_to_sample,
-    remove_comment_from_sample,
-    update_sample_qc_classification,
-)
+from app.bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
+                        find_and_cluster_similar_samples,
+                        find_samples_similar_to_reference, get_antibiotics,
+                        get_group_by_id, get_lims_export_file,
+                        get_sample_by_id, get_variant_rejection_reasons,
+                        post_comment_to_sample, remove_comment_from_sample,
+                        update_sample_qc_classification, update_variant_info)
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, abort, current_app, flash, make_response,
+                   redirect, render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from .controllers import create_amr_summary
+from .controllers import filter_variants, get_variant_genes, sort_variants
 
 samples_bp = Blueprint(
     "samples",
@@ -218,12 +208,105 @@ def update_qc_classification(sample_id: str) -> str:
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
-@samples_bp.route("/sample/<sample_id>/resistance_report")
+@samples_bp.route(
+    "/samples/<sample_id>/resistance/variants/download", methods=["GET", "POST"]
+)
 @login_required
-def resistance_report(sample_id: str) -> str:
+def download_lims(sample_id: str):
+    """Download a LIMS compatible file."""
+    # get user auth token
+    token = TokenObject(**current_user.get_id())
+
+    # default file name
+    today = date.today()
+    fname = request.args.get(
+        "filename", f"bonsai-lims-export_{sample_id}_{today.isoformat()}"
+    )
+
+    # get data in tsv format and setup error handling
+    try:
+        data = get_lims_export_file(token, sample_id=sample_id)
+    except HTTPError as error:
+        # log errors
+        if error.response.status_code == 401:
+            current_app.logger.warning(
+                "LIMS export error - no permissoin %s", current_user.username
+            )
+            flash("You dont have permission to export the result to LIMS", "warning")
+        else:
+            current_app.logger.error(
+                "LIMS export error - generic error: %s", error.response
+            )
+            flash("Error when generating export file", "warning")
+        return redirect(request.referrer)
+
+    # convert string to IO buffer
+    buffer = StringIO(data)
+    response = make_response(buffer.getvalue())
+    # define headers and mimetype for a file
+    response.headers["Content-Disposition"] = f"attachment; filename={fname}.tsv"
+    response.mimetype = "text/csv"
+    # return response object
+    return response
+
+
+@samples_bp.route("/samples/<sample_id>/resistance/variants", methods=["GET", "POST"])
+@login_required
+def resistance_variants(sample_id: str) -> str:
     """Samples view."""
     token = TokenObject(**current_user.get_id())
     sample_info = get_sample_by_id(token, sample_id=sample_id)
+    sample_info = sort_variants(sample_info)
+
+    # check if IGV should be enabled
+    display_genome_browser = all(
+        [
+            sample_info["reference_genome"] is not None,
+            sample_info["read_mapping"] is not None,
+        ]
+    )
+
+    # populate form for filter varaints
+    antibiotics = {
+        fam: list(amrs)
+        for fam, amrs in groupby(get_antibiotics(), key=lambda ant: ant["family"])
+    }
+    rejection_reasons = get_variant_rejection_reasons()
+
+    # populate form for filter varaints
+    form_data = {"filter_genes": get_variant_genes(sample_info, software="tbprofiler")}
+
+    if request.method == "POST":
+        # check if which form deposited data
+        if "classify-variant" in request.form:
+            token = TokenObject(**current_user.get_id())
+            variant_ids = json.loads(request.form.get("variant-ids", "[]"))
+            resistance = request.form.getlist("amrs")
+            # expand rejection reason label to full db object
+            rej_reason = None
+            for reason in rejection_reasons:
+                if reason["label"] == request.form.get("rejection-reason"):
+                    rej_reason = reason
+            # parse updated variant classification
+            status = {
+                "verified": request.form.get("verify-variant-btn"),
+                "reason": rej_reason,
+                "phenotypes": resistance if resistance is not None else None,
+                "resistance_lvl": request.form.get("resistance-lvl-btn"),
+            }
+            sample_info = update_variant_info(
+                token, sample_id=sample_id, variant_ids=variant_ids, status=status
+            )
+        else:
+            sample_info = filter_variants(sample_info, form=request.form)
+        # resort variants after processing
+        sample_info = sort_variants(sample_info)
     return render_template(
-        "resistance_report.html", title=f"{sample_id} resistance", sample=sample_info
+        "resistance_variants.html",
+        title=f"{sample_id} resistance",
+        sample=sample_info,
+        form_data=form_data,
+        antibiotics=antibiotics,
+        rejection_reasons=rejection_reasons,
+        display_igv=display_genome_browser,
     )

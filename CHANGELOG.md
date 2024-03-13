@@ -3,6 +3,12 @@
 ### Added
 
  - Add button to remove samples from the group- and groups view.
+ - Added view for analyszing variants with filtering
+ - Added IGV genome browser integration to variant analysis view.
+ - Bonsai support display of SV and SNV variants.
+ - A user can classify variant as accepted or as rejected based and annotate why it was dissmissed.
+ - A user can annotate that a variant yeilds resistance to additional anitbiotics
+ - Placeholder Export to LIMBS button to the sidebar in the variants view
  - Added CLI command for exporting AMR prediction to a LIMS tsv file
 
 ### Fixed
@@ -14,6 +20,7 @@
 
 ### Changed
 
+ - Removed "passed qc" column from tbprofiler result
  - Changed default app port to 8000 and api port to 8001
 
 ## [v0.2.1]

@@ -165,7 +165,6 @@
         - sample_id:                str                     Current sample id
 
     #}
-    <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Quality control</h6>
     <form
         action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}"
         method="post"
@@ -181,37 +180,71 @@
     </form>
 {% endmacro %}
 
-{% macro sidebar(sample, bad_qc_actions) %}
+{% macro report_link(endpoint, name, sample_id) %}
+    {% if request.endpoint.endswith(endpoint) %}
+        {% set selected="active" %}
+    {% else %}
+        {% set selected="" %}
+    {% endif %}
+    <li class="nav-item mb-2 {{ selected }}">
+        <a class="link-secondary link-underline-success" 
+            href={{ url_for(endpoint, sample_id=sample_id) }}>
+            <i class="bi bi-bar-chart"></i>
+            {{ name }}
+        </a>
+    </li>
+{% endmacro %}
+
+{% macro sidebar_header(text, size="sm", class_names="mt-1 mb-1 ") %}
+    {% if size == "md" %}
+        {% set header_size="sidebar-heading-md" %}
+    {% else %}
+        {% set header_size="sidebar-heading-sm" %}
+    {% endif %}
+    <h6 class="{{ header_size }} text-muted text-uppercase {{ class_names }}">{{text}}</h6>
+{% endmacro %}
+
+{% macro sidebar(sample, bad_qc_actions, optional_macro=None) %}
 <aside class="br-sidebar border-end pe-2">
     <div>
-        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Extended Reports</h6>
+        {{ sidebar_header("Reports")}}
         <ul class="nav flex-column">
-            <li class="nav-item mb-2" disabled>
-                <a class="link-secondary link-underline-success" href="#">
-                    <i class="bi bi-bar-chart"></i>
-                    Outbreak
-                </a>
-            </li>
-            <li class="nav-item mb-2">
-                <a class="link-secondary link-underline-success" 
-                   href={{ url_for('samples.resistance_report', sample_id=sample.sample_id) }}>
-                    <i class="bi bi-bar-chart"></i>
-                    Resistance
-                </a>
-            </li>
+            {{ report_link('samples.sample', sample_id=sample.sample_id, name='Summary') }}
+            {{ report_link('samples.resistance_variants', sample_id=sample.sample_id, name='Variants') }}
         </ul>
 
+        {{ sidebar_header("Quality control")}}
         {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
-        <h6 class="sidebar-heading mt-4 mb-1 text-muted text-uppercase">Comments</h6>
+
+        {# optional specific to certain views #}
+        {% if optional_macro %}
+            {{ optional_macro() }}
+        {% endif %}
+
+        {# comment area #}
+        {{ sidebar_header("Comments")}}
         {{ comment_area(sample) }}
     </div>
 </aside>
+<script>
+    {{ qc_form_controls_js() }}
+
+    function removeComment(btn) {
+        // remove comment from sample
+        const apiURL = "{{ config.BONSAI_API_URL }}"
+        fetch(`${apiURL}/samples/basket/add`, {
+
+        }).then(response => {
+            btn.parentElement.remove()
+        })
+    }
+</script>
 {% endmacro %}
 
 
 {% macro table_of_content() %}
 <div class="br-toc y-lg-0 px-sm-1 text-body-secondary">
-    <h6 class="sidebar-heading d-none d-md-block h6 my-2 ms-3 text-muted text-uppercase">On this page</h6>
+    {{ sidebar_header("On this page") }}
     <hr class="d-none d-md-block my-2 ms-3">
     <div id="toc-contents" class="collapse d-md-block">
         <ul class="nav nav-flush flex-column mb-auto text-left">

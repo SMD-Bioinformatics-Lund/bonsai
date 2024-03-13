@@ -3,6 +3,8 @@ import os
 
 # Setup api url
 BONSAI_API_URL = os.getenv("BONSAI_API_URL", "http://api:8000")
+# where reference genomes are found
+DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
 
 # Session secret key
 SECRET_KEY = b"not-so-secret"
