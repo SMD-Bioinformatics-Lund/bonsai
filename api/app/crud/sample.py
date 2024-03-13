@@ -94,11 +94,19 @@ async def get_samples_summary(
             {
                 "$addFields": {
                     "stx": {
-                        "$cond": {
-                            "if": {"$in": ["stx", "$typing_result.type"]},
-                            "then": {"$arrayElemAt": ["$typing_result", 2]}, 
-                            "else": "-"
-                        }
+                        "$ifNull": [{
+                            "$arrayElemAt": [{
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$typing_result",
+                                            "cond": { "$eq": ["$$this.type", "stx"] }
+                                        }
+                                    },
+                                    "in": "$$this.result.gene_symbol"
+                                }}, 0
+                            ]}, "-"
+                        ]
                     }
                 }
             }
@@ -158,7 +166,7 @@ async def get_samples_summary(
     if include_mlst:
         optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
     if include_stx:
-        optional_projecton["stx"] = {"$arrayElemAt": ["$typing_result", 2]}
+        optional_projecton["stx"] = 1
     if include_oh_type:
         optional_projecton["oh_type"] = 1
     # add projections to pipeline
@@ -176,15 +184,6 @@ async def get_samples_summary(
         for res in results:
             if "mlst" in res:
                 res["mlst"] = res["mlst"]["result"]
-            upd_results.append(res)
-        results = upd_results.copy()
-    if include_stx:
-        # replace mlst with the nested result as a work around
-        # for mongo version < 5
-        upd_results = []
-        for res in results:
-            if "stx" in res:
-                res["stx"] = res["stx"]["result"]
             upd_results.append(res)
         results = upd_results.copy()
     return results

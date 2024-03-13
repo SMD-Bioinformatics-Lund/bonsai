@@ -85,7 +85,7 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="stx",
         label="STX typing",
-        path="$.stx.gene_symbol",
+        path="$.stx",
         sortable=True,
         filterable=True,
     ),
