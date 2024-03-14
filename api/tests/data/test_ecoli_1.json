@@ -9,12 +9,12 @@
       "configuration_files": [
         "/fs1/pipelines/jasen/nextflow.config"
       ],
-      "workflow_name": "astonishing_ride",
+      "workflow_name": "pensive_poincare",
       "sample_name": "test_ecoli_1",
       "sequencing_platform": "illumina",
       "sequencing_type": "PE",
-      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile escherichia_coli --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_ecoli.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.report.html -with-trace /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.trace.txt -with-timeline /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.timeline.html -work-dir /fs1/nextflow//test_ecoli_1.jasen-ecoli-dev -resume",
-      "date": "2024-02-29T16:21:00.917756+01:00"
+      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile escherichia_coli --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_ecoli.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.report.html -with-trace /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.trace.txt -with-timeline /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.timeline.html -work-dir /fs1/nextflow//test_ecoli_1.jasen-ecoli-dev",
+      "date": "2024-03-14T16:45:01.771029+01:00"
     },
     "databases": [
       {
@@ -70,11 +70,12 @@
           "500": 0.0,
           "1000": 0.0
         },
-        "mapped_reads": 6078594,
-        "tot_reads": 7579030,
-        "iqr_median": 40.0,
+        "n_reads": 7579030,
+        "n_mapped_reads": 6078594,
+        "n_read_pairs": 7534608,
+        "coverage_uniformity": 0.19047619047619047,
         "quartile1": 190.0,
-        "median": 210.0,
+        "median_cov": 210.0,
         "quartile3": 230.0
       }
     }
@@ -9120,14 +9121,14 @@
       "software": "mlst",
       "result": {
         "alleles": {
-          "icdA": 3,
           "polB": 26,
           "trpB": 2,
-          "trpA": 1,
+          "dinB": 5,
           "putP": 5,
           "pabB": 3,
-          "uidA": 5,
-          "dinB": 5
+          "trpA": 1,
+          "icdA": 3,
+          "uidA": 5
         },
         "scheme": "ecoli",
         "sequence_type": 58
@@ -16772,103 +16773,103 @@
       "result": {
         "phenotypes": {
           "susceptible": [
-            "tiamulin",
-            "pristinamycin iia",
-            "gentamicin",
-            "fortimicin",
-            "hygromycin",
-            "fosfomycin",
-            "virginiamycin m",
-            "teicoplanin",
-            "linezolid",
-            "g418",
-            "dalfopristin",
-            "ribostamycin",
-            "unknown quinolone",
-            "vancomycin",
-            "astromicin",
-            "rifampicin",
-            "apramycin",
-            "butiromycin",
-            "kasugamycin",
-            "cefotaxime+clavulanic acid",
-            "maduramicin",
-            "mupirocin",
-            "neomycin",
-            "tigecycline",
-            "bleomycin",
             "cephalotin",
+            "virginiamycin m",
             "tylosin",
-            "florfenicol",
-            "carbomycin",
-            "colistin",
-            "metronidazole",
-            "isepamicin",
-            "arbekacin",
             "paromomycin",
-            "piperacillin+clavulanic acid",
+            "unknown aminoglycoside",
+            "metronidazole",
             "ceftazidime+avibactam",
-            "fusidic acid",
-            "oleandomycin",
-            "quinupristin+dalfopristin",
-            "salinomycin",
-            "penicillin",
-            "lividomycin",
-            "kanamycin",
+            "arbekacin",
             "ceftiofur",
-            "narasin",
+            "linezolid",
+            "rifampicin",
+            "florfenicol",
+            "butiromycin",
             "gentamicin c",
+            "fosfomycin",
+            "lividomycin",
+            "mupirocin",
+            "pristinamycin iia",
+            "hygromycin",
+            "vancomycin",
+            "penicillin",
+            "g418",
+            "fusidic acid",
+            "ribostamycin",
+            "piperacillin+clavulanic acid",
+            "astromicin",
+            "tiamulin",
+            "apramycin",
+            "narasin",
+            "maduramicin",
+            "quinupristin+dalfopristin",
             "unknown beta-lactam",
-            "butirosin",
+            "unknown quinolone",
+            "tigecycline",
+            "teicoplanin",
             "kanamycin a",
-            "unknown aminoglycoside"
+            "dalfopristin",
+            "kasugamycin",
+            "kanamycin",
+            "fortimicin",
+            "bleomycin",
+            "carbomycin",
+            "salinomycin",
+            "colistin",
+            "neomycin",
+            "butirosin",
+            "oleandomycin",
+            "gentamicin",
+            "cefotaxime+clavulanic acid",
+            "isepamicin"
           ],
           "resistant": [
-            "amoxicillin+clavulanic acid",
-            "piperacillin+tazobactam",
-            "streptomycin",
-            "sisomicin",
-            "piperacillin",
-            "cephalothin",
-            "doxycycline",
-            "quinupristin",
-            "chloramphenicol",
-            "erythromycin",
-            "meropenem",
-            "azithromycin",
             "telithromycin",
+            "piperacillin",
+            "cefixime",
+            "ceftazidime",
+            "temocillin",
+            "amoxicillin",
+            "piperacillin+tazobactam",
+            "doxycycline",
             "virginiamycin s",
-            "cefotaxime",
-            "dibekacin",
-            "ticarcillin+clavulanic acid",
-            "spectinomycin",
             "cefepime",
+            "cephalothin",
+            "cefotaxime",
+            "streptomycin",
+            "spectinomycin",
+            "erythromycin",
+            "amikacin",
+            "netilmicin",
+            "clindamycin",
             "tobramycin",
             "aztreonam",
-            "ticarcillin",
             "spiramycin",
-            "minocycline",
-            "trimethoprim",
-            "lincomycin",
-            "tetracycline",
-            "amikacin",
-            "sulfamethoxazole",
-            "ciprofloxacin",
-            "ampicillin",
-            "fluoroquinolone",
-            "pristinamycin ia",
-            "ceftazidime",
-            "nalidixic acid",
-            "ceftriaxone",
-            "amoxicillin",
-            "ertapenem",
-            "clindamycin",
-            "cefoxitin",
-            "cefixime",
-            "temocillin",
+            "dibekacin",
+            "chloramphenicol",
+            "azithromycin",
+            "quinupristin",
             "ampicillin+clavulanic acid",
+            "ceftriaxone",
+            "ampicillin",
             "imipenem",
-            "netilmicin"
+            "nalidixic acid",
+            "ertapenem",
+            "amoxicillin+clavulanic acid",
+            "lincomycin",
+            "ticarcillin+clavulanic acid",
+            "trimethoprim",
+            "tetracycline",
+            "ticarcillin",
+            "pristinamycin ia",
+            "sulfamethoxazole",
+            "meropenem",
+            "minocycline",
+            "fluoroquinolone",
+            "cefoxitin",
+            "ciprofloxacin",
+            "sisomicin"
           ]
         },
         "genes": [
@@ -16889,6 +16890,9 @@
                 "name": "tobramycin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16898,6 +16902,9 @@
                 "name": "amikacin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16907,6 +16914,9 @@
                 "name": "dibekacin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16916,6 +16926,9 @@
                 "name": "netilmicin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16925,6 +16938,9 @@
                 "name": "sisomicin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16934,6 +16950,9 @@
                 "name": "fluoroquinolone",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16943,6 +16962,9 @@
                 "name": "ciprofloxacin",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -16968,6 +16990,9 @@
                 "name": "streptomycin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10673049"
                 ],
@@ -16977,6 +17002,9 @@
                 "name": "spectinomycin",
                 "group": "aminocyclitol",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10673049"
                 ],
@@ -17002,6 +17030,9 @@
                 "name": "amoxicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17013,6 +17044,9 @@
                 "name": "amoxicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17024,6 +17058,9 @@
                 "name": "ampicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17035,6 +17072,9 @@
                 "name": "ampicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17046,6 +17086,9 @@
                 "name": "cefotaxime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17057,6 +17100,9 @@
                 "name": "cefoxitin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17068,6 +17114,9 @@
                 "name": "ceftazidime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17079,6 +17128,9 @@
                 "name": "piperacillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17090,6 +17142,9 @@
                 "name": "piperacillin+tazobactam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17101,6 +17156,9 @@
                 "name": "ticarcillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17112,6 +17170,9 @@
                 "name": "ticarcillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8787910",
                   "8067761",
@@ -17139,6 +17200,9 @@
                 "name": "amoxicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17149,6 +17213,9 @@
                 "name": "ampicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17159,6 +17226,9 @@
                 "name": "cefepime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17169,6 +17239,9 @@
                 "name": "cefotaxime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17179,6 +17252,9 @@
                 "name": "ceftazidime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17189,6 +17265,9 @@
                 "name": "piperacillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17199,6 +17278,9 @@
                 "name": "aztreonam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17209,6 +17291,9 @@
                 "name": "ticarcillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17219,6 +17304,9 @@
                 "name": "ceftriaxone",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11470367",
                   "26169409"
@@ -17245,6 +17333,9 @@
                 "name": "amoxicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17254,6 +17345,9 @@
                 "name": "amoxicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17263,6 +17357,9 @@
                 "name": "ampicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17272,6 +17369,9 @@
                 "name": "ampicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17281,6 +17381,9 @@
                 "name": "cefepime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17290,6 +17393,9 @@
                 "name": "cefixime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17299,6 +17405,9 @@
                 "name": "cefotaxime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17308,6 +17417,9 @@
                 "name": "cefoxitin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17317,6 +17429,9 @@
                 "name": "ceftazidime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17326,6 +17441,9 @@
                 "name": "ertapenem",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17335,6 +17453,9 @@
                 "name": "imipenem",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17344,6 +17465,9 @@
                 "name": "meropenem",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17353,6 +17477,9 @@
                 "name": "piperacillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17362,6 +17489,9 @@
                 "name": "piperacillin+tazobactam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17371,6 +17501,9 @@
                 "name": "temocillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19770275"
                 ],
@@ -17396,6 +17529,9 @@
                 "name": "amoxicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17406,6 +17542,9 @@
                 "name": "amoxicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17416,6 +17555,9 @@
                 "name": "ampicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17426,6 +17568,9 @@
                 "name": "ampicillin+clavulanic acid",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17436,6 +17581,9 @@
                 "name": "cefepime",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17446,6 +17594,9 @@
                 "name": "piperacillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17456,6 +17607,9 @@
                 "name": "piperacillin+tazobactam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "10898672",
                   "16735436"
@@ -17482,6 +17636,9 @@
                 "name": "amoxicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "15388431"
                 ],
@@ -17491,6 +17648,9 @@
                 "name": "ampicillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "15388431"
                 ],
@@ -17500,6 +17660,9 @@
                 "name": "piperacillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "15388431"
                 ],
@@ -17509,6 +17672,9 @@
                 "name": "ticarcillin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "15388431"
                 ],
@@ -17518,6 +17684,9 @@
                 "name": "cephalothin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "15388431"
                 ],
@@ -17543,6 +17712,9 @@
                 "name": "chloramphenicol",
                 "group": "amphenicol",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "7793874"
                 ],
@@ -17568,6 +17740,9 @@
                 "name": "trimethoprim",
                 "group": "folate pathway antagonist",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "19573249"
                 ],
@@ -17593,6 +17768,9 @@
                 "name": "lincomycin",
                 "group": "lincosamide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17602,6 +17780,9 @@
                 "name": "clindamycin",
                 "group": "lincosamide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17611,6 +17792,9 @@
                 "name": "erythromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17620,6 +17804,9 @@
                 "name": "quinupristin",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17629,6 +17816,9 @@
                 "name": "pristinamycin ia",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17638,6 +17828,9 @@
                 "name": "virginiamycin s",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "23442208"
                 ],
@@ -17663,6 +17856,9 @@
                 "name": "lincomycin",
                 "group": "lincosamide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17672,6 +17868,9 @@
                 "name": "clindamycin",
                 "group": "lincosamide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17681,6 +17880,9 @@
                 "name": "erythromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17690,6 +17892,9 @@
                 "name": "quinupristin",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17699,6 +17904,9 @@
                 "name": "pristinamycin ia",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17708,6 +17916,9 @@
                 "name": "virginiamycin s",
                 "group": "streptogramin b",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "2832378"
                 ],
@@ -17733,6 +17944,9 @@
                 "name": "erythromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8619599",
                   "17302923"
@@ -17743,6 +17957,9 @@
                 "name": "azithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8619599",
                   "17302923"
@@ -17753,6 +17970,9 @@
                 "name": "spiramycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8619599",
                   "17302923"
@@ -17763,6 +17983,9 @@
                 "name": "telithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "8619599",
                   "17302923"
@@ -17789,6 +18012,9 @@
                 "name": "erythromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17798,6 +18024,9 @@
                 "name": "azithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17807,6 +18036,9 @@
                 "name": "spiramycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17816,6 +18048,9 @@
                 "name": "telithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17841,6 +18076,9 @@
                 "name": "sulfamethoxazole",
                 "group": "folate pathway antagonist",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "18753343"
                 ],
@@ -17866,6 +18104,9 @@
                 "name": "sulfamethoxazole",
                 "group": "folate pathway antagonist",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17891,6 +18132,9 @@
                 "name": "tetracycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11553538"
                 ],
@@ -17900,6 +18144,9 @@
                 "name": "doxycycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11553538"
                 ],
@@ -17909,6 +18156,9 @@
                 "name": "minocycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "11553538"
                 ],
@@ -17934,6 +18184,9 @@
                 "name": "tetracycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17943,6 +18196,9 @@
                 "name": "doxycycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17952,6 +18208,9 @@
                 "name": "minocycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "resfinder",
                 "reference": [
                   "unpublished"
                 ],
@@ -17963,12 +18222,17 @@
         ],
         "variants": [
           {
-            "variant_type": "substitution",
+            "id": 1,
+            "variant_type": "SNV",
+            "variant_subtype": "SUB",
             "phenotypes": [
               {
                 "name": "ciprofloxacin",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -17976,13 +18240,17 @@
                 "name": "nalidixic acid",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
             ],
-            "gene_symbol": "gyrA",
+            "reference_sequence": "gyrA",
             "accession": "CP073768.1",
-            "position": 83,
+            "start": 83,
+            "end": 83,
             "ref_nt": "C",
             "alt_nt": "T",
             "ref_aa": "s",
@@ -17994,12 +18262,17 @@
             "passed_qc": true
           },
           {
-            "variant_type": "substitution",
+            "id": 2,
+            "variant_type": "SNV",
+            "variant_subtype": "SUB",
             "phenotypes": [
               {
                 "name": "ciprofloxacin",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18007,13 +18280,17 @@
                 "name": "nalidixic acid",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
             ],
-            "gene_symbol": "gyrA",
+            "reference_sequence": "gyrA",
             "accession": "CP073768.1",
-            "position": 87,
+            "start": 87,
+            "end": 87,
             "ref_nt": "G",
             "alt_nt": "A",
             "ref_aa": "d",
@@ -18025,12 +18302,17 @@
             "passed_qc": true
           },
           {
-            "variant_type": "substitution",
+            "id": 3,
+            "variant_type": "SNV",
+            "variant_subtype": "SUB",
             "phenotypes": [
               {
                 "name": "ciprofloxacin",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18038,13 +18320,17 @@
                 "name": "nalidixic acid",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
             ],
-            "gene_symbol": "parE",
+            "reference_sequence": "parE",
             "accession": "CP034658.1",
-            "position": 458,
+            "start": 458,
+            "end": 458,
             "ref_nt": "T",
             "alt_nt": "A",
             "ref_aa": "s",
@@ -18065,29 +18351,29 @@
         "phenotypes": {
           "susceptible": [],
           "resistant": [
-            "carbapenem",
-            "streptomycin",
-            "efflux",
-            "chloramphenicol",
-            "fosfomycin",
-            "erythromycin",
-            "azithromycin",
             "telithromycin",
-            "tobramycin",
-            "spiramycin",
-            "trimethoprim",
-            "quinolone",
-            "amikacin",
-            "tetracycline",
-            "colistin",
             "streptogramin b",
-            "rifamycin",
-            "kanamycin",
+            "fosfomycin",
+            "streptomycin",
             "beta-lactam",
-            "clindamycin",
             "cephalosporin",
             "sulfonamide",
-            "bleomycin"
+            "erythromycin",
+            "amikacin",
+            "clindamycin",
+            "quinolone",
+            "tobramycin",
+            "spiramycin",
+            "rifamycin",
+            "chloramphenicol",
+            "azithromycin",
+            "efflux",
+            "kanamycin",
+            "tetracycline",
+            "bleomycin",
+            "trimethoprim",
+            "carbapenem",
+            "colistin"
           ]
         },
         "genes": [
@@ -18112,6 +18398,9 @@
                 "name": "amikacin",
                 "group": "aminoglycoside/quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18119,6 +18408,9 @@
                 "name": "kanamycin",
                 "group": "aminoglycoside/quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18126,6 +18418,9 @@
                 "name": "quinolone",
                 "group": "aminoglycoside/quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18133,6 +18428,9 @@
                 "name": "tobramycin",
                 "group": "aminoglycoside/quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18159,6 +18457,9 @@
                 "name": "streptomycin",
                 "group": "aminoglycoside",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18185,6 +18486,9 @@
                 "name": "efflux",
                 "group": "efflux",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18211,6 +18515,9 @@
                 "name": "rifamycin",
                 "group": "rifamycin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18237,6 +18544,9 @@
                 "name": "cephalosporin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18263,6 +18573,9 @@
                 "name": "cephalosporin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18289,6 +18602,9 @@
                 "name": "beta-lactam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18315,6 +18631,9 @@
                 "name": "carbapenem",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18341,6 +18660,9 @@
                 "name": "cephalosporin",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18367,6 +18689,9 @@
                 "name": "beta-lactam",
                 "group": "beta-lactam",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18393,6 +18718,9 @@
                 "name": "bleomycin",
                 "group": "bleomycin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18419,6 +18747,9 @@
                 "name": "chloramphenicol",
                 "group": "phenicol",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18445,6 +18776,9 @@
                 "name": "trimethoprim",
                 "group": "trimethoprim",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18471,6 +18805,9 @@
                 "name": "clindamycin",
                 "group": "lincosamide/macrolide/streptogramin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18478,6 +18815,9 @@
                 "name": "erythromycin",
                 "group": "lincosamide/macrolide/streptogramin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18485,6 +18825,9 @@
                 "name": "streptogramin b",
                 "group": "lincosamide/macrolide/streptogramin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18511,6 +18854,9 @@
                 "name": "fosfomycin",
                 "group": "fosfomycin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18537,6 +18883,9 @@
                 "name": "quinolone",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18563,6 +18912,9 @@
                 "name": "quinolone",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18589,6 +18941,9 @@
                 "name": "efflux",
                 "group": "efflux",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18615,6 +18970,9 @@
                 "name": "azithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18622,6 +18980,9 @@
                 "name": "erythromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18629,6 +18990,9 @@
                 "name": "spiramycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               },
@@ -18636,6 +19000,9 @@
                 "name": "telithromycin",
                 "group": "macrolide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18662,6 +19029,9 @@
                 "name": "quinolone",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18688,6 +19058,9 @@
                 "name": "quinolone",
                 "group": "quinolone",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18714,6 +19087,9 @@
                 "name": "colistin",
                 "group": "colistin",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18740,6 +19116,9 @@
                 "name": "sulfonamide",
                 "group": "sulfonamide",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18766,6 +19145,9 @@
                 "name": "tetracycline",
                 "group": "tetracycline",
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -18782,8 +19164,8 @@
         "phenotypes": {
           "susceptible": [],
           "resistant": [
-            "STRESS",
-            "quaternary ammonium"
+            "quaternary ammonium",
+            "STRESS"
           ]
         },
         "genes": [
@@ -18808,6 +19190,9 @@
                 "name": "STRESS",
                 "group": "STRESS",
                 "type": "STRESS",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "amrfinder",
                 "reference": [],
                 "note": null
               }
@@ -18834,6 +19219,9 @@
                 "name": "quaternary ammonium",
                 "group": "quaternary ammonium",
                 "type": "STRESS",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": null,
                 "reference": [],
                 "note": null
               }
@@ -19398,5 +19786,10 @@
         "variants": []
       }
     }
-  ]
+  ],
+  "snv_variants": null,
+  "sv_variants": null,
+  "reference_genome": null,
+  "read_mapping": null,
+  "genome_annotation": null
 }

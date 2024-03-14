@@ -9,12 +9,12 @@
       "configuration_files": [
         "/fs1/pipelines/jasen/nextflow.config"
       ],
-      "workflow_name": "insane_tuckerman",
+      "workflow_name": "gigantic_bose",
       "sample_name": "test_mtuberculosis_1",
       "sequencing_platform": "illumina",
       "sequencing_type": "PE",
       "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev",
-      "date": "2024-02-28T14:10:50.618346+01:00"
+      "date": "2024-03-14T16:45:07.969074+01:00"
     },
     "databases": [
       {
@@ -60,11 +60,12 @@
           "500": 0.027567566810190822,
           "1000": 0.0
         },
-        "mapped_reads": 6022294,
-        "tot_reads": 6136081,
-        "iqr_median": 58.0,
+        "n_reads": 6136081,
+        "n_mapped_reads": 6022294,
+        "n_read_pairs": 6118272,
+        "coverage_uniformity": 0.29292929292929293,
         "quartile1": 170.0,
-        "median": 198.0,
+        "median_cov": 198.0,
         "quartile3": 228.0
       }
     }
@@ -10179,22 +10180,22 @@
       "result": {
         "phenotypes": {
           "susceptible": [
-            "Capreomycin",
-            "Pyrazinamide",
-            "Levofloxacin",
-            "Ethionamide",
-            "Ethambutol",
-            "Ciprofloxacin",
             "Delamanid",
             "Moxifloxacin",
             "Ofloxacin",
+            "Pyrazinamide",
+            "Ciprofloxacin",
             "Amikacin",
+            "Ethionamide",
+            "Levofloxacin",
+            "Ethambutol",
+            "Linezolid",
             "Kanamycin",
-            "Linezolid"
+            "Capreomycin"
           ],
           "resistant": [
-            "Streptomycin",
             "Isoniazid",
+            "Streptomycin",
             "Rifampicin"
           ]
         },
@@ -10209,6 +10210,7 @@
                 "name": "Streptomycin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10238,6 +10240,7 @@
                 "name": "Isoniazid",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10267,6 +10270,7 @@
                 "name": "Rifampicin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10296,6 +10300,7 @@
                 "name": "Rifampicin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10325,6 +10330,7 @@
                 "name": "Rifampicin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10354,6 +10360,7 @@
                 "name": "Streptomycin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "mykrobe",
                 "reference": [],
@@ -10397,15 +10404,15 @@
             "capreomycin"
           ],
           "resistant": [
-            "streptomycin",
             "rifampicin",
+            "streptomycin",
             "isoniazid"
           ]
         },
         "genes": [],
         "variants": [
           {
-            "id": 27,
+            "id": 22,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10427,7 +10434,7 @@
             "hgvs_aa_change": "p.Leu896Ser"
           },
           {
-            "id": 28,
+            "id": 40,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10449,7 +10456,7 @@
             "hgvs_aa_change": "p.Ala176Gly"
           },
           {
-            "id": 22,
+            "id": 17,
             "variant_type": "SNV",
             "variant_subtype": "INS",
             "phenotypes": [],
@@ -10471,7 +10478,7 @@
             "hgvs_aa_change": "p.Glu194fs"
           },
           {
-            "id": 29,
+            "id": 23,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10493,7 +10500,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 38,
+            "id": 27,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10515,7 +10522,7 @@
             "hgvs_aa_change": "p.Thr102Ala"
           },
           {
-            "id": 44,
+            "id": 31,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10537,7 +10544,7 @@
             "hgvs_aa_change": "p.Asp397Gly"
           },
           {
-            "id": 31,
+            "id": 25,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10559,7 +10566,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 15,
+            "id": 10,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10581,7 +10588,7 @@
             "hgvs_aa_change": "p.Ile245Met"
           },
           {
-            "id": 39,
+            "id": 46,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10603,7 +10610,7 @@
             "hgvs_aa_change": "p.Glu584*"
           },
           {
-            "id": 30,
+            "id": 24,
             "variant_type": "SNV",
             "variant_subtype": "DEL",
             "phenotypes": [],
@@ -10625,7 +10632,7 @@
             "hgvs_aa_change": "p.Thr269fs"
           },
           {
-            "id": 40,
+            "id": 28,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10647,7 +10654,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 41,
+            "id": 29,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10669,7 +10676,7 @@
             "hgvs_aa_change": "p.Cys76Cys"
           },
           {
-            "id": 42,
+            "id": 47,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10691,7 +10698,7 @@
             "hgvs_aa_change": "p.Ser168Ala"
           },
           {
-            "id": 43,
+            "id": 30,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10713,7 +10720,7 @@
             "hgvs_aa_change": "p.Leu172Arg"
           },
           {
-            "id": 32,
+            "id": 41,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10735,7 +10742,7 @@
             "hgvs_aa_change": "p.Val203Val"
           },
           {
-            "id": 33,
+            "id": 42,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10757,7 +10764,7 @@
             "hgvs_aa_change": "p.Arg209Arg"
           },
           {
-            "id": 34,
+            "id": 43,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10779,7 +10786,7 @@
             "hgvs_aa_change": "p.Val211Val"
           },
           {
-            "id": 11,
+            "id": 8,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10801,7 +10808,7 @@
             "hgvs_aa_change": "p.Phe320Phe"
           },
           {
-            "id": 35,
+            "id": 26,
             "variant_type": "SNV",
             "variant_subtype": "INS",
             "phenotypes": [],
@@ -10823,7 +10830,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 47,
+            "id": 33,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10853,6 +10860,7 @@
                 "name": "streptomycin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "tbprofiler",
                 "reference": [
@@ -10861,7 +10869,6 @@
                 "note": "Assoc w R - Interim"
               }
             ],
-            "verified": "passed",
             "reference_sequence": "gid",
             "accession": "CCP46748",
             "start": 4407686,
@@ -10880,7 +10887,7 @@
             "hgvs_aa_change": "p.Glu173*"
           },
           {
-            "id": 48,
+            "id": 34,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10902,7 +10909,7 @@
             "hgvs_aa_change": "p.Glu92Asp"
           },
           {
-            "id": 5,
+            "id": 35,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10924,7 +10931,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 6,
+            "id": 5,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10946,7 +10953,7 @@
             "hgvs_aa_change": "p.Glu21Gln"
           },
           {
-            "id": 7,
+            "id": 6,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10968,7 +10975,7 @@
             "hgvs_aa_change": "p.Ser95Thr"
           },
           {
-            "id": 8,
+            "id": 7,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -10990,7 +10997,7 @@
             "hgvs_aa_change": "p.Gly668Asp"
           },
           {
-            "id": 9,
+            "id": 36,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11012,7 +11019,7 @@
             "hgvs_aa_change": "p.Ile784Ile"
           },
           {
-            "id": 10,
+            "id": 37,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11034,7 +11041,7 @@
             "hgvs_aa_change": "p.Arg792Ser"
           },
           {
-            "id": 26,
+            "id": 21,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11064,13 +11071,15 @@
                 "name": "isoniazid",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "tbprofiler",
                 "reference": [
                   "https://www.who.int/publications/i/item/9789240028173"
                 ],
                 "note": "Assoc w R"
               }
             ],
-            "verified": "passed",
             "reference_sequence": "katG",
             "accession": "CCP44675",
             "start": 2155168,
@@ -11089,7 +11098,7 @@
             "hgvs_aa_change": "p.Ser315Thr"
           },
           {
-            "id": 17,
+            "id": 12,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11111,7 +11120,7 @@
             "hgvs_aa_change": "p.Ile948Val"
           },
           {
-            "id": 18,
+            "id": 13,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11133,7 +11142,7 @@
             "hgvs_aa_change": "p.Thr794Ile"
           },
           {
-            "id": 19,
+            "id": 14,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11155,7 +11164,7 @@
             "hgvs_aa_change": "p.Asp767Asn"
           },
           {
-            "id": 20,
+            "id": 15,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11177,7 +11186,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 12,
+            "id": 9,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11199,7 +11208,7 @@
             "hgvs_aa_change": "p.Ala187Val"
           },
           {
-            "id": 13,
+            "id": 38,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11221,7 +11230,7 @@
             "hgvs_aa_change": "p.Thr427Pro"
           },
           {
-            "id": 14,
+            "id": 39,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11251,6 +11260,7 @@
                 "name": "rifampicin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
                 "annotation_type": "tool",
                 "annotation_author": "tbprofiler",
                 "reference": [
@@ -11259,7 +11269,6 @@
                 "note": "Assoc w R - Interim"
               }
             ],
-            "verified": "passed",
             "reference_sequence": "rpoB",
             "accession": "CCP43410",
             "start": 761104,
@@ -11278,7 +11287,7 @@
             "hgvs_aa_change": "p.Met434_Asp435del"
           },
           {
-            "id": 16,
+            "id": 11,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11300,7 +11309,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 24,
+            "id": 19,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11322,7 +11331,7 @@
             "hgvs_aa_change": "p.Arg212Arg"
           },
           {
-            "id": 21,
+            "id": 16,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11352,6 +11361,9 @@
                 "name": "streptomycin",
                 "group": null,
                 "type": "AMR",
+                "resistance_level": null,
+                "annotation_type": "tool",
+                "annotation_author": "tbprofiler",
                 "reference": [
                   "https://www.who.int/publications/i/item/9789240028173"
                 ],
@@ -11376,7 +11388,7 @@
             "hgvs_aa_change": "p.Lys88Arg"
           },
           {
-            "id": 23,
+            "id": 18,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11398,7 +11410,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 25,
+            "id": 20,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11420,7 +11432,7 @@
             "hgvs_aa_change": "p.Leu11Leu"
           },
           {
-            "id": 45,
+            "id": 48,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11442,7 +11454,7 @@
             "hgvs_aa_change": "p.Arg101Arg"
           },
           {
-            "id": 46,
+            "id": 32,
             "variant_type": "SNV",
             "variant_subtype": "DEL",
             "phenotypes": [],
@@ -11464,7 +11476,7 @@
             "hgvs_aa_change": ""
           },
           {
-            "id": 36,
+            "id": 44,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11486,7 +11498,7 @@
             "hgvs_aa_change": "p.Gly84Gly"
           },
           {
-            "id": 37,
+            "id": 45,
             "variant_type": "SNV",
             "variant_subtype": "SUB",
             "phenotypes": [],
@@ -11511,106 +11523,9 @@
       }
     }
   ],
-  "snv_variants": [
-    {
-      "id": 1,
-      "variant_type": "SNV",
-      "variant_subtype": "TV",
-      "phenotypes": [],
-      "reference_sequence": "NC_000962.3",
-      "accession": null,
-      "start": 1848,
-      "end": 1849,
-      "ref_nt": "C",
-      "alt_nt": "A",
-      "ref_aa": null,
-      "alt_aa": null,
-      "depth": null,
-      "frequency": null,
-      "confidence": 3455.780029296875,
-      "method": "freeBayes v1.3.6",
-      "passed_qc": null
-    },
-    {
-      "id": 2,
-      "variant_type": "SNV",
-      "variant_subtype": "TS",
-      "phenotypes": [],
-      "reference_sequence": "NC_000962.3",
-      "accession": null,
-      "start": 1976,
-      "end": 1977,
-      "ref_nt": "A",
-      "alt_nt": "G",
-      "ref_aa": null,
-      "alt_aa": null,
-      "depth": null,
-      "frequency": null,
-      "confidence": 4354.0,
-      "method": "freeBayes v1.3.6",
-      "passed_qc": null
-    }
-  ],
-  "sv_variants": [
-    {
-      "id": 1,
-      "variant_type": "SV",
-      "variant_subtype": "DEL",
-      "phenotypes": [],
-      "reference_sequence": "Chromosome",
-      "accession": null,
-      "start": 79570,
-      "end": 83034,
-      "ref_nt": "C",
-      "alt_nt": "<DEL>",
-      "ref_aa": null,
-      "alt_aa": null,
-      "depth": null,
-      "frequency": null,
-      "confidence": 4432.0,
-      "method": "EMBL.DELLYv1.1.8",
-      "passed_qc": true
-    },
-    {
-      "id": 2,
-      "variant_type": "SV",
-      "variant_subtype": "DEL",
-      "phenotypes": [],
-      "reference_sequence": "Chromosome",
-      "accession": null,
-      "start": 335662,
-      "end": 335705,
-      "ref_nt": "CCCGCCCGTGAGGGCTACTACGCCGCCGCCGGCGCCGCCGGCG",
-      "alt_nt": "C",
-      "ref_aa": null,
-      "alt_aa": null,
-      "depth": null,
-      "frequency": null,
-      "confidence": 170.0,
-      "method": "EMBL.DELLYv1.1.8",
-      "passed_qc": true
-    }
-  ],
-  "reference_genome": {
-    "name": "Mycobacterium tuberculosis H37Rv, complete genome",
-    "accession": "NC_000962.3",
-    "fasta": "NC_000962.3.fasta",
-    "fasta_index": "NC_000962.3.fasta.fai",
-    "genes": "NC_000962.3.gff"
-  },
-  "read_mapping": "/tmp/samples/test_mtuberculosis_1.bam",
-  "genome_annotation": [
-    {
-      "name": "annotation_1",
-      "file": "tbdb_fohm.bed"
-    },
-    {
-      "name": "SNVs",
-      "file": "/tmp/samples/test_mtuberculosis_1.snv.vcf"
-    },
-    {
-      "name": "SVs",
-      "file": "/tmp/samples/test_mtuberculosis_1.sv.vcf"
-    }
-  ]
+  "snv_variants": null,
+  "sv_variants": null,
+  "reference_genome": null,
+  "read_mapping": null,
+  "genome_annotation": null
 }
