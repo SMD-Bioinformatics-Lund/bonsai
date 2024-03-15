@@ -10450,7 +10450,7 @@
             "frequency": 0.11363636363636363,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.527C>G",
             "hgvs_aa_change": "p.Ala176Gly"
@@ -10604,7 +10604,7 @@
             "frequency": 0.1450381679389313,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "stop_gained",
             "hgvs_nt_change": "c.1750G>T",
             "hgvs_aa_change": "p.Glu584*"
@@ -10692,7 +10692,7 @@
             "frequency": 0.1702127659574468,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.502T>G",
             "hgvs_aa_change": "p.Ser168Ala"
@@ -10736,7 +10736,7 @@
             "frequency": 0.16071428571428573,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.609A>T",
             "hgvs_aa_change": "p.Val203Val"
@@ -10758,7 +10758,7 @@
             "frequency": 0.12903225806451613,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.627A>T",
             "hgvs_aa_change": "p.Arg209Arg"
@@ -10780,7 +10780,7 @@
             "frequency": 0.15789473684210525,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.633C>G",
             "hgvs_aa_change": "p.Val211Val"
@@ -10925,7 +10925,7 @@
             "frequency": 0.1125,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "upstream_gene_variant",
             "hgvs_nt_change": "c.-6G>T",
             "hgvs_aa_change": ""
@@ -11013,7 +11013,7 @@
             "frequency": 0.1625,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.2352C>A",
             "hgvs_aa_change": "p.Ile784Ile"
@@ -11035,7 +11035,7 @@
             "frequency": 0.11510791366906475,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.2374C>A",
             "hgvs_aa_change": "p.Arg792Ser"
@@ -11224,7 +11224,7 @@
             "frequency": 0.11392405063291139,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.1279A>C",
             "hgvs_aa_change": "p.Thr427Pro"
@@ -11246,7 +11246,7 @@
             "frequency": 0.13253012048192772,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.1284C>A",
             "hgvs_aa_change": "p.Phe428Leu"
@@ -11448,7 +11448,7 @@
             "frequency": 0.11678832116788321,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.303C>A",
             "hgvs_aa_change": "p.Arg101Arg"
@@ -11492,7 +11492,7 @@
             "frequency": 0.1839080459770115,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "synonymous_variant",
             "hgvs_nt_change": "c.252A>G",
             "hgvs_aa_change": "p.Gly84Gly"
@@ -11514,7 +11514,7 @@
             "frequency": 0.14563106796116504,
             "confidence": null,
             "method": "freebayes",
-            "passed_qc": false,
+            "passed_qc": true,
             "variant_effect": "missense_variant",
             "hgvs_nt_change": "c.207G>T",
             "hgvs_aa_change": "p.Glu69Asp"
