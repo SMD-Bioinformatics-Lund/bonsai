@@ -1,7 +1,7 @@
 """Declaration of views for samples"""
 import json
 from datetime import date
-from io import StringIO
+from io import BytesIO
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
@@ -213,7 +213,7 @@ def update_qc_classification(sample_id: str) -> str:
 )
 @login_required
 def download_lims(sample_id: str):
-    """Download a LIMS compatible file."""
+    """Download a LIMS compatible file with UTF-8 encoding."""
     # get user auth token
     token = TokenObject(**current_user.get_id())
 
@@ -241,7 +241,7 @@ def download_lims(sample_id: str):
         return redirect(request.referrer)
 
     # convert string to IO buffer
-    buffer = StringIO(data)
+    buffer = BytesIO(data.encode('UTF-8'))
     response = make_response(buffer.getvalue())
     # define headers and mimetype for a file
     response.headers["Content-Disposition"] = f"attachment; filename={fname}.tsv"

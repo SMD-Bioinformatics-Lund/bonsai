@@ -2,6 +2,14 @@
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [v0.3.0]
+
+### Added
+
  - Add button to remove samples from the group- and groups view.
  - Added view for analyszing variants with filtering
  - Added IGV genome browser integration to variant analysis view.

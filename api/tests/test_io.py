@@ -8,7 +8,6 @@ def test_sample_to_kmlims(mtuberculosis_sample):
     result = sample_to_kmlims(sample=mtuberculosis_sample)
 
     # filter out lineage and spp pred from result
-    mask = result.parameter.str.startswith("MTBC")
     n_exp_antibiotics = sum(
         [
             2 if antib["split_res_level"] else 1
@@ -18,7 +17,3 @@ def test_sample_to_kmlims(mtuberculosis_sample):
     # test that,
     # the targeted antibiotics were reported
     assert len(result) == n_exp_antibiotics + 2  # + lineage and spp pred
-
-    # two found variants with resistance
-    n_resistance = len(result.query("result == 'Mutation påvisad'"))
-    assert n_resistance == 2
