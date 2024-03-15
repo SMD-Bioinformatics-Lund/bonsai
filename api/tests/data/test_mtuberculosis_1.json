@@ -9,12 +9,12 @@
       "configuration_files": [
         "/fs1/pipelines/jasen/nextflow.config"
       ],
-      "workflow_name": "gigantic_bose",
+      "workflow_name": "compassionate_almeida",
       "sample_name": "test_mtuberculosis_1",
       "sequencing_platform": "illumina",
       "sequencing_type": "PE",
-      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev",
-      "date": "2024-03-14T16:45:07.969074+01:00"
+      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev -resume",
+      "date": "2024-03-15T10:11:17.592912+01:00"
     },
     "databases": [
       {
@@ -10180,22 +10180,22 @@
       "result": {
         "phenotypes": {
           "susceptible": [
-            "Delamanid",
-            "Moxifloxacin",
-            "Ofloxacin",
-            "Pyrazinamide",
-            "Ciprofloxacin",
-            "Amikacin",
             "Ethionamide",
-            "Levofloxacin",
-            "Ethambutol",
+            "Amikacin",
             "Linezolid",
+            "Moxifloxacin",
             "Kanamycin",
-            "Capreomycin"
+            "Capreomycin",
+            "Delamanid",
+            "Ethambutol",
+            "Ofloxacin",
+            "Levofloxacin",
+            "Pyrazinamide",
+            "Ciprofloxacin"
           ],
           "resistant": [
-            "Isoniazid",
             "Streptomycin",
+            "Isoniazid",
             "Rifampicin"
           ]
         },
@@ -10405,8 +10405,8 @@
           ],
           "resistant": [
             "rifampicin",
-            "streptomycin",
-            "isoniazid"
+            "isoniazid",
+            "streptomycin"
           ]
         },
         "genes": [],
