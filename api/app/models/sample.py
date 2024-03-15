@@ -106,8 +106,8 @@ class SampleInCreate(
     """Sample data model used when creating new db entries."""
 
     element_type_result: List[MethodIndex]
-    sv_variants: List[VariantInDb]
-    snv_variants: List[VariantInDb]
+    sv_variants: List[VariantInDb] | None = None
+    snv_variants: List[VariantInDb] | None = None
 
 
 class SampleInDatabase(
@@ -116,8 +116,8 @@ class SampleInDatabase(
     """Sample database model outputed from the database."""
 
     element_type_result: List[MethodIndex]
-    sv_variants: List[VariantInDb]
-    snv_variants: List[VariantInDb]
+    sv_variants: List[VariantInDb] | None = None
+    snv_variants: List[VariantInDb] | None = None
 
 
 class SampleSummary(
