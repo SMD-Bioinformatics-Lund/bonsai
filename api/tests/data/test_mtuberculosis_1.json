@@ -11523,9 +11523,106 @@
       }
     }
   ],
-  "snv_variants": null,
-  "sv_variants": null,
-  "reference_genome": null,
-  "read_mapping": null,
-  "genome_annotation": null
+  "snv_variants": [
+    {
+      "id": 1,
+      "variant_type": "SNV",
+      "variant_subtype": "TV",
+      "phenotypes": [],
+      "reference_sequence": "NC_000962.3",
+      "accession": null,
+      "start": 1848,
+      "end": 1849,
+      "ref_nt": "C",
+      "alt_nt": "A",
+      "ref_aa": null,
+      "alt_aa": null,
+      "depth": null,
+      "frequency": null,
+      "confidence": 3455.780029296875,
+      "method": "freeBayes v1.3.6",
+      "passed_qc": null
+    },
+    {
+      "id": 2,
+      "variant_type": "SNV",
+      "variant_subtype": "TS",
+      "phenotypes": [],
+      "reference_sequence": "NC_000962.3",
+      "accession": null,
+      "start": 1976,
+      "end": 1977,
+      "ref_nt": "A",
+      "alt_nt": "G",
+      "ref_aa": null,
+      "alt_aa": null,
+      "depth": null,
+      "frequency": null,
+      "confidence": 4354.0,
+      "method": "freeBayes v1.3.6",
+      "passed_qc": null
+    }
+  ],
+  "sv_variants": [
+    {
+      "id": 1,
+      "variant_type": "SV",
+      "variant_subtype": "DEL",
+      "phenotypes": [],
+      "reference_sequence": "Chromosome",
+      "accession": null,
+      "start": 79570,
+      "end": 83034,
+      "ref_nt": "C",
+      "alt_nt": "<DEL>",
+      "ref_aa": null,
+      "alt_aa": null,
+      "depth": null,
+      "frequency": null,
+      "confidence": 4432.0,
+      "method": "EMBL.DELLYv1.1.8",
+      "passed_qc": true
+    },
+    {
+      "id": 2,
+      "variant_type": "SV",
+      "variant_subtype": "DEL",
+      "phenotypes": [],
+      "reference_sequence": "Chromosome",
+      "accession": null,
+      "start": 335662,
+      "end": 335705,
+      "ref_nt": "CCCGCCCGTGAGGGCTACTACGCCGCCGCCGGCGCCGCCGGCG",
+      "alt_nt": "C",
+      "ref_aa": null,
+      "alt_aa": null,
+      "depth": null,
+      "frequency": null,
+      "confidence": 170.0,
+      "method": "EMBL.DELLYv1.1.8",
+      "passed_qc": true
+    }
+  ],
+  "reference_genome": {
+    "name": "Mycobacterium tuberculosis H37Rv, complete genome",
+    "accession": "NC_000962.3",
+    "fasta": "NC_000962.3.fasta",
+    "fasta_index": "NC_000962.3.fasta.fai",
+    "genes": "NC_000962.3.gff"
+  },
+  "read_mapping": "/tmp/samples/test_mtuberculosis_1.bam",
+  "genome_annotation": [
+    {
+      "name": "annotation_1",
+      "file": "tbdb_fohm.bed"
+    },
+    {
+      "name": "SNVs",
+      "file": "/tmp/samples/test_mtuberculosis_1.snv.vcf"
+    },
+    {
+      "name": "SVs",
+      "file": "/tmp/samples/test_mtuberculosis_1.sv.vcf"
+    }
+  ]
 }
