@@ -83,6 +83,20 @@ VALID_COLUMNS = [
         filterable=True,
     ),
     OverviewTableColumn(
+        id="stx",
+        label="STX typing",
+        path="$.stx",
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
+        id="oh",
+        label="OH typing",
+        path="$.oh_type",
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
         id="profile",
         label="Analysis profile",
         path="$.profile",

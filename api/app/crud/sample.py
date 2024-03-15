@@ -59,6 +59,8 @@ async def get_samples_summary(
     include: List[str] | None = None,
     include_qc: bool = True,
     include_mlst: bool = True,
+    include_stx: bool = True,
+    include_oh_type: bool = True,
 ) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
@@ -69,20 +71,81 @@ async def get_samples_summary(
         pipeline.append({"$skip": skip})
     if limit > 0:
         pipeline.append({"$limit": limit})
-
-    pipeline.append(
-        {
-            "$addFields": {
-                "typing_result": {
-                    "$filter": {
-                        "input": "$typing_result",
-                        "as": "res",
-                        "cond": {"$eq": ["$$res.type", "mlst"]},
+    if include_mlst:
+        pipeline.append(
+            {
+                "$addFields": {
+                    "mlst": {
+                        "$cond": {
+                            "if": {"$in": ["mlst", "$typing_result.type"]}, 
+                            "then": {"$arrayElemAt": ["$typing_result", 0]},
+                            "else": None
+                        }
                     }
                 }
             }
-        }
-    )
+        )
+    if include_stx:
+        pipeline.append(
+            {
+                "$addFields": {
+                    "stx": {
+                        "$ifNull": [{
+                            "$arrayElemAt": [{
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$typing_result",
+                                            "cond": { "$eq": ["$$this.type", "stx"] }
+                                        }
+                                    },
+                                    "in": "$$this.result.gene_symbol"
+                                }}, 0
+                            ]}, "-"
+                        ]
+                    }
+                }
+            }
+        )
+    if include_oh_type:
+        pipeline.append(
+            {
+                "$addFields": {
+                    'oh_type': {
+                        "$concat": [{
+                            "$ifNull": [{
+                                "$arrayElemAt": [{
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": { "$eq": ["$$this.type", "O_type"] }
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name"
+                                    }}, 0
+                                ]}, "-"
+                            ]},
+                            ":",
+                            {
+                            "$ifNull": [{
+                                "$arrayElemAt": [{
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": { "$eq": ["$$this.type", "H_type"] }
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name"
+                                    }}, 0
+                                ]}, "-"
+                            ]}
+                        ]
+                    }
+                }
+            }
+        )
     base_projection = {
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
@@ -98,6 +161,10 @@ async def get_samples_summary(
         optional_projecton["qc_status"] = 1
     if include_mlst:
         optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
+    if include_stx:
+        optional_projecton["stx"] = 1
+    if include_oh_type:
+        optional_projecton["oh_type"] = 1
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 

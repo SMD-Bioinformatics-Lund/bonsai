@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, table_of_content with context %}
-{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, tb_lineage_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
+{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, oh_card, tb_lineage_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
 
 {% block css %}
 {{ super() }}
@@ -58,9 +58,13 @@
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
                         </div>
+                    {% elif res.type == "H_type" or res.type == "O_type"%}
+                        <div class="col-md-auto">
+                        {{ oh_card(res) }}
+                        </div>
                     {% elif res.type == "lineage" %}
                         <div class="col-md-auto">
-                            {{ tb_lineage_card(res) }}
+                        {{ tb_lineage_card(res) }}
                         </div>
                     {% endif %}
                 {% endfor %}
