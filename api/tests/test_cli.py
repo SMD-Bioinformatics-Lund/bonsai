@@ -17,7 +17,7 @@ def test_export_sample(mocker, sample_database):
     # run CLI command
     runner = CliRunner()
     with runner.isolated_filesystem():
-        args = ["-i", "test_mtuberculosis_1", "test.tsv"]
+        args = ["-i", "mtuberculosis_lims_1_run0001", "test.tsv"]
         result = runner.invoke(export, args)
 
         # test that script could execute
