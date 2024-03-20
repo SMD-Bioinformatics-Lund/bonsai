@@ -2,9 +2,15 @@
 
 ### Added
 
+- Added Sample name, LIMS ID, and Sequencing run as selectable columns
+- Sample name in sample view table links to sample
+
 ### Fixed
 
 ### Changed
+
+- Sample id is assigend by concating `lims_id` and `sequencing_run`
+- Sample id is not displayed by default
 
 ## [v0.3.0]
 

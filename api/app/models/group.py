@@ -57,6 +57,25 @@ VALID_COLUMNS = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="sample_name",
+        label="Name",
+        type="sampleid",
+        path="$.sample_name",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="lims_id",
+        label="LIMS id",
+        path="$.lims_id",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="sequencing_run",
+        label="Sequencing run",
+        path="$.sequencing_run",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="tags",
         label="Tags",
         type="tags",
