@@ -54,6 +54,7 @@ VALID_COLUMNS = [
         label="Sample Id",
         type="sampleid",
         path="$.sample_id",
+        hidden=True,
         sortable=True,
     ),
     OverviewTableColumn(
