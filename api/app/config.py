@@ -52,7 +52,10 @@ USER_ROLES = {
         "locations:read",
         "locations:write",
     ],
-    "uploader": ["groups:write"],
+    "uploader": [
+        "groups:write"
+        "samples:write",
+    ],
 }
 
 # Configure authentication method used
