@@ -125,7 +125,7 @@ async def create_sample(
             status_code=status.HTTP_409_CONFLICT,
             detail=error.details["errmsg"],
         ) from error
-    return {"type": "success", "id": db_obj.id}
+    return {"type": "success", "sample_id": db_obj.sample_id}
 
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
