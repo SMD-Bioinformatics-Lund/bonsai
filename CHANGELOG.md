@@ -4,6 +4,7 @@
 
 - Added Sample name, LIMS ID, and Sequencing run as selectable columns
 - Sample name in sample view table links to sample
+- New upload script (`upload_sample.py`) that takes a upload config in YAML format as input
 
 ### Fixed
 
@@ -11,6 +12,8 @@
 
 - Sample id is assigend by concating `lims_id` and `sequencing_run`
 - Sample id is not displayed by default
+- API route POST /samples/ returns `sample_id`
+- Removed `upload_sample.sh`
 
 ## [v0.3.0]
 
