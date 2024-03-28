@@ -22,8 +22,8 @@ BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
 TARGETED_ANTIBIOTICS = {
     "rifampicin": {"abbrev": "rif", "split_res_level": False},
     "isoniazid": {"abbrev": "inh", "split_res_level": True},
-    "pyrazinamide": {"abbrev": "pza", "split_res_level": False},
-    "ethambutol": {"abbrev": "etm", "split_res_level": False},
+    "pyrazinamide": {"abbrev": "pyr", "split_res_level": False},
+    "ethambutol": {"abbrev": "etb", "split_res_level": False},
     "amikacin": {"abbrev": "ami", "split_res_level": False},
     "levofloxacin": {"abbrev": "lev", "split_res_level": False},
 }
