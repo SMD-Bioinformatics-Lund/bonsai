@@ -134,8 +134,8 @@ def _process_generic_status_codes(error, sample_id):
 @click.option("-a", "--api", type=str, help="Upload configuration")
 @click.option("-u", "--user", envvar=USER_ENV, type=str, help="Username")
 @click.option("-p", "--password", envvar=PASSWD_ENV, type=str, help="Password")
-@click.option("-c", "--config", required=True, type=click.File(), help="Upload configuration")
-def cli(api, user, password, config):
+@click.option("-i", "--input", required=True, type=click.File(), help="Upload configuration")
+def cli(api, user, password, input):
     """Upload a sample to Bonsai"""
     if user is None:
         raise click.BadOptionUsage(user, f"No username set. Use either the --user option or env variable {USER_ENV}")
@@ -143,7 +143,7 @@ def cli(api, user, password, config):
         raise click.BadOptionUsage(password, f"No username set. Use either the --password option or env variable {PASSWD_ENV}")
     
     # read upload config and verify content
-    cnf = SampleConfig(**yaml.safe_load(config))
+    cnf = SampleConfig(**yaml.safe_load(input))
 
     # login
     ctx = ExecutionContext(username=user, password=password, api_url=api)
