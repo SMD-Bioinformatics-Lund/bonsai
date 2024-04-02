@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 from collections import defaultdict
+from enum import Enum
 from typing import List
 
 import pandas as pd
@@ -27,6 +28,14 @@ TARGETED_ANTIBIOTICS = {
     "amikacin": {"abbrev": "ami", "split_res_level": False},
     "levofloxacin": {"abbrev": "lev", "split_res_level": False},
 }
+
+
+class TBResponses(Enum):
+    """Valid responses for M. tuberculosis results."""
+
+    resistant = "Mutation påvisad"
+    susceptible = "Mutation ej påvisad"
+    sample_failed = "Ej bedömbart"
 
 
 class InvalidRangeError(Exception):
@@ -131,10 +140,14 @@ def _fmt_variant(variant):
         "Not assoc w R": 5,
     }
     var_type = variant.variant_type
-    if var_type == 'SV':
-        variant_desc = f"{var_type}_{variant.variant_subtype}_{variant.start}-{variant.end}"
+    if var_type == "SV":
+        variant_desc = (
+            f"{var_type}_{variant.variant_subtype}_{variant.start}-{variant.end}"
+        )
     else:
-        variant_desc = f"{variant.reference_sequence}_{variant.start}_{variant.variant_subtype}"
+        variant_desc = (
+            f"{variant.reference_sequence}_{variant.start}_{variant.variant_subtype}"
+        )
     # annotate variant frequency for minority variants
     if variant.frequency is not None and variant.frequency < 1:
         variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
@@ -171,8 +184,6 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         sorted_variants = _sort_motifs_on_phenotype(filtered_variants)
 
         # create tabular result
-        positive = "Mutation påvisad"
-        negative = "Mutation ej påvisad"
         for antibiotic in TARGETED_ANTIBIOTICS:
             # concat variants
             if TARGETED_ANTIBIOTICS[antibiotic]["split_res_level"]:
@@ -182,14 +193,14 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                         antibiotic in sorted_variants
                         and len(sorted_variants[antibiotic][lvl]) > 0
                     ):
-                        call = positive
+                        call = TBResponses.resistant
                         variants = ";".join(
                             _fmt_variant(var)
                             for var in sorted_variants[antibiotic][lvl]
                         )
                     else:
                         # add non-called resistance
-                        call = negative
+                        call = TBResponses.susceptible
                         variants = "-"
                     result.append(
                         {
