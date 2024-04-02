@@ -160,9 +160,9 @@ def cli(api, user, password, input):
         sample_id = upload_sample(token_obj=ctx.token, ctx=ctx, cnf=cnf)
     except requests.exceptions.HTTPError as error:
         if error.response.status_code == 409:
-            click.secho(f"Sample {sample_id} has already been uploaded", fg="yellow")
+            click.secho(f"Sample have already been uploaded", fg="yellow")
         else:
-            msg, _ = _process_generic_status_codes(error, sample_id)
+            msg, _ = _process_generic_status_codes(error, "")
             raise click.UsageError(msg) from error
     # upload minhash signature to sample
     try:
