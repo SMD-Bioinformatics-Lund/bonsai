@@ -2,6 +2,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v0.4.0]
+
+### Added
+
 - Added Sample name, LIMS ID, and Sequencing run as selectable columns
 - Sample name in sample view table links to sample
 - New upload script (`upload_sample.py`) that takes a upload config in YAML format as input
