@@ -150,10 +150,14 @@ async def get_samples_summary(
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
         "sample_id": 1,
+        "sample_name": "$run_metadata.run.sample_name",
+        "lims_id": "$run_metadata.run.lims_id",
+        "sequencing_run": "$run_metadata.run.sequencing_run",
         "tags": 1,
         "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
         "created_at": 1,
         "profile": "$run_metadata.run.analysis_profile",
+        "run_metadata": "$run_metadata.run",
     }
     # define a optional projections
     optional_projecton = {}
@@ -212,8 +216,11 @@ async def get_samples(
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
+    # create sample id from lims id and sequencing run
+    sample_id = f"{sample.run_metadata.run.lims_id}_{sample.run_metadata.run.sequencing_run}".lower()
     # validate data format
     sample_db_fmt = SampleInCreate(
+        sample_id=sample_id,
         in_collections=[],
         tags=compute_phenotype_tags(sample),
         **sample.model_dump(),

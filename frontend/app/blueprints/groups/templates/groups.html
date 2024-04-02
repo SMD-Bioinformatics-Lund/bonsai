@@ -49,25 +49,16 @@
 </div>
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
-    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
-    import { formatTaxonomicName, formatSampleId, formatTag, getDefaultCols } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag, getDefaultCols, getTableSampleData, formatTableColumn } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
 
     // define formatters
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
     w2utils.formatters['tags']  = formatTag
-    w2utils.formatters['sampleid']  = (val, data) => {
-        const baseUrl = {{ request.script_root|tojson }}
-        let element = document.createElement('a')
-        let path = data.groupId ? `sample/${val}?group_id=${data.groupId}` : `sample/${val}`
-        element.setAttribute('href', `${baseUrl}/${path}`)
-        element.classList.add('br-link')
-        element.innerText = val
-        return element.outerHTML
-    }
+    w2utils.formatters['sampleid']  = formatSampleId 
     // define constants
     const apiURL = "{{ config.BONSAI_API_URL }}"
     const samples = {{ samples | tojson }}
-    const columns = await getDefaultCols(apiURL)
+    const apiTableConfig = await getDefaultCols(apiURL)
 
     let tableConfig = {
         grid: {
@@ -83,7 +74,7 @@
             multiSelect: true,
             multiSearch: true,
             liveSearch: true,
-            columns: columns,
+            columns: apiTableConfig.map(formatTableColumn),
             async onSelect(event) {
                 await event.complete
                 // enable add to basket + toggle qc buttons when user selects at least one row
@@ -110,11 +101,8 @@
     let grid = new w2grid(tableConfig.grid)
    
     // append samples to grid
-    grid.records = samples.records.map( sample => {
-        let columns = grid.columns.reduce((acc, col) => ({...acc, [col.field]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-        columns["recid"] = sample["sample_id"]
-        return columns
-    })
+    grid.records = samples.records.map((s) => getTableSampleData(s, apiTableConfig))
+    //grid.records = samples.records.map((s) => getTableSampleData(s, columns))
     window.getSelectedRows = () => grid.getSelection()
     window.action = function (method, param1, param2, param3) {
         grid[method](param1, param2, param3)
@@ -124,7 +112,7 @@
         grid.skip(0)
     }
 
-    const selected_samples = {{selected_samples | tojson |safe }}
+    const selected_samples = {{ selected_samples | tojson | safe }}
     if (selected_samples.length > 0) {
         window.action('select', selected_samples.map(sample => sample))
     }

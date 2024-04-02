@@ -55,35 +55,17 @@
 </div>
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
-    import { JSONPath } from '{{ url_for("groups.static", filename="index-browser-esm.min.js") }}';
-    import { formatTaxonomicName, formatSampleId, formatTag } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+    import { formatTaxonomicName, formatSampleId, formatTag, getTableSampleData, formatTableColumn } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
 
     // define formatters
-    w2utils.formatters['sampleid']  = (val, data) => {
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
-    w2utils.formatters['tags']  = formatTag
-        const baseUrl = {{ request.script_root|tojson }}
-        let element = document.createElement('a')
-        let path = data.groupId ? `sample/${val}?group_id=${data.groupId}` : `sample/${val}`
-        element.setAttribute('href', `${baseUrl}/${path}`)
-        element.classList.add('br-link')
-        element.innerText = val
-        return element.outerHTML
-    }
-
+    w2utils.formatters['tags'] = formatTag
+    w2utils.formatters['sampleid'] = formatSampleId
     // get table configuration
     const apiTableConfig = {{ table_definition | tojson }}
     const groupId = "{{ group_id }}"
     // create table
-    const columns = apiTableConfig.map(col => {
-        return {
-            field: col.id,
-            text: col.label,
-            sortable: col.sortable,
-            hidden: col.hidden,
-            render: col.type.toLowerCase() === 'string' ? null : col.type.toLowerCase(),
-        }
-    })
+    const columns = apiTableConfig.map(formatTableColumn)
     // configure table
     let tableConfig = {
         grid: {
@@ -120,12 +102,7 @@
 
     // get data
     const groupSamples = {{ samples | tojson}}
-    grid.records = groupSamples.map(
-        sample => {
-            let columns = apiTableConfig.reduce((acc, col) => ({...acc, [col.id]: JSONPath({path: col.path, json: sample})[0]}), {}) 
-            columns["recid"] = sample["sample_id"]
-            return columns
-    }) 
+    grid.records = groupSamples.map((s) => getTableSampleData(s, apiTableConfig))
 
     window.getSelectedRows = () => grid.getSelection()
     window.action = function (method, param1, param2, param3) {

@@ -11,6 +11,8 @@
       ],
       "workflow_name": "furious_sammet",
       "sample_name": "test_ecoli_1",
+      "lims_id": "ecoli_lims_1",
+      "sequencing_run": "RUN0002",
       "sequencing_platform": "illumina",
       "sequencing_type": "PE",
       "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile escherichia_coli --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_ecoli.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.report.html -with-trace /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.trace.txt -with-timeline /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.timeline.html -work-dir /fs1/nextflow//test_ecoli_1.jasen-ecoli-dev -resume",

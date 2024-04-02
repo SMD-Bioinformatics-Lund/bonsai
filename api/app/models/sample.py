@@ -3,13 +3,24 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 from prp.models import PipelineResult
-from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
-                                  ElementType, PredictionSoftware,
-                                  ResfinderGene, VariantBase, VirulenceGene)
+from prp.models.phenotype import (
+    AmrFinderGene,
+    AmrFinderResistanceGene,
+    ElementType,
+    PredictionSoftware,
+    ResfinderGene,
+    VariantBase,
+    VirulenceGene,
+)
 from prp.models.species import SpeciesPrediction
-from prp.models.typing import (TypingMethod, TypingResultCgMlst,
-                               TypingResultGeneAllele, TypingResultLineage,
-                               TypingResultMlst, TypingSoftware)
+from prp.models.typing import (
+    TypingMethod,
+    TypingResultCgMlst,
+    TypingResultGeneAllele,
+    TypingResultLineage,
+    TypingResultMlst,
+    TypingSoftware,
+)
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
@@ -62,7 +73,13 @@ class TbProfilerVariant(VariantInDb):
 class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
-    patient_id: str | None = Field(None)
+    sample_id: str = Field(
+        ...,
+        alias="sampleId",
+        min_length=3,
+        max_length=100,
+        description="Unique sample identifier",
+    )
     tags: List[Tag] = []
     qc_status: QcClassification = QcClassification()
     # comments and non analytic results
