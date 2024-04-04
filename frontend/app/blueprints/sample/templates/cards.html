@@ -17,7 +17,9 @@
     <div class="card">
         <div class="card-body">
             <div class="d-flex">
-                <h4 id="sample-id-heading" class="card-title">{{sample.sample_id}}</h4>
+                <h4 id="sample-id-heading" class="card-title">
+                    {{ sample.run_metadata.run.sample_name }}
+                </h4>
                 {% for tag in sample.tags %}
                     {% if tag.type == "virulence" %}
                         {% set heading="virulence-heading" %}
@@ -33,6 +35,7 @@
                     </span>
                 {% endfor %}
             </div>
+            <p class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.run_metadata.run.lims_id }}</span></p>
             <div class="row gx-5">
                 <div class="col-md-auto">
                     Upload date: {{sample.created_at | strftime}}
