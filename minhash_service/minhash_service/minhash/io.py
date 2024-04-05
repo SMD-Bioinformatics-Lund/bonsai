@@ -2,7 +2,7 @@
 import gzip
 import logging
 import pathlib
-from typing import List
+from typing import List, Iterable
 
 import fasteners
 import sourmash
@@ -86,11 +86,21 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
         LOG.debug("Decompressing gziped file")
         signature = gzip.decompress(signature)
 
+    # convert signature from JSON to a mutable signature object
+    # then annotate sample_id as name
+    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(signature, ksize=config.SIGNATURE_KMER_SIZE)
+    upd_signatures = []
+    for sig_obj in signatures:
+        sig_obj = sig_obj.to_mutable()
+        sig_obj.name = sample_id  # assign sample id as name
+        sig_obj = sig_obj.to_frozen()
+        upd_signatures.append(sig_obj)
+
     # save signature to file
     LOG.info("Writing genome signatures to file")
     try:
         with open(signature_file, "w", encoding="utf-8") as out:
-            print(signature.decode("utf-8"), file=out)
+            sourmash.signature.save_signatures(upd_signatures, out)
     except PermissionError as error:
         msg = f"Dont have permission to write file to disk, {signature_file}"
         LOG.error(msg)
