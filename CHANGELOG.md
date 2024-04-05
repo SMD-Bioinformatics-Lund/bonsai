@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- Fix minhash sample id lookup by storing sample_id as signautre name when signature is written to disk.
+
 ## [v0.4.0]
 
 ### Added
