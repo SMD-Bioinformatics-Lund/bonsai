@@ -64,7 +64,8 @@ def get_similar_signatures(
         # read sample results
         signature_path = pathlib.Path(found_sig.filename)
         # extract sample id from sample name
-        base_fname = signature_path.name[: -len(signature_path.suffix)]
+        base_fname = signature_path.name
+        LOG.info("no %d - path: %s -> %s", itr_no, signature_path, base_fname)
         samples.append(SimilarSignature(sample_id=base_fname, similarity=similarity))
 
         # break iteration if limit is reached
