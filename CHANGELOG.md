@@ -11,6 +11,7 @@
 ### Fixed
 
 - Fix minhash sample id lookup by storing sample_id as signautre name when signature is written to disk.
+- Links to a sample from the samples tables now works when Bonsai is hosted under a sub-path
 
 ## [v0.4.0]
 
