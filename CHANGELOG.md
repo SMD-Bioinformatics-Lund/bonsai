@@ -7,6 +7,7 @@
 ### Changed
 
 - Sample name is being displayed instead of sample id on the samples view
+- Dockerfile chown step for api and frontend
 
 ### Fixed
 

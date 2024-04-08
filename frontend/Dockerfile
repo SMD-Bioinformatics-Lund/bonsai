@@ -9,8 +9,11 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 
 # copy project dir
 WORKDIR /home/worker/app
-COPY --chown=worker:worker app app/
-COPY --chown=worker:worker pyproject.toml setup.py setup.cfg ./
+COPY app app/
+COPY pyproject.toml setup.py setup.cfg ./
+
+# Change ownership
+RUN chown -R worker:worker .
 
 # install dependancies
 RUN pip install --no-cache-dir --editable .
