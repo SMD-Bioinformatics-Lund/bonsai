@@ -13,6 +13,13 @@
 
 - Fix minhash sample id lookup by storing sample_id as signautre name when signature is written to disk.
 - Links to a sample from the samples tables now works when Bonsai is hosted under a sub-path
+- Fixed so the samples could be added to the minhash index
+- Fixed nameing of signature sketches and updating filename
+- Fixed broken URL that prevented finding similar samples
+- Fixed storing of selected samples in browser session that prevented samples to be added to the basket from the groups view.
+- Fixed broken URLs in dendrogram in samples view
+- Fixed crash when reading empty sourmash index
+- Fixed crash in resistance/variants view when a samples did not have SNVs or SV variants
 
 ## [v0.4.0]
 

@@ -88,12 +88,7 @@
                 }
                 // update selected samples counter
                 document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
-                sessionStorage.setItem(
-                    "selectedSamples", 
-                    JSON.stringify(
-                        this.get(this.getSelection()).map(row => row.sample_id) 
-                    )
-                );
+                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
             },
         },
     }

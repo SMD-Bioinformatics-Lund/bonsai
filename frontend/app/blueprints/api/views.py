@@ -32,7 +32,6 @@ def add_sample_to_basket():
         flash(str(error), "warning")
         message = "Error"
         return_code = 200
-        raise ValueError(sample_ids)
 
     # store sample informaiton in required format
     samples_to_add = []

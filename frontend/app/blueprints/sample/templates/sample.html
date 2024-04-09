@@ -180,7 +180,9 @@
     }
 
     function openSamplePage(sampleId) {
-        window.open(`/sample/${sampleId}`)
+        const groupNamePos = window.location.pathname.split('/').indexOf('sample')
+        const baseUrl = window.location.pathname.split('/').slice(0, groupNamePos).join('/') 
+        window.open(`${baseUrl}/sample/${sampleId}`)
     }
 
     async function fetchNewickAndDrawDendrogram() {

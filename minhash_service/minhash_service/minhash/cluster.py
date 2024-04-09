@@ -41,6 +41,7 @@ def cluster_signatures(sample_ids: List[str], method: ClusterMethod):
 
     # load sequence signatures to memory
     siglist = []
+    LOG.info("Cluster signatures with sample ids: %s", sample_ids)
     for sample_id in sample_ids:
         signature = read_signature(sample_id)
         siglist.extend(signature)  # append to all signatures

@@ -62,9 +62,9 @@ def get_similar_signatures(
 
     for itr_no, (similarity, found_sig, _) in enumerate(result, start=1):
         # read sample results
-        signature_path = pathlib.Path(found_sig.filename)
+        signature_path = pathlib.Path(f"{found_sig.name}.sig")
         # extract sample id from sample name
-        base_fname = signature_path.name
+        base_fname = found_sig.name
         LOG.info("no %d - path: %s -> %s", itr_no, signature_path, base_fname)
         samples.append(SimilarSignature(sample_id=base_fname, similarity=similarity))
 
