@@ -64,7 +64,7 @@ async function getSimilarSamples() {
     const similarity=document.getElementById("similar-samples-threshold").value
     const baseUrl = {{ request.script_root|tojson }}
     try {
-        const response = await fetch(`${baseUrl}/samples/${sampleId}/similar`, {
+        const response = await fetch(`${baseUrl}/sample/${sampleId}/similar`, {
             method: "POST",
             body: JSON.stringify({limit: limit, similarity: similarity}),
             headers: {
