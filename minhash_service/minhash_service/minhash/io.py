@@ -157,7 +157,10 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
         # check if index already exist
         try:
             index_path = get_sbt_index()
-            tree = sourmash.load_file_as_index(index_path, yield_all_files=True)
+            tree = sourmash.load_file_as_index(index_path)
+        except ValueError as error:
+            LOG.warning("Error when reading index, %s; creating new index", error)
+            tree = sourmash.sbtmh.create_sbt_index()
         except FileNotFoundError:
             tree = sourmash.sbtmh.create_sbt_index()
 

@@ -18,6 +18,7 @@
 - Fixed broken URL that prevented finding similar samples
 - Fixed storing of selected samples in browser session that prevented samples to be added to the basket from the groups view.
 - Fixed broken URLs in dendrogram in samples view
+- Fixed crash when reading empty sourmash index
 
 
 ## [v0.4.0]
