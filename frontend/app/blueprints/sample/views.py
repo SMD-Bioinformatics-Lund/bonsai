@@ -209,7 +209,7 @@ def update_qc_classification(sample_id: str) -> str:
 
 
 @samples_bp.route(
-    "/samples/<sample_id>/resistance/variants/download", methods=["GET", "POST"]
+    "/sample/<sample_id>/resistance/variants/download", methods=["GET", "POST"]
 )
 @login_required
 def download_lims(sample_id: str):
@@ -250,7 +250,7 @@ def download_lims(sample_id: str):
     return response
 
 
-@samples_bp.route("/samples/<sample_id>/resistance/variants", methods=["GET", "POST"])
+@samples_bp.route("/sample/<sample_id>/resistance/variants", methods=["GET", "POST"])
 @login_required
 def resistance_variants(sample_id: str) -> str:
     """Samples view."""
