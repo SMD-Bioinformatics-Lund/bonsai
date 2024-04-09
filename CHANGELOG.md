@@ -19,7 +19,7 @@
 - Fixed storing of selected samples in browser session that prevented samples to be added to the basket from the groups view.
 - Fixed broken URLs in dendrogram in samples view
 - Fixed crash when reading empty sourmash index
-
+- Fixed crash in resistance/variants view when a samples did not have SNVs or SV variants
 
 ## [v0.4.0]
 
