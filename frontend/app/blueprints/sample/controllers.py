@@ -198,7 +198,8 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
 
     # sort SNV and SV variants
     for variant_type in ["snv_variants", "sv_variants"]:
-        sample_info[variant_type] = sorted(sample_info[variant_type], key=_sort_func)
+        if sample_info.get(variant_type) is not None:
+            sample_info[variant_type] = sorted(sample_info[variant_type], key=_sort_func)
 
     return sample_info
 
