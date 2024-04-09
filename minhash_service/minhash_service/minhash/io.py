@@ -17,7 +17,8 @@ SIGNATURES = List[FrozenSourmashSignature]
 def get_sbt_index(check: bool = True) -> str:
     """Get sourmash SBT index file."""
     signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    index_path = signature_dir.joinpath("genomes.sbt.zip")
+    #index_path = signature_dir.joinpath("genomes.sbt.zip")
+    index_path = signature_dir.joinpath("genomes.sbt.json")
 
     # Check if file exist
     if check:
@@ -93,6 +94,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     for sig_obj in signatures:
         sig_obj = sig_obj.to_mutable()
         sig_obj.name = sample_id  # assign sample id as name
+        sig_obj.filename = pathlib.Path(signature_file).name  # assign a new filename
         sig_obj = sig_obj.to_frozen()
         upd_signatures.append(sig_obj)
 
@@ -155,7 +157,7 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
         # check if index already exist
         try:
             index_path = get_sbt_index()
-            tree = sourmash.load_file_as_index(index_path)
+            tree = sourmash.load_file_as_index(index_path, yield_all_files=True)
         except FileNotFoundError:
             tree = sourmash.sbtmh.create_sbt_index()
 
@@ -195,7 +197,7 @@ def remove_signatures_from_index(sample_ids: List[str]) -> bool:
         LOG.info("Removing %d genome signatures to index", len(sample_ids))
         new_index = sourmash.sbtmh.create_sbt_index()
         for signature in old_index.signatures():
-            sample_id = signature.filename.split(".")[0]
+            sample_id = signature.name
             if sample_id not in sample_ids:
                 leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
                 new_index.add_node(leaf)
