@@ -17,6 +17,7 @@
 - Fixed nameing of signature sketches and updating filename
 - Fixed broken URL that prevented finding similar samples
 - Fixed storing of selected samples in browser session that prevented samples to be added to the basket from the groups view.
+- Fixed broken URLs in dendrogram in samples view
 
 
 ## [v0.4.0]
