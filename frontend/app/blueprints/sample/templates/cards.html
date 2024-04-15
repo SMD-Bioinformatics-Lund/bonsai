@@ -695,13 +695,20 @@
                             {% endfor %}
                             </ul>
                         </td>
-                        {% if extended and display_igv %}
+                        {% if extended %}
                             <td>
                                 {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
-                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
-                                   target="_blank" class="btn btn-sm btn-secondary" type="button">
-                                   IGV
-                                </a>
+                                <span class="d-inline-block" tabindex="0"
+                                {% if not display_igv %}
+                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                    data-bs-title="Either no reference genome or BAM assigned to the sample."
+                                {% endif %}>
+                                    <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                    type="button" target="_blank" 
+                                    class="btn btn-sm btn-secondary {% if not display_igv %}disabled{% endif %}">
+                                    IGV
+                                    </a>
+                                </span>
                             </td>
                         {% endif %}
                     </tr>

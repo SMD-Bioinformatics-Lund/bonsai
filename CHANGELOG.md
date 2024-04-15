@@ -3,6 +3,7 @@
 ### Added
 
 ### Changed
+- Show disabled IGV button for samples without BAM or reference genome. 
 
 ### Fixed
 
