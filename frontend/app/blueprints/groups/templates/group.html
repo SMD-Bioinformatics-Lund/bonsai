@@ -143,12 +143,15 @@
         // add metadata and newick file to form
         const newickInput = form.querySelector("#newick-content")
         newickInput.setAttribute("value", newick)
+        const sampleIdInput = form.querySelector("#sample-ids-content")
         const metadataInput = form.querySelector("#metadata-content")
         const typingDataInput = form.querySelector("#typing-data-content")
+        const tableDefinition = {{ table_definition | tojson | safe }}
         typingDataInput.setAttribute("value", typingData)
-        metadataInput.setAttribute("value", 
+        sampleIdInput.setAttribute("value", 
             window.sessionStorage.getItem("clusteredSamples")
         )
+        metadataInput.setAttribute("value", JSON.stringify(tableDefinition))
         const submitBnt = form.querySelector("input[type=submit]")
         submitBnt.click()
     }

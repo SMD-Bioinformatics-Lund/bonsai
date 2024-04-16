@@ -2,13 +2,14 @@
 import json
 import logging
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id
+from app.bonsai import TokenObject, cluster_samples, get_samples_by_id, get_valid_group_columns
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
+from app.custom_filters import get_json_path
 
 LOG = logging.getLogger(__name__)
 
@@ -65,7 +66,14 @@ def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | flo
     return "-" if val is None else val
 
 
-def gather_metadata(samples) -> MetaData:
+def fmt_metadata(data):
+    if isinstance(data, (list, tuple)):
+        return ", ".join([point["label"] for point in data])
+    else:
+        return data
+
+
+def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
     """Create metadata structure.
 
     GrapeTree metadata structure
@@ -82,15 +90,18 @@ def gather_metadata(samples) -> MetaData:
     - grouptype
     - colorscheme
     """
+    # Get which metadata points to display
+    columns = [col for col in column_definition if not col["hidden"]]
     # create metadata structure
     metadata = {}
     for sample in samples:
         # add sample to metadata list
-        # store metadata
         sample_id = sample["sample_id"]
-        metadata[sample_id] = {"time": sample["created_at"]}
-        if "mlst" in sample:
-            metadata[sample_id]["MLST ST"] = get_value(sample["mlst"], "sequence_type")
+        # store metadata
+        metadata[sample_id] = {
+            col["label"]: fmt_metadata(get_json_path(sample, col["path"]))
+            for col in columns
+        }
     # build metadata list
     metadata_list = set()
     for meta in metadata.values():
@@ -123,14 +134,22 @@ def tree():
     if request.method == "POST":
         newick = request.form.get("newick")
         typing_data = request.form.get("typing_data")
-        samples = json.loads(request.form.get("metadata", "{}"))
+        # get samples info as python object
+        samples = request.form.get("sample-ids", "{}")
+        samples = {} if samples == "" else json.loads(samples)
+        # get columns as python object
+        column_info = request.form.get("metadata", "{}")
+        column_info = None if column_info == "" else json.loads(column_info)
         # query for sample metadata
         if samples == {}:
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
             sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
-            metadata = gather_metadata(sample_summary["records"]).model_dump()
+            # get column info
+            if column_info is None:
+                column_info = get_valid_group_columns()
+            metadata = gather_metadata(sample_summary["records"], column_info).model_dump()
         data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",
