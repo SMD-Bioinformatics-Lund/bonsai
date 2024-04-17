@@ -62,9 +62,10 @@ USER_ROLES = {
 # If LDAP is not configured it will fallback on local authentication
 
 # LDAP login Settings
-# LDAP_HOST = "localhost"
-# LDAP_PORT = 389
-# LDAP_BASE_DN = 'cn=admin,dc=example,dc=com
-# LDAP_USER_LOGIN_ATTR = "mail"
-# LDAP_USE_SSL = False
-# LDAP_USE_TLS = True
+LDAP_HOST = "openldap"
+LDAP_PORT = 389
+LDAP_BASE_DN = "cn=admin,dc=example,dc=com"
+LDAP_SECRET = "admin"
+LDAP_USER_LOGIN_ATTR = "mail"
+LDAP_USE_SSL = False
+LDAP_USE_TLS = True
