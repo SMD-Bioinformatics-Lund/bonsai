@@ -1,5 +1,7 @@
 """Mimer api default configuration"""
+from pydantic_settings import BaseSettings
 import os
+import ssl
 
 # Database connection
 # standard URI has the form:
@@ -62,10 +64,38 @@ USER_ROLES = {
 # If LDAP is not configured it will fallback on local authentication
 
 # LDAP login Settings
-LDAP_HOST = "openldap"
-LDAP_PORT = 389
-LDAP_BASE_DN = "cn=admin,dc=example,dc=com"
-LDAP_SECRET = "admin"
-LDAP_USER_LOGIN_ATTR = "mail"
-LDAP_USE_SSL = False
-LDAP_USE_TLS = True
+ssl_defaults = ssl.get_default_verify_paths()
+class Settings(BaseSettings):
+    # ldap authentication
+    ldap_search_attr: str = "mail"
+    ldap_search_filter: str | None = None
+    ldap_base_dn: str | None = None
+    # ldap server
+    ldap_host: str | None = None
+    ldap_port: int = 1389
+    ldap_bind_dn: str | None = None
+    ldap_secret: str | None = None
+    ldap_connection_timeout: int = 10
+    ldap_read_only: bool = False
+    ldap_valid_names: str | None = None
+    ldap_private_key_password: str | None = None
+    ldap_raise_exceptions: bool = False
+    ldap_user_login_attr: str = "mail"
+    force_attribute_value_as_list: bool = False
+    # ldap tls
+    ldap_use_ssl: bool = False
+    ldap_use_tls: bool = True
+    ldap_tls_version: int = ssl.PROTOCOL_TLSv1
+    ldap_require_cert: int = ssl.CERT_REQUIRED
+    ldap_client_private_key: str | None = None
+    ldap_client_cert: str | None = None
+    # ldap ssl
+    ldap_ca_certs_file: str | None = ssl_defaults.cafile
+    ldap_ca_certs_path: str | None = ssl_defaults.capath
+    ldap_ca_certs_data: str | None = None
+
+    @property
+    def use_ldap(self) -> bool:
+        return self.ldap_host is not None
+
+settings = Settings()

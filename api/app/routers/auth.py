@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from ..auth import create_access_token
-from ..config import ACCESS_TOKEN_EXPIRE_MINUTES
+from ..config import ACCESS_TOKEN_EXPIRE_MINUTES, settings
 from ..crud.user import authenticate_user
 from ..db import db
+from ..extensions.ldap_extension import ldap_connection
 
 router = APIRouter()
 
@@ -33,3 +34,17 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         expires_delta=access_token_expires,
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/ldap_token", tags=DEFAULT_TAGS)
+async def ldap_login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Generate a new Oauth2 token."""
+    # old user authentication
+    return {
+        "host": settings.ldap_host,
+        "use ldap": settings.use_ldap,
+        "is_authenticated": ldap_connection.authenticate(
+            form_data.username, form_data.password
+        ),
+    }
+    # return {"Auth old method": user, "valid id": is_valid_dn(form_data.username)}
