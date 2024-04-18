@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### Added
+- Show the same metadata in grapetree as in the sample table from the groups and group view.
 
 ### Changed
 - Show disabled IGV button for samples without BAM or reference genome. 
