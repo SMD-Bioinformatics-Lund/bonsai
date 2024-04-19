@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from app.config import REDIS_HOST, REDIS_PORT
+from app.config import settings
 from pydantic import BaseModel
 from redis import Redis
 from rq import Queue
@@ -18,7 +18,7 @@ class RedisQueue:  # pylint: disable=too-few-public-methods
 
     def __init__(self):
         """Setup connection and define queues."""
-        self.connection = Redis(REDIS_HOST, REDIS_PORT)
+        self.connection = Redis(settings.redis_host, settings.redis_port)
         self.minhash: Queue = Queue("minhash", connection=self.connection)
         self.allele: Queue = Queue("allele_cluster", connection=self.connection)
 

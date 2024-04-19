@@ -40,7 +40,7 @@ configure_cors(app)
 app.add_event_handler("startup", connect_to_mongo)
 app.add_event_handler("shutdown", close_mongo_connection)
 
-if settings.use_ldap:
+if settings.use_ldap_auth:
     app.add_event_handler("startup", ldap_connection.init_app)
     app.add_event_handler("shutdown", ldap_connection.teardown)
 

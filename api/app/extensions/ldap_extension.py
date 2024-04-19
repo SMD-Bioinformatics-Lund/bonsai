@@ -157,5 +157,9 @@ class LDAPConnection:
         else:
             LOG.info("No active connection to BASE_DN. Skipping teardown")
 
+    def whoami(self):
+        """Return BIND_DN."""
+        return self.connection.extend.standard.who_am_i()
+
 
 ldap_connection = LDAPConnection()

@@ -2,71 +2,38 @@
 from pydantic_settings import BaseSettings
 import os
 import ssl
+from typing import List
 
-# Database connection
-# standard URI has the form:
-# mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
-# read more: https://docs.mongodb.com/manual/reference/connection-string/
-DATABASE_NAME = os.getenv("DATABASE_NAME", "bonsai")
-DB_HOST = os.getenv("DB_HOST", "mongodb")
-DB_PORT = os.getenv("DB_PORT", "27017")
-MONGODB_URI = f"mongodb://{DB_HOST}:{DB_PORT}/{DATABASE_NAME}"
-MAX_CONNECTIONS = int(os.getenv("MAX_CONNECTIONS", "10"))
-MIN_CONNECTIONS = int(os.getenv("MIN_CONNECTIONS", "10"))
-
-# Redis connection
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-
-# Reference genome and annotations for IGV
-REFERENCE_GENOMES_DIR = os.getenv("REFERENCE_GENOMES_DIR", "/tmp/reference_genomes")
-ANNOTATIONS_DIR = os.getenv("ANNOTATIONS_DIR", "/tmp/annotations")
-
-# Configure allowed origins (CORS) for development. Origins are a comma seperated list.
-# https://fastapi.tiangolo.com/tutorial/cors/
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "not-so-secret"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 180
-
-# Definition of user roles
-USER_ROLES = {
-    "admin": [
-        "users:me",
-        "users:read",
-        "users:write",
-        "groups:read",
-        "groups:write",
-        "samples:read",
-        "samples:write",
-        "samples:update",
-        "locations:read",
-        "locations:write",
-    ],
-    "user": [
-        "users:me",
-        "samples:read",
-        "samples:update",
-        "groups:read",
-        "locations:read",
-        "locations:write",
-    ],
-    "uploader": [
-        "groups:write"
-        "samples:write",
-    ],
-}
-
-# Configure authentication method used
-# If LDAP is not configured it will fallback on local authentication
-
-# LDAP login Settings
 ssl_defaults = ssl.get_default_verify_paths()
+
 class Settings(BaseSettings):
-    # ldap authentication
+    # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
+    # https://fastapi.tiangolo.com/tutorial/cors/
+    allowed_origins: List[str] = []
+
+    # Database connection
+    # standard URI has the form:
+    # mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]
+    # read more: https://docs.mongodb.com/manual/reference/connection-string/
+    database_name: str = "bonsai"
+    db_host: str = "mongodb"
+    db_port: str = "27017"
+    mongodb_uri: str = f"mongodb://{db_host}:{db_port}/{database_name}"
+    max_connections: int = 10
+    min_connections: int = 10
+
+    # Redis connection
+    redis_host: str = "redis"
+    redis_port: str = "6379"
+
+    # Reference genome and annotations for IGV
+    reference_genomes_dir: str = "/tmp/reference_genomes"
+    annotations_dir: str = "/tmp/annotations"
+    # authentication options
+    secret_key: str = "not-so-secret"  # openssl rand -hex 32
+    access_token_expire_minutes: int = 180  # expiration time for accesst token
+    # LDAP login Settings
+    # If LDAP is not configured it will fallback on local authentication
     ldap_search_attr: str = "mail"
     ldap_search_filter: str | None = None
     ldap_base_dn: str | None = None
@@ -95,7 +62,39 @@ class Settings(BaseSettings):
     ldap_ca_certs_data: str | None = None
 
     @property
-    def use_ldap(self) -> bool:
+    def use_ldap_auth(self) -> bool:
         return self.ldap_host is not None
+
+# to get a string like this run:
+# openssl rand -hex 32
+ALGORITHM = "HS256"
+
+# Definition of user roles
+USER_ROLES = {
+    "admin": [
+        "users:me",
+        "users:read",
+        "users:write",
+        "groups:read",
+        "groups:write",
+        "samples:read",
+        "samples:write",
+        "samples:update",
+        "locations:read",
+        "locations:write",
+    ],
+    "user": [
+        "users:me",
+        "samples:read",
+        "samples:update",
+        "groups:read",
+        "locations:read",
+        "locations:write",
+    ],
+    "uploader": [
+        "groups:write"
+        "samples:write",
+    ],
+}
 
 settings = Settings()

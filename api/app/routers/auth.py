@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from ..auth import create_access_token
-from ..config import ACCESS_TOKEN_EXPIRE_MINUTES, settings
+from ..config import settings
 from ..crud.user import authenticate_user
 from ..db import db
 from ..extensions.ldap_extension import ldap_connection
@@ -28,7 +28,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
         data={"sub": form_data.username, "scopes": "fool"},
         expires_delta=access_token_expires,
@@ -46,5 +46,6 @@ async def ldap_login_for_access_token(form_data: OAuth2PasswordRequestForm = Dep
         "is_authenticated": ldap_connection.authenticate(
             form_data.username, form_data.password
         ),
+        "whoami": ldap_connection.whoami()
     }
     # return {"Auth old method": user, "valid id": is_valid_dn(form_data.username)}
