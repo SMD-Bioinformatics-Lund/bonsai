@@ -22,7 +22,7 @@ The LDAP3 server connection is configured using environmental variables. At mini
 
    "LDAP_HOST",               "Server host or IP"
    "LDAP_PORT",               "Server port"
-   "LDAP_BASE_DN",            "Base DN for searching the server"
+   "LDAP_BASE_DN",            "Base distinguished name (DN) for searching the server"
    "LDAP_BIND_DN",            "Admin bind DN"
    "LDAP_SECRET",             "Optional password for the admin bind DN"
    "LDAP_SEARCH_ATTR",        "Attribute to validate username against"
@@ -41,79 +41,78 @@ Here is a example of an LDAP based authentication configuration using docker-com
    # (sudo) docker-compose up -d
    # (sudo) docker-compose down
    services: 
-   mongodb:
-      image: mongo:4.4.22
-      ports:
-         - "8813:27017"
-      expose:
-         - "27017"
-      volumes:
-         - "./volumes/mongodb:/data/db"
-      networks:
-         - bonsai-net
+      mongodb:
+         image: mongo:4.4.22
+         ports:
+            - "8813:27017"
+         expose:
+            - "27017"
+         volumes:
+            - "./volumes/mongodb:/data/db"
+         networks:
+            - bonsai-net
 
-   redis:
-      image: redis:7.0.10
-      networks:
-         - bonsai-net
+      redis:
+         image: redis:7.0.10
+         networks:
+            - bonsai-net
 
-   openldap:
-      image: ghcr.io/rroemhild/docker-test-openldap:master
-      container_name: openldap
-      ports:
-         - "10389:10389"
-         - "10636:10636"
-      networks:
-         - bonsai-net
-      privileged: true
+      openldap:
+         image: ghcr.io/rroemhild/docker-test-openldap:master
+         container_name: openldap
+         ports:
+            - "10389:10389"
+            - "10636:10636"
+         networks:
+            - bonsai-net
+         privileged: true
 
-   api:
-      container_name: bonsai_api
-      build: 
-         context: api
-         network: host
-      depends_on:
-         - mongodb
-      ports: 
-         - "8811:8000"
-      environment:
-         - DB_HOST=mongodb
-         - REDIS_HOST=redis
-         - LDAP_HOST=openldap
-         - LDAP_PORT=10389
-         - LDAP_BIND_DN=cn=admin,dc=planetexpress,dc=com
-         - LDAP_SECRET=GoodNewsEveryone
-         - LDAP_BASE_DN=dc=planetexpress,dc=com
-         - LDAP_USER_LOGIN_ATTR=mail
-         - LDAP_USE_SSL=false
-         - LDAP_USE_TLS=false
-      networks:
-         - bonsai-net
-      command: "uvicorn app.main:app --reload --log-level debug --host 0.0.0.0"
+      api:
+         container_name: bonsai_api
+         build: 
+            context: api
+            network: host
+         depends_on:
+            - mongodb
+         ports: 
+            - "8811:8000"
+         environment:
+            - DB_HOST=mongodb
+            - REDIS_HOST=redis
+            - LDAP_HOST=openldap
+            - LDAP_PORT=10389
+            - LDAP_BIND_DN=cn=admin,dc=planetexpress,dc=com
+            - LDAP_SECRET=GoodNewsEveryone
+            - LDAP_BASE_DN=dc=planetexpress,dc=com
+            - LDAP_USER_LOGIN_ATTR=mail
+            - LDAP_USE_SSL=false
+            - LDAP_USE_TLS=false
+         networks:
+            - bonsai-net
+         command: "uvicorn app.main:app --reload --log-level debug --host 0.0.0.0"
 
-   app:
-      container_name: bonsai_app
-      build: 
-         context: frontend
-         network: host
-      depends_on:
-         - mongodb
-         - api
-         - minhash_service
-      ports: 
-         - "8812:5000"
-      environment:
-         - FLASK_APP=app.app:create_app
-         - FLASK_ENV=development 
-         - "BONSAI_API_URL=http://mtlucmds2.lund.skane.se:8811"
-      networks:
-         - bonsai-net
-      command: "flask run --debug --host 0.0.0.0"
+      app:
+         container_name: bonsai_app
+         build: 
+            context: frontend
+            network: host
+         depends_on:
+            - mongodb
+            - api
+         ports: 
+            - "8812:5000"
+         environment:
+            - FLASK_APP=app.app:create_app
+            - FLASK_ENV=development 
+            - "BONSAI_API_URL=http://mtlucmds2.lund.skane.se:8811"
+         networks:
+            - bonsai-net
+         command: "flask run --debug --host 0.0.0.0"
 
    networks:
-   bonsai-net:
-      driver: bridge
-      ipam:
-         driver: default
-         config:
-         - subnet: 172.0.30.0/24
+      bonsai-net:
+         driver: bridge
+         ipam:
+            driver: default
+            config:
+            - subnet: 172.0.30.0/24
