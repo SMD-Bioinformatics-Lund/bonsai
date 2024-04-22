@@ -4,10 +4,22 @@ from logging.config import dictConfig
 
 from fastapi import FastAPI
 
+from .config import settings
 from .db.utils import close_mongo_connection, connect_to_mongo
+from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (auth, cluster, export, groups, jobs, locations,
-                      resources, root, samples, users)
+from .routers import (
+    auth,
+    cluster,
+    export,
+    groups,
+    jobs,
+    locations,
+    resources,
+    root,
+    samples,
+    users,
+)
 
 dictConfig(
     {
@@ -37,6 +49,11 @@ configure_cors(app)
 # configure events
 app.add_event_handler("startup", connect_to_mongo)
 app.add_event_handler("shutdown", close_mongo_connection)
+
+if settings.use_ldap_auth:
+    app.add_event_handler("startup", ldap_connection.init_app)
+    app.add_event_handler("shutdown", ldap_connection.teardown)
+
 
 # add api routes
 app.include_router(root.router)

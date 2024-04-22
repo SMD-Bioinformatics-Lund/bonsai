@@ -4,16 +4,17 @@ from typing import List
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
-from fastapi.security import HTTPBasic, OAuth2PasswordBearer, SecurityScopes
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
-from ..config import ALGORITHM, SECRET_KEY, USER_ROLES
+from ..config import ALGORITHM, USER_ROLES, settings
 from ..db import Database, db
 from ..models.auth import TokenData
 from ..models.user import (SampleBasketObject, UserInputCreate,
                            UserInputDatabase, UserOutputDatabase)
 from .errors import EntryNotFound, UpdateDocumentError
+from ..extensions.ldap_extension import ldap_connection
 
 LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
@@ -53,7 +54,7 @@ async def update_user(db_obj: Database, username: str, user: UserInputCreate):
     )
     if resp.matched_count == 0:
         raise EntryNotFound(username)
-    elif resp.modified_count == 0:
+    if resp.modified_count == 0:
         raise UpdateDocumentError(username)
 
 
@@ -95,8 +96,12 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
         user: UserInputDatabase = await get_user(db_obj, username)
     except EntryNotFound:
         return False
-
-    return verify_password(password, user.hashed_password)
+    
+    if settings.use_ldap_auth:
+        is_authenticated = ldap_connection.authenticate(username, password)
+    else:
+        is_authenticated = verify_password(password, user.hashed_password)
+    return is_authenticated
 
 
 async def get_current_user(
@@ -115,7 +120,7 @@ async def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -187,7 +192,7 @@ async def add_samples_to_user_basket(
 
 async def remove_samples_from_user_basket(
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
-    sample_ids: List[SampleBasketObject] = [],
+    *sample_ids: List[SampleBasketObject],
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(

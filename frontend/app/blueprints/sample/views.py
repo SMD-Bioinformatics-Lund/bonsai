@@ -5,16 +5,34 @@ from io import BytesIO
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
-from app.bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
-                        find_and_cluster_similar_samples,
-                        find_samples_similar_to_reference, get_antibiotics,
-                        get_group_by_id, get_lims_export_file,
-                        get_sample_by_id, get_variant_rejection_reasons,
-                        post_comment_to_sample, remove_comment_from_sample,
-                        update_sample_qc_classification, update_variant_info)
+from app.bonsai import (
+    TokenObject,
+    cgmlst_cluster_samples,
+    delete_samples,
+    find_and_cluster_similar_samples,
+    find_samples_similar_to_reference,
+    get_antibiotics,
+    get_group_by_id,
+    get_lims_export_file,
+    get_sample_by_id,
+    get_variant_rejection_reasons,
+    post_comment_to_sample,
+    remove_comment_from_sample,
+    update_sample_qc_classification,
+    update_variant_info,
+)
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (Blueprint, abort, current_app, flash, make_response,
-                   redirect, render_template, request, url_for)
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
@@ -241,7 +259,7 @@ def download_lims(sample_id: str):
         return redirect(request.referrer)
 
     # convert string to IO buffer
-    buffer = BytesIO(data.encode('UTF-8'))
+    buffer = BytesIO(data.encode("UTF-8"))
     response = make_response(buffer.getvalue())
     # define headers and mimetype for a file
     response.headers["Content-Disposition"] = f"attachment; filename={fname}.tsv"

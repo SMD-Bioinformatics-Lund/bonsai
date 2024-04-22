@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
-from app.models import NT_TO_AA, ElementType, PredictionSoftware
+from app.models import ElementType, PredictionSoftware
 
 LOG = logging.getLogger(__name__)
 SampleObj = Dict[str, Any]
@@ -184,9 +184,9 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
 
     def _sort_func(variant):
         """Sort on verfied status, by reference sequence name, and position."""
-        SORT_ORDER = {"passed": 1, "unprocessed": 2, "failed": 3}
+        sort_order = {"passed": 1, "unprocessed": 2, "failed": 3}
         return (
-            SORT_ORDER[variant["verified"]],
+            sort_order[variant["verified"]],
             variant["reference_sequence"],
             variant["start"],
         )
@@ -199,7 +199,9 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
     # sort SNV and SV variants
     for variant_type in ["snv_variants", "sv_variants"]:
         if sample_info.get(variant_type) is not None:
-            sample_info[variant_type] = sorted(sample_info[variant_type], key=_sort_func)
+            sample_info[variant_type] = sorted(
+                sample_info[variant_type], key=_sort_func
+            )
 
     return sample_info
 
@@ -241,7 +243,7 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
 
 
 def filter_variants(sample_info, form: float | None = None):
-    # filter resistance variants from prediction sw
+    """Filter resistance variants from prediction sw."""
     for prediction in sample_info["element_type_result"]:
         variants = prediction["result"]["variants"]
         if len(variants) == 0:
@@ -267,6 +269,7 @@ def filter_variants(sample_info, form: float | None = None):
 
 
 def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
+    """Get the genes that have variants."""
     genes = set()
     for prediction in sample_info["element_type_result"]:
         # skip predictions that are not madew with the desired software

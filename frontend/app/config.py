@@ -8,6 +8,7 @@ DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
 
 # Session secret key
 SECRET_KEY = b"not-so-secret"
+REQUEST_TIMEOUT = 60
 
 # parameters for finding similar samples
 SAMPLE_VIEW_SIMILARITY_LIMIT = 10

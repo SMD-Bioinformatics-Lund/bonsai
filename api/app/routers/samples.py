@@ -4,10 +4,23 @@ import logging
 import pathlib
 from typing import Annotated, Any, Dict, List
 
-from app.io import (InvalidRangeError, RangeOutOfBoundsError, is_file_readable,
-                    send_partial_file)
-from fastapi import (APIRouter, Body, File, Header, HTTPException, Path, Query,
-                     Security, status)
+from app.io import (
+    InvalidRangeError,
+    RangeOutOfBoundsError,
+    is_file_readable,
+    send_partial_file,
+)
+from fastapi import (
+    APIRouter,
+    Body,
+    File,
+    Header,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+    status,
+)
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import VariantType
@@ -20,20 +33,30 @@ from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
 from ..crud.sample import hide_comment as hide_comment_for_sample
 from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import (update_sample_qc_classification,
-                           update_variant_annotation_for_sample)
+from ..crud.sample import (
+    update_sample_qc_classification,
+    update_variant_annotation_for_sample,
+)
 from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (SAMPLE_ID_PATTERN, Comment, CommentInDatabase,
-                             SampleInCreate, SampleInDatabase)
+from ..models.sample import (
+    SAMPLE_ID_PATTERN,
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+)
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, TypingMethod
-from ..redis.minhash import (SubmittedJob, schedule_add_genome_signature,
-                             schedule_add_genome_signature_to_index,
-                             schedule_find_similar_and_cluster,
-                             schedule_find_similar_samples)
+from ..redis.minhash import (
+    SubmittedJob,
+    schedule_add_genome_signature,
+    schedule_add_genome_signature_to_index,
+    schedule_find_similar_and_cluster,
+    schedule_find_similar_samples,
+)
 from ..utils import format_error_message
 
 CommentsObj = List[CommentInDatabase]
@@ -130,7 +153,7 @@ async def create_sample(
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def delete_many_samples(
-    sample_ids: List[str] = [],
+    *sample_ids: List[str],
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -590,13 +613,13 @@ async def hide_comment(
     :rtype: bool
     """
     try:
-        status: bool = await hide_comment_for_sample(db, sample_id, comment_id)
+        resp: bool = await hide_comment_for_sample(db, sample_id, comment_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error,
         ) from error
-    return status
+    return resp
 
 
 @router.put(
