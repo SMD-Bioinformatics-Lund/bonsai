@@ -4,7 +4,7 @@ from app.bonsai import create_user as create_new_user
 from app.bonsai import delete_user as delete_user_from_db
 from app.bonsai import get_user, get_users
 from app.bonsai import update_user as update_user_info
-from flask import (Blueprint, current_app, flash, redirect, render_template,
+from flask import (Blueprint, flash, current_app, flash, redirect, render_template,
                    request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
@@ -194,5 +194,10 @@ def update_user(username):
         form.last_name.data = user["last_name"]
         form.email.data = user["email"]
         form.roles.data = user["roles"]
+        if current_user.authentication_method == 'ldap':
+            form.password.render_kw = {'disabled': True}
+            form.confirm.render_kw = {'disabled': True}
+            flash(f"Passwords are managed by the {current_user.authentication_method} server", "info")
+
     # get all users
     return render_template("user_form.html", method="edit", form=form)
