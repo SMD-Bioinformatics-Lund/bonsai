@@ -4,12 +4,22 @@ from logging.config import dictConfig
 
 from fastapi import FastAPI
 
-from .db.utils import close_mongo_connection, connect_to_mongo
-from .internal.middlewares import configure_cors
-from .routers import (auth, cluster, export, groups, jobs, locations,
-                      resources, root, samples, users)
 from .config import settings
+from .db.utils import close_mongo_connection, connect_to_mongo
 from .extensions.ldap_extension import ldap_connection
+from .internal.middlewares import configure_cors
+from .routers import (
+    auth,
+    cluster,
+    export,
+    groups,
+    jobs,
+    locations,
+    resources,
+    root,
+    samples,
+    users,
+)
 
 dictConfig(
     {

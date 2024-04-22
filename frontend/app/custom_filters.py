@@ -356,12 +356,12 @@ def get_resistance_profile(prediction, level):
     return ", ".join(result)
 
 
-def count_results(results, type=None):
+def count_results(results, pred_type=None):
     """Count the number of prediction results of type."""
     if type is None:
         n_results = len(results)
     else:
-        n_results = len([res for res in results if res["type"] == type])
+        n_results = len([res for res in results if res["type"] == pred_type])
     return n_results
 
 
@@ -374,16 +374,17 @@ def n_results_with_resistance(results):
 def get_who_group_from_tbprofiler_comment(comment):
     """Get WHO group from a comment from TbProfiler."""
     # annotate WHO classification
-    WHO_CLASSES = {
+    who_classes = {
         "assoc w r": 1,
         "assoc w r - interim": 2,
         "uncertain significance": 3,
         "not assoc w r - interim": 4,
         "not assoc w r": 5,
     }
-    who_group = WHO_CLASSES.get(comment.lower())
+    who_group = who_classes.get(comment.lower())
     if who_group is not None:
         return f"WHO-{who_group}"
+    return None
 
 
 TESTS = {

@@ -54,7 +54,7 @@ async def update_user(db_obj: Database, username: str, user: UserInputCreate):
     )
     if resp.matched_count == 0:
         raise EntryNotFound(username)
-    elif resp.modified_count == 0:
+    if resp.modified_count == 0:
         raise UpdateDocumentError(username)
 
 
@@ -192,7 +192,7 @@ async def add_samples_to_user_basket(
 
 async def remove_samples_from_user_basket(
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
-    sample_ids: List[SampleBasketObject] = [],
+    *sample_ids: List[SampleBasketObject],
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(

@@ -1,12 +1,14 @@
 """Mimer api default configuration"""
-from pydantic_settings import BaseSettings
-import os
 import ssl
 from typing import List
 
+from pydantic_settings import BaseSettings
+
 ssl_defaults = ssl.get_default_verify_paths()
 
+
 class Settings(BaseSettings):
+    """API configuration."""
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
     allowed_origins: List[str] = []
@@ -63,7 +65,13 @@ class Settings(BaseSettings):
 
     @property
     def use_ldap_auth(self) -> bool:
+        """Return True if LDAP authentication is enabled.
+
+        :return: Return True if LDAP authentication is enabled
+        :rtype: bool
+        """
         return self.ldap_host is not None
+
 
 # to get a string like this run:
 # openssl rand -hex 32
@@ -92,8 +100,7 @@ USER_ROLES = {
         "locations:write",
     ],
     "uploader": [
-        "groups:write"
-        "samples:write",
+        "groups:write" "samples:write",
     ],
 }
 

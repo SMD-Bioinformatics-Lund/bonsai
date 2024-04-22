@@ -4,8 +4,8 @@ from typing import List
 
 from pydantic import EmailStr
 
-from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 from ..config import settings
+from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
 
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
@@ -53,4 +53,5 @@ class UserOutputDatabase(
 
     Information returned by API.
     """
-    authentication_method: str = 'ldap' if settings.use_ldap_auth else 'simple'
+
+    authentication_method: str = "ldap" if settings.use_ldap_auth else "simple"

@@ -13,7 +13,9 @@ def connect_to_mongo():
     """Setup connection to mongo database."""
     LOG.info("Initiate connection to mongo database")
     db.client = AsyncIOMotorClient(
-        settings.mongodb_uri, maxPoolSize=settings.max_connections, minPoolSize=settings.min_connections
+        settings.mongodb_uri,
+        maxPoolSize=settings.max_connections,
+        minPoolSize=settings.min_connections,
     )
     db.setup()  # initiate collections
     LOG.info("Connection successfull")

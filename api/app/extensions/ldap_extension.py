@@ -1,23 +1,27 @@
-"""Open LDAP authentication extension."""
+"""Open LDAP authentication extension.
+
+Implementation is inspired from, https://github.com/ContinuumIO/flask-ldap-login
+"""
 
 import logging
+
 from ldap3 import (
-    Server,
-    Connection,
-    Tls,
     ALL,
-    AUTO_BIND_TLS_BEFORE_BIND,
-    AUTO_BIND_NO_TLS,
     ANONYMOUS,
+    AUTO_BIND_NO_TLS,
+    AUTO_BIND_TLS_BEFORE_BIND,
     SIMPLE,
     SUBTREE,
+    Connection,
+    Server,
+    Tls,
 )
-from ldap3.utils.dn import parse_dn
 from ldap3.core.exceptions import (
+    LDAPBindError,
     LDAPInvalidDnError,
     LDAPInvalidFilterError,
-    LDAPBindError,
 )
+from ldap3.utils.dn import parse_dn
 
 from ..config import settings
 
@@ -138,7 +142,9 @@ class LDAPConnection:
                 response = self.connection.response
                 username = response[0]["dn"]  # update DN
             except (LDAPInvalidDnError, LDAPInvalidFilterError, IndexError) as error:
-                LOG.warning("Failed to lookup DN for user %s; error: %s", username, error)
+                LOG.warning(
+                    "Failed to lookup DN for user %s; error: %s", username, error
+                )
                 return False
 
         try:

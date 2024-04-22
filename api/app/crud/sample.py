@@ -17,10 +17,17 @@ from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (Comment, CommentInDatabase, SampleInCreate,
-                             SampleInDatabase, SampleSummary)
-from ..redis.minhash import (schedule_remove_genome_signature,
-                             schedule_remove_genome_signature_from_index)
+from ..models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+    SampleSummary,
+)
+from ..redis.minhash import (
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
+)
 from ..utils import format_error_message
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -77,9 +84,9 @@ async def get_samples_summary(
                 "$addFields": {
                     "mlst": {
                         "$cond": {
-                            "if": {"$in": ["mlst", "$typing_result.type"]}, 
+                            "if": {"$in": ["mlst", "$typing_result.type"]},
                             "then": {"$arrayElemAt": ["$typing_result", 0]},
-                            "else": None
+                            "else": None,
                         }
                     }
                 }
@@ -90,18 +97,26 @@ async def get_samples_summary(
             {
                 "$addFields": {
                     "stx": {
-                        "$ifNull": [{
-                            "$arrayElemAt": [{
-                                "$map": {
-                                    "input": {
-                                        "$filter": {
-                                            "input": "$typing_result",
-                                            "cond": { "$eq": ["$$this.type", "stx"] }
+                        "$ifNull": [
+                            {
+                                "$arrayElemAt": [
+                                    {
+                                        "$map": {
+                                            "input": {
+                                                "$filter": {
+                                                    "input": "$typing_result",
+                                                    "cond": {
+                                                        "$eq": ["$$this.type", "stx"]
+                                                    },
+                                                }
+                                            },
+                                            "in": "$$this.result.gene_symbol",
                                         }
                                     },
-                                    "in": "$$this.result.gene_symbol"
-                                }}, 0
-                            ]}, "-"
+                                    0,
+                                ]
+                            },
+                            "-",
                         ]
                     }
                 }
@@ -111,36 +126,61 @@ async def get_samples_summary(
         pipeline.append(
             {
                 "$addFields": {
-                    'oh_type': {
-                        "$concat": [{
-                            "$ifNull": [{
-                                "$arrayElemAt": [{
-                                    "$map": {
-                                        "input": {
-                                            "$filter": {
-                                                "input": "$typing_result",
-                                                "cond": { "$eq": ["$$this.type", "O_type"] }
-                                            }
-                                        },
-                                        "in": "$$this.result.sequence_name"
-                                    }}, 0
-                                ]}, "-"
-                            ]},
+                    "oh_type": {
+                        "$concat": [
+                            {
+                                "$ifNull": [
+                                    {
+                                        "$arrayElemAt": [
+                                            {
+                                                "$map": {
+                                                    "input": {
+                                                        "$filter": {
+                                                            "input": "$typing_result",
+                                                            "cond": {
+                                                                "$eq": [
+                                                                    "$$this.type",
+                                                                    "O_type",
+                                                                ]
+                                                            },
+                                                        }
+                                                    },
+                                                    "in": "$$this.result.sequence_name",
+                                                }
+                                            },
+                                            0,
+                                        ]
+                                    },
+                                    "-",
+                                ]
+                            },
                             ":",
                             {
-                            "$ifNull": [{
-                                "$arrayElemAt": [{
-                                    "$map": {
-                                        "input": {
-                                            "$filter": {
-                                                "input": "$typing_result",
-                                                "cond": { "$eq": ["$$this.type", "H_type"] }
-                                            }
-                                        },
-                                        "in": "$$this.result.sequence_name"
-                                    }}, 0
-                                ]}, "-"
-                            ]}
+                                "$ifNull": [
+                                    {
+                                        "$arrayElemAt": [
+                                            {
+                                                "$map": {
+                                                    "input": {
+                                                        "$filter": {
+                                                            "input": "$typing_result",
+                                                            "cond": {
+                                                                "$eq": [
+                                                                    "$$this.type",
+                                                                    "H_type",
+                                                                ]
+                                                            },
+                                                        }
+                                                    },
+                                                    "in": "$$this.result.sequence_name",
+                                                }
+                                            },
+                                            0,
+                                        ]
+                                    },
+                                    "-",
+                                ]
+                            },
                         ]
                     }
                 }
@@ -217,7 +257,8 @@ async def get_samples(
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # create sample id from lims id and sequencing run
-    sample_id = f"{sample.run_metadata.run.lims_id}_{sample.run_metadata.run.sequencing_run}".lower()
+    sample_run = sample.run_metadata.run
+    sample_id = f"{sample_run.lims_id}_{sample_run.sequencing_run}".lower()
     # validate data format
     sample_db_fmt = SampleInCreate(
         sample_id=sample_id,
@@ -408,7 +449,8 @@ async def update_sample_qc_classification(
 
 
 def update_variant_verificaton(variant, info):
-    # update variant with selected annotations
+    """Update variant with selected annotations."""
+
     if info.verified is not None:
         LOG.debug("cals: %s", info)
         variant = variant.model_copy(
@@ -418,7 +460,8 @@ def update_variant_verificaton(variant, info):
 
 
 def update_variant_phenotype(variant, info, username):
-    # update variant with selected annotations
+    """Update variant with selected annotations"""
+
     predicted_pheno = [
         phe
         for phe in variant.phenotypes

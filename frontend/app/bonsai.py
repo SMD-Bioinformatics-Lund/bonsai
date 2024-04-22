@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Callable, List
 
 import requests
+from app.config import REQUEST_TIMEOUT
 from flask import current_app
 from pydantic import BaseModel
 from requests.structures import CaseInsensitiveDict
@@ -11,9 +12,6 @@ from requests.structures import CaseInsensitiveDict
 from .models import SampleBasketObject, SubmittedJob
 
 LOG = logging.getLogger(__name__)
-
-# Timeout for HTTP request
-TIMEOUT = 10
 
 
 class TokenObject(BaseModel):  # pylint: disable=too-few-public-methods
@@ -55,7 +53,7 @@ def get_current_user(headers: CaseInsensitiveDict):
     """Get current user from token"""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/me'
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -66,7 +64,7 @@ def get_users(headers: CaseInsensitiveDict):
     """Get current user from the database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users'
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -77,7 +75,7 @@ def create_user(headers: CaseInsensitiveDict, user_obj: str):
     """Create a new user."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users'
-    resp = requests.post(url, headers=headers, json=user_obj, timeout=TIMEOUT)
+    resp = requests.post(url, headers=headers, json=user_obj, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -89,7 +87,7 @@ def get_user(headers: CaseInsensitiveDict, username: str):
     # username = kwargs.get("username")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -100,7 +98,7 @@ def update_user(headers: CaseInsensitiveDict, username: str, user):
     """Delete the user from the database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
-    resp = requests.put(url, headers=headers, json=user, timeout=TIMEOUT)
+    resp = requests.put(url, headers=headers, json=user, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -111,7 +109,7 @@ def delete_user(headers: CaseInsensitiveDict, username: str):
     """Delete the user from the database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/{username}'
-    resp = requests.delete(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.delete(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -128,7 +126,7 @@ def get_auth_token(username: str, password: str) -> TokenObject:
         url,
         data={"username": username, "password": password},
         headers=headers,
-        timeout=TIMEOUT,
+        timeout=REQUEST_TIMEOUT,
     )
     # controll that request
     resp.raise_for_status()
@@ -142,7 +140,7 @@ def get_groups(headers: CaseInsensitiveDict):
     """Get groups from database"""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups'
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -154,7 +152,7 @@ def get_group_by_id(headers: CaseInsensitiveDict, group_id: str):
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
     current_app.logger.debug("Query API for group %s", group_id)
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -165,7 +163,7 @@ def delete_group(headers: CaseInsensitiveDict, group_id: str):
     """Remove group from database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
-    resp = requests.delete(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.delete(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -178,7 +176,7 @@ def update_group(headers: CaseInsensitiveDict, **kwargs):
     data = kwargs.get("data")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
-    resp = requests.put(url, json=data, headers=headers, timeout=TIMEOUT)
+    resp = requests.put(url, json=data, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -190,7 +188,7 @@ def create_group(headers: CaseInsensitiveDict, **kwargs):
     data = kwargs.get("data")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/groups'
-    resp = requests.post(url, json=data, headers=headers, timeout=TIMEOUT)
+    resp = requests.post(url, json=data, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -203,7 +201,7 @@ def add_samples_to_basket(headers: CaseInsensitiveDict, **kwargs):
     samples = [smp.model_dump() for smp in samples]
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
-    resp = requests.put(url, json=samples, headers=headers, timeout=TIMEOUT)
+    resp = requests.put(url, json=samples, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -215,7 +213,7 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
     sample_ids: List[str] = kwargs.get("sample_ids")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
-    resp = requests.delete(url, json=sample_ids, headers=headers, timeout=TIMEOUT)
+    resp = requests.delete(url, json=sample_ids, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -229,7 +227,7 @@ def get_samples_in_group(headers: CaseInsensitiveDict, **kwargs):
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
     lookup_samples = kwargs.get("lookup_samples", False)
     resp = requests.get(
-        url, headers=headers, params={"lookup_samples": lookup_samples}, timeout=TIMEOUT
+        url, headers=headers, params={"lookup_samples": lookup_samples}, timeout=REQUEST_TIMEOUT
     )
 
     resp.raise_for_status()
@@ -243,7 +241,7 @@ def get_samples(headers: CaseInsensitiveDict, **kwargs):
     url = f'{current_app.config["BONSAI_API_URL"]}/samples'
     # get limit, offeset and skip values
     parmas = {"limit": kwargs.get("limit", 20), "skip": kwargs.get("skip", 0)}
-    resp = requests.get(url, headers=headers, params=parmas, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, params=parmas, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -254,7 +252,7 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
     """Remove samples from database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/'
-    resp = requests.delete(url, headers=headers, json=sample_ids, timeout=TIMEOUT)
+    resp = requests.delete(url, headers=headers, json=sample_ids, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -276,7 +274,7 @@ def get_samples_by_id(headers: CaseInsensitiveDict, **kwargs):
         "skip": kwargs.get("skip", 0),
     }
     current_app.logger.debug("Query API for %s", sample_id)
-    resp = requests.post(url, headers=headers, json=search, timeout=TIMEOUT)
+    resp = requests.post(url, headers=headers, json=search, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -288,7 +286,7 @@ def get_sample_by_id(headers: CaseInsensitiveDict, **kwargs):
     # conduct query
     sample_id = kwargs.get("sample_id")
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}'
-    resp = requests.get(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
     current_app.logger.debug("Query API for sample %s", sample_id)
 
     resp.raise_for_status()
@@ -299,7 +297,7 @@ def get_sample_by_id(headers: CaseInsensitiveDict, **kwargs):
 def cgmlst_cluster_samples(headers: CaseInsensitiveDict):
     """Get groups from database"""
     url = f'{current_app.config["BONSAI_API_URL"]}/cluster/cgmlst'
-    resp = requests.post(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.post(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
     resp.raise_for_status()
     return resp.json()
@@ -312,7 +310,7 @@ def post_comment_to_sample(headers: CaseInsensitiveDict, **kwargs):
     data = {"comment": kwargs.get("comment"), "username": kwargs.get("user_name")}
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/comment'
-    resp = requests.post(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp = requests.post(url, headers=headers, json=data, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
@@ -324,7 +322,7 @@ def remove_comment_from_sample(headers: CaseInsensitiveDict, **kwargs):
     comment_id = kwargs.get("comment_id")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/comment/{comment_id}'
-    resp = requests.delete(url, headers=headers, timeout=TIMEOUT)
+    resp = requests.delete(url, headers=headers, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
@@ -342,14 +340,14 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
     }
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/qc_status'
-    resp = requests.put(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp = requests.put(url, headers=headers, json=data, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
 
 @api_authentication
 def update_variant_info(
-    headers: CaseInsensitiveDict, sample_id, variant_ids=[], status={}
+    headers: CaseInsensitiveDict, sample_id, *variant_ids, **status
 ):
     """Update annotation of resitance variants for a sample"""
     data = {
@@ -358,7 +356,7 @@ def update_variant_info(
     }
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/{sample_id}/resistance/variants'
-    resp = requests.put(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp = requests.put(url, headers=headers, json=data, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
@@ -374,7 +372,7 @@ def cluster_samples(headers: CaseInsensitiveDict, **kwargs) -> SubmittedJob:
     }
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/cluster/{typing_method}/'
-    resp = requests.post(url, headers=headers, json=data, timeout=TIMEOUT)
+    resp = requests.post(url, headers=headers, json=data, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
 
@@ -399,7 +397,7 @@ def find_samples_similar_to_reference(
         url,
         headers=headers,
         json={"similarity": similarity, "limit": limit, "cluster": False},
-        timeout=TIMEOUT,
+        timeout=REQUEST_TIMEOUT,
     )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
@@ -437,7 +435,7 @@ def find_and_cluster_similar_samples(
             "cluster_method": cluster_method,
             "typing_method": typing_method,
         },
-        timeout=TIMEOUT,
+        timeout=REQUEST_TIMEOUT,
     )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
@@ -447,7 +445,7 @@ def find_and_cluster_similar_samples(
 def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
     """Query the API for a lims export file."""
     url = f'{current_app.config["BONSAI_API_URL"]}/export/{sample_id}/lims'
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.text
 
@@ -455,7 +453,7 @@ def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
 def get_valid_group_columns():
     """Query API for valid group columns."""
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/default/columns'
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
@@ -463,7 +461,7 @@ def get_valid_group_columns():
 def get_antibiotics():
     """Query the API for antibiotics."""
     url = f'{current_app.config["BONSAI_API_URL"]}/resources/antibiotics'
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()
 
@@ -471,6 +469,6 @@ def get_antibiotics():
 def get_variant_rejection_reasons():
     """Query the API for antibiotics."""
     url = f'{current_app.config["BONSAI_API_URL"]}/resources/variant/rejection'
-    resp = requests.get(url)
+    resp = requests.get(url, timeout=REQUEST_TIMEOUT)
     resp.raise_for_status()
     return resp.json()

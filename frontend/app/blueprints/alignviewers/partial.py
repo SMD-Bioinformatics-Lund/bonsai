@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Functions for retrieving segments of files."""
 import mimetypes
 import os
 import re
@@ -17,15 +17,16 @@ def parse_byte_range(byte_range):
 
     m = BYTE_RANGE_RE.match(byte_range)
     if not m:
-        raise ValueError("Invalid byte range %s" % byte_range)
+        raise ValueError(f"Invalid byte range {byte_range}")
 
     first, last = [x and int(x) for x in m.groups()]
     if last and last < first:
-        raise ValueError("Invalid byte range %s" % byte_range)
+        raise ValueError(f"Invalid byte range {byte_range}")
     return first, last
 
 
-def send_file_partial(path):
+def send_file_partial(path: str):
+    """Send path to file."""
     range_header = request.headers.get("Range", None)
     if not range_header:
         try:
@@ -35,7 +36,7 @@ def send_file_partial(path):
 
     try:
         byte_range = parse_byte_range(request.headers["Range"])
-    except ValueError as error:
+    except ValueError:
         return abort(400, "Invalid byte range")
     first, last = byte_range
 
@@ -62,6 +63,6 @@ def send_file_partial(path):
 
     resp.headers.set("Content-type", "application/octet-stream")
     resp.headers.set("Accept-Ranges", "bytes")
-    resp.headers.set("Content-Range", "bytes %s-%s/%s" % (first, last, file_len))
+    resp.headers.set("Content-Range", f"bytes {first}-{last}/{file_len}")
     resp.headers.set("Content-Length", str(response_length))
     return resp
