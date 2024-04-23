@@ -10,7 +10,7 @@ from app.config import BONSAI_API_URL
 from app.models import RWModel
 from flask import session
 from flask_login import current_user
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 LOG = logging.getLogger(__name__)
 
@@ -75,6 +75,8 @@ class IgvVariantTrack(IgvBaseTrack):
 
 
 class IgvReferenceGenome(RWModel):
+    """IGV reference genome container."""
+
     name: str
     fasta_url: str = Field(..., alias="fastaURL")
     index_url: str = Field(..., alias="indexURL")
@@ -82,6 +84,7 @@ class IgvReferenceGenome(RWModel):
 
 
 class IgvData(RWModel):
+    """Definition of data used by IGV."""
     locus: str
     reference: IgvReferenceGenome
     tracks: List[IgvAnnotationTrack | IgvAlignmentTrack | IgvVariantTrack] = []
@@ -93,8 +96,8 @@ class IgvData(RWModel):
     show_cursor_track_guide: bool = Field(False, alias="showCursorTrackGuide")
 
 
-def build_api_url(path, **kwargs):
-    # namedtuple to match the internal signature of urlunparse
+def build_api_url(path: str, **kwargs):
+    """Build api URL path."""
     base_url = f"{BONSAI_API_URL}{path}"
     params = [f"{key}={val}" for key, val in kwargs.items()]
     if len(params) > 0:
@@ -104,7 +107,8 @@ def build_api_url(path, **kwargs):
     return url
 
 
-def get_variant(sample_obj: Dict[str, Any], variant_id: str) -> Dict[str, Any]:
+def get_variant(sample_obj: Dict[str, Any], variant_id: str) -> Dict[str, Any] | None:
+    """Get variant with Id from sampleObj."""
     software, variant_id = variant_id.split("-")
     if software in ["sv_variants", "snv_variants"]:
         for variant in sample_obj[software]:
@@ -116,11 +120,25 @@ def get_variant(sample_obj: Dict[str, Any], variant_id: str) -> Dict[str, Any]:
                 for variant in pred_res["result"]["variants"]:
                     if variant["id"] == int(variant_id):
                         return variant
+    return None
 
 
 def make_igv_tracks(
-    sample_obj, variant_id: str, start: int | None = None, stop: int | None = None
+    sample_obj: Dict[str, Any], variant_id: str, start: int | None = None, stop: int | None = None
 ) -> IgvData:
+    """Make IGV tracks.
+
+    :param sample_obj: Sample object from database
+    :type sample_obj: Dict[str, Any]
+    :param variant_id: Variant id
+    :type variant_id: str
+    :param start: start genome position, defaults to None
+    :type start: int | None, optional
+    :param stop: end position in genome, defaults to None
+    :type stop: int | None, optional
+    :return: Pydantic container with IGV data.
+    :rtype: IgvData
+    """
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
     entrypoint_url = os.path.join(
@@ -214,7 +232,10 @@ def make_igv_tracks(
 
 
 def set_session_tracks(display_obj: Dict[str, str]) -> None:
-    """Save igv tracks as a session object. This way it's easy to verify that a user is requesting one of these files from remote_static view endpoint
+    """Save igv tracks as a session object. 
+
+    This way it's easy to verify that a user is requesting
+    one of these files from remote_static view endpoint
 
     :param display_object: A display object containing case name, list of genes, locus and tracks
     :type: Dict
@@ -229,7 +250,8 @@ def set_session_tracks(display_obj: Dict[str, str]) -> None:
 
 
 def check_session_tracks(resource: str) -> bool:
-    """Make sure that a user requesting a resource is authenticated and resource is in session IGV tracks
+    """Make sure that a user requesting a resource is authenticated
+    and resource is in session IGV tracks
 
     :param resource: track content
     :type: str
@@ -242,7 +264,7 @@ def check_session_tracks(resource: str) -> bool:
         return False
     if resource not in session.get("igv_tracks", []):
         LOG.warning(
-            f"Requested resource to be displayed in IGV not in session's IGV tracks"
+            "Requested resource to be displayed in IGV not in session's IGV tracks"
         )
         return False
     return True

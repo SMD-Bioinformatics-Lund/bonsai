@@ -7,13 +7,12 @@ import pathlib
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 
 import pandas as pd
 from fastapi.responses import Response
 from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
-from pydantic import BaseModel
 
 from .models.sample import SampleInDatabase
 
@@ -39,11 +38,11 @@ class TBResponses(Enum):
 
 
 class InvalidRangeError(Exception):
-    pass
+    """Exception for retrieving invalid file ranges."""
 
 
 class RangeOutOfBoundsError(Exception):
-    pass
+    """Exception if range is out of bounds."""
 
 
 def is_file_readable(file_path: str) -> bool:
@@ -66,7 +65,7 @@ def is_file_readable(file_path: str) -> bool:
     return True
 
 
-def parse_byte_range(byte_range):
+def parse_byte_range(byte_range: str) -> Tuple[int, int]:
     """Returns the two numbers in 'bytes=123-456' or throws ValueError.
     The last number or both numbers may be None.
     """
@@ -83,7 +82,17 @@ def parse_byte_range(byte_range):
     return first, last
 
 
-def send_partial_file(path, range_header):
+def send_partial_file(path: str, range_header: str) -> Response:
+    """Send partial file as a response.
+
+    :param path: File path
+    :type path: str
+    :param range_header: byte range, ie bytes=123-456
+    :type range_header: str
+    :raises RangeOutOfBoundsError: Error if the byte range is out of bounds.
+    :return: Exception
+    :rtype: Response
+    """
     byte_range = parse_byte_range(range_header)
     first, last = byte_range
 
@@ -131,8 +140,8 @@ def _sort_motifs_on_phenotype(prediction: List[GeneBase | VariantBase]):
 
 
 def _fmt_variant(variant):
-    """"""
-    WHO_CLASSES = {
+    """Format information of a resistance variant."""
+    who_classes = {
         "Assoc w R": 1,
         "Assoc w R - Interim": 2,
         "Uncertain significance": 3,
@@ -153,7 +162,7 @@ def _fmt_variant(variant):
     if variant.frequency is not None and variant.frequency < 1:
         variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
     # annotate WHO classification
-    who_group = WHO_CLASSES.get(variant.phenotypes[0].note)
+    who_group = who_classes.get(variant.phenotypes[0].note)
     if who_group is not None:
         variant_desc = f"{variant_desc} WHO-{who_group}"
     return variant_desc
@@ -188,9 +197,9 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         # create tabular result
         for antibiotic in TARGETED_ANTIBIOTICS:
             # concat variants
-            if TARGETED_ANTIBIOTICS[antibiotic]["split_res_level"]:
+            if info["split_res_level"]:
                 for lvl in ["high", "low"]:
-                    abbrev = TARGETED_ANTIBIOTICS[antibiotic]["abbrev"]
+                    abbrev = info["abbrev"]
                     if (
                         antibiotic in sorted_variants
                         and len(sorted_variants[antibiotic][lvl]) > 0
@@ -226,8 +235,8 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                 # add result
                 result.append(
                     {
-                        "sample_id": sample.run_metadata.run.sample_name,
-                        "parameter": f"{TARGETED_ANTIBIOTICS[antibiotic]['abbrev'].upper()}_NGS",
+                        "sample_id": sample.run_metadata.run.sample_name
+                        "parameter": f"{info['abbrev'].upper()} NGS",
                         "result": call,
                         "variants": variants,
                     }
@@ -269,7 +278,7 @@ def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
     match sample.run_metadata.run.analysis_profile:
         case "mycobacterium_tuberculosis":
             pred_res = _fmt_mtuberculosis(sample)
-        case default:
+        case _:
             raise NotImplementedError(
                 f"No export function for {sample.run_metadata.run.analysis_profile}"
             )

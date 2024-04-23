@@ -15,6 +15,7 @@ Bonsai
    :caption: Developer guide
 
    /dev/index
+   /dev/login_systems
    /dev/minhash
    /dev/allele_clustering
 

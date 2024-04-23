@@ -5,10 +5,10 @@ async function openGrapeTree({newick, sampleIds, clusterMethod}) {
     // add metadata and newick file to form
     const newickInput = form.querySelector("#newick-content")
     newickInput.setAttribute("value", newick)
-    const metadataInput = form.querySelector("#metadata-content")
+    const sampleIdInput = form.querySelector("#sample-ids-content")
     const typingDataInput = form.querySelector("#typing-data-content")
     typingDataInput.setAttribute("value", clusterMethod)
-    metadataInput.setAttribute("value", JSON.stringify({sample_id: sampleIds}))
+    sampleIdInput.setAttribute("value", JSON.stringify({sample_id: sampleIds}))
     const submitBnt = form.querySelector("input[type=submit]")
     submitBnt.click()
 }

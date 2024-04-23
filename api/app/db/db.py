@@ -3,7 +3,7 @@ import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
-from ..config import DATABASE_NAME
+from ..config import settings
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class Database:  # pylint: disable=too-few-public-methods
         if self.client is None:
             raise ValueError("Database connection not initialized.")
         # define collection shorthands
-        self.db = self.client[DATABASE_NAME]
+        self.db = self.client[settings.database_name]
         self.sample_group_collection: AsyncIOMotorCollection = self.db.sample_group
         self.sample_collection: AsyncIOMotorCollection = self.db.sample
         self.location_collection: AsyncIOMotorCollection = self.db.location

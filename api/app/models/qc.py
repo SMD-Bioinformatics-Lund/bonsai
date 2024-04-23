@@ -9,6 +9,8 @@ from .tags import TagSeverity
 
 
 class VaraintRejectionReason(BaseModel):
+    """Data model for reasons rejecting a variant."""
+
     label: str
     description: str
     label_class: TagSeverity = TagSeverity.INFO

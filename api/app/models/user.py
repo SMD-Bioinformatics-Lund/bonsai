@@ -4,6 +4,7 @@ from typing import List
 
 from pydantic import EmailStr
 
+from ..config import settings
 from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
 
@@ -52,3 +53,5 @@ class UserOutputDatabase(
 
     Information returned by API.
     """
+
+    authentication_method: str = "ldap" if settings.use_ldap_auth else "simple"

@@ -5,8 +5,14 @@ from prp.models.phenotype import ElementType, ElementTypeResult
 from prp.models.typing import TypingMethod
 
 from ..models.sample import SampleInDatabase
-from ..models.tags import (ResistanceTag, Tag, TagList, TagSeverity, TagType,
-                           VirulenceTag)
+from ..models.tags import (
+    ResistanceTag,
+    Tag,
+    TagList,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -106,7 +112,7 @@ def add_stx_type(tags: TagList, sample: SampleInDatabase) -> Tag:
 def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
     """Check if sample OH type."""
     for type_res in sample.typing_result:
-        if type_res.type == TypingMethod.OTYPE.value or type_res.type == TypingMethod.HTYPE.value:
+        if type_res.type in [TypingMethod.OTYPE.value, TypingMethod.HTYPE.value]:
             tag = Tag(
                 type=TagType.TYPING,
                 label=type_res.result.sequence_name.upper(),

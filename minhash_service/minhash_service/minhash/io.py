@@ -2,13 +2,12 @@
 import gzip
 import logging
 import pathlib
-from typing import List, Iterable
+from typing import Iterable, List
 
 import fasteners
 import sourmash
-from sourmash.signature import FrozenSourmashSignature
-
 from minhash_service import config
+from sourmash.signature import FrozenSourmashSignature
 
 LOG = logging.getLogger(__name__)
 SIGNATURES = List[FrozenSourmashSignature]
@@ -17,7 +16,7 @@ SIGNATURES = List[FrozenSourmashSignature]
 def get_sbt_index(check: bool = True) -> str:
     """Get sourmash SBT index file."""
     signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    #index_path = signature_dir.joinpath("genomes.sbt.zip")
+    # index_path = signature_dir.joinpath("genomes.sbt.zip")
     index_path = signature_dir.joinpath("genomes.sbt.json")
 
     # Check if file exist
@@ -89,7 +88,9 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
 
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
-    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(signature, ksize=config.SIGNATURE_KMER_SIZE)
+    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(
+        signature, ksize=config.SIGNATURE_KMER_SIZE
+    )
     upd_signatures = []
     for sig_obj in signatures:
         sig_obj = sig_obj.to_mutable()

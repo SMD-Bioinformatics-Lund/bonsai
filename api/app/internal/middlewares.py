@@ -2,7 +2,7 @@
 
 from fastapi.middleware.cors import CORSMiddleware
 
-from ..config import allowed_origins
+from ..config import settings
 
 
 def configure_cors(app):
@@ -10,10 +10,10 @@ def configure_cors(app):
 
     configuration is only applied if there are allowed origins specified in config
     """
-    if len(allowed_origins) > 0:
+    if len(settings.allowed_origins) > 0:
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=allowed_origins,
+            allow_origins=settings.allowed_origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
