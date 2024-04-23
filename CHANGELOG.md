@@ -1,10 +1,20 @@
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [v0.5.0]
+
+### Added
 - Show the same metadata in grapetree as in the sample table from the groups and group view.
+- Added optional LDAP based authentication system
 
 ### Changed
 - Show disabled IGV button for samples without BAM or reference genome. 
+- Updated LIMS export format
 
 ### Fixed
 
