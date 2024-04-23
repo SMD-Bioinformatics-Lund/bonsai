@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 from collections import defaultdict
+from enum import Enum
 from typing import List, Tuple
 
 import pandas as pd
@@ -26,6 +27,14 @@ TARGETED_ANTIBIOTICS = {
     "amikacin": {"abbrev": "ami", "split_res_level": False},
     "levofloxacin": {"abbrev": "lev", "split_res_level": False},
 }
+
+
+class TBResponses(Enum):
+    """Valid responses for M. tuberculosis results."""
+
+    resistant = "Mutation påvisad"
+    susceptible = "Mutation ej påvisad"
+    sample_failed = "Ej bedömbart"
 
 
 class InvalidRangeError(Exception):
@@ -142,11 +151,12 @@ def _fmt_variant(variant):
     var_type = variant.variant_type
     if var_type == "SV":
         variant_desc = (
-            f"{var_type}_{variant.variant_subtype}_{variant.start}-{variant.end}"
+            f"g.{variant.start}_{variant.end}{variant.variant_subtype.lower()}"
         )
     else:
+        variant_name = variant.hgvs_nt_change if variant.hgvs_aa_change == "" else variant.hgvs_aa_change
         variant_desc = (
-            f"{variant.reference_sequence}_{variant.start}_{variant.variant_subtype}"
+            f"{variant.reference_sequence}.{variant_name}"
         )
     # annotate variant frequency for minority variants
     if variant.frequency is not None and variant.frequency < 1:
@@ -166,6 +176,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     :param sample: Prediction results
     :type sample: SampleInDatabase
     """
+    has_failed = sample.qc_status.status == "failed" and sample.qc_status.action == "permanent fail"
     result = []
     for pred_res in sample.element_type_result:
         # only include TBprofiler result
@@ -184,8 +195,6 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         sorted_variants = _sort_motifs_on_phenotype(filtered_variants)
 
         # create tabular result
-        positive = "Mutation påvisad"
-        negative = "Mutation ej påvisad"
         for antibiotic, info in TARGETED_ANTIBIOTICS.items():
             # concat variants
             if info["split_res_level"]:
@@ -195,38 +204,38 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                         antibiotic in sorted_variants
                         and len(sorted_variants[antibiotic][lvl]) > 0
                     ):
-                        call = positive
+                        call = TBResponses.resistant.value
                         variants = ";".join(
                             _fmt_variant(var)
                             for var in sorted_variants[antibiotic][lvl]
                         )
                     else:
                         # add non-called resistance
-                        call = negative
+                        call = TBResponses.susceptible.value
                         variants = "-"
                     result.append(
                         {
-                            "sample_id": sample.sample_id,
-                            "parameter": f"{abbrev.upper()} NGS{lvl[0].upper()}",
+                            "sample_id": sample.run_metadata.run.sample_name,
+                            "parameter": f"{abbrev.upper()}_NGS{lvl[0].upper()}",
                             "result": call,
                             "variants": variants,
                         }
                     )
             else:
                 if antibiotic in sorted_variants:
-                    call = positive
+                    call = TBResponses.resistant.value
                     combined_variants = itertools.chain(
                         *sorted_variants[antibiotic].values()
                     )
                     variants = ";".join(_fmt_variant(var) for var in combined_variants)
                 else:
                     # add non-called resistance
-                    call = negative
+                    call = TBResponses.susceptible.value
                     variants = "-"
                 # add result
                 result.append(
                     {
-                        "sample_id": sample.sample_id,
+                        "sample_id": sample.run_metadata.run.sample_name,
                         "parameter": f"{info['abbrev'].upper()} NGS",
                         "result": call,
                         "variants": variants,
@@ -235,8 +244,8 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     # annotate species prediction res
     result.append(
         {
-            "sample_id": sample.sample_id,
-            "parameter": "MTBC ART",
+            "sample_id": sample.run_metadata.run.sample_name,
+            "parameter": "MTBC_ART",
             "result": sample.species_prediction[0].scientific_name,
             "variants": "-",
         }
@@ -251,13 +260,17 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             lin = max(type_res.result.lineages, key=lambda x: len(x.lin))
             result.append(
                 {
-                    "sample_id": sample.sample_id,
-                    "parameter": "MTBC LINEAGE",
+                    "sample_id": sample.run_metadata.run.sample_name,
+                    "parameter": "MTBC_LINEAGE",
                     "result": lin.lin,
                     "variants": "-",
                 }
             )
-    return pd.DataFrame(result)
+    df = pd.DataFrame(result)
+    if has_failed:
+        df["result"] = TBResponses.sample_failed.value
+        df["variants"] = "-"
+    return df
 
 
 def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
