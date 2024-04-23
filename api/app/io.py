@@ -195,7 +195,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         sorted_variants = _sort_motifs_on_phenotype(filtered_variants)
 
         # create tabular result
-        for antibiotic in TARGETED_ANTIBIOTICS:
+        for antibiotic, info in TARGETED_ANTIBIOTICS.items():
             # concat variants
             if info["split_res_level"]:
                 for lvl in ["high", "low"]:
@@ -235,7 +235,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                 # add result
                 result.append(
                     {
-                        "sample_id": sample.run_metadata.run.sample_name
+                        "sample_id": sample.run_metadata.run.sample_name,
                         "parameter": f"{info['abbrev'].upper()} NGS",
                         "result": call,
                         "variants": variants,
