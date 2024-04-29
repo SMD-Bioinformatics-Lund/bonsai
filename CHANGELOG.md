@@ -6,6 +6,7 @@
 
 ### Fixed
 - Fixed bug in generating mongodb URI
+- Fixed crash if vcf type was not recognized
 
 ## [v0.5.0]
 

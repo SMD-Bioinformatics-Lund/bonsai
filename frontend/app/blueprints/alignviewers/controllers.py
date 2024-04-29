@@ -214,10 +214,10 @@ def make_igv_tracks(
                     order=order,
                 )
             case ".vcf":
-                variant_type_suffix, _ = file.suffixes
+                variant_type = file.name.split('_')[-1]
                 url = build_api_url(
                     f"/samples/{sample_obj['sample_id']}/vcf",
-                    variant_type=variant_type_suffix[1:].upper(),
+                    variant_type=variant_type,
                 )  # strip leading .
                 track = IgvVariantTrack(
                     name=annot["name"],
