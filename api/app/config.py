@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     database_name: str = "bonsai"
     db_host: str = "mongodb"
     db_port: str = "27017"
-    mongodb_uri: str = f"mongodb://{db_host}:{db_port}/{database_name}"
     max_connections: int = 10
     min_connections: int = 10
 
@@ -72,6 +71,9 @@ class Settings(BaseSettings):
         """
         return self.ldap_host is not None
 
+    @property
+    def mongodb_uri(self) -> str | None:
+        return f"mongodb://{self.db_host}:{self.db_port}/{self.database_name}"
 
 # to get a string like this run:
 # openssl rand -hex 32

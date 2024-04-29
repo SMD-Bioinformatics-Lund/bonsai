@@ -5,6 +5,7 @@
 ### Changed
 
 ### Fixed
+- Fixed bug in generating mongodb URI
 
 ## [v0.5.0]
 
