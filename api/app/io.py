@@ -242,14 +242,20 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                     }
                 )
     # annotate species prediction res
-    result.append(
+    result.extend([
+        {
+            "sample_id": sample.run_metadata.run.sample_name,
+            "parameter": "MTBC_QC",
+            "result": sample.qc_status.status.capitalize(),
+            "variants": "-",
+        },
         {
             "sample_id": sample.run_metadata.run.sample_name,
             "parameter": "MTBC_ART",
             "result": sample.species_prediction[0].scientific_name,
             "variants": "-",
-        }
-    )
+        },
+    ])
     # annotate lineage
     for type_res in sample.typing_result:
         if (
