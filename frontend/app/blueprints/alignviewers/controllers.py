@@ -142,12 +142,12 @@ def make_igv_tracks(
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
     entrypoint_url = os.path.join(
-        BONSAI_API_URL, "resources", "genome", ref_genome["accession"], "info"
+        BONSAI_API_URL, "resources", "genome", "info"
     )
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
-        fasta_url=f"{entrypoint_url}?annotation_type=fasta",
-        index_url=f"{entrypoint_url}?annotation_type=fasta_index",
+        fasta_url=f"{entrypoint_url}?file={ref_genome['fasta']}",
+        index_url=f"{entrypoint_url}?file={ref_genome['fasta_index']}",
     )
 
     # narrow view to given locus
@@ -183,7 +183,7 @@ def make_igv_tracks(
     ]
     # add gene track
     gene_url = build_api_url(
-        f"/resources/genome/{ref_genome['accession']}/info", annotation_type="gff"
+        f"/resources/genome/info", file=ref_genome['genes']
     )
     tracks.append(
         IgvAnnotationTrack(
@@ -214,10 +214,9 @@ def make_igv_tracks(
                     order=order,
                 )
             case ".vcf":
-                variant_type = file.name.split('_')[-1]
                 url = build_api_url(
                     f"/samples/{sample_obj['sample_id']}/vcf",
-                    variant_type=variant_type,
+                    variant_type=annot["name"],
                 )  # strip leading .
                 track = IgvVariantTrack(
                     name=annot["name"],

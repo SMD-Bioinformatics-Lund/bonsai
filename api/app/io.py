@@ -56,11 +56,11 @@ def is_file_readable(file_path: str) -> bool:
     path = pathlib.Path(file_path)
     if not path.is_file():
         LOG.warning("trying to access missing reference genome data: %s", file_path)
-        return False
+        raise FileNotFoundError(file_path)
 
     if not os.access(path, os.R_OK):
         LOG.warning("file: %s cant read by the system user", file_path)
-        return False
+        raise PermissionError(file_path)
 
     return True
 

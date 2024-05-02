@@ -153,7 +153,7 @@ async def create_sample(
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def delete_many_samples(
-    *sample_ids: List[str],
+    sample_ids: List[str],
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -398,7 +398,6 @@ async def get_vcf_files_for_sample(
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
-    LOG.error("--> Request for variant: %s - %s", sample_id, variant_type)
     try:
         sample = await get_sample(db, sample_id)
     except EntryNotFound as error:
@@ -406,13 +405,14 @@ async def get_vcf_files_for_sample(
             status_code=404, detail=format_error_message(error)
         ) from error
 
-    # build path to either bam or the index
+    # build path to the VCF
     file_path = None
     for annot in sample.genome_annotation:
         path = pathlib.Path(annot["file"])
         # if file exist
-        if f".{variant_type.value.lower()}" in path.suffixes:
+        if variant_type.value == annot["name"]:
             file_path = path
+            break
 
     if file_path is None:
         LOG.error("HTTP 404: %s - %s", sample_id, variant_type)
