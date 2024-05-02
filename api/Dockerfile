@@ -23,3 +23,5 @@ RUN mkdir -p /data/signature_db && chown worker:worker /data/signature_db
 
 # run app as non-root user
 USER worker
+
+CMD ["uvicorn", "app.main:app", "--log-level", "info", "--host", "0.0.0.0"]
