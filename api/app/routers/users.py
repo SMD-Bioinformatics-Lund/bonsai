@@ -91,7 +91,7 @@ async def remove_samples_from_basket(
     """Get samples stored in the users sample basket."""
     try:
         basket_obj: List[SampleBasketObject] = await remove_samples_from_user_basket(
-            current_user, sample_ids
+            current_user=current_user, sample_ids=sample_ids
         )
     except EntryNotFound as error:
         raise HTTPException(

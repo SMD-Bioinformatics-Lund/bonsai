@@ -191,8 +191,8 @@ async def add_samples_to_user_basket(
 
 
 async def remove_samples_from_user_basket(
+    sample_ids: List[SampleBasketObject],
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
-    *sample_ids: List[SampleBasketObject],
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(
@@ -210,7 +210,7 @@ async def remove_samples_from_user_basket(
 
     if not update_obj.modified_count == 1:
         sample_ids_in_basket = await db.user_collection.find_one({"username": current_user.username}, {"basket": 1})
-        LOG.error("try removing %s; samples in basket: %s", sample_ids, sample_ids_in_basket)
+        LOG.error("try removing samples %s from basket. Content: %s", sample_ids, sample_ids_in_basket)
         raise UpdateDocumentError(f"Error when updating the basket of {current_user.username}")
     # get updated basket
     user: UserOutputDatabase = await get_user(db, username=current_user.username)

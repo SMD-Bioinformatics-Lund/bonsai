@@ -8,6 +8,7 @@ from app.config import REQUEST_TIMEOUT
 from flask import current_app
 from pydantic import BaseModel
 from requests.structures import CaseInsensitiveDict
+from requests import HTTPError
 
 from .models import SampleBasketObject, SubmittedJob
 
@@ -229,7 +230,7 @@ def get_samples_in_group(headers: CaseInsensitiveDict, **kwargs):
     resp = requests.get(
         url, headers=headers, params={"lookup_samples": lookup_samples}, timeout=REQUEST_TIMEOUT
     )
-
+    # check errors
     resp.raise_for_status()
     return resp.json()
 
