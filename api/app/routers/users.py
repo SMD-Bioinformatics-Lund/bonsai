@@ -96,12 +96,12 @@ async def remove_samples_from_basket(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
+            detail=str(error),
         ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
-            status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=error,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
         ) from error
     return basket_obj
 

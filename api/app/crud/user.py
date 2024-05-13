@@ -209,7 +209,9 @@ async def remove_samples_from_user_basket(
         raise EntryNotFound(current_user.username)
 
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(current_user.username)
+        sample_ids_in_basket = await db.user_collection.find_one({"username": current_user.username}, {"basket": 1})
+        LOG.error("try removing %s; samples in basket: %s", sample_ids, sample_ids_in_basket)
+        raise UpdateDocumentError(f"Error when updating the basket of {current_user.username}")
     # get updated basket
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
     return user.basket

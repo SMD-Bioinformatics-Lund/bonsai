@@ -128,9 +128,15 @@ const removeAllSamplesFromBasket = () => {
         },
         credentials: 'same-origin'
     }).then(response => {
-        document.querySelectorAll('.sample_in_basket').forEach(e => e.remove());
-        const counter = document.querySelector("#samples-in-basket-counter")
-        counter.innerText = 0
-        document.querySelector("#samples-in-basket-badge").hidden = true
+        if (response.ok) {
+            // clear samples from basket
+            document.querySelectorAll('.sample_in_basket').forEach(e => e.remove());
+            const counter = document.querySelector("#samples-in-basket-counter")
+            counter.innerText = 0
+            document.querySelector("#samples-in-basket-badge").hidden = true
+        } else {
+            // throw error
+            throwSmallToast("Error when removing samples.", "warning")
+        }
     })
 }
