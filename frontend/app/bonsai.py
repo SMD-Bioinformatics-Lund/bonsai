@@ -4,11 +4,12 @@ from functools import wraps
 from typing import Callable, List
 
 import requests
-from app.config import REQUEST_TIMEOUT
 from flask import current_app
 from pydantic import BaseModel
-from requests.structures import CaseInsensitiveDict
 from requests import HTTPError
+from requests.structures import CaseInsensitiveDict
+
+from app.config import REQUEST_TIMEOUT
 
 from .models import SampleBasketObject, SubmittedJob
 
@@ -214,7 +215,9 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
     sample_ids: List[str] = kwargs.get("sample_ids")
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/users/basket'
-    resp = requests.delete(url, json=sample_ids, headers=headers, timeout=REQUEST_TIMEOUT)
+    resp = requests.delete(
+        url, json=sample_ids, headers=headers, timeout=REQUEST_TIMEOUT
+    )
 
     resp.raise_for_status()
     return resp.json()
@@ -228,7 +231,10 @@ def get_samples_in_group(headers: CaseInsensitiveDict, **kwargs):
     url = f'{current_app.config["BONSAI_API_URL"]}/groups/{group_id}'
     lookup_samples = kwargs.get("lookup_samples", False)
     resp = requests.get(
-        url, headers=headers, params={"lookup_samples": lookup_samples}, timeout=REQUEST_TIMEOUT
+        url,
+        headers=headers,
+        params={"lookup_samples": lookup_samples},
+        timeout=REQUEST_TIMEOUT,
     )
     # check errors
     resp.raise_for_status()
@@ -253,7 +259,9 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
     """Remove samples from database."""
     # conduct query
     url = f'{current_app.config["BONSAI_API_URL"]}/samples/'
-    resp = requests.delete(url, headers=headers, json=sample_ids, timeout=REQUEST_TIMEOUT)
+    resp = requests.delete(
+        url, headers=headers, json=sample_ids, timeout=REQUEST_TIMEOUT
+    )
 
     resp.raise_for_status()
     return resp.json()

@@ -5,6 +5,20 @@ from io import BytesIO
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
+
 from app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
@@ -22,19 +36,6 @@ from app.bonsai import (
     update_variant_info,
 )
 from app.models import BadSampleQualityAction, QualityControlResult
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    flash,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
 
 from .controllers import filter_variants, get_variant_genes, sort_variants
 

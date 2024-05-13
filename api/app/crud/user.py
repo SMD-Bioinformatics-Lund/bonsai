@@ -10,11 +10,15 @@ from jose import JWTError, jwt
 from ..auth import get_password_hash, verify_password
 from ..config import ALGORITHM, USER_ROLES, settings
 from ..db import Database, db
-from ..models.auth import TokenData
-from ..models.user import (SampleBasketObject, UserInputCreate,
-                           UserInputDatabase, UserOutputDatabase)
-from .errors import EntryNotFound, UpdateDocumentError
 from ..extensions.ldap_extension import ldap_connection
+from ..models.auth import TokenData
+from ..models.user import (
+    SampleBasketObject,
+    UserInputCreate,
+    UserInputDatabase,
+    UserOutputDatabase,
+)
+from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
@@ -96,7 +100,7 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
         user: UserInputDatabase = await get_user(db_obj, username)
     except EntryNotFound:
         return False
-    
+
     if settings.use_ldap_auth:
         is_authenticated = ldap_connection.authenticate(username, password)
     else:
@@ -209,9 +213,17 @@ async def remove_samples_from_user_basket(
         raise EntryNotFound(current_user.username)
 
     if not update_obj.modified_count == 1:
-        sample_ids_in_basket = await db.user_collection.find_one({"username": current_user.username}, {"basket": 1})
-        LOG.error("try removing samples %s from basket. Content: %s", sample_ids, sample_ids_in_basket)
-        raise UpdateDocumentError(f"Error when updating the basket of {current_user.username}")
+        sample_ids_in_basket = await db.user_collection.find_one(
+            {"username": current_user.username}, {"basket": 1}
+        )
+        LOG.error(
+            "try removing samples %s from basket. Content: %s",
+            sample_ids,
+            sample_ids_in_basket,
+        )
+        raise UpdateDocumentError(
+            f"Error when updating the basket of {current_user.username}"
+        )
     # get updated basket
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
     return user.basket

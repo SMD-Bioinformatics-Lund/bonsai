@@ -4,7 +4,6 @@ import logging
 import os
 from pathlib import Path
 
-from app.bonsai import TokenObject, get_sample_by_id
 from flask import (
     Blueprint,
     Response,
@@ -16,6 +15,8 @@ from flask import (
     session,
 )
 from flask_login import current_user, login_required
+
+from app.bonsai import TokenObject, get_sample_by_id
 
 from . import controllers
 from .partial import send_file_partial

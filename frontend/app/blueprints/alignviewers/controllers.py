@@ -6,11 +6,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List
 
-from app.config import BONSAI_API_URL
-from app.models import RWModel
 from flask import session
 from flask_login import current_user
 from pydantic import Field
+
+from app.config import BONSAI_API_URL
+from app.models import RWModel
 
 LOG = logging.getLogger(__name__)
 
@@ -85,6 +86,7 @@ class IgvReferenceGenome(RWModel):
 
 class IgvData(RWModel):
     """Definition of data used by IGV."""
+
     locus: str
     reference: IgvReferenceGenome
     tracks: List[IgvAnnotationTrack | IgvAlignmentTrack | IgvVariantTrack] = []
@@ -124,7 +126,10 @@ def get_variant(sample_obj: Dict[str, Any], variant_id: str) -> Dict[str, Any] |
 
 
 def make_igv_tracks(
-    sample_obj: Dict[str, Any], variant_id: str, start: int | None = None, stop: int | None = None
+    sample_obj: Dict[str, Any],
+    variant_id: str,
+    start: int | None = None,
+    stop: int | None = None,
 ) -> IgvData:
     """Make IGV tracks.
 
@@ -141,9 +146,7 @@ def make_igv_tracks(
     """
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
-    entrypoint_url = os.path.join(
-        BONSAI_API_URL, "resources", "genome", "info"
-    )
+    entrypoint_url = os.path.join(BONSAI_API_URL, "resources", "genome", "info")
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
         fasta_url=f"{entrypoint_url}?file={ref_genome['fasta']}",
@@ -182,9 +185,7 @@ def make_igv_tracks(
         ),
     ]
     # add gene track
-    gene_url = build_api_url(
-        f"/resources/genome/info", file=ref_genome['genes']
-    )
+    gene_url = build_api_url(f"/resources/genome/info", file=ref_genome["genes"])
     tracks.append(
         IgvAnnotationTrack(
             name="Genes",
@@ -231,7 +232,7 @@ def make_igv_tracks(
 
 
 def set_session_tracks(display_obj: Dict[str, str]) -> None:
-    """Save igv tracks as a session object. 
+    """Save igv tracks as a session object.
 
     This way it's easy to verify that a user is requesting
     one of these files from remote_static view endpoint

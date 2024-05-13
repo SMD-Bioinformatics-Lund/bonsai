@@ -9,6 +9,7 @@ ssl_defaults = ssl.get_default_verify_paths()
 
 class Settings(BaseSettings):
     """API configuration."""
+
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
     allowed_origins: List[str] = []
@@ -74,6 +75,7 @@ class Settings(BaseSettings):
     @property
     def mongodb_uri(self) -> str | None:
         return f"mongodb://{self.db_host}:{self.db_port}/{self.database_name}"
+
 
 # to get a string like this run:
 # openssl rand -hex 32
