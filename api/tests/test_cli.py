@@ -31,4 +31,4 @@ def test_export_sample(mocker, sample_database):
                 for antib in TARGETED_ANTIBIOTICS.values()
             ]
         )
-        assert len(df) == n_antibiotics + 2  # + lineage and spp pred
+        assert len(df) == n_antibiotics + 3  # + lineage, qc, and spp pred

@@ -15,6 +15,7 @@ from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
 
 from .models.sample import SampleInDatabase
+from .models.qc import SampleQcClassification
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -247,12 +248,16 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                     }
                 )
     # annotate species prediction res
+    if isinstance(sample.qc_status.status, SampleQcClassification):
+        qc_status = sample.qc_status.status.value
+    else:
+        qc_status = sample.qc_status.status
     result.extend(
         [
             {
                 "sample_id": sample.run_metadata.run.sample_name,
                 "parameter": "MTBC_QC",
-                "result": sample.qc_status.status.capitalize(),
+                "result": qc_status.capitalize(),
                 "variants": "-",
             },
             {
