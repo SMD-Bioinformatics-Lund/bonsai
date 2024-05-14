@@ -1,9 +1,4 @@
 """Declaration of flask admin views"""
-from app.bonsai import TokenObject
-from app.bonsai import create_user as create_new_user
-from app.bonsai import delete_user as delete_user_from_db
-from app.bonsai import get_user, get_users
-from app.bonsai import update_user as update_user_info
 from flask import (
     Blueprint,
     current_app,
@@ -24,6 +19,12 @@ from wtforms import (
     validators,
     widgets,
 )
+
+from app.bonsai import TokenObject
+from app.bonsai import create_user as create_new_user
+from app.bonsai import delete_user as delete_user_from_db
+from app.bonsai import get_user, get_users
+from app.bonsai import update_user as update_user_info
 
 admin_bp = Blueprint(
     "admin",
@@ -71,8 +72,9 @@ PASSWORD_VALIDATORS = [
 ]
 
 
-class MultiCheckboxField(SelectMultipleField): # pylint: disable=too-few-public-methods
+class MultiCheckboxField(SelectMultipleField):  # pylint: disable=too-few-public-methods
     """WTforms MultiCheckboxField."""
+
     widget = widgets.ListWidget(prefix_label=False)
     option_widget = widgets.CheckboxInput()
 
@@ -94,8 +96,10 @@ class UserInfoForm(Form):
         if field.data is None or len(field.data) == 0:
             raise ValidationError("At least one role must be selected")
 
-class UserRegistrationForm(UserInfoForm): # pylint: disable=too-few-public-methods
+
+class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-methods
     """Form for registering a new user."""
+
     password = PasswordField("Password", PASSWORD_VALIDATORS)
 
     def validate_username(form, field):

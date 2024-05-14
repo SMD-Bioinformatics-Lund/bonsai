@@ -4,11 +4,17 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List
 
-from app.bonsai import TokenObject, cluster_samples, get_samples_by_id, get_valid_group_columns
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
+
+from app.bonsai import (
+    TokenObject,
+    cluster_samples,
+    get_samples_by_id,
+    get_valid_group_columns,
+)
 from app.custom_filters import get_json_path
 
 LOG = logging.getLogger(__name__)
@@ -149,7 +155,9 @@ def tree():
             # get column info
             if column_info is None:
                 column_info = get_valid_group_columns()
-            metadata = gather_metadata(sample_summary["records"], column_info).model_dump()
+            metadata = gather_metadata(
+                sample_summary["records"], column_info
+            ).model_dump()
         data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",

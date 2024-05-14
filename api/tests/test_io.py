@@ -16,4 +16,4 @@ def test_sample_to_kmlims(mtuberculosis_sample):
     )
     # test that,
     # the targeted antibiotics were reported
-    assert len(result) == n_exp_antibiotics + 2  # + lineage and spp pred
+    assert len(result) == n_exp_antibiotics + 3  # + lineage, qc, and spp pred

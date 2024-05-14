@@ -15,6 +15,7 @@ from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
 
 from .models.sample import SampleInDatabase
+from .models.qc import SampleQcClassification
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -154,10 +155,12 @@ def _fmt_variant(variant):
             f"g.{variant.start}_{variant.end}{variant.variant_subtype.lower()}"
         )
     else:
-        variant_name = variant.hgvs_nt_change if variant.hgvs_aa_change == "" else variant.hgvs_aa_change
-        variant_desc = (
-            f"{variant.reference_sequence}.{variant_name}"
+        variant_name = (
+            variant.hgvs_nt_change
+            if variant.hgvs_aa_change == ""
+            else variant.hgvs_aa_change
         )
+        variant_desc = f"{variant.reference_sequence}.{variant_name}"
     # annotate variant frequency for minority variants
     if variant.frequency is not None and variant.frequency < 1:
         variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
@@ -176,7 +179,10 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     :param sample: Prediction results
     :type sample: SampleInDatabase
     """
-    has_failed = sample.qc_status.status == "failed" and sample.qc_status.action == "permanent fail"
+    has_failed = (
+        sample.qc_status.status == "failed"
+        and sample.qc_status.action == "permanent fail"
+    )
     result = []
     for pred_res in sample.element_type_result:
         # only include TBprofiler result
@@ -242,20 +248,26 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                     }
                 )
     # annotate species prediction res
-    result.extend([
-        {
-            "sample_id": sample.run_metadata.run.sample_name,
-            "parameter": "MTBC_QC",
-            "result": sample.qc_status.status.capitalize(),
-            "variants": "-",
-        },
-        {
-            "sample_id": sample.run_metadata.run.sample_name,
-            "parameter": "MTBC_ART",
-            "result": sample.species_prediction[0].scientific_name,
-            "variants": "-",
-        },
-    ])
+    if isinstance(sample.qc_status.status, SampleQcClassification):
+        qc_status = sample.qc_status.status.value
+    else:
+        qc_status = sample.qc_status.status
+    result.extend(
+        [
+            {
+                "sample_id": sample.run_metadata.run.sample_name,
+                "parameter": "MTBC_QC",
+                "result": qc_status.capitalize(),
+                "variants": "-",
+            },
+            {
+                "sample_id": sample.run_metadata.run.sample_name,
+                "parameter": "MTBC_ART",
+                "result": sample.species_prediction[0].scientific_name,
+                "variants": "-",
+            },
+        ]
+    )
     # annotate lineage
     for type_res in sample.typing_result:
         if (

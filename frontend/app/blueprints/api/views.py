@@ -1,18 +1,23 @@
 """Declaration of flask api entrypoints"""
 import json
+import logging
 
 import requests
+from flask import Blueprint, Response, flash, jsonify, request
+from flask_login import current_user, login_required
+
 from app.bonsai import (
+    HTTPError,
     TokenObject,
     add_samples_to_basket,
     get_samples_by_id,
     remove_samples_from_basket,
 )
 from app.models import SampleBasketObject
-from flask import Blueprint, flash, jsonify, request
-from flask_login import current_user, login_required
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
+
+LOG = logging.getLogger(__name__)
 
 
 @api_bp.route("/api/basket/add", methods=["POST"])
@@ -78,6 +83,17 @@ def remove_sample_from_basket():
     else:
         to_remove = [sample_id]
     # call bonsai api to remove samples from basket
-    remove_samples_from_basket(token, sample_ids=to_remove)
+    try:
+        remove_samples_from_basket(token, sample_ids=to_remove)
+    except HTTPError as error:
+        LOG.error(
+            "Error when removing samples from basket for user: %s",
+            current_user.username,
+        )
+        return Response(
+            error.response.text,
+            status=error.response.status_code,
+            mimetype="application/json",
+        )
 
-    return f"removed {len(to_remove)}", 200
+    return f"removed {len(to_remove)} samples", 200

@@ -7,6 +7,8 @@
 ### Fixed
 - Fixed bug in generating mongodb URI
 - Fixed crash if vcf type was not recognized
+- Fixed bug that prevented samples to be reomved from the basket.
+- Improved error handling if a sample could not be removed from the basket.
 
 ## [v0.5.0]
 

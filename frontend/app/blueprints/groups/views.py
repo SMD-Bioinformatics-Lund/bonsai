@@ -3,6 +3,19 @@ import json
 import logging
 from urllib.parse import urlparse
 
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from flask_login import current_user, login_required
+from requests.exceptions import HTTPError
+
 from app.bonsai import (
     TokenObject,
     create_group,
@@ -16,18 +29,6 @@ from app.bonsai import (
     update_sample_qc_classification,
 )
 from app.models import BadSampleQualityAction, PhenotypeType, QualityControlResult
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
 
 LOG = logging.getLogger(__name__)
 
