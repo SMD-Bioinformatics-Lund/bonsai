@@ -3,6 +3,7 @@
 ### Added
 
 ### Changed
+- Updated IGVjs to version 2.15.11
 
 ### Fixed
 - Fixed bug in generating mongodb URI
