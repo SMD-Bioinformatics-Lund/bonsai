@@ -1,8 +1,18 @@
 """Generic database objects of which several other models are based on."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from bson import ObjectId
-from pydantic import BaseConfig, BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
+
+
+class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
+    """Base model for read/ write operations"""
+
+    model_config = ConfigDict(
+        allow_population_by_alias = True,
+        populate_by_name = True,
+        use_enum_values = True,
+    )
 
 
 class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
@@ -17,22 +27,11 @@ class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-method
     id: str | None = Field(None)
 
 
-class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
-    """Base model for read/ write operations"""
-
-    class Config(BaseConfig):  # pylint: disable=too-few-public-methods
-        """Configuration of pydantic model."""
-
-        allow_population_by_alias = True
-        populate_by_name = True
-        use_enum_values = True
-
-
 class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
-    created_at: datetime = Field(datetime.utcnow())
-    modified_at: datetime = Field(datetime.utcnow())
+    created_at: datetime = Field(datetime.now(timezone.utc))
+    modified_at: datetime = Field(datetime.now(timezone.utc))
 
 
 class PyObjectId(ObjectId):
