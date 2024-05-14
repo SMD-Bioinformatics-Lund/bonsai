@@ -620,6 +620,7 @@
     {% if result.variants | n_results_with_resistance == 0 and not extended %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
     {% else %}
+        <div class="table-responsive">
             <table class="table table-sm table-hover table-striped">
                 <thead>
                     <tr>
@@ -641,6 +642,93 @@
                         {% endif %}
                     </tr>
                 </thead>
+                <tbody class="table-group-divider">
+                    {% for variant in result.variants %}
+                        {% if variant.phenotypes | length > 0 or extended %}
+                        {% if variant.verified == "passed" %}
+                            {% set row_class = "table-success" %}
+                        {% elif variant.verified == "failed" %}
+                            {% set row_class = "table-danger" %}
+                        {% endif %}
+                        <tr class="{{ row_class }}">
+                            {% if extended %}
+                                <td>
+                                    <input type="checkbox" class="form-check-input col-auto" name="tbprofiler-{{ variant.id }}" id="tbprofiler-{{ variant.id }}" onclick="selectVariant(this)">
+                                </td>
+                            {% endif %}
+                            <td>
+                                {# TAGS #}
+                                {% if variant.verified == "failed" and variant.reason %}
+                                    <span class="ms-2 badge text-bg-warning"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            data-bs-title="{{ variant.reason.description }}" >
+                                        {{ variant.reason.label | upper }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ variant.hgvs_nt_change }}
+                            </td>
+                            {% if variant.hgvs_aa_change %}
+                                <td>{{ variant.hgvs_aa_change }}</td>
+                            {% else %}
+                                <td>-</td>
+                            {% endif %}
+                            <td>{{ accession_link(variant.accession, name=variant.reference_sequence) }}</td>
+                            {% if extended %}
+                                <td>{{ variant.variant_effect | replace("_", " ") | replace('variant', '') | capitalize }}</td>
+                            {% endif %}
+                            <td>{{ variant.depth | int }}</td>
+                            <td>
+                                {% if variant.frequency == 1 %}
+                                    100
+                                {% else %}
+                                    {{ (variant.frequency * 100) | round(1) }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <ul class="no-bullets">
+                                {% for phenotype in variant.phenotypes %}
+                                    <li>
+                                        {{ fmt_resistance_info(phenotype) }}
+                                        <span class="badge text-bg-secondary"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            data-bs-title="{{ phenotype.source }}">
+                                            {{ phenotype | fmt_db_annotation }}
+                                        </span>
+                                        {% if phenotype.note and phenotype.note != "" %}
+                                            <span class="badge text-bg-dark"
+                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                data-bs-title="WHO group {{phenotype | lookup_who_group }}; {{ phenotype.note }}">
+                                                {{ phenotype | lookup_who_group }}
+                                            </span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </td>
+                            {% if extended %}
+                                <td>
+                                    {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
+                                    <span class="d-inline-block" tabindex="0"
+                                    {% if not display_igv %}
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-title="Either no reference genome or BAM assigned to the sample."
+                                    {% endif %}>
+                                        <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                        type="button" target="_blank" 
+                                        class="btn btn-sm btn-secondary {% if not display_igv %}disabled{% endif %}">
+                                        IGV
+                                        </a>
+                                    </span>
+                                </td>
+                            {% endif %}
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% endif %}
 </div>
 {% endmacro %}
