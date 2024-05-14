@@ -1,9 +1,11 @@
 ## [Unreleased]
 
 ### Added
+- Added source of tbprofier db entry as badge to result card.
 
 ### Changed
 - Updated IGVjs to version 2.15.11
+- Updated the formatting of the results table in the tbprofiler card.
 
 ### Fixed
 - Fixed bug in generating mongodb URI
