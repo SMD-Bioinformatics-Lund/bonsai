@@ -569,16 +569,22 @@
                     {% set ref_depth=(variant.depth * (1 - variant.frequency)) %}
                     <tr>
                         <td>{{ variant.ref_nt | upper }}>{{variant.alt_nt | upper }}</td>
-                        <td>{{ variant.variant_type[:3] }}</td>
-                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
-                        {% if variant.variant_type == 'substitution' %}
+                        <td>{{ variant.variant_subtype }}</td>
+                        <td>
+                        {% if variant.accession is none %}
+                            {{ variant.reference_sequence }}
+                        {% else %}
+                            {{ accession_link(variant.close_seq_name, name=variant.reference_sequence) }}
+                        {% endif %}
+                        </td>
+                        {% if variant.variant_subtype == 'SUB' %}
                             <td>{{ variant.ref_aa | upper }}>{{variant.alt_aa | upper }}</td>
                         {% else %}
                             <td>-</td>
                         {% endif %}
                         <td>{{ variant.method }}</td>
                         <td>{{ alt_depth | int | fmt_number  }} / {{ ref_depth | int | fmt_number }}</td>
-                        <td>{{ variant.confidence }}</td>
+                        <td>{{ variant.confidence | round | int }}</td>
                         <td>{{ variant.phenotypes[0].name | capitalize }}</td>
                     </tr>
                 {% endfor %}
