@@ -5,6 +5,7 @@
 
 ### Changed
 - Updated IGVjs to version 2.15.11
+- Updated PRP to version 0.8.0
 - Updated the formatting of the results table in the tbprofiler card.
 
 ### Fixed
