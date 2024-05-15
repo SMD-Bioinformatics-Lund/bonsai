@@ -1,5 +1,6 @@
 """Custom jinja3 template tests."""
 import logging
+import re
 import math
 from collections import defaultdict
 from itertools import chain
@@ -371,7 +372,7 @@ def n_results_with_resistance(results):
     return n_results
 
 
-def get_who_group_from_tbprofiler_comment(comment):
+def get_who_group_from_tbprofiler_comment(comment: Dict[str, str]) -> str | None:
     """Get WHO group from a comment from TbProfiler."""
     # annotate WHO classification
     who_classes = {
@@ -381,10 +382,28 @@ def get_who_group_from_tbprofiler_comment(comment):
         "not assoc w r - interim": 4,
         "not assoc w r": 5,
     }
-    who_group = who_classes.get(comment.lower())
+    who_group = who_classes.get(comment['note'].lower())
     if who_group is not None:
-        return f"WHO-{who_group}"
+        return f"{who_group}"
     return None
+
+
+def format_tbprofiler_db_annotation(comment: Dict[str, str]) -> str:
+    """Shorten TbProfiler source annotation."""
+    db_names = {
+        'tbdb': 'TBDB',
+        'fohm': 'Fohm',
+    }
+    annot_source = comment['source'].lower()
+    who_match = re.search(r'^who.*v(\d+)', annot_source)
+    if annot_source in db_names:
+        fmt_name = db_names[annot_source]
+    elif who_match:
+        version = who_match.group(1)
+        fmt_name = f"WHOv{version}"
+    else:
+        fmt_name = annot_source
+    return fmt_name
 
 
 TESTS = {
@@ -411,4 +430,5 @@ FILTERS = {
     "count_results": count_results,
     "n_results_with_resistance": n_results_with_resistance,
     "lookup_who_group": get_who_group_from_tbprofiler_comment,
+    "fmt_db_annotation": format_tbprofiler_db_annotation,
 }

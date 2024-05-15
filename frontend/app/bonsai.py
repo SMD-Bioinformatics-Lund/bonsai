@@ -356,7 +356,7 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
 
 @api_authentication
 def update_variant_info(
-    headers: CaseInsensitiveDict, sample_id, *variant_ids, **status
+    headers: CaseInsensitiveDict, sample_id, variant_ids, status
 ):
     """Update annotation of resitance variants for a sample"""
     data = {

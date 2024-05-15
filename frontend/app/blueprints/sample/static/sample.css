@@ -80,3 +80,11 @@
   padding: 1rem !important;
   height: fit-content !important; 
 }
+
+.cell-m {
+  width: 2rem !important;
+}
+
+.cell-sm {
+  width: 1rem !important;
+}
