@@ -697,11 +697,13 @@
                                 {% for phenotype in variant.phenotypes %}
                                     <li>
                                         {{ fmt_resistance_info(phenotype) }}
-                                        <span class="badge text-bg-secondary"
-                                            data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ phenotype.source }}">
-                                            {{ phenotype | fmt_db_annotation }}
-                                        </span>
+                                        {% if phenotype.source is not none %}
+                                            <span class="badge text-bg-secondary"
+                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                data-bs-title="{{ phenotype.source }}">
+                                                {{ phenotype | fmt_db_annotation }}
+                                            </span>
+                                        {% endif %}
                                         {% if phenotype.note and phenotype.note != "" %}
                                             <span class="badge text-bg-dark"
                                                 data-bs-toggle="tooltip" data-bs-placement="top"
