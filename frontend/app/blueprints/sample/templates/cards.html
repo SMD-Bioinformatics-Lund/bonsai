@@ -705,7 +705,7 @@
                                         {% if phenotype.note and phenotype.note != "" %}
                                             <span class="badge text-bg-dark"
                                                 data-bs-toggle="tooltip" data-bs-placement="top"
-                                                data-bs-title="WHO group {{phenotype | lookup_who_group }}; {{ phenotype.note }}">
+                                                data-bs-title="Class {{phenotype | lookup_who_group }} - {{ phenotype.note }}">
                                                 {{ phenotype | lookup_who_group }}
                                             </span>
                                         {% endif %}
