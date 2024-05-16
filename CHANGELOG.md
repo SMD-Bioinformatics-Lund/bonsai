@@ -2,10 +2,11 @@
 
 ### Added
 - Added source of tbprofier db entry as badge to result card.
+- Added species and phylogroup prediction from Mykrobe.
 
 ### Changed
 - Updated IGVjs to version 2.15.11
-- Updated PRP to version 0.8.0
+- Updated PRP to version 0.8.1
 - Updated the formatting of the results table in the tbprofiler card.
 
 ### Fixed
