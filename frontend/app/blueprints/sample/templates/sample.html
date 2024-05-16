@@ -39,9 +39,11 @@
         {{ table_of_content() }}
         <div class="container-fluid">
             <div id="spp-heading" class="row justify-content-md-center">
-                <div class="col-sm-12 col-md-auto">
-                    {{ species_prediction_card(sample.species_prediction, extended=extended) }}
-                </div>
+                {% for spp_pred in sample.species_prediction %}
+                    <div class="col-sm-12 col-md-auto">
+                    {{ species_prediction_card(spp_pred, extended=extended) }}
+                    </div>
+                {% endfor %}
             </div>
             <h5>Epidemiological Typing</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
