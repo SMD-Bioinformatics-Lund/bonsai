@@ -260,10 +260,15 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
     sample_run = sample.run_metadata.run
     sample_id = f"{sample_run.lims_id}_{sample_run.sequencing_run}".lower()
     # validate data format
+    try:
+        tags = compute_phenotype_tags(sample) 
+    except ValueError as error:
+        LOG.warning("Error when creating tags... skipping. %s", error)
+        tags = []
     sample_db_fmt = SampleInCreate(
         sample_id=sample_id,
         in_collections=[],
-        tags=compute_phenotype_tags(sample),
+        tags=tags,
         **sample.model_dump(),
     )
     # store data in database
