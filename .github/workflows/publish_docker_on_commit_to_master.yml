@@ -142,7 +142,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.0
         with:
-          images: clinicalgenomicslund/bonsai-allele-clustering
+          images: clinicalgenomicslund/bonsai-minhash-clustering
           tags: |
             type=raw,value=${{ env.TAG_LATEST }}
 
