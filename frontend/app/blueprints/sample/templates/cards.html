@@ -833,42 +833,45 @@
 {% endmacro %}
 
 
-{% macro tb_lineage_row(pred, row_name="", lin="", has_spoligotype=False) %}
-<th scope="row">{{ row_name }}</th>
-    <td>
-        <u data-bs-toggle="tooltip" data-bs-placement="top" 
-           data-bs-title="{{ pred.rd | replace(';', ', ') }}">
-           {{ lin | replace('lineage', '') }}
-        </u>
-    </td>
-    {% if has_spoligotype %}
-        <td>{{ pred.spoligotype }}</td>
-    {% endif %}
-</tr>
-{% endmacro %}
-
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
     </div>
     <div class="card-body">
-        {% set has_spoligotype=pred.result.lineages[0].spoligotype != None %}
-        {% set has_sublin=pred.result.sublin != None %}
         <table class="table table-sm">
             <thead>
                 <th></th>
                 <th>ID</th>
-                {% if has_spoligotype %}
-                    <th>Spoligotype</th>
+                {% if pred.result.lineages is defined %}
+                    <th>Family</th>
                 {% endif %}
             </thead>
             <tbody>
-                {{ tb_lineage_row(pred.result.lineages[0], "Lineage", pred.result.main_lin, has_spoligotype) }}
-                {% if has_sublin %}
-                    {{ tb_lineage_row(
-                        pred.result.lineages[-1], "Sub-lineage", pred.result.sublin, has_spoligotype) }}
-                {% endif %}
+                <tr>
+                    <th scope="row">Lineage</th>
+                    <td>
+                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+                        {{ pred.result.main_lineage | replace('lineage', '') }}
+                        </u>
+                    </td>
+                    {% if pred.result.lineages is defined and pred.result.lineages is not none %}
+                        <td>{{ pred.result.lineages[0].family }}</td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    <th scope="row">Sublineage</th>
+                    <td>
+                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+                        {{ pred.result.sublineage | replace('lineage', '') }}
+                        </u>
+                    </td>
+                    {% if pred.result.lineages is defined %}
+                        <td>{{ pred.result.lineages[1].family }}</td>
+                    {% endif %}
+                </tr>
             </tbody>
         </table>
     </div>

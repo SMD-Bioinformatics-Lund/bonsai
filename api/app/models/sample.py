@@ -17,9 +17,10 @@ from prp.models.typing import (
     TypingMethod,
     TypingResultCgMlst,
     TypingResultGeneAllele,
-    TypingResultLineage,
     TypingResultMlst,
     TypingSoftware,
+    TbProfilerLineage,
+    ResultLineageBase,
 )
 from pydantic import BaseModel, Field
 
@@ -112,8 +113,9 @@ class MethodIndex(BaseModel):
         ElementTypeResult,
         TypingResultMlst,
         TypingResultCgMlst,
-        TypingResultLineage,
         TypingResultGeneAllele,
+        TbProfilerLineage,
+        ResultLineageBase,
     ]
 
 
