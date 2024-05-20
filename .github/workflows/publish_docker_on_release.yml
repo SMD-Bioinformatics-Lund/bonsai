@@ -1,0 +1,159 @@
+name: Publish to dockerhub when a new version is released
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Bonsai
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: 'docker.io'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export tags to env
+        run: |
+          FRONTEND_VERSION=$(head -2 frontend/app/__version__.py | tail -1 | cut -d'"' -f2);
+          echo "TOOL_VERSION=${FRONTEND_VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=latest" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.0
+        with:
+          images: clinicalgenomicslund/bonsai-app
+          tags: |
+            type=raw,value=${{ env.TAG_LATEST }}
+            type=raw,value=${{ env.TOOL_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},
+          labels: ${{ steps.meta.outputs.labels }}
+  
+  publish-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Bonsai
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: 'docker.io'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export tags to env
+        run: |
+          API_VERSION=$(head -3 api/app/__version__.py | tail -1 | cut -d'"' -f2);
+          echo "TOOL_VERSION=${API_VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=latest" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.0
+        with:
+          images: clinicalgenomicslund/bonsai-api
+          tags: |
+            type=raw,value=${{ env.TAG_LATEST }}
+            type=raw,value=${{ env.TOOL_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: api
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-allele-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Bonsai
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: 'docker.io'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export tags to env
+        run: |
+          ALLELE_VERSION=$(head -3 allele_cluster_service/allele_cluster_service/__init__.py | tail -1 | cut -d'"' -f2);
+          echo "TOOL_VERSION=${ALLELE_VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=latest" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.0
+        with:
+          images: clinicalgenomicslund/bonsai-allele-clustering
+          tags: |
+            type=raw,value=${{ env.TAG_LATEST }}
+            type=raw,value=${{ env.TOOL_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: allele_cluster_service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-minhash-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Bonsai
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: 'docker.io'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export tags to env
+        run: |
+          MINHASH_VERSION=$(head -3 minhash_service/minhash_service/__init__.py | tail -1 | cut -d'"' -f2);
+          echo "TOOL_VERSION=${MINHASH_VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=latest" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.0
+        with:
+          images: clinicalgenomicslund/bonsai-minhash-clustering
+          tags: |
+            type=raw,value=${{ env.TAG_LATEST }}
+            type=raw,value=${{ env.TOOL_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: minhash_service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},
+          labels: ${{ steps.meta.outputs.labels }}
