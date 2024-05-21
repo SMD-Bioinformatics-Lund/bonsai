@@ -132,11 +132,16 @@ ALL_TAG_FUNCS = [
 
 
 def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
-    """Compute tags based on phenotype prediction."""
+    """Compute tags based on bracken phenotype prediction."""
     tags = []
     # iterate over tag functions to build up list of tags
     for tag_func in ALL_TAG_FUNCS:
-        major_spp = sample.species_prediction[0].scientific_name
+        # bracken should always be included regardless of specie.
+        try:
+            spp_res = next((pred for pred in sample.species_prediction if pred.software == "bracken"))
+        except StopIteration as error:
+            raise ValueError(f"No Bracken spp result for sample {sample.sample_id}") from error
+        major_spp = spp_res.result[0].scientific_name
         LOG.debug("Major spp %s in %s", major_spp, str(tag_func["species"]))
         if major_spp in tag_func["species"]:
             tag_func["func"](tags, sample)

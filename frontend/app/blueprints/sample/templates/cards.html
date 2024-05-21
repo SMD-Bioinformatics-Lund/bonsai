@@ -269,42 +269,77 @@
 {% endmacro %}
 
 
-{% macro species_prediction_card(predictions, extended=False) %}
-<div class="card">
-    <div class="card-header">Species prediction</div>
-    <div class="card-body">
-        <table class="table table-sm">
-            <thead>
-                <th>Specie</th>
-                <th>Fraction of reads</th>
-                {% if extended %}
-                    <th>Assigned reads</th>
-                    <th>Added reads</th>
-                {% else %}
-                    <th>N reads</th>
-                {% endif %}
-            </thead>
-            <tbody>
-                {% for pred in predictions %}
-                    {% if extended or pred.fraction_total_reads > 0.001 %}
-                        <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
-                            <td> <a class="br-card-link fst-italic" 
-                                href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
-                                target="_blank">{{pred.scientific_name}}</a></td>
-                            <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
-                            {% if extended %}
-                                <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
-                                <td>{{ pred.added_reads | fmt_to_human_readable }}</td>
-                            {% else %}
-                                <td>
-                                    {{ (pred.kraken_assigned_reads + pred.added_reads) | fmt_to_human_readable }}
-                                </td>
-                            {% endif %}
-                        </tr>
+{% macro bracken_prediction(result, extended=False) %}
+<table class="table table-sm">
+    <thead>
+        <th>Specie</th>
+        <th>Fraction of reads</th>
+        {% if extended %}
+            <th>Assigned reads</th>
+            <th>Added reads</th>
+        {% else %}
+            <th>N reads</th>
+        {% endif %}
+    </thead>
+    <tbody>
+        {% for pred in result %}
+            {% if extended or pred.fraction_total_reads > 0.001 %}
+                <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
+                    <td> <a class="br-card-link fst-italic" 
+                        href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
+                        target="_blank">{{pred.scientific_name}}</a></td>
+                    <td>{{ (pred.fraction_total_reads * 100) | fmt_number(2) }}%</td>
+                    {% if extended %}
+                        <td>{{ pred.kraken_assigned_reads | fmt_to_human_readable }}</td>
+                        <td>{{ pred.added_reads | fmt_to_human_readable }}</td>
+                    {% else %}
+                        <td>
+                            {{ (pred.kraken_assigned_reads + pred.added_reads) | fmt_to_human_readable }}
+                        </td>
                     {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro mykrobe_prediction(result, extended=False) %}
+<table class="table table-sm">
+    <thead>
+        <th></th>
+        <th>Name</th>
+        <th class="text-sm-end">Kmer cov</th>
+    </thead>
+    <tbody>
+        <tr>
+            <th>Species</th>
+            <td><i>{{ result[0].scientific_name }}</i></td>
+            <td class="text-sm-end">{{ result[0].species_coverage }}%</td>
+        </tr>
+        <tr>
+            <th>Phylogroup</th>
+            <td><i>{{ result[0].phylogenetic_group }}</i></td>
+            <td class="text-sm-end">{{ result[0].phylogenetic_group_coverage }}%</td>
+        </tr>
+    </tbody>
+</table>
+{% endmacro %}
+
+
+{% macro species_prediction_card(prediction, extended=False) %}
+<div class="card">
+    <div class="card-header">
+        Species prediction
+        [<i>{{ prediction.software | capitalize }}</i>]
+    </div>
+    <div class="card-body">
+        {% if prediction.software == "bracken"%}
+            {{ bracken_prediction(prediction.result, extended) }}
+        {% elif prediction.software == "mykrobe"%}
+            {{ mykrobe_prediction(prediction.result, extended) }}
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -798,42 +833,45 @@
 {% endmacro %}
 
 
-{% macro tb_lineage_row(pred, row_name="", lin="", has_spoligotype=False) %}
-<th scope="row">{{ row_name }}</th>
-    <td>
-        <u data-bs-toggle="tooltip" data-bs-placement="top" 
-           data-bs-title="{{ pred.rd | replace(';', ', ') }}">
-           {{ lin | replace('lineage', '') }}
-        </u>
-    </td>
-    {% if has_spoligotype %}
-        <td>{{ pred.spoligotype }}</td>
-    {% endif %}
-</tr>
-{% endmacro %}
-
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
     </div>
     <div class="card-body">
-        {% set has_spoligotype=pred.result.lineages[0].spoligotype != None %}
-        {% set has_sublin=pred.result.sublin != None %}
         <table class="table table-sm">
             <thead>
                 <th></th>
                 <th>ID</th>
-                {% if has_spoligotype %}
-                    <th>Spoligotype</th>
+                {% if pred.result.lineages is defined %}
+                    <th>Family</th>
                 {% endif %}
             </thead>
             <tbody>
-                {{ tb_lineage_row(pred.result.lineages[0], "Lineage", pred.result.main_lin, has_spoligotype) }}
-                {% if has_sublin %}
-                    {{ tb_lineage_row(
-                        pred.result.lineages[-1], "Sub-lineage", pred.result.sublin, has_spoligotype) }}
-                {% endif %}
+                <tr>
+                    <th scope="row">Lineage</th>
+                    <td>
+                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+                        {{ pred.result.main_lineage | replace('lineage', '') }}
+                        </u>
+                    </td>
+                    {% if pred.result.lineages is defined and pred.result.lineages is not none %}
+                        <td>{{ pred.result.lineages[0].family }}</td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    <th scope="row">Sublineage</th>
+                    <td>
+                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
+                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
+                        {{ pred.result.sublineage | replace('lineage', '') }}
+                        </u>
+                    </td>
+                    {% if pred.result.lineages is defined %}
+                        <td>{{ pred.result.lineages[1].family }}</td>
+                    {% endif %}
+                </tr>
             </tbody>
         </table>
     </div>

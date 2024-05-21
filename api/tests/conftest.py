@@ -1,5 +1,6 @@
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 from app.crud.sample import create_sample
@@ -26,7 +27,10 @@ def mongo_database():
 def mtuberculosis_sample(mtuberculosis_sample_path):
     """Sample db object."""
     with open(mtuberculosis_sample_path) as inpt:
-        sample_obj = SampleInDatabase(**json.load(inpt))
+        sample_obj = SampleInDatabase(
+            sample_id=Path(mtuberculosis_sample_path).name.replace(".json", ""), 
+            **json.load(inpt)
+        )
     return sample_obj
 
 

@@ -1,4 +1,5 @@
 """Functions for performing CURD operations on sample collection."""
+
 import logging
 from datetime import datetime
 from itertools import groupby
@@ -186,6 +187,29 @@ async def get_samples_summary(
                 }
             }
         )
+    # species prediction projection
+    # get the first entry of the bracken result
+    spp_cmd = {
+        "$arrayElemAt": [
+            {
+                "$arrayElemAt": [
+                    {
+                        "$map": {
+                            "input": {
+                                "$filter": {
+                                    "input": "$species_prediction",
+                                    "cond": {"$eq": ["$$this.software", "bracken"]},
+                                }
+                            },
+                            "in": "$$this.result",
+                        },
+                    },
+                    0,
+                ]
+            },
+            0,
+        ]
+    }
     base_projection = {
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
@@ -194,7 +218,7 @@ async def get_samples_summary(
         "lims_id": "$run_metadata.run.lims_id",
         "sequencing_run": "$run_metadata.run.sequencing_run",
         "tags": 1,
-        "species_prediction": {"$arrayElemAt": ["$species_prediction", 0]},
+        "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$run_metadata.run.analysis_profile",
         "run_metadata": "$run_metadata.run",
@@ -260,10 +284,15 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
     sample_run = sample.run_metadata.run
     sample_id = f"{sample_run.lims_id}_{sample_run.sequencing_run}".lower()
     # validate data format
+    try:
+        tags = compute_phenotype_tags(sample)
+    except ValueError as error:
+        LOG.warning("Error when creating tags... skipping. %s", error)
+        tags = []
     sample_db_fmt = SampleInCreate(
         sample_id=sample_id,
         in_collections=[],
-        tags=compute_phenotype_tags(sample),
+        tags=tags,
         **sample.model_dump(),
     )
     # store data in database

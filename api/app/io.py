@@ -190,10 +190,12 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             continue
 
         # combine tbprofiler variants, called SNV and called SV
+        sv_variants = sample.sv_variants if sample.sv_variants is not None else []
+        snv_variants = sample.snv_variants if sample.snv_variants is not None else []
         filtered_variants = [
             var
             for var in itertools.chain(
-                pred_res.result.variants, sample.sv_variants, sample.snv_variants
+                pred_res.result.variants, sv_variants, snv_variants
             )
             if var.verified == "passed"
         ]
@@ -252,6 +254,11 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         qc_status = sample.qc_status.status.value
     else:
         qc_status = sample.qc_status.status
+    # get mykrobe spp results
+    try:
+        spp_res = next((midx.result for midx in sample.species_prediction if midx.software == "mykrobe"))
+    except StopIteration:
+        spp_res = None
     result.extend(
         [
             {
@@ -263,7 +270,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             {
                 "sample_id": sample.run_metadata.run.sample_name,
                 "parameter": "MTBC_ART",
-                "result": sample.species_prediction[0].scientific_name,
+                "result": spp_res[0].scientific_name if spp_res is not None else "-",
                 "variants": "-",
             },
         ]
@@ -275,12 +282,11 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             and type_res.software == PredictionSoftware.TBPROFILER
         ):
             # get lineage with longest lineage string
-            lin = max(type_res.result.lineages, key=lambda x: len(x.lin))
             result.append(
                 {
                     "sample_id": sample.run_metadata.run.sample_name,
                     "parameter": "MTBC_LINEAGE",
-                    "result": lin.lin,
+                    "result": type_res.result.sublineage,
                     "variants": "-",
                 }
             )
