@@ -282,12 +282,11 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             and type_res.software == PredictionSoftware.TBPROFILER
         ):
             # get lineage with longest lineage string
-            lin = max(type_res.result.lineages, key=lambda x: len(x.lin))
             result.append(
                 {
                     "sample_id": sample.run_metadata.run.sample_name,
                     "parameter": "MTBC_LINEAGE",
-                    "result": lin.lin,
+                    "result": type_res.result.sublineage,
                     "variants": "-",
                 }
             )
