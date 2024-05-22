@@ -6,11 +6,11 @@
 
 ### Changed
 
+- Improved installation instructions.
 - Updated requests to version 2.32.0
 - Added startup commands to minhash and allele clustering services Dockerfiles.
 - Use pydantic-settings for config management in frontend.
 - Updated the samples tables to make sample name, sample id, and major spp searchable.
-
 
 ### Fixed
 
