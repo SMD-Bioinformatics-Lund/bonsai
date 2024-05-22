@@ -27,54 +27,54 @@ Use docker-compose to get started creating the Bonsai containers and configure t
 .. code-block:: yaml
 
    services: 
-   mongodb:
-      image: mongo:latest
-      networks:
-         - bonsai-net
+      mongodb:
+         image: mongo:latest
+         networks:
+            - bonsai-net
 
-   redis:
-      image: redis:7.0.10
-      networks:
-         - bonsai-net
+      redis:
+         image: redis:7.0.10
+         networks:
+            - bonsai-net
 
-   frontend:
-      image: clinicalgenomicslund/bonsai-app:0.6.0 
-      depends_on:
-         - mongodb
-         - api
-      ports: 
-         - "8000:8000"
-      networks:
-         - bonsai-net
+      frontend:
+         image: clinicalgenomicslund/bonsai-app:0.6.0 
+         depends_on:
+            - mongodb
+            - api
+         ports: 
+            - "8000:8000"
+         networks:
+            - bonsai-net
 
-   api:
-      image: clinicalgenomicslund/bonsai-api:0.6.0 
-      depends_on:
-         - mongodb
-         - minhash_service
-         - allele_cluster_service
-      ports: 
-         - "8001:8000"
-      networks:
-         - bonsai-net
+      api:
+         image: clinicalgenomicslund/bonsai-api:0.6.0 
+         depends_on:
+            - mongodb
+            - minhash_service
+            - allele_cluster_service
+         ports: 
+            - "8001:8000"
+         networks:
+            - bonsai-net
 
-   minhash_service:
-      image: clinicalgenomicslund/bonsai-minhash-clustering:0.1.2 
-      depends_on:
-         - redis
-      volumes:
-         - "./volumes/api/genome_signatures:/data/signature_db"
-      networks:
-         - bonsai-net
-      command: "minhash_service"
+      minhash_service:
+         image: clinicalgenomicslund/bonsai-minhash-clustering:0.1.2 
+         depends_on:
+            - redis
+         volumes:
+            - "./volumes/api/genome_signatures:/data/signature_db"
+         networks:
+            - bonsai-net
+         command: "minhash_service"
 
-   allele_cluster_service:
-      image: clinicalgenomicslund/bonsai-allele-clustering:0.1.0
-      depends_on:
-         - redis
-      networks:
-         - bonsai-net
-      command: "cluster_service"
+      allele_cluster_service:
+         image: clinicalgenomicslund/bonsai-allele-clustering:0.1.0
+         depends_on:
+            - redis
+         networks:
+            - bonsai-net
+         command: "cluster_service"
 
    networks:
    bonsai-net:
