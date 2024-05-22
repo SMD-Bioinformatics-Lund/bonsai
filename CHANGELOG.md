@@ -4,20 +4,25 @@
 
 ### Changed
 
+- Added startup commands to minhash and allele clustering services Dockerfiles.
+
 ### Fixed
 
 ## [v0.6.0]
 
 ### Added
+
 - Added source of tbprofier db entry as badge to result card.
 - Added species and phylogroup prediction from Mykrobe.
 
 ### Changed
+
 - Updated IGVjs to version 2.15.11
 - Updated PRP to version 0.8.3
 - Updated the formatting of the results table in the tbprofiler card.
 
 ### Fixed
+
 - Fixed bug in generating mongodb URI
 - Fixed crash if vcf type was not recognized
 - Fixed bug that prevented samples to be reomved from the basket.

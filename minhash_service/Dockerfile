@@ -17,3 +17,5 @@ RUN pip install --no-cache-dir --editable .
 
 # run app as non-root user
 USER worker
+
+CMD ["minhash_service"]
