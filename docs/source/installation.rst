@@ -75,8 +75,8 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - bonsai-net
 
    networks:
-   bonsai-net:
-      driver: bridge
+      bonsai-net:
+         driver: bridge
 
 Start the services with ``docker-compose up -d`` 
 
