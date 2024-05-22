@@ -5,28 +5,22 @@ Installation
 
 Bonsai consist of multiple services such as a frontend, an API, and tools for various clustering methods that needs to be configured during installation. It’s therefore recommended to install Bonsai and its services using the pre-built docker containers stored on Docker Hub. This requires that you have installed `docker <http://www.docker.com>`_ and preferably `docker-compose`. The prebuilt images currently support the x86-64 architecture.
 
-Please note that your ``docker-compose.yml`` file might be different from the minimal example in the documentaiton depending on your network environment. In addition are most configuration options definable using environmental variables but in some instances you might need to edit `frontend config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/frontend/app/config.py>` and `api config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/api/app/config.py>` files depending on your network environment.
+Installing Bonsai using docker-compose and setup involves the following steps.
 
-Version Tags
-------------
+#. :ref:`Create a docker-compose file<Setup Bonsai with docker-compose>`.
+#. :ref:`Setup IGV (optional)<Setup IGV integration>`.
+#. :doc:`Configure LDAP based authentication (optional)</dev/login_systems>`.
+#. Start the Bonsai with ``docker-compose up -d``
+#. :ref:`Create indexes for the database<Create database indexes>`.
+#. :ref:`Create users<Create users>`.
+#. :ref:`Upload samples<Upload samples to Bonsai>`.
 
-This project provides various versions on Docker Hub that are available via tags. Please read the description carefully and exercise caution when using unstable or development tags.
+Please note that your ``docker-compose.yml`` file might be different from the minimal example in the documentaiton depending on your network and server environment. You can configure the different services using environmental variables (defined in the docker-compose file). See advanced :ref:`container configuration<Container configuration>` for the available options. In rare instances you might need to  or by editing the related config files (`frontend config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/frontend/app/config.py>`_ and `api config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/api/app/config.py>`_) and mount these to the container using `volume mounts <https://docs.docker.com/storage/volumes/>`_.
 
-.. table::
-   :widths: auto
+Some containers requires access to directories or files the host file system in order for all features to function or for data to be persistant accros updates to container images. These can be made available using using `docker volumes <https://docs.docker.com/storage/volumes/>`_. For more information see the sections on :ref:`data persistance<Data persistance>`, :ref:`setup IGV<Setup IGV integration>`, and the documentaiton of volume mounts in the :ref:`advanced container configuration<Container configuration>`.
 
-   +------------+----------------------------------------+
-   | Tag        | Description                            |
-   +============+========================================+
-   | latest     | Commits to the master branch of Bonsai |
-   +------------+----------------------------------------+
-   | <version>  | Releases of Bonsai                     |
-   +------------+----------------------------------------+
-
-Application setup
------------------
-
-The web UI can be found at ``http://your-ip:8000``.
+Setup Bonsai with docker-compose
+--------------------------------
 
 Use docker-compose to get started creating the Bonsai containers and configure their access to a mongo database.
 
@@ -88,11 +82,33 @@ Use docker-compose to get started creating the Bonsai containers and configure t
 
 Start the services with ``docker-compose up -d`` 
 
+Version Tags
+~~~~~~~~~~~~
+
+This project provides various versions on Docker Hub that are available via tags. Please read the description carefully and exercise caution when using unstable or development tags.
+
+.. table::
+   :widths: auto
+
+   +------------+----------------------------------------+
+   | Tag        | Description                            |
+   +============+========================================+
+   | latest     | Commits to the master branch of Bonsai |
+   +------------+----------------------------------------+
+   | <version>  | Releases of Bonsai                     |
+   +------------+----------------------------------------+
+
+Create database indexes
+-----------------------
+
 Use the Bonsai api command line interface to create the required database indexes.
 
 .. code-block:: bash
 
    docker-compose exec api bonsai_api index
+
+Create users
+------------
 
 Create an admin user with the CLI. There are three built in user roles (*user*, *uploader*, and *admin*).  The user role has permission to retrieve data and comment on isolates and should be the default user role.  *Uploader* has permission to create and modify data but cannot view isoaltes, this role is inteded for uploading data to the database. The *admin* has full permission to view, create, modify and delete data.
 
@@ -105,9 +121,85 @@ Create an admin user with the CLI. There are three built in user roles (*user*, 
                                                   -m place.holder@mail.com \
                                                   -r admin
 
+Additional users can be created in the WebUI in the admin panel (``http://your-ip/admin/users``) or by using the CLI as above.
 
-Container parameters
---------------------
+Setup IGV integration
+---------------------
+
+Bonsai uses IGV to visualise the read depth for called SNVs and structural variants (SV). This can help interpreting if a called variant is a true or false positive. IGV uses the reference genome sequences with annotated genes, the mapped reads in ``bam`` or ``cram`` format and optionally called variants and regions of interests. These files are either used as assets by Jasen or genreated for the sample and published in the pipeline output directory.
+
+These files are served by the API and therefore needs to be accessable by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR``, ``ANNOTATIONS_DIR`` and the path where Jasen publishes its results. 
+
+.. note::
+
+   IGV needs access to fasta indexes and bam indexes in order to function well.
+
+Reference genomes
+~~~~~~~~~~~~~~~~~
+
+These should be the same as the reference gneomes used by Jasen. You can use the `Makefile <https://github.com/genomic-medicine-sweden/jasen/blob/master/Makefile>` from Jasen to download the genomes, their indexes, and the tbprofiler database. Alternatively you could copy existing files from your Jasen installation to the directories you mount to the API container.
+
+Reference genomes and the corresponding GFF file should be copied to the directory you mount to the path in ``REFERENCE_GENOMES_DIR``. The BED files describing regions of interests should be copied to the directory you mount to the ``ANNOTATIONS_DIR`` path.
+
+BAM and VCF files
+~~~~~~~~~~~~~~~~~
+
+The Bonsai API needs access to directory where Jasen publishes its result because the BAM and VCFs are not uploaded to the API. The result directory could me mounted using docker volumes if its accessable by the host machine. The expected path can be found in the analysis result json file under the field name ``read_mapping`` and ``genome_annotation``.
+
+Accessing the web interface
+---------------------------
+
+To access the web interface, access the URL ``http://localhost:8000`` in your web browser.
+
+If this doesn't work, you might want to run ``docker container ls`` and make sure that a frontend container is running. Secondly ensure that there are not errors in the ``frontend`` and ``api`` container logs.
+
+Upload samples to Bonsai
+------------------------
+
+Use the `upload_sample.py <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/scripts/upload_sample.py>`_ script to add analysis result and genome signature file to the database.
+
+
+.. code-block:: bash
+
+   ./scripts/upload_sample.py                                        \
+      --api localhost:8011                                           \ 
+      --group <optional: group_id of group to associate sample with> \
+      -u <username>                                                  \
+      -p <password>                                                  \
+      --input /path/to/input.json
+
+
+Data persistance
+----------------
+
+The data is not persitant between docker container updates by default as all data is kept in the container. You have to mount the mongo database and the API genome signature database to the host OS to make the data persitant. The volume mounts can be configured in the ``docker-compose.yaml`` file. If you mount the databases to the host OS you have to ensure that they have correct permissions so the container have read and write access to these files.
+
+Use the following command to get the user and group id of the user in the container.
+
+.. code-block:: bash
+
+   $ docker-compose run --rm mongodb id
+   # uid=1000(worker) gid=1000(worker) groups=1000(worker)
+
+Use ``chown -R /path/to/volume_dir 1000:1000`` to change the permission of the folders you
+mount to the container.
+
+The following are an example volume mount configuration. See the `docker-compose <https://docs.docker.com/storage/volumes/>`_
+documentation for more information on volume mounts.
+
+.. code-block:: yaml
+
+   services: 
+      mongodb:
+         volumes:
+            - "./volumes/mongodb:/data/db"
+
+      api:
+         volumes:
+            - "./volumes/api/genome_signatures:/data/signature_db"
+
+Container configuration
+-----------------------
 
 Containers are configured using parameters passed at runtime (such as those above). These parameters are separated by a colon and indicate `<external>:<internal>` respectively. For example, `-p 8080:80` would expose port `80`` from inside the container to be accessible from the host's IP on port `8080` outside the container.
 
@@ -251,78 +343,3 @@ The genome signatures sent to the minhash service container and written to disk.
    +====================+==================================+
    | /data/signature_db | Directory for genome signatures. |
    +--------------------+----------------------------------+
-
-Setup IGV integration
----------------------
-
-Bonsai uses IGV to visualise the read depth for called SNVs and structural variants (SV). This can help interpreting if a called variant is a true or false positive. IGV uses the reference genome sequences with annotated genes, the mapped reads in ``bam`` or ``cram`` format and optionally called variants and regions of interests. These files are either used as assets by Jasen or genreated for the sample and published in the pipeline output directory.
-
-These files are served by the API and therefore needs to be accessable by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR``, ``ANNOTATIONS_DIR`` and the path where Jasen publishes its results. 
-
-.. note::
-
-   IGV needs access to fasta indexes and bam indexes in order to function well.
-
-Reference genomes
-~~~~~~~~~~~~~~~~~
-
-These should be the same as the reference gneomes used by Jasen. Either use the `Makefile <https://github.com/genomic-medicine-sweden/jasen/blob/master/Makefile>` from Jasen to download these reference genomes and the tbprofiler database or copy existing files from your Jasen installation.
-
-Reference genomes and the corresponding GFF file should be copied to the ``REFERENCE_GENOMES_DIR`` and BED files describing regions of interests should be copied to ``ANNOTATIONS_DIR``.
-
-BAM and VCF files
-~~~~~~~~~~~~~~~~~
-
-The Bonsai API needs access to directory where Jasen publishes its result because the BAM and VCFs are not uploaded to the API. The result directory could me mounted using docker volumes if its accessable by the host machine. The expected path can be found in the analysis result json file under the field name ``read_mapping`` and ``genome_annotation``.
-
-Accessing the web interface
----------------------------
-
-To access the web interface, access the URL ``http://localhost:8000`` in your web browser.
-
-If this doesn't work, you might want to run ``docker container ls`` and make sure that a frontend container is running. Secondly ensure that there are not errors in the ``frontend`` and ``api`` container logs.
-
-Upload samples
---------------
-
-Use the `upload_sample.py <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/scripts/upload_sample.py>` script to add analysis result and genome signature file to the database.
-
-
-.. code-block:: bash
-
-   ./scripts/upload_sample.py                                        \
-      --api localhost:8011                                           \ 
-      --group <optional: group_id of group to associate sample with> \
-      -u <username>                                                  \
-      -p <password>                                                  \
-      --input /path/to/input.json
-
-
-Data persistance
-----------------
-
-The data is not persitant between docker container updates by default as all data is kept in the container. You have to mount the mongo database and the API genome signature database to the host OS to make the data persitant. The volume mounts can be configured in the ``docker-compose.yaml`` file. If you mount the databases to the host OS you have to ensure that they have correct permissions so the container have read and write access to these files.
-
-Use the following command to get the user and group id of the user in the container.
-
-.. code-block:: bash
-
-   $ docker-compose run --rm mongodb id
-   # uid=1000(worker) gid=1000(worker) groups=1000(worker)
-
-Use ``chown -R /path/to/volume_dir 1000:1000`` to change the permission of the folders you
-mount to the container.
-
-The following are an example volume mount configuration. See the `docker-compose <https://docs.docker.com/storage/volumes/>`_
-documentation for more information on volume mounts.
-
-.. code-block:: yaml
-
-   services: 
-      mongodb:
-         volumes:
-            - "./volumes/mongodb:/data/db"
-
-      api:
-         volumes:
-            - "./volumes/api/genome_signatures:/data/signature_db"
