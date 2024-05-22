@@ -66,7 +66,6 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - "./volumes/api/genome_signatures:/data/signature_db"
          networks:
             - bonsai-net
-         command: "minhash_service"
 
       allele_cluster_service:
          image: clinicalgenomicslund/bonsai-allele-clustering:0.1.0
@@ -74,7 +73,6 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - redis
          networks:
             - bonsai-net
-         command: "cluster_service"
 
    networks:
    bonsai-net:
