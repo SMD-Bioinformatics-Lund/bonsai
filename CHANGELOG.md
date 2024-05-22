@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Updated requests to version 2.32.0
+
 ### Fixed
 
 ## [v0.6.0]
