@@ -4,6 +4,7 @@
 
 ### Changed
 
+- Updated requests to version 2.32.0
 - Added startup commands to minhash and allele clustering services Dockerfiles.
 
 ### Fixed
