@@ -95,3 +95,8 @@ div#grid_grid_searches.w2ui-grid-searches {
 .toc-collapse {
   display: block !important;
 }
+
+.br-table-link {
+  padding: 0.2rem !important;
+  font-size: small !important;
+}
