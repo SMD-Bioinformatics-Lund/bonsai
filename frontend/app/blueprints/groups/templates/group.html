@@ -55,12 +55,12 @@
 </div>
 <script type="module">
     import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
-    import { formatTaxonomicName, formatSampleId, formatTag, getTableSampleData, formatTableColumn } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
+    import { formatTaxonomicName, formatOpenSampleBtn, formatTag, getTableSampleData, formatTableColumn } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
 
     // define formatters
     w2utils.formatters['taxonomic_name'] = formatTaxonomicName
     w2utils.formatters['tags'] = formatTag
-    w2utils.formatters['sampleid'] = formatSampleId
+    w2utils.formatters['sample_btn'] = formatOpenSampleBtn
     // get table configuration
     const apiTableConfig = {{ table_definition | tojson }}
     const groupId = "{{ group_id }}"
