@@ -15,7 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
-!client/app/blueprints/cluster/static/js/SlickGrid/lib/
+!frontend/bonsai_app/blueprints/cluster/static/js/SlickGrid/lib/
 lib64/
 parts/
 sdist/
