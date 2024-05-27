@@ -10,7 +10,9 @@ Tasks
 
 .. autofunction:: minhash_service.tasks.remove_signature
 
-.. autofunction:: minhash_service.tasks.index
+.. autofunction:: minhash_service.tasks.add_to_index
+
+.. autofunction:: minhash_service.tasks.remove_from_index
 
 .. autofunction:: minhash_service.tasks.similar
 
