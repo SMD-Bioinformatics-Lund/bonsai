@@ -5,3 +5,5 @@ sphinxcontrib-napoleon
 
 -e ./minhash_service/
 -e ./allele_cluster_service/
+-e ./frontend/
+-e ./api/
