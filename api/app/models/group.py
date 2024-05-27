@@ -50,9 +50,14 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
 
 VALID_COLUMNS = [
     OverviewTableColumn(
+        id="sample_btn",
+        label="Open sample",
+        type="sample_btn",
+        path="$.sample_id",
+    ),
+    OverviewTableColumn(
         id="sample_id",
         label="Sample Id",
-        type="sampleid",
         path="$.sample_id",
         hidden=True,
         sortable=True,
@@ -60,7 +65,6 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="sample_name",
         label="Name",
-        type="sampleid",
         path="$.sample_name",
         sortable=True,
     ),
@@ -85,7 +89,6 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="taxonomic_name",
         label="Major species",
-        type="taxonomic_name",
         path="$.species_prediction.scientific_name",
         sortable=True,
     ),
