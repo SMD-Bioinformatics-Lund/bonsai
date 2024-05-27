@@ -10,8 +10,8 @@ from flask import session
 from flask_login import current_user
 from pydantic import Field
 
-from app.config import BONSAI_API_URL
 from app.models import RWModel
+from app.config import settings
 
 LOG = logging.getLogger(__name__)
 
@@ -100,7 +100,7 @@ class IgvData(RWModel):
 
 def build_api_url(path: str, **kwargs):
     """Build api URL path."""
-    base_url = f"{BONSAI_API_URL}{path}"
+    base_url = f"{settings.bonsai_api_url}{path}"
     params = [f"{key}={val}" for key, val in kwargs.items()]
     if len(params) > 0:
         url = f"{base_url}?{'&'.join(params)}"
@@ -146,7 +146,7 @@ def make_igv_tracks(
     """
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
-    entrypoint_url = os.path.join(BONSAI_API_URL, "resources", "genome", "info")
+    entrypoint_url = os.path.join(settings.bonsai_api_url, "resources", "genome", "info")
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
         fasta_url=f"{entrypoint_url}?file={ref_genome['fasta']}",
@@ -169,7 +169,7 @@ def make_igv_tracks(
 
     # generate read mapping track
     bam_entrypoint_url = os.path.join(
-        BONSAI_API_URL, "samples", sample_obj["sample_id"], "alignment"
+        settings.bonsai_api_url, "samples", sample_obj["sample_id"], "alignment"
     )
     tracks = [
         IgvAlignmentTrack(
