@@ -1,6 +1,6 @@
 """Configuration of web site"""
 
-import os
+import pathlib
 from enum import Enum
 
 from pydantic import Field
@@ -30,7 +30,10 @@ class Settings(BaseSettings):
     bonsai_api_url: str = Field(..., description="URL to the Bonsai API.")
 
     # verify SSL certificated for https connections to API
-    ssl_cert_path: str | None = Field(None, description="Path to SSL certificate.")
+    verify_ssl: bool | pathlib.Path = Field(
+        True,
+        description="If SSL should be verifed for HTTPS requests to the API. Can also provide a path to the CA bundle that should be used.",
+    )
     request_timeout: int = Field(
         60, description="Timeout for requests to API in seconds."
     )
@@ -57,10 +60,6 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(use_enum_values=True)
-
-    @property
-    def verify_ssl_cert(self) -> bool:
-        return self.ssl_cert_path is not None
 
 
 settings = Settings()

@@ -20,16 +20,16 @@ LOG = logging.getLogger(__name__)
 
 # define default arguments for requests
 requests_get = partial(
-    requests.get, timeout=settings.request_timeout, verify=settings.verify_ssl_cert
+    requests.get, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
 requests_post = partial(
-    requests.post, timeout=settings.request_timeout, verify=settings.verify_ssl_cert
+    requests.post, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
 requests_put = partial(
-    requests.put, timeout=settings.request_timeout, verify=settings.verify_ssl_cert
+    requests.put, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
 requests_delete = partial(
-    requests.delete, timeout=settings.request_timeout, verify=settings.verify_ssl_cert
+    requests.delete, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
 
 
