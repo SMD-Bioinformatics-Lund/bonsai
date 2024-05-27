@@ -1,15 +1,11 @@
 """Views for alignment browsers."""
 
 import logging
-import os
-from pathlib import Path
 
 from flask import (
     Blueprint,
     Response,
-    abort,
     copy_current_request_context,
-    current_app,
     render_template,
     request,
     session,
@@ -19,7 +15,6 @@ from flask_login import current_user, login_required
 from app.bonsai import TokenObject, get_sample_by_id
 
 from . import controllers
-from .partial import send_file_partial
 
 alignviewers_bp = Blueprint(
     "alignviewers",
@@ -30,28 +25,6 @@ alignviewers_bp = Blueprint(
 )
 
 LOG = logging.getLogger(__name__)
-
-
-@alignviewers_bp.route("/remote/static/", methods=["GET"])  # from case page
-def remote_static():
-    """Load large static files with special requirements."""
-    base_path = Path(current_app.config["DATA_DIR"])
-    file_path = base_path.joinpath(request.args.get("file"))
-
-    if not file_path.is_file():
-        LOG.warning("file: %s cant be found", file_path)
-        abort(404)
-
-    if not os.access(file_path, os.R_OK):
-        LOG.warning("file: %s cant read by the system user", file_path)
-        abort(500)
-
-    range_header = request.headers.get("Range", None)
-    if not range_header and file_path.suffix in [".bam", ".cram"]:
-        abort(500)
-
-    new_resp = send_file_partial(file_path)
-    return new_resp
 
 
 @alignviewers_bp.route("/samples/<sample_id>/igv", methods=["GET"])  # from case page

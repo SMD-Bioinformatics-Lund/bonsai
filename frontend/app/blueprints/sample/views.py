@@ -19,6 +19,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
+from app.config import settings
 from app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
@@ -99,7 +100,6 @@ def sample(sample_id: str) -> str:
     :return: Rendered HTML page
     :rtype: str
     """
-    config = current_app.config
     current_app.logger.debug("Removing non-validated genes from input")
     token = TokenObject(**current_user.get_id())
     # get sample
@@ -134,14 +134,14 @@ def sample(sample_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # Get the most similar samples and calculate the pair-wise similaity
-    typing_method = config["SAMPLE_VIEW_TYPING_METHOD"]
+    typing_method = settings.sample_view_typing_method
     job = find_and_cluster_similar_samples(
         token,
         sample_id=sample_id,
-        limit=config["SAMPLE_VIEW_SIMILARITY_LIMIT"],
-        similarity=config["SAMPLE_VIEW_SIMILARITY_THRESHOLD"],
+        limit=settings.sample_view_similarity_limit,
+        similarity=settings.sample_view_similarity_threshold,
         typing_method=typing_method,
-        cluster_method=config["SAMPLE_VIEW_CLUSTER_METHOD"],
+        cluster_method=settings.sample_view_cluster_method,
     )
     simiar_samples = {"job": job.model_dump(), "typing_method": typing_method}
 

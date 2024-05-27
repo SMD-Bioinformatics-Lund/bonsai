@@ -1,4 +1,5 @@
 """Code for setting up the flask app."""
+
 from itertools import zip_longest
 
 from flask import Flask
@@ -7,15 +8,17 @@ from .blueprints import admin, alignviewers, api, cluster, groups, login, public
 from .custom_filters import FILTERS as JINJA_FILTERS
 from .custom_filters import TESTS as JINJA_TESTS
 from .extensions import login_manager
+from .config import settings
 
 
 def create_app():
     """Flask app factory function."""
     app = Flask(__name__)
-    # load default config
-    app.config.from_pyfile("config.py")
-    # setup secret key
-    app.secret_key = app.config["SECRET_KEY"]
+
+    # load default config from pydantic settings
+    app.config.update(
+        {name.upper(): val for name, val in settings.model_dump().items()}
+    )
 
     # initialize flask extensions
     login_manager.init_app(app)

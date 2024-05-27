@@ -1,20 +1,68 @@
 """Configuration of web site"""
-import os
 
-# Setup api url
-BONSAI_API_URL = os.getenv("BONSAI_API_URL", "http://api:8000")
-# where reference genomes are found
-DATA_DIR = os.getenv("DATA_DIR", "/tmp/data")
+import pathlib
+from enum import Enum
 
-# Session secret key
-SECRET_KEY = b"not-so-secret"
-REQUEST_TIMEOUT = 60
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# parameters for finding similar samples
-SAMPLE_VIEW_SIMILARITY_LIMIT = 10
-SAMPLE_VIEW_SIMILARITY_THRESHOLD = 0.9
-SAMPLE_VIEW_TYPING_METHOD = "minhash"
-SAMPLE_VIEW_CLUSTER_METHOD = "single"
+
+class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
+    """Index of methods for hierarchical clustering of samples."""
+
+    SINGLE = "single"
+    COMPLETE = "complete"
+    AVERAGE = "average"
+    NJ = "neighbor_joining"
+
+
+class TypingMethod(str, Enum):  # pylint: disable=too-few-public-methods
+    """Supported typing methods."""
+
+    MLST = "mlst"
+    CGMLST = "cgmlst"
+    MINHASH = "minhash"
+
+
+class Settings(BaseSettings):
+    """Bonsai frontend configuration."""
+
+    bonsai_api_url: str = Field(..., description="URL to the Bonsai API.")
+
+    # verify SSL certificated for https connections to API
+    verify_ssl: bool | pathlib.Path = Field(
+        True,
+        description="If SSL should be verifed for HTTPS requests to the API. Can also provide a path to the CA bundle that should be used.",
+    )
+    request_timeout: int = Field(
+        60, description="Timeout for requests to API in seconds."
+    )
+    # Session secret key
+    secret_key: bytes = Field(
+        b"not-so-secret", description="Secret key for encrypting session."
+    )
+
+    # parameters for finding similar samples
+    sample_view_similarity_limit: int = Field(
+        10, description="Limit number of samples in sample view dendrogram."
+    )
+    sample_view_similarity_threshold: float = Field(
+        0.9,
+        description="Minimum similarity score for samples in the samples view dendrogram.",
+    )
+    sample_view_typing_method: TypingMethod = Field(
+        TypingMethod.MINHASH,
+        description="Typing method used for clustering samples in sample view dendrogram.",
+    )
+    sample_view_cluster_method: ClusterMethod = Field(
+        ClusterMethod.SINGLE,
+        description="Clustering method used for dendrogram in sample view.",
+    )
+
+    model_config = SettingsConfigDict(use_enum_values=True)
+
+
+settings = Settings()
 
 # res classes
 AMR_CLASS = {}
