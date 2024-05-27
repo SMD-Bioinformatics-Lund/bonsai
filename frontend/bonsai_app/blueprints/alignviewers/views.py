@@ -12,7 +12,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
-from app.bonsai import TokenObject, get_sample_by_id
+from bonsai_app.bonsai import TokenObject, get_sample_by_id
 
 from . import controllers
 

@@ -20,11 +20,11 @@ from wtforms import (
     widgets,
 )
 
-from app.bonsai import TokenObject
-from app.bonsai import create_user as create_new_user
-from app.bonsai import delete_user as delete_user_from_db
-from app.bonsai import get_user, get_users
-from app.bonsai import update_user as update_user_info
+from bonsai_app.bonsai import TokenObject
+from bonsai_app.bonsai import create_user as create_new_user
+from bonsai_app.bonsai import delete_user as delete_user_from_db
+from bonsai_app.bonsai import get_user, get_users
+from bonsai_app.bonsai import update_user as update_user_info
 
 admin_bp = Blueprint(
     "admin",

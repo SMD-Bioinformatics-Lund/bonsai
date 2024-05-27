@@ -15,8 +15,8 @@ from flask_login import UserMixin, login_required, login_user, logout_user
 from requests.exceptions import HTTPError
 
 from app import __version__ as VERSION
-from app.bonsai import TokenObject, get_auth_token, get_current_user
-from app.extensions import login_manager
+from bonsai_app.bonsai import TokenObject, get_auth_token, get_current_user
+from bonsai_app.extensions import login_manager
 
 LOG = logging.getLogger(__name__)
 

@@ -27,7 +27,7 @@ class TypingMethod(str, Enum):  # pylint: disable=too-few-public-methods
 class Settings(BaseSettings):
     """Bonsai frontend configuration."""
 
-    bonsai_api_url: str = Field(..., description="URL to the Bonsai API.")
+    bonsai_api_url: str = Field("http://api:8000", description="URL to the Bonsai API.")
 
     # verify SSL certificated for https connections to API
     verify_ssl: bool | pathlib.Path = Field(

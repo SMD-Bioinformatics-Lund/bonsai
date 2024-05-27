@@ -6,7 +6,7 @@ import requests
 from flask import Blueprint, Response, flash, jsonify, request
 from flask_login import current_user, login_required
 
-from app.bonsai import (
+from bonsai_app.bonsai import (
     HTTPError,
     TokenObject,
     add_samples_to_basket,

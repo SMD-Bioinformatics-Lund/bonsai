@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar, sidebar_header %}
+{% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
+{% from "cards.html" import amr_prediction_card with context %}
+
+{% macro export_btn() %}
+    {{ sidebar_header("Action") }}
+    <form action="{{ url_for('samples.download_lims', sample_id=sample.sample_id) }}">
+        <button class="btn btn-sm btn-warning ms-2" type="submit">
+            <i class="bi bi-box-arrow-up"></i>
+            Export to LIMS
+        </button>
+    </form>
+{% endmacro %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+<form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}">
+    <input value="{{ request.form.get('input-name') }}">
+</form>
+
+{% block content %}
+{% set footnotes = [] %}
+<div class="container-fluid br-layout">
+    {{ sidebar(sample, optional_macro=export_btn) }}
+    <main class="br-main order-1">
+        <div class="br-toc">
+            {# right handed sidebar for filters and classification #}
+        </div>
+        {{ sample_header(sample, class_names="") }}
+        <div class="br-content container-fluid pb-5">
+            <h5>Resistance prediction</h5>
+            <hr class="mt-2 col-md-3 border border-success border-2">
+            {{ sample }}
+        </div>
+    </main>
+</div>
+<script>
+    $(document).ready(() => { 
+        // ready select2
+        $("#antibiotic-group").select2()
+        $("#filter-genes").select2()
+        // 
+        $("#accept-variant-btn").click(() => {
+            // disable rejection reason
+            $("#rejection-reason-group").prop('disabled', true)
+            // enable antibiotic resistance annotation
+            $("#antibiotic-group").prop('disabled', false)
+            $("#high-res-btn").prop('disabled', false)
+            $("#low-res-btn").prop('disabled', false)
+        })
+        $("#reject-variant-btn").click(() => {
+            // enable rejection reason
+            $("#rejection-reason-group").prop('disabled', false)
+            // disable antibiotic resistance annotation
+            $("#antibiotic-group").prop('disabled', true)
+            $("#high-res-btn").prop('disabled', true)
+            $("#low-res-btn").prop('disabled', true)
+        })
+    })
+    window.addEventListener("load", () => {
+        // reset selected variants on page load and reload
+        checkedVariants = Array.from(
+            document.querySelectorAll('.br-content input[type="checkbox"]')
+            ).filter(input => input.checked).map(input => input.id)
+        window.localStorage.setItem("selectedVariants", JSON.stringify(checkedVariants))
+    })
+
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+    const selectVariant = (element) => {
+        let selectedVariants
+        // get selected variants
+        if (window.localStorage.getItem("selectedVariants")) {
+            selectedVariants = new Set(JSON.parse(localStorage.getItem("selectedVariants")))
+        } else {
+            selectedVariants = new Set([])
+        }
+        // update selected variants
+        if ( element.checked ) {
+            selectedVariants.add(element.name)
+        } else {
+            selectedVariants.delete(element.name)
+        }
+        // update selected variant counter
+        document.getElementById("selected-variants-counter").innerHTML = selectedVariants.size
+        const variantsObj = JSON.stringify(Array.from(selectedVariants))
+        document.getElementById("variant-ids-input").value = variantsObj // store the selected variants
+        window.localStorage.setItem("selectedVariants", variantsObj)
+    }
+    // reset selected varants on page load
+</script>
+{% endblock content %}

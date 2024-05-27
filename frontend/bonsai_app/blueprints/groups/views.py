@@ -16,7 +16,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from app.bonsai import (
+from bonsai_app.bonsai import (
     TokenObject,
     create_group,
     delete_group,
