@@ -13,9 +13,10 @@ Check out the :doc:`installation` section for installation instructions.
    :maxdepth: 2
 
    /installation
-   /faq
+   /container_configuration
    /administration
    /deployment
+   /faq
 
 .. toctree::
    :maxdepth: 2

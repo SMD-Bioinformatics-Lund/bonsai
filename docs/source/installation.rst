@@ -12,7 +12,7 @@ Installing Bonsai using docker-compose and setup involves the following steps.
 #. :doc:`Configure LDAP based authentication (optional)</dev/login_systems>`.
 #. Start the Bonsai with ``docker-compose up -d``
 #. :ref:`Create indexes for the database<Create database indexes>`.
-#. :ref:`Create users<Create users>`.
+#. :ref:`Create an admin user<Create an admin user>`.
 #. :ref:`Upload samples<Upload samples to Bonsai>`.
 
 Please note that your ``docker-compose.yml`` file might be different from the minimal example in the documentaiton depending on your network and server environment. You can configure the different services using environmental variables (defined in the docker-compose file). See advanced :ref:`container configuration<Container configuration>` for the available options. In rare instances you might need to  or by editing the related config files (`frontend config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/frontend/app/config.py>`_ and `api config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/api/app/config.py>`_) and mount these to the container using `volume mounts <https://docs.docker.com/storage/volumes/>`_.
@@ -22,7 +22,7 @@ Some containers requires access to directories or files the host file system in 
 Setup Bonsai with docker-compose
 --------------------------------
 
-Use docker-compose to get started creating the Bonsai containers and configure their access to a mongo database.
+Use docker-compose to get started creating the Bonsai containers and configure their access to a mongo database. Some containers must be configured using a combination of environmental variables and volume mounts to either function properly or for data to be :ref:`persistant<Data persistance>`. See :ref:`container configuration<Container configuration>` for more information on how to configure docker containers.
 
 .. code-block:: yaml
 
@@ -99,16 +99,16 @@ This project provides various versions on Docker Hub that are available via tags
 Create database indexes
 -----------------------
 
-Use the Bonsai api command line interface to create the required database indexes.
+The database must be indexed for Bonsai to work correctly. The database indexes support and speed up common queries and enforces restriction on the data. For instance, will the indexes prevent duplicated sample IDs and sample group IDs? The indexes are created using the Bonsai API command line interface. Note that if you are running the containerized version of Bonsai, you must execute the commands in the container.
 
 .. code-block:: bash
 
    docker-compose exec api bonsai_api index
 
-Create users
-------------
+Create an admin user
+--------------------
 
-Create an admin user with the CLI. There are three built in user roles (*user*, *uploader*, and *admin*).  The user role has permission to retrieve data and comment on isolates and should be the default user role.  *Uploader* has permission to create and modify data but cannot view isoaltes, this role is inteded for uploading data to the database. The *admin* has full permission to view, create, modify and delete data.
+Create an admin user with the CLI. The *admin* has full permission to view, create, modify and delete data and can be used to login, upload samples, and create additional users.
 
 .. code-block:: bash
 
@@ -119,7 +119,7 @@ Create an admin user with the CLI. There are three built in user roles (*user*, 
                                                   -m place.holder@mail.com \
                                                   -r admin
 
-Additional users can be created in the WebUI in the admin panel (``http://your-ip/admin/users``) or by using the CLI as above.
+Additional users can be created in the WebUI in the admin panel (``http://your-ip/admin/users``) or by using the CLI as above. For more information see :ref:`create users<Create users>`.
 
 Setup IGV integration
 ---------------------
@@ -135,7 +135,7 @@ These files are served by the API and therefore needs to be accessable by the co
 Reference genomes
 ~~~~~~~~~~~~~~~~~
 
-These should be the same as the reference gneomes used by Jasen. You can use the `Makefile <https://github.com/genomic-medicine-sweden/jasen/blob/master/Makefile>` from Jasen to download the genomes, their indexes, and the tbprofiler database. Alternatively you could copy existing files from your Jasen installation to the directories you mount to the API container.
+These should be the same as the reference gneomes used by Jasen. You can use the `Makefile <https://github.com/genomic-medicine-sweden/jasen/blob/master/Makefile>`_ from Jasen to download the genomes, their indexes, and the tbprofiler database. Alternatively you could copy existing files from your Jasen installation to the directories you mount to the API container.
 
 Reference genomes and the corresponding GFF file should be copied to the directory you mount to the path in ``REFERENCE_GENOMES_DIR``. The BED files describing regions of interests should be copied to the directory you mount to the ``ANNOTATIONS_DIR`` path.
 
@@ -195,149 +195,3 @@ documentation for more information on volume mounts.
       api:
          volumes:
             - "./volumes/api/genome_signatures:/data/signature_db"
-
-Container configuration
------------------------
-
-Containers are configured using parameters passed at runtime (such as those above). These parameters are separated by a colon and indicate `<external>:<internal>` respectively. For example, `-p 8080:80` would expose port `80`` from inside the container to be accessible from the host's IP on port `8080` outside the container.
-
-Ports
-~~~~~
-
-.. table::
-   :widths: auto
-
-   +-----------------+----------+
-   | Parameter       | Function |
-   +=================+==========+
-   | 8000            | WebUI    |
-   +-----------------+----------+
-   | 8001            | API      |
-   +-----------------+----------+
-   | 27017           | Mongo db |
-   +-----------------+----------+
-   | 6380            | Redis    |
-   +-----------------+----------+
-
-Environmental variables
-~~~~~~~~~~~~~~~~~~~~~~~
-
-The services that constitutes Bonsai can be configured with environmental variables. The configuration available differs depending on the service.
-
-Frontend
-^^^^^^^^
-
-.. table:: Frontend environmental variables
-   :widths: auto
-
-   +-----------------+--------------------+-----------------+
-   | Env             | Function           | Default         |
-   +=================+====================+=================+
-   | BONSAI_API_URL  | URL to API service | http://api:8000 |
-   +-----------------+--------------------+-----------------+
-
-API service
-^^^^^^^^^^^
-
-Here are the general configuration options for the API service. See the :doc:`documentation on login systems </dev/login_systems>` for information on how to configure LDAP based authentication.
-
-.. table:: API environmental variables
-   :widths: auto
-
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | Env                         | Function                                            | Default                |
-   +=============================+=====================================================+========================+
-   | ALLOWED_ORIGINS             | Configure allowed origins as commma separated list. |                        |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | DATABASE_NAME               | Database name                                       | bonsai                 |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | DB_HOST                     | Hostname of mongodb                                 | mongodb                |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | DB_PORT                     | Mongodb port                                        | 27017                  |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | REDIS_HOST                  | Hostname of redis server                            | redis                  |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | REDIS_PORT                  | Port of redis server                                | 6379                   |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | REFERENCE_GENOMES_DIR       | Path to directory with reference genomes            | /tmp/reference_genomes |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | ANNOTATIONS_DIR             | Path to directory where genome annotation is stored | /tmp/annotations       |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | SECRET_KEY                  | Authentication token secret key                     |                        |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-   | ACCESS_TOKEN_EXPIRE_MINUTES | Authentication token expiration time.               | 180                    |
-   +-----------------------------+-----------------------------------------------------+------------------------+
-
-Minhash service
-^^^^^^^^^^^^^^^
-
-.. table:: Minhash service environmental variables
-   :widths: auto
-
-   +----------------------+----------------------------------------------+------------------------+
-   | Env                  | Function                                     | Default                |
-   +======================+==============================================+========================+
-   | SIGNATURE_KMER_SIZE  | Kmer size used to build signature files.     | 31                     |
-   +----------------------+----------------------------------------------+------------------------+
-   | GENOME_SIGNATURE_DIR | Path to directory where signatures are kept. | /data/signature_db     |
-   +----------------------+----------------------------------------------+------------------------+
-   | REDIS_HOST           | Redis server hostname                        | redis                  |
-   +----------------------+----------------------------------------------+------------------------+
-   | REDIS_PORT           | Redis server port                            | 6379                   |
-   +----------------------+----------------------------------------------+------------------------+
-
-Allele clustering service
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. table:: Allele cluster service environmental variables
-   :widths: auto
-
-   +----------------------+----------------------------------------------+------------------------+
-   | Env                  | Function                                     | Default                |
-   +======================+==============================================+========================+
-   | REDIS_HOST           | Redis server hostname                        | redis                  |
-   +----------------------+----------------------------------------------+------------------------+
-   | REDIS_PORT           | Redis server port                            | 6379                   |
-   +----------------------+----------------------------------------------+------------------------+
-
-Volume mappings
-~~~~~~~~~~~~~~~
-
-Mouting directories and files from the host file system to the container is used to make assetes, such as reference genomes or configurations, available to the software. It can also be used to make data persistant accros updates to the container which is usefull for databases.
-
-Please ensure that the mounted asset directory match the path specified in the service configuration.
-
-.. note::
-
-   Please ensure that the container have permission to read mounted files and directories.
-
-API service
-^^^^^^^^^^^
-
-The API can serve reference genome sequences and annotation files to the integrated IGV browser. These could be stored on the host file system and mounted to the docker container.
-
-.. table:: API service volume mounts.
-   :widths: auto
-
-   +------------------------+----------------------------+
-   | Volume                 | Function                   |
-   +========================+============================+
-   | /tmp/reference_genomes | Reference genomes for IGV. |
-   +------------------------+----------------------------+
-   | /tmp/annotations       | IGV annotation files.      |
-   +------------------------+----------------------------+
-
-
-Minhash service
-^^^^^^^^^^^^^^^
-
-The genome signatures sent to the minhash service container and written to disk. The directory should be mounted to the host file system for the data to be persistant. For more information see `Data persistance`_.
-
-.. table:: API service volume mounts.
-   :widths: auto
-
-   +--------------------+----------------------------------+
-   | Volume             | Function                         |
-   +====================+==================================+
-   | /data/signature_db | Directory for genome signatures. |
-   +--------------------+----------------------------------+

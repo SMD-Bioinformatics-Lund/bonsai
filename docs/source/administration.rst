@@ -20,12 +20,18 @@ The database must be indexed for Bonsai to work correctly. The database indexes 
 Create users
 ------------
 
-Users are also created through the API. You must specify the username, password, and user role when you create the user.
+Create an admin user with the CLI. There are three built in user roles (*user*, *uploader*, and *admin*).  The user role has permission to retrieve data and comment on isolates and should be the default user role.  *Uploader* has permission to create and modify data but cannot view isoaltes, this role is inteded for uploading data to the database. The *admin* has full permission to view, create, modify and delete data.
 
-.. code-block::bash
+.. code-block:: bash
 
-   # normal command
-   $ bonsai_api create-user --u <username> -p <password> -m <email> --role <admin|user|uploader>
+   docker-compose exec api bonsai_api create-user -u admin                 \
+                                                  -p admin                 \
+                                                  --fname Place            \
+                                                  --lname Holder           \
+                                                  -m place.holder@mail.com \
+                                                  -r admin
+
+Additional users can be created in the WebUI in the admin panel (``http://your-ip/admin/users``) or by using the CLI as above.
 
 Upload samples
 --------------
@@ -34,7 +40,7 @@ JASEN analysis results are uploaded to Bonsai using HTTP requests to the Bonsai 
 
 .. code-block:: bash
 
-   ./scripts/upload_sample.sh                                        \
+   ./scripts/upload_sample.py                                        \
       --api localhost:8011                                           \ 
       --group <optional: group_id of group to associate sample with> \
       -u <username>                                                  \
