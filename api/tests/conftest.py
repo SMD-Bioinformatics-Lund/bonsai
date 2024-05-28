@@ -3,9 +3,9 @@ import json
 from pathlib import Path
 
 import pytest
-from app.crud.sample import create_sample
-from app.db import Database
-from app.models.sample import PipelineResult, SampleInDatabase
+from bonsai_api.crud.sample import create_sample
+from bonsai_api.db import Database
+from bonsai_api.models.sample import PipelineResult, SampleInDatabase
 from mongomock_motor import AsyncMongoMockClient
 
 from .data import *

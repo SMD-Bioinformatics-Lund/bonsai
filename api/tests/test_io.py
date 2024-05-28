@@ -1,6 +1,6 @@
 """Test IO functions."""
 
-from app.io import TARGETED_ANTIBIOTICS, sample_to_kmlims
+from bonsai_api.io import TARGETED_ANTIBIOTICS, sample_to_kmlims
 
 
 def test_sample_to_kmlims(mtuberculosis_sample):
