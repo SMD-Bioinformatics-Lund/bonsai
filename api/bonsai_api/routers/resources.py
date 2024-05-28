@@ -2,17 +2,16 @@
 
 import logging
 import pathlib
-from enum import Enum
 from typing import Annotated
 
-from app.config import settings
-from app.io import (
+from ..config import settings
+from ..io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
     is_file_readable,
     send_partial_file,
 )
-from fastapi import APIRouter, Header, HTTPException, Path, Query, status
+from fastapi import APIRouter, Header, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
 from ..models.antibiotics import ANTIBIOTICS

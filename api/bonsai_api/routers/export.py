@@ -1,6 +1,6 @@
 import logging
 
-from app.io import sample_to_kmlims
+from ..io import sample_to_kmlims
 from fastapi import APIRouter, HTTPException, Path, Security, status
 from fastapi.responses import PlainTextResponse
 

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from app.config import settings
+from bonsai_api.config import settings
 from pydantic import BaseModel
 from redis import Redis
 from rq import Queue
