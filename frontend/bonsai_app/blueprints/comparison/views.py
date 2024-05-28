@@ -3,7 +3,7 @@
 from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
-from bonsai_app.bonsai import TokenObject, get_samples_by_id
+from ...bonsai import TokenObject, get_samples_by_id
 
 comparison_bp = Blueprint(
     "comparison",

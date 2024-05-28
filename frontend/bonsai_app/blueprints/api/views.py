@@ -6,14 +6,14 @@ import requests
 from flask import Blueprint, Response, flash, jsonify, request
 from flask_login import current_user, login_required
 
-from bonsai_app.bonsai import (
+from ...bonsai import (
     HTTPError,
     TokenObject,
     add_samples_to_basket,
     get_samples_by_id,
     remove_samples_from_basket,
 )
-from app.models import SampleBasketObject
+from ...models import SampleBasketObject
 
 api_bp = Blueprint("api", __name__, template_folder="templates", static_folder="static")
 

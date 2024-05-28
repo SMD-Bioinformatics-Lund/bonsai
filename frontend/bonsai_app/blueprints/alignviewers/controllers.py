@@ -10,8 +10,8 @@ from flask import session
 from flask_login import current_user
 from pydantic import Field
 
-from app.models import RWModel
-from app.config import settings
+from ...models import RWModel
+from ...config import settings
 
 LOG = logging.getLogger(__name__)
 

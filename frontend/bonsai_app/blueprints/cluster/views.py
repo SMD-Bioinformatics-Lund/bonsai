@@ -9,13 +9,13 @@ from flask_login import current_user, login_required
 from pydantic import BaseModel
 from requests.exceptions import HTTPError
 
-from bonsai_app.bonsai import (
+from ...bonsai import (
     TokenObject,
     cluster_samples,
     get_samples_by_id,
     get_valid_group_columns,
 )
-from bonsai_app.custom_filters import get_json_path
+from ...custom_filters import get_json_path
 
 LOG = logging.getLogger(__name__)
 

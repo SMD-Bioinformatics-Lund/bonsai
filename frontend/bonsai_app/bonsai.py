@@ -11,7 +11,7 @@ from requests.structures import CaseInsensitiveDict
 from functools import partial
 from requests import HTTPError
 
-from app.config import settings
+from .config import settings
 
 from .models import SampleBasketObject, SubmittedJob
 

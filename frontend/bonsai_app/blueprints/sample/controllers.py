@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
-from app.models import ElementType, PredictionSoftware
+from ...models import ElementType, PredictionSoftware
 
 LOG = logging.getLogger(__name__)
 SampleObj = Dict[str, Any]

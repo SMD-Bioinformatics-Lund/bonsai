@@ -16,7 +16,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from bonsai_app.bonsai import (
+from ...bonsai import (
     TokenObject,
     create_group,
     delete_group,
@@ -28,7 +28,7 @@ from bonsai_app.bonsai import (
     update_group,
     update_sample_qc_classification,
 )
-from app.models import BadSampleQualityAction, PhenotypeType, QualityControlResult
+from ...models import BadSampleQualityAction, PhenotypeType, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 

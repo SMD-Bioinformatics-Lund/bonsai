@@ -1,7 +1,7 @@
 """Public accessable assets and views."""
 from flask import Blueprint, render_template, request, send_from_directory
 
-from app import __version__ as VERSION
+from ... import __version__ as VERSION
 
 public_bp = Blueprint(
     "public",
