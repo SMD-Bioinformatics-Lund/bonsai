@@ -10,18 +10,18 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 
 # copy project dir
 WORKDIR /home/worker/app
-COPY app app/
+COPY bonsai_api bonsai_api/
 COPY pyproject.toml setup.py setup.cfg ./
 
 # Change ownership
 RUN chown -R worker:worker .
 
 # install dependancies
-RUN pip install --no-cache-dir --editable .
+RUN pip install --no-cache-dir .
 
 RUN mkdir -p /data/signature_db && chown worker:worker /data/signature_db
 
 # run app as non-root user
 USER worker
 
-CMD ["uvicorn", "app.main:app", "--log-level", "info", "--host", "0.0.0.0"]
+CMD ["uvicorn", "bonsai_api.main:app", "--log-level", "info", "--host", "0.0.0.0"]

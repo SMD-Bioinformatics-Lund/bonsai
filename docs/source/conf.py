@@ -22,11 +22,13 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.autosummary",
     "sphinx.ext.intersphinx",
     "sphinx.ext.graphviz",
     "sphinx.ext.napoleon",
     "myst_parser",
+    "sphinxcontrib.autodoc_pydantic",
 ]
 autosummary_generate = True
 

@@ -2,8 +2,8 @@
 
 import pandas as pd
 import pytest
-from app.cli import export
-from app.io import TARGETED_ANTIBIOTICS
+from bonsai_api.cli import export
+from bonsai_api.io import TARGETED_ANTIBIOTICS
 from click.testing import CliRunner
 
 
@@ -12,7 +12,7 @@ def test_export_sample(mocker, sample_database):
     """Test exporting a sample as LIMS import file."""
 
     # patch db before running cli
-    mocker.patch("app.cli.db", sample_database)
+    mocker.patch("bonsai_api.cli.db", sample_database)
 
     # run CLI command
     runner = CliRunner()
