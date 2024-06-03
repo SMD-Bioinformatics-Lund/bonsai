@@ -122,12 +122,32 @@ def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
             tags.append(tag)
 
 
+def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> Tag:
+    """Get if an E. coli sample is typed as a Shigella."""
+    for type_res in sample.typing_result:
+        if type_res.type == TypingMethod.SHIGATYPE:
+            if type_res.result.ipah.lower() == "ipah+":
+                if type_res.result.predicted_serotype is not None:
+                    result = "Shigella"
+                else:
+                    result = "EIEC"
+                # type_res.result.sequence_name.upper()
+                tag = Tag(
+                    type=TagType.TYPING,
+                    label=result,
+                    description=type_res.result.predicted_serotype,
+                    severity=TagSeverity.INFO,
+                )
+                tags.append(tag)
+
+
 # Tagging functions with the species they are applicable for
 ALL_TAG_FUNCS = [
     {"species": ["Staphylococcus aureus"], "func": add_pvl},
     {"species": ["Staphylococcus aureus"], "func": add_mrsa},
     {"species": ["Escherichia coli"], "func": add_stx_type},
     {"species": ["Escherichia coli"], "func": add_oh_type},
+    {"species": ["Escherichia coli", "Klebsiella pneumoniae", "Shigella sonnei", "Shigella dysenteriae"], "func": add_shigella_typing},
 ]
 
 
