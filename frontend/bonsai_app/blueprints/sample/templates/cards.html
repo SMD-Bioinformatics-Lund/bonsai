@@ -970,15 +970,15 @@
     </div>
     <div class="card-body">
         <div class="p-2">
-            <span class="fw-semibold">Result:</span>
+            <span class="fw-semibold">Serotype:</span>
             {{ pred.result.predicted_serotype }}
         </div>
         <div class="p-2">
             <table class="table table-sm table-striped">
                 <thead>
-                    <tr><th>Parameter</th><th>Value</th></tr>
+                    <tr><th>Marker</th><th>Value</th></tr>
                 </thead>
-                <tbody>
+                <tbody class="table-group-divider">
                     {% for key, value in pred.result.items() %}
                         <tr>
                             <td>{{ key | camelcase_to_text | capitalize }}</td>
