@@ -963,6 +963,36 @@
 {% endmacro %}
 
 
+{% macro shigella_typing_card(pred) %}
+<div class="card col-md-auto">
+    <div class="card-header">
+        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+    </div>
+    <div class="card-body">
+        <div class="p-2">
+            <span class="fw-semibold">Result:</span>
+            {{ pred.result.predicted_serotype }}
+        </div>
+        <div class="p-2">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr><th>Parameter</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    {% for key, value in pred.result.items() %}
+                        <tr>
+                            <td>{{ key | camelcase_to_text | capitalize }}</td>
+                            <td>{{ value if value is not none else '-' }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro similar_samples_card(data) %}
 <div id="similar-samples-card"
      class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
