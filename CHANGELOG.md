@@ -3,9 +3,11 @@
 ### Added
 
 - Can configure SSL verification and usage of SSL certs for API requests from frontend.
+- Added cards ShigaPass result and function to tag Ecoli and Shigella spp with ShigaPass result.
 
 ### Changed
 
+- Updated PRP to version 0.9.1
 - Improved installation instructions.
 - Updated requests to version 2.32.0
 - Added startup commands to minhash and allele clustering services Dockerfiles.
