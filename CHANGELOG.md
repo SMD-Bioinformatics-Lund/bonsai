@@ -16,6 +16,8 @@
 
 ### Fixed
 
+- Fixed misalignment of the checkbox in the samples table in the group and groups view.
+
 ## [v0.6.0]
 
 ### Added

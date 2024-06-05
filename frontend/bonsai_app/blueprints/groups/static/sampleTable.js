@@ -9,7 +9,7 @@ export const formatOpenSampleBtn = (val, params, data) => {
     let element = document.createElement('a')
     let path = data.groupId ? `sample/${val.sample_id}?group_id=${data.groupId}` : `sample/${val.sample_id}`
     element.setAttribute('href', `${baseUrl}/${path}`)
-    element.classList.add('btn', 'btn-sm', 'btn-dark', 'br-table-link')
+    //element.classList.add('btn', 'btn-sm', 'btn-dark', 'br-table-link')
     //element.classList.add('badge', 'text-bg-info', 'rounded-pill', 'p-1')
     element.innerText = 'Open'
     return element.outerHTML
