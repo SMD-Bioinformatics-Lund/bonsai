@@ -963,6 +963,62 @@
 {% endmacro %}
 
 
+{% macro shigella_typing_card(pred) %}
+<div class="card col-md-auto">
+    <div class="card-header">
+        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+    </div>
+    <div class="card-body">
+        <div>
+            <span class="fw-semibold">Serotype:</span>
+            {{ pred.result.predicted_serotype }}
+        </div>
+        <div>
+            <span class="fw-semibold">Flex serotype:</span>
+            {{ pred.result.predicted_flex_serotype | fmt_null_values }}
+        </div>
+        <div class="p-2">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr><th>Marker</th><th></th></tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    <tr>
+                        <td><i>rfb</i></td>
+                        <td>{{ pred.result.rfb | fmt_null_values }}</td>
+                    </tr>
+                    <tr>
+                        <td><i>rfb</i> hits</td>
+                        <td>{{ pred.result.rfb | fmt_null_values }}</td>
+                    </tr>
+                    <tr>
+                        <td>MLST</td>
+                        <td>{{ pred.result.mlst | fmt_null_values }}</td>
+                    </tr>
+                    <tr>
+                        <td><i>fliC</i></td>
+                        <td>{{ pred.result.flic | fmt_null_values }}</td>
+                    </tr>
+                    <tr>
+                        <td>CRISPER</td>
+                        <td>{{ pred.result.crispr | fmt_null_values }}</td>
+                    </tr>
+                    <tr>
+                        <td>ipaH</td>
+                        <td>{{ pred.result.ipah | fmt_null_values }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {% if pred.result.comments is not none %}
+                <h6 class="fw-semibold">Comment</h6>
+                <p>{{ pred.result.comments }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro similar_samples_card(data) %}
 <div id="similar-samples-card"
      class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
