@@ -1,4 +1,5 @@
 {
+  "sample_id": "test_mtuberculosis_1",
   "run_metadata": {
     "run": {
       "pipeline": "main.nf",
