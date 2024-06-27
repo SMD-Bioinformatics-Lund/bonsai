@@ -74,13 +74,6 @@ class TbProfilerVariant(VariantInDb):
 class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
-    sample_id: str = Field(
-        ...,
-        alias="sampleId",
-        min_length=3,
-        max_length=100,
-        description="Unique sample identifier",
-    )
     tags: List[Tag] = []
     qc_status: QcClassification = QcClassification()
     # comments and non analytic results
