@@ -7,7 +7,8 @@
 
 ### Changed
 
-- Updated PRP to version 0.9.1
+- Bonsai now uses sample ids created by Jasen to identify unique samples.
+- Updated PRP to version 0.9.3
 - Improved installation instructions.
 - Updated requests to version 2.32.0
 - Added startup commands to minhash and allele clustering services Dockerfiles.
