@@ -862,14 +862,20 @@
                 </tr>
                 <tr>
                     <th scope="row">Sublineage</th>
+                    {% set sublin=pred.result.sublineage %}
                     <td>
                         <u data-bs-toggle="tooltip" data-bs-placement="top" 
                         data-bs-title="{{ pred.rd | replace(';', ', ') }}">
-                        {{ pred.result.sublineage | replace('lineage', '') }}
+                        {{ sublin | replace('lineage', '') }}
                         </u>
                     </td>
+                    {# Lookup sublineage if lineages is defined #}
                     {% if pred.result.lineages is defined %}
-                        <td>{{ pred.result.lineages[1].family }}</td>
+                        {% for lin in pred.result.lineages %}
+                            {% if lin.lineage == sublin %}
+                                <td>{{ lin.family }}</td>
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                 </tr>
             </tbody>

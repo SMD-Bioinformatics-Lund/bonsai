@@ -18,6 +18,7 @@
 ### Fixed
 
 - Fixed misalignment of the checkbox in the samples table in the group and groups view.
+- Fixed bug in the TB lineage card that could crash the frontend
 
 ## [v0.6.0]
 
