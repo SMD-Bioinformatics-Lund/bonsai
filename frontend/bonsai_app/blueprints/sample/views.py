@@ -38,7 +38,13 @@ from ...bonsai import (
 )
 from ...models import BadSampleQualityAction, QualityControlResult
 
-from .controllers import filter_variants, get_variant_genes, sort_variants
+from .controllers import (
+    filter_variants,
+    get_variant_genes,
+    get_all_who_classifications,
+    get_all_variant_types,
+    sort_variants,
+)
 
 samples_bp = Blueprint(
     "samples",
@@ -293,7 +299,15 @@ def resistance_variants(sample_id: str) -> str:
     rejection_reasons = get_variant_rejection_reasons()
 
     # populate form for filter varaints
-    form_data = {"filter_genes": get_variant_genes(sample_info, software="tbprofiler")}
+    form_data = {
+        "filter_genes": get_variant_genes(sample_info, software="tbprofiler"),
+        "filter_who_class": get_all_who_classifications(
+            sample_info, software="tbprofiler"
+        ),
+        "filter_variant_type": get_all_variant_types(
+            sample_info, software="tbprofiler"
+        ),
+    }
 
     if request.method == "POST":
         # check if which form deposited data

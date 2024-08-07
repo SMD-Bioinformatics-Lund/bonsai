@@ -382,20 +382,21 @@ def get_who_group_from_tbprofiler_comment(comment: Dict[str, str]) -> str | None
         "not assoc w r - interim": 4,
         "not assoc w r": 5,
     }
-    who_group = who_classes.get(comment['note'].lower())
-    if who_group is not None:
-        return f"{who_group}"
+    if isinstance(comment["note"], str):
+        who_group = who_classes.get(comment["note"].lower())
+        if who_group is not None:
+            return f"{who_group}"
     return None
 
 
 def format_tbprofiler_db_annotation(comment: Dict[str, str]) -> str:
     """Shorten TbProfiler source annotation."""
     db_names = {
-        'tbdb': 'TBDB',
-        'fohm': 'Fohm',
+        "tbdb": "TBDB",
+        "fohm": "Fohm",
     }
-    annot_source = comment['source'].lower()
-    who_match = re.search(r'^who.*v(\d+)', annot_source)
+    annot_source = comment["source"].lower()
+    who_match = re.search(r"^who.*v(\d+)", annot_source)
     if annot_source in db_names:
         fmt_name = db_names[annot_source]
     elif who_match:

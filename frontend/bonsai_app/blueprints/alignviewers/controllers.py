@@ -146,7 +146,9 @@ def make_igv_tracks(
     """
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
-    entrypoint_url = os.path.join(settings.bonsai_api_url, "resources", "genome", "info")
+    entrypoint_url = os.path.join(
+        settings.bonsai_api_url, "resources", "genome", "info"
+    )
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
         fasta_url=f"{entrypoint_url}?file={ref_genome['fasta']}",
