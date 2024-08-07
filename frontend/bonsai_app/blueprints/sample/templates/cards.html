@@ -708,10 +708,22 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {{ variant.hgvs_nt_change }}
+                                {% if variant.hgvs_nt_change | length > 20 %}
+                                    <span data-bs-toggle="tooltip" data-bs-placement="top"
+                                          data-bs-title="{{ variant.hgvs_nt_change }}">
+                                        {{ variant.hgvs_nt_change | truncate(20, killwords=True, leeway=0) }}
+                                    </span>
+                                {% else %}
+                                    {{ variant.hgvs_nt_change }}
+                                {% endif %}
                             </td>
                             {% if variant.hgvs_aa_change %}
-                                <td>{{ variant.hgvs_aa_change }}</td>
+                                <td>
+                                    <span data-bs-toggle="tooltip" data-bs-placement="top"
+                                          data-bs-title="{{ variant.hgvs_aa_change }}">
+                                          {{ variant.hgvs_aa_change | truncate(20, killwords=True, leeway=0) }}
+                                    </span>
+                                </td>
                             {% else %}
                                 <td>-</td>
                             {% endif %}
