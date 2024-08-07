@@ -42,6 +42,7 @@ from .controllers import (
     filter_variants,
     get_variant_genes,
     get_all_who_classifications,
+    get_all_variant_types,
     sort_variants,
 )
 
@@ -301,6 +302,9 @@ def resistance_variants(sample_id: str) -> str:
     form_data = {
         "filter_genes": get_variant_genes(sample_info, software="tbprofiler"),
         "filter_who_class": get_all_who_classifications(
+            sample_info, software="tbprofiler"
+        ),
+        "filter_variant_type": get_all_variant_types(
             sample_info, software="tbprofiler"
         ),
     }

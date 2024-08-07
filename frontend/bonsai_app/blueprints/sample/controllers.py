@@ -235,6 +235,11 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
     if bool(form.get("yeild-resistance")) and len(variant.get("phenotypes", [])) == 0:
         variant_passes_qc = False
 
+    # only inlcude variants of selected types
+    selected_var_types = form.getlist("filter-variant-type")
+    if selected_var_types and variant["variant_type"] not in selected_var_types:
+        variant_passes_qc = False
+
     # only inlcude variants in selected genes
     selected_genes = form.getlist("filter-genes")
     if selected_genes and variant["reference_sequence"] not in selected_genes:
@@ -319,3 +324,21 @@ def get_all_who_classifications(sample_info, software=None) -> Tuple[str, ...]:
         for variant in variants:
             classification.update(get_variant_classifications(variant))
     return tuple(sorted(classification))
+
+
+def get_all_variant_types(sample_info, software=None) -> Tuple[str, ...]:
+    """Get all variant types in the sample output."""
+    variant_types = set()
+    for prediction in sample_info["element_type_result"]:
+        # skip predictions that are not resistance
+        if not prediction["type"] == "AMR":
+            continue
+        # skip predictions that are not made w with the desired software
+        if software and not prediction["software"] == software:
+            continue
+        # skip predictions withouht variants
+        variants = {
+            variant["variant_type"] for variant in prediction["result"]["variants"]
+        }
+        variant_types.update(variants)
+    return tuple(sorted(variant_types))
