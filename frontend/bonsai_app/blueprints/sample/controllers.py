@@ -5,6 +5,7 @@ from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
 from ...models import ElementType, PredictionSoftware
+from ...custom_filters import get_who_group_from_tbprofiler_comment
 
 LOG = logging.getLogger(__name__)
 SampleObj = Dict[str, Any]
@@ -239,6 +240,15 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
     if selected_genes and variant["reference_sequence"] not in selected_genes:
         variant_passes_qc = False
 
+    # only inlcude variants with desired WHO class
+    selected_who_classes = form.getlist("filter-who-class")
+    # get who classes for a variant
+    n_intersecting_classes = len(
+        set(selected_who_classes) & set(get_variant_classifications(variant))
+    )
+    if selected_who_classes and n_intersecting_classes == 0:
+        variant_passes_qc = False
+
     return variant_passes_qc
 
 
@@ -272,10 +282,40 @@ def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
     """Get the genes that have variants."""
     genes = set()
     for prediction in sample_info["element_type_result"]:
+        # skip predictions that are not resistance
+        if not prediction["type"] == "AMR":
+            continue
         # skip predictions that are not madew with the desired software
-        if software and software == prediction["type"]:
+        if software and not software == prediction["software"]:
             continue
         # skip predictions withouht variants
         variants = prediction["result"]["variants"]
         genes.update({variant["reference_sequence"] for variant in variants})
     return tuple(sorted(genes))
+
+
+def get_variant_classifications(variant) -> Tuple[str, ...]:
+    """Get the the classifications for a single variant."""
+    classification = set()
+    for pheno in variant["phenotypes"]:
+        who_group = get_who_group_from_tbprofiler_comment(pheno)
+        if who_group:
+            classification.update([who_group])
+    return tuple(list(classification))
+
+
+def get_all_who_classifications(sample_info, software=None) -> Tuple[str, ...]:
+    """Get the classification of variants predicted by a given software."""
+    classification = set()
+    for prediction in sample_info["element_type_result"]:
+        # skip predictions that are not resistance
+        if not prediction["type"] == "AMR":
+            continue
+        # skip predictions that are not made w with the desired software
+        if software and not prediction["software"] == software:
+            continue
+        # skip predictions withouht variants
+        variants = prediction["result"]["variants"]
+        for variant in variants:
+            classification.update(get_variant_classifications(variant))
+    return tuple(sorted(classification))

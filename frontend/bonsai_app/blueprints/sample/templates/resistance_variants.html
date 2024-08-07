@@ -108,11 +108,21 @@
             </select>
             <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ request.form.get('min-depth') }}" default="">
         </div>
+        {# filter by genes #}
         <label class="form-label" for="filter-genes">Select genes</label>
         <select name="filter-genes" id="filter-genes" class="form-select form-select-sm" data-placeholder="Select gene" data-close-on-select="false" multiple>
             {% for gene in form_data.get('filter_genes', []) %}
                 <option value="{{gene}}" {% if gene in request.form.getlist('filter-genes') %}selected{% endif %}>
                     {{gene}}
+                </option>
+            {% endfor %}
+        </select>
+        {# filter by who classes #}
+        <label class="form-label" for="filter-who-class">Select WHO class</label>
+        <select name="filter-who-class" id="filter-who-class" class="form-select form-select-sm" data-placeholder="Select class" data-close-on-select="false" multiple>
+            {% for w_class in form_data.get('filter_who_class', []) %}
+                <option value="{{w_class}}" {% if w_class in request.form.getlist('filter-who-class') %}selected{% endif %}>
+                    {{w_class}}
                 </option>
             {% endfor %}
         </select>
@@ -249,6 +259,7 @@
         // ready select2
         $("#antibiotic-group").select2()
         $("#filter-genes").select2()
+        $("#filter-who-class").select2()
         // 
         $("#accept-variant-btn").click(() => {
             // disable rejection reason
