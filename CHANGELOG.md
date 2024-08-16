@@ -6,6 +6,7 @@
 - Added cards ShigaPass result and function to tag Ecoli and Shigella spp with ShigaPass result.
 - Added option to filter variants on WHO class and variant type in the variants view.
 - Added button to reset variants filter on the variants view.
+- Added support for more IGV annoation file formats.
 
 ### Changed
 
@@ -17,6 +18,8 @@
 - Use pydantic-settings for config management in frontend.
 - Updated the samples tables to make sample name, sample id, and major spp searchable.
 - Truncate long tbprofiler variant names and show full name on hover.
+- Fixed issue that could prevent IGV from loading.
+- Updated IGVjs to version 3.0.2
 
 ### Fixed
 

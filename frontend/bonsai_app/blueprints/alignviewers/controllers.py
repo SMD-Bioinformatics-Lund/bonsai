@@ -15,6 +15,7 @@ from ...config import settings
 
 LOG = logging.getLogger(__name__)
 
+ANNOTATION_SUFFIXES = [".bed", ".gtf", ".gff", ".genePred", ".genePredExt", ".peaks", ".narrowPeak", ".broadPeak", ".bigBed"]
 
 class IgvDisplayMode(Enum):
     """Valid display modes."""
@@ -204,8 +205,19 @@ def make_igv_tracks(
     # set additional annotation tracks
     for order, annot in enumerate(sample_obj["genome_annotation"], start=3):
         file = Path(annot["file"])
-        match file.suffix:
-            case ".bed":
+        # check if file is gzipped
+        if file.suffix == ".gz" and len(file.suffixes) == 1:
+            # warn if file format is unrecognised
+            LOG.warning("Unknown file format for file: %s", file)
+            continue
+        if file.suffix == ".gz" and len(file.suffixes) > 1:
+            file_suffix = file.suffixes[-2]
+        else:
+            file_suffix = file.suffix
+
+        # detect the type of track to add based on the file suffix
+        match file_suffix:
+            case file_suffix if file_suffix in ANNOTATION_SUFFIXES:
                 url = build_api_url(
                     f"/resources/genome/{ref_genome['accession']}/annotation",
                     file=file.name,
@@ -227,8 +239,12 @@ def make_igv_tracks(
                     url=url,
                     order=order,
                 )
-        # add track
-        tracks.append(track)
+            case _:
+                LOG.warning("Unknown file format for file: %s", file)
+                track = None
+        # add track if defined
+        if track is not None:
+            tracks.append(track)
     display_obj = IgvData(locus=locus, reference=reference, tracks=tracks)
     return display_obj
 
