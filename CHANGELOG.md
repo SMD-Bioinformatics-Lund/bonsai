@@ -19,6 +19,7 @@
 - Updated the samples tables to make sample name, sample id, and major spp searchable.
 - Truncate long tbprofiler variant names and show full name on hover.
 - Fixed issue that could prevent IGV from loading.
+- Updated IGVjs to version 3.0.2
 
 ### Fixed
 
