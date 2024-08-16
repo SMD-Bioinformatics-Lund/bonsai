@@ -280,8 +280,6 @@ async def get_samples(
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
-    # create sample id from lims id and sequencing run
-    sample_run = sample.run_metadata.run
     # validate data format
     try:
         tags = compute_phenotype_tags(sample)
