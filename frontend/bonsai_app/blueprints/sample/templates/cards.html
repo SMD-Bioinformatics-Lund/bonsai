@@ -18,7 +18,7 @@
         <div class="card-body">
             <div class="d-flex">
                 <h4 id="sample-id-heading" class="card-title">
-                    {{ sample.run_metadata.run.sample_name }}
+                    {{ sample.sample_name }}
                 </h4>
                 {% for tag in sample.tags %}
                     {% if tag.type == "virulence" %}
@@ -35,7 +35,7 @@
                     </span>
                 {% endfor %}
             </div>
-            <p class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.run_metadata.run.lims_id }}</span></p>
+            <p class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></p>
             <div class="row gx-5">
                 <div class="col-md-auto">
                     Upload date: {{sample.created_at | strftime}}
@@ -898,7 +898,6 @@
 
 
 {% macro analysis_meta_pipeline(sample_info) %}
-{% set meta=sample_info["run_metadata"] %}
 <div class="card">
     <div class="card-body">
         <h6 class="card-title">
@@ -911,15 +910,15 @@
             <tbody>
                 <tr>
                     <th>Pipeline</th>
-                    <td>{{ meta.run.pipeline }}</td>
+                    <td>{{ sample_info.pipeline.name }}</td>
                 </tr>
                 <tr>
                     <th>Version</th>
-                    <td>{{ meta.run.version }}</td>
+                    <td>{{ sample_info.pipeline.version }}</td>
                 </tr>
                 <tr>
                     <th>Profile</th>
-                    <td>{{ meta.run.analysis_profile }}</td>
+                    <td>{{ sample_info.pipeline.analysis_profile }}</td>
                 </tr>
             </tbody>
         </table>
@@ -928,7 +927,7 @@
 {% endmacro %}
 
 {% macro analysis_meta_databases(sample_info) %}
-{% set meta=sample_info["run_metadata"]%}
+{% set meta=sample_info["pipeline"]%}
 <div class="card">
     <div class="card-body">
         <h6 class="card-title">
