@@ -20,6 +20,7 @@
 - Truncate long tbprofiler variant names and show full name on hover.
 - Fixed issue that could prevent IGV from loading.
 - Updated IGVjs to version 3.0.2
+- Updaed how AMR variants are displayed on the sample view page. All varians are displayed if no variant have been processed, otherwise only show passed resistance yielding variants.
 
 ### Fixed
 
