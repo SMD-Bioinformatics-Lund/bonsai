@@ -342,3 +342,35 @@ def get_all_variant_types(sample_info, software=None) -> Tuple[str, ...]:
         }
         variant_types.update(variants)
     return tuple(sorted(variant_types))
+
+
+def filter_variants_if_processed(sample_info, result_type="AMR"):
+    """Filter out unprocessed and failed variants if any variants have been processed."""
+    results = []
+    for result in sample_info["element_type_result"]:
+        if result["type"] == "AMR" and len(result["result"]["variants"]) > 0:
+            # check if result has has processed variants
+            processed = [QualityControlResult.FAILED, QualityControlResult.PASSED]
+            has_proc_variants = any(
+                QualityControlResult(var["verified"]) in processed
+                for var in result["result"]["variants"]
+            )
+            # create filtered variant object
+            if has_proc_variants:
+                # remove failed and unprocessed variants
+                variants = [
+                    var
+                    for var in result["result"]["variants"]
+                    if QualityControlResult(var["verified"])
+                    == QualityControlResult.PASSED
+                ]
+            else:
+                # include all
+                variants = result["result"]["variants"]
+            # update variant object
+            result["result"]["variants"] = variants
+        # add back the result object to the sample info data
+        results.append(result)
+    # add back the result object to the sample info data
+    sample_info["element_type_result"] = results
+    return sample_info

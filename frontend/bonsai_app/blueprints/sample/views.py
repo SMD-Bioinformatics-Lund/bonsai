@@ -1,5 +1,6 @@
 """Declaration of views for samples"""
 import json
+import logging
 from datetime import date
 from io import BytesIO
 from itertools import groupby
@@ -43,7 +44,10 @@ from .controllers import (
     get_all_who_classifications,
     get_variant_genes,
     sort_variants,
+    filter_variants_if_processed,
 )
+
+LOG = logging.getLogger(__name__)
 
 samples_bp = Blueprint(
     "samples",
@@ -134,6 +138,13 @@ def sample(sample_id: str) -> str:
         key=lambda res: order.get(res["software"], 0),
         reverse=True,
     )
+
+    # filter tbprofiler results and sort variants
+    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
+    sample_info = filter_variants_if_processed(sample_info)
+    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
+    sample_info = sort_variants(sample_info)
+    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
 
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
