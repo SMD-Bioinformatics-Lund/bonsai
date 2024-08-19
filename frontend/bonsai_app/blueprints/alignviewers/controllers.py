@@ -188,7 +188,7 @@ def make_igv_tracks(
         ),
     ]
     # add gene track
-    gene_url = build_api_url(f"/resources/genome/info", file=ref_genome["genes"])
+    gene_url = build_api_url("/resources/genome/info", file=ref_genome["genes"])
     tracks.append(
         IgvAnnotationTrack(
             name="Genes",
