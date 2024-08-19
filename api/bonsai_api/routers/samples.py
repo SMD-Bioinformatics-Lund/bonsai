@@ -408,9 +408,9 @@ async def get_vcf_files_for_sample(
     # build path to the VCF
     file_path = None
     for annot in sample.genome_annotation:
-        path = pathlib.Path(annot["file"])
+        path = pathlib.Path(annot.file)
         # if file exist
-        if variant_type.value == annot["name"]:
+        if variant_type.value == annot.name:
             file_path = path
             break
 
