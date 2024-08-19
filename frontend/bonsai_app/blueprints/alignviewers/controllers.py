@@ -236,6 +236,7 @@ def make_igv_tracks(
                 track = IgvVariantTrack(
                     name=annot["name"],
                     source_type="file",
+                    format="vcf",
                     url=url,
                     order=order,
                 )
