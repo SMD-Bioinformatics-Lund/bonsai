@@ -219,8 +219,7 @@ def make_igv_tracks(
         match file_suffix:
             case file_suffix if file_suffix in ANNOTATION_SUFFIXES:
                 url = build_api_url(
-                    f"/resources/genome/{ref_genome['accession']}/annotation",
-                    file=file.name,
+                    "/resources/genome/info", file=file
                 )
                 track = IgvAnnotationTrack(
                     name=annot["name"],
@@ -230,9 +229,8 @@ def make_igv_tracks(
                 )
             case ".vcf":
                 url = build_api_url(
-                    f"/samples/{sample_obj['sample_id']}/vcf",
-                    variant_type=annot["name"],
-                )  # strip leading .
+                    "/resources/genome/info", file=file
+                )
                 track = IgvVariantTrack(
                     name=annot["name"],
                     source_type="file",
