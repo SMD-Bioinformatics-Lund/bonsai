@@ -14,8 +14,8 @@ from fastapi.responses import Response
 from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
 
-from .models.sample import SampleInDatabase
 from .models.qc import SampleQcClassification
+from .models.sample import SampleInDatabase
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -256,7 +256,13 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
         qc_status = sample.qc_status.status
     # get mykrobe spp results
     try:
-        spp_res = next((midx.result for midx in sample.species_prediction if midx.software == "mykrobe"))
+        spp_res = next(
+            (
+                midx.result
+                for midx in sample.species_prediction
+                if midx.software == "mykrobe"
+            )
+        )
     except StopIteration:
         spp_res = None
     result.extend(

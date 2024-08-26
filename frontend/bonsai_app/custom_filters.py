@@ -1,7 +1,7 @@
 """Custom jinja3 template tests."""
 import logging
-import re
 import math
+import re
 from collections import defaultdict
 from itertools import chain
 from typing import Any, Dict, List

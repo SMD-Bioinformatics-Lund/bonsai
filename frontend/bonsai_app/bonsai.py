@@ -1,18 +1,16 @@
 """Handlers for api services."""
 
 import logging
-from functools import wraps
+from functools import partial, wraps
 from typing import Callable, List
 
 import requests
 from flask import current_app
 from pydantic import BaseModel
-from requests.structures import CaseInsensitiveDict
-from functools import partial
 from requests import HTTPError
+from requests.structures import CaseInsensitiveDict
 
 from .config import settings
-
 from .models import SampleBasketObject, SubmittedJob
 
 LOG = logging.getLogger(__name__)

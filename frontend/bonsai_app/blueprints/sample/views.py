@@ -19,7 +19,6 @@ from flask import (
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from ...config import settings
 from ...bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
@@ -36,13 +35,13 @@ from ...bonsai import (
     update_sample_qc_classification,
     update_variant_info,
 )
+from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
-
 from .controllers import (
     filter_variants,
-    get_variant_genes,
-    get_all_who_classifications,
     get_all_variant_types,
+    get_all_who_classifications,
+    get_variant_genes,
     sort_variants,
 )
 

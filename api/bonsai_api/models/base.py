@@ -2,16 +2,16 @@
 from datetime import datetime, timezone
 
 from bson import ObjectId
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     """Base model for read/ write operations"""
 
     model_config = ConfigDict(
-        allow_population_by_alias = True,
-        populate_by_name = True,
-        use_enum_values = True,
+        allow_population_by_alias=True,
+        populate_by_name=True,
+        use_enum_values=True,
     )
 
 

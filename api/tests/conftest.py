@@ -27,9 +27,7 @@ def mongo_database():
 def mtuberculosis_sample(mtuberculosis_sample_path):
     """Sample db object."""
     with open(mtuberculosis_sample_path) as inpt:
-        sample_obj = SampleInDatabase(
-            **json.load(inpt)
-        )
+        sample_obj = SampleInDatabase(**json.load(inpt))
     return sample_obj
 
 

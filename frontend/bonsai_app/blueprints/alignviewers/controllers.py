@@ -10,12 +10,23 @@ from flask import session
 from flask_login import current_user
 from pydantic import Field
 
-from ...models import RWModel
 from ...config import settings
+from ...models import RWModel
 
 LOG = logging.getLogger(__name__)
 
-ANNOTATION_SUFFIXES = [".bed", ".gtf", ".gff", ".genePred", ".genePredExt", ".peaks", ".narrowPeak", ".broadPeak", ".bigBed"]
+ANNOTATION_SUFFIXES = [
+    ".bed",
+    ".gtf",
+    ".gff",
+    ".genePred",
+    ".genePredExt",
+    ".peaks",
+    ".narrowPeak",
+    ".broadPeak",
+    ".bigBed",
+]
+
 
 class IgvDisplayMode(Enum):
     """Valid display modes."""
@@ -218,9 +229,7 @@ def make_igv_tracks(
         # detect the type of track to add based on the file suffix
         match file_suffix:
             case file_suffix if file_suffix in ANNOTATION_SUFFIXES:
-                url = build_api_url(
-                    "/resources/genome/info", file=file
-                )
+                url = build_api_url("/resources/genome/info", file=file)
                 track = IgvAnnotationTrack(
                     name=annot["name"],
                     source_type="file",
@@ -228,9 +237,7 @@ def make_igv_tracks(
                     order=order,
                 )
             case ".vcf":
-                url = build_api_url(
-                    "/resources/genome/info", file=file
-                )
+                url = build_api_url("/resources/genome/info", file=file)
                 track = IgvVariantTrack(
                     name=annot["name"],
                     source_type="file",

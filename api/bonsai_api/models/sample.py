@@ -14,13 +14,13 @@ from prp.models.phenotype import (
 )
 from prp.models.species import SpeciesPrediction
 from prp.models.typing import (
+    ResultLineageBase,
+    TbProfilerLineage,
     TypingMethod,
     TypingResultCgMlst,
     TypingResultGeneAllele,
     TypingResultMlst,
     TypingSoftware,
-    TbProfilerLineage,
-    ResultLineageBase,
 )
 from pydantic import BaseModel, Field
 
