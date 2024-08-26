@@ -220,8 +220,8 @@ async def get_samples_summary(
         "tags": 1,
         "species_prediction": spp_cmd,
         "created_at": 1,
-        "profile": "$run_metadata.run.analysis_profile",
-        "run_metadata": "$run_metadata.run",
+        "profile": "$pipeline.analysis_profile",
+        "run_metadata": "$sequencing",
     }
     # define a optional projections
     optional_projecton = {}
