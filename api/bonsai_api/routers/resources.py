@@ -4,6 +4,9 @@ import logging
 import pathlib
 from typing import Annotated
 
+from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi.responses import FileResponse
+
 from ..config import settings
 from ..io import (
     InvalidRangeError,
@@ -11,9 +14,6 @@ from ..io import (
     is_file_readable,
     send_partial_file,
 )
-from fastapi import APIRouter, Header, HTTPException, Query, status
-from fastapi.responses import FileResponse
-
 from ..models.antibiotics import ANTIBIOTICS
 from ..models.qc import VARIANT_REJECTION_REASONS
 

@@ -147,7 +147,15 @@ ALL_TAG_FUNCS = [
     {"species": ["Staphylococcus aureus"], "func": add_mrsa},
     {"species": ["Escherichia coli"], "func": add_stx_type},
     {"species": ["Escherichia coli"], "func": add_oh_type},
-    {"species": ["Escherichia coli", "Klebsiella pneumoniae", "Shigella sonnei", "Shigella dysenteriae"], "func": add_shigella_typing},
+    {
+        "species": [
+            "Escherichia coli",
+            "Klebsiella pneumoniae",
+            "Shigella sonnei",
+            "Shigella dysenteriae",
+        ],
+        "func": add_shigella_typing,
+    },
 ]
 
 
@@ -158,9 +166,17 @@ def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
     for tag_func in ALL_TAG_FUNCS:
         # bracken should always be included regardless of specie.
         try:
-            spp_res = next((pred for pred in sample.species_prediction if pred.software == "bracken"))
+            spp_res = next(
+                (
+                    pred
+                    for pred in sample.species_prediction
+                    if pred.software == "bracken"
+                )
+            )
         except StopIteration as error:
-            raise ValueError(f"No Bracken spp result for sample {sample.sample_id}") from error
+            raise ValueError(
+                f"No Bracken spp result for sample {sample.sample_id}"
+            ) from error
         major_spp = spp_res.result[0].scientific_name
         LOG.debug("Major spp %s in %s", major_spp, str(tag_func["species"]))
         if major_spp in tag_func["species"]:

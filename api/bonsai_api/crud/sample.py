@@ -214,14 +214,14 @@ async def get_samples_summary(
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
         "sample_id": 1,
-        "sample_name": "$run_metadata.run.sample_name",
-        "lims_id": "$run_metadata.run.lims_id",
-        "sequencing_run": "$run_metadata.run.sequencing_run",
+        "sample_name": 1,
+        "lims_id": 1,
+        "sequencing_run": "$sequencing.run_id",
         "tags": 1,
         "species_prediction": spp_cmd,
         "created_at": 1,
-        "profile": "$run_metadata.run.analysis_profile",
-        "run_metadata": "$run_metadata.run",
+        "profile": "$pipeline.analysis_profile",
+        "run_metadata": "$sequencing",
     }
     # define a optional projections
     optional_projecton = {}
@@ -280,8 +280,6 @@ async def get_samples(
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
-    # create sample id from lims id and sequencing run
-    sample_run = sample.run_metadata.run
     # validate data format
     try:
         tags = compute_phenotype_tags(sample)

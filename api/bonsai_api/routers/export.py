@@ -1,12 +1,12 @@
 import logging
 
-from ..io import sample_to_kmlims
 from fastapi import APIRouter, HTTPException, Path, Security, status
 from fastapi.responses import PlainTextResponse
 
 from ..crud.sample import EntryNotFound, get_sample
 from ..crud.user import get_current_active_user
 from ..db import db
+from ..io import sample_to_kmlims
 from ..models.sample import SAMPLE_ID_PATTERN
 from ..models.user import UserOutputDatabase
 

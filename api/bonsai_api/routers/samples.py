@@ -4,12 +4,6 @@ import logging
 import pathlib
 from typing import Annotated, Any, Dict, List
 
-from ..io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
 from fastapi import (
     APIRouter,
     Body,
@@ -39,6 +33,12 @@ from ..crud.sample import (
 )
 from ..crud.user import get_current_active_user
 from ..db import db
+from ..io import (
+    InvalidRangeError,
+    RangeOutOfBoundsError,
+    is_file_readable,
+    send_partial_file,
+)
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
@@ -408,9 +408,9 @@ async def get_vcf_files_for_sample(
     # build path to the VCF
     file_path = None
     for annot in sample.genome_annotation:
-        path = pathlib.Path(annot["file"])
+        path = pathlib.Path(annot.file)
         # if file exist
-        if variant_type.value == annot["name"]:
+        if variant_type.value == annot.name:
             file_path = path
             break
 

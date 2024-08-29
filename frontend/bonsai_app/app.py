@@ -5,10 +5,10 @@ from itertools import zip_longest
 from flask import Flask
 
 from .blueprints import admin, alignviewers, api, cluster, groups, login, public, sample
+from .config import settings
 from .custom_filters import FILTERS as JINJA_FILTERS
 from .custom_filters import TESTS as JINJA_TESTS
 from .extensions import login_manager
-from .config import settings
 
 
 def create_app():
