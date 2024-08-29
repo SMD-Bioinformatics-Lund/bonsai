@@ -5,7 +5,7 @@ from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
 from ...custom_filters import get_who_group_from_tbprofiler_comment
-from ...models import ElementType, PredictionSoftware
+from ...models import ElementType, PredictionSoftware, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 SampleObj = Dict[str, Any]
