@@ -223,7 +223,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                         variants = "-"
                     result.append(
                         {
-                            "sample_id": sample.run_metadata.run.sample_name,
+                            "sample_id": sample.sample_name,
                             "parameter": f"{abbrev.upper()}_NGS{lvl[0].upper()}",
                             "result": call,
                             "variants": variants,
@@ -243,7 +243,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                 # add result
                 result.append(
                     {
-                        "sample_id": sample.run_metadata.run.sample_name,
+                        "sample_id": sample.sample_name,
                         "parameter": f"{info['abbrev'].upper()} NGS",
                         "result": call,
                         "variants": variants,
@@ -268,13 +268,13 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
     result.extend(
         [
             {
-                "sample_id": sample.run_metadata.run.sample_name,
+                "sample_id": sample.sample_name,
                 "parameter": "MTBC_QC",
                 "result": qc_status.capitalize(),
                 "variants": "-",
             },
             {
-                "sample_id": sample.run_metadata.run.sample_name,
+                "sample_id": sample.sample_name,
                 "parameter": "MTBC_ART",
                 "result": spp_res[0].scientific_name if spp_res is not None else "-",
                 "variants": "-",
@@ -290,7 +290,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
             # get lineage with longest lineage string
             result.append(
                 {
-                    "sample_id": sample.run_metadata.run.sample_name,
+                    "sample_id": sample.sample_name,
                     "parameter": "MTBC_LINEAGE",
                     "result": type_res.result.sublineage,
                     "variants": "-",
@@ -305,11 +305,11 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
 
 def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
     """Convert sample information to KMLIMS format."""
-    match sample.run_metadata.run.analysis_profile:
+    match sample.pipeline.analysis_profile:
         case "mycobacterium_tuberculosis":
             pred_res = _fmt_mtuberculosis(sample)
         case _:
             raise NotImplementedError(
-                f"No export function for {sample.run_metadata.run.analysis_profile}"
+                f"No export function for {sample.pipeline.analysis_profile}"
             )
     return pred_res

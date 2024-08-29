@@ -1,24 +1,26 @@
 {
   "sample_id": "test_mtuberculosis_1",
-  "run_metadata": {
-    "run": {
-      "pipeline": "main.nf",
-      "version": "0.6.0",
-      "commit": "null",
-      "analysis_profile": "mycobacterium_tuberculosis",
-      "configuration_files": [
-        "/fs1/pipelines/jasen/configs/nextflow.dev.config"
-      ],
-      "workflow_name": "insane_gautier",
-      "sample_name": "test_mtuberculosis_1",
-      "lims_id": "mtuberculosis_lims_1",
-      "sequencing_run": "RUN0001",
-      "sequencing_platform": "illumina",
-      "sequencing_type": "PE",
-      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis -c /fs1/pipelines/jasen/configs/nextflow.dev.config --csv /home/markjo/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev",
-      "date": "2024-05-20T13:36:09.671742+02:00"
-    },
-    "databases": [
+  "sample_name": "test_mtuberculosis_1",
+  "lims_id": "mtuberculosis_lims_1",
+  "sequencing": {
+    "run_id": "RUN0001",
+    "platform": "illumina",
+    "instrument": "",
+    "sequencing_type": "PE",
+    "date": "2024-05-20T13:36:09.671742+02:00"
+  },
+  "pipeline": {
+    "pipeline": "main.nf",
+    "version": "0.6.0",
+    "commit": "null",
+    "analysis_profile": "mycobacterium_tuberculosis",
+    "configuration_files": [
+      "/fs1/pipelines/jasen/configs/nextflow.dev.config"
+    ],
+    "workflow_name": "insane_gautier",
+    "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis -c /fs1/pipelines/jasen/configs/nextflow.dev.config --csv /home/markjo/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev",
+    "date": "2024-05-20T13:36:09.671742+02:00",
+    "softwares": [
       {
         "name": "mykrobe-predictor",
         "version": "v0.12.2",
