@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
 
 from ...bonsai import (
@@ -35,10 +35,7 @@ class DataPointStyle(BaseModel):  # pylint: disable=too-few-public-methods
     grouptype: str = "alphabetic"
     colorscheme: DataType
 
-    class Config:  # pylint: disable=too-few-public-methods
-        """Configure model to resolve Enum values."""
-
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class MetaData(BaseModel):  # pylint: disable=too-few-public-methods
