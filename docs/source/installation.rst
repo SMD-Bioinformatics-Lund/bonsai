@@ -38,7 +38,7 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - bonsai-net
 
       frontend:
-         image: clinicalgenomicslund/bonsai-app:0.6.0 
+         image: clinicalgenomicslund/bonsai-app:0.7.0 
          depends_on:
             - mongodb
             - api
@@ -48,7 +48,7 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - bonsai-net
 
       api:
-         image: clinicalgenomicslund/bonsai-api:0.6.0 
+         image: clinicalgenomicslund/bonsai-api:0.7.0 
          depends_on:
             - mongodb
             - minhash_service
@@ -59,7 +59,7 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - bonsai-net
 
       minhash_service:
-         image: clinicalgenomicslund/bonsai-minhash-clustering:0.1.2 
+         image: clinicalgenomicslund/bonsai-minhash-clustering:0.2.0 
          depends_on:
             - redis
          volumes:
@@ -68,7 +68,7 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - bonsai-net
 
       allele_cluster_service:
-         image: clinicalgenomicslund/bonsai-allele-clustering:0.1.0
+         image: clinicalgenomicslund/bonsai-allele-clustering:0.2.0
          depends_on:
             - redis
          networks:
