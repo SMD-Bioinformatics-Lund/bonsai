@@ -25,7 +25,8 @@
 ### Fixed
 
 - Fixed misalignment of the checkbox in the samples table in the group and groups view.
-- Fixed bug in the TB lineage card that could crash the frontend
+- Fixed bug in the TB lineage card that could crash the frontend.
+- Fixed an issue where samples without MLST profiles could crash GrapeTree.
 
 ## [v0.6.0]
 

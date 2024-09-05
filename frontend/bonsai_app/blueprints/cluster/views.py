@@ -41,7 +41,7 @@ class DataPointStyle(BaseModel):  # pylint: disable=too-few-public-methods
 class MetaData(BaseModel):  # pylint: disable=too-few-public-methods
     """Structure of metadata options"""
 
-    metadata: Dict[str, Dict[str, str | int | float]]
+    metadata: Dict[str, Dict[str, str | int | float | None]]
     metadata_list: list[str]
     metadata_options: Dict[str, DataPointStyle]
 
