@@ -2,6 +2,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v0.7.0]
+
+### Added
+
 - Can configure SSL verification and usage of SSL certs for API requests from frontend.
 - Added cards ShigaPass result and function to tag Ecoli and Shigella spp with ShigaPass result.
 - Added option to filter variants on WHO class and variant type in the variants view.
