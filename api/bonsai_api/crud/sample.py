@@ -668,7 +668,6 @@ async def get_typing_profiles(
     # query database
     results = []
     async for raw_typing_profile in db.sample_collection.aggregate(pipeline):
-        #raise ValueError(raw_typing_profile.keys())
         results.append(
             TypingProfileAggregate(
                 sample_id=raw_typing_profile['sample_id'],
