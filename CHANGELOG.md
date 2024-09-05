@@ -11,7 +11,7 @@
 ### Changed
 
 - Bonsai now uses sample ids created by Jasen to identify unique samples.
-- Updated PRP to version 0.9.3
+- Updated PRP to version 0.10.1
 - Improved installation instructions.
 - Updated requests to version 2.32.0
 - Added startup commands to minhash and allele clustering services Dockerfiles.
@@ -27,6 +27,7 @@
 - Fixed misalignment of the checkbox in the samples table in the group and groups view.
 - Fixed bug in the TB lineage card that could crash the frontend.
 - Fixed an issue where samples without MLST profiles could crash GrapeTree.
+- Fixed removal of new ChewBBACA alleles call info codes.
 
 ## [v0.6.0]
 
