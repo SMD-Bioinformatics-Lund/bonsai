@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added select all variants button to tbprofiler and SV cards in Variant report view.
+
 ### Changed
 
 ### Fixed
