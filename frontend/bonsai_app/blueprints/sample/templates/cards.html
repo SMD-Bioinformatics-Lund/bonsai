@@ -666,7 +666,9 @@
                 <thead>
                     <tr>
                         {% if extended %}
-                            <td scope="col"></td>
+                            <td scope="col">
+                                <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'tbprofiler-variant-table')">
+                            </td>
                         {% endif %}
                         <td scope="col">Tags</td>
                         <td scope="col">Variant</td>
@@ -683,7 +685,7 @@
                         {% endif %}
                     </tr>
                 </thead>
-                <tbody class="table-group-divider">
+                <tbody id="tbprofiler-variant-table" class="table-group-divider">
                     {% for variant in result.variants %}
                         {% if variant.phenotypes | length > 0 or extended %}
                         {% if variant.verified == "passed" %}

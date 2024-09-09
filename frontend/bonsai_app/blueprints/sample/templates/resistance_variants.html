@@ -25,7 +25,9 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th></th>
+                    <th>
+                        <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'sv-variant-table')">
+                    </th>
                     <th>Info</th>
                     <th>Subtype</th>
                     <th>Start</th>
@@ -36,7 +38,7 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="sv-variant-table">
                 {% for variant in variants %}
                     {% if variant.verified == "passed" %}
                         {% set row_class = "table-success" %}
@@ -44,7 +46,7 @@
                         {% set row_class = "table-danger" %}
                     {% endif %}
                     <tr class="{{ row_class }}">
-                        <td><input type="checkbox" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
+                        <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
                         <td>
                             {% if variant.verified == "failed" and variant.reason %}
                                 <span class="ms-2 badge text-bg-warning"
@@ -321,5 +323,11 @@
         window.localStorage.setItem("selectedVariants", variantsObj)
     }
     // reset selected varants on page load
+    const selectAllVariants = (elem, tableId) => {
+        document.getElementById(tableId).querySelectorAll("input[type=checkbox]").forEach(el => {
+            el.checked = elem.checked; 
+            selectVariant(el);
+        });
+    }
 </script>
 {% endblock content %}
