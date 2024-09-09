@@ -29,6 +29,11 @@
                 {{ add_to_basket_btn() }}
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
+
+                    {# remove samples from group #}
+                    <button class="btn btn-sm btn-secondary ms-1" onclick="removeSelectedSamplesFromGroup('{{ title }}')">
+                        <i class="bi bi-folder-minus"></i>
+                    </button>
                 {% endif %}
                 {{ search_similar_btn() }}
                 {{ qc_bulk_toggle(bad_qc_actions)}}
@@ -224,6 +229,25 @@
         window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
     })
+</script>
+<script>
+    function removeSelectedSamplesFromGroup(groupId) {
+        const body = {
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        const baseUrl = {{ request.script_root|tojson }}
+        fetch(`${baseUrl}/api/groups/${groupId}/samples`, {
+            method: "DEL",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {
+            response.ok ?  location.reload() : throwSmallToast("The samples could not be removed from group.", "error")
+        })
+    }
 </script>
 {% endblock content %}
 
