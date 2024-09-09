@@ -6,6 +6,8 @@
 
 ### Fixed
 
+- Fixed highlight of displayed sample in the dendrogram on the sample view page.
+
 ## [v0.7.0]
 
 ### Added
