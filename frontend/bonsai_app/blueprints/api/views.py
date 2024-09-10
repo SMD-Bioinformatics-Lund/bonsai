@@ -11,6 +11,8 @@ from ...bonsai import (
     TokenObject,
     add_samples_to_basket,
     get_samples_by_id,
+    get_group_by_id,
+    update_group,
     remove_samples_from_basket,
 )
 from ...models import SampleBasketObject
@@ -97,3 +99,55 @@ def remove_sample_from_basket():
         )
 
     return f"removed {len(to_remove)} samples", 200
+
+
+@api_bp.route("/api/groups/<group_id>/samples", methods=["POST", "DEL"])
+@login_required
+def update_samples_in_group(group_id: str) -> str:
+    """Add one or more samples to an existing group."""
+    # if not valid token
+    if current_user.get_id() is None:
+        return jsonify("Not authenticated"), 401
+
+    # get sample ids that should be added from request
+    request_data = json.loads(request.data)
+    selected_samples = request_data.get("selectedSamples", [])
+
+    # sanity check that the list is not empty
+    if not isinstance(selected_samples, list):
+        LOG.error("Unexpected format of sample ids, %s", selected_samples)
+        return Response("Error when trying to add samples to group", status=500)
+    if len(selected_samples) == 0:
+        LOG.error("No sample ids in request, %s", selected_samples)
+        return Response("No sample ids in request", status=200)
+
+    # get session auth token
+    token = TokenObject(**current_user.get_id())
+
+    # get information of the group that should be updated
+    try:
+        group_obj = get_group_by_id(token, group_id=group_id)
+    except HTTPError as error:
+        # throw proper error page
+        abort(error.response.status_code)
+    
+    match request.method:
+        case "POST":
+            # add samples to group object
+            group_obj['included_samples'] = [
+                li for li in set(group_obj['included_samples'] + selected_samples)
+            ]
+        case "DEL":
+            # remove sample ids from group object
+            group_obj['included_samples'] = [
+                li for li in set(group_obj['included_samples']) - set(selected_samples)
+            ]
+
+    # update group object in database
+    try:
+        update_group(token, group_id=group_id, data=group_obj)
+    except HTTPError as error:
+        # throw proper error page
+        abort(error.response.status_code)
+
+    return selected_samples

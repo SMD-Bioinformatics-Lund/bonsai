@@ -20,6 +20,9 @@
                         {{ group_card(group, current_user.is_admin) }}
                     </div>
                 {% endfor %}
+                {% if current_user.is_admin %}
+                    <div class="col-sm-6 col-md-4 col-lg-auto py-2">{{ create_group_card() }}</div>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -32,15 +35,25 @@
                     <span id="n-selected-samples-counter">0</span>
                 </span>
                 {{ add_to_basket_btn() }}
+
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
+
+                    {# Add selected samples to group #}
+                    <div class="dropdown ps-2">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-folder-plus"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            {% for group in groups %}
+                                <li><a class="dropdown-item" onclick="addSelectedSamplesToGroup('{{group.group_id}}')">{{ group.display_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 {% endif %}
+
                 {{ search_similar_btn() }}
-                {% if current_user.is_admin %}
-                    <a href={{ url_for('groups.edit_groups') }} class="btn btn-sm btn-secondary ms-2">
-                        Create group
-                    </a>
-                {% endif %}
+
                 {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
@@ -139,6 +152,25 @@
     // template code for searching similar samples
     {{ search_similar_js() }}
 </script>
+<script>
+    function addSelectedSamplesToGroup(groupId) {
+        const body = {
+            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
+        }
+        const baseUrl = {{ request.script_root|tojson }}
+        fetch(`${baseUrl}/api/groups/${groupId}/samples`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'Accept': 'application/json', 
+                'Content-Type': 'application/json' 
+            },
+            credentials: 'same-origin'
+        }).then(response => {
+            response.ok ?  location.reload() : throwSmallToast("The samples could not be added to the group", "error")
+        })
+    }
+</script>
 {% endblock content %}
 
 {% macro group_card(group, is_admin=False) %}
@@ -160,6 +192,19 @@
         </div>
         <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
             <span class="last-update text-uppercase fw-semibold text-muted">Updated: {{ group.modified_at | strftime }}</span>
+        </div>
+    </a>
+</div>
+{% endmacro %}
+
+{% macro create_group_card() %}
+<div class="card group-card position-relative text-center border-success h-100">
+    {# Card for createing groups with similar layout as the group_card #}
+    <a class="link-dark text-decoration-none h-100" href="{{ url_for('groups.edit_groups') }}">
+        <div class="card-body">
+            <p class="text-success position-absolute top-50 start-50 translate-middle fs-1 p-0">
+                <i class="bi bi-plus-lg"></i>
+            </p>
         </div>
     </a>
 </div>

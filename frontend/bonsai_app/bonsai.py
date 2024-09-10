@@ -187,10 +187,8 @@ def delete_group(headers: CaseInsensitiveDict, group_id: str):
 
 
 @api_authentication
-def update_group(headers: CaseInsensitiveDict, **kwargs):
+def update_group(headers: CaseInsensitiveDict, group_id: str, data):
     """Update information in database for a group with group_id."""
-    group_id = kwargs.get("group_id")
-    data = kwargs.get("data")
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/{group_id}"
     resp = requests_put(url, json=data, headers=headers)
