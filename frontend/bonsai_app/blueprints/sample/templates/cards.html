@@ -1116,7 +1116,8 @@
                 yaxis: {
                     title: "Percent bases",
                     titlefont: { size: 12 },
-                    automargin: true
+                    automargin: true,
+                    range: [0 , 100],
                 },
                 xaxis: {
                     title: "Coverage",
@@ -1124,7 +1125,7 @@
                     automargin: true
                 },
                 font: { size: 12 }}
-            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: true} )
+            Plotly.newPlot('qcPlot', [data], layout, { staticPlot: false} )
         </script>
     </div>
 </div>

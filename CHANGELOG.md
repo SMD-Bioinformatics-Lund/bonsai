@@ -8,6 +8,8 @@
 
 ### Changed
 
+- Genome coverage plot to interactive and have an y-range of 0 to 100.
+
 ### Fixed
 
 - Fixed highlight of displayed sample in the dendrogram on the sample view page.
