@@ -20,7 +20,6 @@ export const formatSampleId = (val, params, data) => {
     // in case bonsai is not hosted under the root path
     const groupNamePos = window.location.pathname.split('/').indexOf('groups')
     const baseUrl = window.location.pathname.split('/').slice(0, groupNamePos).join('/') 
-    console.log(`${window.location.pathname} --> ${baseUrl}`)
     let element = document.createElement('a')
     let path = data.groupId ? `sample/${val.sample_id}?group_id=${data.groupId}` : `sample/${val.sample_id}`
     element.setAttribute('href', `${baseUrl}/${path}`)
@@ -44,6 +43,27 @@ export const formatTag = (val, params, data) => {
         return element.outerHTML
     })
     return elements.join('')
+}
+
+export const formatComment = (val, params, data) => {
+    if (val.length > 0) {
+        let element = document.createElement('span')
+        // add styling
+        element.className = `badge text-bg-primary p-1 me-1`
+
+        // add icon
+        let icon = document.createElement('i')
+        icon.className = "bi bi-chat-left pe-1"
+        element.appendChild(icon)
+
+        // add comment count
+        let nCommentsElement = document.createElement('span')
+        nCommentsElement.id = 'n-comments'
+        nCommentsElement.textContent = val.filter(comment => comment.displayed).length
+        element.appendChild(nCommentsElement)
+
+        return element.outerHTML
+    }
 }
 
 export async function getDefaultCols (apiUrl) {
