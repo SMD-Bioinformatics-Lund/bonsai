@@ -63,6 +63,12 @@ VALID_COLUMNS = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="comments",
+        label="Comments",
+        type="comments",
+        path="$.comments",
+    ),
+    OverviewTableColumn(
         id="sample_name",
         label="Name",
         path="$.sample_name",

@@ -70,6 +70,7 @@ async def get_samples_summary(
     include_mlst: bool = True,
     include_stx: bool = True,
     include_oh_type: bool = True,
+    include_comments: bool = True,
 ) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
@@ -223,6 +224,7 @@ async def get_samples_summary(
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",
         "run_metadata": "$sequencing",
+        "comments": int(include_comments),
     }
     # define a optional projections
     optional_projecton = {}
