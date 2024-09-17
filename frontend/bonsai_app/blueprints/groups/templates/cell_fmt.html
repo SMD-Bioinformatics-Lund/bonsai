@@ -1,5 +1,5 @@
-{% macro render_sampleId(sample_id)  %}
-    <a href={{url_for('samples.sample', sample_id=sample_id)}}>{{sample_id}}</a>
+{% macro render_sampleId(sample_id, label)  %}
+    <a href={{url_for('samples.sample', sample_id=sample_id)}}>{{label}}</a>
 {% endmacro %}
 
 {% macro render_taxonomic_name(text)  %}
@@ -29,6 +29,32 @@
     {% endif %}
 {% endmacro %}
 
+{% macro render_tags(tag_info)  %}
+    <td data-search="{% for tag in tag_info %}{{tag.label}} {% endfor %}">
+    {% for tag in tag_info %}
+        <span class="badge text-bg-{{tag.severity}} p-1 me-1">
+            {{tag.label}}
+        </span>
+    {% endfor %}
+    </td>
+{% endmacro %}
+
 {% macro render_text(text)  %}
     <span>{{text}}</span>
+{% endmacro %}
+
+{% macro format_table_cell(cell_info) %}
+    {% if cell_info['type'] == 'sample_btn' %}
+        <td>{{ render_sampleId(cell_info.data, "Open") }}</td>
+    {% elif cell_info['type'] == 'tags' %}
+        {{ render_tags(cell_info.data) }}
+    {% elif cell_info['type'] == 'taxonomic_name' %}
+        <td>{{ render_taxonomic_name(cell_info.data) }} </td>
+    {% elif cell_info['type'] == 'date' %}
+        <td>{{ cell_info.data | strftime }} </td>
+    {% elif cell_info['type'] == 'qc' %}
+        <td>{{ render_qc(cell_info.data) }} </td>
+    {% else %}
+        <td>{{ cell_info.data }}</td>
+    {% endif %}
 {% endmacro %}

@@ -89,6 +89,7 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="taxonomic_name",
         label="Major species",
+        type="taxonomic_name",
         path="$.species_prediction.scientific_name",
         sortable=True,
     ),

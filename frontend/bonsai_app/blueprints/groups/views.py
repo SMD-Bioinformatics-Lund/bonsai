@@ -1,6 +1,7 @@
 """Declaration of views for groups"""
 import json
 import logging
+from jsonpath2.path import Path as jsonPath
 from urllib.parse import urlparse
 
 from flask import (
@@ -66,11 +67,36 @@ def groups() -> str:
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
 
+    # get default columns from api
+    default_columns = []
+    for col in get_valid_group_columns():
+        if col['hidden']:
+            continue
+        # get path
+        col['path'] = jsonPath.parse_str(col['path'])
+        default_columns.append(col)
+
+    table_data = []
+    for sample in all_samples['records']:
+        row = []
+        for col in default_columns:
+            # get sample data from json path
+            data = [m.current_value for m in col['path'].match(sample)]
+            data = data[0] if len(data) > 0 else ""
+            row.append({
+                "id": col["id"],
+                "label": col["label"],
+                "type": col["type"],
+                "data": data,
+            })
+        if len(row) > 0:
+            table_data.append(row)
+
     return render_template(
         "groups.html",
         title="Groups",
         groups=all_groups,
-        samples=all_samples,
+        table_data=table_data,
         basket=basket,
         token=current_user.get_id().get("token"),
         bad_qc_actions=bad_qc_actions,

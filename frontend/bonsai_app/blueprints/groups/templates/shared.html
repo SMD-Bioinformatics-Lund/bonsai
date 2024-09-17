@@ -59,7 +59,7 @@ function addSelectedSamplesToBasket(btn) {
 
 {% macro search_similar_js() %}
 async function getSimilarSamples() {
-    const sampleId=window.getSelectedRows()[0]
+    const sampleId=window.getSelectedRows().ids()[0]
     const limit=document.getElementById("similar-samples-limit").value
     const similarity=document.getElementById("similar-samples-threshold").value
     const baseUrl = {{ request.script_root|tojson }}
@@ -98,7 +98,7 @@ async function getSimilarSamplesAndCheckRows(btn) {
                     resultParser,       // parse results
                     3000                // interval time
                 )
-                window.action('select', result.map(sample => sample.sample_id))
+                window.selectRows(result.map(sample => sample.sample_id))
                 hideSpinner(parentElem)
             } catch (err) {
                 throwSmallToast("Error while finding similar samples")
@@ -170,9 +170,6 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
       * @param   {HTMLFormElement}  form    The HTML form element to which the selected samples will be added.
       */
      function addSelectedSamplesToQcForm(form) {
-         // Retrieve selected samples from sessionStorage
-         let selectedSamples = window.getSelectedRows()
-
          // Remove existing hidden inputs with the name 'qc-selected-samples'
          var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
          existingInputs.forEach(existingInput => {
@@ -180,15 +177,15 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
          });
 
          // Iterate over the selectedSamples array and add as hidden inputs to the form
-         selectedSamples.forEach(sampleId => {
-             // Create a hidden input element
-             var input = document.createElement('input');
-             input.type = 'hidden';
-             input.name = 'qc-selected-samples'; // Adjust the name as needed
-             input.value = sampleId
+         window.getSelectedRows().ids().toArray().forEach(sampleId => {
+            // Create a hidden input element
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'qc-selected-samples'; // Adjust the name as needed
+            input.value = sampleId
 
-             // Append the input element to the form
-             form.appendChild(input);
+            // Append the input element to the form
+            form.appendChild(input);
          });
      }
     </script>
@@ -208,7 +205,7 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
         removeSamplesForm.addEventListener("submit", event => {
         event.preventDefault()
         // add selected samples to form
-        event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows())
+        event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows().ids().toArray())
         removeSamplesForm.submit()
         })
     </script>
