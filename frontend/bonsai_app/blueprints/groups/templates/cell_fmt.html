@@ -39,6 +39,32 @@
     </td>
 {% endmacro %}
 
+
+{% macro comment_tooltip(comment) %}
+<p class='mb-1'>{{ comment.comment }}</p>
+<p class='mt-0 text-end fst-italic'>- {{ comment.username }}</p>
+<hr>
+{% endmacro %}
+
+{% macro render_comments(comments_obj) %}
+    <td>
+        {% if comments_obj | length %}
+            <span class="badge text-bg-primary" data-bs-toggle="tooltip" 
+                  data-bs-placement="top" data-bs-html="true"
+                  data-bs-title="
+                  <div>
+                  {% for comment in comments_obj %}
+                  {% if comment.displayed %}{{ comment_tooltip(comment) }}{% endif %}
+                  {% endfor %}
+                  </div>
+                  ">
+                <i class="bi bi-chat-right"></i>
+                <span>{{ comments_obj | length }}</span>
+            </span>
+        {% endif %}
+    </td>
+{% endmacro %}
+
 {% macro render_text(text)  %}
     <span>{{text}}</span>
 {% endmacro %}
@@ -54,6 +80,9 @@
         <td>{{ cell_info.data | strftime }} </td>
     {% elif cell_info['type'] == 'qc' %}
         <td>{{ render_qc(cell_info.data) }} </td>
+    {% elif cell_info['type'] == 'comments' %}
+        {{ render_comments(cell_info.data) }}
     {% else %}
         <td>{{ cell_info.data }}</td>
     {% endif %}
+{% endmacro %}

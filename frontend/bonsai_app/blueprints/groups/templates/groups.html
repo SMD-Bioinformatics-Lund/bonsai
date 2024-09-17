@@ -140,7 +140,10 @@ window.updateRowSelectionCounters = () => {
     }
     sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
 }
- 
+
+// init tooltips
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 </script>
 {% endblock content %}
 
