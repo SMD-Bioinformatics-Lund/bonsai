@@ -1,12 +1,17 @@
 {% extends "layout.html" %}
-{% import "cell_fmt.html" as cell_format %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
-    {{ super() }}
-    <link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('groups.static', filename='group.css') }}">
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('groups.static', filename='groups.css') }}">
+<link rel="stylesheet" href="{{ url_for('groups.static', filename='datatables.min.css') }}">
 {% endblock css %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
+<script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
+{% endblock scripts %}
 
 {% block content %}
 <div class="card bg-white mt-4 col-lg-auto mx-2">
@@ -22,10 +27,6 @@
         </table>
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
-                <span class="navbar-text">
-                    <i>Selected samples:</i>
-                    <span id="n-selected-samples-counter">0</span>
-                </span>
                 {{ add_to_basket_btn() }}
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
@@ -55,77 +56,9 @@
                 </form>
             </div>
         </nav>
-        <div id="data-table"></div>
+        {{ sample_table(table_data) }}
     </div>
 </div>
-<script type="module">
-    import { w2grid, w2utils } from 'https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.es6.min.js'
-    import { formatTaxonomicName, formatOpenSampleBtn, formatTag, formatComment, getTableSampleData, formatTableColumn } from '{{ url_for("groups.static", filename="sampleTable.js") }}';
-
-    // define formatters
-    w2utils.formatters['taxonomic_name'] = formatTaxonomicName
-    w2utils.formatters['tags'] = formatTag
-    w2utils.formatters['comments'] = formatComment
-    w2utils.formatters['sample_btn'] = formatOpenSampleBtn
-    // get table configuration
-    const apiTableConfig = {{ table_definition | tojson }}
-    const groupId = "{{ group_id }}"
-    // create table
-    const columns = apiTableConfig.map(formatTableColumn)
-    // configure table
-    let tableConfig = {
-        grid: {
-            name: 'grid',
-            box: '#data-table',
-            show: {
-                footer: false,
-                toolbar: true,
-                selectColumn: true,
-            },
-            multiSelect: true,
-            multiSearch: true,
-            liveSearch: true,
-            columns: columns,
-            async onSelect(event) {
-                await event.complete
-                document.getElementById("cluster-button").disabled = 2 > this.getSelection().length
-                document.getElementById("add-to-basket-btn").disabled = 1 > this.getSelection().length
-                document.getElementById("toggle-qc-btn").disabled = 1 > this.getSelection().length
-                document.getElementById("n-selected-samples-counter").innerText = this.getSelection().length
-                // enable remove samples btn
-                if (document.getElementById("remove-samples-btn") !== null) {
-                  document.getElementById("remove-samples-btn").disabled = 0 > this.getSelection().length
-                }
-                // update selected samples counter
-                sessionStorage.setItem("selectedSamples", JSON.stringify(this.getSelection()));
-                // enable find simiar samples button when ONE row is selected
-                document.getElementById("select-similar-samples-btn").disabled = 1 !== this.getSelection().length
-            }
-        },
-    }
-    // setup grid
-    let grid = new w2grid(tableConfig.grid)
-
-    // get data
-    const groupSamples = {{ samples | tojson}}
-    grid.records = groupSamples.map((s) => getTableSampleData(s, apiTableConfig))
-
-    window.getSelectedRows = () => grid.getSelection()
-    window.action = function (method, param1, param2, param3) {
-        grid[method](param1, param2, param3)
-    }
-
-    const selected_samples = {{selected_samples | tojson |safe }}
-    if (selected_samples.length > 0) {
-        window.action('select', selected_samples.map(sample => sample))
-    }
-
-    window.refreshGrid = function(auto) {
-        grid.autoLoad = auto
-        grid.skip(0)
-    }
-    grid.render()
-</script>
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
     // template code for adding to basket
@@ -172,7 +105,7 @@
         showSpinner(button)
         
         // get sample ids for checked samples
-        const sampleId = window.getSelectedRows()
+        const sampleId = window.getSelectedRows().ids().toArray()
         const distance = document.getElementById("cluster-distance-metric").value
         // if there are more than 1k samples use minhash instead of cgmlst
         const typingData = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-typing-data").value
@@ -229,6 +162,16 @@
         xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
         window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
         xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
+    })
+
+    // update functions for selecting and deselecting rows
+    table.on('select', (e, dt, type, indexes) => {
+        window.updateRowSelectionCounters()
+        document.getElementById("cluster-button").disabled = window.getSelectedRows().data().length < 2
+    })
+    table.on('deselect', (e, dt, type, indexes) => {
+        window.updateRowSelectionCounters()
+        document.getElementById("cluster-button").disabled = window.getSelectedRows().data().length < 2
     })
 </script>
 <script>

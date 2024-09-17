@@ -76,6 +76,7 @@ def groups() -> str:
         col['path'] = jsonPath.parse_str(col['path'])
         default_columns.append(col)
 
+    # generate table data
     table_data = []
     for sample in all_samples['records']:
         row = []
@@ -197,7 +198,6 @@ def group(group_id: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    table_definition = group_info["table_columns"]
     samples = get_samples_by_id(
         token, limit=0, skip=0, sample_ids=group_info["included_samples"]
     )
@@ -206,6 +206,34 @@ def group(group_id: str) -> str:
     selected_samples = request.args.getlist("samples")
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
+
+    # get columns from api
+    group_columns = []
+    for col in group_info["table_columns"]:
+        if col['hidden']:
+            continue
+        # get path
+        upd_col = col.copy()
+        upd_col['path'] = jsonPath.parse_str(upd_col['path'])
+        group_columns.append(upd_col)
+
+    # generate table data
+    table_data = []
+    for sample in samples['records']:
+        row = []
+        for col in group_columns:
+            # get sample data from json path
+            data = [m.current_value for m in col['path'].match(sample)]
+            data = data[0] if len(data) > 0 else ""
+            row.append({
+                "id": col["id"],
+                "label": col["label"],
+                "type": col["type"],
+                "data": data,
+            })
+        if len(row) > 0:
+            table_data.append(row)
+        
     return render_template(
         "group.html",
         title=group_id,
@@ -213,9 +241,9 @@ def group(group_id: str) -> str:
         bad_qc_actions=bad_qc_actions,
         selected_samples=selected_samples,
         group_desc=group_info["description"],
-        samples=samples["records"],
+        table_data=table_data,
+        table_definition=group_info["table_columns"],
         modified=group_info["modified_at"],
-        table_definition=table_definition,
     )
 
 

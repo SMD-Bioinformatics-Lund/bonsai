@@ -1,18 +1,16 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn %}
-{% from "cell_fmt.html" import format_table_cell %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
 {{ super() }}
-<link rel="stylesheet" type="text/css" href="https://rawgit.com/vitmalina/w2ui/master/dist/w2ui.min.css">
-<link rel="stylesheet" href="{{url_for('groups.static', filename='groups.css')}}">
-<link href="https://cdn.datatables.net/v/bs5/dt-2.1.6/b-3.1.2/sb-1.8.0/sp-2.3.2/sl-2.1.0/datatables.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('groups.static', filename='groups.css') }}">
+<link rel="stylesheet" href="{{ url_for('groups.static', filename='datatables.min.css') }}">
 {% endblock css %}
 
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.datatables.net/v/bs5/dt-2.1.6/b-3.1.2/sb-1.8.0/sp-2.3.2/sl-2.1.0/datatables.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
+<script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}
@@ -61,26 +59,7 @@
                 {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
-        {# build sample table #}
-        <table id="sample-table" class="display table table-striped">
-            <thead>
-                <tr>
-                    {# build table header #}
-                    {% for col in table_data[0] %}
-                        <td>{{ col.label }}</td>
-                    {% endfor %}
-                </th>
-            </thead>
-            <tbody>
-                {% for row in table_data %}
-                    <tr id="{{ row[0].data }}">
-                        {% for cell in row %}
-                            {{ format_table_cell(cell) }}
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {{ sample_table(table_data) }}
     </div>
 </div>
 <script>
@@ -108,42 +87,6 @@
             response.ok ?  location.reload() : throwSmallToast("The samples could not be added to the group", "error")
         })
     }
-</script>
-<script>
-// define data table
-const table = new DataTable('#sample-table', { 
-    select: true,
-    layout: {
-        topStart: 'searchBuilder'
-    },
-});
-table.on('select', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-table.on('deselect', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-
-// define global functions
-window.getSelectedRows = () => table.rows('.selected')
-window.selectRows = (sampleIds) => {
-    table.rows(sampleIds.map(id => `#${id}`)).select()
-    window.updateRowSelectionCounters()
-}
-
-window.updateRowSelectionCounters = () => {
-    let nSelectedRows = table.rows('.selected').data().length
-    // enable add to basket + toggle qc buttons when user selects at least one row
-    document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
-    document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
-    // enable find simiar samples button when ONE row is selected
-    document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
-    // enable remove samples btn
-    if (document.getElementById("remove-samples-btn") !== null) {
-        document.getElementById("remove-samples-btn").disabled = 0 > nSelectedRows
-    }
-    sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
-}
-
-// init tooltips
-const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 </script>
 {% endblock content %}
 
