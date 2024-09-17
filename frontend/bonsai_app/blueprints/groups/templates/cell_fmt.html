@@ -82,6 +82,8 @@
         <td>{{ render_qc(cell_info.data) }} </td>
     {% elif cell_info['type'] == 'comments' %}
         {{ render_comments(cell_info.data) }}
+    {% elif cell_info['type'] == 'mlst' %}
+        {{ render_mlst(cell_info.data) }}
     {% else %}
         <td>{{ cell_info.data }}</td>
     {% endif %}
