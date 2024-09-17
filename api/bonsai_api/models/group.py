@@ -51,7 +51,7 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
 VALID_COLUMNS = [
     OverviewTableColumn(
         id="sample_btn",
-        label="Open sample",
+        label="",
         type="sample_btn",
         path="$.sample_id",
     ),
