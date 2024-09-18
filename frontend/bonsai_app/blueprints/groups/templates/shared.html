@@ -1,4 +1,5 @@
 {% from  'sidebar.html' import qc_classification_form_fields, qc_form_controls_js  %}
+{% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" 
@@ -208,5 +209,64 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
         event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows().ids().toArray())
         removeSamplesForm.submit()
         })
+    </script>
+{% endmacro %}
+
+{% macro sample_table(table_data) %}
+    {# build sample table #}
+    <table id="sample-table" class="display table table-striped">
+        <thead>
+            <tr>
+                {# build table header #}
+                {% for col in table_data[0] %}
+                    <td>{{ col.label }}</td>
+                {% endfor %}
+            </th>
+        </thead>
+        <tbody>
+            {% for row in table_data %}
+                <tr id="{{ row[0].data }}">
+                    {% for cell in row %}
+                        {{ format_table_cell(cell) }}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        // define data table
+        const table = new DataTable('#sample-table', { 
+            select: true,
+            layout: {
+                topStart: 'searchBuilder'
+            },
+        });
+        table.on('select', (e, dt, type, indexes) => window.updateRowSelectionCounters());
+        table.on('deselect', (e, dt, type, indexes) => window.updateRowSelectionCounters());
+
+        // define global functions
+        window.getSelectedRows = () => table.rows('.selected')
+        window.selectRows = (sampleIds) => {
+            table.rows(sampleIds.map(id => `#${id}`)).select()
+            window.updateRowSelectionCounters()
+        }
+
+        window.updateRowSelectionCounters = () => {
+            let nSelectedRows = table.rows('.selected').data().length
+            // enable add to basket + toggle qc buttons when user selects at least one row
+            document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
+            document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
+            // enable find simiar samples button when ONE row is selected
+            document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
+            // enable remove samples btn
+            if (document.getElementById("remove-samples-btn") !== null) {
+                document.getElementById("remove-samples-btn").disabled = 0 > nSelectedRows
+            }
+            sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
+        }
+
+        // init tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
     </script>
 {% endmacro %}

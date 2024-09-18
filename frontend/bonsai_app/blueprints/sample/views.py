@@ -40,11 +40,11 @@ from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
     filter_variants,
+    filter_variants_if_processed,
     get_all_variant_types,
     get_all_who_classifications,
     get_variant_genes,
     sort_variants,
-    filter_variants_if_processed,
 )
 
 LOG = logging.getLogger(__name__)
