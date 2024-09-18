@@ -1,11 +1,13 @@
 """Entrypoints for getting group data."""
 
-from typing import List
+from typing import List, Any
 
 from fastapi import APIRouter, HTTPException, Path, Security, status
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
+from pydantic import BaseModel, Field, computed_field, ConfigDict
 
+from ..crud.sample import get_samples_summary_v2
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
@@ -102,7 +104,7 @@ async def delete_group_from_db(
     return result
 
 
-@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=["groups"])
+@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
@@ -122,7 +124,7 @@ async def update_group_info(
 
 
 @router.put(
-    "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=["groups"]
+    "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
 )
 async def add_sample_to_group(
     sample_id: str,
@@ -145,3 +147,46 @@ async def add_sample_to_group(
             status_code=status.HTTP_304_NOT_MODIFIED,
             detail=sample_id,
         ) from error
+
+
+
+class SamplesSummaryData(BaseModel):  # pylint: disable=too-few-public-methods
+    """Output data format for samples summary."""
+    model_config = ConfigDict(populate_by_name=True)
+
+    data: list[dict[str, Any]] = Field(...)
+    records_total: int = Field(..., alias='recordsTotal')
+
+    @computed_field(alias="recordsFiltered")
+    def records_filtered(self) -> int:
+        return len(self.data)
+
+
+@router.get("/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS, response_model=SamplesSummaryData)
+async def get_samples_in_group(
+    qc: bool = False,
+    limit: int = 0,
+    skip: int = 0,
+    group_id: str = Path(..., tilte="The id of the group to get"),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    )):
+    """Get basic prediction results of all samples in a group."""
+    # get group info
+    try:
+        group = await get_group(db, group_id, lookup_samples=False)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=group_id,
+        ) from error
+    # query samples
+    db_obj = await get_samples_summary_v2(
+        db,
+        include_samples=group.included_samples,
+        limit=limit,
+        skip=skip,
+        prediction_result=False,
+        qc_metrics=True,
+    )
+    return SamplesSummaryData(data=db_obj, records_total=len(group.included_samples))

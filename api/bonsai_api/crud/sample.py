@@ -60,13 +60,213 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 TypingProfileOutput = list[TypingProfileAggregate]
 
+PREDICTION_SUMMARY_QUERY = {
+    "$addFields": {
+        "mlst": {
+            "$cond": {
+                "if": {"$in": ["mlst", "$typing_result.type"]},
+                "then": {"$arrayElemAt": ["$typing_result", 0]},
+                "else": None,
+            }
+        },
+        "stx": {
+            "$ifNull": [
+                {
+                    "$arrayElemAt": [
+                        {
+                            "$map": {
+                                "input": {
+                                    "$filter": {
+                                        "input": "$typing_result",
+                                        "cond": {"$eq": ["$$this.type", "stx"]},
+                                    }
+                                },
+                                "in": "$$this.result.gene_symbol",
+                            }
+                        },
+                        0,
+                    ]
+                },
+                "-",
+            ]
+        },
+        "oh_type": {
+            "$concat": [
+                {
+                    "$ifNull": [
+                        {
+                            "$arrayElemAt": [
+                                {
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": {
+                                                    "$eq": [
+                                                        "$$this.type",
+                                                        "O_type",
+                                                    ]
+                                                },
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name",
+                                    }
+                                },
+                                0,
+                            ]
+                        },
+                        "-",
+                    ]
+                },
+                ":",
+                {
+                    "$ifNull": [
+                        {
+                            "$arrayElemAt": [
+                                {
+                                    "$map": {
+                                        "input": {
+                                            "$filter": {
+                                                "input": "$typing_result",
+                                                "cond": {
+                                                    "$eq": [
+                                                        "$$this.type",
+                                                        "H_type",
+                                                    ]
+                                                },
+                                            }
+                                        },
+                                        "in": "$$this.result.sequence_name",
+                                    }
+                                },
+                                0,
+                            ]
+                        },
+                        "-",
+                    ]
+                },
+            ]
+        },
+    }
+}
+
+QC_METRICS_SUMMARY_QUERY = {
+    "$addFields": {
+        "median_cov": {
+            "$cond": {
+                "if": {"$in": ["mlst", "$typing_result.type"]},
+                "then": {"$arrayElemAt": ["$typing_result", 0]},
+                "else": None,
+            }
+        },
+    }
+}
+
+async def get_samples_summary_v2(
+    db: Database,
+    limit: int = 0,
+    skip: int = 0,
+    include_samples: List[str] | None = None,
+    prediction_result: bool = True,
+    qc_metrics: bool = False,
+) -> List[SampleSummary]:
+    """Get a summay of several samples."""
+    # build query pipeline
+    pipeline = []
+    if include_samples is not None:
+        pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
+    if skip > 0:
+        pipeline.append({"$skip": skip})
+    if limit > 0:
+        pipeline.append({"$limit": limit})
+
+    # species prediction projection
+    # get the first entry of the bracken result
+    spp_cmd = {
+        "$arrayElemAt": [
+            {
+                "$arrayElemAt": [
+                    {
+                        "$map": {
+                            "input": {
+                                "$filter": {
+                                    "input": "$species_prediction",
+                                    "cond": {"$eq": ["$$this.software", "bracken"]},
+                                }
+                            },
+                            "in": "$$this.result",
+                        },
+                    },
+                    0,
+                ]
+            },
+            0,
+        ]
+    }
+
+
+    # define base projection
+    base_projection = {
+        "_id": 0,
+        "id": {"$convert": {"input": "$_id", "to": "string"}},
+        "sample_id": 1,
+        "sample_name": 1,
+        "lims_id": 1,
+        "sequencing_run": "$sequencing.run_id",
+        "qc_status": 1,
+        "species_prediction": spp_cmd,
+        "created_at": 1,
+        "profile": "$pipeline.analysis_profile",
+    }
+
+    # define container for opitional projections
+    optional_projecton = {}
+
+    # build query for prediction result
+    if prediction_result:
+        pipeline.append(PREDICTION_SUMMARY_QUERY)
+        optional_projecton = {
+            "tags": 1,
+            "comments": 1,
+            "mlst": {"$arrayElemAt": ["$typing_result", 0]},
+            "stx": 1,
+            "oh_type": 1,
+            ** optional_projecton,
+        }
+    
+    # build query control for quality metrics
+    if qc_metrics:
+        pipeline.append(QC_METRICS_SUMMARY_QUERY)
+        optional_projecton = {
+            ** optional_projecton,
+        }
+
+    # add projections to pipeline
+    pipeline.append({"$project": {**base_projection, **optional_projecton}})
+
+    # query database
+    cursor = db.sample_collection.aggregate(pipeline)
+    # get query results from the database
+    results = await cursor.to_list(None)
+
+    if prediction_result:
+        # replace mlst with the nested result as a work around
+        # for mongo version < 5
+        upd_results = []
+        for res in results:
+            if "mlst" in res:
+                res["mlst"] = res["mlst"]["result"]
+            upd_results.append(res)
+        results = upd_results.copy()
+    return results
+
 
 async def get_samples_summary(
     db: Database,
     limit: int = 0,
     skip: int = 0,
     include: List[str] | None = None,
-    include_qc: bool = True,
+    include_qc_status: bool = True,
     include_mlst: bool = True,
     include_stx: bool = True,
     include_oh_type: bool = True,
@@ -228,7 +428,7 @@ async def get_samples_summary(
     }
     # define a optional projections
     optional_projecton = {}
-    if include_qc:
+    if include_qc_status:
         optional_projecton["qc_status"] = 1
     if include_mlst:
         optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}

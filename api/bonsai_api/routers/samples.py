@@ -118,7 +118,7 @@ async def read_samples(
         db,
         limit=limit,
         skip=skip,
-        include_qc=include_qc,
+        include_qc_status=include_qc,
         include_mlst=include_mlst,
     )
     return {"status": "success", "total": len(db_obj), "records": db_obj}
