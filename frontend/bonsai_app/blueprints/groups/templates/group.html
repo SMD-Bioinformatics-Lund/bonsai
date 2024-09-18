@@ -2,15 +2,15 @@
 {% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('groups.static', filename='groups.css') }}">
-<link rel="stylesheet" href="{{ url_for('groups.static', filename='datatables.min.css') }}">
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('groups.static', filename='groups.css') }}">
+    <link rel="stylesheet" href="{{ url_for('groups.static', filename='datatables.min.css') }}">
 {% endblock css %}
 
 {% block scripts %}
-{{ super() }}
-<script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
-<script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
+    {{ super() }}
+    <script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
+    <script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}

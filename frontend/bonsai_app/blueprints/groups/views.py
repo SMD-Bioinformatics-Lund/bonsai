@@ -1,7 +1,6 @@
 """Declaration of views for groups"""
 import json
 import logging
-from jsonpath2.path import Path as jsonPath
 from urllib.parse import urlparse
 
 from flask import (
@@ -15,6 +14,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+from jsonpath2.path import Path as jsonPath
 from requests.exceptions import HTTPError
 
 from ...bonsai import (
@@ -70,26 +70,28 @@ def groups() -> str:
     # get default columns from api
     default_columns = []
     for col in get_valid_group_columns():
-        if col['hidden']:
+        if col["hidden"]:
             continue
         # get path
-        col['path'] = jsonPath.parse_str(col['path'])
+        col["path"] = jsonPath.parse_str(col["path"])
         default_columns.append(col)
 
     # generate table data
     table_data = []
-    for sample in all_samples['records']:
+    for sample in all_samples["records"]:
         row = []
         for col in default_columns:
             # get sample data from json path
-            data = [m.current_value for m in col['path'].match(sample)]
+            data = [m.current_value for m in col["path"].match(sample)]
             data = data[0] if len(data) > 0 else ""
-            row.append({
-                "id": col["id"],
-                "label": col["label"],
-                "type": col["type"],
-                "data": data,
-            })
+            row.append(
+                {
+                    "id": col["id"],
+                    "label": col["label"],
+                    "type": col["type"],
+                    "data": data,
+                }
+            )
         if len(row) > 0:
             table_data.append(row)
 
@@ -210,30 +212,32 @@ def group(group_id: str) -> str:
     # get columns from api
     group_columns = []
     for col in group_info["table_columns"]:
-        if col['hidden']:
+        if col["hidden"]:
             continue
         # get path
         upd_col = col.copy()
-        upd_col['path'] = jsonPath.parse_str(upd_col['path'])
+        upd_col["path"] = jsonPath.parse_str(upd_col["path"])
         group_columns.append(upd_col)
 
     # generate table data
     table_data = []
-    for sample in samples['records']:
+    for sample in samples["records"]:
         row = []
         for col in group_columns:
             # get sample data from json path
-            data = [m.current_value for m in col['path'].match(sample)]
+            data = [m.current_value for m in col["path"].match(sample)]
             data = data[0] if len(data) > 0 else ""
-            row.append({
-                "id": col["id"],
-                "label": col["label"],
-                "type": col["type"],
-                "data": data,
-            })
+            row.append(
+                {
+                    "id": col["id"],
+                    "label": col["label"],
+                    "type": col["type"],
+                    "data": data,
+                }
+            )
         if len(row) > 0:
             table_data.append(row)
-        
+
     return render_template(
         "group.html",
         title=group_id,

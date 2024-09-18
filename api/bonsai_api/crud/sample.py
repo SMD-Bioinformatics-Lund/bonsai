@@ -4,13 +4,13 @@ import logging
 from datetime import datetime
 from itertools import groupby
 from typing import Any, Dict, List
-from prp.parse.typing import replace_cgmlst_errors
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
+from prp.parse.typing import replace_cgmlst_errors
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -672,12 +672,15 @@ async def get_typing_profiles(
     async for raw_typing_profile in db.sample_collection.aggregate(pipeline):
         results.append(
             TypingProfileAggregate(
-                sample_id=raw_typing_profile['sample_id'],
+                sample_id=raw_typing_profile["sample_id"],
                 typing_result={
-                    loci: replace_cgmlst_errors(allele, include_novel_alleles=True, correct_alleles=True)
-                    for loci, allele in raw_typing_profile['typing_result'].items()
-                    }
-            ))
+                    loci: replace_cgmlst_errors(
+                        allele, include_novel_alleles=True, correct_alleles=True
+                    )
+                    for loci, allele in raw_typing_profile["typing_result"].items()
+                },
+            )
+        )
 
     missing_samples = set(sample_idx) - {s.sample_id for s in results}
     if len(missing_samples) > 0:

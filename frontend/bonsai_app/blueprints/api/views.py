@@ -10,10 +10,10 @@ from ...bonsai import (
     HTTPError,
     TokenObject,
     add_samples_to_basket,
-    get_samples_by_id,
     get_group_by_id,
-    update_group,
+    get_samples_by_id,
     remove_samples_from_basket,
+    update_group,
 )
 from ...models import SampleBasketObject
 
@@ -130,17 +130,17 @@ def update_samples_in_group(group_id: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    
+
     match request.method:
         case "POST":
             # add samples to group object
-            group_obj['included_samples'] = [
-                li for li in set(group_obj['included_samples'] + selected_samples)
+            group_obj["included_samples"] = [
+                li for li in set(group_obj["included_samples"] + selected_samples)
             ]
         case "DEL":
             # remove sample ids from group object
-            group_obj['included_samples'] = [
-                li for li in set(group_obj['included_samples']) - set(selected_samples)
+            group_obj["included_samples"] = [
+                li for li in set(group_obj["included_samples"]) - set(selected_samples)
             ]
 
     # update group object in database
