@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel, Field, computed_field, ConfigDict
 
-from ..crud.sample import get_samples_summary_v2
+from ..crud.sample import get_samples_summary
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
@@ -167,6 +167,7 @@ async def get_samples_in_group(
     prediction_result: bool = Query(True, description="Include prediction results"),
     qc_metrics: bool = Query(False, description="Include QC metrics"),
     skip: int = 0,
+    limit: int = 0,
     group_id: str = Path(..., tilte="The id of the group to get"),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -181,12 +182,12 @@ async def get_samples_in_group(
             detail=group_id,
         ) from error
     # query samples
-    db_obj = await get_samples_summary_v2(
+    db_obj = await get_samples_summary(
         db,
         include_samples=group.included_samples,
         limit=limit,
         skip=skip,
-        prediction_result=prediction_result,
-        qc_metrics=qc_metrics,
+        prediction_result=True,
+        qc_metrics=False,
     )
     return SamplesSummaryData(data=db_obj, records_total=len(group.included_samples))

@@ -108,7 +108,7 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="mlst",
         label="MLST ST",
-        path="$.mlst.sequence_type",
+        path="$.mlst",
         sortable=True,
         filterable=True,
     ),

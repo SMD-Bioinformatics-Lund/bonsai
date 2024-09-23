@@ -91,8 +91,8 @@ UPDATE_PERMISSION = "samples:update"
 async def read_samples(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
-    include_qc: bool = Query(True),
-    include_mlst: bool = Query(True),
+    prediction_result: bool = Query(True),
+    qc_metrics: bool = Query(False),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -100,26 +100,13 @@ async def read_samples(
     """Get a summary of one or more samples from the database.
 
     Some type of results can be excluded from the output.
-
-    :param limit: Limit result to N samples, defaults to Query(10, gt=-1)
-    :type limit: int, optional
-    :param skip: Skip the N first samples, defaults to Query(0, gt=-1)
-    :type skip: int, optional
-    :param include_qc: include QC metrics in result, defaults to Query(True)
-    :type include_qc: bool, optional
-    :param include_mlst: include MLST typing in result, defaults to Query(True)
-    :type include_mlst: bool, optional
-    :param current_user: The logged in user, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :return: Prediction results for samples.
-    :rtype: Dict[str, str | int | List[SampleInDatabase]]
     """
     db_obj: List[SampleInDatabase] = await get_samples_summary(
         db,
         limit=limit,
         skip=skip,
-        include_qc_status=include_qc,
-        include_mlst=include_mlst,
+        prediction_result=prediction_result,
+        qc_metrics=qc_metrics,
     )
     return {"status": "success", "total": len(db_obj), "records": db_obj}
 
