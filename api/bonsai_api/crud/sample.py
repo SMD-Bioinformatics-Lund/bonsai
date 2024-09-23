@@ -16,7 +16,7 @@ from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import RWModel
+from ..models.base import RWModel, MultipleRecordsResponseModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
@@ -197,10 +197,6 @@ async def get_samples_summary(
     pipeline = []
     if include_samples is not None:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
-    if skip > 0:
-        pipeline.append({"$skip": skip})
-    if limit > 0:
-        pipeline.append({"$limit": limit})
 
     # species prediction projection
     # get the first entry of the bracken result
@@ -238,6 +234,7 @@ async def get_samples_summary(
         "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",
+        "n_records": 1,
     }
 
     # define container for opitional projections
@@ -268,12 +265,29 @@ async def get_samples_summary(
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
+    # add limit, skip and count total records in db
+    facet_pipe = []
+    if limit > 0:
+        facet_pipe.append({"$limit": limit})
+    if skip > 0:
+        facet_pipe.append({"$skip": skip})
+    pipeline.append(
+        {
+            "$facet": {
+                "data": facet_pipe,
+                "records_total": [{"$count": "count"}],
+            }
+        },
+    )
+
     # query database
     cursor = db.sample_collection.aggregate(pipeline)
     # get query results from the database
     results = await cursor.to_list(None)
 
-    return results
+    return MultipleRecordsResponseModel(
+        data=results[0]["data"], records_total=results[0]["records_total"][0]["count"]
+    )
 
 
 async def get_samples(

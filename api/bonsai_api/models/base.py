@@ -2,7 +2,8 @@
 from datetime import datetime, timezone
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+from typing import Any
 
 
 class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
@@ -52,3 +53,14 @@ class PyObjectId(ObjectId):
     @classmethod
     def __modify_schema__(cls, field_schema):
         field_schema.update(type="string")
+
+
+class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods
+    """Generic response model for multiple data records."""
+
+    data: list[dict[str, Any]] = Field(...)
+    records_total: int = Field(..., alias='recordsTotal')
+
+    @computed_field(alias="recordsFiltered")
+    def records_filtered(self) -> int:
+        return len(self.data)

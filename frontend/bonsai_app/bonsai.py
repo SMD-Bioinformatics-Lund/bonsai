@@ -235,23 +235,6 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def get_samples_in_group(headers: CaseInsensitiveDict, **kwargs):
-    """Get groups from database"""
-    # conduct query
-    group_id = kwargs.get("group_id")
-    url = f"{settings.bonsai_api_url}/groups/{group_id}"
-    lookup_samples = kwargs.get("lookup_samples", False)
-    resp = requests_get(
-        url,
-        headers=headers,
-        params={"lookup_samples": lookup_samples},
-    )
-    # check errors
-    resp.raise_for_status()
-    return resp.json()
-
-
-@api_authentication
 def get_samples(headers: CaseInsensitiveDict, **kwargs):
     """Get multipe samples from database."""
     # conduct query
@@ -276,22 +259,15 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
 
 
 @api_authentication
-def get_samples_by_id(headers: CaseInsensitiveDict, **kwargs):
-    """Search the database for multiple samples"""
+def get_samples_in_group(headers: CaseInsensitiveDict, group_id, limit=0, skip_lines=0):
+    """Search the database for the samples that are part of a given group."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/search"
-    sample_id = kwargs.get("sample_ids", None)
-    if sample_id is None:
+    url = f"{settings.bonsai_api_url}/groups/{group_id}/samples"
+    if group_id is None:
         raise ValueError("No sample id provided.")
-    search = {
-        "params": {
-            "sample_id": sample_id,
-        },
-        "limit": kwargs.get("limit", 0),
-        "skip": kwargs.get("skip", 0),
-    }
-    current_app.logger.debug("Query API for %s", sample_id)
-    resp = requests_post(url, headers=headers, json=search)
+
+    current_app.logger.debug("Query API for samples in group: %s", group_id)
+    resp = requests_get(url, headers=headers, params={"limit": limit, "skip": skip_lines})
 
     resp.raise_for_status()
     return resp.json()

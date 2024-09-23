@@ -1,11 +1,10 @@
 """Entrypoints for getting group data."""
 
-from typing import List, Any
+from typing import List
 
 from fastapi import APIRouter, HTTPException, Path, Security, status, Query
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
-from pydantic import BaseModel, Field, computed_field, ConfigDict
 
 from ..crud.sample import get_samples_summary
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -16,6 +15,7 @@ from ..crud.user import get_current_active_user
 from ..db import db
 from ..models.group import VALID_COLUMNS, GroupInCreate, GroupInfoDatabase
 from ..models.user import UserOutputDatabase
+from ..models.base import MultipleRecordsResponseModel
 
 router = APIRouter()
 
@@ -150,19 +150,7 @@ async def add_sample_to_group(
 
 
 
-class SamplesSummaryData(BaseModel):  # pylint: disable=too-few-public-methods
-    """Output data format for samples summary."""
-    model_config = ConfigDict(populate_by_name=True)
-
-    data: list[dict[str, Any]] = Field(...)
-    records_total: int = Field(..., alias='recordsTotal')
-
-    @computed_field(alias="recordsFiltered")
-    def records_filtered(self) -> int:
-        return len(self.data)
-
-
-@router.get("/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS, response_model=SamplesSummaryData)
+@router.get("/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS, response_model=MultipleRecordsResponseModel)
 async def get_samples_in_group(
     prediction_result: bool = Query(True, description="Include prediction results"),
     qc_metrics: bool = Query(False, description="Include QC metrics"),
@@ -182,7 +170,7 @@ async def get_samples_in_group(
             detail=group_id,
         ) from error
     # query samples
-    db_obj = await get_samples_summary(
+    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
         include_samples=group.included_samples,
         limit=limit,
@@ -190,4 +178,4 @@ async def get_samples_in_group(
         prediction_result=True,
         qc_metrics=False,
     )
-    return SamplesSummaryData(data=db_obj, records_total=len(group.included_samples))
+    return db_obj

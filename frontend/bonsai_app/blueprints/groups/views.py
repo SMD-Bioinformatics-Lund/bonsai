@@ -23,7 +23,6 @@ from ...bonsai import (
     delete_group,
     get_groups,
     get_samples,
-    get_samples_by_id,
     get_samples_in_group,
     get_valid_group_columns,
     update_group,
@@ -78,7 +77,7 @@ def groups() -> str:
 
     # generate table data
     table_data = []
-    for sample in all_samples["records"]:
+    for sample in all_samples["data"]:
         row = []
         for col in default_columns:
             # get sample data from json path
@@ -194,15 +193,13 @@ def group(group_id: str) -> str:
     """
     token = TokenObject(**current_user.get_id())
     try:
-        group_info = get_samples_in_group(
-            token, group_id=group_id, lookup_samples=False
-        )
+        group_info = get_samples_in_group(token, group_id=group_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    samples = get_samples_by_id(
-        token, limit=0, skip=0, sample_ids=group_info["included_samples"]
-    )
+    #samples = get_samples_by_id(
+    #    token, limit=0, skip=0, sample_ids=group_info["included_samples"]
+    #)
 
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
