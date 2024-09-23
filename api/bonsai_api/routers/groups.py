@@ -2,7 +2,7 @@
 
 from typing import List, Any
 
-from fastapi import APIRouter, HTTPException, Path, Security, status
+from fastapi import APIRouter, HTTPException, Path, Security, status, Query
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel, Field, computed_field, ConfigDict
@@ -164,8 +164,8 @@ class SamplesSummaryData(BaseModel):  # pylint: disable=too-few-public-methods
 
 @router.get("/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS, response_model=SamplesSummaryData)
 async def get_samples_in_group(
-    qc: bool = False,
-    limit: int = 0,
+    prediction_result: bool = Query(True, description="Include prediction results"),
+    qc_metrics: bool = Query(False, description="Include QC metrics"),
     skip: int = 0,
     group_id: str = Path(..., tilte="The id of the group to get"),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -186,7 +186,7 @@ async def get_samples_in_group(
         include_samples=group.included_samples,
         limit=limit,
         skip=skip,
-        prediction_result=False,
-        qc_metrics=True,
+        prediction_result=prediction_result,
+        qc_metrics=qc_metrics,
     )
     return SamplesSummaryData(data=db_obj, records_total=len(group.included_samples))
