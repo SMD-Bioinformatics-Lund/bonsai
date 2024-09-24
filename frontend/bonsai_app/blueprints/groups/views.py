@@ -193,7 +193,7 @@ def group(group_id: str) -> str:
     :rtype: str
     """
     # check if qc metrics should be displayed
-    display_qc: bool = request.args.get("qc", False, type=bool)
+    display_qc: bool = request.args.get("qc", False, type=lambda val: val.lower() == 'true')
 
     # query API for sample info
     token = TokenObject(**current_user.get_id())
