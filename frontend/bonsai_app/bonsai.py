@@ -235,13 +235,18 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def get_samples(headers: CaseInsensitiveDict, **kwargs):
+def get_samples(headers: CaseInsensitiveDict, limit: int = 20, skip: int = 0, sample_ids: list[str] | None = None):
     """Get multipe samples from database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/samples"
     # get limit, offeset and skip values
-    parmas = {"limit": kwargs.get("limit", 20), "skip": kwargs.get("skip", 0)}
-    resp = requests_get(url, headers=headers, params=parmas)
+    params = {"limit": limit, "skip": skip}
+    if sample_ids is not None:
+        # sanity check list
+        if len(sample_ids) == 0:
+            raise ValueError("sample_ids list cant be empty!")
+        params['sid'] = sample_ids
+    resp = requests_get(url, headers=headers, params=params)
 
     resp.raise_for_status()
     return resp.json()

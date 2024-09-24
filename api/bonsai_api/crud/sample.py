@@ -195,7 +195,7 @@ async def get_samples_summary(
     """Get a summay of several samples."""
     # build query pipeline
     pipeline = []
-    if include_samples is not None:
+    if include_samples is not None and len(include_samples) > 0:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
 
     # species prediction projection
