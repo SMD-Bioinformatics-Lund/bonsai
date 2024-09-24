@@ -13,7 +13,7 @@ from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.user import get_current_active_user
 from ..db import db
-from ..models.group import VALID_COLUMNS, GroupInCreate, GroupInfoDatabase
+from ..models.group import pred_res_cols, qc_cols, GroupInCreate, GroupInfoDatabase
 from ..models.user import UserOutputDatabase
 from ..models.base import MultipleRecordsResponseModel
 
@@ -27,9 +27,13 @@ WRITE_PERMISSION = "groups:write"
 
 
 @router.get("/groups/default/columns", tags=DEFAULT_TAGS)
-async def get_valid_columns():
+async def get_valid_columns(qc: bool = False):
     """Get group info schema."""
-    return jsonable_encoder(VALID_COLUMNS)
+    if qc:
+        columns = qc_cols
+    else:
+        columns = pred_res_cols
+    return jsonable_encoder(columns)
 
 
 @router.get("/groups/", response_model=List[GroupInfoDatabase], tags=DEFAULT_TAGS)
@@ -180,7 +184,7 @@ async def get_samples_in_group(
         include_samples=group.included_samples,
         limit=limit,
         skip=skip,
-        prediction_result=True,
-        qc_metrics=False,
+        prediction_result=prediction_result,
+        qc_metrics=qc_metrics,
     )
     return db_obj

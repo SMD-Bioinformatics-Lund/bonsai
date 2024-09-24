@@ -155,7 +155,7 @@ PREDICTION_SUMMARY_QUERY = [
 
 QC_METRICS_SUMMARY_QUERY = [
     {
-        "$project": {
+        "$addFields": {
             "quast": {
                 "$arrayElemAt": [
                     {

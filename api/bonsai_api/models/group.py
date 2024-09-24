@@ -47,8 +47,7 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     filter_type: str | None = None
     filter_param: str | None = None
 
-
-VALID_COLUMNS = [
+VALID_BASE_COLS = [
     OverviewTableColumn(
         id="sample_btn",
         label="",
@@ -61,12 +60,6 @@ VALID_COLUMNS = [
         path="$.sample_id",
         hidden=True,
         sortable=True,
-    ),
-    OverviewTableColumn(
-        id="comments",
-        label="Comments",
-        type="comments",
-        path="$.comments",
     ),
     OverviewTableColumn(
         id="sample_name",
@@ -87,12 +80,6 @@ VALID_COLUMNS = [
         sortable=True,
     ),
     OverviewTableColumn(
-        id="tags",
-        label="Tags",
-        type="tags",
-        path="$.tags",
-    ),
-    OverviewTableColumn(
         id="taxonomic_name",
         label="Major species",
         type="taxonomic_name",
@@ -102,8 +89,32 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="qc",
         label="QC",
+        type="qc",
         path="$.qc_status.status",
         sortable=True,
+    ),
+    OverviewTableColumn(
+        id="profile",
+        label="Analysis profile",
+        path="$.profile",
+        sortable=True,
+        filterable=True,
+    ),
+]
+
+# Prediction result columns
+VALID_PREDICTION_COLS = [
+    OverviewTableColumn(
+        id="comments",
+        label="Comments",
+        type="comments",
+        path="$.comments",
+    ),
+    OverviewTableColumn(
+        id="tags",
+        label="Tags",
+        type="tags",
+        path="$.tags",
     ),
     OverviewTableColumn(
         id="mlst",
@@ -127,13 +138,6 @@ VALID_COLUMNS = [
         filterable=True,
     ),
     OverviewTableColumn(
-        id="profile",
-        label="Analysis profile",
-        path="$.profile",
-        sortable=True,
-        filterable=True,
-    ),
-    OverviewTableColumn(
         id="cdate",
         label="Date",
         type="date",
@@ -142,6 +146,38 @@ VALID_COLUMNS = [
     ),
 ]
 
+# Prediction result columns
+VALID_QC_COLS = [
+    OverviewTableColumn(
+        id="n50",
+        label="N50",
+        path="$.quast.n50",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="n_contigs",
+        label="#Contigs",
+        path="$.quast.n_contigs",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="median_cov",
+        label="Median cov",
+        path="$.postalignqc.median_cov",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="n_reads",
+        label="# Reads",
+        type="number",
+        path="$.postalignqc.n_reads",
+        sortable=True,
+    ),
+]
+
+# create combination of valid columns
+pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
+qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""

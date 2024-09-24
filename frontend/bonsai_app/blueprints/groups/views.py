@@ -193,12 +193,18 @@ def group(group_id: str) -> str:
     :rtype: str
     """
     # check if qc metrics should be displayed
-    display_qc: bool = request.args.get("qc", False)
+    display_qc: bool = request.args.get("qc", False, type=bool)
 
     # query API for sample info
     token = TokenObject(**current_user.get_id())
     try:
-        samples_info = get_samples_in_group(token, group_id=group_id)
+        samples_info = get_samples_in_group(
+            token,
+            group_id=group_id,
+            prediction_result=not display_qc,
+            qc_metrics=display_qc,
+        )
+        # get column definition to use
         group_info = get_group_by_id(token, group_id=group_id)
     except HTTPError as error:
         # throw proper error page
@@ -211,7 +217,7 @@ def group(group_id: str) -> str:
 
     # get columns from api
     group_columns = []
-    for col in group_info["table_columns"]:
+    for col in get_valid_group_columns(True) if display_qc else group_info["table_columns"]:
         if col["hidden"]:
             continue
         # get path

@@ -7,7 +7,14 @@
 {% endmacro %}
 
 {% macro render_qc(text)  %}
-    <span class="fw-light fst-italic">{{text}}</span>
+    {% if text == 'passed' %}
+        {% set text_colour = 'text-success' %}
+    {% elif text == 'failed' %} 
+        {% set text_colour = 'text-danger' %}
+    {% else %}
+        {% set text_colour = '' %}
+    {% endif %}
+    <span class="fw-light {{ text_colour }}">{{ text }}</span>
 {% endmacro %}
 
 {% macro render_mlst(st)  %}
@@ -70,20 +77,22 @@
 {% endmacro %}
 
 {% macro format_table_cell(cell_info) %}
-    {% if cell_info['type'] == 'sample_btn' %}
+    {% if cell_info.type == 'sample_btn' %}
         <td>{{ render_sampleId(cell_info.data, "Open") }}</td>
-    {% elif cell_info['type'] == 'tags' %}
+    {% elif cell_info.type == 'tags' %}
         {{ render_tags(cell_info.data) }}
-    {% elif cell_info['type'] == 'taxonomic_name' %}
+    {% elif cell_info.type == 'taxonomic_name' %}
         <td>{{ render_taxonomic_name(cell_info.data) }} </td>
-    {% elif cell_info['type'] == 'date' %}
+    {% elif cell_info.type == 'date' %}
         <td>{{ cell_info.data | strftime }} </td>
-    {% elif cell_info['type'] == 'qc' %}
-        <td>{{ render_qc(cell_info.data) }} </td>
-    {% elif cell_info['type'] == 'comments' %}
+    {% elif cell_info.type == 'qc' %}
+        <td>{{ render_qc(cell_info.data) }}</td>
+    {% elif cell_info.type == 'comments' %}
         {{ render_comments(cell_info.data) }}
-    {% elif cell_info['type'] == 'mlst' %}
+    {% elif cell_info.type == 'mlst' %}
         {{ render_mlst(cell_info.data) }}
+    {% elif cell_info.type == 'number' %}
+        <td data-search="{{ cell_info.data }}">{{ cell_info.data | fmt_to_human_readable }}</td>
     {% else %}
         <td>{{ cell_info.data }}</td>
     {% endif %}
