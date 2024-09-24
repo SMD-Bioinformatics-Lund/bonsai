@@ -151,6 +151,7 @@ VALID_QC_COLS = [
     OverviewTableColumn(
         id="n50",
         label="N50",
+        type="number",
         path="$.quast.n50",
         sortable=True,
     ),
