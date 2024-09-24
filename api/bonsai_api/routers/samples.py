@@ -88,7 +88,12 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-@router.get("/samples/", response_model_by_alias=False, response_model=MultipleRecordsResponseModel, tags=DEFAULT_TAGS)
+@router.get(
+    "/samples/",
+    response_model_by_alias=False,
+    response_model=MultipleRecordsResponseModel,
+    tags=DEFAULT_TAGS,
+)
 async def samples_summary(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),

@@ -37,7 +37,9 @@
                     </button>
                 {% endif %}
                 {{ search_similar_btn() }}
-                {{ qc_bulk_toggle(bad_qc_actions)}}
+                {% if display_qc %}
+                    {{ qc_bulk_toggle(bad_qc_actions)}}
+                {% endif %}
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">

@@ -149,8 +149,12 @@ async def add_sample_to_group(
         ) from error
 
 
-
-@router.get("/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS, response_model=MultipleRecordsResponseModel)
+@router.get(
+    "/groups/{group_id}/samples",
+    status_code=status.HTTP_200_OK,
+    tags=DEFAULT_TAGS,
+    response_model=MultipleRecordsResponseModel,
+)
 async def get_samples_in_group(
     prediction_result: bool = Query(True, description="Include prediction results"),
     qc_metrics: bool = Query(False, description="Include QC metrics"),
@@ -159,7 +163,8 @@ async def get_samples_in_group(
     group_id: str = Path(..., tilte="The id of the group to get"),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
-    )):
+    ),
+):
     """Get basic prediction results of all samples in a group."""
     # get group info
     try:

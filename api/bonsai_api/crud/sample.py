@@ -25,7 +25,7 @@ from ..models.sample import (
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
-    MultipleSampleRecordsResponseModel
+    MultipleSampleRecordsResponseModel,
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,

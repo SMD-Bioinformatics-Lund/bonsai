@@ -55,7 +55,7 @@ class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-m
     """Generic response model for multiple data records."""
 
     data: list[dict[str, Any]] = Field(...)
-    records_total: int = Field(..., alias='recordsTotal')
+    records_total: int = Field(..., alias="recordsTotal")
 
     @computed_field(alias="recordsFiltered")
     def records_filtered(self) -> int:

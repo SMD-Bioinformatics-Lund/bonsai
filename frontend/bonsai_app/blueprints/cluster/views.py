@@ -152,9 +152,7 @@ def tree():
             # get column info
             if column_info is None:
                 column_info = get_valid_group_columns()
-            metadata = gather_metadata(
-                sample_summary["data"], column_info
-            ).model_dump()
+            metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
         data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",

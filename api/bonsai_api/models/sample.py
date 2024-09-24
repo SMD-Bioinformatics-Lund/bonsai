@@ -140,6 +140,7 @@ class SampleSummary(
     major_specie: SpeciesPrediction = Field(...)
 
 
-class MultipleSampleRecordsResponseModel(MultipleRecordsResponseModel):   # pylint: disable=too-few-public-methods
-
+class MultipleSampleRecordsResponseModel(
+    MultipleRecordsResponseModel
+):  # pylint: disable=too-few-public-methods
     data: list[SampleInDatabase] = []

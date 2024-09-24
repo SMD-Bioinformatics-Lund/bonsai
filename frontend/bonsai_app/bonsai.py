@@ -235,7 +235,12 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def get_samples(headers: CaseInsensitiveDict, limit: int = 20, skip: int = 0, sample_ids: list[str] | None = None):
+def get_samples(
+    headers: CaseInsensitiveDict,
+    limit: int = 20,
+    skip: int = 0,
+    sample_ids: list[str] | None = None,
+):
     """Get multipe samples from database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/samples"
@@ -245,7 +250,7 @@ def get_samples(headers: CaseInsensitiveDict, limit: int = 20, skip: int = 0, sa
         # sanity check list
         if len(sample_ids) == 0:
             raise ValueError("sample_ids list cant be empty!")
-        params['sid'] = sample_ids
+        params["sid"] = sample_ids
     resp = requests_get(url, headers=headers, params=params)
 
     resp.raise_for_status()
@@ -264,7 +269,14 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
 
 
 @api_authentication
-def get_samples_in_group(headers: CaseInsensitiveDict, group_id, limit=0, skip_lines=0):
+def get_samples_in_group(
+    headers: CaseInsensitiveDict,
+    group_id: str,
+    limit: int = 0,
+    skip_lines: int = 0,
+    prediction_result: bool = True,
+    qc_metrics: bool = False,
+):
     """Search the database for the samples that are part of a given group."""
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/{group_id}/samples"
@@ -272,7 +284,16 @@ def get_samples_in_group(headers: CaseInsensitiveDict, group_id, limit=0, skip_l
         raise ValueError("No sample id provided.")
 
     current_app.logger.debug("Query API for samples in group: %s", group_id)
-    resp = requests_get(url, headers=headers, params={"limit": limit, "skip": skip_lines})
+    resp = requests_get(
+        url,
+        headers=headers,
+        params={
+            "limit": limit,
+            "skip": skip_lines,
+            "prediction_result": prediction_result,
+            "qc_metrics": qc_metrics,
+        },
+    )
 
     resp.raise_for_status()
     return resp.json()

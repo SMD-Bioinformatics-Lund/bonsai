@@ -192,6 +192,10 @@ def group(group_id: str) -> str:
     :return: html page
     :rtype: str
     """
+    # check if qc metrics should be displayed
+    display_qc: bool = request.args.get("qc", False)
+
+    # query API for sample info
     token = TokenObject(**current_user.get_id())
     try:
         samples_info = get_samples_in_group(token, group_id=group_id)
@@ -244,6 +248,7 @@ def group(group_id: str) -> str:
         table_data=table_data,
         table_definition=group_info["table_columns"],
         modified=group_info["modified_at"],
+        display_qc=display_qc,
     )
 
 
