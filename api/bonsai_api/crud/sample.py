@@ -25,6 +25,7 @@ from ..models.sample import (
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
+    MultipleSampleRecordsResponseModel
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -298,6 +299,9 @@ async def get_samples(
 ) -> List[SampleInDatabase]:
     """Get samples from database."""
 
+    # get number of samples in collection
+    n_samples = await db.sample_collection.count_documents({})
+
     cursor = db.sample_collection.find(limit=limit, skip=skip)
     samp_objs = []
     for samp in await cursor.to_list(None):
@@ -312,7 +316,7 @@ async def get_samples(
         if include is not None and sample.sample_id not in include:
             continue
         samp_objs.append(sample)
-    return samp_objs
+    return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
 
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
