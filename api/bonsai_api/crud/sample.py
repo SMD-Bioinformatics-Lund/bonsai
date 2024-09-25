@@ -180,6 +180,18 @@ QC_METRICS_SUMMARY_QUERY = [
                     0,
                 ]
             },
+            "cgmlst": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": "$typing_result",
+                            "as": "m",
+                            "cond": {"$eq": ["$$m.type", "cgmlst"]},
+                        }
+                    },
+                    0,
+                ]
+            },
         }
     },
 ]
@@ -260,6 +272,7 @@ async def get_samples_summary(
             "platform": "$sequencing.platform",
             "quast": "$quast.result",
             "postalignqc": "$postalignqc.result",
+            "missing_cgmlst_loci": "$cgmlst.result.n_missing",
             **optional_projecton,
         }
 

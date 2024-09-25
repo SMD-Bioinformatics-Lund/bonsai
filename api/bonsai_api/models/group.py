@@ -61,6 +61,10 @@ VALID_BASE_COLS = [
         hidden=True,
         sortable=True,
     ),
+]
+
+# Prediction result columns
+VALID_PREDICTION_COLS = [
     OverviewTableColumn(
         id="sample_name",
         label="Name",
@@ -100,10 +104,6 @@ VALID_BASE_COLS = [
         sortable=True,
         filterable=True,
     ),
-]
-
-# Prediction result columns
-VALID_PREDICTION_COLS = [
     OverviewTableColumn(
         id="comments",
         label="Comments",
@@ -149,6 +149,18 @@ VALID_PREDICTION_COLS = [
 # Prediction result columns
 VALID_QC_COLS = [
     OverviewTableColumn(
+        id="sample_name",
+        label="Name",
+        path="$.sample_name",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="sequencing_run",
+        label="Sequencing run",
+        path="$.sequencing_run",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="n50",
         label="N50",
         type="number",
@@ -172,6 +184,27 @@ VALID_QC_COLS = [
         label="# Reads",
         type="number",
         path="$.postalignqc.n_reads",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="coverage",
+        label="Cov > 10",
+        type="number",
+        path="$.postalignqc.pct_above_x[\"10\"]",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="coverage",
+        label="Cov > 30",
+        type="number",
+        path="$.postalignqc.pct_above_x[\"30\"]",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="missing_loci",
+        label="# Missing loci",
+        type="number",
+        path="$.missing_cgmlst_loci",
         sortable=True,
     ),
 ]
