@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict, Union
 
 from fastapi import (
     APIRouter,
@@ -17,7 +17,8 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import VariantType
+from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VariantBase, VirulenceMethodIndex
+from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -59,7 +60,7 @@ from ..redis.minhash import (
 )
 from ..utils import format_error_message
 
-CommentsObj = List[CommentInDatabase]
+CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -67,7 +68,7 @@ router = APIRouter()
 class SearchParams(BaseModel):  # pylint: disable=too-few-public-methods
     """Parameters for searching for samples."""
 
-    sample_id: str | List[str]
+    sample_id: str | list[str]
 
 
 class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
@@ -78,6 +79,14 @@ class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
     limit: int | None = None
     skip: int = 0
 
+
+SAMPLE_ID_PATH: str = Path(
+    ...,
+    title="ID of the sample to get",
+    min_length=3,
+    max_length=100,
+    pattern=SAMPLE_ID_PATTERN,
+),
 
 DEFAULT_TAGS = [
     "samples",
@@ -101,7 +110,7 @@ async def read_samples(
 
     Some type of results can be excluded from the output.
     """
-    db_obj: List[SampleInDatabase] = await get_samples_summary(
+    db_obj: list[SampleInDatabase] = await get_samples_summary(
         db,
         limit=limit,
         skip=skip,
@@ -131,7 +140,7 @@ async def create_sample(
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def delete_many_samples(
-    sample_ids: List[str],
+    sample_ids: list[str],
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -153,7 +162,7 @@ async def search_samples(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-) -> Dict[str, str | int | List[Dict[str, Any]]]:
+) -> Dict[str, str | int | list[Dict[str, Any]]]:
     """Entrypoint for searching the database for multiple samples."""
     sample_ids = body.params.sample_id
     # to list if sample ids is a string
@@ -171,13 +180,7 @@ async def search_samples(
 
 @router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_sample(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -193,16 +196,17 @@ async def read_sample(
     return sample_obj
 
 
+class UpdateSampleInputModel(BaseModel):
+    """Input data when updating sample information."""
+
+    typing: list[Union[MethodIndex, ShigaTypingMethodIndex]]
+    phenotype: list[Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]]
+
+
 @router.put("/samples/{sample_id}", tags=DEFAULT_TAGS, response_model=SampleInDatabase)
 async def update_sample(
-    sample: PipelineResult,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    update_data: UpdateSampleInputModel,
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -218,13 +222,7 @@ async def update_sample(
     "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
 )
 async def delete_sample(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -418,13 +416,7 @@ async def add_vcf_to_sample(
 )
 async def update_qc_status(
     classification: QcClassification,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -449,13 +441,7 @@ async def update_qc_status(
 )
 async def update_variant_annotation(
     classification: VariantAnnotation,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -480,13 +466,7 @@ async def update_variant_annotation(
 )
 async def post_comment(
     comment: Comment,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -507,13 +487,7 @@ async def post_comment(
     tags=DEFAULT_TAGS,
 )
 async def hide_comment(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     comment_id: int = Path(..., title="ID of the comment to delete"),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
@@ -537,13 +511,7 @@ async def hide_comment(
 )
 async def update_location(
     location_id: str = Body(...),
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -580,13 +548,7 @@ class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
 )
 async def find_similar_samples(
     body: SimilarSamplesInput,
-    sample_id: str = Path(
-        ...,
-        title="ID of the refernece sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
