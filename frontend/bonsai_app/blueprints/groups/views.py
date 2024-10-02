@@ -23,7 +23,7 @@ from ...bonsai import (
     delete_group,
     get_groups,
     get_samples,
-    get_samples_by_id,
+    get_group_by_id,
     get_samples_in_group,
     get_valid_group_columns,
     update_group,
@@ -78,7 +78,7 @@ def groups() -> str:
 
     # generate table data
     table_data = []
-    for sample in all_samples["records"]:
+    for sample in all_samples["data"]:
         row = []
         for col in default_columns:
             # get sample data from json path
@@ -192,17 +192,23 @@ def group(group_id: str) -> str:
     :return: html page
     :rtype: str
     """
+    # check if qc metrics should be displayed
+    display_qc: bool = request.args.get("qc", False, type=lambda val: val.lower() == 'true')
+
+    # query API for sample info
     token = TokenObject(**current_user.get_id())
     try:
-        group_info = get_samples_in_group(
-            token, group_id=group_id, lookup_samples=False
+        samples_info = get_samples_in_group(
+            token,
+            group_id=group_id,
+            prediction_result=not display_qc,
+            qc_metrics=display_qc,
         )
+        # get column definition to use
+        group_info = get_group_by_id(token, group_id=group_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    samples = get_samples_by_id(
-        token, limit=0, skip=0, sample_ids=group_info["included_samples"]
-    )
 
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
@@ -211,7 +217,7 @@ def group(group_id: str) -> str:
 
     # get columns from api
     group_columns = []
-    for col in group_info["table_columns"]:
+    for col in get_valid_group_columns(True) if display_qc else group_info["table_columns"]:
         if col["hidden"]:
             continue
         # get path
@@ -221,7 +227,7 @@ def group(group_id: str) -> str:
 
     # generate table data
     table_data = []
-    for sample in samples["records"]:
+    for sample in samples_info["data"]:
         row = []
         for col in group_columns:
             # get sample data from json path
@@ -248,6 +254,7 @@ def group(group_id: str) -> str:
         table_data=table_data,
         table_definition=group_info["table_columns"],
         modified=group_info["modified_at"],
+        display_qc=display_qc,
     )
 
 

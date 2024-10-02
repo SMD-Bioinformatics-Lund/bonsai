@@ -11,7 +11,7 @@ from ...bonsai import (
     TokenObject,
     add_samples_to_basket,
     get_group_by_id,
-    get_samples_by_id,
+    get_samples,
     remove_samples_from_basket,
     update_group,
 )
@@ -38,15 +38,16 @@ def add_sample_to_basket():
 
     # lookup analysis profile for samples
     try:
-        response = get_samples_by_id(token, sample_ids=sample_ids)
+        response = get_samples(token, sample_ids=sample_ids, limit=0, skip=0)
     except requests.exceptions.HTTPError as error:
         flash(str(error), "warning")
         message = "Error"
         return_code = 200
+        return "Error", 200
 
     # store sample informaiton in required format
     samples_to_add = []
-    for sample in response["records"]:
+    for sample in response["data"]:
         samples_to_add.append(
             SampleBasketObject(
                 sample_id=sample["sample_id"], analysis_profile=sample["profile"]
