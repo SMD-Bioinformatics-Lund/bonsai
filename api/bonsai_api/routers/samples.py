@@ -80,14 +80,6 @@ class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
     skip: int = 0
 
 
-SAMPLE_ID_PATH: str = Path(
-    ...,
-    title="ID of the sample to get",
-    min_length=3,
-    max_length=100,
-    pattern=SAMPLE_ID_PATTERN,
-),
-
 DEFAULT_TAGS = [
     "samples",
 ]
