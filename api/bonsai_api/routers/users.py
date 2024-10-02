@@ -3,7 +3,7 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Security, status
+from fastapi import APIRouter, HTTPException, Security, status, Depends
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -18,7 +18,7 @@ from ..crud.user import (
     remove_samples_from_user_basket,
     update_user,
 )
-from ..db import db
+from ..db import Database, get_db
 from ..models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
 
 LOG = logging.getLogger(__name__)
@@ -35,6 +35,7 @@ WRITE_PERMISSION = "users:write"
 
 @router.get("/users/me", tags=DEFAULT_TAGS, response_model=UserOutputDatabase)
 async def get_users_me(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
     ),
@@ -45,6 +46,7 @@ async def get_users_me(
 
 @router.get("/users/basket", tags=DEFAULT_TAGS)
 async def get_samples_in_basket(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
     )
@@ -59,6 +61,7 @@ async def get_samples_in_basket(
 @router.put("/users/basket", tags=DEFAULT_TAGS)
 async def add_samples_to_basket(
     samples: List[SampleBasketObject],
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
     ),
@@ -84,6 +87,7 @@ async def add_samples_to_basket(
 @router.delete("/users/basket", tags=DEFAULT_TAGS)
 async def remove_samples_from_basket(
     sample_ids: List[str],
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
     ),
@@ -109,6 +113,7 @@ async def remove_samples_from_basket(
 @router.get("/users/{username}", tags=DEFAULT_TAGS)
 async def get_user_in_db(
     username: str,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -127,6 +132,7 @@ async def get_user_in_db(
 @router.delete("/users/{username}", tags=DEFAULT_TAGS)
 async def delete_user_from_db(
     username: str,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -151,6 +157,7 @@ async def delete_user_from_db(
 async def update_user_info(
     username: str,
     user: UserInputCreate,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -174,6 +181,7 @@ async def update_user_info(
 
 @router.get("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def get_users_in_db(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -186,6 +194,7 @@ async def get_users_in_db(
 @router.post("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_user_in_db(
     user: UserInputCreate,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),

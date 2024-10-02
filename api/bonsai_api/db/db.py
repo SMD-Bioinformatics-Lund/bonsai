@@ -8,7 +8,7 @@ from ..config import settings
 LOG = logging.getLogger(__name__)
 
 
-class Database:  # pylint: disable=too-few-public-methods
+class MongoDatabase:  # pylint: disable=too-few-public-methods
     """Container for database connection and collections."""
 
     def __init__(self) -> None:
@@ -30,6 +30,3 @@ class Database:  # pylint: disable=too-few-public-methods
         self.sample_collection: AsyncIOMotorCollection = self.db.sample
         self.location_collection: AsyncIOMotorCollection = self.db.location
         self.user_collection: AsyncIOMotorCollection = self.db.user
-
-
-db = Database()

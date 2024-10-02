@@ -2,7 +2,7 @@
 
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Path, Security, status
+from fastapi import APIRouter, HTTPException, Path, Security, status, Depends
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
@@ -11,7 +11,7 @@ from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.user import get_current_active_user
-from ..db import db
+from ..db import Database, get_db
 from ..models.group import VALID_COLUMNS, GroupInCreate, GroupInfoDatabase
 from ..models.user import UserOutputDatabase
 
@@ -32,6 +32,7 @@ async def get_valid_columns():
 
 @router.get("/groups/", response_model=List[GroupInfoDatabase], tags=DEFAULT_TAGS)
 async def get_groups_in_db(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     )
@@ -49,6 +50,7 @@ async def get_groups_in_db(
 )
 async def create_group(
     group_info: GroupInCreate,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -72,6 +74,7 @@ async def create_group(
 async def get_group_in_db(
     group_id: str,
     lookup_samples: bool = False,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -88,6 +91,7 @@ async def get_group_in_db(
 )
 async def delete_group_from_db(
     group_id: str,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -106,6 +110,7 @@ async def delete_group_from_db(
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -127,6 +132,7 @@ async def update_group_info(
 async def add_sample_to_group(
     sample_id: str,
     group_id: str = Path(..., tilte="The id of the group to get"),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),

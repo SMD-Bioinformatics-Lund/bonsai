@@ -3,16 +3,16 @@ import logging
 from pathlib import Path
 from typing import Dict
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import Field, ConfigDict
 
+from ..db import Database, get_db
 from ..crud.errors import EntryNotFound
 from ..crud.sample import (
     TypingProfileOutput,
     get_signature_path_for_samples,
     get_typing_profiles,
 )
-from ..db import db
 from ..models.base import RWModel
 from ..redis import (
     ClusterMethod,
@@ -60,6 +60,7 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
 async def cluster_samples(
     typing_method: TypingMethod,
     cluster_input: ClusterInput,
+    db: Database = Depends(get_db),
 ) -> SubmittedJob:
     """Cluster samples on their cgmlst profile.
 

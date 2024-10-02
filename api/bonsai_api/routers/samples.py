@@ -14,6 +14,7 @@ from fastapi import (
     Query,
     Security,
     status,
+    Depends,
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
@@ -33,7 +34,6 @@ from ..crud.sample import (
     update_variant_annotation_for_sample,
 )
 from ..crud.user import get_current_active_user
-from ..db import db
 from ..io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
@@ -59,6 +59,8 @@ from ..redis.minhash import (
     schedule_find_similar_samples,
 )
 from ..utils import format_error_message
+from .shared import SAMPLE_ID_PATH
+from ..db import Database, get_db
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -94,6 +96,7 @@ async def read_samples(
     skip: int = Query(0, gt=-1),
     include_qc: bool = Query(True),
     include_mlst: bool = Query(True),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -115,6 +118,7 @@ async def read_samples(
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_sample(
     sample: PipelineResult,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -133,6 +137,7 @@ async def create_sample(
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def delete_many_samples(
     sample_ids: list[str],
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -151,6 +156,7 @@ async def delete_many_samples(
 @router.post("/samples/search", tags=DEFAULT_TAGS)
 async def search_samples(
     body: SearchBody,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -173,6 +179,7 @@ async def search_samples(
 @router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -199,6 +206,7 @@ class UpdateSampleInputModel(BaseModel):
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -215,6 +223,7 @@ async def update_sample(
 )
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -234,6 +243,7 @@ async def delete_sample(
 async def create_genome_signatures_sample(
     sample_id: str,
     signature: Annotated[bytes, File()],
+    db: Database = Depends(get_db),
 ) -> Dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
@@ -275,6 +285,7 @@ async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
     range: Annotated[str | None, Header()] = None,
+    db: Database = Depends(get_db),
 ) -> str:
     """Get read mapping results for a sample."""
     try:
@@ -326,6 +337,7 @@ async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
     range: Annotated[str | None, Header()] = None,
+    db: Database = Depends(get_db),
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
@@ -382,6 +394,7 @@ async def get_vcf_files_for_sample(
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
+    db: Database = Depends(get_db),
 ) -> Dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
@@ -409,6 +422,7 @@ async def add_vcf_to_sample(
 async def update_qc_status(
     classification: QcClassification,
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -434,6 +448,7 @@ async def update_qc_status(
 async def update_variant_annotation(
     classification: VariantAnnotation,
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -459,6 +474,7 @@ async def update_variant_annotation(
 async def post_comment(
     comment: Comment,
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -481,6 +497,7 @@ async def post_comment(
 async def hide_comment(
     sample_id: str = SAMPLE_ID_PATH,
     comment_id: int = Path(..., title="ID of the comment to delete"),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -504,6 +521,7 @@ async def hide_comment(
 async def update_location(
     location_id: str = Body(...),
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -541,6 +559,7 @@ class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
 async def find_similar_samples(
     body: SimilarSamplesInput,
     sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),

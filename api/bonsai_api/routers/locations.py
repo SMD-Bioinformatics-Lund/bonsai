@@ -1,7 +1,7 @@
 """Routers for reading or manipulating locations."""
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Query, Security, status
+from fastapi import APIRouter, HTTPException, Query, Security, status, Depends
 
 from ..crud.errors import EntryNotFound
 from ..crud.location import create_location as create_location_from_db
@@ -9,7 +9,7 @@ from ..crud.location import get_location as get_location_from_db
 from ..crud.location import get_locations as get_locations_from_db
 from ..crud.location import get_locations_within_bbox
 from ..crud.user import get_current_active_user
-from ..db import db
+from ..db import Database, get_db
 from ..models.location import (
     GeoJSONPolygon,
     LocationInputCreate,
@@ -30,6 +30,7 @@ WRITE_PERMISSION = "locations:write"
 async def get_locations(
     limit: int = Query(10, gt=0),
     skip: int = Query(0, gt=-1),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -52,6 +53,7 @@ async def get_locations(
 @router.post("/locations/", tags=DEFAULT_TAGS)
 async def create_location(
     location: LocationInputCreate,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -75,6 +77,7 @@ async def get_location_bbox(
     bottom: float,
     right: float,
     top: float,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -108,6 +111,7 @@ async def get_location_bbox(
 @router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
 async def get_location(
     location_id: str,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
