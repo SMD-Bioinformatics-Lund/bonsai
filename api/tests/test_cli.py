@@ -7,7 +7,6 @@ from bonsai_api.io import TARGETED_ANTIBIOTICS
 from click.testing import CliRunner
 
 
-@pytest.mark.asyncio()
 def test_export_sample(mocker, sample_database):
     """Test exporting a sample as LIMS import file."""
 
