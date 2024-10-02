@@ -171,6 +171,7 @@ async def get_samples_in_group(
     skip: int = 0,
     limit: int = 0,
     group_id: str = Path(..., tilte="The id of the group to get"),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),

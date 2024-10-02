@@ -57,13 +57,13 @@ async def sample_database(mongo_database, mtuberculosis_sample_path):
 
 
 @pytest.fixture()
-def fastapi_client(mongo_database):
+def fastapi_client(sample_database):
     """Setup API test client."""
     # disable authentication for test client
     app.dependency_overrides[oauth2_scheme] = lambda: ""
 
     # use mocked mongo database
-    app.dependency_overrides[get_db] = lambda: mongo_database
+    app.dependency_overrides[get_db] = lambda: sample_database
 
     client = TestClient(app)
 

@@ -11,7 +11,7 @@ def test_export_sample(mocker, sample_database):
     """Test exporting a sample as LIMS import file."""
 
     # patch db before running cli
-    mocker.patch("bonsai_api.cli.db", sample_database)
+    mocker.patch("bonsai_api.cli.get_db", lambda: sample_database)
 
     # run CLI command
     runner = CliRunner()

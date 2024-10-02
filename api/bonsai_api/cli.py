@@ -13,9 +13,8 @@ from .config import USER_ROLES
 from .crud.sample import get_sample, get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
 from .crud.user import create_user as create_user_in_db
-from .db import db
+from .db import get_db
 from .db.index import INDEXES
-from .db.utils import connect_to_mongo
 from .io import sample_to_kmlims
 from .models.sample import SampleInCreate
 from .models.user import UserInputCreate
@@ -33,14 +32,11 @@ def _generate_random_pwd(length=15) -> str:
 @click.pass_context
 def cli(ctx):
     """Bonsai api server"""
-    ctx.ensure_object(dict)
-    connect_to_mongo()
-    db.setup()
-    ctx.obj["DB"] = db
+    pass
 
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 def setup(ctx):
     """Setup a new database instance by creating collections and indexes."""
     # create collections
@@ -51,7 +47,7 @@ def setup(ctx):
 
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 @click.option("-u", "--username", required=True, help="Desired username.")
 @click.option("--fname", help="Fist name")
 @click.option("--lname", help="Last name")
@@ -84,6 +80,7 @@ def create_user(
     )
     try:
         loop = asyncio.get_event_loop()
+        db = get_db()
         func = create_user_in_db(db, user)
         loop.run_until_complete(func)
     except DuplicateKeyError as error:
@@ -92,9 +89,10 @@ def create_user(
 
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 def index(ctx):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
+    db = get_db()
     for collection_name, indexes in INDEXES.items():
         collection = getattr(db, f"{collection_name}_collection")
         click.secho(f"Creating index for: {collection.name}")
@@ -103,13 +101,14 @@ def index(ctx):  # pylint: disable=unused-argument
 
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
 @click.argument("output", type=click.File("w"), default="-")
 def export(ctx, sample_id, output):  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
+    db = get_db()
     func = get_sample(db, sample_id)
     sample = loop.run_until_complete(func)
 
@@ -125,11 +124,12 @@ def export(ctx, sample_id, output):  # pylint: disable=unused-argument
 
 
 @cli.command()
-@click.pass_context
+@click.pass_obj
 def update_tags(ctx):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
     LOG.info("Updating tags...")
     loop = asyncio.get_event_loop()
+    db = get_db()
     func = get_samples(db)
     samples = loop.run_until_complete(func)
     with click.progressbar(
