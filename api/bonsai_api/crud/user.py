@@ -1,6 +1,6 @@
 """User CRUD operations."""
 import logging
-from typing import List
+from typing import List, Annotated
 
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
@@ -109,7 +109,8 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes, token: str = Depends(oauth2_scheme)
+    security_scopes: SecurityScopes, 
+    token: Annotated[str, Depends(oauth2_scheme)]
 ) -> UserOutputDatabase:
     """Get current user."""
     if security_scopes.scopes:
