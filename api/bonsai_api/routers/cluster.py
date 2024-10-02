@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict
 
 from fastapi import APIRouter, HTTPException, status
-from pydantic import Field
+from pydantic import Field, ConfigDict
 
 from ..crud.errors import EntryNotFound
 from ..crud.sample import (
@@ -48,10 +48,7 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
     distance: DistanceMethod | None = None
     method: ClusterMethod | MsTreeMethods
 
-    class Config:  # pylint: disable=too-few-public-methods
-        """Model configuration class."""
-
-        use_enum_values = False
+    model_config = ConfigDict(use_enum_values=False)
 
 
 @router.post(
