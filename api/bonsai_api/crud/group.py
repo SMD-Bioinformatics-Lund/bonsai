@@ -85,6 +85,7 @@ async def get_group(
                 # cast as static object
                 group["tags"] = compute_phenotype_tags(SampleSummary(**sample))
         return group_document_to_db_object(group)
+    raise EntryNotFound(group_id)
 
 
 async def create_group(db: Database, group_record: GroupInCreate) -> GroupInfoDatabase:

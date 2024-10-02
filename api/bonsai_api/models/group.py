@@ -44,8 +44,7 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     filter_type: str | None = None
     filter_param: str | None = None
 
-
-VALID_COLUMNS = [
+VALID_BASE_COLS = [
     OverviewTableColumn(
         id="sample_btn",
         label="",
@@ -59,12 +58,10 @@ VALID_COLUMNS = [
         hidden=True,
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="comments",
-        label="Comments",
-        type="comments",
-        path="$.comments",
-    ),
+]
+
+# Prediction result columns
+VALID_PREDICTION_COLS = [
     OverviewTableColumn(
         id="sample_name",
         label="Name",
@@ -84,12 +81,6 @@ VALID_COLUMNS = [
         sortable=True,
     ),
     OverviewTableColumn(
-        id="tags",
-        label="Tags",
-        type="tags",
-        path="$.tags",
-    ),
-    OverviewTableColumn(
         id="taxonomic_name",
         label="Major species",
         type="taxonomic_name",
@@ -99,13 +90,33 @@ VALID_COLUMNS = [
     OverviewTableColumn(
         id="qc",
         label="QC",
+        type="qc",
         path="$.qc_status.status",
         sortable=True,
     ),
     OverviewTableColumn(
+        id="profile",
+        label="Analysis profile",
+        path="$.profile",
+        sortable=True,
+        filterable=True,
+    ),
+    OverviewTableColumn(
+        id="comments",
+        label="Comments",
+        type="comments",
+        path="$.comments",
+    ),
+    OverviewTableColumn(
+        id="tags",
+        label="Tags",
+        type="tags",
+        path="$.tags",
+    ),
+    OverviewTableColumn(
         id="mlst",
         label="MLST ST",
-        path="$.mlst.sequence_type",
+        path="$.mlst",
         sortable=True,
         filterable=True,
     ),
@@ -124,13 +135,6 @@ VALID_COLUMNS = [
         filterable=True,
     ),
     OverviewTableColumn(
-        id="profile",
-        label="Analysis profile",
-        path="$.profile",
-        sortable=True,
-        filterable=True,
-    ),
-    OverviewTableColumn(
         id="cdate",
         label="Date",
         type="date",
@@ -139,6 +143,72 @@ VALID_COLUMNS = [
     ),
 ]
 
+# Prediction result columns
+VALID_QC_COLS = [
+    OverviewTableColumn(
+        id="sample_name",
+        label="Name",
+        path="$.sample_name",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="sequencing_run",
+        label="Sequencing run",
+        path="$.sequencing_run",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="n50",
+        label="N50",
+        type="number",
+        path="$.quast.n50",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="n_contigs",
+        label="#Contigs",
+        path="$.quast.n_contigs",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="median_cov",
+        label="Median cov",
+        path="$.postalignqc.median_cov",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="n_reads",
+        label="# Reads",
+        type="number",
+        path="$.postalignqc.n_reads",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="coverage",
+        label="Cov > 10",
+        type="number",
+        path="$.postalignqc.pct_above_x[\"10\"]",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="coverage",
+        label="Cov > 30",
+        type="number",
+        path="$.postalignqc.pct_above_x[\"30\"]",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="missing_loci",
+        label="# Missing loci",
+        type="number",
+        path="$.missing_cgmlst_loci",
+        sortable=True,
+    ),
+]
+
+# create combination of valid columns
+pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
+qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""

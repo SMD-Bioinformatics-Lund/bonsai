@@ -16,7 +16,7 @@ from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import RWModel
+from ..models.base import RWModel, MultipleRecordsResponseModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
@@ -25,6 +25,7 @@ from ..models.sample import (
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
+    MultipleSampleRecordsResponseModel,
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -60,46 +61,40 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 TypingProfileOutput = list[TypingProfileAggregate]
 
-
-async def get_samples_summary(
-    db: Database,
-    limit: int = 0,
-    skip: int = 0,
-    include: List[str] | None = None,
-    include_qc: bool = True,
-    include_mlst: bool = True,
-    include_stx: bool = True,
-    include_oh_type: bool = True,
-    include_comments: bool = True,
-) -> List[SampleSummary]:
-    """Get a summay of several samples."""
-    # build query pipeline
-    pipeline = []
-    if include is not None:
-        pipeline.append({"$match": {"sample_id": {"$in": include}}})
-    if skip > 0:
-        pipeline.append({"$skip": skip})
-    if limit > 0:
-        pipeline.append({"$limit": limit})
-    if include_mlst:
-        pipeline.append(
-            {
-                "$addFields": {
-                    "mlst": {
-                        "$cond": {
-                            "if": {"$in": ["mlst", "$typing_result.type"]},
-                            "then": {"$arrayElemAt": ["$typing_result", 0]},
-                            "else": None,
-                        }
-                    }
+PREDICTION_SUMMARY_QUERY = [
+    {
+        "$addFields": {
+            "mlst": {
+                "$cond": {
+                    "if": {"$in": ["mlst", "$typing_result.type"]},
+                    "then": {"$arrayElemAt": ["$typing_result", 0]},
+                    "else": None,
                 }
-            }
-        )
-    if include_stx:
-        pipeline.append(
-            {
-                "$addFields": {
-                    "stx": {
+            },
+            "stx": {
+                "$ifNull": [
+                    {
+                        "$arrayElemAt": [
+                            {
+                                "$map": {
+                                    "input": {
+                                        "$filter": {
+                                            "input": "$typing_result",
+                                            "cond": {"$eq": ["$$this.type", "stx"]},
+                                        }
+                                    },
+                                    "in": "$$this.result.gene_symbol",
+                                }
+                            },
+                            0,
+                        ]
+                    },
+                    "-",
+                ]
+            },
+            "oh_type": {
+                "$concat": [
+                    {
                         "$ifNull": [
                             {
                                 "$arrayElemAt": [
@@ -109,11 +104,14 @@ async def get_samples_summary(
                                                 "$filter": {
                                                     "input": "$typing_result",
                                                     "cond": {
-                                                        "$eq": ["$$this.type", "stx"]
+                                                        "$eq": [
+                                                            "$$this.type",
+                                                            "O_type",
+                                                        ]
                                                     },
                                                 }
                                             },
-                                            "in": "$$this.result.gene_symbol",
+                                            "in": "$$this.result.sequence_name",
                                         }
                                     },
                                     0,
@@ -121,74 +119,98 @@ async def get_samples_summary(
                             },
                             "-",
                         ]
-                    }
-                }
-            }
-        )
-    if include_oh_type:
-        pipeline.append(
-            {
-                "$addFields": {
-                    "oh_type": {
-                        "$concat": [
+                    },
+                    ":",
+                    {
+                        "$ifNull": [
                             {
-                                "$ifNull": [
+                                "$arrayElemAt": [
                                     {
-                                        "$arrayElemAt": [
-                                            {
-                                                "$map": {
-                                                    "input": {
-                                                        "$filter": {
-                                                            "input": "$typing_result",
-                                                            "cond": {
-                                                                "$eq": [
-                                                                    "$$this.type",
-                                                                    "O_type",
-                                                                ]
-                                                            },
-                                                        }
+                                        "$map": {
+                                            "input": {
+                                                "$filter": {
+                                                    "input": "$typing_result",
+                                                    "cond": {
+                                                        "$eq": [
+                                                            "$$this.type",
+                                                            "H_type",
+                                                        ]
                                                     },
-                                                    "in": "$$this.result.sequence_name",
                                                 }
                                             },
-                                            0,
-                                        ]
+                                            "in": "$$this.result.sequence_name",
+                                        }
                                     },
-                                    "-",
+                                    0,
                                 ]
                             },
-                            ":",
-                            {
-                                "$ifNull": [
-                                    {
-                                        "$arrayElemAt": [
-                                            {
-                                                "$map": {
-                                                    "input": {
-                                                        "$filter": {
-                                                            "input": "$typing_result",
-                                                            "cond": {
-                                                                "$eq": [
-                                                                    "$$this.type",
-                                                                    "H_type",
-                                                                ]
-                                                            },
-                                                        }
-                                                    },
-                                                    "in": "$$this.result.sequence_name",
-                                                }
-                                            },
-                                            0,
-                                        ]
-                                    },
-                                    "-",
-                                ]
-                            },
+                            "-",
                         ]
-                    }
-                }
-            }
-        )
+                    },
+                ]
+            },
+        }
+    },
+]
+
+QC_METRICS_SUMMARY_QUERY = [
+    {
+        "$addFields": {
+            "quast": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": "$qc",
+                            "as": "qc",
+                            "cond": {"$eq": ["$$qc.software", "quast"]},
+                        }
+                    },
+                    0,
+                ]
+            },
+            "postalignqc": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": "$qc",
+                            "as": "qc",
+                            "cond": {"$eq": ["$$qc.software", "postalignqc"]},
+                        }
+                    },
+                    0,
+                ]
+            },
+            "cgmlst": {
+                "$arrayElemAt": [
+                    {
+                        "$filter": {
+                            "input": "$typing_result",
+                            "as": "m",
+                            "cond": {"$eq": ["$$m.type", "cgmlst"]},
+                        }
+                    },
+                    0,
+                ]
+            },
+        }
+    },
+]
+
+
+async def get_samples_summary(
+    db: Database,
+    limit: int = 0,
+    skip: int = 0,
+    include_samples: List[str] | None = None,
+    prediction_result: bool = True,
+    qc_metrics: bool = False,
+) -> List[SampleSummary]:
+    """Get a summay of several samples."""
+    # build query pipeline
+    pipeline = []
+    if include_samples is not None and len(include_samples) > 0:
+        pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
+
     # species prediction projection
     # get the first entry of the bracken result
     spp_cmd = {
@@ -212,6 +234,8 @@ async def get_samples_summary(
             0,
         ]
     }
+
+    # define base projection
     base_projection = {
         "_id": 0,
         "id": {"$convert": {"input": "$_id", "to": "string"}},
@@ -219,41 +243,65 @@ async def get_samples_summary(
         "sample_name": 1,
         "lims_id": 1,
         "sequencing_run": "$sequencing.run_id",
-        "tags": 1,
+        "qc_status": 1,
         "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",
-        "run_metadata": "$sequencing",
-        "comments": int(include_comments),
+        "n_records": 1,
     }
-    # define a optional projections
+
+    # define container for opitional projections
     optional_projecton = {}
-    if include_qc:
-        optional_projecton["qc_status"] = 1
-    if include_mlst:
-        optional_projecton["mlst"] = {"$arrayElemAt": ["$typing_result", 0]}
-    if include_stx:
-        optional_projecton["stx"] = 1
-    if include_oh_type:
-        optional_projecton["oh_type"] = 1
+
+    # build query for prediction result
+    if prediction_result:
+        pipeline.extend(PREDICTION_SUMMARY_QUERY)
+        optional_projecton = {
+            "tags": 1,
+            "comments": 1,
+            "mlst": "$mlst.result.sequence_type",
+            "stx": 1,
+            "oh_type": 1,
+            **optional_projecton,
+        }
+
+    # build query control for quality metrics
+    if qc_metrics:
+        pipeline.extend(QC_METRICS_SUMMARY_QUERY)
+        optional_projecton = {
+            "platform": "$sequencing.platform",
+            "quast": "$quast.result",
+            "postalignqc": "$postalignqc.result",
+            "missing_cgmlst_loci": "$cgmlst.result.n_missing",
+            **optional_projecton,
+        }
+
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
+
+    # add limit, skip and count total records in db
+    facet_pipe = []
+    if limit > 0:
+        facet_pipe.append({"$limit": limit})
+    if skip > 0:
+        facet_pipe.append({"$skip": skip})
+    pipeline.append(
+        {
+            "$facet": {
+                "data": facet_pipe,
+                "records_total": [{"$count": "count"}],
+            }
+        },
+    )
 
     # query database
     cursor = db.sample_collection.aggregate(pipeline)
     # get query results from the database
     results = await cursor.to_list(None)
 
-    if include_mlst:
-        # replace mlst with the nested result as a work around
-        # for mongo version < 5
-        upd_results = []
-        for res in results:
-            if "mlst" in res:
-                res["mlst"] = res["mlst"]["result"]
-            upd_results.append(res)
-        results = upd_results.copy()
-    return results
+    return MultipleRecordsResponseModel(
+        data=results[0]["data"], records_total=results[0]["records_total"][0]["count"]
+    )
 
 
 async def get_samples(
@@ -263,6 +311,9 @@ async def get_samples(
     include: List[str] | None = None,
 ) -> List[SampleInDatabase]:
     """Get samples from database."""
+
+    # get number of samples in collection
+    n_samples = await db.sample_collection.count_documents({})
 
     cursor = db.sample_collection.find(limit=limit, skip=skip)
     samp_objs = []
@@ -278,7 +329,7 @@ async def get_samples(
         if include is not None and sample.sample_id not in include:
             continue
         samp_objs.append(sample)
-    return samp_objs
+    return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
 
 
 async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:

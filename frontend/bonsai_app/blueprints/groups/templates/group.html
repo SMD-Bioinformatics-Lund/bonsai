@@ -37,7 +37,9 @@
                     </button>
                 {% endif %}
                 {{ search_similar_btn() }}
-                {{ qc_bulk_toggle(bad_qc_actions)}}
+                {% if display_qc %}
+                    {{ qc_bulk_toggle(bad_qc_actions)}}
+                {% endif %}
                 <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
                     <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
                     <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
@@ -54,6 +56,11 @@
                         </span>
                     </button>
                 </form>
+                {# toggle display qc values #}
+                <a class="btn btn-sm btn-outline-primary {% if display_qc %}active{% endif %} ms-2" 
+                   href="{{ url_for('groups.group', group_id=title, qc=not display_qc) }}">
+                   Show QC
+                </a>
             </div>
         </nav>
         {{ sample_table(table_data) }}

@@ -50,6 +50,7 @@ from ..models.sample import (
     SampleInDatabase,
 )
 from ..models.user import UserOutputDatabase
+from ..models.base import MultipleRecordsResponseModel
 from ..redis import ClusterMethod, TypingMethod
 from ..redis.minhash import (
     SubmittedJob,
@@ -90,29 +91,34 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-@router.get("/samples/", response_model_by_alias=False, tags=DEFAULT_TAGS)
-async def read_samples(
+@router.get(
+    "/samples/",
+    response_model_by_alias=False,
+    response_model=MultipleRecordsResponseModel,
+    tags=DEFAULT_TAGS,
+)
+async def samples_summary(
     limit: int = Query(10, gt=-1),
     skip: int = Query(0, gt=-1),
-    include_qc: bool = Query(True),
-    include_mlst: bool = Query(True),
+    prediction_result: bool = Query(True, description="Include prediction results"),
+    qc_metrics: bool = Query(False, description="Include QC metrics"),
+    sid: list[str] = Query([], description="Optional limit query to samples ids"),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    """Get a summary of one or more samples from the database.
-
-    Some type of results can be excluded from the output.
-    """
-    db_obj: list[SampleInDatabase] = await get_samples_summary(
+    """Entrypoint for getting a summary for multiple samples."""
+    # query samples
+    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
         limit=limit,
         skip=skip,
-        include_qc=include_qc,
-        include_mlst=include_mlst,
+        prediction_result=prediction_result,
+        include_samples=sid,
+        qc_metrics=qc_metrics,
     )
-    return {"status": "success", "total": len(db_obj), "records": db_obj}
+    return db_obj
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
@@ -151,29 +157,6 @@ async def delete_many_samples(
             detail=str(error),
         ) from error
     return result
-
-
-@router.post("/samples/search", tags=DEFAULT_TAGS)
-async def search_samples(
-    body: SearchBody,
-    db: Database = Depends(get_db),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[READ_PERMISSION]
-    ),
-) -> Dict[str, str | int | list[Dict[str, Any]]]:
-    """Entrypoint for searching the database for multiple samples."""
-    sample_ids = body.params.sample_id
-    # to list if sample ids is a string
-    if isinstance(sample_ids, str):
-        sample_ids = [sample_ids]
-    # query samples
-    db_obj = await get_samples_summary(
-        db,
-        include=sample_ids,
-        limit=body.limit,
-        skip=body.skip,
-    )
-    return {"status": "success", "total": len(db_obj), "records": db_obj}
 
 
 @router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)

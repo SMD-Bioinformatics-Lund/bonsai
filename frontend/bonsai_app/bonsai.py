@@ -235,30 +235,23 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def get_samples_in_group(headers: CaseInsensitiveDict, **kwargs):
-    """Get groups from database"""
-    # conduct query
-    group_id = kwargs.get("group_id")
-    url = f"{settings.bonsai_api_url}/groups/{group_id}"
-    lookup_samples = kwargs.get("lookup_samples", False)
-    resp = requests_get(
-        url,
-        headers=headers,
-        params={"lookup_samples": lookup_samples},
-    )
-    # check errors
-    resp.raise_for_status()
-    return resp.json()
-
-
-@api_authentication
-def get_samples(headers: CaseInsensitiveDict, **kwargs):
+def get_samples(
+    headers: CaseInsensitiveDict,
+    limit: int = 20,
+    skip: int = 0,
+    sample_ids: list[str] | None = None,
+):
     """Get multipe samples from database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/samples"
     # get limit, offeset and skip values
-    parmas = {"limit": kwargs.get("limit", 20), "skip": kwargs.get("skip", 0)}
-    resp = requests_get(url, headers=headers, params=parmas)
+    params = {"limit": limit, "skip": skip}
+    if sample_ids is not None:
+        # sanity check list
+        if len(sample_ids) == 0:
+            raise ValueError("sample_ids list cant be empty!")
+        params["sid"] = sample_ids
+    resp = requests_get(url, headers=headers, params=params)
 
     resp.raise_for_status()
     return resp.json()
@@ -276,22 +269,31 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
 
 
 @api_authentication
-def get_samples_by_id(headers: CaseInsensitiveDict, **kwargs):
-    """Search the database for multiple samples"""
+def get_samples_in_group(
+    headers: CaseInsensitiveDict,
+    group_id: str,
+    limit: int = 0,
+    skip_lines: int = 0,
+    prediction_result: bool = True,
+    qc_metrics: bool = False,
+):
+    """Search the database for the samples that are part of a given group."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/search"
-    sample_id = kwargs.get("sample_ids", None)
-    if sample_id is None:
+    url = f"{settings.bonsai_api_url}/groups/{group_id}/samples"
+    if group_id is None:
         raise ValueError("No sample id provided.")
-    search = {
-        "params": {
-            "sample_id": sample_id,
+
+    current_app.logger.debug("Query API for samples in group: %s", group_id)
+    resp = requests_get(
+        url,
+        headers=headers,
+        params={
+            "limit": limit,
+            "skip": skip_lines,
+            "prediction_result": prediction_result,
+            "qc_metrics": qc_metrics,
         },
-        "limit": kwargs.get("limit", 0),
-        "skip": kwargs.get("skip", 0),
-    }
-    current_app.logger.debug("Query API for %s", sample_id)
-    resp = requests_post(url, headers=headers, json=search)
+    )
 
     resp.raise_for_status()
     return resp.json()
@@ -461,10 +463,10 @@ def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
     return resp.text
 
 
-def get_valid_group_columns():
+def get_valid_group_columns(qc: bool = False):
     """Query API for valid group columns."""
     url = f"{settings.bonsai_api_url}/groups/default/columns"
-    resp = requests_get(url)
+    resp = requests_get(url, params={"qc": qc})
     resp.raise_for_status()
     return resp.json()
 

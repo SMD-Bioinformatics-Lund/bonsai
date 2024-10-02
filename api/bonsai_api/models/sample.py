@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import DBModelMixin, ModifiedAtRWModel
+from .base import DBModelMixin, ModifiedAtRWModel, MultipleRecordsResponseModel
 from .qc import QcClassification
 
 CURRENT_SCHEMA_VERSION = 1
@@ -138,3 +138,9 @@ class SampleSummary(
     """Summary of a sample stored in the database."""
 
     major_specie: SpeciesPrediction = Field(...)
+
+
+class MultipleSampleRecordsResponseModel(
+    MultipleRecordsResponseModel
+):  # pylint: disable=too-few-public-methods
+    data: list[SampleInDatabase] = []

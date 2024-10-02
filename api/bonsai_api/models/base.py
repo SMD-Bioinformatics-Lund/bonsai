@@ -1,8 +1,25 @@
 """Generic database objects of which several other models are based on."""
 from datetime import datetime, timezone
 
-from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field
+from bson import ObjectId as BaseObjectId
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+from typing import Any
+
+
+class ObjectId(BaseObjectId):
+    """Class for handeling mongo object ids"""
+
+    @classmethod
+    def __get_validators__(cls):
+        """Validators"""
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        """Validate object id"""
+        if not BaseObjectId.is_valid(v):
+            raise ValueError("Invalid object id")
+        return BaseObjectId(v)
 
 
 class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
@@ -34,21 +51,12 @@ class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
     modified_at: datetime = Field(datetime.now(timezone.utc))
 
 
-class PyObjectId(ObjectId):
-    """Class for handeling mongo object ids"""
+class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods
+    """Generic response model for multiple data records."""
 
-    @classmethod
-    def __get_validators__(cls):
-        """Validators"""
-        yield cls.validate
+    data: list[dict[str, Any]] = Field(...)
+    records_total: int = Field(..., alias="recordsTotal")
 
-    @classmethod
-    def validate(cls, v):
-        """Validate object id"""
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid object id")
-        return ObjectId(v)
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    @computed_field(alias="recordsFiltered")
+    def records_filtered(self) -> int:
+        return len(self.data)

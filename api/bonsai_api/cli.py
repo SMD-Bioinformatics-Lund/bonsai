@@ -133,7 +133,7 @@ def update_tags(ctx):  # pylint: disable=unused-argument
     func = get_samples(db)
     samples = loop.run_until_complete(func)
     with click.progressbar(
-        samples, length=len(samples), label="Updating tags"
+        samples.data, length=samples.records_filtered, label="Updating tags"
     ) as prog_bar:
         for sample in prog_bar:
             upd_tags = compute_phenotype_tags(sample)

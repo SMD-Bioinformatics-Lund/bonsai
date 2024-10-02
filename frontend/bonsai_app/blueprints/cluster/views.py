@@ -12,7 +12,7 @@ from requests.exceptions import HTTPError
 from ...bonsai import (
     TokenObject,
     cluster_samples,
-    get_samples_by_id,
+    get_samples,
     get_valid_group_columns,
 )
 from ...custom_filters import get_json_path
@@ -148,13 +148,11 @@ def tree():
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
-            sample_summary = get_samples_by_id(token, sample_ids=samples["sample_id"])
+            sample_summary = get_samples(token, sample_ids=samples["sample_id"])
             # get column info
             if column_info is None:
                 column_info = get_valid_group_columns()
-            metadata = gather_metadata(
-                sample_summary["records"], column_info
-            ).model_dump()
+            metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
         data = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",
