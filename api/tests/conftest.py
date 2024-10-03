@@ -1,7 +1,5 @@
 import asyncio
 import json
-from pathlib import Path
-from dotenv import load_dotenv
 from  fastapi.testclient import TestClient
 
 
@@ -68,9 +66,3 @@ def fastapi_client(sample_database):
     client = TestClient(app)
 
     return client
-
-
-def pytest_configure(config):
-    """Configure environment variables used for test."""
-    test_env = str(Path(__file__).parent / "test.env")
-    load_dotenv(test_env, override=True)

@@ -1,6 +1,7 @@
 """Main entrypoint for API server."""
 
-from logging.config import dictConfig
+import logging
+import logging.config as logging_config
 
 from fastapi import FastAPI
 
@@ -20,7 +21,7 @@ from .routers import (
     users,
 )
 
-dictConfig(
+logging_config.dictConfig(
     {
         "version": 1,
         "disable_existing_loggers": False,
@@ -39,11 +40,16 @@ dictConfig(
         "root": {"level": "DEBUG", "handlers": ["wsgi"]},
     }
 )
+LOG = logging.getLogger(__name__)
 
 app = FastAPI(title="Bonsai")
 
 # configure CORS
 configure_cors(app)
+
+# check if api authentication is disabled
+if not settings.api_authentication:
+    LOG.warning("API authentication disabled!")
 
 # configure events
 if settings.use_ldap_auth:

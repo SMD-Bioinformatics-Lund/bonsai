@@ -2,14 +2,14 @@
 import logging
 from typing import List, Annotated
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Security, status, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
 from ..auth import get_password_hash, verify_password
 from ..config import ALGORITHM, USER_ROLES, settings
-from ..db import Database, db
+from ..db import Database, get_db
 from ..extensions.ldap_extension import ldap_connection
 from ..models.auth import TokenData
 from ..models.user import (
@@ -70,7 +70,7 @@ async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputData
         hashed_password=hashed_password, **user.model_dump()
     )
     # store data in database
-    resp_obj = await db.user_collection.insert_one(user_db_fmt.model_dump())
+    resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
     inserted_id = resp_obj.inserted_id
     user_obj = UserInputDatabase(
         id=str(inserted_id),
@@ -101,18 +101,27 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
     except EntryNotFound:
         return False
 
+    # use authenticate users with an LDAP server
     if settings.use_ldap_auth:
         is_authenticated = ldap_connection.authenticate(username, password)
     else:
+        # use username and password to authenticate users
         is_authenticated = verify_password(password, user.hashed_password)
     return is_authenticated
 
 
 async def get_current_user(
     security_scopes: SecurityScopes, 
-    token: Annotated[str, Depends(oauth2_scheme)]
-) -> UserOutputDatabase:
+    #token: Annotated[str, Depends(oauth2_scheme)],
+    #token: str = Depends(oauth2_scheme),
+    token: str = "",
+    db: Database = Depends(get_db),
+) -> UserOutputDatabase | None:
     """Get current user."""
+    # check if API authentication is disabled
+    if not settings.api_authentication:
+        return None
+
     if security_scopes.scopes:
         authenticate_value = f"Bearer scope={security_scopes.scope_str}"
     else:
@@ -151,15 +160,21 @@ async def get_current_user(
 
 
 async def get_current_active_user(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
-) -> UserOutputDatabase:
+) -> UserOutputDatabase | None:
     """Get current active user."""
+    # disable API authentication
+    if not settings.api_authentication:
+        return None
+
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 
 async def get_samples_in_user_basket(
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
 ) -> List[SampleBasketObject]:
     """Get samples in the current user basket."""
@@ -170,6 +185,7 @@ async def get_samples_in_user_basket(
 async def add_samples_to_user_basket(
     current_user: UserOutputDatabase,
     sample_ids: List[SampleBasketObject],
+    db: Database = Depends(get_db),
 ) -> SampleBasketObject:
     """Add samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(
@@ -197,6 +213,7 @@ async def add_samples_to_user_basket(
 
 async def remove_samples_from_user_basket(
     sample_ids: List[SampleBasketObject],
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
