@@ -3,6 +3,7 @@ import json
 import logging
 from enum import Enum
 from typing import Any, Dict, List
+import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -69,11 +70,20 @@ def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | flo
     return "-" if val is None else val
 
 
-def fmt_metadata(data):
-    if isinstance(data, (list, tuple)):
-        return ", ".join([point["label"] for point in data])
-    else:
-        return data
+def fmt_metadata(sample_obj, column) -> str:
+    data = get_json_path(sample_obj, column["path"])
+    #return ", ".join([point["label"] for point in data])
+    LOG.warning(column['type'])
+    match column['type']:
+        case "tags":
+            fmt_data = ", ".join([point["label"] for point in data])
+        case "comments":
+            fmt_data = ", ".join([comment_obj["comment"] for comment_obj in data if comment_obj['displayed']])
+        case "date":
+            fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
+        case default:
+            fmt_data = data
+    return fmt_data
 
 
 def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
@@ -102,7 +112,7 @@ def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
         sample_id = sample["sample_id"]
         # store metadata
         metadata[sample_id] = {
-            col["label"]: fmt_metadata(get_json_path(sample, col["path"]))
+            col["label"]: fmt_metadata(sample, col)
             for col in columns
         }
     # build metadata list
@@ -148,7 +158,7 @@ def tree():
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
-            sample_summary = get_samples(token, sample_ids=samples["sample_id"])
+            sample_summary = get_samples(token, sample_ids=samples["sample_id"], limit=0)
             # get column info
             if column_info is None:
                 column_info = get_valid_group_columns()
