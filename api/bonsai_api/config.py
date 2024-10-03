@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # authentication options
     secret_key: str = "not-so-secret"  # openssl rand -hex 32
     access_token_expire_minutes: int = 180  # expiration time for accesst token
+    api_authentication: bool = True
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
     ldap_search_attr: str = "mail"
