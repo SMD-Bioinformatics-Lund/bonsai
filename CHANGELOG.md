@@ -15,6 +15,7 @@
 ### Fixed
 
 - Fixed highlight of displayed sample in the dendrogram on the sample view page.
+- Fixed formatting of grapetree metadata that could crash the frontend.
 
 ## [v0.7.0]
 
