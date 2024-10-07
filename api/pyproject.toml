@@ -8,3 +8,6 @@ plugins = "pydantic.mypy"
 [tool.isort]
 profile = "black"
 src_paths = ["isort", "test"]
+
+[tool.pytest_env]
+API_AUTHENTICATION = false

@@ -20,8 +20,8 @@ DEFAULT_TAGS = [
 @router.post("/token", tags=DEFAULT_TAGS)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     """Generate a new Oauth2 token."""
-    user: bool = await authenticate_user(db, form_data.username, form_data.password)
-    if not user:
+    is_authenticated: bool = await authenticate_user(db, form_data.username, form_data.password)
+    if not is_authenticated:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

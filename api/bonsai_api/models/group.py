@@ -2,7 +2,7 @@
 from typing import Dict, List
 
 from prp.models.phenotype import ElementType
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId
 from .sample import SampleSummary
@@ -15,10 +15,7 @@ class IncludedSamples(ModifiedAtRWModel):  # pylint: disable=too-few-public-meth
 
     included_samples: List[str | SampleSummary]
 
-    class Config:  # pylint: disable=too-few-public-methods
-        """Make mongodb object id serializable."""
-
-        json_encoders = {ObjectId: str}
+    model_config = ConfigDict(json_encoders={ObjectId: str})
 
 
 class UpdateIncludedSamples(IncludedSamples):  # pylint: disable=too-few-public-methods

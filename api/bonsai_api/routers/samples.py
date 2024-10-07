@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Dict, List
+from typing import Annotated, Any, Dict, Union
 
 from fastapi import (
     APIRouter,
@@ -14,10 +14,12 @@ from fastapi import (
     Query,
     Security,
     status,
+    Depends,
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import VariantType
+from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VariantBase, VirulenceMethodIndex
+from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -32,7 +34,6 @@ from ..crud.sample import (
     update_variant_annotation_for_sample,
 )
 from ..crud.user import get_current_active_user
-from ..db import db
 from ..io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
@@ -59,8 +60,10 @@ from ..redis.minhash import (
     schedule_find_similar_samples,
 )
 from ..utils import format_error_message
+from .shared import SAMPLE_ID_PATH
+from ..db import Database, get_db
 
-CommentsObj = List[CommentInDatabase]
+CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -68,7 +71,7 @@ router = APIRouter()
 class SearchParams(BaseModel):  # pylint: disable=too-few-public-methods
     """Parameters for searching for samples."""
 
-    sample_id: str | List[str]
+    sample_id: str | list[str]
 
 
 class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
@@ -100,6 +103,7 @@ async def samples_summary(
     prediction_result: bool = Query(True, description="Include prediction results"),
     qc_metrics: bool = Query(False, description="Include QC metrics"),
     sid: list[str] = Query([], description="Optional limit query to samples ids"),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -120,20 +124,12 @@ async def samples_summary(
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def create_sample(
     sample: PipelineResult,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> Dict[str, str]:
-    """Entrypoint for creating a new sample.
-
-    :param sample: JASEN prediction result
-    :type sample: PipelineResult
-    :param current_user: The logged in user, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return 409 error if sample is already in the database.
-    :return: record id in the database
-    :rtype: Dict[str, str]
-    """
+    """Entrypoint for creating a new sample."""
     try:
         db_obj = await create_sample_record(db, sample)
     except DuplicateKeyError as error:
@@ -146,7 +142,8 @@ async def create_sample(
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
 async def delete_many_samples(
-    sample_ids: List[str],
+    sample_ids: list[str],
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -164,27 +161,13 @@ async def delete_many_samples(
 
 @router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
 async def read_sample(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ) -> SampleInDatabase:
-    """Read sample with sample id from database.
-
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return 404 error if sample is not in the database.
-    :return: Sample prediction results.
-    :rtype: SampleInDatabase
-    """
+    """Read sample with sample id from database."""
     try:
         sample_obj = await get_sample(db, sample_id)
     except EntryNotFound as error:
@@ -195,48 +178,35 @@ async def read_sample(
     return sample_obj
 
 
-@router.put("/samples/{sample_id}", tags=DEFAULT_TAGS)
+class UpdateSampleInputModel(BaseModel):
+    """Input data when updating sample information."""
+
+    typing: list[Union[MethodIndex, ShigaTypingMethodIndex]]
+    phenotype: list[Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]]
+
+
+@router.put("/samples/{sample_id}", tags=DEFAULT_TAGS, response_model=SampleInDatabase)
 async def update_sample(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
-    sample: Dict | PipelineResult = Body({}),
-    location: Dict = Body({}, embed=True),
+    update_data: UpdateSampleInputModel,
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
-) -> Dict[str, str | SampleInDatabase]:
+):
     """Update sample with sample id from database.
-
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param sample: New sample information, defaults to Body({})
-    :type sample: Dict | PipelineResult, optional
-    :param location: Location information, defaults to Body({}, embed=True)
-    :type location: Dict, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :return: _description_
-    :rtype: Dict[str, str | SampleInDatabase]
+    
+    Take either a partial or full result as input.
     """
-    return {"sample_id": sample_id, "sample": sample, "location": location}
+    return sample
 
 
 @router.delete(
     "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
 )
 async def delete_sample(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -256,18 +226,9 @@ async def delete_sample(
 async def create_genome_signatures_sample(
     sample_id: str,
     signature: Annotated[bytes, File()],
+    db: Database = Depends(get_db),
 ) -> Dict[str, str]:
-    """Entrypoint for uploading a genome signature to the database.
-
-    :param sample_id: Sample id
-    :type sample_id: str
-    :param signature: Sourmash genome signature file
-    :type signature: Annotated[bytes, File
-    :raises HTTPException: Return 404 error if sample has not been uploaded
-    :raises sig_exist_err: Return 409 error if signature already has been uploaded
-    :return: Ids for upload and indexing job
-    :rtype: Dict[str, str]
-    """
+    """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
     try:
         sample = await get_sample(db, sample_id)
@@ -307,6 +268,7 @@ async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
     range: Annotated[str | None, Header()] = None,
+    db: Database = Depends(get_db),
 ) -> str:
     """Get read mapping results for a sample."""
     try:
@@ -358,6 +320,7 @@ async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
     range: Annotated[str | None, Header()] = None,
+    db: Database = Depends(get_db),
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
@@ -414,6 +377,7 @@ async def get_vcf_files_for_sample(
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
+    db: Database = Depends(get_db),
 ) -> Dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
@@ -440,29 +404,13 @@ async def add_vcf_to_sample(
 )
 async def update_qc_status(
     classification: QcClassification,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> bool:
-    """Update sample QC status
-
-    :param classification: QC classification info
-    :type classification: QcClassification
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return 404 error if sample is not in the database
-    :return: Sample information in the database.
-    :rtype: bool
-    """
+    """Update sample QC status."""
     try:
         status_obj: bool = await update_sample_qc_classification(
             db, sample_id, classification
@@ -482,13 +430,8 @@ async def update_qc_status(
 )
 async def update_variant_annotation(
     classification: VariantAnnotation,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -513,29 +456,13 @@ async def update_variant_annotation(
 )
 async def post_comment(
     comment: Comment,
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> CommentsObj:
-    """Add a commet to a sample.
-
-    :param comment: Comment information
-    :type comment: Comment
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return 404 HTTP error if sample have not been added to the database.
-    :return: All comments for sample.
-    :rtype: CommentsObj
-    """
+    """Add a commet to a sample."""
     try:
         comment_obj: CommentsObj = await add_comment(db, sample_id, comment)
     except EntryNotFound as error:
@@ -551,30 +478,14 @@ async def post_comment(
     tags=DEFAULT_TAGS,
 )
 async def hide_comment(
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
     comment_id: int = Path(..., title="ID of the comment to delete"),
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> bool:
-    """Hide a comment in a sample from users.
-
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param comment_id: Comment id, defaults to Path(..., title="ID of the comment to delete")
-    :type comment_id: int, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return 404 error if comment or sample is not in the database.
-    :return: operation status.
-    :rtype: bool
-    """
+    """Hide a comment in a sample from users."""
     try:
         resp: bool = await hide_comment_for_sample(db, sample_id, comment_id)
     except EntryNotFound as error:
@@ -592,29 +503,13 @@ async def hide_comment(
 )
 async def update_location(
     location_id: str = Body(...),
-    sample_id: str = Path(
-        ...,
-        title="ID of the sample to get",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> LocationOutputDatabase:
-    """Update the location of a sample.
-
-    :param location_id: id of the location, defaults to Body(...)
-    :type location_id: str, optional
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :raises HTTPException: Return a 404 error if sample or location is not in the database.
-    :return: The associated location.
-    :rtype: LocationOutputDatabase
-    """
+    """Update the location of a sample."""
     try:
         location_obj: LocationOutputDatabase = await add_location(
             db, sample_id, location_id
@@ -646,13 +541,8 @@ class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
 )
 async def find_similar_samples(
     body: SimilarSamplesInput,
-    sample_id: str = Path(
-        ...,
-        title="ID of the refernece sample",
-        min_length=3,
-        max_length=100,
-        regex=SAMPLE_ID_PATTERN,
-    ),
+    sample_id: str = SAMPLE_ID_PATH,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -661,15 +551,6 @@ async def find_similar_samples(
 
     The entrypoint adds a similarity search job to the redis
     queue.
-
-    :param body: Query information
-    :type body: SimilarSamplesInput
-    :param sample_id: Sample id, defaults to Path
-    :type sample_id: str, optional
-    :param current_user: for authentication, defaults to Security
-    :type current_user: UserOutputDatabase, optional
-    :return: The information of the submitted job.
-    :rtype: SubmittedJob
     """
     LOG.info("ref: %s, body: %s, cluster: %s", sample_id, body, body.cluster)
     if body.cluster:

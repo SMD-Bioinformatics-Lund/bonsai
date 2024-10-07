@@ -1,11 +1,11 @@
 """Main entrypoint for API server."""
 
-from logging.config import dictConfig
+import logging
+import logging.config as logging_config
 
 from fastapi import FastAPI
 
 from .config import settings
-from .db.utils import close_mongo_connection, connect_to_mongo
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
 from .routers import (
@@ -21,7 +21,7 @@ from .routers import (
     users,
 )
 
-dictConfig(
+logging_config.dictConfig(
     {
         "version": 1,
         "disable_existing_loggers": False,
@@ -40,16 +40,18 @@ dictConfig(
         "root": {"level": "DEBUG", "handlers": ["wsgi"]},
     }
 )
+LOG = logging.getLogger(__name__)
 
 app = FastAPI(title="Bonsai")
 
 # configure CORS
 configure_cors(app)
 
-# configure events
-app.add_event_handler("startup", connect_to_mongo)
-app.add_event_handler("shutdown", close_mongo_connection)
+# check if api authentication is disabled
+if not settings.api_authentication:
+    LOG.warning("API authentication disabled!")
 
+# configure events
 if settings.use_ldap_auth:
     app.add_event_handler("startup", ldap_connection.init_app)
     app.add_event_handler("shutdown", ldap_connection.teardown)
