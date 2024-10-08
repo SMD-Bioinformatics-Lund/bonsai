@@ -36,7 +36,6 @@ INDEXES = {
             "definition": [("_id", ASCENDING)],
             "options": {
                 "name": "location_unique_id",
-                "background": True,
                 "unique": True,
             },
         },
