@@ -32,9 +32,7 @@ services:
     ports: 
       - "8001:8000"
     environment:
-      - ALLOWED_ORIGINS=*
-    volumes:
-      - "./api/app:/home/worker/app/app"
+      - ALLOWED_ORIGINS=["*"]
     networks:
       - bonsai-net
     command: "uvicorn app.main:app --reload --host 0.0.0.0"
