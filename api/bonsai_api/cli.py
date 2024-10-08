@@ -42,9 +42,13 @@ def setup(ctx, password):
     """Setup a new database instance by creating an admin user and setup indexes."""
     # create collections
     click.secho("Start database setup...", fg="green")
-    ctx.invoke(index)
-    ctx.invoke(create_user, username="admin", password=password, email="placeholder@mail.com", role="admin")
-    click.secho("setup complete", fg="green")
+    try:
+        ctx.invoke(index)
+        ctx.invoke(create_user, username="admin", password=password, email="placeholder@mail.com", role="admin")
+    except Exception as err:
+        click.secho(f"An error occurred, {err}", fg="red")
+    finally:
+        click.secho("setup complete", fg="green")
 
 
 @cli.command()
@@ -86,7 +90,8 @@ def create_user(
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Username "{username}" is already taken') from error
-    click.secho(f'Successfully created the user "{user.username}"', fg="green")
+    finally:
+        click.secho(f'Successfully created the user "{user.username}"', fg="green")
 
 
 @cli.command()
