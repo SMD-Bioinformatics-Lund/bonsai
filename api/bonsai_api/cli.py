@@ -36,13 +36,14 @@ def cli(ctx):
 
 
 @cli.command()
-@click.pass_obj
-def setup(ctx):
-    """Setup a new database instance by creating collections and indexes."""
+@click.pass_context
+@click.option("-p", "--password", default="admin", help="Password of admin usser.")
+def setup(ctx, password):
+    """Setup a new database instance by creating an admin user and setup indexes."""
     # create collections
     click.secho("Start database setup...", fg="green")
-    ctx.forward(index)
-    ctx.invoke(create_user, username="admin", role="admin")
+    ctx.invoke(index)
+    ctx.invoke(create_user, username="admin", password=password, email="placeholder@mail.com", role="admin")
     click.secho("setup complete", fg="green")
 
 
@@ -80,9 +81,9 @@ def create_user(
     )
     try:
         loop = asyncio.get_event_loop()
-        db = get_db()
-        func = create_user_in_db(db, user)
-        loop.run_until_complete(func)
+        with get_db() as db:
+            func = create_user_in_db(db, user)
+            loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Username "{username}" is already taken') from error
     click.secho(f'Successfully created the user "{user.username}"', fg="green")
@@ -92,12 +93,12 @@ def create_user(
 @click.pass_obj
 def index(ctx):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
-    db = get_db()
-    for collection_name, indexes in INDEXES.items():
-        collection = getattr(db, f"{collection_name}_collection")
-        click.secho(f"Creating index for: {collection.name}")
-        for idx in indexes:
-            collection.create_index(idx["definition"], **idx["options"])
+    with get_db() as db:
+        for collection_name, indexes in INDEXES.items():
+            collection = getattr(db, f"{collection_name}_collection")
+            click.secho(f"Creating index for: {collection.name}")
+            for idx in indexes:
+                collection.create_index(idx["definition"], **idx["options"])
 
 
 @cli.command()
@@ -108,9 +109,9 @@ def export(ctx, sample_id, output):  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
-    db = get_db()
-    func = get_sample(db, sample_id)
-    sample = loop.run_until_complete(func)
+    with get_db() as db:
+        func = get_sample(db, sample_id)
+        sample = loop.run_until_complete(func)
 
     try:
         lims_data = sample_to_kmlims(sample)
@@ -129,9 +130,9 @@ def update_tags(ctx):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
     LOG.info("Updating tags...")
     loop = asyncio.get_event_loop()
-    db = get_db()
-    func = get_samples(db)
-    samples = loop.run_until_complete(func)
+    with get_db() as db:
+        func = get_samples(db)
+        samples = loop.run_until_complete(func)
     with click.progressbar(
         samples.data, length=samples.records_filtered, label="Updating tags"
     ) as prog_bar:
