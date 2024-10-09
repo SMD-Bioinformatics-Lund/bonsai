@@ -12,6 +12,7 @@
 
 - Genome coverage plot to interactive and have an y-range of 0 to 100.
 - Use data-tables instead of w2ui for samples tables.
+- Removed swedish characters from LIMS export output.
 
 ### Fixed
 
