@@ -298,9 +298,10 @@ async def get_samples_summary(
     cursor = db.sample_collection.aggregate(pipeline)
     # get query results from the database
     results = await cursor.to_list(None)
+    result = results[0]
 
     return MultipleRecordsResponseModel(
-        data=results[0]["data"], records_total=results[0]["records_total"][0]["count"]
+        data=result["data"], records_total=0 if len(result["records_total"]) == 0 else result["records_total"][0]["count"]
     )
 
 
