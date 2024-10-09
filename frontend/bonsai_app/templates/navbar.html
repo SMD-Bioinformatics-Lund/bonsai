@@ -20,7 +20,7 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             {{ navbar_link('Home', 'public.index') }}
-            {{ navbar_link('Groups', 'groups.groups') }}
+            {{ navbar_link('Groups', 'groups.groups', test_id='groups-view-btn') }}
             {{ navbar_link('Locations', 'groups.groups', True) }}
             {% if current_user.is_admin %}
                 {{ navbar_link('Admin', 'admin.admin_panel') }}
@@ -166,14 +166,18 @@
 </div>
 {% endmacro %}
 
-{% macro navbar_link(name, target, disabled=False) %}
+{% macro navbar_link(name, target, disabled=False, test_id=None) %}
 <li class="nav-item">
-    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" href="{{ url_for(target) }}">{{ name }}</a>
+    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" 
+       {% if test_id is not none %}data-test-id={{test_id}}{% endif %}
+       href="{{ url_for(target) }}">
+       {{ name }}
+    </a>
 </li>
 {% endmacro %}
 
 {% macro user_dropdown(current_user) %}
-<li class="nav-item dropdown">
+<li class="nav-item dropdown" data-test-id="user-options-dropdown">
     <a 
         id="navbarDropdown"
         class="nav-link dropdown-toggle" 
@@ -191,12 +195,12 @@
         {{ dropdown_link('Profile', disabled=True) }}
         {{ dropdown_link('Settings', disabled=True) }}
         <li><hr class="dropdown-divider"/></li>
-        {{ dropdown_link('Log out', 'login.logout', disabled=False) }}
+        {{ dropdown_link('Log out', 'login.logout', disabled=False, test_id='logout-user-btn') }}
     </ul>
 </li>
 {% endmacro %}
 
-{% macro dropdown_link(text, url_target, disabled=False) %}
+{% macro dropdown_link(text, url_target, disabled=False, test_id=None) %}
 <li>
     <a href="
     {% if url_target %}
@@ -206,6 +210,7 @@
     {% endif %}
     "
         class="dropdown-item {% if disabled %} disabled {% endif %}"
+        {% if test_id is not none %}data-test-id={{test_id}}{% endif %}
     >{{ text }}</a>
 </li>
 {% endmacro %}
