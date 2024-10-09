@@ -112,9 +112,7 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
 
 async def get_current_user(
     security_scopes: SecurityScopes, 
-    #token: Annotated[str, Depends(oauth2_scheme)],
-    #token: str = Depends(oauth2_scheme),
-    token: str = "",
+    token: Annotated[str, Depends(oauth2_scheme)],
     db: Database = Depends(get_db),
 ) -> UserOutputDatabase | None:
     """Get current user."""
