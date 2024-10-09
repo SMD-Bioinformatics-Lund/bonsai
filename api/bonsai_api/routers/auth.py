@@ -8,7 +8,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from ..auth import create_access_token
 from ..config import settings
 from ..crud.user import authenticate_user
-from ..db import db
+from ..db import Database, get_db
 
 router = APIRouter()
 
@@ -18,7 +18,9 @@ DEFAULT_TAGS = [
 
 
 @router.post("/token", tags=DEFAULT_TAGS)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(
+    db: Database = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()):
     """Generate a new Oauth2 token."""
     is_authenticated: bool = await authenticate_user(db, form_data.username, form_data.password)
     if not is_authenticated:
