@@ -1,0 +1,6 @@
+# Login credentials
+username: admin
+password: admin
+# Selenium remote driver, can be chrome or firefox
+remote_browser: chrome
+remote_webdriver: http://chrome:4444/wd/hub
