@@ -37,10 +37,10 @@ def get_bootstrap_alert(driver, severity: str = "all") -> WebElement | None:
     query_class_names = 'alert'
     if not severity == "all":
         query_class_names = f'{query_class_names} alert-{severity}'
+
+    # look for alert DOM element
     try:
         element: WebElement = driver.find_element(By.CLASS_NAME, query_class_names)
-
-    # check if html element was found
     except NoSuchElementException:
         LOG.debug("No alert was found!")
         return None
