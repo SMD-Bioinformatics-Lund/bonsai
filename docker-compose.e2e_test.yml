@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+
+  chrome:
+    container_name: chrome
+    hostname: chrome
+    image: selenium/standalone-chrome
+    platform: linux/x86_64
+    shm_size: 2gb
+    privileged: true
+    ports:
+     - "4444:4444"
+     - "8812:7900"
+    networks:
+     - bonsai-net
+    
+  e2e-tests:
+    container_name: e2e-tests
+    build: 
+      context: e2e_tests
+      network: host
+    volumes:
+     - ./e2e_tests/tests/:/home/worker/app/tests
+     - ./e2e_tests/config.yml:/home/worker/app/config.yml
+     - ./test_reports:/home/worker/app/reports:rw
+    depends_on:
+     - chrome
+     - frontend
+    networks:
+     - bonsai-net
+    command: pytest --html=reports/bonsai_e2e_report.html --self-contained-html tests
+
+  api:
+    healthcheck:
+      test: curl --fail http://localhost:8000/ || exit 1
+      retries: 3
+      interval: 10s
+      start_period: 10s
+    volumes:
+      - "./api/bonsai_api:/home/worker/app/bonsai_api"
+      - "./e2e_tests/tests/fixtures/minhash_signatures:/data/signature_db"
+      - "./e2e_tests/setup_bonsai_database.sh:/tmp/setup_bonsai_database.sh"
+      - "./scripts/upload_sample.py:/home/worker/app/upload_sample.py"
+    entrypoint: /tmp/setup_bonsai_database.sh
