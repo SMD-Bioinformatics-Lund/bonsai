@@ -8,10 +8,13 @@ from requests.structures import CaseInsensitiveDict
 from pydantic import BaseModel, Field, FilePath
 from typing import Callable
 import yaml
+from pathlib import Path
+from io import TextIOWrapper
 
 USER_ENV = "BONSAI_USER"
 PASSWD_ENV = "BONSAI_PASSWD"
 TIMEOUT = 10
+
 
 class SampleConfig(BaseModel):
     """Definition of a sample configuration."""
@@ -39,6 +42,30 @@ class ExecutionContext(BaseModel):
     password: str
     api_url: str
     token: TokenObject | None = None
+
+
+def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
+    """Take PRP config and convert it to a config object."""
+    raw_config = yaml.safe_load(config_file)
+    base_path = Path(config_file.name).parent
+
+    # if a path is relative, convert to absolute from the configs parent directory
+    # i.e.  prp_path = ./results/sample_name.json --> /data/samples/results/sample_name.json
+    #       given, cnf_path = /data/samples/cnf.yml
+    # relative paths are used when bootstraping a test database
+    prp_result = Path(raw_config.get('prp_result'))
+    if not prp_result.is_absolute():
+        prp_result = base_path / prp_result
+    minhash_signature = Path(raw_config.get('minhash_signature'))
+    if not minhash_signature.is_absolute():
+        minhash_signature = base_path / minhash_signature
+
+    # cast as SampleConfig object and validate input
+    return SampleConfig(
+        group_id=raw_config.get('group_id'), 
+        prp_result=str(prp_result),
+        minhash_signature=str(minhash_signature),
+    )
 
 
 def get_auth_token(ctx: ExecutionContext) -> TokenObject:
@@ -143,7 +170,7 @@ def cli(api, user, password, input):
         raise click.BadOptionUsage(password, f"No username set. Use either the --password option or env variable {PASSWD_ENV}")
     
     # read upload config and verify content
-    cnf = SampleConfig(**yaml.safe_load(input))
+    cnf: SampleConfig = process_input_config(input)
 
     # login
     ctx = ExecutionContext(username=user, password=password, api_url=api)
