@@ -25,7 +25,7 @@ def test_login_admin(logged_in_admin):
     assert urlparse(logged_in_admin.current_url).path == '/groups'
 
 
-def test_log_out_user(logged_in_admin, config):
+def test_log_out_user(logged_in_admin):
     """Test that login out from Bonsai works."""
 
     # logout user
