@@ -35,7 +35,7 @@
                         {% set basket=current_user.basket %}
                         {% if basket | length > 0 %}
                             <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
-                                <span id="samples-in-basket-counter">{{ basket | length }}</span>
+                                <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
                                 <span class="visually-hidden">Samples in basket</span>
                             </span>
                         {% endif %}
