@@ -13,7 +13,7 @@ FilterParams = List[Dict[str, str | int | float],]
 class IncludedSamples(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Object for keeping track of included samples in a group"""
 
-    included_samples: List[str | SampleSummary]
+    included_samples: List[str | SampleSummary] = []
 
     model_config = ConfigDict(json_encoders={ObjectId: str})
 

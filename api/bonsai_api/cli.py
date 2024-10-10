@@ -13,10 +13,12 @@ from .config import USER_ROLES
 from .crud.sample import get_sample, get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
 from .crud.user import create_user as create_user_in_db
-from .db import get_db
+from .crud.group import create_group as create_group_in_db
+from .db.utils import get_db_connection
 from .db.index import INDEXES
 from .io import sample_to_kmlims
 from .models.sample import SampleInCreate
+from .models.group import GroupInCreate, pred_res_cols
 from .models.user import UserInputCreate
 
 LOG = getLogger(__name__)
@@ -47,6 +49,7 @@ def setup(ctx, password):
         ctx.invoke(create_user, username="admin", password=password, email="placeholder@mail.com", role="admin")
     except Exception as err:
         click.secho(f"An error occurred, {err}", fg="red")
+        raise click.Abort()
     finally:
         click.secho("setup complete", fg="green")
 
@@ -85,7 +88,7 @@ def create_user(
     )
     try:
         loop = asyncio.get_event_loop()
-        with get_db() as db:
+        with get_db_connection() as db:
             func = create_user_in_db(db, user)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
@@ -96,9 +99,32 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
+@click.option("-i", "--id", required=True, help="Group id")
+@click.option("-n", "--name", required=True, help="Group name")
+@click.option("-d", "--description", help="Group description")
+def create_group(
+    ctx, id, name, description
+):  # pylint: disable=unused-argument
+    """Create a user account"""
+    # create collections
+    group_obj = GroupInCreate(group_id=id, display_name=name, description=description, 
+                              table_columns=pred_res_cols)
+    try:
+        loop = asyncio.get_event_loop()
+        with get_db_connection() as db:
+            func = create_group_in_db(db, group_obj)
+            loop.run_until_complete(func)
+    except DuplicateKeyError as error:
+        raise click.UsageError(f'Group with "{id}" exists already') from error
+    finally:
+        click.secho(f'Successfully created a group with id: "{id}"', fg="green")
+
+
+@cli.command()
+@click.pass_obj
 def index(ctx):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
-    with get_db() as db:
+    with get_db_connection() as db:
         for collection_name, indexes in INDEXES.items():
             collection = getattr(db, f"{collection_name}_collection")
             click.secho(f"Creating index for: {collection.name}")
@@ -114,7 +140,7 @@ def export(ctx, sample_id, output):  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
-    with get_db() as db:
+    with get_db_connection() as db:
         func = get_sample(db, sample_id)
         sample = loop.run_until_complete(func)
 
@@ -135,7 +161,7 @@ def update_tags(ctx):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
     LOG.info("Updating tags...")
     loop = asyncio.get_event_loop()
-    with get_db() as db:
+    with get_db_connection() as db:
         func = get_samples(db)
         samples = loop.run_until_complete(func)
     with click.progressbar(
