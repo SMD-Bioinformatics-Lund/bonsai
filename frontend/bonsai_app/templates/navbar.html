@@ -23,7 +23,7 @@
             {{ navbar_link('Groups', 'groups.groups', test_id='groups-view-btn') }}
             {{ navbar_link('Locations', 'groups.groups', True) }}
             {% if current_user.is_admin %}
-                {{ navbar_link('Admin', 'admin.admin_panel') }}
+                {{ navbar_link('Admin', 'admin.admin_panel', test_id="admin-panel-navbar-btn") }}
             {% endif %}
         </ul>
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
