@@ -320,8 +320,17 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     :return: rounded human readable number with SI prefix
     :rtype: str
     """
+    # sanity check the input number
+    if not isinstance(number, (int, float)):
+        LOG.debug("Got a non-number as input: %s", number)
+        if number is None:
+            return '-'
+        else:
+            return number
+
+    # dont round zeroes
     if number == 0:
-        return number
+        return str(number)
 
     power = math.floor(math.log10(number))
     # source: https://sv.wikipedia.org/wiki/SI-prefix
