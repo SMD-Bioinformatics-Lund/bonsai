@@ -13,13 +13,17 @@ def test_accessable_landingpage(remote_driver, config):
     assert "bonsai" in remote_driver.title.lower()
 
 
-def test_login_admin(logged_in_admin):
+def test_login_admin(logged_in_admin, config):
     """Test that login to Bonsai works."""
     # Ensure that login worked
     alert = get_bootstrap_alert(logged_in_admin)
 
     # Check that no bootstrap alert was thrown
     assert alert is None
+
+    # Go to a protected route
+    url = Path(config["frontend_url"]) / "groups"
+    logged_in_admin.get(str(url))
 
     # Check that login was redirected to groups view
     assert urlparse(logged_in_admin.current_url).path == "/groups"
