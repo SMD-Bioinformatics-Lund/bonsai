@@ -1,6 +1,8 @@
 """Tests for the /groups view."""
 from pathlib import Path
 
+import pytest
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
@@ -22,25 +24,54 @@ def test_samples_are_displayed(logged_in_user, config):
 
 def test_add_samples_to_basket(logged_in_user, config):
     """Test samples can be added to the basket."""
+    # setup wait
+    wait = WebDriverWait(logged_in_user, 10)
     # go to groups view
     logged_in_user.get(str(Path(config["frontend_url"]) / "groups"))
 
-    # then select the first sample in the table
+    # FIRST ensure that basket has been cleared
+    get_element_by_test_id(logged_in_user, "open-basket-btn").click()
+    clear_basket_btn = wait.until(
+        EC.visibility_of_element_located((By.ID, "clear-basket-btn"))
+    )
+    clear_basket_btn.click()
+    get_element_by_test_id(logged_in_user, "close-basket-btn").click()
+
+    # THEN select the first sample in the table
     get_element_by_test_id(logged_in_user, "sample-row-1").click()
 
-    # then check that the add to basket button has been enabled
+    # THEN check that the add to basket button has been enabled
     add_to_basket_btn = get_element_by_test_id(logged_in_user, "add-to-basket-btn")
     assert add_to_basket_btn.is_enabled()
 
-    # then click the button
+    # THEN click the button
     add_to_basket_btn.click()
 
     # wait for page to load
     logged_in_user.implicitly_wait(2)
 
-    # verify that no error alerts were thrown
+    # TEST that no error alerts were thrown
     alert = get_bootstrap_alert(logged_in_user)
     assert alert is None, f"Alert error: {alert.text}"
 
-    # check that the sample has been added to the basket
-    get_element_by_test_id(logged_in_user, "samples-in-basket-counter")
+    # TEST that one sample has been added to the basket
+    counter = get_element_by_test_id(logged_in_user, "samples-in-basket-counter")
+    assert counter.text == "1"
+
+    # THEN clear the basket again
+    get_element_by_test_id(logged_in_user, "open-basket-btn").click()
+    clear_basket_btn = wait.until(
+        EC.visibility_of_element_located((By.ID, "clear-basket-btn"))
+    )
+    clear_basket_btn.click()
+    get_element_by_test_id(logged_in_user, "close-basket-btn").click()
+
+    # TEST that basket was cleared
+    counter = get_element_by_test_id(logged_in_user, "samples-in-basket-counter")
+    assert counter.text == ""
+
+    # THEN refresh page to test that the change was commited to the API by ensuring that counter element is not in DOM
+    logged_in_user.refresh()
+    logged_in_user.implicitly_wait(1)
+    with pytest.raises(NoSuchElementException):
+        counter = get_element_by_test_id(logged_in_user, "samples-in-basket-counter")

@@ -30,7 +30,7 @@
             {% if current_user.is_authenticated %}
                 {{ user_dropdown(current_user) }}
                 <li class="nav-item d-flex flex-row">
-                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button">
+                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
                         <i class="bi bi-basket3 fs-4"></i>
                         {% set basket=current_user.basket %}
                         {% if basket | length > 0 %}
@@ -70,7 +70,7 @@
                 Your basket is empty
             {% endif %}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
     </div>
     <div class="offcanvas-body">
         <div class="overflow-auto" style="max-height: 60vh;">
@@ -93,9 +93,11 @@
         <div class="row">
             <div class="col-auto">
                 <button
+                    id="clear-basket-btn"
                     class="btn btn-outline-danger btn-sm float-right"
                     aria-label="Clear basket"
                     onclick="removeAllSamplesFromBasket()"
+                    data-test-id="clear-basket-btn"
                     type="button">
                     <i class="bi btn-sm bi-trash3-fill">Clear basket</i>
                 </button>
