@@ -1,16 +1,17 @@
 """Tests for the /groups view."""
 from pathlib import Path
-from ..conftest import get_element_by_test_id, get_bootstrap_alert
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+
+from ..conftest import get_bootstrap_alert, get_element_by_test_id
 
 
 def test_samples_are_displayed(logged_in_user, config):
     """Test that login to Bonsai works."""
     # go to groups view
-    logged_in_user.get(str(Path(config['frontend_url']) / 'groups'))
+    logged_in_user.get(str(Path(config["frontend_url"]) / "groups"))
 
     # get sample table
     sample_table = logged_in_user.find_element(By.ID, "sample-table")
@@ -22,7 +23,7 @@ def test_samples_are_displayed(logged_in_user, config):
 def test_add_samples_to_basket(logged_in_user, config):
     """Test samples can be added to the basket."""
     # go to groups view
-    logged_in_user.get(str(Path(config['frontend_url']) / 'groups'))
+    logged_in_user.get(str(Path(config["frontend_url"]) / "groups"))
 
     # then select the first sample in the table
     get_element_by_test_id(logged_in_user, "sample-row-1").click()
