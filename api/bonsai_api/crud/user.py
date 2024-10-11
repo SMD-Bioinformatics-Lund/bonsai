@@ -172,8 +172,8 @@ async def get_current_active_user(
 
 
 async def get_samples_in_user_basket(
-    db: Database = Depends(get_db),
-    current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+    db: Database,
+    current_user: UserOutputDatabase,
 ) -> List[SampleBasketObject]:
     """Get samples in the current user basket."""
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
@@ -183,7 +183,7 @@ async def get_samples_in_user_basket(
 async def add_samples_to_user_basket(
     current_user: UserOutputDatabase,
     sample_ids: List[SampleBasketObject],
-    db: Database = Depends(get_db),
+    db: Database,
 ) -> SampleBasketObject:
     """Add samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(
@@ -211,8 +211,8 @@ async def add_samples_to_user_basket(
 
 async def remove_samples_from_user_basket(
     sample_ids: List[SampleBasketObject],
-    db: Database = Depends(get_db),
-    current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+    db: Database,
+    current_user: UserOutputDatabase,
 ) -> SampleBasketObject:
     """Remove samples to the basket of the current user."""
     update_obj = await db.user_collection.update_one(
