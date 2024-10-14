@@ -24,14 +24,21 @@ services:
      - ./e2e_tests/tests/:/home/worker/app/tests
      - ./e2e_tests/config.yml:/home/worker/app/config.yml
      - ./e2e_tests/load_test_samples.sh:/home/worker/load_test_samples.sh
-     - ./test_reports:/home/worker/app/reports:rw
+     - ./e2e_tests/e2e_test_entrypoint.sh:/home/worker/e2e_test_entrypoint.sh
      - ./scripts/upload_sample.py:/home/worker/upload_sample.py
+     - ./volumes/e2e_tests/:/home/worker/app/reports:rw
     depends_on:
-     - chrome
-     - frontend
+      chrome:
+        condition: service_started
+      frontend:
+        condition: service_started
+      api:
+        condition: service_healthy
+        restart: true
     networks:
      - bonsai-net
-    command: pytest --html=reports/bonsai_e2e_report.html --self-contained-html tests
+    entrypoint: /home/worker/e2e_test_entrypoint.sh
+    command: pytest --html=/home/worker/app/reports/bonsai_e2e_report.html --self-contained-html tests
 
   api:
     volumes:

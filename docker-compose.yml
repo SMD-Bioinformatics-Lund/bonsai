@@ -29,6 +29,12 @@ services:
       - allele_cluster_service
     ports: 
       - "8001:8000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/"]
+      interval: 10s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     environment:
       - ALLOWED_ORIGINS=["*"]
       - DB_HOST=mongodb
@@ -42,8 +48,9 @@ services:
       context: frontend
       network: host
     depends_on:
-      - mongodb
-      - api
+      api:
+        condition: service_healthy
+        restart: true
     ports: 
       - "8811:5000"
     volumes:
