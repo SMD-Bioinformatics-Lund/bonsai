@@ -1,3 +1,0 @@
-group_id: mtuberculosis
-minhash_signature: ./sourmash/tb_test_1.sig
-prp_result: ./analysis_result/tb_test_1_result.json
