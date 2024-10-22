@@ -1,0 +1,4 @@
+group_id: mtuberculosis
+minhash_signature: ./sourmash/ERR11551985.sig
+prp_result: ./analysis_result/ERR11551985_result.json
+ska_index: ./ska/ERR11551985_ska_index.skf
