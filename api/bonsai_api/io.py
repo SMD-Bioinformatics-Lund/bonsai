@@ -33,9 +33,9 @@ TARGETED_ANTIBIOTICS = {
 class TBResponses(Enum):
     """Valid responses for M. tuberculosis results."""
 
-    resistant = "Mutation påvisad"
-    susceptible = "Mutation ej påvisad"
-    sample_failed = "Ej bedömbart"
+    resistant = "Mutation pavisad"
+    susceptible = "Mutation ej pavisad"
+    sample_failed = "Ej bedombart"
 
 
 class InvalidRangeError(Exception):
