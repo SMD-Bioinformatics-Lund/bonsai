@@ -7,16 +7,19 @@
 - Added button to the group view for removing selected samples from group.
 - Added column with comments indicator to group and groups view.
 - Added foundation for testing API routes.
+- Added test for Allele cluster service.
 
 ### Changed
 
 - Genome coverage plot to interactive and have an y-range of 0 to 100.
 - Use data-tables instead of w2ui for samples tables.
+- Improved error handling of allele cluster service.
 
 ### Fixed
 
 - Fixed highlight of displayed sample in the dendrogram on the sample view page.
 - Fixed formatting of grapetree metadata that could crash the frontend.
+- Fixed crash in Allele cluster service when clustering samples with the same profile using MsTree or MsTreeV2.
 
 ## [v0.7.0]
 
