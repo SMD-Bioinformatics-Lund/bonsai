@@ -1,7 +1,9 @@
 """MStrees V2. Forked from GrapeTree https://github.com/achtman-lab/GrapeTree/"""
+
 # pylint: skip-file
 import argparse
 import gzip
+import logging
 import os
 import platform
 import re
@@ -9,6 +11,7 @@ import sys
 import tempfile
 from enum import Enum
 from glob import glob
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 import networkx as nx
@@ -16,11 +19,9 @@ import numpy as np
 import psutil
 from ete3 import Tree
 from numba import jit
-import logging
-from pathlib import Path
 
 LOG = logging.getLogger(__name__)
-#BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
+# BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
 BIN_DIR = Path(__name__).parent.parent.joinpath("bin").absolute()
 
 
@@ -906,16 +907,18 @@ class methods(object):
                 )
         del dist, d
         args = [
-                params["RapidNJ_{0}".format(platform.system())],
-                "-n",
-                "-x",
-                dist_file + "_rapidnj.nwk",
-                "-i",
-                "pd",
-                dist_file,
-            ]
-        _, std_err = Popen(args, stdout=PIPE, stderr=PIPE, encoding='utf-8').communicate()
-        if 'error' in std_err.lower():
+            params["RapidNJ_{0}".format(platform.system())],
+            "-n",
+            "-x",
+            dist_file + "_rapidnj.nwk",
+            "-i",
+            "pd",
+            dist_file,
+        ]
+        _, std_err = Popen(
+            args, stdout=PIPE, stderr=PIPE, encoding="utf-8"
+        ).communicate()
+        if "error" in std_err.lower():
             raise ValueError(std_err)
         tree = Tree(dist_file + "_rapidnj.nwk")
         for fname in glob(dist_file + "*"):
