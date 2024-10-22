@@ -30,7 +30,7 @@
             {% if current_user.is_authenticated %}
                 {{ user_dropdown(current_user) }}
                 <li class="nav-item d-flex flex-row">
-                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
+                    <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
                         <i class="bi bi-basket3 fs-4"></i>
                         {% set basket=current_user.basket %}
                         {% if basket | length > 0 %}
@@ -70,7 +70,7 @@
                 Your basket is empty
             {% endif %}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
+        <button id="close-basket-btn" type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
     </div>
     <div class="offcanvas-body">
         <div class="overflow-auto" style="max-height: 60vh;">
@@ -114,6 +114,7 @@
                     <button 
                       class="btn btn-success dropdown-toggle" 
                       type="button" data-bs-toggle="dropdown"
+                      data-test-id="cluster-samples-dropdown-btn"
                       {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
                     >
                         <span class="content">
@@ -129,16 +130,19 @@
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-cgmlst-btn"
                                data-bi-typing-method="cgmlst">cgMLST</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-minhash-btn"
                                data-bi-typing-method="minhash">MinHash</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-mlst-btn"
                                data-bi-typing-method="mlst">MLST</a>
                         </li>
                     </ul>
