@@ -1,6 +1,6 @@
 # This workflow will install Bonsai and run the test suite
 
-name: Pytest
+name: Unit-tests
 
 on:
     push:
@@ -24,6 +24,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ./api[dev] ./frontend[dev] ./allele_cluster_service[dev]
-    - name: Run test suite
+    - name: Run unit-tests test suite
       run: |
         pytest api/tests frontend/tests allele_cluster_service/tests
