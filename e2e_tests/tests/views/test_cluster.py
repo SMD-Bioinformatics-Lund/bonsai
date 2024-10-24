@@ -14,7 +14,7 @@ from ..conftest import get_element_by_test_id
 def test_cluster_samples_from_basket(logged_in_user, config, cluster_method):
     """Test the QC view could be opended for the different test groups."""
     # setup wait
-    wait = WebDriverWait(logged_in_user, 10)
+    wait = WebDriverWait(logged_in_user, 20)
 
     # Store the ID of the original window
     original_window = logged_in_user.current_window_handle

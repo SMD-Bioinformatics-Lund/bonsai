@@ -68,8 +68,6 @@ services:
       network: host
     depends_on:
       - redis
-    volumes:
-      - "./volumes/api/genome_signatures:/data/signature_db"
     networks:
       - bonsai-net
 

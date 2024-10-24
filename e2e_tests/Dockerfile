@@ -2,20 +2,15 @@ FROM python:3.11.3
 
 LABEL base_image="python:3.8.1-slim"
 
-# Create non-root user to run commands
-RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
-
 # copy project dir
-WORKDIR /home/worker/app
+WORKDIR /app
 COPY tests tests/
-COPY config.yml requirements.txt ./
-RUN mkdir reports
-
-# Change ownership
-RUN chown -R worker:worker .
+COPY fixtures fixtures/
+COPY config.yml requirements.txt e2e_test_entrypoint.sh load_test_samples.sh ./
+RUN mkdir -p /app/reports
 
 RUN pip install --upgrade pip &&                   \
     pip install --no-cache -r requirements.txt
 
-# run app as non-root user
-USER worker
+ENTRYPOINT [ "/app/e2e_test_entrypoint.sh" ]
+CMD pytest --html=/app/reports/e2e_report.html --self-contained-html
