@@ -23,4 +23,4 @@ RUN pip install --no-cache-dir .
 # run app as non-root user
 USER worker
 
-CMD ["gunicorn", "--log-level", "INFO", "--bind", "0.0.0.0:8000", "bonsai_app.wsgi:app"]
+CMD ["gunicorn", "--log-level", "WARNING", "--bind", "0.0.0.0:8000", "bonsai_app.wsgi:app"]
