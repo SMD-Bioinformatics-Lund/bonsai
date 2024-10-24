@@ -10,7 +10,6 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 # copy project dir
 WORKDIR /home/worker/app
 COPY --chown=worker:worker allele_cluster_service allele_cluster_service/
-COPY --chown=worker:worker bin bin/
 COPY --chown=worker:worker README.md pyproject.toml setup.py setup.cfg ./
 
 # install dependancies

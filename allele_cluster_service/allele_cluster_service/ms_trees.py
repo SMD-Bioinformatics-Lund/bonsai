@@ -11,6 +11,7 @@ import sys
 import tempfile
 from enum import Enum
 from glob import glob
+from importlib.resources import files
 from pathlib import Path
 from subprocess import PIPE, Popen
 
@@ -21,8 +22,7 @@ from ete3 import Tree
 from numba import jit
 
 LOG = logging.getLogger(__name__)
-# BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
-BIN_DIR = Path(__name__).parent.parent.joinpath("bin").absolute()
+BIN_DIR = files("allele_cluster_service.bin")
 
 
 class ClusterMethod(str, Enum):
@@ -44,19 +44,19 @@ params = dict(
     wgMLST=False,
     n_proc=5,
     checkEnv=False,
-    NJ_Windows=os.path.join(BIN_DIR, "fastme.exe"),
-    NJ_Darwin=os.path.join(BIN_DIR, "fastme-2.1.5-osx"),
-    NJ_Linux=os.path.join(BIN_DIR, "fastme-2.1.5-linux64"),
-    NJ_Linux32=os.path.join(BIN_DIR, "fastme-2.1.5-linux32"),
-    edmonds_Windows=os.path.join(BIN_DIR, "edmonds.exe"),
-    edmonds_Darwin=os.path.join(BIN_DIR, "edmonds-osx"),
-    edmonds_Linux=os.path.join(BIN_DIR, "edmonds-linux"),
-    RapidNJ_Linux=os.path.join(BIN_DIR, "rapidnj"),
-    RapidNJ_Darwin=os.path.join(BIN_DIR, "rapidnj-osx"),
-    RapidNJ_Windows=os.path.join(BIN_DIR, "rapidnj.exe"),
-    ninja_Linux=os.path.join(BIN_DIR, "Ninja.jar"),
-    ninja_Darwin=os.path.join(BIN_DIR, "Ninja.jar"),
-    ninja_Windows=os.path.join(BIN_DIR, "Ninja.jar"),
+    NJ_Windows=BIN_DIR.joinpath("fastme.exe"),
+    NJ_Darwin=BIN_DIR.joinpath("fastme-2.1.5-osx"),
+    NJ_Linux=BIN_DIR.joinpath("fastme-2.1.5-linux64"),
+    NJ_Linux32=BIN_DIR.joinpath("fastme-2.1.5-linux32"),
+    edmonds_Windows=BIN_DIR.joinpath("edmonds.exe"),
+    edmonds_Darwin=BIN_DIR.joinpath("edmonds-osx"),
+    edmonds_Linux=BIN_DIR.joinpath("edmonds-linux"),
+    RapidNJ_Linux=BIN_DIR.joinpath("rapidnj"),
+    RapidNJ_Darwin=BIN_DIR.joinpath("rapidnj-osx"),
+    RapidNJ_Windows=BIN_DIR.joinpath("rapidnj.exe"),
+    ninja_Linux=BIN_DIR.joinpath("Ninja.jar"),
+    ninja_Darwin=BIN_DIR.joinpath("Ninja.jar"),
+    ninja_Windows=BIN_DIR.joinpath("Ninja.jar"),
 )
 
 
