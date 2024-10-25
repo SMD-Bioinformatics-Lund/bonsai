@@ -39,7 +39,7 @@ def cli(ctx):
 
 @cli.command()
 @click.pass_context
-@click.option("-p", "--password", default="admin", help="Password of admin usser.")
+@click.option("-p", "--password", default="admin", help="Password of admin user.")
 def setup(ctx, password):
     """Setup a new database instance by creating an admin user and setup indexes."""
     # create collections
