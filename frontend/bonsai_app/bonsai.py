@@ -80,7 +80,7 @@ def get_current_user(headers: CaseInsensitiveDict):
 def get_users(headers: CaseInsensitiveDict):
     """Get current user from the database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users"
+    url = f"{settings.bonsai_api_url}/users/"
     resp = requests_get(url, headers=headers)
 
     resp.raise_for_status()
@@ -91,7 +91,7 @@ def get_users(headers: CaseInsensitiveDict):
 def create_user(headers: CaseInsensitiveDict, user_obj: str):
     """Create a new user."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users"
+    url = f"{settings.bonsai_api_url}/users/"
     resp = requests_post(url, headers=headers, json=user_obj)
 
     resp.raise_for_status()
@@ -155,7 +155,7 @@ def get_auth_token(username: str, password: str) -> TokenObject:
 def get_groups(headers: CaseInsensitiveDict):
     """Get groups from database"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups"
+    url = f"{settings.bonsai_api_url}/groups/"
     LOG.error("query api url: %s", url)
     resp = requests_get(url, headers=headers)
 
@@ -202,7 +202,7 @@ def create_group(headers: CaseInsensitiveDict, **kwargs):
     """create new group."""
     data = kwargs.get("data")
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups"
+    url = f"{settings.bonsai_api_url}/groups/"
     resp = requests_post(url, json=data, headers=headers)
 
     resp.raise_for_status()
@@ -243,7 +243,7 @@ def get_samples(
 ):
     """Get multipe samples from database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples"
+    url = f"{settings.bonsai_api_url}/samples/"
     # get limit, offeset and skip values
     params = {"limit": limit, "skip": skip}
     if sample_ids is not None:
@@ -253,7 +253,11 @@ def get_samples(
         params["sid"] = sample_ids
     resp = requests_get(url, headers=headers, params=params)
 
-    resp.raise_for_status()
+    LOG.error("url: %s, params: %s", url, params)
+    try:
+        resp.raise_for_status()
+    except:
+        print(resp.text)
     return resp.json()
 
 

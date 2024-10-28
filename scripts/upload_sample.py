@@ -118,7 +118,7 @@ def api_authentication(func: Callable) -> Callable:
 def upload_sample(headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig) -> str:
     """Create a new sample."""
     sample_obj = json.load(cnf.prp_result.open())
-    resp = requests.post(f'{ctx.api_url}/samples', headers=headers, json=sample_obj, timeout=TIMEOUT)
+    resp = requests.post(f'{ctx.api_url}/samples/', headers=headers, json=sample_obj, timeout=TIMEOUT)
 
     resp.raise_for_status()
     resp_data = resp.json()
