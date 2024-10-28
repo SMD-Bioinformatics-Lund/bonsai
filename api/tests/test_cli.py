@@ -1,17 +1,16 @@
 """Test Bonsai CLI commands."""
 
 import pandas as pd
-import pytest
 from bonsai_api.cli import export
 from bonsai_api.io import TARGETED_ANTIBIOTICS
 from click.testing import CliRunner
 
 
-def test_export_sample(mocker, sample_database):
+def test_export_sample(mocker, sample_database_context):
     """Test exporting a sample as LIMS import file."""
 
     # patch db before running cli
-    mocker.patch("bonsai_api.cli.get_db", lambda: sample_database)
+    mocker.patch("bonsai_api.cli.get_db_connection", lambda: sample_database_context)
 
     # run CLI command
     runner = CliRunner()

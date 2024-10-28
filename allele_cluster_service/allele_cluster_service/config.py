@@ -1,4 +1,5 @@
 """Configuration for minhash service"""
+
 from os import getenv
 
 # Redis variables

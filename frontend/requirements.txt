@@ -1,6 +1,0 @@
-Flask
-flask-login
-requests
-pydantic
-python-dateutil
-jsonpath2

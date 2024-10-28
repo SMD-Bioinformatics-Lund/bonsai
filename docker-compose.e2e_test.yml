@@ -1,0 +1,42 @@
+# run e2e tests by overriding the existing compose file:
+# (sudo) docker-compose -f docker-compose.yml -f docker-compose.e2e_tests.yml run
+services:
+  chrome:
+    container_name: chrome
+    hostname: chrome
+    image: selenium/standalone-chrome
+    platform: linux/x86_64
+    shm_size: 2gb
+    privileged: true
+    ports:
+     - "4444:4444"
+     - "7900:7900"
+    networks:
+     - bonsai-net
+    
+  e2e-tests:
+    container_name: e2e-tests
+    build: 
+      context: e2e_tests
+      network: host
+    volumes:
+     - ./scripts/upload_sample.py:/app/upload_sample.py
+     - ./reports/:/app/reports:rw
+    depends_on:
+      chrome:
+        condition: service_started
+      frontend:
+        condition: service_started
+      api:
+        condition: service_healthy
+        restart: true
+    networks:
+     - bonsai-net
+
+  api:
+    volumes:
+     - "./api/bonsai_api:/home/worker/app/bonsai_api"
+     - "./e2e_tests/setup_bonsai_database.sh:/tmp/setup_bonsai_database.sh"
+     - "./e2e_tests/fixtures:/home/worker/fixtures"
+     - "./scripts/upload_sample.py:/home/worker/upload_sample.py"
+    entrypoint: /tmp/setup_bonsai_database.sh

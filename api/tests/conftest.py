@@ -11,6 +11,7 @@ from bonsai_api.models.sample import PipelineResult, SampleInDatabase
 from bonsai_api.models.user import UserInputCreate
 from bonsai_api.main import app
 from mongomock_motor import AsyncMongoMockClient
+from contextlib import contextmanager
 
 from .data import *
 
@@ -50,8 +51,15 @@ async def sample_database(mongo_database, mtuberculosis_sample_path):
     with open(mtuberculosis_sample_path) as inpt:
         data = PipelineResult(**json.load(inpt))
         # create sample in database
-        sample = await create_sample(db=mongo_database, sample=data)
+        await create_sample(db=mongo_database, sample=data)
         return mongo_database
+
+
+@pytest.fixture(scope="function")
+@contextmanager
+def sample_database_context(sample_database):
+    """Returns a database client with loaded test data."""
+    yield sample_database
 
 
 @pytest.fixture()

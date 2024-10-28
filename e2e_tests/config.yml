@@ -1,0 +1,9 @@
+# Login credentials
+frontend_url: http://frontend:5000/
+admin_username: admin
+admin_password: admin
+user_username: user
+user_password: user
+# Selenium remote driver, can be chrome or firefox
+remote_browser: chrome
+remote_webdriver: http://chrome:4444/wd/hub

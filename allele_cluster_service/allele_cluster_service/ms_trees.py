@@ -1,7 +1,9 @@
 """MStrees V2. Forked from GrapeTree https://github.com/achtman-lab/GrapeTree/"""
+
 # pylint: skip-file
 import argparse
 import gzip
+import logging
 import os
 import platform
 import re
@@ -9,6 +11,8 @@ import sys
 import tempfile
 from enum import Enum
 from glob import glob
+from importlib.resources import files
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 import networkx as nx
@@ -17,7 +21,8 @@ import psutil
 from ete3 import Tree
 from numba import jit
 
-BIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bin")
+LOG = logging.getLogger(__name__)
+BIN_DIR = files("allele_cluster_service.bin")
 
 
 class ClusterMethod(str, Enum):
@@ -39,19 +44,19 @@ params = dict(
     wgMLST=False,
     n_proc=5,
     checkEnv=False,
-    NJ_Windows=os.path.join(BIN_DIR, "fastme.exe"),
-    NJ_Darwin=os.path.join(BIN_DIR, "fastme-2.1.5-osx"),
-    NJ_Linux=os.path.join(BIN_DIR, "fastme-2.1.5-linux64"),
-    NJ_Linux32=os.path.join(BIN_DIR, "fastme-2.1.5-linux32"),
-    edmonds_Windows=os.path.join(BIN_DIR, "edmonds.exe"),
-    edmonds_Darwin=os.path.join(BIN_DIR, "edmonds-osx"),
-    edmonds_Linux=os.path.join(BIN_DIR, "edmonds-linux"),
-    RapidNJ_Linux=os.path.join(BIN_DIR, "rapidnj"),
-    RapidNJ_Darwin=os.path.join(BIN_DIR, "rapidnj-osx"),
-    RapidNJ_Windows=os.path.join(BIN_DIR, "rapidnj.exe"),
-    ninja_Linux=os.path.join(BIN_DIR, "Ninja.jar"),
-    ninja_Darwin=os.path.join(BIN_DIR, "Ninja.jar"),
-    ninja_Windows=os.path.join(BIN_DIR, "Ninja.jar"),
+    NJ_Windows=BIN_DIR.joinpath("fastme.exe"),
+    NJ_Darwin=BIN_DIR.joinpath("fastme-2.1.5-osx"),
+    NJ_Linux=BIN_DIR.joinpath("fastme-2.1.5-linux64"),
+    NJ_Linux32=BIN_DIR.joinpath("fastme-2.1.5-linux32"),
+    edmonds_Windows=BIN_DIR.joinpath("edmonds.exe"),
+    edmonds_Darwin=BIN_DIR.joinpath("edmonds-osx"),
+    edmonds_Linux=BIN_DIR.joinpath("edmonds-linux"),
+    RapidNJ_Linux=BIN_DIR.joinpath("rapidnj"),
+    RapidNJ_Darwin=BIN_DIR.joinpath("rapidnj-osx"),
+    RapidNJ_Windows=BIN_DIR.joinpath("rapidnj.exe"),
+    ninja_Linux=BIN_DIR.joinpath("Ninja.jar"),
+    ninja_Darwin=BIN_DIR.joinpath("Ninja.jar"),
+    ninja_Windows=BIN_DIR.joinpath("Ninja.jar"),
 )
 
 
@@ -662,39 +667,46 @@ class methods(object):
 
     @staticmethod
     def _network2tree(branches, names):
-        branches.sort(key=lambda x: x[2], reverse=True)
-        branch = []
-        in_use = {branches[0][0]: 1}
-        while len(branches):
-            remain = []
-            for br in branches:
-                if br[0] in in_use:
-                    branch.append(br)
-                    in_use[br[1]] = 1
-                elif br[1] in in_use:
-                    branch.append([br[1], br[0], br[2]])
-                    in_use[br[0]] = 1
+        """Create a tree object from branches."""
+        tree = Tree()
+
+        # build tree object
+        if len(branches) == 0:  # all samples have the same profile
+            for name in names:
+                tree.add_child(name=name, dist=0)
+        else:  # if samples have different profiles
+            branches.sort(key=lambda x: x[2], reverse=True)
+            branch = []
+            in_use = {branches[0][0]: 1}
+            while len(branches):
+                remain = []
+                for br in branches:
+                    if br[0] in in_use:
+                        branch.append(br)
+                        in_use[br[1]] = 1
+                    elif br[1] in in_use:
+                        branch.append([br[1], br[0], br[2]])
+                        in_use[br[0]] = 1
+                    else:
+                        remain.append(br)
+                branches = remain
+
+            nodeFinder = {}
+
+            tree.name = branch[0][0]
+            nodeFinder[tree.name] = tree
+            for src, tgt, dif in branch:
+                node = nodeFinder[src]
+                child = node.add_child(name=tgt, dist=dif)
+                nodeFinder[child.name] = child
+            for node in tree.traverse("postorder"):
+                if not node.is_leaf():
+                    name = node.name
+                    node.name = ""
+                    node.add_child(name=names[name], dist=0.0)
                 else:
-                    remain.append(br)
-            branches = remain
-
-        tre = Tree()
-        nodeFinder = {}
-
-        tre.name = branch[0][0]
-        nodeFinder[tre.name] = tre
-        for src, tgt, dif in branch:
-            node = nodeFinder[src]
-            child = node.add_child(name=tgt, dist=dif)
-            nodeFinder[child.name] = child
-        for node in tre.traverse("postorder"):
-            if not node.is_leaf():
-                name = node.name
-                node.name = ""
-                node.add_child(name=names[name], dist=0.0)
-            else:
-                node.name = names[node.name]
-        return tre
+                    node.name = names[node.name]
+        return tree
 
     @staticmethod
     def MSTree(
@@ -832,6 +844,10 @@ class methods(object):
 
     @staticmethod
     def NJ(names, profiles, embeded, handle_missing="pair_delete", **params):
+        # NJ requires four taxa to compute a tree
+        if len(np.unique(profiles, axis=0)) < 4:
+            raise ValueError("NJ cannot compute tree with less than 4 unique taxa.")
+
         dist = distance_matrix.get_distance("symmetric", profiles, handle_missing)
 
         dist_file = params["tempfix"] + "dist.list"
@@ -890,19 +906,20 @@ class methods(object):
                     )
                 )
         del dist, d
-        Popen(
-            [
-                params["RapidNJ_{0}".format(platform.system())],
-                "-n",
-                "-x",
-                dist_file + "_rapidnj.nwk",
-                "-i",
-                "pd",
-                dist_file,
-            ],
-            stdout=PIPE,
-            stderr=PIPE,
+        args = [
+            params["RapidNJ_{0}".format(platform.system())],
+            "-n",
+            "-x",
+            dist_file + "_rapidnj.nwk",
+            "-i",
+            "pd",
+            dist_file,
+        ]
+        _, std_err = Popen(
+            args, stdout=PIPE, stderr=PIPE, encoding="utf-8"
         ).communicate()
+        if "error" in std_err.lower():
+            raise ValueError(std_err)
         tree = Tree(dist_file + "_rapidnj.nwk")
         for fname in glob(dist_file + "*"):
             os.unlink(fname)

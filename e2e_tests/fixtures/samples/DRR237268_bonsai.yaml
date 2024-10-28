@@ -1,0 +1,3 @@
+group_id: saureus
+minhash_signature: ./sourmash/DRR237268.sig
+prp_result: ./analysis_result/DRR237268_result.json

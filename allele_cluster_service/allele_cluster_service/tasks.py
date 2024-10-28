@@ -1,4 +1,5 @@
 """Define reddis tasks."""
+
 import logging
 
 from .ms_trees import ClusterMethod, backend

@@ -1,4 +1,4 @@
-FROM python:3.11.3-slim
+FROM python:3.11.3
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -23,4 +23,4 @@ RUN pip install --no-cache-dir .
 # run app as non-root user
 USER worker
 
-CMD ["gunicorn", "--log-level", "INFO", "--bind", "0.0.0.0:8000", "bonsai_app.wsgi:app"]
+CMD ["gunicorn", "--log-level", "WARNING", "--bind", "0.0.0.0:8000", "bonsai_app.wsgi:app"]

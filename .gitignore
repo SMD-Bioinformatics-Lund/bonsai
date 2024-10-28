@@ -138,6 +138,8 @@ volumes/mongodb/*
 !volumes/mongodb/.gitkeep
 volumes/api/genome_signatures/*
 !volumes/api/genome_signatures/.gitkeep
+volumes/e2e_tests/*
+!volumes/e2e_tests/.gitkeep
 data/*
 
 # editor related files

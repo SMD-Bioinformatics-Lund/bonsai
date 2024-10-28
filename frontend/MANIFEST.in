@@ -1,0 +1,3 @@
+include bonsai_app/templates/*
+include bonsai_app/blueprints/*/static/*
+include bonsai_app/blueprints/*/templates/*

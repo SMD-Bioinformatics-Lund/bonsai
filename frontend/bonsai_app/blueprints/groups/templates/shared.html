@@ -2,7 +2,7 @@
 {% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
-<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" 
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
         onclick="addSelectedSamplesToBasket(this)" disabled>
     <i class="bi bi-plus-lg"></i>
     <span>Add to basket</span>
@@ -225,7 +225,9 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
         </thead>
         <tbody>
             {% for row in table_data %}
-                <tr id="{{ row[0].data }}">
+                <tr id="{{ row[0].data }}"
+                 {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}
+                 >
                     {% for cell in row %}
                         {{ format_table_cell(cell) }}
                     {% endfor %}
@@ -254,10 +256,16 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
         window.updateRowSelectionCounters = () => {
             let nSelectedRows = table.rows('.selected').data().length
             // enable add to basket + toggle qc buttons when user selects at least one row
-            document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
-            document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
+            if ( document.getElementById("add-to-basket-btn") !== null) {
+              document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
+            }
+            if ( document.getElementById("toggle-qc-btn") !== null ) {
+              document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
+            }
             // enable find simiar samples button when ONE row is selected
-            document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
+            if ( document.getElementById("select-similar-samples-btn") !== null ) {
+              document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
+            }
             // enable remove samples btn
             if (document.getElementById("remove-samples-btn") !== null) {
                 document.getElementById("remove-samples-btn").disabled = 0 > nSelectedRows

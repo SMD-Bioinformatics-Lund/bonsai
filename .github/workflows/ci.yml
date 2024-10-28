@@ -1,0 +1,87 @@
+# This workflow will install Bonsai and run the test suite
+
+name: CI
+
+on:
+    push:
+        branches: ["master"]
+    pull_request:
+        branches: ["master"]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ./api[dev] ./frontend[dev] ./allele_cluster_service[dev]
+    - name: Run unit-tests test suite
+      run: |
+        pytest api/tests frontend/tests allele_cluster_service/tests
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Run end2end test suite
+      run: |
+        docker compose -f docker-compose.yml -f docker-compose.e2e_test.yml run e2e-tests
+    - name: Tar test report
+      if: failure()
+      run: tar cvzf ./reports.tar.gz ./reports
+    - name: Upload report to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: pytest_report.tar.gz
+        path: ./reports.tar.gz
+    - name: Collect docker logs on failure
+      if: failure()
+      uses: jwalton/gh-docker-logs@v2
+      with:
+        dest: './logs'
+    - name: Tar logs
+      if: failure()
+      run: tar cvzf ./logs.tar.gz ./logs
+    - name: Upload logs to GitHub
+      if: failure()
+      uses: actions/upload-artifact@master
+      with:
+        name: logs.tar.gz
+        path: ./logs.tar.gz
+
+  pylint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install -e frontend/ api/ minhash_service/ allele_cluster_service/
+    - name: Analysing the code with pylint
+      run: |
+        pylint --fail-under 9 frontend/bonsai_app api/bonsai_api minhash_service/minhash_service/ allele_cluster_service/allele_cluster_service/

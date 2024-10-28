@@ -20,22 +20,22 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             {{ navbar_link('Home', 'public.index') }}
-            {{ navbar_link('Groups', 'groups.groups') }}
+            {{ navbar_link('Groups', 'groups.groups', test_id='groups-view-btn') }}
             {{ navbar_link('Locations', 'groups.groups', True) }}
             {% if current_user.is_admin %}
-                {{ navbar_link('Admin', 'admin.admin_panel') }}
+                {{ navbar_link('Admin', 'admin.admin_panel', test_id="admin-panel-navbar-btn") }}
             {% endif %}
         </ul>
         <ul class="navbar-nav mb-2 mb-lg-0 ml-2">
             {% if current_user.is_authenticated %}
                 {{ user_dropdown(current_user) }}
                 <li class="nav-item d-flex flex-row">
-                    <a class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button">
+                    <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
                         <i class="bi bi-basket3 fs-4"></i>
                         {% set basket=current_user.basket %}
                         {% if basket | length > 0 %}
                             <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
-                                <span id="samples-in-basket-counter">{{ basket | length }}</span>
+                                <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
                                 <span class="visually-hidden">Samples in basket</span>
                             </span>
                         {% endif %}
@@ -70,7 +70,7 @@
                 Your basket is empty
             {% endif %}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <button id="close-basket-btn" type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
     </div>
     <div class="offcanvas-body">
         <div class="overflow-auto" style="max-height: 60vh;">
@@ -93,9 +93,11 @@
         <div class="row">
             <div class="col-auto">
                 <button
+                    id="clear-basket-btn"
                     class="btn btn-outline-danger btn-sm float-right"
                     aria-label="Clear basket"
                     onclick="removeAllSamplesFromBasket()"
+                    data-test-id="clear-basket-btn"
                     type="button">
                     <i class="bi btn-sm bi-trash3-fill">Clear basket</i>
                 </button>
@@ -112,6 +114,7 @@
                     <button 
                       class="btn btn-success dropdown-toggle" 
                       type="button" data-bs-toggle="dropdown"
+                      data-test-id="cluster-samples-dropdown-btn"
                       {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
                     >
                         <span class="content">
@@ -127,16 +130,19 @@
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-cgmlst-btn"
                                data-bi-typing-method="cgmlst">cgMLST</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-minhash-btn"
                                data-bi-typing-method="minhash">MinHash</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
                                onclick="clusterSamplesInBasket(this)"
+                               data-test-id="cluster-mlst-btn"
                                data-bi-typing-method="mlst">MLST</a>
                         </li>
                     </ul>
@@ -166,14 +172,18 @@
 </div>
 {% endmacro %}
 
-{% macro navbar_link(name, target, disabled=False) %}
+{% macro navbar_link(name, target, disabled=False, test_id=None) %}
 <li class="nav-item">
-    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" href="{{ url_for(target) }}">{{ name }}</a>
+    <a class="nav-link {% if disabled %} disabled {% endif %} fs-5" 
+       {% if test_id is not none %}data-test-id={{test_id}}{% endif %}
+       href="{{ url_for(target) }}">
+       {{ name }}
+    </a>
 </li>
 {% endmacro %}
 
 {% macro user_dropdown(current_user) %}
-<li class="nav-item dropdown">
+<li class="nav-item dropdown" data-test-id="user-options-dropdown">
     <a 
         id="navbarDropdown"
         class="nav-link dropdown-toggle" 
@@ -191,12 +201,12 @@
         {{ dropdown_link('Profile', disabled=True) }}
         {{ dropdown_link('Settings', disabled=True) }}
         <li><hr class="dropdown-divider"/></li>
-        {{ dropdown_link('Log out', 'login.logout', disabled=False) }}
+        {{ dropdown_link('Log out', 'login.logout', disabled=False, test_id='logout-user-btn') }}
     </ul>
 </li>
 {% endmacro %}
 
-{% macro dropdown_link(text, url_target, disabled=False) %}
+{% macro dropdown_link(text, url_target, disabled=False, test_id=None) %}
 <li>
     <a href="
     {% if url_target %}
@@ -206,6 +216,7 @@
     {% endif %}
     "
         class="dropdown-item {% if disabled %} disabled {% endif %}"
+        {% if test_id is not none %}data-test-id={{test_id}}{% endif %}
     >{{ text }}</a>
 </li>
 {% endmacro %}
