@@ -2,6 +2,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v0.8.0]
+
+### Added
+
 - Added select all variants button to tbprofiler and SV cards in Variant report view.
 - Added button to the groups view for adding selected samples to group.
 - Added button to the group view for removing selected samples from group.
