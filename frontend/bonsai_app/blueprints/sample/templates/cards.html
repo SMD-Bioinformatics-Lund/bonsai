@@ -186,7 +186,9 @@
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
-    {% if pred.software == "virulencefinder" %}
+    {% if pred.genes | length == 0 %}
+        <p class="card-text fst-italic">No  identified virulence factors.</p>
+    {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
     {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
         {{ amrfinder_virulence_prediction(pred.result) }}

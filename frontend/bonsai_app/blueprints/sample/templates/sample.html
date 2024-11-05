@@ -109,17 +109,15 @@
             <h5>Virulence</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="virulence-heading" class="row justify-content-md-center">
+                {# controll function for messages if no factors was predicted #}
+                {% set msg_printed = False %}
+
                 {% set n_virulence_pred=sample.element_type_result | count_results("VIRULENCE") %}
-                {% if n_virulence_pred == 0 %}
-                    <p>No virulence factors identified.</p>
-                {% else %}
                     {% for res in sample.element_type_result %}
                         {% if res.type == "VIRULENCE" %}
                             {% set n_genes=res.result.genes | length %}
                             {% if is_filtered and n_genes == 0 %}
                                 <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
-                            {% elif n_genes == 0 %}
-                                <p>No validated virulence factors identified.</p>
                             {% else %}
                             <div class="col-md-auto">
                             {{ virulence_card(res) }}
@@ -127,7 +125,6 @@
                             {% endif %}
                         {% endif %}
                     {% endfor %}
-                {% endif %}
             </div>
             <h5>Quality</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
