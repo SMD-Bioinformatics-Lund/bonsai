@@ -1,6 +1,6 @@
 FROM python:3.11.3
 
-LABEL base_image="python:3.8.1-slim"
+LABEL base_image="python:3.11.3-slim"
 
 # copy project dir
 WORKDIR /app
