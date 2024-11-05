@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added card for displaying EMM typing result from emmtyper.
+
 ### Changed
 
 ### Fixed
