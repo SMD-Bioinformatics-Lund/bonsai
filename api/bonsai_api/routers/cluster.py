@@ -10,7 +10,8 @@ from ..db import Database, get_db
 from ..crud.errors import EntryNotFound
 from ..crud.sample import (
     TypingProfileOutput,
-    get_signature_path_for_samples,
+    get_signature_path_for_samples, 
+    get_ska_index_path_for_samples,
     get_typing_profiles,
 )
 from ..models.base import RWModel
@@ -26,6 +27,7 @@ from ..redis.allele_cluster import (
 )
 from ..redis.minhash import schedule_add_genome_signature_to_index
 from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -77,6 +79,13 @@ async def cluster_samples(
     if typing_method == TypingMethod.MINHASH:
         job = schedule_minhash_cluster_samples(
             cluster_input.sample_ids, cluster_input.method
+        )
+    elif typing_method == TypingMethod.SKA:
+        # query database for index file paths using the sample ids
+        index_files = await get_ska_index_path_for_samples(db, cluster_input.sample_ids)
+        # dispatch job
+        job = schedule_ska_cluster_samples(
+            index_files, cluster_input.method
         )
     else:
         try:

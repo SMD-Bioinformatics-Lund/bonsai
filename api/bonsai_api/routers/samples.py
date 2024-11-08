@@ -18,7 +18,7 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VariantBase, VirulenceMethodIndex
+from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VirulenceMethodIndex
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError

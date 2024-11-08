@@ -20,6 +20,7 @@ class RedisQueue:  # pylint: disable=too-few-public-methods
         """Setup connection and define queues."""
         self.connection = Redis(settings.redis_host, settings.redis_port)
         self.minhash: Queue = Queue("minhash", connection=self.connection)
+        self.ska: Queue = Queue("ska", connection=self.connection)
         self.allele: Queue = Queue("allele_cluster", connection=self.connection)
 
 

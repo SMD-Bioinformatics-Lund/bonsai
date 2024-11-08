@@ -114,6 +114,7 @@ def schedule_cluster_samples(
     min_similarity - minimum similarity score to be included
     """
     task = "minhash_service.tasks.cluster"
+    LOG.error(sample_ids, cluster_method)
     job = redis.minhash.enqueue(
         task,
         sample_ids=sample_ids,

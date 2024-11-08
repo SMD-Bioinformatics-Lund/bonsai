@@ -76,6 +76,8 @@ services:
     build: 
       context: ska_service
       network: host
+    environment:
+      - log_level=debug
     volumes:
       - "./e2e_tests/fixtures/samples/ska:/data/index_files"
       - "./ska_service/ska_service:/home/worker/app/ska_service"

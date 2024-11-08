@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 from itertools import groupby
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -758,4 +758,23 @@ async def get_signature_path_for_samples(
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
     LOG.debug("Found %d signatures", len(results))
+    return results
+
+
+async def get_ska_index_path_for_samples(
+    db: Database, sample_ids: Sequence[str]
+) -> Sequence[str]:
+    """Get genome signature paths for samples."""
+    LOG.info("Get sak indexes for samples")
+    query = {
+        "$and": [  # query for documents with
+            {"sample_id": {"$in": sample_ids}},  # matching sample ids
+            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
+        ]
+    }
+    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}  # projection
+    LOG.debug("Query: %s; projection: %s", query, projection)
+    cursor = db.sample_collection.find(query, projection)
+    results = await cursor.to_list(None)
+    LOG.debug("Found %d ska indexes", len(results))
     return results

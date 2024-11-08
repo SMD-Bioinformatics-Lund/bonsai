@@ -45,6 +45,13 @@ async function clusterSamplesInBasket(element) {
                 cluster_method: "single",
             }
             break
+        case "ska":
+            body = {
+                sample_ids: sampleIds,
+                typing_method: typingMethod,
+                cluster_method: "single",
+            }
+            break
     }
     // submit job to API
     showSpinner(btn)
