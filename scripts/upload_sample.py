@@ -28,6 +28,7 @@ class SampleConfig(BaseModel):
     )
 
     def assinged_to_group(self) -> bool:
+        """Return True if sample is assigned to a group."""
         return self.group_id is not None
 
 
@@ -128,7 +129,7 @@ def api_authentication(func: Callable) -> Callable:
 
 
 @api_authentication
-def upload_sample(
+def upload_sample_result(
     headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig
 ) -> str:
     """Create a new sample."""
@@ -213,31 +214,78 @@ def _process_generic_status_codes(error, sample_id):
     return msg, is_major_error
 
 
+def upload_sample(ctx: ExecutionContext, cnf: SampleConfig) -> str:
+    """Upload a sample with files for clustring."""
+    try:
+        sample_id = upload_sample_result(  # pylint: disable=no-value-for-parameter
+            token_obj=ctx.token, ctx=ctx, cnf=cnf
+        )
+    except requests.exceptions.HTTPError as error:
+        if error.response.status_code == 409:
+            click.secho("Sample have already been uploaded", fg="yellow")
+        else:
+            msg, _ = _process_generic_status_codes(error, "")
+            raise click.UsageError(msg) from error
+    # upload minhash signature to sample
+    try:
+        upload_signature(  # pylint: disable=no-value-for-parameter
+            token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf
+        )
+    except requests.exceptions.HTTPError as error:
+        if error.response.status_code == 409:
+            click.secho(
+                f"Sample {sample_id} has already a signature file, skipping",
+                fg="yellow",
+            )
+        else:
+            msg, _ = _process_generic_status_codes(error, sample_id)
+            raise click.UsageError(msg) from error
+    # add ska index path to sample
+    if cnf.ska_index is not None:
+        try:
+            add_ska_index(  # pylint: disable=no-value-for-parameter
+                token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf
+            )
+        except requests.exceptions.HTTPError as error:
+            if error.response.status_code == 409:
+                click.secho(
+                    f"Sample {sample_id} is already associated with a ska index file, skipping",
+                    fg="yellow",
+                )
+            else:
+                msg, _ = _process_generic_status_codes(error, sample_id)
+                raise click.UsageError(msg) from error
+    return sample_id
+
+
 @click.command()
-@click.option("-a", "--api", type=str, help="Upload configuration")
+@click.option("-a", "--api", required=True, type=str, help="Upload configuration")
 @click.option("-u", "--user", envvar=USER_ENV, type=str, help="Username")
 @click.option("-p", "--password", envvar=PASSWD_ENV, type=str, help="Password")
 @click.option(
-    "-i", "--input", required=True, type=click.File(), help="Upload configuration"
+    "-i",
+    "--input",
+    "sample_conf",
+    required=True,
+    type=click.File(),
+    help="Upload configuration",
 )
-def cli(api, user, password, input):
+def cli(api, user, password, sample_conf):
     """Upload a sample to Bonsai"""
     if user is None:
         raise click.BadOptionUsage(
             user,
             f"No username set. Use either the --user option or env variable {USER_ENV}",
         )
-    elif password is None:
+    if password is None:
         raise click.BadOptionUsage(
             password,
             f"No username set. Use either the --password option or env variable {PASSWD_ENV}",
         )
-    elif api is None:
-        raise click.BadOptionUsage(api, f"No api URL set.")
 
     # read upload config and verify content
     try:
-        cnf: SampleConfig = process_input_config(input)
+        cnf: SampleConfig = process_input_config(sample_conf)
     except ValidationError as err:
         err_json = json.loads(err.json())[0]
         err_msg = (
@@ -256,43 +304,11 @@ def cli(api, user, password, input):
     # add token to ctx
     ctx = ctx.model_copy(update={"token": token})
     # upload sample
-    try:
-        sample_id = upload_sample(token_obj=ctx.token, ctx=ctx, cnf=cnf)
-    except requests.exceptions.HTTPError as error:
-        if error.response.status_code == 409:
-            click.secho(f"Sample have already been uploaded", fg="yellow")
-        else:
-            msg, _ = _process_generic_status_codes(error, "")
-            raise click.UsageError(msg) from error
-    # upload minhash signature to sample
-    try:
-        upload_signature(token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf)
-    except requests.exceptions.HTTPError as error:
-        if error.response.status_code == 409:
-            click.secho(
-                f"Sample {sample_id} has already a signature file, skipping",
-                fg="yellow",
-            )
-        else:
-            msg, _ = _process_generic_status_codes(error, sample_id)
-            raise click.UsageError(msg) from error
-    # add ska index path to sample
-    if cnf.ska_index is not None:
-        try:
-            add_ska_index(token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf)
-        except requests.exceptions.HTTPError as error:
-            if error.response.status_code == 409:
-                click.secho(
-                    f"Sample {sample_id} is already associated with a ska index file, skipping",
-                    fg="yellow",
-                )
-            else:
-                msg, _ = _process_generic_status_codes(error, sample_id)
-                raise click.UsageError(msg) from error
+    sample_id = upload_sample(ctx=ctx, cnf=cnf)
     # add sample to group if it was assigned one.
     if cnf.assinged_to_group():
         try:
-            add_sample_to_group(
+            add_sample_to_group(  # pylint: disable=no-value-for-parameter
                 token_obj=ctx.token, ctx=ctx, cnf=cnf, sample_id=sample_id
             )
         except requests.exceptions.HTTPError as error:
@@ -311,4 +327,4 @@ def cli(api, user, password, input):
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter
