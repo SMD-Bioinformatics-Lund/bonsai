@@ -1,15 +1,16 @@
 #! /usr/bin/env python
 """Upload sample to Bonsai."""
-import click
-from functools import wraps
 import json
-import requests
-from requests.structures import CaseInsensitiveDict
-from pydantic import BaseModel, Field, FilePath
-from typing import Callable
-import yaml
-from pathlib import Path
+from functools import wraps
 from io import TextIOWrapper
+from pathlib import Path
+from typing import Callable
+
+import click
+import requests
+import yaml
+from pydantic import BaseModel, Field, FilePath, ValidationError
+from requests.structures import CaseInsensitiveDict
 
 USER_ENV = "BONSAI_USER"
 PASSWD_ENV = "BONSAI_PASSWD"
@@ -22,7 +23,9 @@ class SampleConfig(BaseModel):
     group_id: str | None = Field(None, description="Add sample to group with id")
     prp_result: FilePath = Field(..., description="Path to PRP output")
     minhash_signature: FilePath = Field(..., description="Path to minhash signature")
-
+    ska_index: FilePath | None = Field(
+        ..., description="Path to ska index for SNV clustring"
+    )
 
     def assinged_to_group(self) -> bool:
         return self.group_id is not None
@@ -44,27 +47,37 @@ class ExecutionContext(BaseModel):
     token: TokenObject | None = None
 
 
+def _rel_to_abs_path(path: Path | str, base_path: Path) -> str:
+    """Resolve relative paths to absolute.
+
+    if a path is relative, convert to absolute from the configs parent directory
+    i.e.  prp_path = ./results/sample_name.json --> /data/samples/results/sample_name.json
+          given, cnf_path = /data/samples/cnf.yml
+    relative paths are used when bootstraping a test database
+    """
+    rel_path = Path(path) if Path(path).is_absolute() else base_path / path
+    return str(rel_path.absolute())
+
+
 def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
     """Take PRP config and convert it to a config object."""
     raw_config = yaml.safe_load(config_file)
     base_path = Path(config_file.name).parent
 
-    # if a path is relative, convert to absolute from the configs parent directory
-    # i.e.  prp_path = ./results/sample_name.json --> /data/samples/results/sample_name.json
-    #       given, cnf_path = /data/samples/cnf.yml
-    # relative paths are used when bootstraping a test database
-    prp_result = Path(raw_config.get('prp_result'))
-    if not prp_result.is_absolute():
-        prp_result = base_path / prp_result
-    minhash_signature = Path(raw_config.get('minhash_signature'))
-    if not minhash_signature.is_absolute():
-        minhash_signature = base_path / minhash_signature
+    prp_result = _rel_to_abs_path(raw_config.get("prp_result"), base_path)
+    minhash_signature = _rel_to_abs_path(raw_config.get("minhash_signature"), base_path)
+    ska_index = (
+        _rel_to_abs_path(raw_config.get("ska_index"), base_path)
+        if raw_config.get("ska_index")
+        else None
+    )
 
     # cast as SampleConfig object and validate input
     return SampleConfig(
-        group_id=raw_config.get('group_id'), 
-        prp_result=str(prp_result),
-        minhash_signature=str(minhash_signature),
+        group_id=raw_config.get("group_id"),
+        prp_result=prp_result,
+        minhash_signature=minhash_signature,
+        ska_index=ska_index,
     )
 
 
@@ -73,7 +86,7 @@ def get_auth_token(ctx: ExecutionContext) -> TokenObject:
     # configure header
     headers = CaseInsensitiveDict()
     headers["Content-Type"] = "application/x-www-form-urlencoded"
-    url = f'{ctx.api_url}/token'
+    url = f"{ctx.api_url}/token"
     resp = requests.post(
         url,
         data={"username": ctx.username, "password": ctx.password},
@@ -115,10 +128,14 @@ def api_authentication(func: Callable) -> Callable:
 
 
 @api_authentication
-def upload_sample(headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig) -> str:
+def upload_sample(
+    headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig
+) -> str:
     """Create a new sample."""
     sample_obj = json.load(cnf.prp_result.open())
-    resp = requests.post(f'{ctx.api_url}/samples/', headers=headers, json=sample_obj, timeout=TIMEOUT)
+    resp = requests.post(
+        f"{ctx.api_url}/samples/", headers=headers, json=sample_obj, timeout=TIMEOUT
+    )
 
     resp.raise_for_status()
     resp_data = resp.json()
@@ -126,18 +143,57 @@ def upload_sample(headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: Samp
 
 
 @api_authentication
-def upload_signature(headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig, sample_id: str) -> str:
+def upload_signature(
+    headers: CaseInsensitiveDict,
+    ctx: ExecutionContext,
+    cnf: SampleConfig,
+    sample_id: str,
+) -> str:
     """Upload a genome signature to sample."""
-    resp = requests.post(f'{ctx.api_url}/samples/{sample_id}/signature', headers=headers, files={"signature": cnf.minhash_signature.open()}, timeout=TIMEOUT)
+    resp = requests.post(
+        f"{ctx.api_url}/samples/{sample_id}/signature",
+        headers=headers,
+        files={"signature": cnf.minhash_signature.open()},
+        timeout=TIMEOUT,
+    )
 
     resp.raise_for_status()
     return resp.json()
 
 
 @api_authentication
-def add_sample_to_group(headers: CaseInsensitiveDict, ctx: ExecutionContext, cnf: SampleConfig, sample_id: str) -> str:
+def add_ska_index(
+    headers: CaseInsensitiveDict,
+    ctx: ExecutionContext,
+    cnf: SampleConfig,
+    sample_id: str,
+) -> str:
+    """Upload a genome signature to sample."""
+    resp = requests.post(
+        f"{ctx.api_url}/samples/{sample_id}/ska_index",
+        headers=headers,
+        params={"index": cnf.ska_index},
+        timeout=TIMEOUT,
+    )
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def add_sample_to_group(
+    headers: CaseInsensitiveDict,
+    ctx: ExecutionContext,
+    cnf: SampleConfig,
+    sample_id: str,
+) -> str:
     """Add sample to a group."""
-    resp = requests.put(f'{ctx.api_url}/groups/{cnf.group_id}/sample', headers=headers, params={"sample_id": sample_id}, timeout=TIMEOUT)
+    resp = requests.put(
+        f"{ctx.api_url}/groups/{cnf.group_id}/sample",
+        headers=headers,
+        params={"sample_id": sample_id},
+        timeout=TIMEOUT,
+    )
 
     resp.raise_for_status()
     return resp.json()
@@ -161,20 +217,37 @@ def _process_generic_status_codes(error, sample_id):
 @click.option("-a", "--api", type=str, help="Upload configuration")
 @click.option("-u", "--user", envvar=USER_ENV, type=str, help="Username")
 @click.option("-p", "--password", envvar=PASSWD_ENV, type=str, help="Password")
-@click.option("-i", "--input", required=True, type=click.File(), help="Upload configuration")
+@click.option(
+    "-i", "--input", required=True, type=click.File(), help="Upload configuration"
+)
 def cli(api, user, password, input):
     """Upload a sample to Bonsai"""
     if user is None:
-        raise click.BadOptionUsage(user, f"No username set. Use either the --user option or env variable {USER_ENV}")
-    if password is None:
-        raise click.BadOptionUsage(password, f"No username set. Use either the --password option or env variable {PASSWD_ENV}")
-    
+        raise click.BadOptionUsage(
+            user,
+            f"No username set. Use either the --user option or env variable {USER_ENV}",
+        )
+    elif password is None:
+        raise click.BadOptionUsage(
+            password,
+            f"No username set. Use either the --password option or env variable {PASSWD_ENV}",
+        )
+    elif api is None:
+        raise click.BadOptionUsage(api, f"No api URL set.")
+
     # read upload config and verify content
-    cnf: SampleConfig = process_input_config(input)
+    try:
+        cnf: SampleConfig = process_input_config(input)
+    except ValidationError as err:
+        err_json = json.loads(err.json())[0]
+        err_msg = (
+            f"Input config file is invalid.\n{err_json['msg']}: {err_json['input']}"
+        )
+        raise click.BadArgumentUsage(err_msg)
 
     # login
     ctx = ExecutionContext(username=user, password=password, api_url=api)
-    # add token if 
+    # add token if
     try:
         token = get_auth_token(ctx)
     except ValueError as error:
@@ -196,14 +269,32 @@ def cli(api, user, password, input):
         upload_signature(token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf)
     except requests.exceptions.HTTPError as error:
         if error.response.status_code == 409:
-            click.secho(f"Sample {sample_id} has alread a signature file, skipping", fg="yellow")
+            click.secho(
+                f"Sample {sample_id} has already a signature file, skipping",
+                fg="yellow",
+            )
         else:
             msg, _ = _process_generic_status_codes(error, sample_id)
             raise click.UsageError(msg) from error
+    # add ska index path to sample
+    if cnf.ska_index is not None:
+        try:
+            add_ska_index(token_obj=ctx.token, ctx=ctx, sample_id=sample_id, cnf=cnf)
+        except requests.exceptions.HTTPError as error:
+            if error.response.status_code == 409:
+                click.secho(
+                    f"Sample {sample_id} is already associated with a ska index file, skipping",
+                    fg="yellow",
+                )
+            else:
+                msg, _ = _process_generic_status_codes(error, sample_id)
+                raise click.UsageError(msg) from error
     # add sample to group if it was assigned one.
     if cnf.assinged_to_group():
         try:
-            add_sample_to_group(token_obj=ctx.token, ctx=ctx, cnf=cnf, sample_id=sample_id)
+            add_sample_to_group(
+                token_obj=ctx.token, ctx=ctx, cnf=cnf, sample_id=sample_id
+            )
         except requests.exceptions.HTTPError as error:
             match error.response.status_code:
                 case 404:
