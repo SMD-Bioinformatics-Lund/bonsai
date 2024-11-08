@@ -1,18 +1,18 @@
 """Configuration for minhash service"""
 
-import logging
 from enum import StrEnum
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class LogLevel(StrEnum):
     """Valid log levels."""
 
-    DEBUGGER = logging.DEBUG
-    INFO = logging.INFO
-    WARNING = logging.WARNING
-    ERROR = logging.ERROR
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
 
 
 class Settings(BaseSettings):
@@ -22,9 +22,11 @@ class Settings(BaseSettings):
     # redis variables
     redis_host: str = "redis"
     redis_port: int = 6379
-    redis_queue: str = "minhash"
+    redis_queue: str = "ska"
     # logging
-    log_level: LogLevel = LogLevel.WARNING
+    log_level: LogLevel = LogLevel.INFO
+
+    model_config = ConfigDict(use_enum_values=True)
 
 
 settings = Settings()

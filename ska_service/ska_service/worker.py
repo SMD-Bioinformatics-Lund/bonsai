@@ -17,7 +17,7 @@ DICT_CONFIG = {
     },
     "handlers": {
         "default": {
-            "level": settings.log_level,
+            "level": settings.log_level.upper(),
             "formatter": "standard",
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stderr",  # Default is stderr
@@ -26,7 +26,7 @@ DICT_CONFIG = {
     "loggers": {
         "root": {  # root logger
             "handlers": ["default"],
-            "level": "DEBUG",
+            "level": settings.log_level.upper(),
             "propagate": False,
         },
     },
@@ -41,12 +41,12 @@ LOG = logging.getLogger(__name__)
 def create_app():
     """Start a new worker instance."""
     LOG.info("Preparing to start worker")
-    LOG.info("Setup redis connection: %s:%s", settings.REDIS_HOST, settings.REDIS_PORT)
-    redis = Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT)
+    LOG.info("Setup redis connection: %s:%s", settings.redis_host, settings.redis_port)
+    redis = Redis(host=settings.redis_host, port=settings.redis_port)
 
     # start worker with json serializer
     LOG.info("Starting worker...")
     with Connection(redis):
-        queue = Queue(settings.REDIS_QUEUE)
+        queue = Queue(settings.redis_queue)
         worker = Worker([queue], connection=redis)
         worker.work()

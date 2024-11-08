@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Sequence
+from typing import Sequence, Dict
 
 from . import ska
 from .ska.cluster import ClusterMethod
@@ -11,7 +11,7 @@ from .ska.cluster import ClusterMethod
 LOG = logging.getLogger(__name__)
 
 
-def cluster(indexes: Sequence[str], cluster_method: str = "single") -> str:
+def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their SNVs using SKA indexes.
 
@@ -24,7 +24,7 @@ def cluster(indexes: Sequence[str], cluster_method: str = "single") -> str:
     :rtype: str
     """
     # validate input samples and cast to path
-    idx_paths = [Path(idx) for idx in indexes]
+    idx_paths = [Path(idx['ska_index']) for idx in indexes]
 
     # validate cluster method
     try:
