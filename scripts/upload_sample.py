@@ -48,7 +48,7 @@ class ExecutionContext(BaseModel):
     token: TokenObject | None = None
 
 
-def _rel_to_abs_path(path: Path | str, base_path: Path) -> str:
+def _rel_to_abs_path(path: Path | str, base_path: Path) -> Path:
     """Resolve relative paths to absolute.
 
     if a path is relative, convert to absolute from the configs parent directory
@@ -56,8 +56,7 @@ def _rel_to_abs_path(path: Path | str, base_path: Path) -> str:
           given, cnf_path = /data/samples/cnf.yml
     relative paths are used when bootstraping a test database
     """
-    rel_path = Path(path) if Path(path).is_absolute() else base_path / path
-    return str(rel_path.absolute())
+    return Path(path) if Path(path).is_absolute() else base_path / path
 
 
 def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
@@ -69,7 +68,7 @@ def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
     minhash_signature = _rel_to_abs_path(raw_config.get("minhash_signature"), base_path)
     ska_index = (
         _rel_to_abs_path(raw_config.get("ska_index"), base_path)
-        if raw_config.get("ska_index")
+        if raw_config.get("ska_index") is not None
         else None
     )
 
@@ -85,7 +84,7 @@ def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
 def get_auth_token(ctx: ExecutionContext) -> TokenObject:
     """Get authentication token from api"""
     # configure header
-    headers = CaseInsensitiveDict()
+    headers: CaseInsensitiveDict[str] = CaseInsensitiveDict()
     headers["Content-Type"] = "application/x-www-form-urlencoded"
     url = f"{ctx.api_url}/token"
     resp = requests.post(
@@ -119,7 +118,7 @@ def api_authentication(func: Callable) -> Callable:
         :return: Wrapped API call function
         :rtype: Callable
         """
-        headers = CaseInsensitiveDict()
+        headers: CaseInsensitiveDict[str] = CaseInsensitiveDict()
         headers["Accept"] = "application/json"
         headers["Authorization"] = f"{token_obj.type.capitalize()} {token_obj.token}"
 
@@ -170,10 +169,11 @@ def add_ska_index(
     sample_id: str,
 ) -> str:
     """Upload a genome signature to sample."""
+    params: dict[str, str] = {"index": str(cnf.ska_index)}
     resp = requests.post(
         f"{ctx.api_url}/samples/{sample_id}/ska_index",
         headers=headers,
-        params={"index": cnf.ska_index},
+        params=params,
         timeout=TIMEOUT,
     )
 
@@ -274,12 +274,12 @@ def cli(api, user, password, sample_conf):
     """Upload a sample to Bonsai"""
     if user is None:
         raise click.BadOptionUsage(
-            user,
+            "user",
             f"No username set. Use either the --user option or env variable {USER_ENV}",
         )
     if password is None:
         raise click.BadOptionUsage(
-            password,
+            "password",
             f"No username set. Use either the --password option or env variable {PASSWD_ENV}",
         )
 
