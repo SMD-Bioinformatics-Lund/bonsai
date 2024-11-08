@@ -81,6 +81,7 @@ class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     location: str | None = Field(None, description="Location id")
     # signature file name
     genome_signature: str | None = Field(None, description="Genome signature name")
+    ska_index: str | None = Field(None, description="Ska index path")
 
 
 class ElementTypeResult(BaseModel):

@@ -263,6 +263,37 @@ async def create_genome_signatures_sample(
     }
 
 
+@router.post("/samples/{sample_id}/ska_index", tags=DEFAULT_TAGS)
+async def add_ska_index_to_sample(
+    sample_id: str,
+    index: str,
+    db: Database = Depends(get_db),
+) -> Dict[str, str]:
+    """Entrypoint for uploading a genome signature to the database."""
+    # verify that sample are in database
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # abort if signature has already been added
+    idx_exist_err = HTTPException(
+        status_code=409, detail="Sample is already associated with an SKA index."
+    )
+    if sample.ska_index is not None:
+        raise idx_exist_err
+
+    # updated sample in database with signature object jobid
+    # recast the data to proper object
+    sample_obj = {**sample.model_dump(), **{"ska_index": index}}
+    upd_sample_data = SampleInCreate(**sample_obj)
+    await crud_update_sample(db, upd_sample_data)
+
+    return {"sample_id": sample_id, "index_file": index}
+
+
 @router.get("/samples/{sample_id}/alignment", tags=DEFAULT_TAGS)
 async def get_sample_read_mapping(
     sample_id: str,
