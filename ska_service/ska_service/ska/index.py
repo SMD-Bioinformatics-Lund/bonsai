@@ -4,10 +4,36 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import Sequence
+from pydantic_settings import BaseSettings
 
 from .base import ska_base
 
 LOG = logging.getLogger(__name__)
+
+
+def resolve_index_path(
+    file_name: str, cnf: BaseSettings, find_missing: bool = False
+) -> Path:
+    """Resolve and check path to index file.
+
+    If the index cant be found, it will optionally search the index_path directory
+    for the file.
+    """
+    index_path = Path(cnf.index_dir) / file_name
+
+    # if file exists
+    if index_path.is_file():
+        return index_path
+
+    # else try to find the file
+    if find_missing:
+        LOG.info("Trying to find file %s by recursive search", file_name)
+        for root, _, files in Path(cnf.index_dir).walk():
+            if index_path.name in files:
+                return Path(root) / index_path.name
+
+    # if file cannot be found in index_dir raise error
+    raise FileNotFoundError(file_name)
 
 
 def ska_merge(index_files: Sequence[Path], output: Path | None = None) -> Path:

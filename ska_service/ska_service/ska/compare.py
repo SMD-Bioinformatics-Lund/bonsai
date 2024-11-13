@@ -18,7 +18,7 @@ def _to_dist_matrix(dist_df: pd.DataFrame) -> pd.DataFrame:
     dist_df.set_index(["Sample1", "Sample2"], inplace=True)
 
     # create distance matrix
-    dist_matrix = pd.DataFrame(index=samples, columns=samples).fillna(1)
+    dist_matrix = pd.DataFrame(index=samples, columns=samples, dtype=int).fillna(1)
     for first, second in itertools.combinations(samples, 2):
         # upper
         dist_matrix.loc[first, second] = dist_df.loc[(first, second), "Distance"]

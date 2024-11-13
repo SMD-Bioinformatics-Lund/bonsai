@@ -23,7 +23,7 @@ class SampleConfig(BaseModel):
     group_id: str | None = Field(None, description="Add sample to group with id")
     prp_result: FilePath = Field(..., description="Path to PRP output")
     minhash_signature: FilePath = Field(..., description="Path to minhash signature")
-    ska_index: FilePath | None = Field(
+    ska_index: str | None = Field(
         ..., description="Path to ska index for SNV clustring"
     )
 
@@ -66,18 +66,13 @@ def process_input_config(config_file: TextIOWrapper) -> SampleConfig:
 
     prp_result = _rel_to_abs_path(raw_config.get("prp_result"), base_path)
     minhash_signature = _rel_to_abs_path(raw_config.get("minhash_signature"), base_path)
-    ska_index = (
-        _rel_to_abs_path(raw_config.get("ska_index"), base_path)
-        if raw_config.get("ska_index") is not None
-        else None
-    )
 
     # cast as SampleConfig object and validate input
     return SampleConfig(
         group_id=raw_config.get("group_id"),
         prp_result=prp_result,
         minhash_signature=minhash_signature,
-        ska_index=ska_index,
+        ska_index=raw_config.get("ska_index"),
     )
 
 

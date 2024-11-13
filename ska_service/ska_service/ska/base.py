@@ -43,7 +43,7 @@ def ska_base(
     if arguments is not None:
         cli_command.extend([str(arg) for arg in arguments])
 
-    LOG.debug("Running subprocess command: %s", cli_command)
+    LOG.debug("Running subprocess command: %s", " ".join(cli_command))
     proc = subprocess.run(
         cli_command,
         capture_output=True,

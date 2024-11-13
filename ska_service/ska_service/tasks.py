@@ -8,6 +8,8 @@ from typing import Sequence, Dict
 from . import ska
 from .ska.cluster import ClusterMethod
 
+from .config import settings
+
 LOG = logging.getLogger(__name__)
 
 
@@ -24,7 +26,10 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
     :rtype: str
     """
     # validate input samples and cast to path
-    idx_paths = [Path(idx['ska_index']) for idx in indexes]
+    idx_paths = [
+        Path(settings.index_dir) / idx["ska_index"]
+        for idx in indexes
+    ]
 
     # validate cluster method
     try:
@@ -41,3 +46,17 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
         dist = ska.distance(merged_index, dist_matrix=True)
         nwk = ska.cluster_distances(dist, method)
     return nwk
+
+
+def check_index(file_name: str) -> str | None:
+    """Check if index exist and are accessable.
+
+    returns true if the index file exists and are accessable, else false
+    """
+    LOG.info("Check if index file %s is accessable.", file_name)
+    try:
+        path: Path = ska.resolve_index_path(file_name, settings, find_missing=True)
+        return str(path)
+    except FileNotFoundError:
+        LOG.error("The index file %s could not be found.", file_name)
+    return None
