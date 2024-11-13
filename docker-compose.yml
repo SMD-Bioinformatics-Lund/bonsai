@@ -25,6 +25,7 @@ services:
     depends_on:
       - mongodb
       - minhash_service
+      - ska_service
       - allele_cluster_service
     ports: 
       - "8001:8000"
@@ -79,7 +80,7 @@ services:
     environment:
       - log_level=debug
     volumes:
-      - "./e2e_tests/fixtures/samples/ska:/data/index_files"
+      - "./e2e_tests/fixtures/samples/ska:/data/index_files/ska"
       - "./ska_service/ska_service:/home/worker/app/ska_service"
     depends_on:
       - redis
