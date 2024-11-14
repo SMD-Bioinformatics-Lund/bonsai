@@ -4,15 +4,15 @@ import logging
 import tempfile
 from pathlib import Path
 from typing import Sequence
-from pydantic_settings import BaseSettings
 
+from ..config import Settings
 from .base import ska_base
 
 LOG = logging.getLogger(__name__)
 
 
 def resolve_index_path(
-    file_name: str, cnf: BaseSettings, find_missing: bool = False
+    file_name: str, cnf: Settings, find_missing: bool = False
 ) -> Path:
     """Resolve and check path to index file.
 

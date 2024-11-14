@@ -3,12 +3,11 @@
 import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Sequence, Dict
+from typing import Dict, Sequence
 
 from . import ska
-from .ska.cluster import ClusterMethod
-
 from .config import settings
+from .ska.cluster import ClusterMethod
 
 LOG = logging.getLogger(__name__)
 
@@ -26,10 +25,7 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
     :rtype: str
     """
     # validate input samples and cast to path
-    idx_paths = [
-        Path(settings.index_dir) / idx["ska_index"]
-        for idx in indexes
-    ]
+    idx_paths = [Path(settings.index_dir) / idx["ska_index"] for idx in indexes]
 
     # validate cluster method
     try:

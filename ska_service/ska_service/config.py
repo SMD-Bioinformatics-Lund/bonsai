@@ -2,8 +2,7 @@
 
 from enum import StrEnum
 
-from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class LogLevel(StrEnum):
@@ -26,7 +25,7 @@ class Settings(BaseSettings):
     # logging
     log_level: LogLevel = LogLevel.INFO
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = SettingsConfigDict(use_enum_values=True)
 
 
 settings = Settings()
