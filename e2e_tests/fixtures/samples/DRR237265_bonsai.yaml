@@ -1,3 +1,4 @@
 group_id: saureus
 minhash_signature: ./sourmash/DRR237265.sig
 prp_result: ./analysis_result/DRR237265_result.json
+ska_index: ./ska/saureus/DRR237265_ska_index.skf
