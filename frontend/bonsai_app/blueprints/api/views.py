@@ -1,4 +1,5 @@
 """Declaration of flask api entrypoints"""
+
 import json
 import logging
 

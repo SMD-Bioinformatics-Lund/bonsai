@@ -1,8 +1,9 @@
 """Helper functions for setup and teardown of database connections."""
+
 import logging
+from contextlib import contextmanager
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from contextlib import contextmanager
 
 from ..config import settings
 from .db import MongoDatabase

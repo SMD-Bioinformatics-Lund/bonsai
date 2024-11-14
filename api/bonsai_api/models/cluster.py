@@ -1,4 +1,5 @@
 """Clustering information"""
+
 from enum import Enum
 
 

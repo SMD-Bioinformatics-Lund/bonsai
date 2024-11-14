@@ -1,8 +1,9 @@
 """Routes related to collections of samples."""
+
 from typing import Dict, List
 
 from prp.models.phenotype import ElementType
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId
 from .sample import SampleSummary
@@ -43,6 +44,7 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     filterable: bool = False
     filter_type: str | None = None
     filter_param: str | None = None
+
 
 VALID_BASE_COLS = [
     OverviewTableColumn(
@@ -187,14 +189,14 @@ VALID_QC_COLS = [
         id="coverage",
         label="Cov > 10",
         type="number",
-        path="$.postalignqc.pct_above_x[\"10\"]",
+        path='$.postalignqc.pct_above_x["10"]',
         sortable=True,
     ),
     OverviewTableColumn(
         id="coverage",
         label="Cov > 30",
         type="number",
-        path="$.postalignqc.pct_above_x[\"30\"]",
+        path='$.postalignqc.pct_above_x["30"]',
         sortable=True,
     ),
     OverviewTableColumn(
@@ -209,6 +211,7 @@ VALID_QC_COLS = [
 # create combination of valid columns
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
 qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
+
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""

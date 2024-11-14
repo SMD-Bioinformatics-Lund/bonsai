@@ -1,21 +1,17 @@
 """Declaration of views for samples"""
+
+import datetime
 import json
 import logging
 from enum import Enum
 from typing import Any, Dict, List
-import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
 
-from ...bonsai import (
-    TokenObject,
-    cluster_samples,
-    get_samples,
-    get_valid_group_columns,
-)
+from ...bonsai import TokenObject, cluster_samples, get_samples, get_valid_group_columns
 from ...custom_filters import get_json_path
 
 LOG = logging.getLogger(__name__)
@@ -72,13 +68,19 @@ def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | flo
 
 def fmt_metadata(sample_obj, column) -> str:
     data = get_json_path(sample_obj, column["path"])
-    #return ", ".join([point["label"] for point in data])
-    LOG.warning(column['type'])
-    match column['type']:
+    # return ", ".join([point["label"] for point in data])
+    LOG.warning(column["type"])
+    match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
         case "comments":
-            fmt_data = ", ".join([comment_obj["comment"] for comment_obj in data if comment_obj['displayed']])
+            fmt_data = ", ".join(
+                [
+                    comment_obj["comment"]
+                    for comment_obj in data
+                    if comment_obj["displayed"]
+                ]
+            )
         case "date":
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
         case default:
@@ -112,8 +114,7 @@ def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
         sample_id = sample["sample_id"]
         # store metadata
         metadata[sample_id] = {
-            col["label"]: fmt_metadata(sample, col)
-            for col in columns
+            col["label"]: fmt_metadata(sample, col) for col in columns
         }
     # build metadata list
     metadata_list = set()
@@ -158,7 +159,9 @@ def tree():
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
-            sample_summary = get_samples(token, sample_ids=samples["sample_id"], limit=0)
+            sample_summary = get_samples(
+                token, sample_ids=samples["sample_id"], limit=0
+            )
             # get column info
             if column_info is None:
                 column_info = get_valid_group_columns()

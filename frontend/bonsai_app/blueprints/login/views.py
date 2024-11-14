@@ -1,4 +1,5 @@
 """Manage user authentication."""
+
 import logging
 
 from flask import (

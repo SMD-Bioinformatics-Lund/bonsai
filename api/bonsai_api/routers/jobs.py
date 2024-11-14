@@ -1,4 +1,5 @@
 """Routes for interacting with submitted jobs."""
+
 import logging
 
 from fastapi import APIRouter, status

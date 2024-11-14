@@ -2,20 +2,20 @@
 
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Path, Security, status, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
-from ..crud.sample import get_samples_summary
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
 from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
+from ..crud.sample import get_samples_summary
 from ..crud.user import get_current_active_user
 from ..db import Database, get_db
-from ..models.group import pred_res_cols, qc_cols, GroupInCreate, GroupInfoDatabase
-from ..models.user import UserOutputDatabase
 from ..models.base import MultipleRecordsResponseModel
+from ..models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
+from ..models.user import UserOutputDatabase
 
 router = APIRouter()
 
@@ -41,7 +41,7 @@ async def get_groups_in_db(
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
-    )
+    ),
 ):
     """Get information of the number of samples per group loaded into the database."""
     groups = await get_groups(db)

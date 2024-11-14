@@ -7,6 +7,7 @@ from typing import Annotated, Any, Dict, Union
 from fastapi import (
     APIRouter,
     Body,
+    Depends,
     File,
     Header,
     HTTPException,
@@ -14,11 +15,15 @@ from fastapi import (
     Query,
     Security,
     status,
-    Depends,
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VirulenceMethodIndex
+from prp.models.phenotype import (
+    AMRMethodIndex,
+    StressMethodIndex,
+    VariantType,
+    VirulenceMethodIndex,
+)
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
@@ -34,12 +39,14 @@ from ..crud.sample import (
     update_variant_annotation_for_sample,
 )
 from ..crud.user import get_current_active_user
+from ..db import Database, get_db
 from ..io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
     is_file_readable,
     send_partial_file,
 )
+from ..models.base import MultipleRecordsResponseModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
@@ -50,7 +57,6 @@ from ..models.sample import (
     SampleInDatabase,
 )
 from ..models.user import UserOutputDatabase
-from ..models.base import MultipleRecordsResponseModel
 from ..redis import ClusterMethod, TypingMethod
 from ..redis.minhash import (
     SubmittedJob,
@@ -61,7 +67,6 @@ from ..redis.minhash import (
 )
 from ..utils import format_error_message
 from .shared import SAMPLE_ID_PATH
-from ..db import Database, get_db
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -182,7 +187,9 @@ class UpdateSampleInputModel(BaseModel):
     """Input data when updating sample information."""
 
     typing: list[Union[MethodIndex, ShigaTypingMethodIndex]]
-    phenotype: list[Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]]
+    phenotype: list[
+        Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]
+    ]
 
 
 @router.put("/samples/{sample_id}", tags=DEFAULT_TAGS, response_model=SampleInDatabase)
@@ -195,7 +202,7 @@ async def update_sample(
     ),
 ):
     """Update sample with sample id from database.
-    
+
     Take either a partial or full result as input.
     """
     return sample

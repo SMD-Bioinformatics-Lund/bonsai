@@ -1,4 +1,5 @@
 """Functions relating to scheduling allele clustering jobs."""
+
 import logging
 from typing import List
 

@@ -1,4 +1,5 @@
 """Custom jinja3 template tests."""
+
 import logging
 import math
 import re
@@ -324,7 +325,7 @@ def human_readable_large_numbers(number: float, decimals: int = 2) -> str:
     if not isinstance(number, (int, float)):
         LOG.debug("Got a non-number as input: %s", number)
         if number is None:
-            return '-'
+            return "-"
         else:
             return number
 

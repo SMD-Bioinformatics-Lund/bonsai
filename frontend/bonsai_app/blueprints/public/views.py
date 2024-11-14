@@ -1,4 +1,5 @@
 """Public accessable assets and views."""
+
 from flask import Blueprint, render_template, request, send_from_directory
 
 from ... import __version__ as VERSION

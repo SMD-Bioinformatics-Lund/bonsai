@@ -1,4 +1,5 @@
 """Data model definition of input/ output data"""
+
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 

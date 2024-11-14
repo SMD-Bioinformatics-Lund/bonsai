@@ -1,7 +1,8 @@
 """Routers for reading or manipulating locations."""
+
 from typing import List
 
-from fastapi import APIRouter, HTTPException, Query, Security, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
 from ..crud.errors import EntryNotFound
 from ..crud.location import create_location as create_location_from_db

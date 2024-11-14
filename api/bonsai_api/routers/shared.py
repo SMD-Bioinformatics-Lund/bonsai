@@ -1,7 +1,8 @@
 """Resources shared by many routers."""
-from fastapi import Path
-from ..models.sample import SAMPLE_ID_PATTERN
 
+from fastapi import Path
+
+from ..models.sample import SAMPLE_ID_PATTERN
 
 SAMPLE_ID_PATH: str = Path(
     ...,

@@ -16,16 +16,16 @@ from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import RWModel, MultipleRecordsResponseModel
+from ..models.base import MultipleRecordsResponseModel, RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
     Comment,
     CommentInDatabase,
+    MultipleSampleRecordsResponseModel,
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
-    MultipleSampleRecordsResponseModel,
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -301,7 +301,12 @@ async def get_samples_summary(
     result = results[0]
 
     return MultipleRecordsResponseModel(
-        data=result["data"], records_total=0 if len(result["records_total"]) == 0 else result["records_total"][0]["count"]
+        data=result["data"],
+        records_total=(
+            0
+            if len(result["records_total"]) == 0
+            else result["records_total"][0]["count"]
+        ),
     )
 
 

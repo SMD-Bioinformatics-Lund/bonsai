@@ -1,4 +1,5 @@
 """Declaration of views for groups"""
+
 import json
 import logging
 from urllib.parse import urlparse
@@ -21,9 +22,9 @@ from ...bonsai import (
     TokenObject,
     create_group,
     delete_group,
+    get_group_by_id,
     get_groups,
     get_samples,
-    get_group_by_id,
     get_samples_in_group,
     get_valid_group_columns,
     update_group,
@@ -193,7 +194,9 @@ def group(group_id: str) -> str:
     :rtype: str
     """
     # check if qc metrics should be displayed
-    display_qc: bool = request.args.get("qc", False, type=lambda val: val.lower() == 'true')
+    display_qc: bool = request.args.get(
+        "qc", False, type=lambda val: val.lower() == "true"
+    )
 
     # query API for sample info
     token = TokenObject(**current_user.get_id())
@@ -217,7 +220,9 @@ def group(group_id: str) -> str:
 
     # get columns from api
     group_columns = []
-    for col in get_valid_group_columns(True) if display_qc else group_info["table_columns"]:
+    for col in (
+        get_valid_group_columns(True) if display_qc else group_info["table_columns"]
+    ):
         if col["hidden"]:
             continue
         # get path

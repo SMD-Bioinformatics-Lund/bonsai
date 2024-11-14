@@ -1,4 +1,5 @@
 """Operations on minhash signatures."""
+
 import logging
 from typing import List
 

@@ -1,17 +1,16 @@
 import asyncio
 import json
-from  fastapi.testclient import TestClient
-
+from contextlib import contextmanager
 
 import pytest
 from bonsai_api.crud.sample import create_sample
 from bonsai_api.crud.user import create_user, oauth2_scheme
 from bonsai_api.db import Database, get_db
+from bonsai_api.main import app
 from bonsai_api.models.sample import PipelineResult, SampleInDatabase
 from bonsai_api.models.user import UserInputCreate
-from bonsai_api.main import app
+from fastapi.testclient import TestClient
 from mongomock_motor import AsyncMongoMockClient
-from contextlib import contextmanager
 
 from .data import *
 
@@ -27,11 +26,16 @@ async def mongo_database():
     db.setup()
 
     # load basic fixtures
-    await db.user_collection.insert_one({
-        "username": "admin", "password": "admin",
-        "first_name": "Nollan", "last_name": "Nollsson",
-        "email": "palceholder@email.com", "roles": ["admin"],
-    })
+    await db.user_collection.insert_one(
+        {
+            "username": "admin",
+            "password": "admin",
+            "first_name": "Nollan",
+            "last_name": "Nollsson",
+            "email": "palceholder@email.com",
+            "roles": ["admin"],
+        }
+    )
     return db
 
 

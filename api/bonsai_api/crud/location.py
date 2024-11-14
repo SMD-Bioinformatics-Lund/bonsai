@@ -1,4 +1,5 @@
 """CRUD location operataions."""
+
 from typing import List
 
 from bson import ObjectId

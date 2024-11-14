@@ -1,9 +1,10 @@
 """Generic database objects of which several other models are based on."""
+
 from datetime import datetime, timezone
+from typing import Any
 
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-from typing import Any
 
 
 class ObjectId(BaseObjectId):
