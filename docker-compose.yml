@@ -53,8 +53,6 @@ services:
         restart: true
     ports: 
       - "8000:5000"
-    volumes:
-      - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
       - FLASK_ENV=development 
@@ -79,9 +77,6 @@ services:
       network: host
     environment:
       - log_level=debug
-    volumes:
-      - "./e2e_tests/fixtures/samples/ska:/data/index_files/ska"
-      - "./ska_service/ska_service:/home/worker/app/ska_service"
     depends_on:
       - redis
     networks:

@@ -33,10 +33,11 @@ services:
     networks:
      - bonsai-net
 
+  ska_service:
+    volumes:
+      - "./e2e_tests/fixtures/samples/ska:/data/index_files/ska"
+
   api:
     volumes:
-     - "./api/bonsai_api:/home/worker/app/bonsai_api"
      - "./e2e_tests/setup_bonsai_database.sh:/tmp/setup_bonsai_database.sh"
-     - "./e2e_tests/fixtures:/home/worker/fixtures"
-     - "./scripts/upload_sample.py:/home/worker/upload_sample.py"
     entrypoint: /tmp/setup_bonsai_database.sh
