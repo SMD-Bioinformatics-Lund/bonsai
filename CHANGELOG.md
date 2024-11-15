@@ -2,9 +2,12 @@
 
 ### Added
 
+- Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
 
 ### Changed
+
+- Added dummy SKA indexes for test samples
 
 ### Fixed
 
