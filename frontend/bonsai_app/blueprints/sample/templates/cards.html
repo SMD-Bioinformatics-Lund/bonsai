@@ -1054,11 +1054,11 @@
             <tbody>
                 <tr>
                     <th scope="row">Type</th>
-                    <td>{{ emm.emmtype }}</td>
+                    <td>{{ emm.emmtype | default('-', true) }}</td>
                 </tr>
                 <tr>
                     <th scope="row">Cluster</th>
-                    <td>{{ emm.emm_cluster }}</tr>
+                    <td>{{ emm.emm_cluster | default('-', true) }}</tr>
                 </tr>
                 <tr>
                     <th scope="row">
@@ -1067,7 +1067,7 @@
                             <i class="bi bi-question-circle"></i>
                         </span>
                     </th>
-                    <td>{{ emm.cluster_count }}</tr>
+                    <td>{{ emm.cluster_count | default('-', true) }}</tr>
                 </tr>
             </tbody>
         </table>
