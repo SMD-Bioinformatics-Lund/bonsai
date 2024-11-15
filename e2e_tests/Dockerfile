@@ -1,12 +1,12 @@
 FROM python:3.11.3
 
-LABEL base_image="python:3.8.1-slim"
+LABEL base_image="python:3.11.3-slim"
 
 # copy project dir
 WORKDIR /app
 COPY tests tests/
 COPY fixtures fixtures/
-COPY config.yml requirements.txt e2e_test_entrypoint.sh load_test_samples.sh ./
+COPY config.yml requirements.txt e2e_test_entrypoint.sh ./
 RUN mkdir -p /app/reports
 
 RUN pip install --upgrade pip &&                   \

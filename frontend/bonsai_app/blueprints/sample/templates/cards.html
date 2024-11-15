@@ -186,7 +186,9 @@
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
-    {% if pred.software == "virulencefinder" %}
+    {% if pred.genes | length == 0 %}
+        <p class="card-text fst-italic">No  identified virulence factors.</p>
+    {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
     {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
         {{ amrfinder_virulence_prediction(pred.result) }}
@@ -1033,6 +1035,42 @@
                 <p>{{ pred.result.comments }}</p>
             {% endif %}
         </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro emm_card(emm) %}
+{# Card for displaying EMM typing results #}
+<div class="card col-md-auto">
+    <div class="card-header">
+        EMMtyper
+        <a class="ps-2" href="https://github.com/MDU-PHL/emmtyper" target="_blank">
+            <i class="bi bi-box-arrow-up-right"></i>
+        </a>
+    </div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <tbody>
+                <tr>
+                    <th scope="row">Type</th>
+                    <td>{{ emm.emmtype | default('-', true) }}</td>
+                </tr>
+                <tr>
+                    <th scope="row">Cluster</th>
+                    <td>{{ emm.emm_cluster | default('-', true) }}</tr>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        #Clusters 
+                        <span data-bs-toggle="tooltip" data-bs-title="Number of EMM-like gene clusters, should be between 1 and 3, larger values could indicate contamination">
+                            <i class="bi bi-question-circle"></i>
+                        </span>
+                    </th>
+                    <td>{{ emm.cluster_count | default('-', true) }}</tr>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 {% endmacro %}
