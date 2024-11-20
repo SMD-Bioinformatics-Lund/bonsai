@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Updated PRP to version 0.11.2
+
 ### Fixed
 
 ## [v0.8.0]
