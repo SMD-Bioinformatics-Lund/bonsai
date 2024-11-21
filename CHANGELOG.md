@@ -8,6 +8,7 @@
 ### Changed
 
 - Added dummy SKA indexes for test samples
+- Updated PRP to version 0.11.2
 
 ### Fixed
 
