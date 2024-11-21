@@ -1,7 +1,7 @@
 ##############
 # Build SKA2 #
 ##############
-FROM rust:1.82 as builder
+FROM rust:1.82 AS builder
 
 ARG SKA2_VERSION=v0.3.11
 
