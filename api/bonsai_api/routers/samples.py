@@ -276,7 +276,7 @@ async def add_ska_index_to_sample(
     index: str,
     db: Database = Depends(get_db),
 ) -> Dict[str, str]:
-    """Entrypoint for uploading a genome signature to the database."""
+    """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
     try:
         sample = await get_sample(db, sample_id)

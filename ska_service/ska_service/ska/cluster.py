@@ -2,6 +2,7 @@
 
 import logging
 from enum import Enum
+from typing import Sequence
 
 import pandas as pd
 from scipy.cluster import hierarchy
@@ -19,14 +20,14 @@ class ClusterMethod(str, Enum):
     CENTROID = "centroid"
 
 
-def to_newick(node, newick, parentdist, leaf_names) -> str:
+def to_newick(node: hierarchy.ClusterNode, newick: str, parent_dist: float, leaf_names: Sequence[str]) -> str:
     """Convert hierarcical tree representation to newick format."""
 
     if node.is_leaf():
-        return f"{leaf_names[node.id]}:{parentdist - node.dist:.2f}{newick}"
+        return f"{leaf_names[node.id]}:{parent_dist - node.dist:.2f}{newick}"
 
     if len(newick) > 0:
-        newick = f"):{parentdist - node.dist:.2f}{newick}"
+        newick = f"):{parent_dist - node.dist:.2f}{newick}"
     else:
         newick = ");"
     newick = to_newick(node.get_left(), newick, node.dist, leaf_names)
@@ -41,6 +42,5 @@ def cluster_distances(distance_matrix: pd.DataFrame, method: ClusterMethod) -> s
     linkage = hierarchy.linkage(distance_matrix, method=method.value)
     tree = hierarchy.to_tree(linkage, False)
 
-    # creae newick tree
     newick_tree = to_newick(tree, "", tree.dist, list(distance_matrix.columns))
     return newick_tree

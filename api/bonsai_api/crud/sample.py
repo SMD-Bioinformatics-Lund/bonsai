@@ -285,6 +285,16 @@ async def get_samples_summary(
         facet_pipe.append({"$limit": limit})
     if skip > 0:
         facet_pipe.append({"$skip": skip})
+    """
+    pipeline.append(
+        {
+            "$facet": {
+                "data": facet_pipe,
+                "records_total": [{"$count": "count"}],
+            }
+        },
+    )
+    """
     pipeline.append(
         {
             "$facet": {
@@ -769,15 +779,15 @@ async def get_signature_path_for_samples(
 async def get_ska_index_path_for_samples(
     db: Database, sample_ids: Sequence[str]
 ) -> Sequence[str]:
-    """Get genome signature paths for samples."""
-    LOG.info("Get sak indexes for samples")
+    """Get genome signature paths for a samples stored in the database."""
+    LOG.info("Get ska indexes for samples")
     query = {
         "$and": [  # query for documents with
             {"sample_id": {"$in": sample_ids}},  # matching sample ids
             {"ska_index": {"$ne": None}},  # AND genome_signatures not null
         ]
     }
-    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}  # projection
+    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
     LOG.debug("Query: %s; projection: %s", query, projection)
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)

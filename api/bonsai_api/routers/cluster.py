@@ -82,9 +82,8 @@ async def cluster_samples(
             cluster_input.sample_ids, cluster_input.method
         )
     elif typing_method == TypingMethod.SKA:
-        # query database for index file paths using the sample ids
+        # query database for index file paths using the sample ids and distpatch cluster job to queue
         index_files = await get_ska_index_path_for_samples(db, cluster_input.sample_ids)
-        # dispatch job
         job = schedule_ska_cluster_samples(index_files, cluster_input.method)
     else:
         try:

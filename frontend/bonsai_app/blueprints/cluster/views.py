@@ -68,8 +68,6 @@ def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | flo
 
 def fmt_metadata(sample_obj, column) -> str:
     data = get_json_path(sample_obj, column["path"])
-    # return ", ".join([point["label"] for point in data])
-    LOG.warning(column["type"])
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
@@ -83,7 +81,7 @@ def fmt_metadata(sample_obj, column) -> str:
             )
         case "date":
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
-        case default:
+        case _:
             fmt_data = data
     return fmt_data
 
