@@ -5,9 +5,11 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Dict, Sequence
 
+from Bio import AlignIO
+
 from . import ska
 from .config import settings
-from .ska.cluster import ClusterMethod
+from .ska.cluster import ClusterMethod, calc_snv_distance
 
 LOG = logging.getLogger(__name__)
 
@@ -38,9 +40,15 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
     with TemporaryDirectory() as tmp_dir:
         # merge indexes into a single file
         merged_index = ska.merge(idx_paths, output=Path(tmp_dir).joinpath("merged.skf"))
-        # get SNV distance between samples
-        dist = ska.distance(merged_index, dist_matrix=True)
-        nwk = ska.cluster_distances(dist, method)
+
+        # align variants and return as multi fasta
+        aln_file = ska.align(merged_index, filter_ambig=True, filter_constant=True)
+
+        # calculate distance between samples from alignment and cluster
+        with open(aln_file) as inpt:
+            aln = AlignIO.read(inpt, 'fasta')
+        dm = calc_snv_distance(aln)
+        nwk = ska.cluster_distances(dm, method)
     return nwk
 
 

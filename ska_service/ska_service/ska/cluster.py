@@ -2,12 +2,22 @@
 
 import logging
 from enum import Enum
+import itertools
 from typing import Sequence
 
-import pandas as pd
+from Bio.Align import MultipleSeqAlignment
+from Bio.Phylo.TreeConstruction import DistanceMatrix as BioDistanceMatrix
 from scipy.cluster import hierarchy
 
 LOG = logging.getLogger(__name__)
+
+
+class DistanceMatrix(BioDistanceMatrix):
+    """Extended version of the DistanceMatrix from Biopython."""
+
+    def to_condensed(self) -> Sequence[float | int]:
+        """Convert to condensed distance matrix compatible with scipy linkage."""
+        return [self.__getitem__((seq1, seq2)) for seq1, seq2 in itertools.combinations(self.names, 2)]
 
 
 class ClusterMethod(str, Enum):
@@ -36,11 +46,22 @@ def to_newick(node: hierarchy.ClusterNode, newick: str, parent_dist: float, leaf
     return newick
 
 
-def cluster_distances(distance_matrix: pd.DataFrame, method: ClusterMethod) -> str:
+def calc_snv_distance(aln: MultipleSeqAlignment) -> DistanceMatrix:
+    """Calculate pair-wise sample distance from aligned fasta sequences."""
+    dm = DistanceMatrix(names=[al.name for al in aln])
+    for seq1, seq2 in itertools.combinations(aln, 2):
+        n_missing = sum(a_seq != b_seq for a_seq, b_seq in zip(seq1, seq2) if not any([a_seq == '-', b_seq == '-']))
+        dm[seq1.name, seq2.name] = n_missing
+    return dm
+
+
+
+
+def cluster_distances(dm: DistanceMatrix, method: ClusterMethod) -> str:
     """Cluster two or more samples from a distance matrix."""
 
-    linkage = hierarchy.linkage(distance_matrix, method=method.value)
+    linkage = hierarchy.linkage(dm.to_condensed(), method=method.value)
     tree = hierarchy.to_tree(linkage, False)
 
-    newick_tree = to_newick(tree, "", tree.dist, list(distance_matrix.columns))
+    newick_tree = to_newick(tree, "", tree.dist, dm.names)
     return newick_tree

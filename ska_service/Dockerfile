@@ -15,7 +15,7 @@ RUN \
     && cargo install --path .
 
 
-FROM python:3.13-slim-bookworm
+FROM python:3.13-bookworm
 
 # Create non-root user to run commands
 RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
