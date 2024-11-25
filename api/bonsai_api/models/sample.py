@@ -1,4 +1,5 @@
 """Data model definition of input/ output data"""
+
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
@@ -81,6 +82,7 @@ class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     location: str | None = Field(None, description="Location id")
     # signature file name
     genome_signature: str | None = Field(None, description="Genome signature name")
+    ska_index: str | None = Field(None, description="Ska index path")
 
 
 class ElementTypeResult(BaseModel):

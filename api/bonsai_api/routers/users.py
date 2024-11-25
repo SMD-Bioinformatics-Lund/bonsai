@@ -1,9 +1,9 @@
 """Routes for interacting with user data."""
 
 import logging
-from typing import List, Annotated
+from typing import Annotated, List
 
-from fastapi import APIRouter, HTTPException, Security, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
@@ -45,9 +45,9 @@ async def get_users_me(
 
 @router.get("/users/basket", tags=DEFAULT_TAGS)
 async def get_samples_in_basket(
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[OWN_USER]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
+    ]
 ) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     return current_user.basket
@@ -57,9 +57,9 @@ async def get_samples_in_basket(
 async def add_samples_to_basket(
     samples: List[SampleBasketObject],
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[OWN_USER]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
+    ],
 ) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
@@ -83,9 +83,9 @@ async def add_samples_to_basket(
 async def remove_samples_from_basket(
     sample_ids: List[str],
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[OWN_USER]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
+    ],
 ) -> List[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
@@ -109,9 +109,9 @@ async def remove_samples_from_basket(
 async def get_user_in_db(
     username: str,
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[READ_PERMISSION]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[READ_PERMISSION])
+    ],
 ) -> UserOutputDatabase:
     """Get user data for user with username."""
     try:
@@ -128,9 +128,9 @@ async def get_user_in_db(
 async def delete_user_from_db(
     username: str,
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
+    ],
 ):
     """Delete user with username from the database."""
     try:
@@ -153,9 +153,9 @@ async def update_user_info(
     username: str,
     user: UserInputCreate,
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
+    ],
 ):
     """Delete user with username from the database."""
     try:
@@ -177,9 +177,9 @@ async def update_user_info(
 @router.get("/users/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
 async def get_users_in_db(
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[READ_PERMISSION]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[READ_PERMISSION])
+    ],
 ) -> List[UserOutputDatabase]:
     """Create a new user."""
     users = await get_users(db)
@@ -190,9 +190,9 @@ async def get_users_in_db(
 async def create_user_in_db(
     user: UserInputCreate,
     db: Annotated[Database, Depends(get_db)],
-    current_user: Annotated[UserOutputDatabase, Security(
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    )]
+    current_user: Annotated[
+        UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
+    ],
 ) -> UserOutputDatabase:
     """Create a new user."""
     try:

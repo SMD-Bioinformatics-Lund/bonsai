@@ -3,7 +3,7 @@
 import logging
 from datetime import datetime
 from itertools import groupby
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -16,16 +16,16 @@ from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
 from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import RWModel, MultipleRecordsResponseModel
+from ..models.base import MultipleRecordsResponseModel, RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
     Comment,
     CommentInDatabase,
+    MultipleSampleRecordsResponseModel,
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
-    MultipleSampleRecordsResponseModel,
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -285,6 +285,16 @@ async def get_samples_summary(
         facet_pipe.append({"$limit": limit})
     if skip > 0:
         facet_pipe.append({"$skip": skip})
+    """
+    pipeline.append(
+        {
+            "$facet": {
+                "data": facet_pipe,
+                "records_total": [{"$count": "count"}],
+            }
+        },
+    )
+    """
     pipeline.append(
         {
             "$facet": {
@@ -301,7 +311,12 @@ async def get_samples_summary(
     result = results[0]
 
     return MultipleRecordsResponseModel(
-        data=result["data"], records_total=0 if len(result["records_total"]) == 0 else result["records_total"][0]["count"]
+        data=result["data"],
+        records_total=(
+            0
+            if len(result["records_total"]) == 0
+            else result["records_total"][0]["count"]
+        ),
     )
 
 
@@ -758,4 +773,23 @@ async def get_signature_path_for_samples(
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
     LOG.debug("Found %d signatures", len(results))
+    return results
+
+
+async def get_ska_index_path_for_samples(
+    db: Database, sample_ids: Sequence[str]
+) -> Sequence[str]:
+    """Get genome signature paths for a samples stored in the database."""
+    LOG.info("Get ska indexes for samples")
+    query = {
+        "$and": [  # query for documents with
+            {"sample_id": {"$in": sample_ids}},  # matching sample ids
+            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
+        ]
+    }
+    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
+    LOG.debug("Query: %s; projection: %s", query, projection)
+    cursor = db.sample_collection.find(query, projection)
+    results = await cursor.to_list(None)
+    LOG.debug("Found %d ska indexes", len(results))
     return results

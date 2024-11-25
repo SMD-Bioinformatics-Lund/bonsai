@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Path, Security, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Path, Security, status
 from fastapi.responses import PlainTextResponse
 
 from ..crud.sample import EntryNotFound, get_sample

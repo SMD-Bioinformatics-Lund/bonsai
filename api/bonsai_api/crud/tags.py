@@ -1,4 +1,5 @@
 """Functions for computing tags."""
+
 import logging
 
 from prp.models.phenotype import ElementType, ElementTypeResult
@@ -40,9 +41,9 @@ def add_pvl(tags: TagList, sample: SampleInDatabase) -> Tag:
         elif any([has_lukf and not has_luks, has_luks and not has_lukf]):
             tag = Tag(
                 type=TagType.VIRULENCE,
-                label=VirulenceTag.PVL_LUKF_POS
-                if has_lukf
-                else VirulenceTag.PVL_LUKS_POS,
+                label=(
+                    VirulenceTag.PVL_LUKF_POS if has_lukf else VirulenceTag.PVL_LUKS_POS
+                ),
                 description="One of the luk sub-units identified",
                 severity=TagSeverity.WARNING,
             )

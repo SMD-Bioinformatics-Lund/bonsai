@@ -1,4 +1,5 @@
 """Functions for creating and maintaining indexes."""
+
 from pymongo import ASCENDING, GEOSPHERE
 
 # Create indexes for collections

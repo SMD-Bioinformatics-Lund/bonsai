@@ -1,4 +1,5 @@
 """Functions for conducting CURD operations on group collection"""
+
 import logging
 from datetime import datetime
 from typing import Any, Dict, List

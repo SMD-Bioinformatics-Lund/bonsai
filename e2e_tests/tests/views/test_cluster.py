@@ -10,11 +10,11 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 from ..conftest import get_element_by_test_id
 
-@pytest.mark.parametrize("cluster_method", ["cgmlst", "mlst", "minhash"])
-def test_cluster_samples_from_basket(logged_in_user, config, cluster_method):
+@pytest.mark.parametrize("cluster_method,group_id,timeout", [("cgmlst", "saureus", 20), ("mlst", "saureus", 20), ("minhash", "saureus", 20), ("snv", "mtuberculosis", 60)])
+def test_cluster_samples_from_basket(logged_in_user, config, cluster_method, group_id, timeout):
     """Test the QC view could be opended for the different test groups."""
     # setup wait
-    wait = WebDriverWait(logged_in_user, 20)
+    wait = WebDriverWait(logged_in_user, timeout)
 
     # Store the ID of the original window
     original_window = logged_in_user.current_window_handle

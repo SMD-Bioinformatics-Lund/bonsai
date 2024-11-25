@@ -1,4 +1,5 @@
 """Data modules shared by the application."""
+
 from enum import Enum
 from typing import List
 

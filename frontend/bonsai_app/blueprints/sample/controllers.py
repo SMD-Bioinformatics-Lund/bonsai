@@ -1,4 +1,5 @@
 """Functions that generate data rendered by views."""
+
 import logging
 from collections import defaultdict
 from itertools import chain, groupby

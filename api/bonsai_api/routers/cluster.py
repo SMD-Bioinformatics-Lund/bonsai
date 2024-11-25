@@ -1,18 +1,20 @@
 """Entrypoints for starting clustering jobs."""
+
 import logging
 from pathlib import Path
 from typing import Dict
 
-from fastapi import APIRouter, HTTPException, status, Depends
-from pydantic import Field, ConfigDict
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ConfigDict, Field
 
-from ..db import Database, get_db
 from ..crud.errors import EntryNotFound
 from ..crud.sample import (
     TypingProfileOutput,
     get_signature_path_for_samples,
+    get_ska_index_path_for_samples,
     get_typing_profiles,
 )
+from ..db import Database, get_db
 from ..models.base import RWModel
 from ..redis import (
     ClusterMethod,
@@ -26,6 +28,7 @@ from ..redis.allele_cluster import (
 )
 from ..redis.minhash import schedule_add_genome_signature_to_index
 from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -78,6 +81,10 @@ async def cluster_samples(
         job = schedule_minhash_cluster_samples(
             cluster_input.sample_ids, cluster_input.method
         )
+    elif typing_method == TypingMethod.SKA:
+        # query database for index file paths using the sample ids and distpatch cluster job to queue
+        index_files = await get_ska_index_path_for_samples(db, cluster_input.sample_ids)
+        job = schedule_ska_cluster_samples(index_files, cluster_input.method)
     else:
         try:
             profiles: TypingProfileOutput = await get_typing_profiles(

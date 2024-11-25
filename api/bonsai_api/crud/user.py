@@ -1,8 +1,9 @@
 """User CRUD operations."""
-import logging
-from typing import List, Annotated
 
-from fastapi import Depends, HTTPException, Security, status, Depends
+import logging
+from typing import Annotated, List
+
+from fastapi import Depends, HTTPException, Security, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
@@ -111,7 +112,7 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
 
 
 async def get_current_user(
-    security_scopes: SecurityScopes, 
+    security_scopes: SecurityScopes,
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Database = Depends(get_db),
 ) -> UserOutputDatabase | None:

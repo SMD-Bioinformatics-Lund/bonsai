@@ -25,6 +25,7 @@ services:
     depends_on:
       - mongodb
       - minhash_service
+      - ska_service
       - allele_cluster_service
     ports: 
       - "8001:8000"
@@ -52,8 +53,6 @@ services:
         restart: true
     ports: 
       - "8000:5000"
-    volumes:
-      - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
       - FLASK_ENV=development 
@@ -66,6 +65,18 @@ services:
     build: 
       context: minhash_service
       network: host
+    depends_on:
+      - redis
+    networks:
+      - bonsai-net
+
+  ska_service:
+    container_name: ska_service
+    build: 
+      context: ska_service
+      network: host
+    environment:
+      - log_level=debug
     depends_on:
       - redis
     networks:

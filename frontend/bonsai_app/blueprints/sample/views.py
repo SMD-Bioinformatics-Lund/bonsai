@@ -1,4 +1,5 @@
 """Declaration of views for samples"""
+
 import json
 import logging
 from datetime import date

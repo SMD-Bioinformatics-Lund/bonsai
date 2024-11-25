@@ -7,6 +7,7 @@ from typing import Annotated, Any, Dict, Union
 from fastapi import (
     APIRouter,
     Body,
+    Depends,
     File,
     Header,
     HTTPException,
@@ -14,11 +15,15 @@ from fastapi import (
     Query,
     Security,
     status,
-    Depends,
 )
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import VariantType, AMRMethodIndex, StressMethodIndex, VariantBase, VirulenceMethodIndex
+from prp.models.phenotype import (
+    AMRMethodIndex,
+    StressMethodIndex,
+    VariantType,
+    VirulenceMethodIndex,
+)
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
@@ -34,12 +39,14 @@ from ..crud.sample import (
     update_variant_annotation_for_sample,
 )
 from ..crud.user import get_current_active_user
+from ..db import Database, get_db
 from ..io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
     is_file_readable,
     send_partial_file,
 )
+from ..models.base import MultipleRecordsResponseModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
@@ -50,7 +57,6 @@ from ..models.sample import (
     SampleInDatabase,
 )
 from ..models.user import UserOutputDatabase
-from ..models.base import MultipleRecordsResponseModel
 from ..redis import ClusterMethod, TypingMethod
 from ..redis.minhash import (
     SubmittedJob,
@@ -61,7 +67,6 @@ from ..redis.minhash import (
 )
 from ..utils import format_error_message
 from .shared import SAMPLE_ID_PATH
-from ..db import Database, get_db
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -182,7 +187,9 @@ class UpdateSampleInputModel(BaseModel):
     """Input data when updating sample information."""
 
     typing: list[Union[MethodIndex, ShigaTypingMethodIndex]]
-    phenotype: list[Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]]
+    phenotype: list[
+        Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]
+    ]
 
 
 @router.put("/samples/{sample_id}", tags=DEFAULT_TAGS, response_model=SampleInDatabase)
@@ -195,7 +202,7 @@ async def update_sample(
     ),
 ):
     """Update sample with sample id from database.
-    
+
     Take either a partial or full result as input.
     """
     return sample
@@ -261,6 +268,37 @@ async def create_genome_signatures_sample(
         "add_signature_job": add_sig_job.id,
         "index_job": index_job.id,
     }
+
+
+@router.post("/samples/{sample_id}/ska_index", tags=DEFAULT_TAGS)
+async def add_ska_index_to_sample(
+    sample_id: str,
+    index: str,
+    db: Database = Depends(get_db),
+) -> Dict[str, str]:
+    """Entrypoint for associating a SKA index with the sample."""
+    # verify that sample are in database
+    try:
+        sample = await get_sample(db, sample_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=format_error_message(error)
+        ) from error
+
+    # abort if signature has already been added
+    idx_exist_err = HTTPException(
+        status_code=409, detail="Sample is already associated with an SKA index."
+    )
+    if sample.ska_index is not None:
+        raise idx_exist_err
+
+    # updated sample in database with signature object jobid
+    # recast the data to proper object
+    sample_obj = {**sample.model_dump(), **{"ska_index": index}}
+    upd_sample_data = SampleInCreate(**sample_obj)
+    await crud_update_sample(db, upd_sample_data)
+
+    return {"sample_id": sample_id, "index_file": index}
 
 
 @router.get("/samples/{sample_id}/alignment", tags=DEFAULT_TAGS)

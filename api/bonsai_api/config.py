@@ -1,4 +1,5 @@
 """Mimer api default configuration"""
+
 import ssl
 from typing import List
 
