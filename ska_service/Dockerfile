@@ -1,7 +1,7 @@
 ##############
 # Build SKA2 #
 ##############
-FROM rust:1.82 AS builder
+FROM rust:1.82-bullseye AS builder
 
 ARG SKA2_VERSION=v0.3.11
 
@@ -15,7 +15,7 @@ RUN \
     && cargo install --path .
 
 
-FROM python:3.13-bookworm
+FROM python:3.11.3
 
 # Create non-root user to run commands
 RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
