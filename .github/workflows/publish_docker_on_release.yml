@@ -33,7 +33,6 @@ jobs:
         with:
           images: clinicalgenomicslund/bonsai-app
           tags: |
-            type=raw,value=${{ env.TAG_LATEST }}
             type=raw,value=${{ env.TOOL_VERSION }}
 
       - name: Build and push Docker image
@@ -71,7 +70,6 @@ jobs:
         with:
           images: clinicalgenomicslund/bonsai-api
           tags: |
-            type=raw,value=${{ env.TAG_LATEST }}
             type=raw,value=${{ env.TOOL_VERSION }}
 
       - name: Build and push Docker image
@@ -109,7 +107,6 @@ jobs:
         with:
           images: clinicalgenomicslund/bonsai-allele-clustering
           tags: |
-            type=raw,value=${{ env.TAG_LATEST }}
             type=raw,value=${{ env.TOOL_VERSION }}
 
       - name: Build and push Docker image
@@ -147,13 +144,49 @@ jobs:
         with:
           images: clinicalgenomicslund/bonsai-minhash-clustering
           tags: |
-            type=raw,value=${{ env.TAG_LATEST }}
             type=raw,value=${{ env.TOOL_VERSION }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5.1.0
         with:
           context: minhash_service
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},
+          labels: ${{ steps.meta.outputs.labels }}
+
+  publish-ska-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout Bonsai
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: 'docker.io'
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Export tags to env
+        run: |
+          SKA_VERSION=$(head -3 ska_service/ska_service/__init__.py | tail -1 | cut -d'"' -f2);
+          echo "TOOL_VERSION=${SKA_VERSION}" >> $GITHUB_ENV
+          echo "TAG_LATEST=latest" >> $GITHUB_ENV
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.5.0
+        with:
+          images: clinicalgenomicslund/bonsai-ska-clustering
+          tags: |
+            type=raw,value=${{ env.TOOL_VERSION }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: ska_service
           push: true
           tags: ${{ steps.meta.outputs.tags }},
           labels: ${{ steps.meta.outputs.labels }}
