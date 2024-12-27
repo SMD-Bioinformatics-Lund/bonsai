@@ -6,7 +6,7 @@
 .br-main {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 8rem);
+  height: max(100%, calc(100vh - 8rem));
 }
 
 #data-table {
