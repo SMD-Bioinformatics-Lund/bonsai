@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Fixed padding of sample table in group and groups view.
+
 ## [v0.8.0]
 
 ### Added
