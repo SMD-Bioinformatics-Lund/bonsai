@@ -4,11 +4,12 @@
 
 - Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
+- Added mlst scheme to mlst card.
 
 ### Changed
 
 - Added dummy SKA indexes for test samples
-- Updated PRP to version 0.11.2
+- Updated PRP to version 0.11.3
 
 ### Fixed
 
