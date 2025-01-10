@@ -55,6 +55,7 @@
         "largest_contig": 220311,
         "n_contigs": 59,
         "n50": 106751,
+        "ng50": 106751,
         "assembly_gc": 32.63,
         "reference_gc": 32.81,
         "duplication_ratio": 1.0
