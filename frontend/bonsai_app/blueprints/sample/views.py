@@ -280,7 +280,7 @@ def download_lims(sample_id: str):
     buffer = BytesIO(data.encode("UTF-8"))
     response = make_response(buffer.getvalue())
     # define headers and mimetype for a file
-    response.headers["Content-Disposition"] = f"attachment; filename={fname}.tsv"
+    response.headers["Content-Disposition"] = f"attachment; filename={fname}.txt"
     response.mimetype = "text/csv"
     # return response object
     return response

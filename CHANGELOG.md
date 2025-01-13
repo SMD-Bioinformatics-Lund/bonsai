@@ -8,8 +8,9 @@
 
 ### Changed
 
-- Added dummy SKA indexes for test samples
+- Added dummy SKA indexes for test samples.
 - Updated PRP to version 0.11.3
+- Added underscores to AMRs in LIMS export.
 
 ### Fixed
 
