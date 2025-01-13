@@ -1,0 +1,14 @@
+# For development
+# - volume mount app folders to container.
+# - requires rebuilding containers when changing dependencies.
+#
+# usage:
+# (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
+services: 
+  frontend:
+    volumes: 
+      - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
+  api:
+    volumes: 
+      - "./api/bonsai_api:/home/worker/app/bonsai_api"
