@@ -245,7 +245,7 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
                 result.append(
                     {
                         "sample_id": sample.sample_name,
-                        "parameter": f"{info['abbrev'].upper()} NGS",
+                        "parameter": f"{info['abbrev'].upper()}_NGS",
                         "result": call,
                         "variants": variants,
                     }
