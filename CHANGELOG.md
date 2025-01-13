@@ -2,6 +2,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v1.0.0]
+
+### Added
+
 - Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
 - Added mlst scheme to mlst card.
