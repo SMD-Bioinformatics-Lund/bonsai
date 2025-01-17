@@ -186,7 +186,7 @@
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
-    {% if pred.genes | length == 0 %}
+    {% if pred.result.genes | length == 0 %}
         <p class="card-text fst-italic">No  identified virulence factors.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
@@ -402,6 +402,7 @@
             <thead>
                 <tr>
                     <td scope="col">Variant</td>
+                    <td scope="col">Type</td>
                     <td scope="col">Gene</td>
                     <td scope="col">Protein change</td>
                     <td scope="col">Depth</td>
@@ -411,8 +412,9 @@
             <tbody class="table-group-divider">
                 {% for variant in result.variants %}
                     <tr>
-                        <td>{{ variant.name }}</td>
-                        <td>{{ accession_link(variant.close_seq_name, name=variant.gene_symbol) }}</td>
+                        <td>{{ variant.ref_nt }}{{ variant.start }}{{ variant.alt_nt }}</td>
+                        <td>{{ variant.variant_type }}</td>
+                        <td>{{ accession_link(variant.accession, name=variant.reference_sequence) }}</td>
                         <td>{{ variant.ref_aa | upper }}>{{variant.alt_aa | upper }}</td>
                         <td>{{ variant.depth | fmt_number }}</td>
                         <td>{{ variant.phenotypes | get_resistance_profile(level="name") }}</td>
