@@ -17,6 +17,7 @@
 - Fixed padding of sample table in group and groups view.
 - Fixed issue preventing virulence predictions to be shown.
 - Fixed display issues of ResFinder variants.
+- Fixed broken sample counter in the group view.
 
 ## [v0.8.0]
 
