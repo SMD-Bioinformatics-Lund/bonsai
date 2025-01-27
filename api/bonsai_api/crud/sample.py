@@ -1,7 +1,6 @@
 """Functions for performing CURD operations on sample collection."""
 
 import logging
-from datetime import datetime
 from itertools import groupby
 from typing import Any, Dict, List, Sequence
 
@@ -31,7 +30,7 @@ from ..redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
 )
-from ..utils import format_error_message
+from ..utils import format_error_message, get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)
@@ -422,7 +421,7 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
             "$pull": {
                 "included_samples": {"$in": sample_ids}
             },  # remove samples from group
-            "$set": {"modified_at": datetime.now()},  # update modified at
+            "$set": {"modified_at": get_timestamp()},  # update modified at
         },
     )
     # verify that number of modified groups and samples match
@@ -479,10 +478,10 @@ async def add_comment(
     update_obj = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
-            "$set": {"modified_at": datetime.now()},
+            "$set": {"modified_at": get_timestamp()},
             "$push": {
                 "comments": {
-                    "$each": [jsonable_encoder(comment_obj, by_alias=False)],
+                    "$each": [comment_obj.model_dump(by_alias=False)],
                     "$position": 0,
                 }
             },
@@ -504,7 +503,7 @@ async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
         {"sample_id": sample_id, "comments.id": comment_id},
         {
             "$set": {
-                "modified_at": datetime.now(),
+                "modified_at": get_timestamp(),
                 "comments.$.displayed": False,
             },
         },
@@ -528,7 +527,7 @@ async def update_sample_qc_classification(
         query,
         {
             "$set": {
-                "modified_at": datetime.now(),
+                "modified_at": get_timestamp(),
                 "qc_status": jsonable_encoder(classification, by_alias=False),
             }
         },
@@ -663,7 +662,7 @@ async def update_variant_annotation_for_sample(
         {"sample_id": sample_id},
         {
             "$set": {
-                "modified_at": datetime.now(),
+                "modified_at": get_timestamp(),
                 **{
                     key: jsonable_encoder(value, by_alias=False)
                     for key, value in updated_data.items()
@@ -703,7 +702,7 @@ async def add_location(
         {"sample_id": sample_id},
         {
             "$set": {
-                "modified_at": datetime.now(),
+                "modified_at": get_timestamp(),
                 "location": ObjectId(location_id),
             }
         },
