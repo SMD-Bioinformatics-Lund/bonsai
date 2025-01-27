@@ -1,10 +1,12 @@
 """Generic database objects of which several other models are based on."""
 
-from datetime import datetime, timezone
+import datetime
 from typing import Any
 
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field
+
+from ..utils import get_timestamp
 
 
 class ObjectId(BaseObjectId):
@@ -36,7 +38,7 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
 class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
     """Add explicit time stamps to database model."""
 
-    created_at: datetime | None = Field(None)
+    created_at: datetime.datetime = Field(default_factory=get_timestamp)
 
 
 class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
@@ -48,8 +50,8 @@ class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-method
 class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
-    created_at: datetime = Field(datetime.now(timezone.utc))
-    modified_at: datetime = Field(datetime.now(timezone.utc))
+    created_at: datetime.datetime = Field(default_factory=get_timestamp)
+    modified_at: datetime.datetime = Field(default_factory=get_timestamp)
 
 
 class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods

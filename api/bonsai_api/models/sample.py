@@ -1,6 +1,5 @@
 """Data model definition of input/ output data"""
 
-from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 from prp.models import PipelineResult
@@ -27,18 +26,17 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import DBModelMixin, ModifiedAtRWModel, MultipleRecordsResponseModel
+from .base import DBModelMixin, ModifiedAtRWModel, MultipleRecordsResponseModel, DateTimeModelMixin
 from .qc import QcClassification
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
 
 
-class Comment(BaseModel):  # pylint: disable=too-few-public-methods
+class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
 
     username: str = Field(..., min_length=0)
-    created_at: datetime = Field(datetime.now())
     comment: str = Field(..., min_length=0)
     displayed: bool = True
 
