@@ -5,6 +5,7 @@
 - Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
 - Added mlst scheme to mlst card.
+- Added support for timezones in frontend.
 
 ### Changed
 
@@ -14,9 +15,12 @@
 
 ### Fixed
 
+- Dates are now being handled properly in the sample tables.
 - Fixed padding of sample table in group and groups view.
 - Fixed issue preventing virulence predictions to be shown.
 - Fixed display issues of ResFinder variants.
+- Timestamps are now correctly assigned.
+- `created_at` timestamp are not overwritten when updating a group.
 - Fixed broken sample counter in the group view.
 
 ## [v0.8.0]

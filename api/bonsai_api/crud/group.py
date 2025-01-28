@@ -1,7 +1,6 @@
 """Functions for conducting CURD operations on group collection"""
 
 import logging
-from datetime import datetime
 from typing import Any, Dict, List
 
 from prp.models.typing import TypingMethod
@@ -13,6 +12,7 @@ from ..models.sample import SampleSummary
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
 from .tags import compute_phenotype_tags
+from ..utils import get_timestamp
 
 LOG = logging.getLogger(__name__)
 
@@ -117,7 +117,7 @@ async def update_group(
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
-            "$set": {"modified_at": datetime.now(), **group_record.model_dump()},
+            "$set": {"modified_at": get_timestamp(), **group_record.model_dump()},
         },
     )
 
@@ -142,7 +142,7 @@ async def append_sample_to_group(db: Database, sample_id: str, group_id: str) ->
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
-            "$set": {"modified_at": datetime.now()},
+            "$set": {"modified_at": get_timestamp()},
             "$addToSet": {
                 "included_samples": sample_obj.sample_id,
             },

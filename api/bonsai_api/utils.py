@@ -1,4 +1,10 @@
 """Utililty functions for shared by functions in the API."""
+import datetime
+
+
+def get_timestamp() -> datetime.datetime:
+    """Get datetime timestamp in utc timezone."""
+    return datetime.datetime.now(tz=datetime.UTC)
 
 
 def format_error_message(exception: Exception) -> str:

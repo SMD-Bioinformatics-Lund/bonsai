@@ -5,13 +5,13 @@ from typing import Dict, List
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
 
-from .base import DBModelMixin, ModifiedAtRWModel, ObjectId
+from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, RWModel
 from .sample import SampleSummary
 
 FilterParams = List[Dict[str, str | int | float],]
 
 
-class IncludedSamples(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
+class IncludedSamples(RWModel):  # pylint: disable=too-few-public-methods
     """Object for keeping track of included samples in a group"""
 
     included_samples: List[str | SampleSummary] = []
@@ -221,7 +221,7 @@ class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
 
 
 class GroupInfoDatabase(
-    DBModelMixin, GroupInCreate
+    DBModelMixin, ModifiedAtRWModel, GroupInCreate
 ):  # pylint: disable=too-few-public-methods
     """Defines group info stored in the databas."""
 
