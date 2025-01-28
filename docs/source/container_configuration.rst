@@ -36,6 +36,8 @@ Frontend
    +=================+====================+=================+
    | BONSAI_API_URL  | URL to API service | http://api:8000 |
    +-----------------+--------------------+-----------------+
+   | TZ              | Timezone           | Etc/UTC         |
+   +-----------------+--------------------+-----------------+
 
 .. autopydantic_settings:: bonsai_app.config.Settings
 
