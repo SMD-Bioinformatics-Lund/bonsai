@@ -18,6 +18,8 @@
 - Fixed padding of sample table in group and groups view.
 - Fixed issue preventing virulence predictions to be shown.
 - Fixed display issues of ResFinder variants.
+- Timestamps are now correctly assigned.
+- `created_at` timestamp are not overwritten when updating a group.
 
 ## [v0.8.0]
 
