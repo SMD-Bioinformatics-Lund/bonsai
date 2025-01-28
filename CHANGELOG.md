@@ -21,6 +21,7 @@
 - Fixed display issues of ResFinder variants.
 - Timestamps are now correctly assigned.
 - `created_at` timestamp are not overwritten when updating a group.
+- Fixed broken sample counter in the group view.
 
 ## [v0.8.0]
 
