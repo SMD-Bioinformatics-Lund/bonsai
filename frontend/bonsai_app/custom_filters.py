@@ -3,6 +3,7 @@
 import logging
 import math
 import re
+from zoneinfo import ZoneInfo
 from collections import defaultdict
 from itertools import chain
 from typing import Any, Dict, List
@@ -10,7 +11,7 @@ from typing import Any, Dict, List
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
 
-from .config import ANTIBIOTIC_CLASSES
+from .config import ANTIBIOTIC_CLASSES, settings
 from .models import Severity, Tag, TagList, TagType, VirulenceTag
 
 LOG = logging.getLogger(__name__)
@@ -122,8 +123,8 @@ def text_to_camelcase(text: str) -> str:
     return text.replace(" ", "_")
 
 
-def _jinja2_filter_datetime(date: str, fmt: str = r"%b %d, %Y") -> str:
-    """Format date and time string.
+def _jinja2_filter_datetime(date: str, fmt: str = r"%Y-%m-%d") -> str:
+    """Format date and time string using the timezone from settings.
 
     :param date: String representation of a date or time
     :type date: str
@@ -133,7 +134,7 @@ def _jinja2_filter_datetime(date: str, fmt: str = r"%b %d, %Y") -> str:
     :rtype: str
     """
     date = parse(date)
-    native = date.replace(tzinfo=None)
+    native = date.replace(tzinfo=ZoneInfo(settings.tz))
     return native.strftime(fmt)
 
 
