@@ -38,8 +38,6 @@
             <p class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></p>
             <div class="row gx-5">
                 <div class="col-md-auto">
-                    Uploaded: {{sample.created_at | strftime("%c")}}
-                    <br>
                     <p class="card-text">
                         {% if sample.qc_status.status == "passed" %}
                             QC: <strong class="text-success">{{ sample.qc_status.status | capitalize }}</strong>
@@ -50,6 +48,10 @@
                         {% endif %}
                     </p>
                 </div>
+            </div>
+            <div class="row gx-5">
+                <div class="col">Uploaded: <span class="fst-italic">{{sample.created_at | strftime("%c")}}</span></div>
+                <div class="col">Modified: <span class="fst-italic">{{sample.modified_at | strftime("%c")}}</span></div>
             </div>
         </div>
     </div>
