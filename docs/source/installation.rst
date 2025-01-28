@@ -44,6 +44,8 @@ Use docker-compose to get started creating the Bonsai containers and configure t
             - api
          ports: 
             - "8000:8000"
+         environment: 
+            - TZ=Europe/Stockholm
          networks:
             - bonsai-net
 
