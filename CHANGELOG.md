@@ -5,6 +5,7 @@
 - Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
 - Added mlst scheme to mlst card.
+- Added support for timezones in frontend.
 
 ### Changed
 
