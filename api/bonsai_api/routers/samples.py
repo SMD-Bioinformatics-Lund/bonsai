@@ -107,7 +107,7 @@ async def samples_summary(
     skip: int = Query(0, gt=-1),
     prediction_result: bool = Query(True, description="Include prediction results"),
     qc_metrics: bool = Query(False, description="Include QC metrics"),
-    sid: list[str] = Query([], description="Optional limit query to samples ids"),
+    sid: list[str] | None = Query(None, description="Optional limit query to samples ids"),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
