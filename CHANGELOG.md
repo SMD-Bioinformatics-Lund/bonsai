@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- Empty groups of samples are now being displayed as being empty.
 - Dates are now being handled properly in the sample tables.
 - Fixed padding of sample table in group and groups view.
 - Fixed issue preventing virulence predictions to be shown.
