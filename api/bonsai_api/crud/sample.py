@@ -284,16 +284,7 @@ async def get_samples_summary(
         facet_pipe.append({"$limit": limit})
     if skip > 0:
         facet_pipe.append({"$skip": skip})
-    """
-    pipeline.append(
-        {
-            "$facet": {
-                "data": facet_pipe,
-                "records_total": [{"$count": "count"}],
-            }
-        },
-    )
-    """
+
     pipeline.append(
         {
             "$facet": {
