@@ -38,5 +38,6 @@ Services
 
 .. toctree::
 
+    frontend
     minhash
     allele_clustering
