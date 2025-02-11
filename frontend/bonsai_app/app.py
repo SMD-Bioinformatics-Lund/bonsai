@@ -1,5 +1,6 @@
 """Code for setting up the flask app."""
 
+import logging
 from itertools import zip_longest
 
 from flask import Flask
@@ -20,7 +21,8 @@ def create_app():
         {name.upper(): val for name, val in settings.model_dump().items()}
     )
     if settings.testing:
-        app.config.update({'debug': True})
+        app.config.update({"debug": True})
+        app.logger.setLevel(logging.DEBUG)
 
     # initialize flask extensions
     login_manager.init_app(app)
