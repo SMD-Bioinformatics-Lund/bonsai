@@ -1,4 +1,5 @@
 """Test basic landing page functionality."""
+
 from bs4 import BeautifulSoup
 from flask_login.test_client import FlaskLoginClient
 
@@ -8,7 +9,7 @@ def test_development_indicator(test_client: FlaskLoginClient):
 
     # goto landing page
     response = test_client.get("/")
-    dom = BeautifulSoup(response.data, 'html.parser')
+    dom = BeautifulSoup(response.data, "html.parser")
 
     # search for testing alert
     tag = dom.find(id="testing-instance-alert")
@@ -21,7 +22,7 @@ def test_development_indicator(client: FlaskLoginClient):
 
     # goto landing page
     response = client.get("/")
-    dom = BeautifulSoup(response.data, 'html.parser')
+    dom = BeautifulSoup(response.data, "html.parser")
 
     # search for testing alert
     tag = dom.find(id="testing-instance-alert")
