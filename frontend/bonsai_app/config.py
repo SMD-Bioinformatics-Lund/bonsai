@@ -61,6 +61,11 @@ class Settings(BaseSettings):
         ClusterMethod.SINGLE,
         description="Clustering method used for dendrogram in sample view.",
     )
+    testing: bool = Field(
+        False,
+        description="Enable test mode to facilitate easier testing and development.",
+    )
+
 
     model_config = SettingsConfigDict(use_enum_values=True)
 

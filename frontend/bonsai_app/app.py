@@ -19,6 +19,8 @@ def create_app():
     app.config.update(
         {name.upper(): val for name, val in settings.model_dump().items()}
     )
+    if settings.testing:
+        app.config.update({'debug': True})
 
     # initialize flask extensions
     login_manager.init_app(app)
