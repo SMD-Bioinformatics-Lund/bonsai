@@ -22,7 +22,9 @@
         <table class="table table-sm w-auto">
             <thead><tr><th>Samples</th><th>Updated</th></tr></thead>
             <tbody>
-                <tr><td>{{ table_data | length }}</td><td>{{ modified | strftime }}</td></tr>
+                <tr>
+                    <td id="samples-counter">{{ table_data | length }}</td>
+                    <td id="group-modified-timestamp">{{ modified | strftime }}</td></tr>
             </tbody>
         </table>
         <nav class="navbar bg-light">
