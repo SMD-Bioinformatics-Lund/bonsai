@@ -9,6 +9,18 @@ from bonsai_app.bonsai import TokenObject
 @pytest.fixture()
 def app():
     app = create_app()
+
+    # other setup can go here
+    app.test_client_class = FlaskLoginClient
+
+    yield app
+
+    # clean up / reset resources here
+
+
+@pytest.fixture()
+def test_app():
+    app = create_app()
     app.config.update(
         {
             "TESTING": True,
@@ -21,6 +33,11 @@ def app():
     yield app
 
     # clean up / reset resources here
+
+
+@pytest.fixture()
+def test_client(test_app):
+    return test_app.test_client()
 
 
 @pytest.fixture()
