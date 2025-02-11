@@ -23,7 +23,7 @@ def test_open_group_view(logged_in_user, config, group_id: str):
     assert "bonsai" in logged_in_user.title.lower()
 
 
-@pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus", "ecoli"])
+@pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus"])
 def test_open_qc_view(logged_in_user, config, group_id: str):
     """Test the QC view could be opended for the different test groups."""
 
@@ -38,7 +38,7 @@ def test_open_qc_view(logged_in_user, config, group_id: str):
     assert "bonsai" in logged_in_user.title.lower()
 
 
-@pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus", "ecoli"])
+@pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus"])
 def test_add_samples_to_basket(logged_in_user, config, group_id: str):
     """Test the QC view could be opended for the different test groups."""
 
@@ -86,3 +86,19 @@ def test_add_samples_to_basket(logged_in_user, config, group_id: str):
     # TEST that one sample has been added to the basket
     counter = get_element_by_test_id(logged_in_user, "samples-in-basket-counter")
     assert counter.text == "5"
+
+
+def test_empty_group_is_empty(logged_in_user, config):
+    """Test that no samples are being displayed in an empty group."""
+    # go to the ecoli group view
+    logged_in_user.get(str(Path(config["frontend_url"]) / "groups" / "ecoli"))
+
+    # verify that no samples are being displayed in the table
+    samples_counter = logged_in_user.find_element(By.ID, "samples-counter")
+    assert int(samples_counter.text) == 0
+
+    # get sample table
+    sample_table = logged_in_user.find_element(By.ID, "sample-table")
+
+    # verify that the number of samples in the group is 0
+    assert sample_table.text.startswith('No data available')

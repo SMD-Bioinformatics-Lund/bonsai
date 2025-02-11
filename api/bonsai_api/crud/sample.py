@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Sequence
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
@@ -206,10 +207,9 @@ async def get_samples_summary(
 ) -> List[SampleSummary]:
     """Get a summay of several samples."""
     # build query pipeline
-    pipeline = []
-    if include_samples is not None and len(include_samples) > 0:
+    pipeline: list[dict[str, Any]] = []
+    if isinstance(include_samples, list) and len(include_samples) > 0:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
-
     # species prediction projection
     # get the first entry of the bracken result
     spp_cmd = {
@@ -279,21 +279,12 @@ async def get_samples_summary(
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
 
     # add limit, skip and count total records in db
-    facet_pipe = []
+    facet_pipe: list[dict[str, int]] = []
     if limit > 0:
         facet_pipe.append({"$limit": limit})
     if skip > 0:
         facet_pipe.append({"$skip": skip})
-    """
-    pipeline.append(
-        {
-            "$facet": {
-                "data": facet_pipe,
-                "records_total": [{"$count": "count"}],
-            }
-        },
-    )
-    """
+
     pipeline.append(
         {
             "$facet": {
@@ -303,20 +294,27 @@ async def get_samples_summary(
         },
     )
 
-    # query database
-    cursor = db.sample_collection.aggregate(pipeline)
-    # get query results from the database
-    results = await cursor.to_list(None)
-    result = results[0]
+    if isinstance(include_samples, list) and len(include_samples) == 0:
+        # avoid query if include_samples is set and is empty.
+        query_response = MultipleRecordsResponseModel(
+            data=[],
+            records_total=0
+        )
+    else:
+        # query database for the number of samples
+        cursor: AsyncIOMotorCommandCursor = db.sample_collection.aggregate(pipeline)
 
-    return MultipleRecordsResponseModel(
-        data=result["data"],
-        records_total=(
-            0
-            if len(result["records_total"]) == 0
-            else result["records_total"][0]["count"]
-        ),
-    )
+        # get query results from the database
+        query_results: list[dict[str, Any]] = await cursor.to_list(None)
+        query_response = MultipleRecordsResponseModel(
+            data=query_results[0]["data"],
+            records_total=(
+                0
+                if len(query_results[0]["records_total"]) == 0
+                else query_results[0]["records_total"][0]["count"]
+            ),
+        )
+    return query_response
 
 
 async def get_samples(
