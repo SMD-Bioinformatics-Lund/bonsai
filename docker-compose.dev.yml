@@ -7,6 +7,8 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
   frontend:
+    environment:
+      - TESTING=True
     volumes: 
       - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
   api:
