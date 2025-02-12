@@ -3,10 +3,10 @@
 import logging
 import math
 import re
-from zoneinfo import ZoneInfo
 from collections import defaultdict
 from itertools import chain
 from typing import Any, Dict, List
+from zoneinfo import ZoneInfo
 
 from dateutil.parser import parse
 from jsonpath2.path import Path as JsonPath
