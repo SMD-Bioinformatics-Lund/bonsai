@@ -4,8 +4,8 @@ import pathlib
 from enum import Enum
 
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_extra_types.timezone_name import TimeZoneName
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     bonsai_api_url: str = Field("http://api:8000", description="URL to the Bonsai API.")
 
-    tz: TimeZoneName = Field('Etc/UTC', alias='timezone')
+    tz: TimeZoneName = Field("Etc/UTC", alias="timezone")
 
     # verify SSL certificated for https connections to API
     verify_ssl: bool | pathlib.Path = Field(
@@ -60,6 +60,10 @@ class Settings(BaseSettings):
     sample_view_cluster_method: ClusterMethod = Field(
         ClusterMethod.SINGLE,
         description="Clustering method used for dendrogram in sample view.",
+    )
+    testing: bool = Field(
+        False,
+        description="Enable test mode to facilitate easier testing and development.",
     )
 
     model_config = SettingsConfigDict(use_enum_values=True)
