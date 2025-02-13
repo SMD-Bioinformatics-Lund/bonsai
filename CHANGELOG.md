@@ -2,6 +2,14 @@
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v1.0.0]
+
+### Added
+
 - Added a test mode for the frontend that is set using an env variable.
 - Added SNV clustering using SKA indexes.
 - Added card for displaying EMM typing result from emmtyper.
