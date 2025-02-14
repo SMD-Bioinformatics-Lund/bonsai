@@ -1,6 +1,7 @@
 """Helper functions for setup and teardown of database connections."""
 
 import logging
+from typing import Generator
 from contextlib import contextmanager
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,7 +14,7 @@ LOG = logging.getLogger(__name__)
 db = MongoDatabase()
 
 
-def get_db() -> MongoDatabase:
+def get_db() -> Generator[MongoDatabase]:
     """Set up database connection."""
     db.client = AsyncIOMotorClient(
         settings.mongodb_uri,
@@ -31,7 +32,7 @@ def get_db() -> MongoDatabase:
 
 
 @contextmanager
-def get_db_connection() -> MongoDatabase:
+def get_db_connection() -> Generator[MongoDatabase]:
     """Set up database connection."""
     db.client = AsyncIOMotorClient(
         settings.mongodb_uri,
