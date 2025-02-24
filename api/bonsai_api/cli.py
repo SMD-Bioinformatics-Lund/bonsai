@@ -1,39 +1,35 @@
 """Commmand line interface to server component."""
 
 import asyncio
-import json
-import random
-import string
+from csv import DictWriter
 from logging import getLogger
+from typing import Callable
 
 import click
 from pymongo.errors import DuplicateKeyError
 
 from .__version__ import VERSION as version
+from .auth import generate_random_pwd
 from .config import USER_ROLES
 from .crud.group import create_group as create_group_in_db
 from .crud.sample import get_sample, get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
 from .crud.user import create_user as create_user_in_db
+from .db import verify
 from .db.index import INDEXES
 from .db.utils import get_db_connection
 from .io import sample_to_kmlims
 from .models.group import GroupInCreate, pred_res_cols
-from .models.sample import SampleInCreate
+from .models.sample import SampleInCreate, SampleInDatabase
 from .models.user import UserInputCreate
 
 LOG = getLogger(__name__)
 
 
-def _generate_random_pwd(length=15) -> str:
-    symbols = string.digits + string.ascii_lowercase + string.ascii_uppercase
-    return "".join(random.sample(symbols, length))
-
-
 @click.group()
 @click.version_option(version)
 @click.pass_context
-def cli(ctx):
+def cli(_):
     """Bonsai api server"""
     pass
 
@@ -70,7 +66,7 @@ def setup(ctx, password):
 @click.option(
     "-p",
     "--password",
-    default=_generate_random_pwd(),
+    default=generate_random_pwd(),
     help="Desired password (optional).",
 )
 @click.option(
@@ -81,7 +77,7 @@ def setup(ctx, password):
     help="User role which dictates persmission.",
 )
 def create_user(
-    ctx, username, email, password, role, fname, lname
+    _, username, email, password, role, fname, lname
 ):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
@@ -109,7 +105,7 @@ def create_user(
 @click.option("-i", "--id", required=True, help="Group id")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
-def create_group(ctx, id, name, description):  # pylint: disable=unused-argument
+def create_group(_, id, name, description):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     group_obj = GroupInCreate(
@@ -131,7 +127,7 @@ def create_group(ctx, id, name, description):  # pylint: disable=unused-argument
 
 @cli.command()
 @click.pass_obj
-def index(ctx):  # pylint: disable=unused-argument
+def index(_):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
     with get_db_connection() as db:
         for collection_name, indexes in INDEXES.items():
@@ -145,7 +141,7 @@ def index(ctx):  # pylint: disable=unused-argument
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
 @click.argument("output", type=click.File("w"), default="-")
-def export(ctx, sample_id, output):  # pylint: disable=unused-argument
+def export(_, sample_id, output):  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
@@ -166,7 +162,7 @@ def export(ctx, sample_id, output):  # pylint: disable=unused-argument
 
 @cli.command()
 @click.pass_obj
-def update_tags(ctx):  # pylint: disable=unused-argument
+def update_tags(_):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
     LOG.info("Updating tags...")
     loop = asyncio.get_event_loop()
@@ -184,3 +180,57 @@ def update_tags(ctx):  # pylint: disable=unused-argument
             func = update_sample(db, upd_sample)
             samples = loop.run_until_complete(func)
     click.secho("Updated tags for all samples", fg="green")
+
+
+@cli.command()
+@click.pass_obj
+@click.option(
+    "-t",
+    "--timeout",
+    "redis_timeout",
+    type=int,
+    default=60,
+    help="Timeout limit for requests.",
+)
+@click.option(
+    "-o", "--output", type=click.File("w"), default="-", help="Write report to file."
+)
+def check_paths(_, redis_timeout: int, output):
+    """Check that paths to files are valid."""
+    loop = asyncio.get_event_loop()
+    # get all samples in the database
+    with get_db_connection() as db:
+        func = get_samples(db)
+        samples: list[SampleInDatabase] = loop.run_until_complete(func)
+
+    # loop over samples and check if paths are valid
+    with click.progressbar(
+        samples.data,
+        length=samples.records_filtered,
+        label="Checking file paths for samples",
+    ) as pbar:
+        missing_files: list[verify.MissingFile] = []
+        for sample in pbar:
+            status: verify.MISSING_FILES = verify.verify_reference_genome(sample)
+            if len(status) > 0:
+                missing_files.extend(status)
+
+            missing: verify.MissingFile | None = verify.verify_read_mapping(sample)
+            if len(status) > 0:
+                missing_files.append(missing)
+
+            # query redis
+            redis_funcs: list[Callable[..., verify.MissingFile | None]] = [
+                verify.verify_ska_index,
+                verify.verify_sourmash_files,
+            ]
+            for func in redis_funcs:
+                missing: verify.MissingFile | None = func(sample, redis_timeout)
+                if missing is not None:
+                    missing_files.append(missing)
+
+    # write output in csv format
+    writer = DictWriter(output, fieldnames=list(verify.MissingFile.model_fields))
+    writer.writeheader()
+    for missing_file in missing_files:
+        writer.writerow(missing_file.model_dump())
