@@ -14,6 +14,10 @@ from rq.job import Job
 LOG = logging.getLogger(__name__)
 
 
+class JobFailedError(BaseException):
+    """Failed redis job."""
+
+
 class RedisQueue:  # pylint: disable=too-few-public-methods
     """Worker queue interface."""
 
@@ -47,12 +51,13 @@ class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
     status: JobStatusCodes
     queue: str
     result: Any
+    error: str | None = None
     submitted_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
 
 
-def check_redis_job_status(job_id: str) -> JobStatus:
+def check_redis_job_status(job_id: str, raise_on_exception: False = False) -> JobStatus:
     """Check status of a job."""
     job = Job.fetch(job_id, connection=redis.connection)
     job_info = JobStatus(
@@ -66,5 +71,7 @@ def check_redis_job_status(job_id: str) -> JobStatus:
     )
     # LOG stacktraces for failed jobs
     if job_info.status == JobStatusCodes.FAILED:
-        LOG.warning("Redis job %s; %s", JobStatusCodes.FAILED, job.exc_info)
+        LOG.debug("Redis job %s error; %s", job.id, job.exc_info)
+        if raise_on_exception:
+            raise JobFailedError(job.exc_info)
     return job_info

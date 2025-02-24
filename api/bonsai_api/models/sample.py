@@ -26,7 +26,12 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import DBModelMixin, ModifiedAtRWModel, MultipleRecordsResponseModel, DateTimeModelMixin
+from .base import (
+    DateTimeModelMixin,
+    DBModelMixin,
+    ModifiedAtRWModel,
+    MultipleRecordsResponseModel,
+)
 from .qc import QcClassification
 
 CURRENT_SCHEMA_VERSION = 1
