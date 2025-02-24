@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added CLI command for validating paths to index and reference files.
+
 ### Changed
 
 ### Fixed
