@@ -6,7 +6,8 @@ from typing import List
 from rq import Retry
 from rq.job import Dependency
 
-from . import ClusterMethod, SubmittedJob, TypingMethod
+from ..models.cluster import TypingMethod
+from .models import ClusterMethod, SubmittedJob
 from .queue import redis
 
 LOG = logging.getLogger(__name__)
@@ -151,4 +152,12 @@ def schedule_find_similar_and_cluster(
         LOG.debug("Submitting job, %s to %s", task, job.worker_name)
     else:
         raise ValueError(f"{typing_method} is not implemented yet")
+    return SubmittedJob(id=job.id, task=task)
+
+
+def schedule_check_signature(sample_id: str) -> SubmittedJob:
+    """Schedule a task to check if signatue has been added for sample id."""
+    task = "minhash_service.tasks.check_signature"
+    job = redis.minhash.enqueue(task, sample_id=sample_id, job_timeout="30m")
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
     return SubmittedJob(id=job.id, task=task)
