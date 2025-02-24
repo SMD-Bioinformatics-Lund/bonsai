@@ -296,10 +296,7 @@ async def get_samples_summary(
 
     if isinstance(include_samples, list) and len(include_samples) == 0:
         # avoid query if include_samples is set and is empty.
-        query_response = MultipleRecordsResponseModel(
-            data=[],
-            records_total=0
-        )
+        query_response = MultipleRecordsResponseModel(data=[], records_total=0)
     else:
         # query database for the number of samples
         cursor: AsyncIOMotorCommandCursor = db.sample_collection.aggregate(pipeline)
@@ -322,7 +319,7 @@ async def get_samples(
     limit: int = 0,
     skip: int = 0,
     include: List[str] | None = None,
-) -> List[SampleInDatabase]:
+) -> MultipleSampleRecordsResponseModel:
     """Get samples from database."""
 
     # get number of samples in collection
