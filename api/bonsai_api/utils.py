@@ -1,4 +1,5 @@
 """Utililty functions for shared by functions in the API."""
+
 import datetime
 
 
@@ -17,5 +18,8 @@ def format_error_message(exception: Exception) -> str:
             arg_str = ", ".join([f"{k}={v}" for k, v in arg.items()])
         elif isinstance(arg, str):
             arg_str = arg
+        else:
+            arg_str = ""
+
         proc_args.append(arg_str)
     return f"{type(exception).__name__}: {', '.join(proc_args)}"

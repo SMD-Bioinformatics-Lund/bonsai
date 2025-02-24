@@ -76,6 +76,8 @@ class Settings(BaseSettings):
 
     @property
     def mongodb_uri(self) -> str | None:
+        """Create mongodb connection string."""
+
         return f"mongodb://{self.db_host}:{self.db_port}/{self.database_name}"
 
 
