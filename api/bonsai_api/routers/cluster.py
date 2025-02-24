@@ -16,13 +16,8 @@ from ..crud.sample import (
 )
 from ..db import Database, get_db
 from ..models.base import RWModel
-from ..redis import (
-    ClusterMethod,
-    DistanceMethod,
-    MsTreeMethods,
-    SubmittedJob,
-    TypingMethod,
-)
+from ..models.cluster import DistanceMethod, TypingMethod
+from ..redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from ..redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
 )
