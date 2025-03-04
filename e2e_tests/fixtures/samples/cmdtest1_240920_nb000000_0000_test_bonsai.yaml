@@ -1,0 +1,4 @@
+group_id: streptococcus
+minhash_signature: ./sourmash/cmdtest1_240920_nb000000_0000_test.sig
+prp_result: ./analysis_result/cmdtest1_240920_nb000000_0000_test_result.json
+ska_index: ./ska/cmdtest1_240920_nb000000_0000_test_ska_index.skf

@@ -59,7 +59,8 @@ class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-m
 
     data: list[dict[str, Any]] = Field(...)
     records_total: int = Field(
-        ..., alias="recordsTotal", 
+        ...,
+        alias="recordsTotal",
         description="Number of db records matching the query",
     )
 
@@ -67,7 +68,7 @@ class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-m
     def records_filtered(self) -> int:
         """
         Number of db returned records after narrowing the result.
-        
+
         The result can be reduced with limit and skip operations etc.
         """
         return len(self.data)

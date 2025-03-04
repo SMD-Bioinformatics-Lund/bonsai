@@ -14,7 +14,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
 
     def __init__(self) -> None:
         """Constructor function."""
-        self.client: AsyncIOMotorClient = None
+        self.client: AsyncIOMotorClient | None = None
         self.db = None
         self.sample_group_collection: AsyncIOMotorCollection | None = None
         self.sample_collection: AsyncIOMotorCollection | None = None
@@ -31,3 +31,10 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.sample_collection: AsyncIOMotorCollection = self.db.sample
         self.location_collection: AsyncIOMotorCollection = self.db.location
         self.user_collection: AsyncIOMotorCollection = self.db.user
+
+    def close(self) -> None:
+        """Close database connection."""
+        if isinstance(self.client, AsyncIOMotorClient):
+            self.client.close()
+        else:
+            raise ValueError("Trying to close an uninstantiated database")

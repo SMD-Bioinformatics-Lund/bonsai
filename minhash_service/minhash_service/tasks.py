@@ -38,6 +38,13 @@ def remove_signature(sample_id: str) -> Dict[str, str | bool]:
     return {"sample_id": sample_id, "removed": status}
 
 
+def check_signature(sample_id: str) -> dict[str, str | bool]:
+    """Check if signature exist."""
+
+    status: bool = remove_signature_file(sample_id)
+    return {"sample_id": sample_id, "removed": status}
+
+
 def add_to_index(sample_ids: List[str]) -> str:
     """
     Add signatures to sourmash SBT index.
