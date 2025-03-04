@@ -52,7 +52,7 @@ from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
 from ..models.user import UserOutputDatabase
-from ..redis import ClusterMethod
+from ..redis import ClusterMethod, ConnectionError
 from ..redis.minhash import (
     SubmittedJob,
     schedule_add_genome_signature,
@@ -588,18 +588,21 @@ async def find_similar_samples(
     queue.
     """
     LOG.info("ref: %s, body: %s, cluster: %s", sample_id, body, body.cluster)
-    if body.cluster:
-        submission_info: SubmittedJob = schedule_find_similar_and_cluster(
-            sample_id,
-            min_similarity=body.similarity,
-            limit=body.limit,
-            typing_method=body.typing_method,
-            cluster_method=body.cluster_method,
-        )
-    else:
-        submission_info: SubmittedJob = schedule_find_similar_samples(
-            sample_id,
-            min_similarity=body.similarity,
-            limit=body.limit,
-        )
+    try:
+        if body.cluster:
+            submission_info: SubmittedJob = schedule_find_similar_and_cluster(
+                sample_id,
+                min_similarity=body.similarity,
+                limit=body.limit,
+                typing_method=body.typing_method,
+                cluster_method=body.cluster_method,
+            )
+        else:
+            submission_info: SubmittedJob = schedule_find_similar_samples(
+                sample_id,
+                min_similarity=body.similarity,
+                limit=body.limit,
+            )
+    except ConnectionError as error:
+        raise HTTPException(status_code=500, detail=str(error))
     return submission_info
