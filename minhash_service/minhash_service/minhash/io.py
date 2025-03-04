@@ -141,7 +141,6 @@ def remove_signature(sample_id: str) -> bool:
 def check_signature(sample_id: str) -> bool:
     """Check if signature exist and has been added to the index."""
     LOG.info("Checking signature file: %s", signature_file)
-    # check that signature exist
     try:
         signature_file = get_signature_path(sample_id, check=True)
     except FileExistsError:

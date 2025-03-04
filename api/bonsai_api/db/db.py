@@ -37,4 +37,4 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         if isinstance(self.client, AsyncIOMotorClient):
             self.client.close()
         else:
-            raise ValueError("Trying to close an uninstanciated database")
+            raise ValueError("Trying to close an uninstantiated database")

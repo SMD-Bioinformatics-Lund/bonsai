@@ -13,7 +13,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def generate_random_pwd(length: int = 15) -> str:
-    """Generate a random passworkd with numbers, upper and lower characters."""
+    """Generate a random password with numbers, upper and lower characters."""
     symbols = string.digits + string.ascii_lowercase + string.ascii_uppercase
     return "".join(random.sample(symbols, length))
 

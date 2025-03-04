@@ -74,7 +74,7 @@ def verify_ska_index(sample: SampleInDatabase, timeout: int = 60) -> MissingFile
     """Verify files for SKA clustering."""
     if sample.ska_index is not None:
         job: SubmittedJob = ska.schedule_check_index(sample.ska_index)
-        # call async funtion to get job status
+        # call async function to get job status
         loop = asyncio.get_event_loop()
         async_func = wait_for_job(job, timeout=timeout)
         job_status = loop.run_until_complete(async_func)
@@ -94,7 +94,7 @@ def verify_sourmash_files(
     """Verify files for minhash clustering."""
     if sample.genome_signature is not None:
         job: SubmittedJob = minhash.schedule_check_signature(sample.sample_id)
-        # call async funtion to get job status
+        # call async function to get job status
         try:
             loop = asyncio.get_event_loop()
             async_func = wait_for_job(job, timeout=timeout)

@@ -15,7 +15,6 @@ async def wait_until_complete(job: SubmittedJob, delay: int) -> JobStatus:
     while job_status.status != JobStatusCodes.FINISHED:
         await asyncio.sleep(delay)
         job_status = check_redis_job_status(job.id, raise_on_exception=True)
-    # return job
     return job_status
 
 
