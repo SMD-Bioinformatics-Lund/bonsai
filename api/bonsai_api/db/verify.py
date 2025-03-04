@@ -72,20 +72,20 @@ def verify_read_mapping(sample: SampleInDatabase) -> MissingFile | None:
 
 def verify_ska_index(sample: SampleInDatabase, timeout: int = 60) -> MissingFile | None:
     """Verify files for SKA clustering."""
-    if sample.ska_index is not None:
-        job: SubmittedJob = ska.schedule_check_index(sample.ska_index)
-        # call async function to get job status
-        loop = asyncio.get_event_loop()
-        async_func = wait_for_job(job, timeout=timeout)
-        job_status = loop.run_until_complete(async_func)
-        # report if file was missing
-        if job_status.result is None:
-            return MissingFile(
-                sample_id=sample.sample_id,
-                file_type="ska_index",
-                error_type="FileNotFound",
-                path=Path(sample.ska_index),
-            )
+    if sample.ska_index is None:
+        return None
+
+    job: SubmittedJob = ska.schedule_check_index(sample.ska_index)
+    loop = asyncio.get_event_loop()
+    async_func = wait_for_job(job, timeout=timeout)
+    job_status = loop.run_until_complete(async_func)
+    if job_status.result is None:
+        return MissingFile(
+            sample_id=sample.sample_id,
+            file_type="ska_index",
+            error_type="FileNotFound",
+            path=Path(sample.ska_index),
+        )
 
 
 def verify_sourmash_files(
@@ -94,7 +94,6 @@ def verify_sourmash_files(
     """Verify files for minhash clustering."""
     if sample.genome_signature is not None:
         job: SubmittedJob = minhash.schedule_check_signature(sample.sample_id)
-        # call async function to get job status
         try:
             loop = asyncio.get_event_loop()
             async_func = wait_for_job(job, timeout=timeout)
@@ -106,7 +105,7 @@ def verify_sourmash_files(
             )
             LOG.debug("Minhash error: %s", err)
         except TimeoutError as err:
-            pass
+            LOG.debug("Job to verify sample '%s' timed out", sample.sample_id)
         else:
             # report if file was missing
             if job_status.result is None:
