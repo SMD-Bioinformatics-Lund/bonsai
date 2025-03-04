@@ -4,6 +4,7 @@ import asyncio
 from csv import DictWriter
 from logging import getLogger
 from typing import Callable
+from io import TextIOWrapper
 
 import click
 from pymongo.errors import DuplicateKeyError
@@ -195,7 +196,7 @@ def update_tags(_):  # pylint: disable=unused-argument
 @click.option(
     "-o", "--output", type=click.File("w"), default="-", help="Write report to file."
 )
-def check_paths(_, redis_timeout: int, output):
+def check_paths(_, redis_timeout: int, output: TextIOWrapper) -> None:
     """Check that paths to files are valid."""
     loop = asyncio.get_event_loop()
     # get all samples in the database
@@ -217,7 +218,7 @@ def check_paths(_, redis_timeout: int, output):
                 missing_files.extend(status)
 
             missing: verify.MissingFile | None = verify.verify_read_mapping(sample)
-            if len(status) > 0:
+            if missing is not None:
                 missing_files.append(missing)
 
             # query redis
