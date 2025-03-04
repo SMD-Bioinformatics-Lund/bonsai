@@ -204,10 +204,11 @@ def check_paths(_, redis_timeout: int, output):
         samples: list[SampleInDatabase] = loop.run_until_complete(func)
 
     # loop over samples and check if paths are valid
+    click.secho(f"Checking {samples.records_filtered} samples for invalid paths.")
     with click.progressbar(
         samples.data,
         length=samples.records_filtered,
-        label="Checking file paths for samples",
+        label="Checking file paths",
     ) as pbar:
         missing_files: list[verify.MissingFile] = []
         for sample in pbar:
@@ -229,8 +230,11 @@ def check_paths(_, redis_timeout: int, output):
                 if missing is not None:
                     missing_files.append(missing)
 
-    # write output in csv format
-    writer = DictWriter(output, fieldnames=list(verify.MissingFile.model_fields))
-    writer.writeheader()
-    for missing_file in missing_files:
-        writer.writerow(missing_file.model_dump())
+    # write output in csv format if missing paths were identified
+    if len(missing_files) == 0:
+        click.secho("No samples with invalid paths were identified")
+    else:
+        writer = DictWriter(output, fieldnames=list(verify.MissingFile.model_fields))
+        writer.writeheader()
+        for missing_file in missing_files:
+            writer.writerow(missing_file.model_dump())
