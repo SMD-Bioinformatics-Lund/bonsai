@@ -21,7 +21,12 @@ async def wait_until_complete(job: SubmittedJob, delay: int) -> JobStatus:
 async def wait_for_job(
     job: SubmittedJob, timeout: int = 60, delay: int = 1
 ) -> JobStatus | None:
-    """Wait for redis job to complete."""
+    
+    """
+    Wait for redis job to complete.
+    
+    :param timeout: n seconds to wait before job times out.
+    """
     try:
         job_status = await asyncio.wait_for(
             wait_until_complete(job, delay=delay), timeout=timeout
