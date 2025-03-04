@@ -30,15 +30,14 @@ LOG = getLogger(__name__)
 @click.group()
 @click.version_option(version)
 @click.pass_context
-def cli(_):
+def cli(_ctx: click.Context):
     """Bonsai api server"""
-    pass
 
 
 @cli.command()
 @click.pass_context
 @click.option("-p", "--password", default="admin", help="Password of admin user.")
-def setup(ctx, password):
+def setup(ctx: click.Context, password: str):
     """Setup a new database instance by creating an admin user and setup indexes."""
     # create collections
     click.secho("Start database setup...", fg="green")
@@ -78,8 +77,8 @@ def setup(ctx, password):
     help="User role which dictates persmission.",
 )
 def create_user(
-    _, username, email, password, role, fname, lname
-):  # pylint: disable=unused-argument
+    _ctx: click.Context, username: str, email: str, password: str, role: str, fname: str, lname: str
+):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """Create a user account"""
     # create collections
     user = UserInputCreate(
@@ -103,14 +102,14 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
-@click.option("-i", "--id", required=True, help="Group id")
+@click.option("-i", "--id", 'group_id', required=True, help="Group id")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
-def create_group(_, id, name, description):  # pylint: disable=unused-argument
+def create_group(_ctx: click.Context, group_id: str, name: str, description: str | None):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     group_obj = GroupInCreate(
-        group_id=id,
+        group_id=group_id,
         display_name=name,
         description=description,
         table_columns=pred_res_cols,
@@ -128,7 +127,7 @@ def create_group(_, id, name, description):  # pylint: disable=unused-argument
 
 @cli.command()
 @click.pass_obj
-def index(_):  # pylint: disable=unused-argument
+def index(_ctx: click.Context):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
     with get_db_connection() as db:
         for collection_name, indexes in INDEXES.items():
@@ -142,7 +141,7 @@ def index(_):  # pylint: disable=unused-argument
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
 @click.argument("output", type=click.File("w"), default="-")
-def export(_, sample_id, output):  # pylint: disable=unused-argument
+def export(_ctx: click.Context, sample_id: str, output: TextIOWrapper) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
@@ -163,7 +162,7 @@ def export(_, sample_id, output):  # pylint: disable=unused-argument
 
 @cli.command()
 @click.pass_obj
-def update_tags(_):  # pylint: disable=unused-argument
+def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
     LOG.info("Updating tags...")
     loop = asyncio.get_event_loop()
@@ -196,7 +195,7 @@ def update_tags(_):  # pylint: disable=unused-argument
 @click.option(
     "-o", "--output", type=click.File("w"), default="-", help="Write report to file."
 )
-def check_paths(_, redis_timeout: int, output: TextIOWrapper) -> None:
+def check_paths(_ctx: click.Context, redis_timeout: int, output: TextIOWrapper) -> None:
     """Check that paths to files are valid."""
     loop = asyncio.get_event_loop()
     # get all samples in the database
