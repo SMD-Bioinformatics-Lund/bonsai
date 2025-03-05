@@ -36,6 +36,8 @@ from ...bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
+    HTTPError,
+    SubmittedJob
 )
 from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
@@ -152,15 +154,23 @@ def sample(sample_id: str) -> str:
 
     # Get the most similar samples and calculate the pair-wise similaity
     typing_method = settings.sample_view_typing_method
-    job = find_and_cluster_similar_samples(
-        token,
-        sample_id=sample_id,
-        limit=settings.sample_view_similarity_limit,
-        similarity=settings.sample_view_similarity_threshold,
-        typing_method=typing_method,
-        cluster_method=settings.sample_view_cluster_method,
-    )
-    simiar_samples = {"job": job.model_dump(), "typing_method": typing_method}
+    try:
+        job: SubmittedJob = find_and_cluster_similar_samples(
+            token,
+            sample_id=sample_id,
+            limit=settings.sample_view_similarity_limit,
+            similarity=settings.sample_view_similarity_threshold,
+            typing_method=typing_method,
+            cluster_method=settings.sample_view_cluster_method,
+        )
+        simiar_samples: dict[str, Any] | None = {"job": job.model_dump(), "typing_method": typing_method}
+    except HTTPError as error:
+        flash(f"A error occured when trying to find similar samples", category="warning")
+        LOG.error(
+            "Error when queueing redis job 'find similar samples' for sample '%s'; error: %s",
+            sample_id, str(error)
+        )
+        simiar_samples = None
 
     return render_template(
         "sample.html",
