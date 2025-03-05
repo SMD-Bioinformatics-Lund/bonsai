@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- A redis connection error no longer crash the sample view in the frontend.
+
 ## [v1.0.0]
 
 ### Added
