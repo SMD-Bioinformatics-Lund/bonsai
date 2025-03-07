@@ -184,7 +184,7 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
     :rtype: Dict[str, Any]
     """
 
-    def _sort_func(variant):
+    def _sort_func(variant: dict[str, Any]):
         """Sort on verfied status, by reference sequence name, and position."""
         sort_order = {"passed": 1, "unprocessed": 2, "failed": 3}
         return (
@@ -208,7 +208,7 @@ def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
     return sample_info
 
 
-def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) -> bool:
+def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) -> bool:
     """Check if variant passes qc filters."""
     variant_passes_qc = True
     # check frequency
@@ -258,7 +258,9 @@ def has_variant_passed_filters(variant: Dict[str, Any], form: Dict[str, Any]) ->
     return variant_passes_qc
 
 
-def filter_variants(sample_info, form: float | None = None):
+def filter_variants(
+    sample_info: dict[str, Any], form: dict[str, Any] = {}
+) -> dict[str, Any]:
     """Filter resistance variants from prediction sw."""
     for prediction in sample_info["element_type_result"]:
         variants = prediction["result"]["variants"]

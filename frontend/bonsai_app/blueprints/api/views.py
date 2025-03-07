@@ -3,12 +3,11 @@
 import json
 import logging
 
-import requests
 from flask import Blueprint, Response, flash, jsonify, request
 from flask_login import current_user, login_required
+from requests import HTTPError
 
 from ...bonsai import (
-    HTTPError,
     TokenObject,
     add_samples_to_basket,
     get_group_by_id,
@@ -40,7 +39,7 @@ def add_sample_to_basket():
     # lookup analysis profile for samples
     try:
         response = get_samples(token, sample_ids=sample_ids, limit=0, skip=0)
-    except requests.exceptions.HTTPError as error:
+    except HTTPError as error:
         flash(str(error), "warning")
         message = "Error"
         return_code = 200
@@ -59,7 +58,7 @@ def add_sample_to_basket():
         add_samples_to_basket(token, samples=samples_to_add)
         message = "Added"
         return_code = 200
-    except requests.exceptions.HTTPError as error:
+    except HTTPError as error:
         flash(str(error), "warning")
         message = "Error"
         return_code = 200

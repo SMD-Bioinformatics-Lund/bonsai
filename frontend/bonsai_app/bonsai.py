@@ -7,7 +7,6 @@ from typing import Any, Callable, List
 import requests
 from flask import current_app
 from pydantic import BaseModel
-from requests import HTTPError
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
@@ -48,7 +47,9 @@ def api_authentication(func: Callable[..., Any]) -> Callable[..., Any]:
     """
 
     @wraps(func)
-    def wrapper(token_obj: TokenObject, *args: list[Any], **kwargs: list[Any]) -> Callable[..., Any]:
+    def wrapper(
+        token_obj: TokenObject, *args: list[Any], **kwargs: list[Any]
+    ) -> Callable[..., Any]:
         """Add authentication headers to API requests.
 
         :param token_obj: Auth token object
@@ -255,10 +256,9 @@ def get_samples(
         params["sid"] = sample_ids
     resp = requests_get(url, headers=headers, params=params)
 
-    LOG.error("url: %s, params: %s", url, params)
     try:
         resp.raise_for_status()
-    except:
+    except requests.HTTPError:
         print(resp.text)
     return resp.json()
 
@@ -403,12 +403,6 @@ def cluster_samples(
     distance: str = "jaccard",
 ) -> SubmittedJob:
     """Cluster samples on selected typing result."""
-    data = {
-        "sample_ids": sample_ids,
-        "method": method,
-        "distance": distance,
-    }
-    # conduct query
     url = f"{settings.bonsai_api_url}/cluster/{typing_method}/"
     resp = requests_post(
         url,
