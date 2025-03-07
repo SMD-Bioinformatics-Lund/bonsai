@@ -4,14 +4,15 @@ import asyncio
 from csv import DictWriter
 from logging import getLogger
 from typing import Callable
-from io import TextIOWrapper
+from io import TextIOWrapper, StringIO
 
 import click
+from email_validator import validate_email, EmailNotValidError
 from pymongo.errors import DuplicateKeyError
 
 from .__version__ import VERSION as version
 from .auth import generate_random_pwd
-from .config import USER_ROLES
+from .config import USER_ROLES, settings
 from .crud.group import create_group as create_group_in_db
 from .crud.sample import get_sample, get_samples, update_sample
 from .crud.tags import compute_phenotype_tags
@@ -23,8 +24,20 @@ from .io import sample_to_kmlims
 from .models.group import GroupInCreate, pred_res_cols
 from .models.sample import SampleInCreate, SampleInDatabase
 from .models.user import UserInputCreate
+from .email import get_smtp_connection, create_email
 
 LOG = getLogger(__name__)
+
+
+class EmailType(click.ParamType):
+    name = "email"
+
+    def convert(self, value: str, param, ctx):
+        try:
+            validate_email(value)
+            return value
+        except EmailNotValidError:
+            self.fail(f"{value} is not a valid email", param, ctx)
 
 
 @click.group()
@@ -192,10 +205,11 @@ def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     default=60,
     help="Timeout limit for requests.",
 )
+@click.option('-e', '--email', 'email_addr', type=EmailType(), multiple=True, help="email report to recipient.")
 @click.option(
     "-o", "--output", type=click.File("w"), default="-", help="Write report to file."
 )
-def check_paths(_ctx: click.Context, redis_timeout: int, output: TextIOWrapper) -> None:
+def check_paths(_ctx: click.Context, redis_timeout: int, email_addr: list[str], output: TextIOWrapper) -> None:
     """Check that paths to files are valid."""
     loop = asyncio.get_event_loop()
     # get all samples in the database
@@ -230,11 +244,29 @@ def check_paths(_ctx: click.Context, redis_timeout: int, output: TextIOWrapper) 
                 if missing is not None:
                     missing_files.append(missing)
 
+    # setup methods to report results
+    report_channels: dict[str, TextIOWrapper] = {"stdout": output}
+    if len(email_addr) > 0:
+        report_channels['email'] = StringIO()
+    
     # write output in csv format if missing paths were identified
-    if len(missing_files) == 0:
-        click.secho("No samples with invalid paths were identified")
-    else:
-        writer = DictWriter(output, fieldnames=list(verify.MissingFile.model_fields))
-        writer.writeheader()
-        for missing_file in missing_files:
-            writer.writerow(missing_file.model_dump())
+    for channel in report_channels.values():
+        if len(missing_files) == 0:
+            print("No samples with invalid paths were identified", file=channel)
+        else:
+            n_samples = len({row.sample_id for row in missing_files})
+            print(f"Found {n_samples} with a ttoal of {len(missing_files)} missing files.\n", file=channel)
+            writer = DictWriter(channel, fieldnames=list(verify.MissingFile.model_fields))
+            writer.writeheader()
+            for missing_file in missing_files:
+                writer.writerow(missing_file.model_dump())
+    # create email report if needed
+    if 'email' in report_channels:
+        if settings.email is None or settings.smtp is None:
+            LOG.error("Cant send email because smtp client has not been configured.")
+        else:
+            with get_smtp_connection(settings.smtp) as smtp:
+                msg = create_email(email_addr, settings.email)
+                msg['Subject'] = '[ Bonsai ] database integrity report'
+                msg.set_content(report_channels['email'].getvalue())
+                smtp.send_message(msg)
