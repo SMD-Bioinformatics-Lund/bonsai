@@ -57,7 +57,7 @@ class Settings(BaseSettings):
 
     # email server
     smtp: SmtpConfig | None = None
-    email: EmailConfig | None = None
+    email: EmailConfig = EmailConfig()
 
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
