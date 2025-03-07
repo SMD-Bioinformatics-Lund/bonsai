@@ -22,7 +22,7 @@ class SmtpConfig(BaseSettings):
 class EmailConfig(BaseSettings):
 
     subject_prefix: str = "[ Bonsai ]"
-    sender: str
+    sender: str = 'do-not-reply@bonsai.app'
     sender_name: str = "Bonsai"
 
 
