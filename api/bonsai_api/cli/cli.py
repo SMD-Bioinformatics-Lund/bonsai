@@ -1,43 +1,30 @@
 """Commmand line interface to server component."""
 
 import asyncio
-from csv import DictWriter
+from io import StringIO, TextIOWrapper
 from logging import getLogger
 from typing import Callable
-from io import TextIOWrapper, StringIO
 
 import click
-from email_validator import validate_email, EmailNotValidError
+from bonsai_api.__version__ import VERSION as version
+from bonsai_api.auth import generate_random_pwd
+from bonsai_api.config import USER_ROLES
+from bonsai_api.crud.group import create_group as create_group_in_db
+from bonsai_api.crud.sample import get_sample, get_samples, update_sample
+from bonsai_api.crud.tags import compute_phenotype_tags
+from bonsai_api.crud.user import create_user as create_user_in_db
+from bonsai_api.db import verify
+from bonsai_api.db.index import INDEXES
+from bonsai_api.db.utils import get_db_connection
+from bonsai_api.io import sample_to_kmlims
+from bonsai_api.models.group import GroupInCreate, pred_res_cols
+from bonsai_api.models.sample import SampleInCreate, MultipleSampleRecordsResponseModel
+from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
-from .__version__ import VERSION as version
-from .auth import generate_random_pwd
-from .config import USER_ROLES, settings
-from .crud.group import create_group as create_group_in_db
-from .crud.sample import get_sample, get_samples, update_sample
-from .crud.tags import compute_phenotype_tags
-from .crud.user import create_user as create_user_in_db
-from .db import verify
-from .db.index import INDEXES
-from .db.utils import get_db_connection
-from .io import sample_to_kmlims
-from .models.group import GroupInCreate, pred_res_cols
-from .models.sample import SampleInCreate, SampleInDatabase
-from .models.user import UserInputCreate
-from .email import get_smtp_connection, create_email
+from .utils import EmailType, create_missing_file_report, send_email_report
 
 LOG = getLogger(__name__)
-
-
-class EmailType(click.ParamType):
-    name = "email"
-
-    def convert(self, value: str, param, ctx):
-        try:
-            validate_email(value)
-            return value
-        except EmailNotValidError:
-            self.fail(f"{value} is not a valid email", param, ctx)
 
 
 @click.group()
@@ -90,7 +77,13 @@ def setup(ctx: click.Context, password: str):
     help="User role which dictates persmission.",
 )
 def create_user(
-    _ctx: click.Context, username: str, email: str, password: str, role: str, fname: str, lname: str
+    _ctx: click.Context,
+    username: str,
+    email: str,
+    password: str,
+    role: str,
+    fname: str,
+    lname: str,
 ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """Create a user account"""
     # create collections
@@ -115,10 +108,12 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
-@click.option("-i", "--id", 'group_id', required=True, help="Group id")
+@click.option("-i", "--id", "group_id", required=True, help="Group id")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
-def create_group(_ctx: click.Context, group_id: str, name: str, description: str | None):  # pylint: disable=unused-argument
+def create_group(
+    _ctx: click.Context, group_id: str, name: str, description: str | None
+):  # pylint: disable=unused-argument
     """Create a user account"""
     # create collections
     group_obj = GroupInCreate(
@@ -126,6 +121,7 @@ def create_group(_ctx: click.Context, group_id: str, name: str, description: str
         display_name=name,
         description=description,
         table_columns=pred_res_cols,
+        validated_genes=None
     )
     try:
         loop = asyncio.get_event_loop()
@@ -154,7 +150,9 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
 @click.argument("output", type=click.File("w"), default="-")
-def export(_ctx: click.Context, sample_id: str, output: TextIOWrapper) -> None:  # pylint: disable=unused-argument
+def export(
+    _ctx: click.Context, sample_id: str, output: TextIOWrapper
+) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
     loop = asyncio.get_event_loop()
@@ -205,17 +203,29 @@ def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     default=60,
     help="Timeout limit for requests.",
 )
-@click.option('-e', '--email', 'email_addr', type=EmailType(), multiple=True, help="email report to recipient.")
+@click.option(
+    "-e",
+    "--email",
+    "email_addr",
+    type=EmailType(),
+    multiple=True,
+    help="email report to recipient.",
+)
 @click.option(
     "-o", "--output", type=click.File("w"), default="-", help="Write report to file."
 )
-def check_paths(_ctx: click.Context, redis_timeout: int, email_addr: list[str], output: TextIOWrapper) -> None:
+def check_paths(
+    _ctx: click.Context,
+    redis_timeout: int,
+    email_addr: list[str],
+    output: TextIOWrapper,
+) -> None:
     """Check that paths to files are valid."""
     loop = asyncio.get_event_loop()
     # get all samples in the database
     with get_db_connection() as db:
         func = get_samples(db)
-        samples: list[SampleInDatabase] = loop.run_until_complete(func)
+        samples: MultipleSampleRecordsResponseModel = loop.run_until_complete(func)
 
     # loop over samples and check if paths are valid
     click.secho(f"Checking {samples.records_filtered} samples for invalid paths.")
@@ -244,29 +254,18 @@ def check_paths(_ctx: click.Context, redis_timeout: int, email_addr: list[str], 
                 if missing is not None:
                     missing_files.append(missing)
 
-    # setup methods to report results
-    report_channels: dict[str, TextIOWrapper] = {"stdout": output}
+    output_ch = StringIO()
+    if len(missing_files) == 0:
+        print("No samples with invalid paths were identified", file=output_ch)
+    else:
+        create_missing_file_report(missing_files, file=output_ch)
+
     if len(email_addr) > 0:
-        report_channels['email'] = StringIO()
-    
-    # write output in csv format if missing paths were identified
-    for channel in report_channels.values():
-        if len(missing_files) == 0:
-            print("No samples with invalid paths were identified", file=channel)
-        else:
-            n_samples = len({row.sample_id for row in missing_files})
-            print(f"Found {n_samples} with a ttoal of {len(missing_files)} missing files.\n", file=channel)
-            writer = DictWriter(channel, fieldnames=list(verify.MissingFile.model_fields))
-            writer.writeheader()
-            for missing_file in missing_files:
-                writer.writerow(missing_file.model_dump())
-    # create email report if needed
-    if 'email' in report_channels:
-        if settings.email is None or settings.smtp is None:
-            LOG.error("Cant send email because smtp client has not been configured.")
-        else:
-            with get_smtp_connection(settings.smtp) as smtp:
-                msg = create_email(email_addr, settings.email)
-                msg['Subject'] = '[ Bonsai ] database integrity report'
-                msg.set_content(report_channels['email'].getvalue())
-                smtp.send_message(msg)
+        # send report as email instead of writing to output
+        try:
+            send_email_report(output_ch.getvalue(), email_address=email_addr)
+        except ValueError as err:
+            LOG.error(str(err))
+    else:
+        output.write(output_ch.getvalue())
+    click.secho("Finished validating file paths", fg='green')
