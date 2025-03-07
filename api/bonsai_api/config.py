@@ -3,9 +3,27 @@
 import ssl
 from typing import List
 
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
+
+
+class SmtpConfig(BaseSettings):
+    """SMTP server configuration."""
+
+    host: str
+    port: int = 25
+    timeout: int = Field(60, description="Conection timeout in seconds.")
+    use_tls: bool = False
+    use_ssl: bool = False
+
+
+class EmailConfig(BaseSettings):
+
+    subject_prefix: str = "[ Bonsai ]"
+    sender: str = 'do-not-reply@bonsai.app'
+    sender_name: str = "Bonsai"
 
 
 class Settings(BaseSettings):
@@ -36,6 +54,11 @@ class Settings(BaseSettings):
     secret_key: str = "not-so-secret"  # openssl rand -hex 32
     access_token_expire_minutes: int = 180  # expiration time for accesst token
     api_authentication: bool = True
+
+    # email server
+    smtp: SmtpConfig | None = None
+    email: EmailConfig = EmailConfig()
+
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
     ldap_search_attr: str = "mail"
@@ -64,6 +87,11 @@ class Settings(BaseSettings):
     ldap_ca_certs_file: str | None = ssl_defaults.cafile
     ldap_ca_certs_path: str | None = ssl_defaults.capath
     ldap_ca_certs_data: str | None = None
+
+    model_config = SettingsConfigDict(
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+    )
 
     @property
     def use_ldap_auth(self) -> bool:
