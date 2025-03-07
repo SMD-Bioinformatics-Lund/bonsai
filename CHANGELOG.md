@@ -3,6 +3,7 @@
 ### Added
 
 - Added CLI command for validating paths to index and reference files.
+- The CLI command `validate-paths` can send reports via mail.
 
 ### Changed
 
