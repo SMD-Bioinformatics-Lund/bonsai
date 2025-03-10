@@ -65,6 +65,7 @@ class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-m
     )
 
     @computed_field(alias="recordsFiltered")
+    @property
     def records_filtered(self) -> int:
         """
         Number of db returned records after narrowing the result.

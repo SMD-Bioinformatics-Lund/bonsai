@@ -12,5 +12,23 @@ services:
     volumes: 
       - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
   api:
+    environment:
+      - SMTP__HOST=mailhog
+      - SMTP__PORT=1025
     volumes: 
       - "./api/bonsai_api:/home/worker/app/bonsai_api"
+    depends_on:
+      - mongodb
+      - minhash_service
+      - ska_service
+      - allele_cluster_service
+      - mailhog
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - bonsai-net
