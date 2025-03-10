@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 from urllib.parse import urlparse
 
 from flask import (
@@ -69,7 +70,7 @@ def groups() -> str:
     selected_samples = request.args.getlist("samples")
 
     # get default columns from api
-    default_columns = []
+    default_columns: list[dict[str, str | bool | jsonPath | None]] = []
     for col in get_valid_group_columns():
         if col["hidden"]:
             continue
@@ -78,13 +79,15 @@ def groups() -> str:
         default_columns.append(col)
 
     # generate table data
-    table_data = []
+    table_data: list[dict[str, Any]] = []
     for sample in all_samples["data"]:
-        row = []
+        row: list[dict[str, Any]] = []
         for col in default_columns:
             # get sample data from json path
-            data = [m.current_value for m in col["path"].match(sample)]
-            data = data[0] if len(data) > 0 else ""
+            raw_data: list[str] = [
+                mat.current_value for mat in col["path"].match(sample)
+            ]
+            data = raw_data[0] if len(raw_data) > 0 else ""
             row.append(
                 {
                     "id": col["id"],
@@ -111,7 +114,7 @@ def groups() -> str:
 @groups_bp.route("/groups/edit", methods=["GET", "POST"])
 @groups_bp.route("/groups/edit/<group_id>", methods=["GET", "POST"])
 @login_required
-def edit_groups(group_id: str | None = None) -> str:
+def edit_groups(group_id: str | None = None):
     """Generate edit groups view
 
     :param group_id: Group id, defaults to None

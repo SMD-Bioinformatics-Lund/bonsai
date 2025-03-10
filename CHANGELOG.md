@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- Greater than and lesser than are now being remembered when filtering varians in variants.
 - A redis connection error no longer crash the sample view in the frontend.
 
 ## [v1.0.0]
