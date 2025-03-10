@@ -22,7 +22,6 @@ from flask_login import current_user, login_required
 from requests import HTTPError
 
 from ...bonsai import (
-    SubmittedJob,
     TokenObject,
     cgmlst_cluster_samples,
     delete_samples,
@@ -37,6 +36,7 @@ from ...bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
+    SubmittedJob,
 )
 from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
@@ -162,7 +162,7 @@ def sample(sample_id: str) -> str:
             typing_method=typing_method,
             cluster_method=settings.sample_view_cluster_method,
         )
-        simiar_samples: dict[str, Any] | None = {
+        similar_samples: dict[str, Any] | None = {
             "job": job.model_dump(),
             "typing_method": typing_method,
         }
@@ -175,14 +175,14 @@ def sample(sample_id: str) -> str:
             sample_id,
             str(error),
         )
-        simiar_samples = None
+        similar_samples = None
 
     return render_template(
         "sample.html",
         sample=sample_info,
         title=sample_id,
         is_filtered=bool(group_id),
-        similar_samples=simiar_samples,
+        similar_samples=similar_samples,
         bad_qc_actions=bad_qc_actions,
         extended=extended,
     )
