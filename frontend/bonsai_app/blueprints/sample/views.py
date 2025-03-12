@@ -19,7 +19,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
+from requests import HTTPError
 
 from ...bonsai import (
     TokenObject,
@@ -36,8 +36,7 @@ from ...bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
-    HTTPError,
-    SubmittedJob
+    SubmittedJob,
 )
 from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
@@ -163,21 +162,27 @@ def sample(sample_id: str) -> str:
             typing_method=typing_method,
             cluster_method=settings.sample_view_cluster_method,
         )
-        simiar_samples: dict[str, Any] | None = {"job": job.model_dump(), "typing_method": typing_method}
+        similar_samples: dict[str, Any] | None = {
+            "job": job.model_dump(),
+            "typing_method": typing_method,
+        }
     except HTTPError as error:
-        flash(f"A error occured when trying to find similar samples", category="warning")
+        flash(
+            f"A error occured when trying to find similar samples", category="warning"
+        )
         LOG.error(
             "Error when queueing redis job 'find similar samples' for sample '%s'; error: %s",
-            sample_id, str(error)
+            sample_id,
+            str(error),
         )
-        simiar_samples = None
+        similar_samples = None
 
     return render_template(
         "sample.html",
         sample=sample_info,
         title=sample_id,
         is_filtered=bool(group_id),
-        similar_samples=simiar_samples,
+        similar_samples=similar_samples,
         bad_qc_actions=bad_qc_actions,
         extended=extended,
     )
@@ -335,17 +340,17 @@ def resistance_variants(sample_id: str) -> str:
         if "classify-variant" in request.form:
             token = TokenObject(**current_user.get_id())
             variant_ids = json.loads(request.form.get("variant-ids", "[]"))
-            resistance = request.form.getlist("amrs")
+            resistance: list[str] = request.form.getlist("amrs")
             # expand rejection reason label to full db object
             rej_reason = None
             for reason in rejection_reasons:
                 if reason["label"] == request.form.get("rejection-reason"):
                     rej_reason = reason
             # parse updated variant classification
-            status = {
+            status: dict[str, str | list[str] | None] = {
                 "verified": request.form.get("verify-variant-btn"),
                 "reason": rej_reason,
-                "phenotypes": resistance if resistance is not None else None,
+                "phenotypes": resistance,
                 "resistance_lvl": request.form.get("resistance-lvl-btn"),
             }
             sample_info = update_variant_info(
