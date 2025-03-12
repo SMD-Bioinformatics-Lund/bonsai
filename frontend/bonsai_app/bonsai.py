@@ -2,12 +2,11 @@
 
 import logging
 from functools import partial, wraps
-from typing import Callable, List
+from typing import Any, Callable, List
 
 import requests
 from flask import current_app
 from pydantic import BaseModel
-from requests import HTTPError
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
@@ -38,7 +37,7 @@ class TokenObject(BaseModel):  # pylint: disable=too-few-public-methods
     type: str
 
 
-def api_authentication(func: Callable) -> Callable:
+def api_authentication(func: Callable[..., Any]) -> Callable[..., Any]:
     """Use authentication token for api.
 
     :param func: API function to wrap with API auth headers
@@ -48,7 +47,9 @@ def api_authentication(func: Callable) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(token_obj: TokenObject, *args, **kwargs) -> Callable:
+    def wrapper(
+        token_obj: TokenObject, *args: list[Any], **kwargs: list[Any]
+    ) -> Callable[..., Any]:
         """Add authentication headers to API requests.
 
         :param token_obj: Auth token object
@@ -56,7 +57,7 @@ def api_authentication(func: Callable) -> Callable:
         :return: Wrapped API call function
         :rtype: Callable
         """
-        headers = CaseInsensitiveDict()
+        headers: CaseInsensitiveDict[str] = CaseInsensitiveDict()
         headers["Accept"] = "application/json"
         headers["Authorization"] = f"{token_obj.type.capitalize()} {token_obj.token}"
 
@@ -66,7 +67,7 @@ def api_authentication(func: Callable) -> Callable:
 
 
 @api_authentication
-def get_current_user(headers: CaseInsensitiveDict):
+def get_current_user(headers: CaseInsensitiveDict[str]):
     """Get current user from token"""
     # conduct query
     url = f"{settings.bonsai_api_url}/users/me"
@@ -77,7 +78,7 @@ def get_current_user(headers: CaseInsensitiveDict):
 
 
 @api_authentication
-def get_users(headers: CaseInsensitiveDict):
+def get_users(headers: CaseInsensitiveDict[str]):
     """Get current user from the database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/users/"
@@ -88,7 +89,7 @@ def get_users(headers: CaseInsensitiveDict):
 
 
 @api_authentication
-def create_user(headers: CaseInsensitiveDict, user_obj: str):
+def create_user(headers: CaseInsensitiveDict[str], user_obj: str):
     """Create a new user."""
     # conduct query
     url = f"{settings.bonsai_api_url}/users/"
@@ -99,7 +100,7 @@ def create_user(headers: CaseInsensitiveDict, user_obj: str):
 
 
 @api_authentication
-def get_user(headers: CaseInsensitiveDict, username: str):
+def get_user(headers: CaseInsensitiveDict[str], username: str):
     """Get current user from token"""
     # username = kwargs.get("username")
     # conduct query
@@ -111,7 +112,7 @@ def get_user(headers: CaseInsensitiveDict, username: str):
 
 
 @api_authentication
-def update_user(headers: CaseInsensitiveDict, username: str, user):
+def update_user(headers: CaseInsensitiveDict[str], username: str, user: dict[str, str]):
     """Delete the user from the database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/users/{username}"
@@ -122,7 +123,7 @@ def update_user(headers: CaseInsensitiveDict, username: str, user):
 
 
 @api_authentication
-def delete_user(headers: CaseInsensitiveDict, username: str):
+def delete_user(headers: CaseInsensitiveDict[str], username: str):
     """Delete the user from the database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/users/{username}"
@@ -135,7 +136,7 @@ def delete_user(headers: CaseInsensitiveDict, username: str):
 def get_auth_token(username: str, password: str) -> TokenObject:
     """Get authentication token from api"""
     # configure header
-    headers = CaseInsensitiveDict()
+    headers: CaseInsensitiveDict[str] = CaseInsensitiveDict()
     headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     url = f"{settings.bonsai_api_url}/token"
@@ -152,7 +153,7 @@ def get_auth_token(username: str, password: str) -> TokenObject:
 
 
 @api_authentication
-def get_groups(headers: CaseInsensitiveDict):
+def get_groups(headers: CaseInsensitiveDict[str]):
     """Get groups from database"""
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/"
@@ -164,7 +165,7 @@ def get_groups(headers: CaseInsensitiveDict):
 
 
 @api_authentication
-def get_group_by_id(headers: CaseInsensitiveDict, group_id: str):
+def get_group_by_id(headers: CaseInsensitiveDict[str], group_id: str):
     """Get a group with its group_id from database"""
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/{group_id}"
@@ -176,7 +177,7 @@ def get_group_by_id(headers: CaseInsensitiveDict, group_id: str):
 
 
 @api_authentication
-def delete_group(headers: CaseInsensitiveDict, group_id: str):
+def delete_group(headers: CaseInsensitiveDict[str], group_id: str):
     """Remove group from database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/{group_id}"
@@ -187,7 +188,9 @@ def delete_group(headers: CaseInsensitiveDict, group_id: str):
 
 
 @api_authentication
-def update_group(headers: CaseInsensitiveDict, group_id: str, data):
+def update_group(
+    headers: CaseInsensitiveDict[str], group_id: str, data: dict[str, Any]
+):
     """Update information in database for a group with group_id."""
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/{group_id}"
@@ -198,9 +201,8 @@ def update_group(headers: CaseInsensitiveDict, group_id: str, data):
 
 
 @api_authentication
-def create_group(headers: CaseInsensitiveDict, **kwargs):
+def create_group(headers: CaseInsensitiveDict[str], data: dict[str, Any]):
     """create new group."""
-    data = kwargs.get("data")
     # conduct query
     url = f"{settings.bonsai_api_url}/groups/"
     resp = requests_post(url, json=data, headers=headers)
@@ -210,23 +212,24 @@ def create_group(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def add_samples_to_basket(headers: CaseInsensitiveDict, **kwargs):
+def add_samples_to_basket(
+    headers: CaseInsensitiveDict[str], samples: list[SampleBasketObject]
+):
     """create new group."""
-    samples: List[SampleBasketObject] = kwargs.get("samples")
-    samples = [smp.model_dump() for smp in samples]
+    serialised_info = [smp.model_dump() for smp in samples]
     # conduct query
     url = f"{settings.bonsai_api_url}/users/basket"
-    resp = requests_put(url, json=samples, headers=headers)
+    resp = requests_put(url, json=serialised_info, headers=headers)
 
     resp.raise_for_status()
     return resp.json()
 
 
 @api_authentication
-def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
+def remove_samples_from_basket(
+    headers: CaseInsensitiveDict[str], sample_ids: list[str]
+):
     """create new group."""
-    sample_ids: List[str] = kwargs.get("sample_ids")
-    # conduct query
     url = f"{settings.bonsai_api_url}/users/basket"
     resp = requests_delete(url, json=sample_ids, headers=headers)
 
@@ -236,7 +239,7 @@ def remove_samples_from_basket(headers: CaseInsensitiveDict, **kwargs):
 
 @api_authentication
 def get_samples(
-    headers: CaseInsensitiveDict,
+    headers: CaseInsensitiveDict[str],
     limit: int = 20,
     skip: int = 0,
     sample_ids: list[str] | None = None,
@@ -245,7 +248,7 @@ def get_samples(
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/"
     # get limit, offeset and skip values
-    params = {"limit": limit, "skip": skip}
+    params: dict[str, int | list[str]] = {"limit": limit, "skip": skip}
     if sample_ids is not None:
         # sanity check list
         if len(sample_ids) == 0:
@@ -253,16 +256,15 @@ def get_samples(
         params["sid"] = sample_ids
     resp = requests_get(url, headers=headers, params=params)
 
-    LOG.error("url: %s, params: %s", url, params)
     try:
         resp.raise_for_status()
-    except:
+    except requests.HTTPError:
         print(resp.text)
     return resp.json()
 
 
 @api_authentication
-def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
+def delete_samples(headers: CaseInsensitiveDict[str], sample_ids: List[str]):
     """Remove samples from database."""
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/"
@@ -274,8 +276,8 @@ def delete_samples(headers: CaseInsensitiveDict, sample_ids: List[str]):
 
 @api_authentication
 def get_samples_in_group(
-    headers: CaseInsensitiveDict,
-    group_id: str,
+    headers: CaseInsensitiveDict[str],
+    group_id: str | None = None,
     limit: int = 0,
     skip_lines: int = 0,
     prediction_result: bool = True,
@@ -304,10 +306,11 @@ def get_samples_in_group(
 
 
 @api_authentication
-def get_sample_by_id(headers: CaseInsensitiveDict, **kwargs):
+def get_sample_by_id(
+    headers: CaseInsensitiveDict[str], sample_id: str
+) -> dict[str, Any]:
     """Get sample from database by id"""
     # conduct query
-    sample_id = kwargs.get("sample_id")
     url = f"{settings.bonsai_api_url}/samples/{sample_id}"
     resp = requests_get(url, headers=headers)
     current_app.logger.debug("Query API for sample %s", sample_id)
@@ -317,7 +320,7 @@ def get_sample_by_id(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def cgmlst_cluster_samples(headers: CaseInsensitiveDict):
+def cgmlst_cluster_samples(headers: CaseInsensitiveDict[str]):
     """Get groups from database"""
     url = f"{settings.bonsai_api_url}/cluster/cgmlst"
     resp = requests_post(url, headers=headers)
@@ -327,10 +330,11 @@ def cgmlst_cluster_samples(headers: CaseInsensitiveDict):
 
 
 @api_authentication
-def post_comment_to_sample(headers: CaseInsensitiveDict, **kwargs):
+def post_comment_to_sample(
+    headers: CaseInsensitiveDict[str], sample_id: str, user_name: str, comment: str
+):
     """Post comment to sample"""
-    sample_id = kwargs.get("sample_id")
-    data = {"comment": kwargs.get("comment"), "username": kwargs.get("user_name")}
+    data = {"comment": comment, "username": user_name}
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/{sample_id}/comment"
     resp = requests_post(url, headers=headers, json=data)
@@ -339,10 +343,10 @@ def post_comment_to_sample(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def remove_comment_from_sample(headers: CaseInsensitiveDict, **kwargs):
+def remove_comment_from_sample(
+    headers: CaseInsensitiveDict[str], sample_id: str, comment_id: str
+):
     """Post comment to sample"""
-    sample_id = kwargs.get("sample_id")
-    comment_id = kwargs.get("comment_id")
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/{sample_id}/comment/{comment_id}"
     resp = requests_delete(url, headers=headers)
@@ -351,15 +355,18 @@ def remove_comment_from_sample(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
+def update_sample_qc_classification(
+    headers: CaseInsensitiveDict[str],
+    sample_id: str,
+    status: str,
+    action: str | None,
+    comment: str,
+):
     """Update the qc classification of a sample"""
-    if "sample_id" not in kwargs:
-        raise ValueError("Sample id is required for this entrypoint")
-    sample_id = kwargs["sample_id"]
-    data = {
-        "status": kwargs.get("status"),
-        "action": kwargs.get("action"),
-        "comment": kwargs.get("comment"),
+    data: dict[str, str | None] = {
+        "status": status,
+        "action": action,
+        "comment": comment,
     }
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/{sample_id}/qc_status"
@@ -369,9 +376,14 @@ def update_sample_qc_classification(headers: CaseInsensitiveDict, **kwargs):
 
 
 @api_authentication
-def update_variant_info(headers: CaseInsensitiveDict, sample_id, variant_ids, status):
+def update_variant_info(
+    headers: CaseInsensitiveDict[str],
+    sample_id: str,
+    variant_ids: str,
+    status: dict[str, str | list[str] | None],
+):
     """Update annotation of resitance variants for a sample"""
-    data = {
+    data: dict[str, str | list[str] | None] = {
         "variant_ids": variant_ids,
         **status,
     }
@@ -383,29 +395,36 @@ def update_variant_info(headers: CaseInsensitiveDict, sample_id, variant_ids, st
 
 
 @api_authentication
-def cluster_samples(headers: CaseInsensitiveDict, **kwargs) -> SubmittedJob:
+def cluster_samples(
+    headers: CaseInsensitiveDict[str],
+    sample_ids: list[str],
+    method: str = "single",
+    typing_method: str = "cgmlst",
+    distance: str = "jaccard",
+) -> SubmittedJob:
     """Cluster samples on selected typing result."""
-    typing_method = kwargs.get("typing_method", "cgmslt")
-    data = {
-        "sample_ids": kwargs.get("sample_ids"),
-        "method": kwargs.get("method", "single"),
-        "distance": kwargs.get("distance", "jaccard"),
-    }
-    # conduct query
     url = f"{settings.bonsai_api_url}/cluster/{typing_method}/"
-    resp = requests_post(url, headers=headers, json=data)
+    resp = requests_post(
+        url,
+        headers=headers,
+        json={
+            "sample_ids": sample_ids,
+            "method": method,
+            "distance": distance,
+        },
+    )
     resp.raise_for_status()
     return SubmittedJob(**resp.json())
 
 
 @api_authentication
 def find_samples_similar_to_reference(
-    headers: CaseInsensitiveDict, **kwargs
+    headers: CaseInsensitiveDict[str],
+    sample_id: str,
+    similarity: float = 0.5,
+    limit: int | None = None,
 ) -> SubmittedJob:
     """Find samples with closest minhash distance to reference."""
-    sample_id: str = kwargs.get("sample_id")
-    similarity: float = kwargs.get("similarity", 0.5)  # similarity score
-    limit: int = kwargs.get("limit", None)
     # conduct query
     url = f"{settings.bonsai_api_url}/samples/{sample_id}/similar"
     current_app.logger.debug(
@@ -425,7 +444,7 @@ def find_samples_similar_to_reference(
 
 @api_authentication
 def find_and_cluster_similar_samples(
-    headers: CaseInsensitiveDict,
+    headers: CaseInsensitiveDict[str],
     sample_id: str,
     similarity: float = 0.5,
     limit: int | None = None,
@@ -441,7 +460,7 @@ def find_and_cluster_similar_samples(
         similarity,
         limit,
     )
-    data = {
+    data: dict[str, str | int | float | None] = {
         "sample_id": sample_id,
         "similarity": similarity,
         "limit": limit,
@@ -459,7 +478,7 @@ def find_and_cluster_similar_samples(
 
 
 @api_authentication
-def get_lims_export_file(headers: CaseInsensitiveDict, sample_id: str) -> str:
+def get_lims_export_file(headers: CaseInsensitiveDict[str], sample_id: str) -> str:
     """Query the API for a lims export file."""
     url = f"{settings.bonsai_api_url}/export/{sample_id}/lims"
     resp = requests_get(url, headers=headers)

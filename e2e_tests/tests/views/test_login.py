@@ -16,7 +16,7 @@ def test_accessable_landingpage(remote_driver, config):
 def test_login_admin(logged_in_admin, config):
     """Test that login to Bonsai works."""
     # Ensure that login worked
-    alert = get_bootstrap_alert(logged_in_admin)
+    alert = get_bootstrap_alert(logged_in_admin, severity="warning")
 
     # Check that no bootstrap alert was thrown
     assert alert is None
@@ -39,7 +39,7 @@ def test_log_out_user(logged_in_admin):
     get_element_by_test_id(logged_in_admin, "logout-user-btn").click()
 
     # Check that no bootstrap alert was thrown
-    alert = get_bootstrap_alert(logged_in_admin)
+    alert = get_bootstrap_alert(logged_in_admin, severity="warning")
     assert alert is None
 
     # Check that login was redirected to the landing page

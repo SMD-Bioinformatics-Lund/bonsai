@@ -80,7 +80,7 @@ def test_add_samples_to_basket(logged_in_user, config, group_id: str):
     logged_in_user.implicitly_wait(2)
 
     # TEST that no error alerts were thrown
-    alert = get_bootstrap_alert(logged_in_user)
+    alert = get_bootstrap_alert(logged_in_user, severity="warning")
     assert alert is None, f"Alert error: {alert.text}"
 
     # TEST that one sample has been added to the basket
