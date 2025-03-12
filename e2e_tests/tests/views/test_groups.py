@@ -35,7 +35,9 @@ def test_add_samples_to_basket(logged_in_user, config):
         EC.visibility_of_element_located((By.ID, "clear-basket-btn"))
     )
     clear_basket_btn.click()
-    get_element_by_test_id(logged_in_user, "close-basket-btn").click()
+    wait.until(
+        EC.element_to_be_clickable((By.ID, "close-basket-btn"))
+    ).click()
 
     # THEN select the first sample in the table
     get_element_by_test_id(logged_in_user, "sample-row-1").click()
@@ -51,7 +53,7 @@ def test_add_samples_to_basket(logged_in_user, config):
     logged_in_user.implicitly_wait(2)
 
     # TEST that no error alerts were thrown
-    alert = get_bootstrap_alert(logged_in_user)
+    alert = get_bootstrap_alert(logged_in_user, severity="warning")
     assert alert is None, f"Alert error: {alert.text}"
 
     # TEST that one sample has been added to the basket
