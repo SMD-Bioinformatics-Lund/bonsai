@@ -5,6 +5,7 @@ from itertools import groupby
 from typing import Any, Dict, List, Sequence
 from pymongo.results import UpdateResult
 
+from pydantic import ValidationError
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
@@ -62,7 +63,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 TypingProfileOutput = list[TypingProfileAggregate]
 
-PREDICTION_SUMMARY_QUERY = [
+PREDICTION_SUMMARY_QUERY: list[dict[str, Any]] = [
     {
         "$addFields": {
             "mlst": {
@@ -154,7 +155,7 @@ PREDICTION_SUMMARY_QUERY = [
     },
 ]
 
-QC_METRICS_SUMMARY_QUERY = [
+QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
     {
         "$addFields": {
             "quast": {
@@ -205,7 +206,7 @@ async def get_samples_summary(
     include_samples: List[str] | None = None,
     prediction_result: bool = True,
     qc_metrics: bool = False,
-) -> List[SampleSummary]:
+) -> MultipleRecordsResponseModel:
     """Get a summay of several samples."""
     # build query pipeline
     pipeline: list[dict[str, Any]] = []
@@ -259,7 +260,7 @@ async def get_samples_summary(
     # build query for prediction result
     if prediction_result:
         pipeline.extend(PREDICTION_SUMMARY_QUERY)
-        optional_projecton = {
+        optional_projecton: dict[str, int | str] = {
             "tags": 1,
             "comments": 1,
             "mlst": "$mlst.result.sequence_type",
@@ -327,18 +328,31 @@ async def get_samples(
     """Get samples from database."""
 
     # get number of samples in collection
-    n_samples = await db.sample_collection.count_documents({})
+    if db.sample_collection is None:
+        raise ValueError("Database connection not initialized.")
 
-    cursor = db.sample_collection.find(limit=limit, skip=skip)
-    samp_objs = []
+    # query the database for samples
+    n_samples: int = await db.sample_collection.count_documents({})
+    cursor = db.sample_collection.find({}, limit=limit, skip=skip)
+    samp_objs: list[SampleInDatabase] = []
     for samp in await cursor.to_list(None):
-        inserted_id = samp["_id"]
-        sample = SampleInDatabase(
-            id=str(inserted_id),
-            **samp,
-        )
+        inserted_id: ObjectId = samp["_id"]
+        # cast database object as data model
+        try:
+            sample = SampleInDatabase.model_validate(
+                {"id": str(inserted_id), **samp},
+            )
+        except ValidationError as err:
+            LOG.error(
+                (
+                    "Sample '%s' do not conform to the expected data format. "
+                    "This can be caused if the data format has been updated. "
+                    "If that is the case the database needs to be migrated. "
+                    "See the documentation for more information."
+                ), samp.get("sample_id", "unknown id"))
+            raise err
         # Compute tags
-        tags: TagList = compute_phenotype_tags(sample)
+        tags = compute_phenotype_tags(sample)
         sample.tags = tags
         if include is not None and sample.sample_id not in include:
             continue
