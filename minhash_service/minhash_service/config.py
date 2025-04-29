@@ -1,17 +1,26 @@
 """Configuration for minhash service"""
-from os import getenv
 
-# Sourmash variables
-SIGNATURE_KMER_SIZE = int(getenv("KMER_SIZE", "31"))
-GENOME_SIGNATURE_DIR = getenv("DB_PATH", "/data/signature_db")
+from pathlib import Path
+from typing import Any
+from pydantic import DirectoryPath, PositiveInt
+from pydantic_settings import BaseSettings
 
-# Sourmash variables
-REDIS_HOST = getenv("REDIS_HOST", "redis")
-REDIS_PORT = getenv("REDIS_PORT", "6379")
-REDIS_QUEUE = "minhash"
+class RedisConfig(BaseSettings):
+    host: str = "redis"
+    port: PositiveInt = 6379
+    queue: str = "minhash"
+
+
+class Settings(BaseSettings):
+    """Minhash service settings."""
+
+    kmer_size: PositiveInt = 31
+    signature_dir: DirectoryPath = Path("/data/signature_db")
+
+    redis: RedisConfig
 
 # Logging configuration
-DICT_CONFIG = {
+LOG_CONFIG: dict[str, Any] = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
@@ -33,3 +42,6 @@ DICT_CONFIG = {
         },
     },
 }
+
+
+settings = Settings()

@@ -6,7 +6,7 @@ from typing import Iterable, List
 
 import fasteners
 import sourmash
-from minhash_service import config
+from minhash_service.config import settings
 from sourmash.signature import FrozenSourmashSignature
 
 LOG = logging.getLogger(__name__)
@@ -15,9 +15,8 @@ SIGNATURES = List[FrozenSourmashSignature]
 
 def get_sbt_index(check: bool = True) -> str:
     """Get sourmash SBT index file."""
-    signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    # index_path = signature_dir.joinpath("genomes.sbt.zip")
-    index_path = signature_dir.joinpath("genomes.sbt.json")
+    signature_dir = pathlib.Path(settings.signature_dir)
+    index_path = signature_dir.joinpath("genomes.sbt.zip")
 
     # Check if file exist
     if check:
@@ -27,7 +26,7 @@ def get_sbt_index(check: bool = True) -> str:
     return str(index_path)
 
 
-def get_signature_path(sample_id: str, check=True) -> str:
+def get_signature_path(sample_id: str, check: bool = True) -> str:
     """
     Get path to a sample signature file.
 
@@ -37,7 +36,7 @@ def get_signature_path(sample_id: str, check=True) -> str:
     :return: path to the signature
     :rtype: str
     """
-    signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
+    signature_dir = pathlib.Path(settings.signature_dir)
     signature_path = signature_dir.joinpath(f"{sample_id}.sig")
 
     # Check if file exist
@@ -52,14 +51,13 @@ def read_signature(sample_id: str) -> SIGNATURES:
     """Read signature to memory."""
     # read signature
     signature_path = get_signature_path(sample_id)
-    kmer_sizes = config.SIGNATURE_KMER_SIZE
-    loaded = sourmash.load_file_as_signatures(signature_path, ksize=kmer_sizes)
+    loaded = sourmash.load_file_as_signatures(signature_path, ksize=settings.kmer_size)
 
     # check that were signatures loaded with current kmer
     loaded = list(loaded)
     if not loaded:
         raise ValueError(
-            f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}"
+            f"No signatures, sample id: {sample_id}, ksize: {settings.kmer_size}, {loaded}"
         )
     return loaded
 
@@ -72,7 +70,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     """
     # get signature directory
     LOG.info("Adding signature file for %s", sample_id)
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
+    signature_db = pathlib.Path(settings.signature_dir)
     # make db if signature db is not present
     if not signature_db.exists():
         signature_db.mkdir(parents=True, exist_ok=True)
@@ -89,7 +87,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
     signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(
-        signature, ksize=config.SIGNATURE_KMER_SIZE
+        signature, ksize=settings.kmer_size
     )
     upd_signatures = []
     for sig_obj in signatures:
@@ -115,9 +113,6 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
 def remove_signature(sample_id: str) -> bool:
     """Remove an existing signature file from disk."""
 
-    # get signature directory
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-
     # get genome index
     sbt_filename = get_sbt_index()
 
@@ -128,7 +123,7 @@ def remove_signature(sample_id: str) -> bool:
     # read signature
     signature = next(
         sourmash.signature.load_signatures(
-            signature_file, ksize=config.SIGNATURE_KMER_SIZE
+            signature_file, ksize=settings.kmer_size
         )
     )
 

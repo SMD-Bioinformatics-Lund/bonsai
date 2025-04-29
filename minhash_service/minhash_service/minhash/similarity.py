@@ -4,7 +4,7 @@ import pathlib
 from typing import List
 
 import sourmash
-from minhash_service import config
+from minhash_service.config import settings
 from pydantic import BaseModel
 
 from .io import SIGNATURES, get_sbt_index, read_signature
@@ -48,7 +48,7 @@ def get_similar_signatures(
     if len(query_signature) == 0:
         msg = (
             f"No signature in: {query_signature.filename}"
-            f"with kmer size: {config.SIGNATURE_KMER_SIZE}"
+            f"with kmer size: {settings.kmer_size}"
         )
         raise ValueError(msg)
 
