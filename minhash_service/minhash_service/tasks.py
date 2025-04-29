@@ -2,16 +2,19 @@
 import logging
 from typing import Dict, List
 
+from minhash_service.minhash_service.minhash.models import SignatureFile
+
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
 from .minhash.io import remove_signatures_from_index, write_signature
 from .minhash.similarity import SimilarSignatures, get_similar_signatures
+from .config import settings
 
 LOG = logging.getLogger(__name__)
 
 
-def add_signature(sample_id: str, signature) -> str:
+def add_signature(sample_id: str, signature: SignatureFile) -> str:
     """
     Find signatures similar to reference signature.
 
@@ -97,7 +100,7 @@ def similar(
     :rtype: SimilarSignatures
     """
     samples = get_similar_signatures(
-        sample_id, min_similarity=min_similarity, limit=limit
+        sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
     )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",

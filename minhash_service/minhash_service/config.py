@@ -15,9 +15,10 @@ class Settings(BaseSettings):
     """Minhash service settings."""
 
     kmer_size: PositiveInt = 31
-    signature_dir: DirectoryPath = Path("/data/signature_db")
+    signature_dir: Path = Path("/data/signature_db")
+    index_name: str = "genomes"
 
-    redis: RedisConfig
+    redis: RedisConfig = RedisConfig()
 
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {
