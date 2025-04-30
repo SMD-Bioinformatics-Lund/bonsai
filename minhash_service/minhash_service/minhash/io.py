@@ -146,7 +146,7 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
 
     signatures = []
     for sample_id in sample_ids:
-        signature = read_signature(sample_id)
+        signature = read_signature(sample_id, cnf)
         signatures.append(signature[0])
 
     # add signature to existing index
