@@ -1,0 +1,2 @@
+sample	type	subtype	mecA	targets	regions	coverage	hits	target_schema	target_schema_version	region_schema	region_schema_version	camlhmp_version	params	target_comment	region_comment	comment
+drr237262_250425_a012345_0000_prjdb10169_sccmec	IV	IVa	+	ccrA2,ccrB2,IS431,IS431_1,IS431_2,IS1272,mecA,mecR1	IVa	94.09	22	sccmec_targets	1.2.0	sccmec_regions	1.2.0	1.1.0	min-targets-coverage=80;min-targets-pident=90;min-regions-coverage=83;min-regions-pident=85		Coverage based on 22 hits;There were one or more overlapping hits	

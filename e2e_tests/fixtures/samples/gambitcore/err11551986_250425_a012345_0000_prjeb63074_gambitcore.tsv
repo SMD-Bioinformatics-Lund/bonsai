@@ -1,0 +1,2 @@
+Filename	Species	Completeness (%)	Assembly Core/species Core	Closest accession	Closest distance	Assembly Kmers	Species Kmers Mean	Species Kmers Std Dev	Assembly QC
+err11551986_250425_a012345_0000_prjeb63074_skesa.fasta	Mycobacterium tuberculosis	99.86%	(6910/6920)	GCF_001376255.1	0.0031	7394	7396	28	green

@@ -15,6 +15,8 @@
 
 ### Changed
 
+- Updated e2e_test fixtures regarding new prp upload format
+
 ### Fixed
 
 - Greater than and lesser than are now being remembered when filtering varians in variants.

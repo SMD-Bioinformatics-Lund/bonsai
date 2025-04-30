@@ -1,0 +1,23 @@
+{
+  "workflow_name": "tiny_legentil",
+  "sample_name": "ERR11551983",
+  "lims_id": "ERR11551983",
+  "assay": "mtuberculosis",
+  "release_life_cycle": "development",
+  "sequencing_run": "250425_A012345_0000_PRJEB63074",
+  "sequencing_platform": "illumina",
+  "sequencing_type": "PE",
+  "date": "2025-04-30T17:56:22.363306+02:00",
+  "pipeline": "main.nf",
+  "version": "1.0.0",
+  "commit": "null",
+  "configuration_files": [
+    "/fs1/pipelines/jasen_dev/nextflow.config"
+  ],
+  "analysis_profile": [
+    "mycobacterium_tuberculosis",
+    "dev",
+    "illumina"
+  ],
+  "command": "nextflow run /fs1/pipelines/jasen_dev/main.nf -profile mycobacterium_tuberculosis,dev,illumina -c /fs1/pipelines/jasen_dev/nextflow.config --csv /fs1/ryan/jasen/test-csvs/PRJEB63074-saureus.csv --queue high -with-singularity /fs1/resources/containers/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/PRJEB63074.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/PRJEB63074.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/PRJEB63074.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//PRJEB63074.jasen-mtuberculosis-dev -resume"
+}

@@ -1,4 +1,34 @@
-group_id: saureus
-minhash_signature: ./sourmash/DRR237264.sig
-prp_result: ./analysis_result/DRR237264_result.json
-ska_index: ./ska/saureus/DRR237264_ska_index.skf
+amrfinder: ./amrfinderplus/drr237264_250425_a012345_0000_prjdb10169_amrfinder.tsv
+assay: saureus
+chewbbaca: ./chewbbaca/drr237264_250425_a012345_0000_prjdb10169_chewbbaca.tsv
+gambitcore: ./gambitcore/drr237264_250425_a012345_0000_prjdb10169_gambitcore.tsv
+groups:
+- saureus
+igv_annotations:
+- index_uri: ./bam/drr237264_250425_a012345_0000_prjdb10169_bwa.bam.bai
+  name: Read coverage
+  type: alignment
+  uri: ./bam/drr237264_250425_a012345_0000_prjdb10169_bwa.bam
+- name: Cool variants
+  type: variant
+  uri: ./vcf/drr237264_250425_a012345_0000_prjdb10169_freebayes.vcf
+kraken: ./kraken/drr237264_250425_a012345_0000_prjdb10169_bracken.out
+lims_id: DRR237264
+mlst: ./mlst/drr237264_250425_a012345_0000_prjdb10169_mlst.json
+nextflow_run_info: ./analysis_metadata/drr237264_250425_a012345_0000_prjdb10169_analysis_meta.json
+postalnqc: ./postalignqc/drr237264_250425_a012345_0000_prjdb10169_qc.json
+quast: ./quast/drr237264_250425_a012345_0000_prjdb10169_quast.tsv
+ref_genome_annotation: ./genomes/staphylococcus_aureus/GCF_000012045.1.gff
+ref_genome_sequence: ./genomes/staphylococcus_aureus/GCF_000012045.1.fasta
+release_life_cycle: development
+resfinder: ./resfinder/drr237264_250425_a012345_0000_prjdb10169_resfinder.json
+sample_id: drr237264_250425_a012345_0000_prjdb10169
+sample_name: DRR237264
+sccmec: ./sccmec/drr237264_250425_a012345_0000_prjdb10169_sccmec.tsv
+ska_index: ./ska/drr237264_250425_a012345_0000_prjdb10169_ska_index.skf
+software_info:
+- ./resfinder/drr237264_250425_a012345_0000_prjdb10169_resfinder_meta.json
+- ./virulencefinder/drr237264_250425_a012345_0000_prjdb10169_virulencefinder_meta.json
+sourmash_signature: ./sourmash/drr237264_250425_a012345_0000_prjdb10169.sig
+spatyper: ./spatyper/drr237264_250425_a012345_0000_prjdb10169_spatyper.tsv
+virulencefinder: ./virulencefinder/drr237264_250425_a012345_0000_prjdb10169_virulencefinder.json

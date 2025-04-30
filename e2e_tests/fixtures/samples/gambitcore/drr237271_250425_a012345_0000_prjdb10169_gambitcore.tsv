@@ -1,0 +1,2 @@
+Filename	Species	Completeness (%)	Assembly Core/species Core	Closest accession	Closest distance	Assembly Kmers	Species Kmers Mean	Species Kmers Std Dev	Assembly QC
+drr237271_250425_a012345_0000_prjdb10169_skesa.fasta	Staphylococcus aureus	99.90%	(4010/4014)	GCF_000542905.1	0.0045	7150	7081	130	green

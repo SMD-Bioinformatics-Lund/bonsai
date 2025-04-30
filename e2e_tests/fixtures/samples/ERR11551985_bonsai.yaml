@@ -1,4 +1,30 @@
-group_id: mtuberculosis
-minhash_signature: ./sourmash/ERR11551985.sig
-prp_result: ./analysis_result/ERR11551985_result.json
-ska_index: ./ska/mtuberculosis/ERR11551985_ska_index.skf
+gambitcore: /fs1/results_dev/jasen/mtuberculosis/gambitcore/err11551985_250425_a012345_0000_prjeb63074_gambitcore.tsv
+groups:
+- mtuberculosis
+igv_annotations:
+- index_uri: /access/jasen/mtuberculosis/bam/err11551985_250425_a012345_0000_prjeb63074_tbprofiler.bam.bai
+  name: Read coverage
+  type: alignment
+  uri: /access/jasen/mtuberculosis/bam/err11551985_250425_a012345_0000_prjeb63074_tbprofiler.bam
+- name: tbdb grading rules bed
+  type: bed
+  uri: /fs1/pipelines/jasen_dev/assets/tb_info/bed/tb_grading_rules.bed
+- name: tbdb bed
+  type: bed
+  uri: /fs1/pipelines/jasen_dev/assets/tbdb/converged_who_fohm_tbdb.bed.gz
+- name: Cool variants
+  type: variant
+  uri: /access/jasen/mtuberculosis/vcf/err11551985_250425_a012345_0000_prjeb63074_annotated_delly.vcf
+kraken: /fs1/results_dev/jasen/mtuberculosis/kraken/err11551985_250425_a012345_0000_prjeb63074_bracken.out
+lims_id: ERR11551985
+mykrobe: /fs1/results_dev/jasen/mtuberculosis/mykrobe/err11551985_250425_a012345_0000_prjeb63074_mykrobe.csv
+nextflow_run_info: /fs1/results_dev/jasen/mtuberculosis/analysis_metadata/err11551985_250425_a012345_0000_prjeb63074_analysis_meta.json
+postalnqc: /fs1/results_dev/jasen/mtuberculosis/postalignqc/err11551985_250425_a012345_0000_prjeb63074_qc.json
+quast: /fs1/results_dev/jasen/mtuberculosis/quast/err11551985_250425_a012345_0000_prjeb63074_quast.tsv
+ref_genome_annotation: /fs1/pipelines/jasen_dev/assets/genomes/mycobacterium_tuberculosis/GCF_000195955.2.gff
+ref_genome_sequence: /fs1/pipelines/jasen_dev/assets/genomes/mycobacterium_tuberculosis/GCF_000195955.2.fasta
+sample_id: err11551985_250425_a012345_0000_prjeb63074
+sample_name: ERR11551985
+ska_index: /access/jasen/mtuberculosis/ska/err11551985_250425_a012345_0000_prjeb63074_ska_index.skf
+sourmash_signature: /access/jasen/mtuberculosis/sourmash/err11551985_250425_a012345_0000_prjeb63074.sig
+tbprofiler: /fs1/results_dev/jasen/mtuberculosis/tbprofiler/err11551985_250425_a012345_0000_prjeb63074_tbprofiler.json
