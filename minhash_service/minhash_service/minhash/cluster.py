@@ -7,6 +7,7 @@ import sourmash
 from scipy.cluster import hierarchy
 
 from .io import read_signature
+from minhash_service.config import Settings
 
 LOG = logging.getLogger(__name__)
 
@@ -17,7 +18,6 @@ class ClusterMethod(str, Enum):
     SINGLE = "single"
     COMPLETE = "complete"
     AVERAGE = "average"
-    NJ = "neighbor_joining"
 
 
 def to_newick(node, newick, parentdist, leaf_names) -> str:
@@ -36,14 +36,14 @@ def to_newick(node, newick, parentdist, leaf_names) -> str:
     return newick
 
 
-def cluster_signatures(sample_ids: List[str], method: ClusterMethod):
+def cluster_signatures(sample_ids: List[str], method: ClusterMethod, cnf: Settings):
     """Cluster multiple samples on their minhash signatures."""
 
     # load sequence signatures to memory
     siglist = []
     LOG.info("Cluster signatures with sample ids: %s", sample_ids)
     for sample_id in sample_ids:
-        signature = read_signature(sample_id)
+        signature = read_signature(sample_id, cnf=cnf)
         siglist.extend(signature)  # append to all signatures
 
     # create distance matrix

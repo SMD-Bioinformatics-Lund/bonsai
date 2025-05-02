@@ -1,33 +1,37 @@
 """Functions for reading and writing signatures"""
+
 import gzip
 import logging
 import pathlib
-from typing import Iterable, List
+from typing import Iterable
 
 import fasteners
 import sourmash
-from minhash_service import config
-from sourmash.signature import FrozenSourmashSignature
+from sourmash.signature import FrozenSourmashSignature, SourmashSignature
+
+from minhash_service.config import Settings
+
+from .models import SignatureFile, SignatureName
 
 LOG = logging.getLogger(__name__)
-SIGNATURES = List[FrozenSourmashSignature]
+Signatures = list[SourmashSignature | FrozenSourmashSignature]
 
 
-def get_sbt_index(check: bool = True) -> str:
+def get_sbt_index(cnf: Settings, check: bool = True) -> pathlib.Path:
     """Get sourmash SBT index file."""
-    signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-    # index_path = signature_dir.joinpath("genomes.sbt.zip")
-    index_path = signature_dir.joinpath("genomes.sbt.json")
+    index_path = cnf.signature_dir.joinpath(f"{cnf.index_name}.sbt.zip")
 
     # Check if file exist
     if check:
         if not index_path.is_file():
             raise FileNotFoundError(f"Sourmash index does not exist: {index_path}")
     # Load index to memory
-    return str(index_path)
+    return index_path
 
 
-def get_signature_path(sample_id: str, check=True) -> str:
+def get_signature_path(
+    sample_id: str, signature_dir: pathlib.Path, check: bool = True
+) -> str:
     """
     Get path to a sample signature file.
 
@@ -37,7 +41,6 @@ def get_signature_path(sample_id: str, check=True) -> str:
     :return: path to the signature
     :rtype: str
     """
-    signature_dir = pathlib.Path(config.GENOME_SIGNATURE_DIR)
     signature_path = signature_dir.joinpath(f"{sample_id}.sig")
 
     # Check if file exist
@@ -48,23 +51,24 @@ def get_signature_path(sample_id: str, check=True) -> str:
     return str(signature_path)
 
 
-def read_signature(sample_id: str) -> SIGNATURES:
+def read_signature(sample_id: str, cnf: Settings) -> Signatures:
     """Read signature to memory."""
     # read signature
-    signature_path = get_signature_path(sample_id)
-    kmer_sizes = config.SIGNATURE_KMER_SIZE
-    loaded = sourmash.load_file_as_signatures(signature_path, ksize=kmer_sizes)
+    signature_path = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
+    loaded = sourmash.load_file_as_signatures(signature_path, ksize=cnf.kmer_size)
 
     # check that were signatures loaded with current kmer
-    loaded = list(loaded)
-    if not loaded:
+    loaded_sigs = list(loaded)
+    if len(loaded_sigs) == 0:
         raise ValueError(
-            f"No signatures, sample id: {sample_id}, ksize: {kmer_sizes}, {loaded}"
+            f"No signatures, sample id: {sample_id}, ksize: {cnf.kmer_size}, {loaded}"
         )
-    return loaded
+    return loaded_sigs
 
 
-def write_signature(sample_id: str, signature) -> pathlib.Path:
+def write_signature(
+    sample_id: str, signature: SignatureFile, cnf: Settings
+) -> pathlib.Path:
     """
     Add genome signature to index.
 
@@ -72,13 +76,15 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     """
     # get signature directory
     LOG.info("Adding signature file for %s", sample_id)
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
+    signature_db = pathlib.Path(cnf.signature_dir)
     # make db if signature db is not present
     if not signature_db.exists():
         signature_db.mkdir(parents=True, exist_ok=True)
 
     # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id, check=False)
+    signature_file = get_signature_path(
+        sample_id, signature_dir=cnf.signature_dir, check=False
+    )
 
     # check if compressed and decompress data
     LOG.info("Check if signature is compressed")
@@ -89,7 +95,7 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
     signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(
-        signature, ksize=config.SIGNATURE_KMER_SIZE
+        signature, ksize=cnf.kmer_size
     )
     upd_signatures = []
     for sig_obj in signatures:
@@ -112,25 +118,14 @@ def write_signature(sample_id: str, signature) -> pathlib.Path:
     return signature_file
 
 
-def remove_signature(sample_id: str) -> bool:
+def remove_signature(sample_id: str, cnf: Settings) -> bool:
     """Remove an existing signature file from disk."""
-
-    # get signature directory
-    signature_db = pathlib.Path(config.GENOME_SIGNATURE_DIR)
-
-    # get genome index
-    sbt_filename = get_sbt_index()
-
     # check that signature doesnt exist
     # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id)
+    signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
 
     # read signature
-    signature = next(
-        sourmash.signature.load_signatures(
-            signature_file, ksize=config.SIGNATURE_KMER_SIZE
-        )
-    )
+    next(sourmash.signature.load_signatures(signature_file, ksize=cnf.kmer_size))
 
     # remove file
     pathlib.Path(signature_file).unlink()
@@ -138,28 +133,30 @@ def remove_signature(sample_id: str) -> bool:
     return False
 
 
-def check_signature(sample_id: str) -> bool:
+def check_signature(sample_id: str, cnf: Settings) -> bool:
     """Check if signature exist and has been added to the index."""
     LOG.info("Checking signature file: %s", signature_file)
     try:
-        signature_file = get_signature_path(sample_id, check=True)
+        signature_file = get_signature_path(
+            sample_id, signature_dir=cnf.signature_dir, check=True
+        )
     except FileExistsError:
         return False
     else:
         return True
 
 
-def add_signatures_to_index(sample_ids: List[str]) -> bool:
+def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
     """Add genome signature file to sourmash index"""
 
-    genome_index = get_sbt_index(check=False)
-    sbt_lock_path = f"{genome_index}.lock"
+    genome_index = get_sbt_index(cnf=cnf, check=False)
+    sbt_lock_path = f"{genome_index.name}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
     LOG.debug("Using lock: %s", sbt_lock_path)
 
     signatures = []
     for sample_id in sample_ids:
-        signature = read_signature(sample_id)
+        signature = read_signature(sample_id, cnf)
         signatures.append(signature[0])
 
     # add signature to existing index
@@ -168,8 +165,8 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
     with lock:
         # check if index already exist
         try:
-            index_path = get_sbt_index()
-            tree = sourmash.load_file_as_index(index_path)
+            index_path = get_sbt_index(cnf=cnf)
+            tree = sourmash.load_file_as_index(str(index_path))
         except ValueError as error:
             LOG.warning("Error when reading index, %s; creating new index", error)
             tree = sourmash.sbtmh.create_sbt_index()
@@ -183,8 +180,8 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
             tree.add_node(leaf)
         # save updated bloom tree
         try:
-            index_path = get_sbt_index(check=False)
-            tree.save(index_path)
+            index_path = get_sbt_index(cnf=cnf, check=False)
+            tree.save(str(index_path))
         except PermissionError as err:
             LOG.error("Dont have permission to write file to disk")
             raise err
@@ -192,11 +189,11 @@ def add_signatures_to_index(sample_ids: List[str]) -> bool:
     return True
 
 
-def remove_signatures_from_index(sample_ids: List[str]) -> bool:
+def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
     """Add genome signature file to sourmash index"""
 
-    genome_index = get_sbt_index(check=False)
-    sbt_lock_path = f"{genome_index}.lock"
+    genome_index = get_sbt_index(cnf=cnf, check=False)
+    sbt_lock_path = f"{genome_index.name}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
     LOG.debug("Using lock: %s", sbt_lock_path)
 
@@ -205,8 +202,8 @@ def remove_signatures_from_index(sample_ids: List[str]) -> bool:
     LOG.debug("Attempt to acquire lock to append %s to index...", sample_ids)
     with lock:
         # check if index already exist
-        index_path = get_sbt_index()
-        old_index = sourmash.load_file_as_index(index_path)
+        index_path = get_sbt_index(cnf)
+        old_index = sourmash.load_file_as_index(str(index_path))
 
         # add signatures not among the sample ids a new index
         LOG.info("Removing %d genome signatures to index", len(sample_ids))
@@ -219,10 +216,21 @@ def remove_signatures_from_index(sample_ids: List[str]) -> bool:
 
         # save new bloom tree
         try:
-            index_path = get_sbt_index(check=False)
-            new_index.save(index_path)
+            index_path = get_sbt_index(cnf, check=False)
+            new_index.save(str(index_path))
         except PermissionError as err:
             LOG.error("Dont have permission to write file to disk")
             raise err
 
     return True
+
+
+def list_signatures_in_index(cnf: Settings) -> list[SignatureName]:
+    """List signatures in index."""
+
+    index_path = get_sbt_index(cnf=cnf, check=False)
+    idx = sourmash.load_file_as_index(str(index_path))
+    return [
+        SignatureName.model_validate({"name": sig.name, "filename": sig.filename})
+        for sig in idx.signatures()
+    ]
