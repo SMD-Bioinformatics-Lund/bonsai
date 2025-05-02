@@ -1,0 +1,24 @@
+{
+  "workflow_name": "soggy_joliot",
+  "sample_name": "DRR237263",
+  "lims_id": "DRR237263",
+  "assay": "saureus",
+  "release_life_cycle": "development",
+  "sequencing_run": "250425_A012345_0000_PRJDB10169",
+  "sequencing_platform": "illumina",
+  "sequencing_type": "PE",
+  "date": "2025-04-25T13:19:07.909964+02:00",
+  "pipeline": "main.nf",
+  "version": "1.0.0",
+  "commit": "null",
+  "configuration_files": [
+    "/fs1/pipelines/jasen_dev/nextflow.config"
+  ],
+  "analysis_profile": [
+    "staphylococcus_aureus",
+    "dev",
+    "illumina",
+    "singularity"
+  ],
+  "command": "nextflow run /fs1/pipelines/jasen_dev/main.nf -profile staphylococcus_aureus,dev,illumina,singularity -c /fs1/pipelines/jasen_dev/nextflow.config --csv /fs1/ryan/jasen/test-csvs/PRJDB10169-saureus.csv --queue normal -with-singularity /fs1/resources/containers/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/PRJDB10169.jasen-saureus-dev.report.html -with-trace /fs1/nextflow//reports/PRJDB10169.jasen-saureus-dev.trace.txt -with-timeline /fs1/nextflow//reports/PRJDB10169.jasen-saureus-dev.timeline.html -work-dir /fs1/nextflow//PRJDB10169.jasen-saureus-dev"
+}

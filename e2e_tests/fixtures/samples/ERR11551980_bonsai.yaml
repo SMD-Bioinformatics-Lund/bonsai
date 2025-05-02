@@ -1,4 +1,30 @@
-group_id: mtuberculosis
-minhash_signature: ./sourmash/ERR11551980.sig
-prp_result: ./analysis_result/ERR11551980_result.json
-ska_index: ./ska/mtuberculosis/ERR11551980_ska_index.skf
+gambitcore: ./gambitcore/err11551980_250425_a012345_0000_prjeb63074_gambitcore.tsv
+groups:
+- mtuberculosis
+igv_annotations:
+- index_uri: ./bam/err11551980_250425_a012345_0000_prjeb63074_tbprofiler.bam.bai
+  name: Read coverage
+  type: alignment
+  uri: ./bam/err11551980_250425_a012345_0000_prjeb63074_tbprofiler.bam
+- name: tbdb grading rules bed
+  type: bed
+  uri: ./tb_info/bed/tb_grading_rules.bed
+- name: tbdb bed
+  type: bed
+  uri: ./tbdb/converged_who_fohm_tbdb.bed.gz
+- name: Cool variants
+  type: variant
+  uri: ./vcf/err11551980_250425_a012345_0000_prjeb63074_annotated_delly.vcf
+kraken: ./kraken/err11551980_250425_a012345_0000_prjeb63074_bracken.out
+lims_id: ERR11551980
+mykrobe: ./mykrobe/err11551980_250425_a012345_0000_prjeb63074_mykrobe.csv
+nextflow_run_info: ./analysis_metadata/err11551980_250425_a012345_0000_prjeb63074_analysis_meta.json
+postalnqc: ./postalignqc/err11551980_250425_a012345_0000_prjeb63074_qc.json
+quast: ./quast/err11551980_250425_a012345_0000_prjeb63074_quast.tsv
+ref_genome_annotation: ./genomes/mycobacterium_tuberculosis/GCF_000195955.2.gff
+ref_genome_sequence: ./genomes/mycobacterium_tuberculosis/GCF_000195955.2.fasta
+sample_id: err11551980_250425_a012345_0000_prjeb63074
+sample_name: ERR11551980
+ska_index: ./ska/err11551980_250425_a012345_0000_prjeb63074_ska_index.skf
+sourmash_signature: ./sourmash/err11551980_250425_a012345_0000_prjeb63074.sig
+tbprofiler: ./tbprofiler/err11551980_250425_a012345_0000_prjeb63074_tbprofiler.json

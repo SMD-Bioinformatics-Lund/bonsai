@@ -1,9 +1,11 @@
 """Commmand line interface to server component."""
 
 import asyncio
+from bson import json_util
+import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
-from typing import Callable
+from typing import Any, Callable
 
 import click
 from bonsai_api.__version__ import VERSION as version
@@ -13,13 +15,16 @@ from bonsai_api.crud.group import create_group as create_group_in_db
 from bonsai_api.crud.sample import get_sample, get_samples, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.user import create_user as create_user_in_db
+from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.io import sample_to_kmlims
 from bonsai_api.models.group import GroupInCreate, pred_res_cols
-from bonsai_api.models.sample import SampleInCreate, MultipleSampleRecordsResponseModel
+from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
+from prp.models.sample import SCHEMA_VERSION
+from prp.migration.convert import migrate_result
 from pymongo.errors import DuplicateKeyError
 
 from .utils import EmailType, create_missing_file_report, send_email_report
@@ -269,3 +274,49 @@ def check_paths(
     else:
         output.write(output_ch.getvalue())
     click.secho("Finished validating file paths", fg='green')
+
+
+@cli.command()
+@click.option('-b', '--backup', 'backup_path', type=click.Path(path_type=pathlib.Path), help="Backup samples that will be modified to PATH.")
+def migrate_database(backup_path: pathlib.Path | None):
+    """Migrate the data to a newer version of the schema."""
+    click.secho(f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database...")
+    # 1 query the database for all samples that does not have the current schema version
+    loop = asyncio.get_event_loop()
+    with get_db_connection() as db:
+        if db.sample_collection is None:
+            raise ValueError
+        func = get_deprecated_records(db.sample_collection, SCHEMA_VERSION)
+        samples: list[dict[str, Any]] = loop.run_until_complete(func)
+
+        # 2 summarize operation
+        if len(samples) == 0:
+            click.secho("Your database is up to date!", fg="green")
+            raise click.Abort()
+
+        click.secho(f"Found {click.style(len(samples), fg='cyan', bold=True)} entry to migrate.")
+
+        # Confirm migration
+        click.confirm('Do you what to continue?', abort=True)
+
+        # 3 migrate data and validate using the current schema
+        migrated_samples: list[SampleInCreate] = [
+            SampleInCreate.model_validate(
+                migrate_result(sample, validate=False)
+            ) for sample in samples
+        ]
+        # 4 backup old records as json array
+        if backup_path is not None:
+            click.secho(f"Backing up old entries to: {clickbackup_path}")
+            with open(backup_path, 'w', encoding='utf-8') as outf:
+                outf.write(json_util.dumps(samples, indent=3))
+        # 5 update samples
+        click.secho(f"Updating samples in the database")
+        try:
+            for upd_sample in migrated_samples:
+                func = update_sample(db, upd_sample)
+                was_updated = loop.run_until_complete(func)
+                if not was_updated:
+                    raise ValueError(f"Sample '{upd_sample.sample_id}' was not updated.")
+        finally:
+            click.secho("Finished migrating the database", fg="green")
