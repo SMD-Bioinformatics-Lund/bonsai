@@ -8,6 +8,7 @@ from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
+from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry, TableMetadataEntry
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
 from prp.parse.typing import replace_cgmlst_errors
@@ -787,3 +788,17 @@ async def get_ska_index_path_for_samples(
     results = await cursor.to_list(None)
     LOG.debug("Found %d ska indexes", len(results))
     return results
+
+
+MetaEntry = GenericMetadataEntry | DatetimeMetadataEntry | TableMetadataEntry 
+
+async def add_metadata_to_sample(sample_id: str, metadata: MetaEntry, db: Database):
+    """Add one or more metadata records to a sample in the database."""
+
+    # TODO add code for pushing metadata to a sample.
+
+    # 1. verify that fieldname does not already exist
+    # 2. if entry is a table, serialize to some structure.
+    # 3. push entry to list
+
+    return None

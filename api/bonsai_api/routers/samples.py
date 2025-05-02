@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Dict, Union
+from typing import Annotated, Union
 
 from fastapi import (
     APIRouter,
@@ -25,6 +25,7 @@ from prp.models.phenotype import (
     VirulenceMethodIndex,
 )
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
+from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry, TableMetadataEntry
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -61,7 +62,7 @@ from ..redis.minhash import (
     schedule_find_similar_samples,
 )
 from ..utils import format_error_message
-from .shared import SAMPLE_ID_PATH
+from .shared import SAMPLE_ID_PATH, RouterTags
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -78,14 +79,11 @@ class SearchBody(BaseModel):  # pylint: disable=too-few-public-methods
     """Parameters for searching for samples."""
 
     params: SearchParams
-    order: str = 1
+    order: str = "1"
     limit: int | None = None
     skip: int = 0
 
 
-DEFAULT_TAGS = [
-    "samples",
-]
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
@@ -95,7 +93,7 @@ UPDATE_PERMISSION = "samples:update"
     "/samples/",
     response_model_by_alias=False,
     response_model=MultipleRecordsResponseModel,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.SAMPLE],
 )
 async def samples_summary(
     limit: int = Query(10, gt=-1),
@@ -123,14 +121,14 @@ async def samples_summary(
     return db_obj
 
 
-@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=DEFAULT_TAGS)
+@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])
 async def create_sample(
     sample: PipelineResult,
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Entrypoint for creating a new sample."""
     try:
         db_obj = await create_sample_record(db, sample)
@@ -142,7 +140,7 @@ async def create_sample(
     return {"type": "success", "sample_id": db_obj.sample_id}
 
 
-@router.delete("/samples/", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
+@router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
 async def delete_many_samples(
     sample_ids: list[str],
     db: Database = Depends(get_db),
@@ -161,7 +159,7 @@ async def delete_many_samples(
     return result
 
 
-@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE])
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
     db: Database = Depends(get_db),
@@ -189,7 +187,7 @@ class UpdateSampleInputModel(BaseModel):
     ]
 
 
-@router.put("/samples/{sample_id}", tags=DEFAULT_TAGS, response_model=SampleInDatabase)
+@router.put("/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase)
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
@@ -206,7 +204,7 @@ async def update_sample(
 
 
 @router.delete(
-    "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
+    "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE]
 )
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
@@ -225,13 +223,20 @@ async def delete_sample(
         ) from error
     return result
 
+MetaEntry = GenericMetadataEntry | DatetimeMetadataEntry | TableMetadataEntry 
 
-@router.post("/samples/{sample_id}/signature", tags=DEFAULT_TAGS)
+@router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
+async def add_metadata_to_sample(sample_id: str, metdata: MetaEntries, db: Database = Depends(get_db)) -> str:
+    """Add metadata to an existing sample."""
+    return sample_id
+
+
+@router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])
 async def create_genome_signatures_sample(
     sample_id: str,
     signature: Annotated[bytes, File()],
     db: Database = Depends(get_db),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
     try:
@@ -267,12 +272,12 @@ async def create_genome_signatures_sample(
     }
 
 
-@router.post("/samples/{sample_id}/ska_index", tags=DEFAULT_TAGS)
+@router.post("/samples/{sample_id}/ska_index", tags=[RouterTags.SAMPLE])
 async def add_ska_index_to_sample(
     sample_id: str,
     index: str,
     db: Database = Depends(get_db),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
     try:
@@ -298,7 +303,7 @@ async def add_ska_index_to_sample(
     return {"sample_id": sample_id, "index_file": index}
 
 
-@router.get("/samples/{sample_id}/alignment", tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}/alignment", tags=[RouterTags.SAMPLE])
 async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
@@ -350,7 +355,7 @@ async def get_sample_read_mapping(
     return response
 
 
-@router.get("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+@router.get("/samples/{sample_id}/vcf", tags=[RouterTags.SAMPLE])
 async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
@@ -408,12 +413,12 @@ async def get_vcf_files_for_sample(
     return response
 
 
-@router.post("/samples/{sample_id}/vcf", tags=DEFAULT_TAGS)
+@router.post("/samples/{sample_id}/vcf", tags=[RouterTags.SAMPLE])
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
     db: Database = Depends(get_db),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
     try:
@@ -435,7 +440,7 @@ async def add_vcf_to_sample(
 @router.put(
     "/samples/{sample_id}/qc_status",
     response_model=QcClassification,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.SAMPLE],
 )
 async def update_qc_status(
     classification: QcClassification,
@@ -461,7 +466,7 @@ async def update_qc_status(
 @router.put(
     "/samples/{sample_id}/resistance/variants",
     response_model_by_alias=False,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.SAMPLE],
 )
 async def update_variant_annotation(
     classification: VariantAnnotation,
@@ -487,7 +492,7 @@ async def update_variant_annotation(
 @router.post(
     "/samples/{sample_id}/comment",
     response_model=CommentsObj,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.SAMPLE],
 )
 async def post_comment(
     comment: Comment,
@@ -510,7 +515,7 @@ async def post_comment(
 
 @router.delete(
     "/samples/{sample_id}/comment/{comment_id}",
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.SAMPLE],
 )
 async def hide_comment(
     sample_id: str = SAMPLE_ID_PATH,
@@ -534,7 +539,7 @@ async def hide_comment(
 @router.put(
     "/samples/{sample_id}/location",
     response_model=LocationOutputDatabase,
-    tags=[*DEFAULT_TAGS, "locations"],
+    tags=[RouterTags.SAMPLE, "locations"],
 )
 async def update_location(
     location_id: str = Body(...),
@@ -572,7 +577,7 @@ class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
 @router.post(
     "/samples/{sample_id}/similar",
     response_model=SubmittedJob,
-    tags=["minhash", *DEFAULT_TAGS],
+    tags=["minhash", RouterTags.SAMPLE],
 )
 async def find_similar_samples(
     body: SimilarSamplesInput,
