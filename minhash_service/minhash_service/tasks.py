@@ -1,15 +1,12 @@
 """Define reddis tasks."""
 import logging
-from typing import Dict, List
-
-from minhash_service.minhash_service.minhash.models import SignatureFile
 
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
 from .minhash.io import remove_signatures_from_index, write_signature
 from .minhash.similarity import get_similar_signatures
-from .minhash.models import SimilarSignatures
+from .minhash.models import SimilarSignatures, SignatureFile
 from .config import settings
 
 LOG = logging.getLogger(__name__)
@@ -20,7 +17,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     Find signatures similar to reference signature.
 
     :param sample_id str: the sample_id
-    :param signature Dict[str, str]: sourmash signature file in JSON format
+    :param signature dict[str, str]: sourmash signature file in JSON format
 
     :return: path to the signature
     :rtype: str
@@ -29,7 +26,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     return str(signature_path)
 
 
-def remove_signature(sample_id: str) -> Dict[str, str | bool]:
+def remove_signature(sample_id: str) -> dict[str, str | bool]:
     """
     Remove a signature from the database and index.
 
@@ -49,11 +46,11 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     return {"sample_id": sample_id, "removed": status}
 
 
-def add_to_index(sample_ids: List[str]) -> str:
+def add_to_index(sample_ids: list[str]) -> str:
     """
     Add signatures to sourmash SBT index.
 
-    :param sample_ids List[str]: The path to multiple signature files
+    :param sample_ids list[str]: The path to multiple signature files
 
     :return: result message
     :rtype: str
@@ -68,11 +65,11 @@ def add_to_index(sample_ids: List[str]) -> str:
     return msg
 
 
-def remove_from_index(sample_ids: List[str]) -> str:
+def remove_from_index(sample_ids: list[str]) -> str:
     """
     Remove signatures from sourmash SBT index.
 
-    :param sample_ids List[str]: Sample ids of signatures to remove
+    :param sample_ids list[str]: Sample ids of signatures to remove
 
     :return: result message
     :rtype: str
@@ -113,11 +110,11 @@ def similar(
     return results
 
 
-def cluster(sample_ids: List[str], cluster_method: str = "single") -> str:
+def cluster(sample_ids: list[str], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their sourmash signatures.
 
-    :param sample_ids List[str]: The sample ids to cluster
+    :param sample_ids list[str]: The sample ids to cluster
     :param cluster_method int: The linkage or clustering method to use, default to single
 
     :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
@@ -133,7 +130,7 @@ def cluster(sample_ids: List[str], cluster_method: str = "single") -> str:
         LOG.error(msg)
         raise ValueError(msg) from error
     # cluster
-    newick: str = cluster_signatures(sample_ids, method)
+    newick: str = cluster_signatures(sample_ids, method, cnf=settings)
     return newick
 
 
@@ -164,7 +161,7 @@ def find_similar_and_cluster(
         LOG.error(msg)
         raise ValueError(msg) from error
     sample_ids = get_similar_signatures(
-        sample_id, min_similarity=min_similarity, limit=limit
+        sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
     )
 
     # if 1 or 0 samples were found, return emtpy newick
