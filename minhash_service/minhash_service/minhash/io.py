@@ -1,4 +1,5 @@
 """Functions for reading and writing signatures"""
+
 import gzip
 import logging
 import pathlib
@@ -9,7 +10,8 @@ import sourmash
 from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
 from minhash_service.config import Settings
-from .models import SignatureFile
+
+from .models import SignatureFile, SignatureName
 
 LOG = logging.getLogger(__name__)
 Signatures = list[SourmashSignature | FrozenSourmashSignature]
@@ -27,7 +29,9 @@ def get_sbt_index(cnf: Settings, check: bool = True) -> pathlib.Path:
     return index_path
 
 
-def get_signature_path(sample_id: str, signature_dir: pathlib.Path, check: bool = True) -> str:
+def get_signature_path(
+    sample_id: str, signature_dir: pathlib.Path, check: bool = True
+) -> str:
     """
     Get path to a sample signature file.
 
@@ -62,7 +66,9 @@ def read_signature(sample_id: str, cnf: Settings) -> Signatures:
     return loaded_sigs
 
 
-def write_signature(sample_id: str, signature: SignatureFile, cnf: Settings) -> pathlib.Path:
+def write_signature(
+    sample_id: str, signature: SignatureFile, cnf: Settings
+) -> pathlib.Path:
     """
     Add genome signature to index.
 
@@ -76,7 +82,9 @@ def write_signature(sample_id: str, signature: SignatureFile, cnf: Settings) -> 
         signature_db.mkdir(parents=True, exist_ok=True)
 
     # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir, check=False)
+    signature_file = get_signature_path(
+        sample_id, signature_dir=cnf.signature_dir, check=False
+    )
 
     # check if compressed and decompress data
     LOG.info("Check if signature is compressed")
@@ -129,7 +137,9 @@ def check_signature(sample_id: str, cnf: Settings) -> bool:
     """Check if signature exist and has been added to the index."""
     LOG.info("Checking signature file: %s", signature_file)
     try:
-        signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir, check=True)
+        signature_file = get_signature_path(
+            sample_id, signature_dir=cnf.signature_dir, check=True
+        )
     except FileExistsError:
         return False
     else:
@@ -213,3 +223,14 @@ def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
             raise err
 
     return True
+
+
+def list_signatures_in_index(cnf: Settings) -> list[SignatureName]:
+    """List signatures in index."""
+
+    index_path = get_sbt_index(cnf=cnf, check=False)
+    idx = sourmash.load_file_as_index(str(index_path))
+    return [
+        SignatureName.model_validate({"name": sig.name, "filename": sig.filename})
+        for sig in idx.signatures()
+    ]

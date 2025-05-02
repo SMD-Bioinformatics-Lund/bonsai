@@ -8,7 +8,8 @@ from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
 from .minhash.io import remove_signatures_from_index, write_signature
-from .minhash.similarity import SimilarSignatures, get_similar_signatures
+from .minhash.similarity import get_similar_signatures
+from .minhash.models import SimilarSignatures
 from .config import settings
 
 LOG = logging.getLogger(__name__)
