@@ -1,6 +1,5 @@
 """Test IO functions in the Minhash package."""
 
-import pytest
 from minhash_service.config import Settings
 from minhash_service.minhash.io import add_signatures_to_index, list_signatures_in_index, remove_signatures_from_index
 
@@ -24,7 +23,6 @@ def test_remove_signatures_from_index(settings_tmp_index: Settings):
     """Test that a signature can be removed from a index."""
 
     # setup test
-    index_path = settings_tmp_index.signature_dir.joinpath(f"{settings_tmp_index.index_name}.sbt.zip")
     resp = add_signatures_to_index(sample_ids=["DRR237260", "DRR237261"], cnf=settings_tmp_index)
     assert resp
 
@@ -37,6 +35,7 @@ def test_list_signatures_in_index(settings_tmp_index: Settings):
     """Test function for listing signatures in index."""
     # setup test
     resp = add_signatures_to_index(sample_ids=["DRR237260", "DRR237261"], cnf=settings_tmp_index)
+    assert resp
 
     in_index = list_signatures_in_index(cnf=settings_tmp_index)
     exp_sigs = sorted([idx.filename.split("_")[0] for idx in in_index])
