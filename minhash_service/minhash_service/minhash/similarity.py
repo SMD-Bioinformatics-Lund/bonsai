@@ -3,25 +3,15 @@
 import logging
 
 import sourmash
-from pydantic import BaseModel
 from sourmash.index import IndexSearchResult as Result
 from sourmash.sbt import SBT
 
 from minhash_service.config import Settings
+from minhash_service.minhash.models import SimilarSignatures, SimilarSignature
 
 from .io import get_sbt_index, read_signature
 
 LOG = logging.getLogger(__name__)
-
-
-class SimilarSignature(BaseModel):  # pydantic: disable=too-few-public-methods
-    """Container for similar signature result"""
-
-    sample_id: str
-    similarity: float
-
-
-SimilarSignatures = list[SimilarSignature]
 
 
 def get_similar_signatures(
