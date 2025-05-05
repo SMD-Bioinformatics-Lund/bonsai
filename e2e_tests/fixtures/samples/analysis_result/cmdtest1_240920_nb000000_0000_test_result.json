@@ -12,10 +12,12 @@
     "date": "2024-09-20T00:00:00"
   },
   "pipeline": {
+    "assay": "spyogenes",
+    "release_life_cycle": "test",
     "pipeline": "main.nf",
     "version": "0.9.0",
     "commit": "null",
-    "analysis_profile": "streptococcus",
+    "analysis_profile": ["streptococcus"],
     "configuration_files": [
       "/fs1/pipelines/jasen/configs/nextflow.dev.config"
     ],
@@ -215,7 +217,7 @@
       ]
     }
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "typing_result": [
     {
       "type": "mlst",
