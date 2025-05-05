@@ -25,11 +25,10 @@ from prp.models.phenotype import (
     VirulenceMethodIndex,
 )
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
-from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry, TableMetadataEntry
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from ..crud.sample import EntryNotFound, add_comment, add_location
+from ..crud.sample import EntryNotFound, add_comment, add_location, add_metadata_to_sample
 from ..crud.sample import create_sample as create_sample_record
 from ..crud.sample import delete_samples as delete_samples_from_db
 from ..crud.sample import get_sample, get_samples_summary
@@ -51,7 +50,7 @@ from ..models.base import MultipleRecordsResponseModel
 from ..models.cluster import TypingMethod
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
+from ..models.sample import Comment, CommentInDatabase, InputMetaEntry, SampleInCreate, SampleInDatabase
 from ..models.user import UserOutputDatabase
 from ..redis import ClusterMethod, ConnectionError
 from ..redis.minhash import (
@@ -223,12 +222,16 @@ async def delete_sample(
         ) from error
     return result
 
-MetaEntry = GenericMetadataEntry | DatetimeMetadataEntry | TableMetadataEntry 
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
-async def add_metadata_to_sample(sample_id: str, metdata: MetaEntries, db: Database = Depends(get_db)) -> str:
+async def add_sample_metadata(
+    sample_id: str, metadata: InputMetaEntry, db: Database = Depends(get_db)) -> bool:
     """Add metadata to an existing sample."""
-    return sample_id
+    try:
+        resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
+    return resp
 
 
 @router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])

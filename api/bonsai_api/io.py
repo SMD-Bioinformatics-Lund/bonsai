@@ -1,5 +1,6 @@
 """File IO operations."""
 
+from io import StringIO
 import itertools
 import logging
 import mimetypes
@@ -16,7 +17,7 @@ from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
 
 from .models.qc import SampleQcClassification
-from .models.sample import SampleInDatabase
+from .models.sample import InputTableMetadata, MetaEntryInDb, SampleInDatabase, TableMetadataInDb
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -314,3 +315,10 @@ def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
                 f"No export function for {sample.pipeline.analysis_profile}"
             )
     return pred_res
+
+
+def parse_metadata_table(entry: InputTableMetadata, index_col: int | None = None) -> TableMetadataInDb:
+    """Parse a stringified csv file as a mongo representation of a table."""
+    df = pd.read_csv(StringIO(entry.value), sep=',', index_col=index_col)
+    df_json = df.to_dict(orient='split', index=False if index_col is None else True)
+    return TableMetadataInDb.model_validate({"fieldname": entry.fieldname, **df_json})
