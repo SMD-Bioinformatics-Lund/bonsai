@@ -180,6 +180,20 @@
     </form>
 {% endmacro %}
 
+{% macro metadata_link(endpoint, sample_id, entry) %}
+    {% if request.endpoint.endswith(endpoint) %}
+        {% set selected="active" %}
+    {% else %}
+        {% set selected="" %}
+    {% endif %}
+    <li class="nav-item mb-2 {{ selected }}">
+        <a class="link-secondary link-underline-success" href="{{ url_for(endpoint, sample_id=sample_id, fieldname=entry.fieldname) }}">
+            <i class="bi bi-table"></i>
+            {{ entry.fieldname }}
+        </a>
+    </li>
+{% endmacro %}
+
 {% macro report_link(endpoint, name, sample_id) %}
     {% if request.endpoint.endswith(endpoint) %}
         {% set selected="active" %}
@@ -204,9 +218,15 @@
     <h6 class="{{ header_size }} text-muted text-uppercase {{ class_names }}">{{text}}</h6>
 {% endmacro %}
 
-{% macro sidebar(sample, bad_qc_actions, optional_macro=None) %}
+{% macro sidebar(sample, bad_qc_actions, metadata=[], optional_macro=None) %}
 <aside class="br-sidebar border-end pe-2">
     <div>
+        {{ sidebar_header("Metadata")}}
+        <ul class="nav flex-column">
+            {% for meta in metadata %}
+                {{ metadata_link('samples.open_metadata_tbl', sample_id=sample.sample_id, entry=meta) }}
+            {% endfor %}
+        </ul>
         {{ sidebar_header("Reports")}}
         <ul class="nav flex-column">
             {{ report_link('samples.sample', sample_id=sample.sample_id, name='Summary') }}

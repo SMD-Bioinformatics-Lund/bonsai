@@ -47,6 +47,7 @@ from .controllers import (
     get_all_who_classifications,
     get_variant_genes,
     sort_variants,
+    split_metadata,
 )
 
 LOG = logging.getLogger(__name__)
@@ -176,7 +177,10 @@ def sample(sample_id: str) -> str:
             str(error),
         )
         similar_samples = None
+    
+    kw_meta_records, meta_tbls = split_metadata(sample_info)
 
+    
     return render_template(
         "sample.html",
         sample=sample_info,
@@ -185,6 +189,8 @@ def sample(sample_id: str) -> str:
         similar_samples=similar_samples,
         bad_qc_actions=bad_qc_actions,
         extended=extended,
+        kw_metadata=kw_meta_records,
+        metadata_tbls=meta_tbls
     )
 
 
@@ -368,4 +374,28 @@ def resistance_variants(sample_id: str) -> str:
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
+    )
+
+
+@samples_bp.route("/sample/<sample_id>/metadata/<fieldname>", methods=["GET", "POST"])
+@login_required
+def open_metadata_tbl(sample_id: str, fieldname: str | None = None) -> str:
+    """Open a metadata table."""
+
+    token = TokenObject(**current_user.get_id())
+    # get sample
+    try:
+        sample_info = get_sample_by_id(token, sample_id=sample_id)
+    except HTTPError as error:
+        # throw proper error page
+        abort(error.response.status_code)
+    
+    _, metadata_tbls = split_metadata(sample_info)
+
+    return render_template(
+        "metadata.html",
+        title=f"{sample_id} metadata",
+        sample=sample_info,
+        metadata_tbls=metadata_tbls,
+        selected_tbl=fieldname
     )

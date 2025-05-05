@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+{% from "sidebar.html" import sidebar, table_of_content with context %}
+{% from "cards.html" import sample_header %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+
+{% macro meta_table(entry) %}
+    <div class="card">
+        <div class="card-header">{{ entry.fieldname }}</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        {% for col_name in entry.columns %}
+                            <th>{{ col_name }}</td>
+                        {% endfor %}
+                    </thead>
+                    <tbody>
+                        {% for row in entry.data %}
+                            <tr>
+                                {% for cell_value in row %}<td>{{ cell_value }}</td>{% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% block content %}
+<div class="d-md-none d-sm-block sticky-top bg-secondary">
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-link fs-2 text-white text-decoration-none"
+                type="button" data-bs-toggle="collapse" data-bs-target="#sample-sidebar" 
+                aria-expanded="false" aria-controls="sample-sidebar">
+            <i class="bi bi-list"></i>
+        </button>
+        <button class="btn btn-link fs-2 text-white"
+                type="button" data-bs-toggle="collapse" data-bs-target="#toc-contents" 
+                aria-expanded="false" aria-controls="toc-contents">
+            <i class="bi bi-three-dots"></i>
+        </button>
+    </div>
+</div>
+<div class="container-fluid br-layout">
+    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls) }}
+    <main class="container-fluid">
+        {{ sample_header(sample) }}
+        <div class="container-fluid">
+            <div class="row justify-content-md-center">
+                {% for meta in metadata_tbls %}
+                    {% if meta.fieldname == selected_tbl %}
+                        <div class="col-auto">{{ meta_table(meta) }}</div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock content %}

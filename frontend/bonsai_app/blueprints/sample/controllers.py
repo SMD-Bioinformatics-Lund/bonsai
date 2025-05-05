@@ -377,3 +377,15 @@ def filter_variants_if_processed(sample_info, result_type="AMR"):
     # add back the result object to the sample info data
     sample_info["element_type_result"] = results
     return sample_info
+
+
+def split_metadata(sample_obj: dict[str, Any]):
+    """Seperate key-value metadata records from tables into two distinct collections."""
+    kw_meta: list[dict[str, Any]] = []
+    tbl_meta: list[dict[str, Any]] = []
+    for meta in sample_obj["metadata"]:
+        if meta['type'] == "table":
+            tbl_meta.append(meta)
+        else:
+            kw_meta.append(meta)
+    return kw_meta, tbl_meta
