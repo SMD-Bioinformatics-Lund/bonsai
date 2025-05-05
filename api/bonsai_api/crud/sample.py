@@ -811,8 +811,9 @@ async def add_metadata_to_sample(sample_id: str, metadata: InputMetaEntry, db: D
             meta_info.append(meta)
     # if entry is a table, serialize and reformat
     if metadata.type == 'table':
-        metadata = parse_metadata_table(entry=metadata)
-    meta_info.append(metadata)
+        meta_info.append(parse_metadata_table(entry=metadata))
+    else:
+        meta_info.append(metadata)
 
     cursor: UpdateResult = await db.sample_collection.update_one(
         {"sample_id": sample_id}, 

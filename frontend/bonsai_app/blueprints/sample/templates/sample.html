@@ -32,7 +32,7 @@
     </div>
 </div>
 <div class="container-fluid br-layout">
-    {{ sidebar(sample, bad_qc_actions) }}
+    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls) }}
     <main class="br-main order-1" 
         data-bs-spy="scroll" data-bs-target="#toc-contents">
         {{ sample_header(sample) }}
