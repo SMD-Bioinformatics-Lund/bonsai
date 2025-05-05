@@ -3,15 +3,17 @@
 import logging
 from itertools import groupby
 from typing import Any, Dict, List, Sequence
+from pymongo.results import UpdateResult
 
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
-from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry, TableMetadataEntry
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
 from prp.parse.typing import replace_cgmlst_errors
+
+from bonsai_api.io import parse_metadata_table
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -23,10 +25,12 @@ from ..models.qc import QcClassification, VariantAnnotation
 from ..models.sample import (
     Comment,
     CommentInDatabase,
+    MetaEntryInDb,
     MultipleSampleRecordsResponseModel,
     SampleInCreate,
     SampleInDatabase,
     SampleSummary,
+    InputMetaEntry
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -471,7 +475,7 @@ async def add_comment(
         max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
     )
     comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
-    update_obj = await db.sample_collection.update_one(
+    update_obj: UpdateResult = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
             "$set": {"modified_at": get_timestamp()},
@@ -519,7 +523,7 @@ async def update_sample_qc_classification(
     """Update the quality control classification of a sample"""
 
     query = {"sample_id": sample_id}
-    update_obj = await db.sample_collection.update_one(
+    update_obj: UpdateResult = await db.sample_collection.update_one(
         query,
         {
             "$set": {
@@ -654,7 +658,7 @@ async def update_variant_annotation_for_sample(
             updated_data[variant_type] = upd_variants
 
     # update phenotypic prediction information in the database
-    update_obj = await db.sample_collection.update_one(
+    update_obj: UpdateResult = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
             "$set": {
@@ -694,7 +698,7 @@ async def add_location(
         raise err
 
     # Add location to samples
-    update_obj = await db.sample_collection.update_one(
+    update_obj: UpdateResult = await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {
             "$set": {
@@ -790,15 +794,33 @@ async def get_ska_index_path_for_samples(
     return results
 
 
-MetaEntry = GenericMetadataEntry | DatetimeMetadataEntry | TableMetadataEntry 
-
-async def add_metadata_to_sample(sample_id: str, metadata: MetaEntry, db: Database):
+async def add_metadata_to_sample(sample_id: str, metadata: InputMetaEntry, db: Database) -> bool:
     """Add one or more metadata records to a sample in the database."""
 
     # TODO add code for pushing metadata to a sample.
 
     # 1. verify that fieldname does not already exist
-    # 2. if entry is a table, serialize to some structure.
-    # 3. push entry to list
+    sample_obj = await get_sample(sample_id=sample_id, db=db)
+    if any([metadata.fieldname == meta.fieldname for meta in sample_obj.metadata]):
+        raise ValueError(f"Metadata field '{metadata.fieldname}' already exist for sample {sample_id}")
 
-    return None
+    # 2. push new metadata entry to existing metadata
+    meta_info: list[MetaEntryInDb] = []
+    for meta in sample_obj.metadata:
+        if meta.fieldname != metadata.fieldname:
+            meta_info.append(meta)
+    # if entry is a table, serialize and reformat
+    if metadata.type == 'table':
+        metadata = parse_metadata_table(entry=metadata)
+    meta_info.append(metadata)
+
+    cursor: UpdateResult = await db.sample_collection.update_one(
+        {"sample_id": sample_id}, 
+        {"$set": {"metadata": [meta.model_dump() for meta in meta_info]}}
+    )
+    if cursor.matched_count == 0:
+        raise EntryNotFound(sample_id)
+    is_updated = cursor.matched_count == 1 and cursor.modified_count == 1
+    if not is_updated:
+        raise ValueError("Metadata not modified.")
+    return True

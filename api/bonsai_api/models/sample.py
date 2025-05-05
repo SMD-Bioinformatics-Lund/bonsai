@@ -1,6 +1,7 @@
 """Data model definition of input/ output data"""
 
-from typing import Dict, List, Optional, Union
+from datetime import datetime
+from typing import Dict, List, Literal, Optional, Union
 
 from prp.models import PipelineResult
 from prp.models.phenotype import (
@@ -13,6 +14,7 @@ from prp.models.phenotype import (
     VirulenceGene,
 )
 from prp.models.species import SpeciesPrediction
+from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry
 from prp.models.typing import (
     ResultLineageBase,
     TbProfilerLineage,
@@ -36,6 +38,27 @@ from .qc import QcClassification
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
+
+class InputTableMetadata(BaseModel):
+    """Metadata table info recieved by API."""
+
+    fieldname: str
+    value: str
+    type: Literal["table"] = "table"
+
+
+class TableMetadataInDb(BaseModel):
+    """Metadata table stored in database."""
+
+    fieldname: str
+    columns: list[str] = []
+    index: list[str] = []
+    data: list[list[str | int | float | datetime]]
+    type: Literal["table"] = "table"
+
+
+InputMetaEntry = DatetimeMetadataEntry | InputTableMetadata | GenericMetadataEntry
+MetaEntryInDb = DatetimeMetadataEntry | TableMetadataInDb | GenericMetadataEntry
 
 
 class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
@@ -122,6 +145,7 @@ class SampleInCreate(
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
+    metadata: list[InputMetaEntry] = []
     element_type_result: List[MethodIndex]
     sv_variants: List[VariantInDb] | None = None
     snv_variants: List[VariantInDb] | None = None
@@ -132,6 +156,7 @@ class SampleInDatabase(
 ):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
 
+    metadata: list[MetaEntryInDb] = []
     element_type_result: List[MethodIndex]
     sv_variants: List[VariantInDb] | None = None
     snv_variants: List[VariantInDb] | None = None
