@@ -12,10 +12,12 @@
     "date": null
   },
   "pipeline": {
+    "assay": "saureus",
+    "release_life_cycle": "test",
     "pipeline": "main.nf",
     "version": "0.9.0",
     "commit": "null",
-    "analysis_profile": "staphylococcus_aureus",
+    "analysis_profile": ["staphylococcus_aureus"],
     "configuration_files": [
       "/fs1/pipelines/jasen_dev/configs/nextflow.dev.config"
     ],
@@ -222,7 +224,7 @@
       ]
     }
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "typing_result": [
     {
       "type": "mlst",
