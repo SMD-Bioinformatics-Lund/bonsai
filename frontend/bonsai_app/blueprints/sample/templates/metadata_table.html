@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block css %}
+{{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+{% endblock css %}
+
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
+    <script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
+{% endblock scripts %}
+
+{% macro meta_table(entry, id, name=None, caption=None, show_columns=True) %}
+    <div class="card">
+        {% if name %}
+            <div class="card-header">{{ entry.fieldname }}</div>
+        {% endif %}
+        <div class="card-body">
+            <div class="table-responsive">
+                {% if caption %}
+                    <caption>{{ caption }}</caption>
+                {% endif %}
+                <table id="{{id}}" class="table table-hover">
+                    {% if show_columns %}
+                        <thead>
+                            {% if entry.index | length == entry.data | length %}
+                                <th></th>
+                            {% endif %}
+                            {% for col_name in entry.columns %}
+                                <th>{{ col_name }}</td>
+                            {% endfor %}
+                        </thead>
+                    {% endif %}
+                    <tbody>
+                        {% for row in entry.data %}
+                            <tr>
+                                {% for cell_value in row %}
+                                    {% if entry.index | length == entry.data | length %}
+                                        <th>{{ entry.index[loop.index0] }}</th>
+                                    {% endif %}
+                                    <td>{{ cell_value }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            {% if table %}
+                {{ meta_table(table, id='meta-tbl', caption=table.fieldname) }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+    const table = new DataTable('#meta-tbl', {
+        paging: false, info: false, searching: false, scrollX: false,
+        layout: {
+            topStart: {
+                buttons: ['copyHtml5', 'excelHtml5', 'csvHtml5']
+            }
+        }
+    })
+</script>
+{% endblock content %}
