@@ -5,6 +5,8 @@ from collections import defaultdict
 from itertools import chain, groupby
 from typing import Any, Dict, Tuple
 
+import pandas as pd
+
 from ...custom_filters import get_who_group_from_tbprofiler_comment
 from ...models import ElementType, PredictionSoftware, QualityControlResult
 
@@ -389,3 +391,13 @@ def split_metadata(sample_obj: dict[str, Any]):
         else:
             kw_meta.append(meta)
     return kw_meta, tbl_meta
+
+
+def kw_metadata_to_table(metadata: list[dict[str, Any]]):
+    """Format key-value metadata to a dataframe like table object."""
+    raw_series = pd.Series(
+        [rec['value'] for rec in metadata],
+        index=[rec['fieldname'] for rec in metadata], 
+        name="Metadata"
+    )
+    return raw_series.to_frame().to_dict('split')

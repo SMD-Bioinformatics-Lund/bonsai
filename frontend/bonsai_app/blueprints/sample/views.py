@@ -46,6 +46,7 @@ from .controllers import (
     get_all_variant_types,
     get_all_who_classifications,
     get_variant_genes,
+    kw_metadata_to_table,
     sort_variants,
     split_metadata,
 )
@@ -377,9 +378,34 @@ def resistance_variants(sample_id: str) -> str:
     )
 
 
+@samples_bp.route("/sample/<sample_id>/metadata", methods=["GET", "POST"])
+@login_required
+def metadata(sample_id: str) -> str:
+    """Open a metadata table."""
+
+    token = TokenObject(**current_user.get_id())
+    # get sample
+    try:
+        sample_info = get_sample_by_id(token, sample_id=sample_id)
+    except HTTPError as error:
+        # throw proper error page
+        abort(error.response.status_code)
+    
+    kw_metadata, metadata_tbls = split_metadata(sample_info)
+    kw_tbl = kw_metadata_to_table(kw_metadata)
+
+    return render_template(
+        "metadata.html",
+        title=f"{sample_id} metadata",
+        sample=sample_info,
+        kw_tbl=kw_tbl,
+        metadata_tbls=metadata_tbls,
+    )
+
+
 @samples_bp.route("/sample/<sample_id>/metadata/<fieldname>", methods=["GET", "POST"])
 @login_required
-def open_metadata_tbl(sample_id: str, fieldname: str | None = None) -> str:
+def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     """Open a metadata table."""
 
     token = TokenObject(**current_user.get_id())
@@ -391,11 +417,12 @@ def open_metadata_tbl(sample_id: str, fieldname: str | None = None) -> str:
         abort(error.response.status_code)
     
     _, metadata_tbls = split_metadata(sample_info)
+    indexed_tbls = {tbl['fieldname']: tbl for tbl in metadata_tbls}
+    table = indexed_tbls.get(fieldname, None)
 
     return render_template(
-        "metadata.html",
+        "metadata_table.html",
         title=f"{sample_id} metadata",
         sample=sample_info,
-        metadata_tbls=metadata_tbls,
-        selected_tbl=fieldname
+        table=table,
     )
