@@ -34,10 +34,11 @@
                     {% endif %}
                     <tbody>
                         {% for row in entry.data %}
+                            {% set index=loop.index0 %}
                             <tr>
                                 {% for cell_value in row %}
                                     {% if entry.index | length == entry.data | length %}
-                                        <th>{{ entry.index[loop.index0] }}</th>
+                                        <th>{{ entry.index[index] }}</th>
                                     {% endif %}
                                     <td>{{ cell_value }}</td>
                                 {% endfor %}

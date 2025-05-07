@@ -1,14 +1,15 @@
 """Custom jinja3 template tests."""
 
+from datetime import datetime
 import logging
 import math
 import re
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 from zoneinfo import ZoneInfo
 
-from dateutil.parser import parse
+from dateutil.parser import parse, ParserError
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES, settings
@@ -133,9 +134,12 @@ def _jinja2_filter_datetime(date: str, fmt: str = r"%Y-%m-%d") -> str:
     :return: reformatted datetime
     :rtype: str
     """
-    date = parse(date)
-    native = date.replace(tzinfo=ZoneInfo(settings.tz))
-    return native.strftime(fmt)
+    try:
+        parsed_date: datetime = parse(date)
+        native = parsed_date.replace(tzinfo=ZoneInfo(settings.tz))
+        return native.strftime(fmt)
+    except ParserError:
+        return date
 
 
 def cgmlst_count_called(alleles: Dict[str, int | str | None]) -> int:
@@ -298,7 +302,7 @@ def fmt_null_values(value: int | str | None) -> int | str:
     return value
 
 
-def has_same_analysis_profile(samples: List[Dict[str, Any]]) -> bool:
+def has_same_assay(samples: List[Dict[str, Any]]) -> bool:
     """Check if all samples from session cache have the same analysis profile.
 
     :param samples: List of samples
@@ -306,7 +310,7 @@ def has_same_analysis_profile(samples: List[Dict[str, Any]]) -> bool:
     :return: True if all samples have the same analysis profile.
     :rtype: bool
     """
-    profiles = [sample["analysis_profile"] for sample in samples]
+    profiles = [sample["assay"] for sample in samples]
     return len(set(profiles)) == 1
 
 
@@ -418,11 +422,11 @@ def format_tbprofiler_db_annotation(comment: Dict[str, str]) -> str:
     return fmt_name
 
 
-TESTS = {
+TESTS: dict[str, Callable[..., Any]] = {
     "list": is_list,
 }
 
-FILTERS = {
+FILTERS: dict[str, Callable[..., Any]] = {
     "json_path": get_json_path,
     "has_arg": has_arg,
     "get_all_phenotypes": get_all_phenotypes,
@@ -435,7 +439,7 @@ FILTERS = {
     "groupby_antib_class": groupby_antib_class,
     "fmt_number": fmt_number,
     "fmt_null_values": fmt_null_values,
-    "has_same_analysis_profile": has_same_analysis_profile,
+    "has_same_assay": has_same_assay,
     "get_pvl_tag": get_pvl_tag,
     "fmt_to_human_readable": human_readable_large_numbers,
     "get_resistance_profile": get_resistance_profile,

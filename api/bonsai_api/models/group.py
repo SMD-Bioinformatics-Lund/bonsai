@@ -39,14 +39,14 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     path: str = Field(..., description="JSONpath describing how to access the data")
     # display params
     hidden: bool = False
-    type: str = Field("string", description="Data type")
+    type: str = Field(default="string", description="Data type")
     sortable: bool = False
     filterable: bool = False
     filter_type: str | None = None
     filter_param: str | None = None
 
 
-VALID_BASE_COLS = [
+VALID_BASE_COLS: list[OverviewTableColumn] = [
     OverviewTableColumn(
         id="sample_btn",
         label="",
@@ -63,7 +63,7 @@ VALID_BASE_COLS = [
 ]
 
 # Prediction result columns
-VALID_PREDICTION_COLS = [
+VALID_PREDICTION_COLS: list[OverviewTableColumn] = [
     OverviewTableColumn(
         id="sample_name",
         label="Name",
@@ -100,6 +100,7 @@ VALID_PREDICTION_COLS = [
         id="profile",
         label="Analysis profile",
         path="$.profile",
+        type="list",
         sortable=True,
         filterable=True,
     ),

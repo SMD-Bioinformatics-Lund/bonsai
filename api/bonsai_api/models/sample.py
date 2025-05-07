@@ -1,7 +1,6 @@
 """Data model definition of input/ output data"""
 
-from datetime import datetime
-from typing import Dict, List, Literal, Optional, Union
+from typing import Optional, Union
 
 from prp.models import PipelineResult
 from prp.models.phenotype import (
@@ -14,7 +13,6 @@ from prp.models.phenotype import (
     VirulenceGene,
 )
 from prp.models.species import SpeciesPrediction
-from prp.models.metadata import GenericMetadataEntry, DatetimeMetadataEntry
 from prp.models.typing import (
     ResultLineageBase,
     TbProfilerLineage,
@@ -35,30 +33,11 @@ from .base import (
     MultipleRecordsResponseModel,
 )
 from .qc import QcClassification
+from .metadata import MetaEntryInDb, InputMetaEntry
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
 
-class InputTableMetadata(BaseModel):
-    """Metadata table info recieved by API."""
-
-    fieldname: str
-    value: str
-    type: Literal["table"] = "table"
-
-
-class TableMetadataInDb(BaseModel):
-    """Metadata table stored in database."""
-
-    fieldname: str
-    columns: list[str] = []
-    index: list[str] = []
-    data: list[list[str | int | float | datetime]]
-    type: Literal["table"] = "table"
-
-
-InputMetaEntry = DatetimeMetadataEntry | InputTableMetadata | GenericMetadataEntry
-MetaEntryInDb = DatetimeMetadataEntry | TableMetadataInDb | GenericMetadataEntry
 
 
 class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
@@ -101,10 +80,10 @@ class TbProfilerVariant(VariantInDb):
 class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
-    tags: List[Tag] = []
+    tags: list[Tag] = []
     qc_status: QcClassification = QcClassification()
     # comments and non analytic results
-    comments: List[CommentInDatabase] = []
+    comments: list[CommentInDatabase] = []
     location: str | None = Field(None, description="Location id")
     # signature file name
     genome_signature: str | None = Field(None, description="Genome signature name")
@@ -118,11 +97,11 @@ class ElementTypeResult(BaseModel):
     mutations and phenotyp changes.
     """
 
-    phenotypes: Dict[str, List[str]]
-    genes: List[
+    phenotypes: dict[str, list[str]]
+    genes: list[
         Union[AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene]
     ]
-    variants: List[Union[TbProfilerVariant, MykrobeVariant, ResfinderVariant]]
+    variants: list[Union[TbProfilerVariant, MykrobeVariant, ResfinderVariant]]
 
 
 class MethodIndex(BaseModel):
@@ -146,9 +125,9 @@ class SampleInCreate(
     """Sample data model used when creating new db entries."""
 
     metadata: list[InputMetaEntry] = []
-    element_type_result: List[MethodIndex]
-    sv_variants: List[VariantInDb] | None = None
-    snv_variants: List[VariantInDb] | None = None
+    element_type_result: list[MethodIndex]
+    sv_variants: list[VariantInDb] | None = None
+    snv_variants: list[VariantInDb] | None = None
 
 
 class SampleInDatabase(
@@ -157,9 +136,9 @@ class SampleInDatabase(
     """Sample database model outputed from the database."""
 
     metadata: list[MetaEntryInDb] = []
-    element_type_result: List[MethodIndex]
-    sv_variants: List[VariantInDb] | None = None
-    snv_variants: List[VariantInDb] | None = None
+    element_type_result: list[MethodIndex]
+    sv_variants: list[VariantInDb] | None = None
+    snv_variants: list[VariantInDb] | None = None
 
 
 class SampleSummary(

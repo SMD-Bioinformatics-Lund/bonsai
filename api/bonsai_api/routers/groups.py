@@ -1,10 +1,10 @@
 """Entrypoints for getting group data."""
 
-from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
+
+from .shared import RouterTags
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
 from ..crud.group import append_sample_to_group
@@ -12,6 +12,7 @@ from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.sample import get_samples_summary
 from ..crud.user import get_current_active_user
+from ..crud.metadata import get_metadata_fields_for_samples
 from ..db import Database, get_db
 from ..models.base import MultipleRecordsResponseModel
 from ..models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
@@ -19,16 +20,14 @@ from ..models.user import UserOutputDatabase
 
 router = APIRouter()
 
-DEFAULT_TAGS = [
-    "groups",
-]
 READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-@router.get("/groups/default/columns", tags=DEFAULT_TAGS)
+@router.get("/groups/default/columns", tags=[RouterTags.GROUP])
 async def get_valid_columns(qc: bool = False):
     """Get group info schema."""
+    # get pipeline analysis related columns
     if qc:
         columns = qc_cols
     else:
@@ -36,7 +35,7 @@ async def get_valid_columns(qc: bool = False):
     return jsonable_encoder(columns)
 
 
-@router.get("/groups/", response_model=List[GroupInfoDatabase], tags=DEFAULT_TAGS)
+@router.get("/groups/", response_model=list[GroupInfoDatabase], tags=[RouterTags.GROUP])
 async def get_groups_in_db(
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -52,7 +51,7 @@ async def get_groups_in_db(
     "/groups/",
     response_model=GroupInfoDatabase,
     status_code=status.HTTP_201_CREATED,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.GROUP],
 )
 async def create_group(
     group_info: GroupInCreate,
@@ -75,7 +74,7 @@ async def create_group(
 @router.get(
     "/groups/{group_id}",
     response_model=GroupInfoDatabase,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.GROUP],
 )
 async def get_group_in_db(
     group_id: str,
@@ -93,7 +92,7 @@ async def get_group_in_db(
 @router.delete(
     "/groups/{group_id}",
     status_code=status.HTTP_200_OK,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.GROUP],
 )
 async def delete_group_from_db(
     group_id: str,
@@ -112,7 +111,7 @@ async def delete_group_from_db(
     return result
 
 
-@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS)
+@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP])
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
@@ -133,7 +132,7 @@ async def update_group_info(
 
 
 @router.put(
-    "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=DEFAULT_TAGS
+    "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
 )
 async def add_sample_to_group(
     sample_id: str,
@@ -160,9 +159,26 @@ async def add_sample_to_group(
 
 
 @router.get(
+    "/groups/{group_id}/columns",
+    tags=[RouterTags.GROUP],
+)
+async def get_columns_for_group(
+    group_id: str, db: Database = Depends(get_db),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
+    """Get information of the number of samples per group loaded into the database."""
+    group_obj = GroupInfoDatabase.model_validate(await get_group(db, group_id, lookup_samples=False))
+    meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
+    # add default columns
+    return pred_res_cols + meta_entries
+
+
+@router.get(
     "/groups/{group_id}/samples",
     status_code=status.HTTP_200_OK,
-    tags=DEFAULT_TAGS,
+    tags=[RouterTags.GROUP],
     response_model=MultipleRecordsResponseModel,
 )
 async def get_samples_in_group(

@@ -50,7 +50,7 @@ def add_sample_to_basket():
     for sample in response["data"]:
         samples_to_add.append(
             SampleBasketObject(
-                sample_id=sample["sample_id"], analysis_profile=sample["profile"]
+                sample_id=sample["sample_id"], assay=sample["assay"]
             )
         )
 

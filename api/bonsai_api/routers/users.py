@@ -1,25 +1,26 @@
 """Routes for interacting with user data."""
 
 import logging
-from typing import Annotated, List
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
-from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.user import (
+from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.user import (
     add_samples_to_user_basket,
     create_user,
     delete_user,
     get_current_active_user,
-    get_samples_in_user_basket,
     get_user,
     get_users,
     remove_samples_from_user_basket,
     update_user,
 )
-from ..db import Database, get_db
-from ..models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
+from bonsai_api.db import Database, get_db
+from bonsai_api.models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
+
+from .shared import RouterTags
 
 LOG = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ READ_PERMISSION = "users:read"
 WRITE_PERMISSION = "users:write"
 
 
-@router.get("/users/me", tags=DEFAULT_TAGS, response_model=UserOutputDatabase)
+@router.get("/users/me", tags=[RouterTags.USR], response_model=UserOutputDatabase)
 async def get_users_me(
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
@@ -43,27 +44,27 @@ async def get_users_me(
     return current_user
 
 
-@router.get("/users/basket", tags=DEFAULT_TAGS)
+@router.get("/users/basket", tags=[RouterTags.USR])
 async def get_samples_in_basket(
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
     ]
-) -> List[SampleBasketObject]:
+) -> list[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     return current_user.basket
 
 
-@router.put("/users/basket", tags=DEFAULT_TAGS)
+@router.put("/users/basket", tags=[RouterTags.USR])
 async def add_samples_to_basket(
-    samples: List[SampleBasketObject],
+    samples: list[SampleBasketObject],
     db: Annotated[Database, Depends(get_db)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
     ],
-) -> List[SampleBasketObject]:
+) -> list[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
-        basket_obj: List[SampleBasketObject] = await add_samples_to_user_basket(
+        basket_obj: list[SampleBasketObject] = await add_samples_to_user_basket(
             current_user, samples, db
         )
     except EntryNotFound as error:
@@ -81,15 +82,15 @@ async def add_samples_to_basket(
 
 @router.delete("/users/basket", tags=DEFAULT_TAGS)
 async def remove_samples_from_basket(
-    sample_ids: List[str],
+    sample_ids: list[str],
     db: Annotated[Database, Depends(get_db)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
     ],
-) -> List[SampleBasketObject]:
+) -> list[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     try:
-        basket_obj: List[SampleBasketObject] = await remove_samples_from_user_basket(
+        basket_obj: list[SampleBasketObject] = await remove_samples_from_user_basket(
             current_user=current_user, sample_ids=sample_ids, db=db
         )
     except EntryNotFound as error:
@@ -180,7 +181,7 @@ async def get_users_in_db(
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[READ_PERMISSION])
     ],
-) -> List[UserOutputDatabase]:
+) -> list[UserOutputDatabase]:
     """Create a new user."""
     users = await get_users(db)
     return users

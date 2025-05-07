@@ -16,4 +16,6 @@ SAMPLE_ID_PATH: str = Path(
 class RouterTags(StrEnum):
 
     SAMPLE = 'sample'
+    GROUP = 'groups'
     META = 'metadata'
+    USR = 'user'
