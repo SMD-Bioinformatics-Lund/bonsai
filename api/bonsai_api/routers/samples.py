@@ -28,39 +28,41 @@ from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
-from ..crud.sample import EntryNotFound, add_comment, add_location, add_metadata_to_sample
-from ..crud.sample import create_sample as create_sample_record
-from ..crud.sample import delete_samples as delete_samples_from_db
-from ..crud.sample import get_sample, get_samples_summary
-from ..crud.sample import hide_comment as hide_comment_for_sample
-from ..crud.sample import update_sample as crud_update_sample
-from ..crud.sample import (
+from bonsai_api.crud.metadata import add_metadata_to_sample
+from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
+from bonsai_api.crud.sample import create_sample as create_sample_record
+from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
+from bonsai_api.crud.sample import get_sample, get_samples_summary
+from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
+from bonsai_api.crud.sample import update_sample as crud_update_sample
+from bonsai_api.crud.sample import (
     update_sample_qc_classification,
     update_variant_annotation_for_sample,
 )
-from ..crud.user import get_current_active_user
-from ..db import Database, get_db
-from ..io import (
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.db import Database, get_db
+from bonsai_api.io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
     is_file_readable,
     send_partial_file,
 )
-from ..models.base import MultipleRecordsResponseModel
-from ..models.cluster import TypingMethod
-from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import Comment, CommentInDatabase, InputMetaEntry, SampleInCreate, SampleInDatabase
-from ..models.user import UserOutputDatabase
-from ..redis import ClusterMethod, ConnectionError
-from ..redis.minhash import (
+from bonsai_api.models.base import MultipleRecordsResponseModel
+from bonsai_api.models.cluster import TypingMethod
+from bonsai_api.models.location import LocationOutputDatabase
+from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
+from bonsai_api.models.metadata import InputMetaEntry
+from bonsai_api.models.user import UserOutputDatabase
+from bonsai_api.redis import ClusterMethod, ConnectionError
+from bonsai_api.redis.minhash import (
     SubmittedJob,
     schedule_add_genome_signature,
     schedule_add_genome_signature_to_index,
     schedule_find_similar_and_cluster,
     schedule_find_similar_samples,
 )
-from ..utils import format_error_message
+from bonsai_api.utils import format_error_message
 from .shared import SAMPLE_ID_PATH, RouterTags
 
 CommentsObj = list[CommentInDatabase]
@@ -225,7 +227,7 @@ async def delete_sample(
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
 async def add_sample_metadata(
-    sample_id: str, metadata: InputMetaEntry, db: Database = Depends(get_db)) -> bool:
+    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_db)) -> bool:
     """Add metadata to an existing sample."""
     try:
         resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)

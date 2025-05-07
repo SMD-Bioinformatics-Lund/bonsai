@@ -17,7 +17,8 @@ from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod
 
 from .models.qc import SampleQcClassification
-from .models.sample import InputTableMetadata, MetaEntryInDb, SampleInDatabase, TableMetadataInDb
+from .models.sample import SampleInDatabase
+from .models.metadata import InputTableMetadata, TableMetadataInDb
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")

@@ -20,7 +20,7 @@ class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
     """Contaner for sample baskt content."""
 
     sample_id: str
-    analysis_profile: str
+    assay: str
 
 
 class QualityControlResult(Enum):

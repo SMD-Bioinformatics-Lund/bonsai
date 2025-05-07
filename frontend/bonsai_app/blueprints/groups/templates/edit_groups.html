@@ -209,12 +209,14 @@
                 <div class="rounded-1 p-2 bg-light">
                     <h6>{{ name }}</h6>
                     <ul id="{{value}}-list" class="list-group validated-genes-list">
-                    {% for gene in group.validated_genes.get(value, []) %}
-                        <li key={{gene}} class="list-group-item list-group-item-action d-flex justify-content-between">
-                            {{ gene }}
-                            <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
-                        </li>
-                    {% endfor %}
+                    {% if group.validated_genes %}
+                        {% for gene in group.validated_genes.get(value, []) %}
+                            <li key={{gene}} class="list-group-item list-group-item-action d-flex justify-content-between">
+                                {{ gene }}
+                                <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
+                            </li>
+                        {% endfor %}
+                    {% endif %}
                     </ul>
                 </div>
             </div>

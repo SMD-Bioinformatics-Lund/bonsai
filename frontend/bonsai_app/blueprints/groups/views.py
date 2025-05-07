@@ -71,7 +71,7 @@ def groups() -> str:
 
     # get default columns from api
     default_columns: list[dict[str, str | bool | jsonPath | None]] = []
-    for col in get_valid_group_columns():
+    for col in get_valid_group_columns(token_obj=token):
         if col["hidden"]:
             continue
         # get path
@@ -164,7 +164,7 @@ def edit_groups(group_id: str | None = None):
     }
 
     # get valid columns and set used cols as checked
-    valid_cols = get_valid_group_columns()
+    valid_cols = get_valid_group_columns(group_id=group_id, token_obj=token)
     all_group_ids = [group["group_id"] for group in all_groups]
     if group_id is not None and group_id in all_group_ids:
         selected_group = next(
@@ -222,15 +222,16 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # get columns from api
-    group_columns = []
+    group_columns: list[dict[str, Any]] = []
     for col in (
-        get_valid_group_columns(True) if display_qc else group_info["table_columns"]
+        get_valid_group_columns(qc=True) if display_qc else group_info["table_columns"]
     ):
         if col["hidden"]:
             continue
         # get path
         upd_col = col.copy()
         upd_col["path"] = jsonPath.parse_str(upd_col["path"])
+        sample = samples_info['data'][8]
         group_columns.append(upd_col)
 
     # generate table data

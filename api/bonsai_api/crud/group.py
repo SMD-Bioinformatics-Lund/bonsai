@@ -1,13 +1,13 @@
 """Functions for conducting CURD operations on group collection"""
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from prp.models.typing import TypingMethod
 from pymongo import ASCENDING
 
 from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase, OverviewTableColumn
+from ..models.group import GroupInCreate, GroupInfoDatabase
 from ..models.sample import SampleSummary
 from ..utils import get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
@@ -17,7 +17,7 @@ from .tags import compute_phenotype_tags
 LOG = logging.getLogger(__name__)
 
 
-def group_document_to_db_object(document: Dict[str, Any]) -> GroupInfoDatabase:
+def group_document_to_db_object(document: dict[str, Any]) -> GroupInfoDatabase:
     """Convert document from database to GroupInfoDatabase object."""
     inserted_id = document["_id"]
     db_obj = GroupInfoDatabase(
@@ -27,7 +27,7 @@ def group_document_to_db_object(document: Dict[str, Any]) -> GroupInfoDatabase:
     return db_obj
 
 
-async def get_groups(db: Database) -> List[GroupInfoDatabase]:
+async def get_groups(db: Database) -> list[GroupInfoDatabase]:
     """Get collections from database."""
     cursor = db.sample_group_collection.find({})
     groups = []

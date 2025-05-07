@@ -116,7 +116,7 @@
         <hr>
         <div class="row">
             <div class="col-auto">
-                {% set has_same_profile = samples | has_same_analysis_profile %}
+                {% set has_same_profile = samples | has_same_assay %}
                 <div id="basket-cluster-samples" 
                      class="dropdown"
                      data-bi-cluster-route="{{url_for('cluster.cluster')}}">

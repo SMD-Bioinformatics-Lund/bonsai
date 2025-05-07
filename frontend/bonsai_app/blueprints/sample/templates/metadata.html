@@ -29,7 +29,7 @@
         {{ sample_header(sample) }}
         <div class="container-fluid">
             <div class="row justify-content-md-center">
-                <div class="col-md-auto w-50">{{ meta_table(kw_tbl, 'kw-meta', show_columns=False, caption="General metadata.") }}</div>
+                <div class="col-md-auto w-50">{{ meta_table(kw_tbl, 'kw-meta', show_columns=False) }}</div>
             </div>
             <div class="row justify-content-md-center">
                 {% for meta in metadata_tbls %}

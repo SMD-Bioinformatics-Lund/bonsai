@@ -486,10 +486,14 @@ def get_lims_export_file(headers: CaseInsensitiveDict[str], sample_id: str) -> s
     return resp.text
 
 
-def get_valid_group_columns(qc: bool = False):
+@api_authentication
+def get_valid_group_columns(headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False):
     """Query API for valid group columns."""
-    url = f"{settings.bonsai_api_url}/groups/default/columns"
-    resp = requests_get(url, params={"qc": qc})
+    partial_url: str = (
+        "groups/default/columns" if group_id is None 
+        else f"groups/{group_id}/columns"
+    )
+    resp = requests_get(f"{settings.bonsai_api_url}/{partial_url}", params={"qc": qc}, headers=headers)
     resp.raise_for_status()
     return resp.json()
 
