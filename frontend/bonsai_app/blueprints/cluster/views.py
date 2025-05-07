@@ -4,7 +4,7 @@ import datetime
 import json
 import logging
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -38,9 +38,9 @@ class DataPointStyle(BaseModel):  # pylint: disable=too-few-public-methods
 class MetaData(BaseModel):  # pylint: disable=too-few-public-methods
     """Structure of metadata options"""
 
-    metadata: Dict[str, Dict[str, str | int | float | None]]
+    metadata: dict[str, dict[str, str | int | float | None]]
     metadata_list: list[str]
-    metadata_options: Dict[str, DataPointStyle]
+    metadata_options: dict[str, DataPointStyle]
 
 
 cluster_bp = Blueprint(
@@ -52,7 +52,7 @@ cluster_bp = Blueprint(
 )
 
 
-def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | float:
+def get_value(sample: dict[str | int, Any], value: str | int) -> str | int | float:
     """Get value from object.
 
     :param sample: Sample infomation as dict
@@ -66,7 +66,7 @@ def get_value(sample: Dict[str | int, Any], value: str | int) -> str | int | flo
     return "-" if val is None else val
 
 
-def fmt_metadata(sample_obj, column) -> str:
+def fmt_metadata(sample_obj: dict[str, str | int | list[str | dict[str, Any]]], column: dict[str, Any]) -> str:
     data = get_json_path(sample_obj, column["path"])
     match column["type"]:
         case "tags":
@@ -81,12 +81,14 @@ def fmt_metadata(sample_obj, column) -> str:
             )
         case "date":
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
+        case "list":
+            fmt_data = ', '.join(data)
         case _:
             fmt_data = data
     return fmt_data
 
 
-def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
+def gather_metadata(samples: list[dict[str, Any]], column_definition: list[Any]) -> MetaData:
     """Create metadata structure.
 
     GrapeTree metadata structure
@@ -104,23 +106,28 @@ def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
     - colorscheme
     """
     # Get which metadata points to display
-    columns = [col for col in column_definition if not col["hidden"]]
+    # skip column with sample button
+    columns = [col for col in column_definition if not col["hidden"] and col["label"] != ""]
     # create metadata structure
-    metadata = {}
+    metadata: dict[str, dict[str, str | int | float | None]] = {}
     for sample in samples:
         # add sample to metadata list
         sample_id = sample["sample_id"]
         # store metadata
-        metadata[sample_id] = {
-            col["label"]: fmt_metadata(sample, col) for col in columns
+        default_cols = {
+            col["label"]: fmt_metadata(sample, col) for col in columns if col != ""
         }
-    # build metadata list
-    metadata_list = set()
-    for meta in metadata.values():
-        metadata_list.update(set(meta))
-    metadata_list = list(metadata_list)
+        # exclude metadata tables as they cant be rendered
+        meta_records: dict[str, str] = {
+            meta['fieldname']: meta['value'] for meta in sample['metadata'] if meta['type'] != 'table'}
+        metadata[sample_id] = {**default_cols, **meta_records}
+    # build list of unique columns
+    metadata_list: set[str] = set()
+    for sample_meta in metadata.values():
+        metadata_list.update(set(sample_meta))
+    unique_cols: list[str] = list(metadata_list)
     # build styling for metadata point
-    opts = {}
+    opts: dict[str, DataPointStyle] = {}
     for meta_name in metadata_list:
         dtype = DataType.CATEGORY
         opt = DataPointStyle(
@@ -134,7 +141,7 @@ def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
     # return Meta object
     return MetaData(
         metadata=metadata,
-        metadata_list=metadata_list,
+        metadata_list=unique_cols,
         metadata_options=opts,
     )
 
@@ -144,27 +151,27 @@ def gather_metadata(samples, column_definition: List[Any]) -> MetaData:
 def tree():
     """grapetree view."""
     if request.method == "POST":
-        newick = request.form.get("newick")
+        newick = str(request.form.get("newick"))
         typing_data = request.form.get("typing_data")
         # get samples info as python object
-        samples = request.form.get("sample-ids", "{}")
-        samples = {} if samples == "" else json.loads(samples)
+        samples = str(request.form.get("sample-ids", "{}"))
+        samples_obj: dict[str, Any] = {} if samples == "" else json.loads(samples)
         # get columns as python object
         column_info = request.form.get("metadata", "{}")
         column_info = None if column_info == "" else json.loads(column_info)
         # query for sample metadata
-        if samples == {}:
+        if samples_obj == {}:
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
             sample_summary = get_samples(
-                token, sample_ids=samples["sample_id"], limit=0
+                token, sample_ids=samples_obj["sample_id"], limit=0
             )
             # get column info
             if column_info is None:
-                column_info = get_valid_group_columns()
+                column_info = get_valid_group_columns(token_obj=token)
             metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
-        data = {"nwk": newick, **metadata}
+        data: dict[str, str] = {"nwk": newick, **metadata}
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
