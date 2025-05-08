@@ -322,4 +322,4 @@ def parse_metadata_table(entry: InputTableMetadata, index_col: int | None = None
     """Parse a stringified csv file as a mongo representation of a table."""
     df = pd.read_csv(StringIO(entry.value), sep=',', index_col=index_col)
     df_json = df.to_dict(orient='split', index=False if index_col is None else True)
-    return TableMetadataInDb.model_validate({"fieldname": entry.fieldname, **df_json})
+    return TableMetadataInDb.model_validate({"fieldname": entry.fieldname, "category": entry.category, **df_json})

@@ -3,7 +3,7 @@
 import logging
 from collections import defaultdict
 from itertools import chain, groupby
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import pandas as pd
 
@@ -11,7 +11,7 @@ from ...custom_filters import get_who_group_from_tbprofiler_comment
 from ...models import ElementType, PredictionSoftware, QualityControlResult
 
 LOG = logging.getLogger(__name__)
-SampleObj = Dict[str, Any]
+SampleObj = dict[str, Any]
 
 
 def _has_phenotype(feature, phenotypes) -> bool:
@@ -95,7 +95,7 @@ def to_hgvs_nomenclature(variant):
     return f"{ref_gene}{description}"
 
 
-def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def create_amr_summary(sample: SampleObj) -> tuple[dict[str, Any], dict[str, Any]]:
     """Summarize antimicrobial resistance prediction.
 
     :param sample: Sample information
@@ -103,7 +103,7 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
     :raises ValueError: _description_
     :raises ValueError: _description_
     :return: Summary table and resistance information.
-    :rtype: Tuple[Dict[str, Any], Dict[str, Any]]
+    :rtype: tuple[dict[str, Any], dict[str, Any]]
     """
     amr_summary = {}
     resistance_info = {"genes": {}, "mutations": defaultdict(list)}
@@ -177,13 +177,13 @@ def create_amr_summary(sample: SampleObj) -> Tuple[Dict[str, Any], Dict[str, Any
     return amr_summary, resistance_info
 
 
-def sort_variants(sample_info: Dict[str, Any]) -> Dict[str, Any]:
+def sort_variants(sample_info: dict[str, Any]) -> dict[str, Any]:
     """Sort variants for a sample by verified status, ref sequence and position.
 
     :param sample_info: Sample object.
-    :type sample_info: Dict[str, Any]
+    :type sample_info: dict[str, Any]
     :return: Sample object with sorted variants.
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
 
     def _sort_func(variant: dict[str, Any]):
@@ -288,7 +288,7 @@ def filter_variants(
     return sample_info
 
 
-def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
+def get_variant_genes(sample_info, software=None) -> tuple[str, ...]:
     """Get the genes that have variants."""
     genes = set()
     for prediction in sample_info["element_type_result"]:
@@ -304,7 +304,7 @@ def get_variant_genes(sample_info, software=None) -> Tuple[str, ...]:
     return tuple(sorted(genes))
 
 
-def get_variant_classifications(variant) -> Tuple[str, ...]:
+def get_variant_classifications(variant) -> tuple[str, ...]:
     """Get the the classifications for a single variant."""
     classification = set()
     for pheno in variant["phenotypes"]:
@@ -314,7 +314,7 @@ def get_variant_classifications(variant) -> Tuple[str, ...]:
     return tuple(list(classification))
 
 
-def get_all_who_classifications(sample_info, software=None) -> Tuple[str, ...]:
+def get_all_who_classifications(sample_info, software=None) -> tuple[str, ...]:
     """Get the classification of variants predicted by a given software."""
     classification = set()
     for prediction in sample_info["element_type_result"]:
@@ -331,7 +331,7 @@ def get_all_who_classifications(sample_info, software=None) -> Tuple[str, ...]:
     return tuple(sorted(classification))
 
 
-def get_all_variant_types(sample_info, software=None) -> Tuple[str, ...]:
+def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
     """Get all variant types in the sample output."""
     variant_types = set()
     for prediction in sample_info["element_type_result"]:
@@ -393,11 +393,15 @@ def split_metadata(sample_obj: dict[str, Any]):
     return kw_meta, tbl_meta
 
 
-def kw_metadata_to_table(metadata: list[dict[str, Any]]):
+def kw_metadata_to_table(metadata: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Format key-value metadata to a dataframe like table object."""
-    raw_series = pd.Series(
-        [rec['value'] for rec in metadata],
-        index=[rec['fieldname'] for rec in metadata], 
-        name="Metadata"
-    )
-    return raw_series.to_frame().to_dict('split')
+    grouped_kw_meta: dict[str, dict[str, Any]] = {}
+    for name, records_itr in groupby(metadata, key=lambda x: x['category']):
+        records = list(records_itr)
+        raw_series = pd.Series(
+            [rec['value'] for rec in records],
+            index=[rec['fieldname'] for rec in records], 
+            name="Metadata"
+        )
+        grouped_kw_meta[name] = raw_series.to_frame().to_dict('split')
+    return grouped_kw_meta

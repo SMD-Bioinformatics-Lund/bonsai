@@ -393,13 +393,14 @@ def metadata(sample_id: str) -> str:
     
     kw_metadata, metadata_tbls = split_metadata(sample_info)
     kw_tbl = kw_metadata_to_table(kw_metadata)
+    grouped_meta_tbl = {name: list(gr) for name, gr in groupby(metadata_tbls, key=lambda x: x['category'])}
 
     return render_template(
         "metadata.html",
         title=f"{sample_id} metadata",
         sample=sample_info,
         kw_tbl=kw_tbl,
-        metadata_tbls=metadata_tbls,
+        metadata_tbls=grouped_meta_tbl,
     )
 
 
