@@ -232,6 +232,8 @@ async def add_sample_metadata(
     try:
         resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
     except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+    except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
     return resp
 

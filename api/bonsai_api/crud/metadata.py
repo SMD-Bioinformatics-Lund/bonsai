@@ -23,7 +23,7 @@ async def add_metadata_to_sample(
     input_fieldnames = {met.fieldname for met in metadata}
     db_fieldnames = {meta.fieldname for meta in sample_obj.metadata}
     if len(input_fieldnames & db_fieldnames) > 0:
-        raise ValueError(
+        raise FileExistsError(
             f"Metadata field '{metadata.fieldname}' already exist for sample {sample_id}"
         )
 
