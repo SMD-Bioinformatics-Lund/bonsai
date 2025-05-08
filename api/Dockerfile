@@ -1,4 +1,4 @@
-FROM python:3.11.3
+FROM bonsai-base:latest
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1

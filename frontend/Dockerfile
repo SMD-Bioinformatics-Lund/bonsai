@@ -12,7 +12,7 @@ RUN npm install && npm run build
 # BUILD APP #
 #############
 
-FROM python:3.11.3
+FROM bonsai-base:latest
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1

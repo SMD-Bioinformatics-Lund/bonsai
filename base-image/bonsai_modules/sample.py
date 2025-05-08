@@ -1,0 +1,123 @@
+"""Data model definition of input/ output data"""
+
+from typing import Literal
+
+from pydantic import Field
+
+from .base import RWModel, CreatedAt, ModifiedAt
+from .metadata import PipelineInfo, SequencingInfo
+from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
+                        VirulenceMethodIndex)
+from .qc import QcMethodIndex, QcClassification
+from .species import SppMethodIndex
+from .tags import TagList
+from .typing import (EmmTypingMethodIndex, ResultLineageBase,
+                     ShigaTypingMethodIndex, SpatyperTypingMethodIndex,
+                     TbProfilerLineage, TypingMethod, TypingResultCgMlst,
+                     TypingResultGeneAllele, TypingResultMlst, TypingSoftware)
+
+SCHEMA_VERSION: int = 2
+
+
+class MethodIndex(RWModel):
+    """Container for key-value lookup of analytical results."""
+
+    type: TypingMethod
+    software: TypingSoftware | None
+    result: (
+        TypingResultMlst
+        | TypingResultCgMlst
+        | TypingResultGeneAllele
+        | TbProfilerLineage
+        | ResultLineageBase
+        | SpatyperTypingMethodIndex
+    )
+
+
+class SampleBase(RWModel):
+    """Base datamodel for sample data structure"""
+
+    sample_id: str = Field(..., alias="sampleId", min_length=3, max_length=100)
+    sample_name: str
+    lims_id: str
+
+    # metadata
+    sequencing: SequencingInfo
+    pipeline: PipelineInfo
+
+    # quality
+    qc: list[QcMethodIndex] = Field(...)
+
+    # species identification
+    species_prediction: list[SppMethodIndex] = Field(..., alias="speciesPrediction")
+
+
+class ReferenceGenome(RWModel):
+    """Reference genome."""
+
+    name: str
+    accession: str
+    fasta: str
+    fasta_index: str | None = None
+    genes: str
+
+
+class IgvAnnotationTrack(RWModel):
+    """IGV annotation track data."""
+
+    name: str  # track name to display
+    file: str  # path to the annotation file
+
+
+class PipelineResult(SampleBase):
+    """Input format of sample object from pipeline."""
+
+    schema_version: Literal[2] = SCHEMA_VERSION
+    # optional typing
+    typing_result: list[
+        (
+            ShigaTypingMethodIndex
+            | EmmTypingMethodIndex
+            | SpatyperTypingMethodIndex
+            | MethodIndex
+        )
+    ] = Field(..., alias="typingResult")
+    # optional phenotype prediction
+    element_type_result: list[
+        (VirulenceMethodIndex | AMRMethodIndex | StressMethodIndex | MethodIndex)
+    ] = Field(..., alias="elementTypeResult")
+    # optional variant info
+    snv_variants: list[VariantBase] | None = None
+    sv_variants: list[VariantBase] | None = None
+    indel_variants: list[VariantBase] | None = None
+    # optional alignment info
+    reference_genome: ReferenceGenome | None = None
+    read_mapping: str | None = None
+    genome_annotation: list[IgvAnnotationTrack] | None = None
+
+
+class Comment(CreatedAt):  # pylint: disable=too-few-public-methods
+    """Contianer for comments."""
+
+    username: str = Field(..., min_length=0)
+    comment: str = Field(..., min_length=0)
+    displayed: bool = True
+
+
+class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
+    """Comment data structure in database."""
+
+    id: int = Field(..., alias="id")
+
+
+class SampleInDb(PipelineResult, CreatedAt, ModifiedAt):  # pylint: disable=too-few-public-methods
+    """Base datamodel for sample data structure"""
+
+    tags: TagList = []
+    qc_status: QcClassification = QcClassification()
+    # comments and non analytic results
+    comments: list[CommentInDatabase] = []
+    location: str | None = Field(None, description="Location id")
+    # signature file name
+    genome_signature: str | None = Field(None, description="Genome signature name")
+    ska_index: str | None = Field(None, description="Ska index path")
