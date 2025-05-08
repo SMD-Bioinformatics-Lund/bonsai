@@ -1,16 +1,16 @@
 """Clustering information"""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class DistanceMethod(Enum):  # pylint: disable=too-few-public-methods
+class DistanceMethod(StrEnum):  # pylint: disable=too-few-public-methods
     """Valid distance methods for hierarchical clustering of samples."""
 
     JACCARD = "jaccard"
     HAMMING = "hamming"
 
 
-class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
+class ClusterMethod(StrEnum):  # pylint: disable=too-few-public-methods
     """Index of methods for hierarchical clustering of samples."""
 
     SINGLE = "single"
@@ -19,7 +19,7 @@ class ClusterMethod(Enum):  # pylint: disable=too-few-public-methods
     NJ = "neighbor_joining"
 
 
-class TypingMethod(str, Enum):  # pylint: disable=too-few-public-methods
+class TypingMethod(StrEnum):  # pylint: disable=too-few-public-methods
     """Supported typing methods."""
 
     MLST = "mlst"
