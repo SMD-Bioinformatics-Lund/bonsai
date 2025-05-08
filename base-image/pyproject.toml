@@ -14,3 +14,9 @@ authors = [
     {name = "Markus Johansson", email = "markus.h.johansson@skane.se"}
 ]
 readme = "README.md"
+
+[project.optional-dependencies]
+dev = ["black", "pylint", "isort"]
+
+[tool.setuptools.dynamic]
+version = {attr = "bonsai_models.__version__"}

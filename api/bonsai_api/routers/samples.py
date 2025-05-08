@@ -17,14 +17,13 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
-from prp.models import PipelineResult
-from prp.models.phenotype import (
+from bonsai_models.phenotype import (
     AMRMethodIndex,
     StressMethodIndex,
     VariantType,
     VirulenceMethodIndex,
 )
-from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
+from bonsai_models.sample import PipelineResult, MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 

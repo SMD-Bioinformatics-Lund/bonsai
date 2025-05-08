@@ -4,13 +4,14 @@ from typing import Literal
 
 from pydantic import Field
 
-from .base import RWModel, CreatedAt, ModifiedAt
+from .base import DBModelMixin, RWModel, CreatedAt, ModifiedAt
 from .metadata import PipelineInfo, SequencingInfo
 from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
                         VirulenceMethodIndex)
 from .qc import QcMethodIndex, QcClassification
 from .species import SppMethodIndex
 from .tags import TagList
+from .species import SpeciesPrediction
 from .typing import (EmmTypingMethodIndex, ResultLineageBase,
                      ShigaTypingMethodIndex, SpatyperTypingMethodIndex,
                      TbProfilerLineage, TypingMethod, TypingResultCgMlst,
@@ -121,3 +122,11 @@ class SampleInDb(PipelineResult, CreatedAt, ModifiedAt):  # pylint: disable=too-
     # signature file name
     genome_signature: str | None = Field(None, description="Genome signature name")
     ska_index: str | None = Field(None, description="Ska index path")
+
+
+class SampleSummary(
+    DBModelMixin, PipelineResult
+):  # pylint: disable=too-few-public-methods
+    """Summary of a sample stored in the database."""
+
+    major_specie: SpeciesPrediction
