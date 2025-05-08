@@ -1,8 +1,8 @@
 FROM python:3.11.3
 
-# install shared modules
+# install shared models and modules
 WORKDIR /app
-COPY bonsai_modules bonsai_modules/
+COPY bonsai_models bonsai_models/
 COPY pyproject.toml ./
 
 # install dependancies

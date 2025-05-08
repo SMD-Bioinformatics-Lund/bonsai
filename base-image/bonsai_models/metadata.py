@@ -35,16 +35,29 @@ class DatetimeMetadataEntry(BaseModel):
     type: Literal["datetime"]
 
 
-class TableMetadataEntry(BaseModel):
-    """Container of basic metadata information"""
+class InputTableMetadata(BaseModel):
+    """Metadata table info recieved by API."""
 
     fieldname: str
     value: str
+    category: str = "general"
+    type: Literal["table"] = "table"
+
+
+class TableMetadataInDb(BaseModel):
+    """Metadata table stored in database."""
+
+    fieldname: str
+    columns: list[str] = []
+    index: list[str] = []
+    data: list[list[str | int | float | datetime]]
     category: str
-    type: Literal["table"]
+    type: Literal["table"] = "table"
 
 
-MetaEntries = GenericMetadataEntry | DatetimeMetadataEntry | TableMetadataEntry
+InputMetaEntry = DatetimeMetadataEntry | InputTableMetadata | GenericMetadataEntry
+MetaEntryInDb = DatetimeMetadataEntry | TableMetadataInDb | GenericMetadataEntry
+MetaEntriesInDb = list[MetaEntryInDb]
 
 
 class SoupType(StrEnum):
