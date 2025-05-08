@@ -367,6 +367,9 @@ def resistance_variants(sample_id: str) -> str:
             sample_info = filter_variants(sample_info, form=request.form)
         # resort variants after processing
         sample_info = sort_variants(sample_info)
+
+    _, meta_tbls = split_metadata(sample_info)
+
     return render_template(
         "resistance_variants.html",
         title=f"{sample_id} resistance",
@@ -375,6 +378,7 @@ def resistance_variants(sample_id: str) -> str:
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
+        metadata_tbls=meta_tbls
     )
 
 
@@ -400,7 +404,8 @@ def metadata(sample_id: str) -> str:
         title=f"{sample_id} metadata",
         sample=sample_info,
         kw_tbl=kw_tbl,
-        metadata_tbls=grouped_meta_tbl,
+        metadata_tbls=metadata_tbls,
+        grouped_metadata_tbls=grouped_meta_tbl,
     )
 
 

@@ -231,7 +231,7 @@
 {% block content %}
 {% set footnotes = [] %}
 <div class="container-fluid br-layout">
-    {{ sidebar(sample, optional_macro=export_btn) }}
+    {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls) }}
     <main class="br-main order-1">
         <div class="br-toc">
             {# right handed sidebar for filters and classification #}

@@ -28,7 +28,7 @@
     <main class="container-fluid">
         {{ sample_header(sample) }}
         <div class="container-fluid">
-            {% set categories=(kw_tbl | list  + metadata_tbls | list) | unique %}
+            {% set categories=(kw_tbl | list  + grouped_metadata_tbls | list) | unique %}
             {% for category in categories %}
                 <h5>{{ category }}</h5>
                 <hr class="mt-2 col-md-3 border border-success border-2">
@@ -40,7 +40,7 @@
                     {% endif %}
                     {% if category in metadata_tbls %}
                         <div class="row justify-content-md-center">
-                            {% for meta in metadata_tbls[category] %}
+                            {% for meta in grouped_metadata_tbls[category] %}
                                 <div class="col-md-auto w-50">{{ meta_table(meta, loop.index, name=meta.fieldname) }}</div>
                             {% endfor %}
                         </div>
