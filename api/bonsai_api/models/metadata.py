@@ -37,7 +37,7 @@ class InputTableMetadata(BaseModel):
 
     fieldname: str
     value: str
-    category: str
+    category: str = "general"
     type: Literal["table"] = "table"
 
 
