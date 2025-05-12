@@ -53,7 +53,9 @@ class AntibioticInfo(BaseModel):  # pylint: disable=too-few-public-methods
 ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="unknown aminocyclitol", family=AntibioticFamily.AMINOCYCLITOL),
     AntibioticInfo(name="spectinomycin", family=AntibioticFamily.AMINOCYCLITOL),
-    AntibioticInfo(name="unknown aminoglycoside", family=AntibioticFamily.AMINOGLYCOSIDE),
+    AntibioticInfo(
+        name="unknown aminoglycoside", family=AntibioticFamily.AMINOGLYCOSIDE
+    ),
     AntibioticInfo(name="gentamicin", family=AntibioticFamily.AMINOGLYCOSIDE),
     AntibioticInfo(name="gentamicin c", family=AntibioticFamily.AMINOGLYCOSIDE),
     AntibioticInfo(name="tobramycin", family=AntibioticFamily.AMINOGLYCOSIDE),
@@ -80,19 +82,26 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="astromicin", family=AntibioticFamily.AMINOGLYCOSIDE),
     AntibioticInfo(name="fortimicin", family=AntibioticFamily.AMINOGLYCOSIDE),
     AntibioticInfo(
-        name="unknown analog of d-alanine", family=AntibioticFamily.ANALOG_OF_D_ALANINE),
+        name="unknown analog of d-alanine", family=AntibioticFamily.ANALOG_OF_D_ALANINE
+    ),
     AntibioticInfo(name="d-cycloserine", family=AntibioticFamily.ANALOG_OF_D_ALANINE),
     AntibioticInfo(name="unknown beta-lactam", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="amoxicillin", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="amoxicillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM),
+    AntibioticInfo(
+        name="amoxicillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM
+    ),
     AntibioticInfo(name="ampicillin", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="ampicillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM),
+    AntibioticInfo(
+        name="ampicillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM
+    ),
     AntibioticInfo(name="aztreonam", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="cefazolin", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="cefepime", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="cefixime", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="cefotaxime", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="cefotaxime+clavulanic acid", family=AntibioticFamily.BETA_LACTAM),
+    AntibioticInfo(
+        name="cefotaxime+clavulanic acid", family=AntibioticFamily.BETA_LACTAM
+    ),
     AntibioticInfo(name="cefoxitin", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="ceftaroline", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="ceftazidime", family=AntibioticFamily.BETA_LACTAM),
@@ -108,20 +117,31 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="piperacillin+tazobactam", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="temocillin", family=AntibioticFamily.BETA_LACTAM),
     AntibioticInfo(name="ticarcillin", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="ticarcillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM),
+    AntibioticInfo(
+        name="ticarcillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM
+    ),
     AntibioticInfo(name="cephalotin", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="piperacillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM),
-    AntibioticInfo(name="unknown diarylquinoline", family=AntibioticFamily.DIARYLQUINOLINE),
+    AntibioticInfo(
+        name="piperacillin+clavulanic acid", family=AntibioticFamily.BETA_LACTAM
+    ),
+    AntibioticInfo(
+        name="unknown diarylquinoline", family=AntibioticFamily.DIARYLQUINOLINE
+    ),
     AntibioticInfo(name="bedaquiline", family=AntibioticFamily.DIARYLQUINOLINE),
     AntibioticInfo(name="unknown quinolone", family=AntibioticFamily.QUINOLONE),
     AntibioticInfo(name="ciprofloxacin", family=AntibioticFamily.QUINOLONE),
     AntibioticInfo(name="nalidixic acid", family=AntibioticFamily.QUINOLONE),
     AntibioticInfo(name="fluoroquinolone", family=AntibioticFamily.QUINOLONE),
     AntibioticInfo(
-        name="unknown folate pathway antagonist", family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST
+        name="unknown folate pathway antagonist",
+        family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST,
     ),
-    AntibioticInfo(name="sulfamethoxazole", family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST),
-    AntibioticInfo(name="trimethoprim", family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST),
+    AntibioticInfo(
+        name="sulfamethoxazole", family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST
+    ),
+    AntibioticInfo(
+        name="trimethoprim", family=AntibioticFamily.FOLATE_PATHWAY_ANTAGONIST
+    ),
     AntibioticInfo(name="unknown fosfomycin", family=AntibioticFamily.FOSFOMYCIN),
     AntibioticInfo(name="fosfomycin", family=AntibioticFamily.FOSFOMYCIN),
     AntibioticInfo(name="unknown glycopeptide", family=AntibioticFamily.GLYCOPEPTIDE),
@@ -132,7 +152,9 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="narasin", family=AntibioticFamily.IONOPHORES),
     AntibioticInfo(name="salinomycin", family=AntibioticFamily.IONOPHORES),
     AntibioticInfo(name="maduramicin", family=AntibioticFamily.IONOPHORES),
-    AntibioticInfo(name="unknown iminophenazine", family=AntibioticFamily.IMINOPHENAZINE),
+    AntibioticInfo(
+        name="unknown iminophenazine", family=AntibioticFamily.IMINOPHENAZINE
+    ),
     AntibioticInfo(name="clofazimine", family=AntibioticFamily.IMINOPHENAZINE),
     AntibioticInfo(
         name="unknown isonicotinic acid hydrazide",
@@ -150,7 +172,9 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="tylosin", family=AntibioticFamily.MACROLIDE),
     AntibioticInfo(name="telithromycin", family=AntibioticFamily.MACROLIDE),
     AntibioticInfo(name="erythromycin", family=AntibioticFamily.MACROLIDE),
-    AntibioticInfo(name="unknown nitroimidazole", family=AntibioticFamily.NITROIMIDAZOLE),
+    AntibioticInfo(
+        name="unknown nitroimidazole", family=AntibioticFamily.NITROIMIDAZOLE
+    ),
     AntibioticInfo(name="metronidazole", family=AntibioticFamily.NITROIMIDAZOLE),
     AntibioticInfo(name="unknown oxazolidinone", family=AntibioticFamily.OXAZOLIDINONE),
     AntibioticInfo(name="linezolid", family=AntibioticFamily.OXAZOLIDINONE),
@@ -161,7 +185,9 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="tiamulin", family=AntibioticFamily.PLEUROMUTILIN),
     AntibioticInfo(name="unknown polymyxin", family=AntibioticFamily.POLYMYXIN),
     AntibioticInfo(name="colistin", family=AntibioticFamily.POLYMYXIN),
-    AntibioticInfo(name="unknown pseudomonic acid", family=AntibioticFamily.PSEUDOMONIC_ACID),
+    AntibioticInfo(
+        name="unknown pseudomonic acid", family=AntibioticFamily.PSEUDOMONIC_ACID
+    ),
     AntibioticInfo(name="mupirocin", family=AntibioticFamily.PSEUDOMONIC_ACID),
     AntibioticInfo(name="unknown rifamycin", family=AntibioticFamily.RIFAMYCIN),
     AntibioticInfo(name="rifampicin", family=AntibioticFamily.RIFAMYCIN),
@@ -170,18 +196,26 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
         family=AntibioticFamily.SALICYLIC_ACID_ANTI_FOLATE,
     ),
     AntibioticInfo(
-        name="para-aminosalicyclic acid", family=AntibioticFamily.SALICYLIC_ACID_ANTI_FOLATE
+        name="para-aminosalicyclic acid",
+        family=AntibioticFamily.SALICYLIC_ACID_ANTI_FOLATE,
     ),
     AntibioticInfo(
-        name="unknown steroid antibacterial", family=AntibioticFamily.STEROID_ANTIBACTERIAL
+        name="unknown steroid antibacterial",
+        family=AntibioticFamily.STEROID_ANTIBACTERIAL,
     ),
     AntibioticInfo(name="fusidic acid", family=AntibioticFamily.STEROID_ANTIBACTERIAL),
-    AntibioticInfo(name="unknown streptogramin a", family=AntibioticFamily.STREPTOGRAMIN_A),
+    AntibioticInfo(
+        name="unknown streptogramin a", family=AntibioticFamily.STREPTOGRAMIN_A
+    ),
     AntibioticInfo(name="dalfopristin", family=AntibioticFamily.STREPTOGRAMIN_A),
     AntibioticInfo(name="pristinamycin iia", family=AntibioticFamily.STREPTOGRAMIN_A),
     AntibioticInfo(name="virginiamycin m", family=AntibioticFamily.STREPTOGRAMIN_A),
-    AntibioticInfo(name="quinupristin+dalfopristin", family=AntibioticFamily.STREPTOGRAMIN_A),
-    AntibioticInfo(name="unknown streptogramin b", family=AntibioticFamily.STREPTOGRAMIN_B),
+    AntibioticInfo(
+        name="quinupristin+dalfopristin", family=AntibioticFamily.STREPTOGRAMIN_A
+    ),
+    AntibioticInfo(
+        name="unknown streptogramin b", family=AntibioticFamily.STREPTOGRAMIN_B
+    ),
     AntibioticInfo(name="quinupristin", family=AntibioticFamily.STREPTOGRAMIN_B),
     AntibioticInfo(name="pristinamycin ia", family=AntibioticFamily.STREPTOGRAMIN_B),
     AntibioticInfo(name="virginiamycin s", family=AntibioticFamily.STREPTOGRAMIN_B),
@@ -189,9 +223,7 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
         name="unknown synthetic derivative of nicotinamide",
         family=AntibioticFamily.NICOTINAMIDE,
     ),
-    AntibioticInfo(
-        name="pyrazinamide", family=AntibioticFamily.NICOTINAMIDE
-    ),
+    AntibioticInfo(name="pyrazinamide", family=AntibioticFamily.NICOTINAMIDE),
     AntibioticInfo(name="unknown tetracycline", family=AntibioticFamily.TETRACYCLINE),
     AntibioticInfo(name="tetracycline", family=AntibioticFamily.TETRACYCLINE),
     AntibioticInfo(name="doxycycline", family=AntibioticFamily.TETRACYCLINE),
@@ -209,4 +241,3 @@ ANTIBIOTICS: Sequence[AntibioticInfo] = [
     AntibioticInfo(name="moxifloxacin", family=AntibioticFamily.FLUOROQUINOLONE),
     AntibioticInfo(name="delamanid", family=AntibioticFamily.NITROIMIDAZOLE),
 ]
-

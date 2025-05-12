@@ -4,14 +4,13 @@ from typing import Literal
 
 from pydantic import Field
 
-from .base import DBModelMixin, RWModel, CreatedAt, ModifiedAt
+from .base import CreatedAt, DBModelMixin, ModifiedAt, RWModel
 from .metadata import PipelineInfo, SequencingInfo
 from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
                         VirulenceMethodIndex)
-from .qc import QcMethodIndex, QcClassification
-from .species import SppMethodIndex
+from .qc import QcClassification, QcMethodIndex
+from .species import SpeciesPrediction, SppMethodIndex
 from .tags import TagList
-from .species import SpeciesPrediction
 from .typing import (EmmTypingMethodIndex, ResultLineageBase,
                      ShigaTypingMethodIndex, SpatyperTypingMethodIndex,
                      TbProfilerLineage, TypingMethod, TypingResultCgMlst,
@@ -19,6 +18,7 @@ from .typing import (EmmTypingMethodIndex, ResultLineageBase,
 
 SCHEMA_VERSION: int = 2
 
+SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
 
 class MethodIndex(RWModel):
     """Container for key-value lookup of analytical results."""
@@ -111,7 +111,9 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
-class SampleInDb(PipelineResult, CreatedAt, ModifiedAt):  # pylint: disable=too-few-public-methods
+class SampleInDb(
+    PipelineResult, CreatedAt, ModifiedAt
+):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     tags: TagList = []
