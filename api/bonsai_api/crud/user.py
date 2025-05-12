@@ -3,11 +3,6 @@
 import logging
 from typing import Annotated, List
 
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-from jose import JWTError, jwt
-
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database, get_db
@@ -19,6 +14,11 @@ from bonsai_models.models.user import (
     UserInputDatabase,
     UserOutputDatabase,
 )
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+from jose import JWTError, jwt
+
 from .errors import EntryNotFound, UpdateDocumentError
 
 LOG = logging.getLogger(__name__)

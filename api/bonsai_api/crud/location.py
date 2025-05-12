@@ -2,8 +2,6 @@
 
 from typing import List
 
-from bson import ObjectId
-
 from bonsai_api.db import Database
 from bonsai_models.models.location import (
     GeoJSONPolygon,
@@ -11,6 +9,8 @@ from bonsai_models.models.location import (
     LocationInputDatabase,
     LocationOutputDatabase,
 )
+from bson import ObjectId
+
 from .errors import EntryNotFound
 
 

@@ -1,6 +1,5 @@
 """File IO operations."""
 
-from io import StringIO
 import itertools
 import logging
 import mimetypes
@@ -9,16 +8,16 @@ import pathlib
 import re
 from collections import defaultdict
 from enum import Enum
+from io import StringIO
 from typing import List, Tuple
 
 import pandas as pd
+from bonsai_models.models.metadata import InputTableMetadata, TableMetadataInDb
+from bonsai_models.models.phenotype import GeneBase, PredictionSoftware, VariantBase
+from bonsai_models.models.qc import SampleQcClassification
+from bonsai_models.models.sample import SampleInDatabase
+from bonsai_models.models.typing import TypingMethod
 from fastapi.responses import Response
-from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
-from prp.models.typing import TypingMethod
-
-from .models.qc import SampleQcClassification
-from .models.sample import SampleInDatabase
-from .models.metadata import InputTableMetadata, TableMetadataInDb
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -318,8 +317,12 @@ def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
     return pred_res
 
 
-def parse_metadata_table(entry: InputTableMetadata, index_col: int | None = None) -> TableMetadataInDb:
+def parse_metadata_table(
+    entry: InputTableMetadata, index_col: int | None = None
+) -> TableMetadataInDb:
     """Parse a stringified csv file as a mongo representation of a table."""
-    df = pd.read_csv(StringIO(entry.value), sep=',', index_col=index_col)
-    df_json = df.to_dict(orient='split', index=False if index_col is None else True)
-    return TableMetadataInDb.model_validate({"fieldname": entry.fieldname, "category": entry.category, **df_json})
+    df = pd.read_csv(StringIO(entry.value), sep=",", index_col=index_col)
+    df_json = df.to_dict(orient="split", index=False if index_col is None else True)
+    return TableMetadataInDb.model_validate(
+        {"fieldname": entry.fieldname, "category": entry.category, **df_json}
+    )

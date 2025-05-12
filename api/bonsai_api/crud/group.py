@@ -3,13 +3,13 @@
 import logging
 from typing import Any
 
-from prp.models.typing import TypingMethod
+from bonsai_api.db import Database
+from bonsai_api.utils import get_timestamp
+from bonsai_models.models.group import GroupInCreate, GroupInfoDatabase
+from bonsai_models.models.sample import SampleSummary
+from bonsai_models.models.typing import TypingMethod
 from pymongo import ASCENDING
 
-from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase
-from ..models.sample import SampleSummary
-from ..utils import get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
 from .tags import compute_phenotype_tags
