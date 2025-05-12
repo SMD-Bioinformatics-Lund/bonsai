@@ -2,11 +2,11 @@
 
 import logging
 
-from prp.models.phenotype import ElementType, ElementTypeResult
-from prp.models.typing import TypingMethod
+from bonsai_models.models.phenotype import ElementType, ElementTypeResult
+from bonsai_models.models.typing import TypingMethod
 
-from ..models.sample import SampleInDatabase
-from ..models.tags import (
+from bonsai_models.models.sample import SampleInDatabase
+from bonsai_models.models.tags import (
     ResistanceTag,
     Tag,
     TagList,

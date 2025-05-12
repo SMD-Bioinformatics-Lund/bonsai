@@ -8,12 +8,12 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from ..auth import get_password_hash, verify_password
-from ..config import ALGORITHM, USER_ROLES, settings
-from ..db import Database, get_db
-from ..extensions.ldap_extension import ldap_connection
-from ..models.auth import TokenData
-from ..models.user import (
+from bonsai_api.auth import get_password_hash, verify_password
+from bonsai_api.config import ALGORITHM, USER_ROLES, settings
+from bonsai_api.db import Database, get_db
+from bonsai_api.extensions.ldap_extension import ldap_connection
+from bonsai_models.models.auth import TokenData
+from bonsai_models.models.user import (
     SampleBasketObject,
     UserInputCreate,
     UserInputDatabase,

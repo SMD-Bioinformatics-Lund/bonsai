@@ -15,15 +15,15 @@ from ..crud.sample import (
     get_typing_profiles,
 )
 from ..db import Database, get_db
-from ..models.base import RWModel
-from ..models.cluster import DistanceMethod, TypingMethod
-from ..redis import ClusterMethod, MsTreeMethods, SubmittedJob
-from ..redis.allele_cluster import (
+from bonsai_models.models.base import RWModel
+from bonsai_models.models.cluster import DistanceMethod, TypingMethod
+from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
+from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
 )
-from ..redis.minhash import schedule_add_genome_signature_to_index
-from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
-from ..redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
+from bonsai_api.redis.minhash import schedule_add_genome_signature_to_index
+from bonsai_api.redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
+from bonsai_api.redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()

@@ -4,11 +4,11 @@ from typing import Literal
 
 from pydantic import Field
 
-from .base import CreatedAt, DBModelMixin, ModifiedAt, RWModel
-from .metadata import PipelineInfo, SequencingInfo
+from .base import CreatedAt, DBModelMixin, ModifiedAt, MultipleRecordsResponseModel, RWModel
+from .metadata import InputMetaEntry, MetaEntryInDb, PipelineInfo, SequencingInfo
 from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
                         VirulenceMethodIndex)
-from .qc import QcClassification, QcMethodIndex
+from .qc import QcClassification, QcMethodIndex, SampleQcClassification, VaraintRejectionReason
 from .species import SpeciesPrediction, SppMethodIndex
 from .tags import TagList
 from .typing import (EmmTypingMethodIndex, ResultLineageBase,
@@ -111,6 +111,29 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
+class VariantInDb(VariantBase):
+    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+    reason: VaraintRejectionReason | None = None
+
+
+class ResfinderVariant(VariantInDb):
+    """Container for ResFinder variant information"""
+
+
+class MykrobeVariant(VariantInDb):
+    """Container for Mykrobe variant information"""
+
+
+class TbProfilerVariant(VariantInDb):
+    """Container for TbProfiler variant information"""
+
+    variant_effect: str
+    hgvs_nt_change: str | None = Field(..., description="DNA change in HGVS format")
+    hgvs_aa_change: str | None = Field(
+        ..., description="Protein change in HGVS format"
+    )
+
+
 class SampleInDb(
     PipelineResult, CreatedAt, ModifiedAt
 ):  # pylint: disable=too-few-public-methods
@@ -126,9 +149,37 @@ class SampleInDb(
     ska_index: str | None = Field(None, description="Ska index path")
 
 
+class SampleInCreate(
+    SampleBase, PipelineResult
+):  # pylint: disable=too-few-public-methods
+    """Sample data model used when creating new db entries."""
+
+    metadata: list[InputMetaEntry] = []
+    element_type_result: list[MethodIndex]
+    sv_variants: list[VariantInDb] | None = None
+    snv_variants: list[VariantInDb] | None = None
+
+
+class SampleInDatabase(
+    DBModelMixin, SampleBase, PipelineResult
+):  # pylint: disable=too-few-public-methods
+    """Sample database model outputed from the database."""
+
+    metadata: list[MetaEntryInDb] = []
+    element_type_result: list[MethodIndex]
+    sv_variants: list[VariantInDb] | None = None
+    snv_variants: list[VariantInDb] | None = None
+
+
 class SampleSummary(
     DBModelMixin, PipelineResult
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
 
     major_specie: SpeciesPrediction
+
+
+class MultipleSampleRecordsResponseModel(
+    MultipleRecordsResponseModel
+):  # pylint: disable=too-few-public-methods
+    data: list[SampleInDatabase] = []

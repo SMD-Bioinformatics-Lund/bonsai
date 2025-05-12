@@ -2,8 +2,8 @@
 
 from typing import Optional, Union
 
-from prp.models import PipelineResult
-from prp.models.phenotype import (
+from bonsai_models.models.sample import PipelineResult
+from bonsai_models.models.phenotype import (
     AmrFinderGene,
     AmrFinderResistanceGene,
     ElementType,
@@ -12,8 +12,8 @@ from prp.models.phenotype import (
     VariantBase,
     VirulenceGene,
 )
-from prp.models.species import SpeciesPrediction
-from prp.models.typing import (
+from bonsai_models.models.species import SpeciesPrediction
+from bonsai_models.models.typing import (
     ResultLineageBase,
     TbProfilerLineage,
     TypingMethod,

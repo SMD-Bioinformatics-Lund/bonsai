@@ -18,7 +18,7 @@ from bonsai_api.crud.user import (
     update_user,
 )
 from bonsai_api.db import Database, get_db
-from bonsai_api.models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
+from bonsai_models.models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
 
 from .shared import RouterTags
 
