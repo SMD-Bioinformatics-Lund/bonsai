@@ -3,8 +3,8 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DBModelMixin, ModifiedAt, ObjectId, RWModel
-from .sample import SampleSummary
 from .phenotype import ElementType
+from .sample import SampleSummary
 
 FilterParams = list[dict[str, str | int | float],]
 

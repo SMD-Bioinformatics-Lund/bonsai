@@ -2,12 +2,11 @@
 
 import datetime
 from typing import Any
+
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-def get_timestamp() -> datetime.datetime:
-    """Get datetime timestamp in utc timezone."""
-    return datetime.datetime.now(tz=datetime.UTC)
+from bonsai_models.util import get_timestamp
 
 
 class ObjectId(BaseObjectId):

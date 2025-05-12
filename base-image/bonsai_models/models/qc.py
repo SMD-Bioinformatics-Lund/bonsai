@@ -5,8 +5,8 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 from .base import RWModel
-from .typing import TypingSoftware
 from .tags import TagSeverity
+from .typing import TypingSoftware
 
 
 class ValidQualityStr(StrEnum):

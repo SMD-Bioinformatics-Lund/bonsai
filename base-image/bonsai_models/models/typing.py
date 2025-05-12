@@ -146,9 +146,7 @@ class TypingResultGeneAllele(VirulenceGene, SerotypeGene):
     """Identification of individual gene alleles."""
 
 
-CgmlstAlleles = dict[str, (
-    int | None | ChewbbacaErrors | MlstErrors | list[int]
-)]
+CgmlstAlleles = dict[str, (int | None | ChewbbacaErrors | MlstErrors | list[int])]
 
 
 class TypingResultSpatyper(RWModel):
