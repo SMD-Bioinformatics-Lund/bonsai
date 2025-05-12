@@ -4,8 +4,8 @@ from typing import List
 
 from bson import ObjectId
 
-from ..db import Database
-from ..models.location import (
+from bonsai_api.db import Database
+from bonsai_models.models.location import (
     GeoJSONPolygon,
     LocationInputCreate,
     LocationInputDatabase,

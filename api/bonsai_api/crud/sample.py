@@ -9,19 +9,19 @@ from pydantic import ValidationError
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
-from prp.models import PipelineResult
-from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from prp.models.tags import TagList
-from prp.parse.typing import replace_cgmlst_errors
+from bonsai_models.models.sample import PipelineResult
+from bonsai_models.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
+from bonsai_models.models.tags import TagList
+from bonsai_api.parse import replace_cgmlst_errors
 
-from ..crud.location import get_location
-from ..crud.tags import compute_phenotype_tags
-from ..db import Database
-from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import MultipleRecordsResponseModel, RWModel
-from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
+from bonsai_api.crud.location import get_location
+from bonsai_api.crud.tags import compute_phenotype_tags
+from bonsai_api.db import Database
+from bonsai_models.models.antibiotics import ANTIBIOTICS
+from bonsai_models.models.base import MultipleRecordsResponseModel, RWModel
+from bonsai_models.models.location import LocationOutputDatabase
+from bonsai_models.models.qc import QcClassification, VariantAnnotation
+from bonsai_models.models.sample import (
     Comment,
     CommentInDatabase,
     MultipleSampleRecordsResponseModel,
