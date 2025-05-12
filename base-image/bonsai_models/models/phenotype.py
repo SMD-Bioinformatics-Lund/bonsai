@@ -300,10 +300,8 @@ class ElementTypeResult(BaseModel):
     phenotypes: dict[str, list[str]] = {}
     genes: list[AmrFinderGene | AmrFinderResistanceGene | ResfinderGene]
     variants: list[
-        TbProfilerVariant
-        | MykrobeVariant
-        | ResfinderVariant
-        | AmrFinderVariant] = []
+        TbProfilerVariant | MykrobeVariant | ResfinderVariant | AmrFinderVariant
+    ] = []
 
 
 class AMRMethodIndex(RWModel):
