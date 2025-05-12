@@ -3,7 +3,7 @@
 from fastapi import Path
 from enum import StrEnum
 
-from ..models.sample import SAMPLE_ID_PATTERN
+from bonsai_models.models.sample import SAMPLE_ID_PATTERN
 
 SAMPLE_ID_PATH: str = Path(
     ...,
@@ -15,6 +15,7 @@ SAMPLE_ID_PATH: str = Path(
 
 class RouterTags(StrEnum):
 
+    AUTH = 'authentication'
     SAMPLE = 'sample'
     GROUP = 'groups'
     META = 'metadata'
