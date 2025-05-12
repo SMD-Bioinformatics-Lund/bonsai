@@ -17,6 +17,9 @@ class RouterTags(StrEnum):
 
     AUTH = 'authentication'
     SAMPLE = 'sample'
-    GROUP = 'groups'
+    GROUP = 'group'
     META = 'metadata'
     USR = 'user'
+    EXP = 'export'
+    JOB = 'job'
+    ASSET = 'resources'

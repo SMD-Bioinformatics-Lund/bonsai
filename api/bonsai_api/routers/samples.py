@@ -17,13 +17,13 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse
-from bonsai_models.phenotype import (
+from bonsai_models.models.phenotype import (
     AMRMethodIndex,
     StressMethodIndex,
     VariantType,
     VirulenceMethodIndex,
 )
-from bonsai_models.sample import PipelineResult, MethodIndex, ShigaTypingMethodIndex
+from bonsai_models.models.sample import PipelineResult, MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field
 from pymongo.errors import DuplicateKeyError
 
@@ -46,13 +46,13 @@ from bonsai_api.io import (
     is_file_readable,
     send_partial_file,
 )
-from bonsai_api.models.base import MultipleRecordsResponseModel
-from bonsai_api.models.cluster import TypingMethod
-from bonsai_api.models.location import LocationOutputDatabase
-from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
-from bonsai_api.models.metadata import InputMetaEntry
-from bonsai_api.models.user import UserOutputDatabase
+from bonsai_models.models.base import MultipleRecordsResponseModel
+from bonsai_models.models.cluster import TypingMethod
+from bonsai_models.models.location import LocationOutputDatabase
+from bonsai_models.models.qc import QcClassification, VariantAnnotation
+from bonsai_models.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
+from bonsai_models.models.metadata import InputMetaEntry
+from bonsai_models.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
     SubmittedJob,

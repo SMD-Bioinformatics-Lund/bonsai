@@ -6,17 +6,17 @@ from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
 
-from ..crud.errors import EntryNotFound, UpdateDocumentError
 import bonsai_api.crud.group as crud_group
-from ..crud.group import create_group as create_group_record
-from ..crud.group import delete_group, get_group, get_groups, update_group
-from ..crud.sample import get_samples_summary
-from ..crud.user import get_current_active_user
-from ..crud.metadata import get_metadata_fields_for_samples
-from ..db import Database, get_db
-from ..models.base import MultipleRecordsResponseModel
-from ..models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
-from ..models.user import UserOutputDatabase
+from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.group import create_group as create_group_record
+from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
+from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.crud.metadata import get_metadata_fields_for_samples
+from bonsai_api.db import Database, get_db
+from bonsai_models.models.base import MultipleRecordsResponseModel
+from bonsai_models.models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
+from bonsai_models.models.user import UserOutputDatabase
 
 router = APIRouter()
 

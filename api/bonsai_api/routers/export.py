@@ -1,29 +1,25 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
 from ..crud.sample import EntryNotFound, get_sample
 from ..crud.user import get_current_active_user
 from ..db import Database, get_db
 from ..io import sample_to_kmlims
-from ..models.sample import SAMPLE_ID_PATTERN
-from ..models.user import UserOutputDatabase
-from .shared import SAMPLE_ID_PATH
+from bonsai_models.models.user import UserOutputDatabase
+from .shared import SAMPLE_ID_PATH, RouterTags
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
-DEFAULT_TAGS = [
-    "export",
-]
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
 @router.get(
-    "/export/{sample_id}/lims", response_class=PlainTextResponse, tags=DEFAULT_TAGS
+    "/export/{sample_id}/lims", response_class=PlainTextResponse, tags=[RouterTags.EXP]
 )
 async def export_to_lims(
     sample_id: str = SAMPLE_ID_PATH,

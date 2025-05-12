@@ -4,19 +4,19 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
-from ..crud.errors import EntryNotFound
-from ..crud.location import create_location as create_location_from_db
-from ..crud.location import get_location as get_location_from_db
-from ..crud.location import get_locations as get_locations_from_db
-from ..crud.location import get_locations_within_bbox
-from ..crud.user import get_current_active_user
-from ..db import Database, get_db
-from ..models.location import (
+from bonsai_api.crud.errors import EntryNotFound
+from bonsai_api.crud.location import create_location as create_location_from_db
+from bonsai_api.crud.location import get_location as get_location_from_db
+from bonsai_api.crud.location import get_locations as get_locations_from_db
+from bonsai_api.crud.location import get_locations_within_bbox
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.db import Database, get_db
+from bonsai_models.models.location import (
     GeoJSONPolygon,
     LocationInputCreate,
     LocationOutputDatabase,
 )
-from ..models.user import UserOutputDatabase
+from bonsai_models.models.user import UserOutputDatabase
 
 router = APIRouter()
 
