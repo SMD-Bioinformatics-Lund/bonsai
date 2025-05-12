@@ -1,62 +1,12 @@
 """Typing related data models"""
 
-from enum import Enum
 from typing import Any, Literal
 
 from pydantic import Field
 
 from .base import RWModel
 from .phenotype import SerotypeGene, VirulenceGene
-
-
-class TypingSoftware(str, Enum):
-    """Container for software names."""
-
-    CHEWBBACA = "chewbbaca"
-    MLST = "mlst"
-    TBPROFILER = "tbprofiler"
-    MYKROBE = "mykrobe"
-    VIRULENCEFINDER = "virulencefinder"
-    SEROTYPEFINDER = "serotypefinder"
-    SHIGAPASS = "shigapass"
-    EMMTYPER = "emmtyper"
-    SPATYPER = "spatyper"
-
-
-class TypingMethod(str, Enum):
-    """Valid typing methods."""
-
-    MLST = "mlst"
-    CGMLST = "cgmlst"
-    LINEAGE = "lineage"
-    STX = "stx"
-    OTYPE = "O_type"
-    HTYPE = "H_type"
-    SHIGATYPE = "shigatype"
-    EMMTYPE = "emmtype"
-    SPATYPE = "spatype"
-
-
-class ChewbbacaErrors(str, Enum):
-    """Chewbbaca error codes."""
-
-    PLOT5 = "PLOT5"
-    PLOT3 = "PLOT3"
-    LOTSC = "LOTSC"
-    NIPH = "NIPH"
-    NIPHEM = "NIPHEM"
-    ALM = "ALM"
-    ASM = "ASM"
-    LNF = "LNF"
-    EXC = "EXC"
-    PAMA = "PAMA"
-
-
-class MlstErrors(str, Enum):
-    """MLST error codes."""
-
-    NOVEL = "novel"
-    PARTIAL = "partial"
+from .constants import TypingMethod, TypingSoftware, ChewbbacaErrors, MlstErrors
 
 
 class ResultMlstBase(RWModel):
