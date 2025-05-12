@@ -8,7 +8,7 @@ from .base import CreatedAt, DBModelMixin, ModifiedAt, MultipleRecordsResponseMo
 from .metadata import InputMetaEntry, MetaEntryInDb, PipelineInfo, SequencingInfo
 from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
                         VirulenceMethodIndex)
-from .qc import QcClassification, QcMethodIndex, SampleQcClassification, VaraintRejectionReason
+from .qc import QcClassification, QcMethodIndex
 from .species import SpeciesPrediction, SppMethodIndex
 from .tags import TagList
 from .typing import (EmmTypingMethodIndex, ResultLineageBase,
@@ -111,35 +111,13 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
-class VariantInDb(VariantBase):
-    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-    reason: VaraintRejectionReason | None = None
-
-
-class ResfinderVariant(VariantInDb):
-    """Container for ResFinder variant information"""
-
-
-class MykrobeVariant(VariantInDb):
-    """Container for Mykrobe variant information"""
-
-
-class TbProfilerVariant(VariantInDb):
-    """Container for TbProfiler variant information"""
-
-    variant_effect: str
-    hgvs_nt_change: str | None = Field(..., description="DNA change in HGVS format")
-    hgvs_aa_change: str | None = Field(
-        ..., description="Protein change in HGVS format"
-    )
-
-
 class SampleInDb(
     PipelineResult, CreatedAt, ModifiedAt
 ):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     tags: TagList = []
+    metadata: list[InputMetaEntry] = []
     qc_status: QcClassification = QcClassification()
     # comments and non analytic results
     comments: list[CommentInDatabase] = []
@@ -149,22 +127,12 @@ class SampleInDb(
     ska_index: str | None = Field(None, description="Ska index path")
 
 
-class SampleInCreate(PipelineResult):  # pylint: disable=too-few-public-methods
+class SampleInCreate(SampleInDb):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
-    metadata: list[InputMetaEntry] = []
-    element_type_result: list[MethodIndex]
-    sv_variants: list[VariantInDb] | None = None
-    snv_variants: list[VariantInDb] | None = None
 
-
-class SampleInDatabase(DBModelMixin, PipelineResult):  # pylint: disable=too-few-public-methods
+class SampleInDatabase(DBModelMixin, SampleInDb):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
-
-    metadata: list[MetaEntryInDb] = []
-    element_type_result: list[MethodIndex]
-    sv_variants: list[VariantInDb] | None = None
-    snv_variants: list[VariantInDb] | None = None
 
 
 class SampleSummary(

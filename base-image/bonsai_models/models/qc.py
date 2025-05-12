@@ -6,23 +6,13 @@ from pydantic import BaseModel, Field
 
 from .base import RWModel
 from .tags import TagSeverity
-from .typing import TypingSoftware
+from .constants import QcSoftware
 
 
 class ValidQualityStr(StrEnum):
     """Valid strings for qc entries."""
 
     LOWCONTIGQUAL = "-"
-
-
-class QcSoftware(StrEnum):
-    """Valid tools."""
-
-    QUAST = "quast"
-    FASTQC = "fastqc"
-    POSTALIGNQC = "postalignqc"
-    CHEWBBACA = TypingSoftware.CHEWBBACA.value
-    GAMBITCORE = "gambitcore"
 
 
 class QuastQcResult(BaseModel):
