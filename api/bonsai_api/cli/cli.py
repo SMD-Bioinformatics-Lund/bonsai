@@ -17,9 +17,12 @@ from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.io import sample_to_kmlims
-from bonsai_api.models.group import GroupInCreate, pred_res_cols
-from bonsai_api.models.sample import SampleInCreate, MultipleSampleRecordsResponseModel
-from bonsai_api.models.user import UserInputCreate
+from bonsai_models.models.group import GroupInCreate, pred_res_cols
+from bonsai_models.models.sample import (
+    MultipleSampleRecordsResponseModel,
+    SampleInCreate,
+)
+from bonsai_models.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
 from .utils import EmailType, create_missing_file_report, send_email_report
@@ -121,7 +124,7 @@ def create_group(
         display_name=name,
         description=description,
         table_columns=pred_res_cols,
-        validated_genes=None
+        validated_genes=None,
     )
     try:
         loop = asyncio.get_event_loop()
@@ -268,4 +271,4 @@ def check_paths(
             LOG.error(str(err))
     else:
         output.write(output_ch.getvalue())
-    click.secho("Finished validating file paths", fg='green')
+    click.secho("Finished validating file paths", fg="green")

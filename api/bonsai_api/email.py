@@ -2,7 +2,8 @@
 
 import smtplib
 from email.message import EmailMessage
-from .config import SmtpConfig, EmailConfig
+
+from .config import EmailConfig, SmtpConfig
 
 
 def get_smtp_connection(cnf: SmtpConfig) -> smtplib.SMTP:
@@ -15,8 +16,8 @@ def create_email(recipients: list[str], cnf: EmailConfig) -> EmailMessage:
     """Send email using sender information from config."""
 
     msg = EmailMessage()
-    msg['From'] = cnf.sender_name
-    msg['Sender'] = cnf.sender
-    msg['To'] = ",".join(recipients)
+    msg["From"] = cnf.sender_name
+    msg["Sender"] = cnf.sender
+    msg["To"] = ",".join(recipients)
 
     return msg

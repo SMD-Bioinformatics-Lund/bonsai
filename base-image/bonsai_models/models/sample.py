@@ -149,9 +149,7 @@ class SampleInDb(
     ska_index: str | None = Field(None, description="Ska index path")
 
 
-class SampleInCreate(
-    SampleBase, PipelineResult
-):  # pylint: disable=too-few-public-methods
+class SampleInCreate(PipelineResult):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
     metadata: list[InputMetaEntry] = []
@@ -160,9 +158,7 @@ class SampleInCreate(
     snv_variants: list[VariantInDb] | None = None
 
 
-class SampleInDatabase(
-    DBModelMixin, SampleBase, PipelineResult
-):  # pylint: disable=too-few-public-methods
+class SampleInDatabase(DBModelMixin, PipelineResult):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
 
     metadata: list[MetaEntryInDb] = []

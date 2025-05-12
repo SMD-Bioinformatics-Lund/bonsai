@@ -1,5 +1,6 @@
 import logging
 
+from bonsai_models.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
@@ -7,7 +8,6 @@ from ..crud.sample import EntryNotFound, get_sample
 from ..crud.user import get_current_active_user
 from ..db import Database, get_db
 from ..io import sample_to_kmlims
-from bonsai_models.models.user import UserOutputDatabase
 from .shared import SAMPLE_ID_PATH, RouterTags
 
 LOG = logging.getLogger(__name__)
