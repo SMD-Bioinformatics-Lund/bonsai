@@ -1,8 +1,7 @@
 """API root message."""
 
-from fastapi import APIRouter
-
 from bonsai_api.__version__ import VERSION as version
+from fastapi import APIRouter
 
 router = APIRouter()
 

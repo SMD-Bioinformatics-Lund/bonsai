@@ -1,11 +1,10 @@
 """Functions for parsing results from prediction softwares."""
 
-
-from enum import StrEnum
 import logging
-
+from enum import StrEnum
 
 LOG = logging.getLogger(__name__)
+
 
 class ChewbbacaErrors(StrEnum):
     """Chewbbaca error codes."""

@@ -3,32 +3,30 @@
 import logging
 from itertools import groupby
 from typing import Any, Dict, List, Sequence
-from pymongo.results import UpdateResult
-
-from pydantic import ValidationError
-from bson.objectid import ObjectId
-from fastapi.encoders import jsonable_encoder
-from motor.motor_asyncio import AsyncIOMotorCommandCursor
-from bonsai_models.models.sample import PipelineResult
-from bonsai_models.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from bonsai_models.models.tags import TagList
-from bonsai_api.parse import replace_cgmlst_errors
 
 from bonsai_api.crud.location import get_location
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.db import Database
+from bonsai_api.parse import replace_cgmlst_errors
 from bonsai_models.models.antibiotics import ANTIBIOTICS
 from bonsai_models.models.base import MultipleRecordsResponseModel, RWModel
 from bonsai_models.models.location import LocationOutputDatabase
+from bonsai_models.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from bonsai_models.models.qc import QcClassification, VariantAnnotation
 from bonsai_models.models.sample import (
     Comment,
     CommentInDatabase,
     MultipleSampleRecordsResponseModel,
+    PipelineResult,
     SampleInCreate,
     SampleInDatabase,
-    SampleSummary,
 )
+from bonsai_models.models.tags import TagList
+from bson.objectid import ObjectId
+from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorCommandCursor
+from pymongo.results import UpdateResult
+
 from ..redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
