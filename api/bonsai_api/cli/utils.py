@@ -14,15 +14,17 @@ LOG = logging.getLogger(__name__)
 
 
 class EmailType(click.ParamType):
+    """Click parameter that validates emails."""
+
     name = "email"
 
     def convert(self, value: str, param: click.Option, ctx: click.Context):
         """Validate emails using email validator module."""
         try:
             validate_email(value)
-            return value
         except EmailNotValidError:
             self.fail(f"{value} is not a valid email", param, ctx)
+        return value
 
 
 def create_missing_file_report(

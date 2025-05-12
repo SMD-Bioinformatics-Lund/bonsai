@@ -29,7 +29,7 @@ LOG = logging.getLogger(__name__)
 
 
 class ExtensionNotInitialized(Exception):
-    pass
+    """If LDAP connection was not initialized before something tries to use it."""
 
 
 def is_valid_dn(username: str) -> bool:
@@ -56,6 +56,7 @@ class LDAPConnection:
         self.ldap_server = None
 
     def init_app(self):
+        """Setup connection to LDAP server."""
         # setup TLS
         self.tls = Tls(
             local_private_key_file=settings.ldap_client_private_key,

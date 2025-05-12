@@ -4,29 +4,6 @@ import logging
 import pathlib
 from typing import Annotated, Union
 
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    Header,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-)
-from fastapi.responses import FileResponse
-from bonsai_models.models.phenotype import (
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantType,
-    VirulenceMethodIndex,
-)
-from bonsai_models.models.sample import PipelineResult, MethodIndex, ShigaTypingMethodIndex
-from pydantic import BaseModel, Field
-from pymongo.errors import DuplicateKeyError
-
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -46,13 +23,6 @@ from bonsai_api.io import (
     is_file_readable,
     send_partial_file,
 )
-from bonsai_models.models.base import MultipleRecordsResponseModel
-from bonsai_models.models.cluster import TypingMethod
-from bonsai_models.models.location import LocationOutputDatabase
-from bonsai_models.models.qc import QcClassification, VariantAnnotation
-from bonsai_models.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
-from bonsai_models.models.metadata import InputMetaEntry
-from bonsai_models.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
     SubmittedJob,
@@ -62,6 +32,43 @@ from bonsai_api.redis.minhash import (
     schedule_find_similar_samples,
 )
 from bonsai_api.utils import format_error_message
+from bonsai_models.models.base import MultipleRecordsResponseModel
+from bonsai_models.models.cluster import TypingMethod
+from bonsai_models.models.location import LocationOutputDatabase
+from bonsai_models.models.metadata import InputMetaEntry
+from bonsai_models.models.phenotype import (
+    AMRMethodIndex,
+    StressMethodIndex,
+    VariantType,
+    VirulenceMethodIndex,
+)
+from bonsai_models.models.qc import QcClassification, VariantAnnotation
+from bonsai_models.models.sample import (
+    Comment,
+    CommentInDatabase,
+    MethodIndex,
+    PipelineResult,
+    SampleInCreate,
+    SampleInDatabase,
+    ShigaTypingMethodIndex,
+)
+from bonsai_models.models.user import UserOutputDatabase
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Header,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+    status,
+)
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+from pymongo.errors import DuplicateKeyError
+
 from .shared import SAMPLE_ID_PATH, RouterTags
 
 CommentsObj = list[CommentInDatabase]
@@ -159,7 +166,9 @@ async def delete_many_samples(
     return result
 
 
-@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE])
+@router.get(
+    "/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE]
+)
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
     db: Database = Depends(get_db),
@@ -187,7 +196,9 @@ class UpdateSampleInputModel(BaseModel):
     ]
 
 
-@router.put("/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase)
+@router.put(
+    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase
+)
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
@@ -226,12 +237,17 @@ async def delete_sample(
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
 async def add_sample_metadata(
-    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_db)) -> bool:
+    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_db)
+) -> bool:
     """Add metadata to an existing sample."""
     try:
-        resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
+        resp = await add_metadata_to_sample(
+            sample_id=sample_id, metadata=metadata, db=db
+        )
     except ValueError as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err)
+        )
     except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
     return resp

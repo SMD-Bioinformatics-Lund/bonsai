@@ -10,6 +10,7 @@ class TagType(StrEnum):
 
     VIRULENCE = "virulence"
     RESISTANCE = "resistane"
+    TYPING = "typing"
     QC = "qc"
 
 

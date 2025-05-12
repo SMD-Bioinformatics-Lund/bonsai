@@ -2,7 +2,6 @@
 
 from typing import Optional, Union
 
-from bonsai_models.models.sample import PipelineResult
 from bonsai_models.models.phenotype import (
     AmrFinderGene,
     AmrFinderResistanceGene,
@@ -12,6 +11,7 @@ from bonsai_models.models.phenotype import (
     VariantBase,
     VirulenceGene,
 )
+from bonsai_models.models.sample import PipelineResult
 from bonsai_models.models.species import SpeciesPrediction
 from bonsai_models.models.typing import (
     ResultLineageBase,
@@ -32,12 +32,11 @@ from .base import (
     ModifiedAtRWModel,
     MultipleRecordsResponseModel,
 )
+from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
-from .metadata import MetaEntryInDb, InputMetaEntry
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
-
 
 
 class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods

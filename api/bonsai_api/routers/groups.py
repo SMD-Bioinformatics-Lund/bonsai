@@ -1,22 +1,28 @@
 """Entrypoints for getting group data."""
 
+
+import bonsai_api.crud.group as crud_group
+
+from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.group import create_group as create_group_record
+from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
+from bonsai_api.crud.metadata import get_metadata_fields_for_samples
+from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.db import Database, get_db
+from bonsai_models.models.base import MultipleRecordsResponseModel
+from bonsai_models.models.group import (
+    GroupInCreate,
+    GroupInfoDatabase,
+    pred_res_cols,
+    qc_cols,
+)
+from bonsai_models.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
-
-import bonsai_api.crud.group as crud_group
-from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
-from bonsai_api.crud.group import create_group as create_group_record
-from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
-from bonsai_api.crud.sample import get_samples_summary
-from bonsai_api.crud.user import get_current_active_user
-from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.db import Database, get_db
-from bonsai_models.models.base import MultipleRecordsResponseModel
-from bonsai_models.models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
-from bonsai_models.models.user import UserOutputDatabase
 
 router = APIRouter()
 
@@ -111,7 +117,9 @@ async def delete_group_from_db(
     return result
 
 
-@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP])
+@router.put(
+    "/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+)
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
@@ -190,14 +198,19 @@ async def remove_sample_from_group(
     tags=[RouterTags.GROUP],
 )
 async def get_columns_for_group(
-    group_id: str, db: Database = Depends(get_db),
+    group_id: str,
+    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoDatabase.model_validate(await get_group(db, group_id, lookup_samples=False))
-    meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
+    group_obj = GroupInfoDatabase.model_validate(
+        await get_group(db, group_id, lookup_samples=False)
+    )
+    meta_entries = await get_metadata_fields_for_samples(
+        db, sample_ids=group_obj.included_samples
+    )
     # add default columns
     return pred_res_cols + meta_entries
 

@@ -3,8 +3,6 @@
 import logging
 
 from bonsai_models.models.phenotype import ElementType, ElementTypeResult
-from bonsai_models.models.typing import TypingMethod
-
 from bonsai_models.models.sample import SampleInDatabase
 from bonsai_models.models.tags import (
     ResistanceTag,
@@ -14,6 +12,7 @@ from bonsai_models.models.tags import (
     TagType,
     VirulenceTag,
 )
+from bonsai_models.models.typing import TypingMethod
 
 LOG = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 class MetadataTypes(StrEnum):
 
     STR = "string"
-    INT ="integer"
+    INT = "integer"
     FLOAT = "float"
 
 

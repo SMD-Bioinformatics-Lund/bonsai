@@ -126,7 +126,7 @@ def create_group(
         display_name=name,
         description=description,
         table_columns=pred_res_cols,
-        validated_genes=None
+        validated_genes=None,
     )
     try:
         loop = asyncio.get_event_loop()

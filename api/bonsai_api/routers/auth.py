@@ -2,14 +2,14 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-
-from api.bonsai_api.routers.shared import RouterTags
 from bonsai_api.auth import create_access_token
 from bonsai_api.config import settings
 from bonsai_api.crud.user import authenticate_user
 from bonsai_api.db import Database, get_db
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from .shared import RouterTags
 
 router = APIRouter()
 

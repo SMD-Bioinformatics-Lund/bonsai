@@ -5,11 +5,11 @@ import string
 from datetime import datetime, timedelta
 from typing import Any
 
+from bonsai_models.util import get_timestamp
 from jose import jwt
 from passlib.context import CryptContext
 
 from .config import ALGORITHM, settings
-from bonsai_models.util import get_timestamp
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -30,7 +30,9 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
+def create_access_token(
+    data: dict[str, Any], expires_delta: timedelta | None = None
+) -> str:
     """Create new access token."""
     to_encode = data.copy()
     if expires_delta:
