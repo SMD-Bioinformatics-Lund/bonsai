@@ -7,47 +7,8 @@ from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
 from .base import RWModel
-
-
-class SequenceStand(StrEnum):
-    """Definition of DNA strand."""
-
-    FORWARD = "+"
-    REVERSE = "-"
-
-
-class PredictionSoftware(StrEnum):
-    """Container for prediciton software names."""
-
-    AMRFINDER = "amrfinder"
-    RESFINDER = "resfinder"
-    VIRFINDER = "virulencefinder"
-    SEROTYPEFINDER = "serotypefinder"
-    MYKROBE = "mykrobe"
-    TBPROFILER = "tbprofiler"
-
-
-class VariantType(StrEnum):
-    """Types of variants."""
-
-    SNV = "SNV"
-    MNV = "MNV"
-    SV = "SV"
-    INDEL = "INDEL"
-    STR = "STR"
-
-
-class VariantSubType(StrEnum):
-    """Variant subtypes."""
-
-    INSERTION = "INS"
-    DELETION = "DEL"
-    SUBSTITUTION = "SUB"
-    TRANSISTION = "TS"
-    TRANSVERTION = "TV"
-    INVERSION = "INV"
-    DUPLICATION = "DUP"
-    TRANSLOCATION = "BND"
+from .qc import SampleQcClassification, VaraintRejectionReason
+from .constants import PredictionSoftware, SequenceStand, VariantSubType, VariantType
 
 
 class ElementType(StrEnum):
@@ -235,6 +196,8 @@ class VariantBase(RWModel):
     passed_qc: bool | None = Field(
         ..., description="Describe if variant has passed the tool qc check"
     )
+    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+    reason: VaraintRejectionReason | None = None
 
     @model_validator(mode="after")
     def check_assigned_ref_alt(self) -> Self:
