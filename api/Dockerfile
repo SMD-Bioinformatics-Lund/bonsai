@@ -13,13 +13,12 @@ WORKDIR /home/worker/app
 # Copy your main app and bonsai-prp (which is symlinked and resolved)
 COPY bonsai_api bonsai_api/
 COPY setup.py setup.cfg pyproject.toml ./
-COPY bonsai-prp bonsai-prp/
 
 # Set ownership
 RUN chown -R worker:worker .
 
 # Install dependencies
-RUN pip install --no-cache-dir . && pip install --no-cache-dir --force-reinstall ./bonsai-prp
+RUN pip install --no-cache-dir . 
 
 # Create necessary runtime dirs
 RUN mkdir -p /data/signature_db && chown worker:worker /data/signature_db
