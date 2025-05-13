@@ -307,7 +307,7 @@ def migrate_database(backup_path: pathlib.Path | None):
         ]
         # 4 backup old records as json array
         if backup_path is not None:
-            click.secho(f"Backing up old entries to: {clickbackup_path}")
+            click.secho(f"Backing up old entries to: {backup_path}")
             with open(backup_path, 'w', encoding='utf-8') as outf:
                 outf.write(json_util.dumps(samples, indent=3))
         # 5 update samples
