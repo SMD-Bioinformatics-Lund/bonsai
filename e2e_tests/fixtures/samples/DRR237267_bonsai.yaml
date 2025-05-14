@@ -4,6 +4,15 @@ chewbbaca: ./chewbbaca/drr237267_250425_a012345_0000_prjdb10169_chewbbaca.tsv
 gambitcore: ./gambitcore/drr237267_250425_a012345_0000_prjdb10169_gambitcore.tsv
 groups:
 - saureus
+metadata:
+  - fieldname: isoalation date
+    value: 2024-06-01
+    type: datetime
+    category: general
+  - fieldname: region
+    value: Region Kronoberg
+    category: general
+    type: string
 igv_annotations:
 - index_uri: ./bam/drr237267_250425_a012345_0000_prjdb10169_bwa.bam.bai
   name: Read coverage
