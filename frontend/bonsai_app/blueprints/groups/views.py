@@ -231,7 +231,6 @@ def group(group_id: str) -> str:
         # get path
         upd_col = col.copy()
         upd_col["path"] = jsonPath.parse_str(upd_col["path"])
-        sample = samples_info['data'][8]
         group_columns.append(upd_col)
 
     # generate table data
