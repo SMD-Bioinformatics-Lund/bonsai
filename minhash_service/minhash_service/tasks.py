@@ -22,7 +22,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     :return: path to the signature
     :rtype: str
     """
-    signature_path = write_signature(sample_id, signature)
+    signature_path = write_signature(sample_id, signature, cnf=settings)
     return str(signature_path)
 
 
@@ -35,14 +35,14 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     :return: The status of the removed job
     :rtype: Dict[str, str | bool]
     """
-    status: bool = remove_signature_file(sample_id)
+    status: bool = remove_signature_file(sample_id, cnf=settings)
     return {"sample_id": sample_id, "removed": status}
 
 
 def check_signature(sample_id: str) -> dict[str, str | bool]:
     """Check if signature exist."""
 
-    status: bool = remove_signature_file(sample_id)
+    status: bool = remove_signature_file(sample_id, cnf=settings)
     return {"sample_id": sample_id, "removed": status}
 
 
@@ -56,7 +56,7 @@ def add_to_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = add_signatures_to_index(sample_ids)
+    res = add_signatures_to_index(sample_ids, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
@@ -75,7 +75,7 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = remove_signatures_from_index(sample_ids)
+    res = remove_signatures_from_index(sample_ids, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Removed {signatures}"
@@ -169,5 +169,5 @@ def find_similar_and_cluster(
         LOG.warning("Invalid number of samples found, %d", len(sample_ids))
         return "()"
     # cluster samples
-    newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method)
+    newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method, cnf=settings)
     return newick
