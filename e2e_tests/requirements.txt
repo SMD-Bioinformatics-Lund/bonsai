@@ -7,6 +7,6 @@ pytest-html
 # for upload script
 pyyaml
 requests
-bonsai-prp @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-prp.git@137-add-support-basic-user-defined-metadata
 pydantic
 click
+bonsai-prp==1.2.0
