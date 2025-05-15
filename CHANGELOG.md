@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added support to add metadata to samples through the config file.
+
 ### Changed
 
 ### Fixed
@@ -14,6 +16,8 @@
 - The CLI command `validate-paths` can send reports via mail.
 
 ### Changed
+
+- Updated e2e_test fixtures regarding new prp upload format
 
 ### Fixed
 
