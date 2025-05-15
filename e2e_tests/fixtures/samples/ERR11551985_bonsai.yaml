@@ -25,6 +25,7 @@ ref_genome_annotation: ./genomes/mycobacterium_tuberculosis/GCF_000195955.2.gff
 ref_genome_sequence: ./genomes/mycobacterium_tuberculosis/GCF_000195955.2.fasta
 sample_id: err11551985_250425_a012345_0000_prjeb63074
 sample_name: ERR11551985
+assay: mtuberculosis
 ska_index: ./ska/err11551985_250425_a012345_0000_prjeb63074_ska_index.skf
 sourmash_signature: ./sourmash/err11551985_250425_a012345_0000_prjeb63074.sig
 tbprofiler: ./tbprofiler/err11551985_250425_a012345_0000_prjeb63074_tbprofiler.json
