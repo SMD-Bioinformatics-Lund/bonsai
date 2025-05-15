@@ -5,7 +5,7 @@
       "pipeline": "main.nf",
       "version": "0.5.0",
       "commit": "null",
-      "analysis_profile": "escherichia_coli",
+      "analysis_profile": ["escherichia_coli"],
       "configuration_files": [
         "/fs1/pipelines/jasen/nextflow.config"
       ],
@@ -15,6 +15,8 @@
       "sequencing_run": "RUN0002",
       "sequencing_platform": "illumina",
       "sequencing_type": "PE",
+      "assay": "ecoli",
+      "release_life_cycle": "test",
       "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile escherichia_coli --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_ecoli.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.report.html -with-trace /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.trace.txt -with-timeline /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.timeline.html -work-dir /fs1/nextflow//test_ecoli_1.jasen-ecoli-dev -resume",
       "date": "2024-03-15T10:11:30.330339+01:00"
     },
@@ -361,7 +363,7 @@
       ]
     }
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "typing_result": [
     {
       "type": "mlst",
