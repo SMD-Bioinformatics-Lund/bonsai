@@ -19,3 +19,25 @@ interface ApiClusterInput {
     distance: distanceMethod
     method: clusterMethod
 }
+
+interface ColumnDefinition {
+    id: string
+    label: string
+    path: string
+    type: string
+    hidden: boolean
+    sortable: boolean
+    filterable: boolean
+    filter_type: string
+    filter_param: string
+}
+
+interface GroupInfo {
+    group_id: string
+    display_name: string
+    description: string
+    included_samples: string[]
+    table_columns: ColumnDefinition[]
+    created_at: string
+    modified_at: string
+}
