@@ -30,10 +30,8 @@
 
         {% block scripts %}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>
-        <script src="{{ url_for('public.static', filename='js/basket.js') }}"></script>
-        <script src="{{ url_for('public.static', filename='js/poll_status.js') }}"></script>
+        <script src="{{ url_for('public.static', filename='bonsai.min.js') }}"></script>
         <!-- jQuery JavaScript file -->
-        <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         {% endblock scripts %}
     </head>
@@ -60,52 +58,7 @@
             {% endif %}
         {% endwith %}
         <script>
-            // initialize toasts
-            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-            var toastList = toastElList.map(toastEl => {
-                return new bootstrap.Toast(toastEl)
-            })
-
-            const throwSmallToast = (message, type="info") => {
-                // get template toast element
-                const toastTemplate = document.getElementById("small-toast-template")
-
-                // copy new element
-                const toastElement = toastTemplate.content.querySelector(".toast").cloneNode(true)
-
-                // append new toast to DOM
-                const toastContainer = document.getElementById("toast-container")
-                toastContainer.appendChild(toastElement)
-
-                // instanciate new toast element
-                const toast = new bootstrap.Toast(toastElement)
-
-                // select button
-                const btn = toastElement.querySelector("button")
-                //const toast = bootstrap.Toast.getInstance(toastElement)
-                // style toast depending on type
-                switch(type) {
-                    case "info":
-                        toast._element.classList.add("text-bg-secondary")
-                        btn.classList.add("btn-close-white")
-                        break
-                    case "success":
-                        toast._element.classList.add("text-bg-success")
-                        btn.classList.add("btn-close-white")
-                        break
-                    case "warning":
-                        toast._element.classList.add("text-bg-warning")
-                        break
-                    case "error":
-                        toast._element.classList.add("text-bg-danger")
-                        btn.classList.add("btn-close-white")
-                        break
-                }
-                const errorMessage = toast._element.querySelector('#toast-error-message')
-                // add custom error message
-                errorMessage.innerText = message
-                toast.show()
-            }
+            bonsai.initToast()
         </script>
         {% block body %}
             {% block content %}

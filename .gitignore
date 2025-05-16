@@ -27,6 +27,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+bonsai.min.js
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -142,6 +143,7 @@ volumes/api/genome_signatures/*
 volumes/e2e_tests/*
 !volumes/e2e_tests/.gitkeep
 data/*
+reports/*
 
 # editor related files
 *~
