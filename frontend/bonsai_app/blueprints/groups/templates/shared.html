@@ -9,6 +9,14 @@
 </button>
 {% endmacro %}
 
+{% macro add_to_basket_btn_v2() %}
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
+        onclick="addSamplesToBasket()" disabled>
+    <i class="bi bi-plus-lg"></i>
+    <span>Add to basket</span>
+</button>
+{% endmacro %}
+
 {% macro add_to_basket_js() %}
 function addSelectedSamplesToBasket(btn) {
     // add selected samples from table to session storage

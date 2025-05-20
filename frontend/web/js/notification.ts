@@ -1,9 +1,10 @@
-import * as bootstrap from 'bootstrap';
-
+import * as bootstrap from "bootstrap";
 
 export const throwSmallToast = (message: string, type: string = "info") => {
   // get template toast element
-  const toastTemplate = document.getElementById("small-toast-template") as HTMLTemplateElement | null;
+  const toastTemplate = document.getElementById(
+    "small-toast-template",
+  ) as HTMLTemplateElement | null;
   if (toastTemplate !== undefined) {
     // copy new element
     const toastElement = toastTemplate.content

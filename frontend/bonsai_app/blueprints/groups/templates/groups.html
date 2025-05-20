@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table_v2 %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_btn_v2, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table_v2 %}
 
 {% block css %}
 {{ super() }}
@@ -34,7 +34,7 @@
         <hr class="mt-2 col-md-2 border border-success border-2">
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
-                {{ add_to_basket_btn() }}
+                {{ add_to_basket_btn_v2() }}
 
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
@@ -60,10 +60,10 @@
         {{ sample_table_v2(table_data) }}
     </div>
 </div>
+    <!-- {{ add_to_basket_js() }} -->
 <script>
     const apiURL = "{{ config.BONSAI_API_URL }}"
     // template code for adding to basket
-    {{ add_to_basket_js() }}
     // template code for searching similar samples
     {{ search_similar_js() }}
 
@@ -73,6 +73,8 @@
             topStart: 'searchBuilder'
         },
     });
+
+    const addSamplesToBasket = () => tblState.getSelected().forEach(sampleId => basket.addSample(sampleId))
     
 </script>
 {% endblock content %}

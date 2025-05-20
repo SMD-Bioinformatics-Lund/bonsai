@@ -36,6 +36,12 @@ class TableStateManager {
     return Array.from(this.selectedRows);
   }
 
+  setSelected(rowIds: string[]): void {
+    this.selectedRows = new Set(rowIds);
+    this.saveState();
+    this.notifyChange();
+  }
+
   clearSelection(): void {
     this.selectedRows.clear();
     this.saveState();
@@ -134,12 +140,12 @@ export function initializeSamplesTable(tableId: string, tableConfig: any) {
   const table = new DataTable(tableId, {...tableConfig});
 
   table.on('select', (e, dt, type, indexes) => {
-    const rowId: string = dt.row(indexes).id()
-    tblState.toggleRow(rowId)}
+    const rowIds: string[] = Array.from(dt.rows('.selected').ids())
+    tblState.setSelected(rowIds)}
   )
   table.on('deselect', (e, dt, type, indexes) => {
-    const rowId: string = dt.row(indexes).id()
-    tblState.toggleRow(rowId)}
+    const rowIds: string[] = Array.from(dt.rows('.selected').ids())
+    tblState.setSelected(rowIds)}
   )
 
   // add callback functions

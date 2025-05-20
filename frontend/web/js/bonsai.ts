@@ -4,17 +4,25 @@ import jQuery from "jquery";
 import { throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { getSimilarSamplesV2, initializeSamplesTable } from "./table";
+import { basketStateManager, SamplesInBasketCounter } from "./basket";
 
 export function initialize(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
-): ApiService {
+): {api: ApiService, basket: basketStateManager} {
   // initialize API
   const auth = new AuthService(bonsaiApiUrl);
   auth.setTokens(accessToken, refreshToken);
   const client = new HttpClient(bonsaiApiUrl, auth);
   const api = new ApiService(client);
+
+  // init sample basket and basket counter
+  const basketState = new basketStateManager()
+  const basketCounter = new SamplesInBasketCounter()
+  basketCounter.counter = basketState.getSampleIds.length
+  // register callback functions
+  basketState.onSelection((sampleIds: string[]) => {basketCounter.counter = sampleIds.length})
 
   // init toasts and tooltips
   const toastElList = [].slice.call(document.querySelectorAll(".toast"));
@@ -28,7 +36,7 @@ export function initialize(
     (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
   );
 
-  return api;
+  return {api: api, basket: basketState};
 }
 
 declare global {
