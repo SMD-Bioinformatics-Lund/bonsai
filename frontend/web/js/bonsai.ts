@@ -4,21 +4,21 @@ import jQuery from "jquery";
 import { throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { getSimilarSamplesV2, initializeSamplesTable } from "./table";
-import { basketStateManager, SamplesInBasketCounter } from "./basket";
+import { SampleBasket, SamplesInBasketCounter } from "./basket";
 
 export function initialize(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
-): {api: ApiService, basket: basketStateManager} {
+): {api: ApiService, basket: SampleBasket} {
   // initialize API
   const auth = new AuthService(bonsaiApiUrl);
   auth.setTokens(accessToken, refreshToken);
-  const client = new HttpClient(bonsaiApiUrl, auth);
-  const api = new ApiService(client);
+  const http = new HttpClient(bonsaiApiUrl, auth);
+  const api = new ApiService(http);
 
   // init sample basket and basket counter
-  const basketState = new basketStateManager()
+  const basketState = new SampleBasket(api.getSamplesDetails)
   const basketCounter = new SamplesInBasketCounter()
   basketCounter.counter = basketState.getSampleIds.length
   // register callback functions

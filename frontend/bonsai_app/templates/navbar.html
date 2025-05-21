@@ -33,12 +33,10 @@
                     <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
                         <i class="bi bi-basket3 fs-4"></i>
                         {% set basket=current_user.basket %}
-                        {% if basket | length > 0 %}
-                            <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
-                                <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
-                                <span class="visually-hidden">Samples in basket</span>
-                            </span>
-                        {% endif %}
+                        <span id="samples-in-basket-badge" hidden class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
+                            <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
+                            <span class="visually-hidden">Samples in basket</span>
+                        </span>
                     </a>
                 </li>
             {% else %}
@@ -83,7 +81,7 @@
         <button id="close-basket-btn" type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
     </div>
     <div class="offcanvas-body">
-        <div class="overflow-auto" style="max-height: 60vh;">
+        <div id="basket-content" class="overflow-auto" style="max-height: 60vh;">
             {# Create sample cards in basket #}
             {% for sample in samples %}
                 <div class="card mb-2 rounded-1 p-0 sample_in_basket">

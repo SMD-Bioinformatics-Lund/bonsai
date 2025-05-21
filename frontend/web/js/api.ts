@@ -15,32 +15,31 @@ export class AuthService {
 
   constructor(private apiUrl: string) {}
 
-  setTokens(accessToken: string, refreshToken: string) {
+  setTokens = (accessToken: string, refreshToken: string) => {
     this.authToken = accessToken;
     this.refreshToken = refreshToken;
     localStorage.setItem("authToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
-  }
+  };
 
-  clearTokens() {
+  clearTokens = () => {
     this.authToken = null;
     this.refreshToken = null;
     localStorage.removeItem("authToken");
     localStorage.removeItem("refreshToken");
-  }
+  };
 
-  isAuthenticated(): boolean {
+  isAuthenticated = (): boolean => {
     if (!this.authToken) return false;
     try {
       const payload = JSON.parse(atob(this.authToken.split(".")[1]));
-      const now = Math.floor(Date.now() / 1000);
-      return payload.exp > now;
+      return payload.exp > Math.floor(Date.now() / 1000);
     } catch {
       return false;
     }
-  }
+  };
 
-  async refreshAuthToken(): Promise<void> {
+  refreshAuthToken = async (): Promise<void> => {
     if (!this.refreshToken) throw new Error("No refresh token available");
     if (this.isRefreshing) return;
 
@@ -58,11 +57,11 @@ export class AuthService {
     } finally {
       this.isRefreshing = false;
     }
-  }
+  };
 
-  getAuthHeader(): HeadersInit {
+  getAuthHeader = (): HeadersInit => {
     return this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
-  }
+  };
 }
 
 export class HttpClient {
@@ -71,11 +70,11 @@ export class HttpClient {
     private authService: AuthService,
   ) {}
 
-  async request<T>(
+  request = async <T>(
     endpoint: string,
     options: RequestInit = {},
     retry = true,
-  ): Promise<T> {
+  ): Promise<T> => {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...this.authService.getAuthHeader(),
@@ -99,46 +98,64 @@ export class HttpClient {
         errorText || `Http error: ${response.status}`,
       );
     }
+
     return await response.json();
-  }
+  };
 }
+
+function objectToQueryParams(query: Record<string, any>): string {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => params.append(key, String(v)));
+    } else if (value !== undefined && value !== null) {
+      params.append(key, String(value));
+    }
+  });
+  return params.toString();
+}
+
 
 export class ApiService {
   constructor(private http: HttpClient) {}
 
-  async checkJobStatus(jobId: string) {
+  getSamplesDetails = async (query: ApiGetSamplesDetailsInput) => {
+    const url = `/samples/?${objectToQueryParams(query)}`;
+    return this.http.request<ApiSampleDetailsResponse>(url);
+  };
+
+  checkJobStatus = async (jobId: string) => {
     try {
-      return this.http.request<JobStatus>(`/job/status/${jobId}`);
+      return await this.http.request<JobStatus>(`/job/status/${jobId}`);
     } catch (error) {
       this.handleError(error);
       throw error;
     }
-  }
+  };
 
-  async clusterSamples(method: typingMethod, params: ApiClusterInput) {
+  clusterSamples = async (method: typingMethod, params: ApiClusterInput) => {
     return this.http.request<ApiJobSubmission>(`/cluster/${method}`, {
       method: "POST",
       body: JSON.stringify(params),
     });
-  }
+  };
 
-  async findSimilarSamples(sampleId: string, params: ApiFindSimilarInput) {
+  findSimilarSamples = async (sampleId: string, params: ApiFindSimilarInput) => {
     return this.http.request<ApiJobSubmission>(`/samples/${sampleId}/similar`, {
       method: "POST",
       body: JSON.stringify(params),
     });
-  }
+  };
 
-  async getGroup(groupId: string) {
+  getGroup = async (groupId: string) => {
     return this.http.request<GroupInfo>(`/groups/${groupId}`);
-  }
+  };
 
-  private handleError(error: unknown) {
+  private handleError = (error: unknown) => {
     if (error instanceof ApiError) {
       console.error(`API Error [${error.status}]: ${error.message}`);
-      // FIXME if error.status == 401, possible redirect to some flask page
     } else {
       console.error("Unexpected error:", error);
     }
-  }
+  };
 }

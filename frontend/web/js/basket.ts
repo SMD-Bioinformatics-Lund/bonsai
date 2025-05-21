@@ -1,73 +1,121 @@
 import { throwSmallToast } from "./notification";
-import { TableStateManager } from "./state";
 
-export class basketStateManager {
-  private name: string
-  private sampleIds: Set<string>
-  private additionListeners: Set<TblStateCallbackFunc>;
+export class SampleBasket {
+  private name = 'basket';
+  private sampleIds: Set<string> = new Set();
+  private additionListeners: Set<CallableFunction> = new Set();
 
-  constructor() {
-    this.name = 'basket';
-    this.sampleIds = new Set<string>;
-    this.additionListeners = new Set();
+  constructor(
+    private getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>
+  ) {
+    this.loadState();
   }
 
-  addSample(sampleId: string): void {
-    if (!this.sampleIds.has(sampleId)) {
-      this.sampleIds.add(sampleId);
-      this.saveState();
-      this.notifyChange();
-    } 
-  }
-
-  removeSample(sampleId: string): void {
-    if (this.sampleIds.has(sampleId)) {
-      this.sampleIds.delete(sampleId);
-      this.saveState();
-      this.notifyChange();
-    } 
-  }
-
-  onSelection(callback: TblStateCallbackFunc): void {
+  onSelection = (callback: CallableFunction): void => {
     this.additionListeners.add(callback);
-  }
+  };
 
-  offSelection(callback: TblStateCallbackFunc): void {
+  offSelection = (callback: CallableFunction): void => {
     this.additionListeners.delete(callback);
-  }
+  };
 
-  getSampleIds(): string[] {
+  getSampleIds = (): string[] => {
     return Array.from(this.sampleIds);
-  }
+  };
 
-  setSampleIds(ids: string[]): void {
-    this.sampleIds = new Set(ids);
+  addSamples = (sampleIds: string[]): void => {
+    sampleIds.forEach(id => this.sampleIds.add(id));
     this.saveState();
     this.notifyChange();
-  }
+  };
 
-  private notifyChange(): void {
-    const selected = this.getSampleIds()
-    for (const callback of this.additionListeners) {
-      callback(selected);
+  removeSamples = (sampleIds: string[]): void => {
+    sampleIds.forEach(id => this.sampleIds.delete(id));
+    this.saveState();
+    this.notifyChange();
+  };
+
+  clear = (): void => {
+    this.sampleIds.clear();
+    this.saveState();
+    this.notifyChange();
+  };
+
+  render = async (): Promise<void> => {
+    const query: ApiGetSamplesDetailsInput = {
+      sid: this.getSampleIds(),
+      prediction_result: true,
+      qc: false,
+      limit: 0,
+      skip: 0,
+    };
+
+    try {
+      const data = await this.getSamplesDetails(query);
+      const container = document.querySelector('#basket-content');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (!data || data.data.length === 0) {
+        container.innerHTML = '<p>Your basket is empty.</p>';
+        return;
+      }
+
+      data.data.forEach((sample: SamplesDetails) => {
+        const item = document.createElement('div');
+        item.className = 'card mb-2 rounded-1 p-0 sample_in_basket';
+        item.innerHTML = String.raw`
+        <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
+            <a class="text-muted d-flex flex-column" href="/">
+                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
+                <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
+            </a>
+            <button class="float-end float-top btn btn-sm btn-outline-danger remove-sample-btn" aria-label="Remove" type="button">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
+        </div>
+        `;
+        const btn = item.querySelector('.remove-sample-btn') as HTMLButtonElement
+        btn.onclick = () => this.removeSamples([sample.sample_id])
+        container.appendChild(item);
+      });
+
+      container.querySelectorAll('button[data-id]').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+          if (id) {
+            this.removeSamples([id]);
+            this.render(); // Re-render after removal
+          }
+        });
+      });
+
+    } catch (error) {
+      console.error('Failed to render basket:', error);
     }
-  }
+  };
 
-  private saveState(): void {
+  private notifyChange = (): void => {
+    const selected = this.getSampleIds();
+    this.additionListeners.forEach(callback => callback(selected));
+  };
+
+  private saveState = (): void => {
     localStorage.setItem(this.storageKey, JSON.stringify(this.getSampleIds()));
-  }
+  };
 
-  private loadState(): void {
+  private loadState = (): void => {
     const state = localStorage.getItem(this.storageKey);
     if (state) {
       try {
         const ids = JSON.parse(state) as string[];
         this.sampleIds = new Set(ids);
       } catch (e) {
-        console.error("Failed to parse saved table state", e);
+        console.error("Failed to parse saved basket state", e);
       }
     }
-  }
+  };
 
   private get storageKey(): string {
     return `${this.name}_content`;
@@ -91,18 +139,11 @@ export class SamplesInBasketCounter {
 
   set counter(value: number) {
     if (this.counterElement !== null) {
-      this.counterElement.innerHTML = value.toString()
+      this.counterElement.innerHTML = value.toString();
+      this.badgeElement.hidden = this.counter == 0;
     } else {
       console.error('No counter on this page!')
     }
-  }
-
-  add(amount: number): void {
-    this.counter = this.counter + amount
-  }
-
-  deduct(amount: number): void {
-    this.counter = this.counter - amount
   }
 
   reset(): void {

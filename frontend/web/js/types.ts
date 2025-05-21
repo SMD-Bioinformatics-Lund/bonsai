@@ -47,6 +47,14 @@ interface ApiFindSimilarInput {
   cluster_method: clusterMethod | null; // use cluster method if cluster is true
 }
 
+interface ApiGetSamplesDetailsInput {
+  sid: string[];
+  limit: number;
+  skip: number;
+  prediction_result: boolean;
+  qc: boolean;
+}
+
 interface ColumnDefinition {
   id: string;
   label: string;
@@ -69,4 +77,19 @@ interface GroupInfo {
   modified_at: string;
 }
 
+interface SamplesDetails {
+  sample_id: string;
+  sample_name: string
+  lims_id: string
+  assay: string
+  created_at: string
+}
+
+interface ApiSampleDetailsResponse {
+  data: SamplesDetails[]
+  records_total: number
+  records_filtered: number
+}
+
+type CallbackFunc = (ids: string[]) => void
 type TblStateCallbackFunc = (selectedRows: string[]) => void

@@ -62,11 +62,14 @@
 </div>
     <!-- {{ add_to_basket_js() }} -->
 <script>
-    const apiURL = "{{ config.BONSAI_API_URL }}"
+    //const apiUrl = "{{ config.BONSAI_API_URL }}"
+    const apiUrl = "http://localhost:8001"
+    const accessToken = "{{ token }}"
     // template code for adding to basket
     // template code for searching similar samples
     {{ search_similar_js() }}
 
+    const {api, basket} = bonsai.initialize(apiUrl, accessToken, "")
     const {table, tblState} = initSampleTbl('#sample-table', {
         select: true,
         layout: {
@@ -74,8 +77,15 @@
         },
     });
 
-    const addSamplesToBasket = () => tblState.getSelected().forEach(sampleId => basket.addSample(sampleId))
-    
+    const addSamplesToBasket = () => basket.addSamples(tblState.getSelected())
+    document.addEventListener('DOMContentLoaded', () => {
+    const offcanvas = document.getElementById('basket-offcanvas');
+    if (offcanvas) {
+        offcanvas.addEventListener('show.bs.offcanvas', () => {
+        basket.render(); // Assuming you have an instance named sampleBasket
+        });
+    }
+    });
 </script>
 {% endblock content %}
 
