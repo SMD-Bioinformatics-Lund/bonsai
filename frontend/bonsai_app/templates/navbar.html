@@ -71,13 +71,6 @@
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
     {% set samples = current_user.basket %} 
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">
-            {% if samples | length > 0 %}
-                Samples
-            {% else %}
-                Your basket is empty
-            {% endif %}
-        </h5>
         <button id="close-basket-btn" type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
     </div>
     <div class="offcanvas-body">
