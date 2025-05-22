@@ -1196,10 +1196,8 @@ D3MSTree.prototype._setNodeText = function () {
     .attr("transform", self => `translate(0,${-self.node_font_size / 3})`)
     .text(function (it) {
       if (field && field !== "node_id") {
-        //const metaIds = self.metadata_map[it.id];
         const metaIds = grouped[it.id];
         if (metaIds) {
-          //const display = self.metadata[metaIds[0]][field];
           const display = metaIds.map(id => self.metadata[id][field]);
           return display ? display : "ND";
         } else {
