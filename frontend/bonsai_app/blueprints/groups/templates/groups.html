@@ -76,6 +76,15 @@
             topStart: 'searchBuilder'
         },
     });
+    document.addEventListener('DOMContentLoaded', () => {
+        const clearBtn = document.getElementById('clear-basket-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+            basket.clear();
+            basket.render();
+            });
+        }
+    });
 
     const addSamplesToBasket = () => basket.addSamples(tblState.getSelected())
     document.addEventListener('DOMContentLoaded', () => {

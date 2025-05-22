@@ -8,6 +8,7 @@ export class SampleBasket {
   constructor(
     private getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>
   ) {
+    // load state from local storage
     this.loadState();
   }
 
@@ -71,13 +72,11 @@ export class SampleBasket {
                 <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
                 <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
             </a>
-            <button class="float-end float-top btn btn-sm btn-outline-danger remove-sample-btn" aria-label="Remove" type="button">
+            <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" type="button" data-id="${sample.sample_id}">
                 <i class="bi bi-trash3-fill"></i>
             </button>
         </div>
         `;
-        const btn = item.querySelector('.remove-sample-btn') as HTMLButtonElement
-        btn.onclick = () => this.removeSamples([sample.sample_id])
         container.appendChild(item);
       });
 
