@@ -384,12 +384,22 @@
 				"graph-div", JSON.parse(JSON.stringify(data)), function (tree, msg) {
 					treeLoading(tree, msg);
 				});
+			
 
-			the_tree.addSegmentOverListener(function (d) {
+			// add render function for node tooltips
+			const render = (id) => {
+				// Return name if defined, otherwise return ID
+				// FIXME this need to be context aware!
+				const meta = the_tree.metadata[id];
+				//debugger
+				return meta && meta.Name ? meta.Name : meta && meta.ID ? meta.ID : "";
+			};
+			the_tree.addSegmentOverListener((node) => {
 				if ($("#show-node-tooltip").prop("checked")) {
 					if (the_tree.display_category === 'nothing') {
-						var node_ids = the_tree.grouped_nodes[d.data.idx];
-						var value = $.map(node_ids, function (idx) { return the_tree.metadata[idx].Name ? the_tree.metadata[idx].Name : the_tree.metadata[idx].ID }).join('<br>');
+						const nodeIds = the_tree.grouped_nodes[node.data.idx];
+						const value = $.map(nodeIds, render).join('<br>');
+						//debugger
 						showToolTip(value);
 					} else {
 						var display = d.data.type;
@@ -397,6 +407,22 @@
 					}
 				}
 			});
+
+			// the_tree.addSegmentOverListener(function (d) {
+			// 	if ($("#show-node-tooltip").prop("checked")) {
+			// 		if (the_tree.display_category === 'nothing') {
+			// 			var node_ids = the_tree.grouped_nodes[d.data.idx];
+			// 			// BUGPLACE 
+			// 			// I think this part of the code is responsible for the node tooltip
+			// 			debugger
+			// 			var value = $.map(node_ids, function (idx) { return the_tree.metadata[idx].Name ? the_tree.metadata[idx].Name : the_tree.metadata[idx].ID }).join('<br>');
+			// 			showToolTip(value);
+			// 		} else {
+			// 			var display = d.data.type;
+			// 			showToolTip(display + "(" + d.data.value + ")");
+			// 		}
+			// 	}
+			// });
 			the_tree.addSegmentOutListener(function (d) {
 				hideToolTip();
 			});

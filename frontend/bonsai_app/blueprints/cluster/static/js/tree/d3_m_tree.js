@@ -1168,17 +1168,24 @@ D3MSTree.prototype.getTreeAsNewick = function () {
  *
  * The modified _setNodeText below should allow for the display of multiple sample id
  * labels for grouped nodes, rather than just one.
+ * 
+ * Markus addendum eddition:
+ * 
+ * This function has been modified to allow for displaying other metadata fields than
+ * sample ids
  *
  */
 D3MSTree.prototype._setNodeText = function () {
-  var self = this;
-  var grouped = this.grouped_nodes;
-  var field = this.node_text_value;
+  const self = this;
+  const grouped = this.grouped_nodes;
+  const field = this.node_text_value;
+  // remove existing text elements
   this.node_elements.selectAll("text").remove();
+  // skip rendering if labels are not shown
   if (!this.show_node_labels) {
     return;
   }
-  var node_text = this.node_elements
+  this.node_elements
     .filter((node) => !node.hypothetical || self.show_hypothetical_nodes)
     .append("text")
     .attr("class", "node-group-number")
@@ -1186,25 +1193,26 @@ D3MSTree.prototype._setNodeText = function () {
     .attr("text-anchor", "middle")
     .attr("font-size", this.node_font_size)
     .attr("font-family", "sans-serif")
-    .attr("transform", function (it) {
-      return "translate(0," + -self.node_font_size / 3 + ")";
-    })
+    .attr("transform", self => `translate(0,${-self.node_font_size / 3})`)
     .text(function (it) {
       if (field && field !== "node_id") {
-        var meta_ids = self.metadata_map[it.id];
-        if (meta_ids) {
-          var display = self.metadata[meta_ids[0]][field];
+        //const metaIds = self.metadata_map[it.id];
+        const metaIds = grouped[it.id];
+        if (metaIds) {
+          //const display = self.metadata[metaIds[0]][field];
+          const display = metaIds.map(id => self.metadata[id][field]);
           return display ? display : "ND";
         } else {
           return "ND";
         }
+      } else {
+        const allIdsHtml = grouped[it.id].join(",");
+        return allIdsHtml;
       }
-      var all_ids_html = grouped[it.id].join(",");
-      return all_ids_html;
     })
     .call(wrap, 100);
 
-  function wrap(text, width) {
+  function wrap(text) {
     text.each(function () {
       var text = d3.select(this),
         words = text.text().split(",").reverse(),
