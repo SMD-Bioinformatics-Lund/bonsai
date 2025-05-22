@@ -9,6 +9,14 @@
 </button>
 {% endmacro %}
 
+{% macro add_to_basket_btn_v2() %}
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
+        onclick="addSamplesToBasket()" disabled>
+    <i class="bi bi-plus-lg"></i>
+    <span>Add to basket</span>
+</button>
+{% endmacro %}
+
 {% macro add_to_basket_js() %}
 function addSelectedSamplesToBasket(btn) {
     // add selected samples from table to session storage
@@ -273,9 +281,31 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             }
             sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
         }
-
-        // init tooltips
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
     </script>
+{% endmacro %}
+
+
+{% macro sample_table_v2(table_data) %}
+    {# build sample table #}
+    <table id="sample-table" class="display table table-striped">
+        <thead>
+            <tr>
+                {# build table header #}
+                {% for col in table_data[0] %}
+                    <td>{{ col.label }}</td>
+                {% endfor %}
+            </th>
+        </thead>
+        <tbody>
+            {% for row in table_data %}
+                <tr id="{{ row[0].data }}"
+                 {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}
+                 >
+                    {% for cell in row %}
+                        {{ format_table_cell(cell) }}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endmacro %}

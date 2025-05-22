@@ -1,0 +1,17 @@
+[
+   {
+      "id" : "drr237263_250425_a012345_0000_prjdb10169_skesa.fasta",
+      "sequence_type" : "8",
+      "filename" : "drr237263_250425_a012345_0000_prjdb10169_skesa.fasta",
+      "scheme" : "saureus",
+      "alleles" : {
+         "arcC" : "3",
+         "pta" : "4",
+         "glpF" : "1",
+         "tpi" : "4",
+         "yqiL" : "3",
+         "gmk" : "1",
+         "aroE" : "3"
+      }
+   }
+]

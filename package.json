@@ -1,0 +1,58 @@
+{
+  "dependencies": {
+    "bootstrap": "^5.3.0",
+    "data": "^1.0.0",
+    "datatables.net-bs5": "^2.3.0",
+    "datatables.net-buttons-bs5": "^3.2.3",
+    "datatables.net-datetime": "^1.5.5",
+    "datatables.net-searchbuilder-bs5": "^1.8.2",
+    "datatables.net-searchpanes-bs5": "^2.3.3",
+    "datatables.net-select-bs5": "^3.0.0",
+    "jquery": "^3.7.1",
+    "select2": "^4.1.0-rc.0"
+  },
+  "name": "bonsai",
+  "description": "> [!WARNING] > Bonsai is under development in an alpha stage. Expect uneven documentation, breaking changes, and bugs until the official 1.0 release.",
+  "version": "1.0.0",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {
+    "eslint": "^9.26.0",
+    "globals": "^16.1.0",
+    "prettier": "^3.5.3",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^6.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "buildcp": "webpack && cp --verbose build/js/bonsai.min.js frontend/bonsai_app/blueprints/public/static/",
+    "lint": "eslint frontend/web",
+    "lint:fix": "npm run lint -- --fix",
+    "prettier": "npx prettier frontend/web",
+    "prettier:fix": "npm run prettier -- --write",
+    "format": "npm run prettier:fix && npm run lint:fix",
+    "typecheck": "npx tsc --noEmit",
+    "sync": "npm run typecheck && npm run buildcp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SMD-Bioinformatics-Lund/bonsai.git"
+  },
+  "keywords": [
+    "wgs",
+    "antibiotic-resistance",
+    "outbreak"
+  ],
+  "author": "Markus Johansson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SMD-Bioinformatics-Lund/bonsai/issues"
+  },
+  "homepage": "https://github.com/SMD-Bioinformatics-Lund/bonsai#readme"
+}

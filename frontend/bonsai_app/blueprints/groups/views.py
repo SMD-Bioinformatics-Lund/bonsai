@@ -66,9 +66,6 @@ def groups() -> str:
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    # Pre-select samples in sample table:
-    selected_samples = request.args.getlist("samples")
-
     # get default columns from api
     default_columns: list[dict[str, str | bool | jsonPath | None]] = []
     for col in get_valid_group_columns(token_obj=token):
@@ -107,7 +104,6 @@ def groups() -> str:
         basket=basket,
         token=current_user.get_id().get("token"),
         bad_qc_actions=bad_qc_actions,
-        selected_samples=selected_samples,
     )
 
 
@@ -224,14 +220,13 @@ def group(group_id: str) -> str:
     # get columns from api
     group_columns: list[dict[str, Any]] = []
     for col in (
-        get_valid_group_columns(qc=True) if display_qc else group_info["table_columns"]
+        get_valid_group_columns(token_obj=token, qc=True) if display_qc else group_info["table_columns"]
     ):
         if col["hidden"]:
             continue
         # get path
         upd_col = col.copy()
         upd_col["path"] = jsonPath.parse_str(upd_col["path"])
-        sample = samples_info['data'][8]
         group_columns.append(upd_col)
 
     # generate table data
