@@ -47,25 +47,29 @@ export class SampleBasket {
   };
 
   render = async (): Promise<void> => {
-    const query: ApiGetSamplesDetailsInput = {
-      sid: this.getSampleIds(),
-      prediction_result: true,
-      qc: false,
-      limit: 0,
-      skip: 0,
-    };
+    // render the basket content
+    // reset the basket content
+    const container = document.querySelector('#basket-content');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const sampleIds = this.getSampleIds();
+    // if no samples in basket, show empty message
+    if (sampleIds.length === 0) {
+      container.innerHTML = '<p>Your basket is empty.</p>';
+      return;
+    }
 
     try {
+      // query the API for sample details
+      const query: ApiGetSamplesDetailsInput = {
+        sid: sampleIds,
+        prediction_result: true,
+        qc: false,
+        limit: 0,
+        skip: 0,
+      };
       const data = await this.getSamplesDetails(query);
-      const container = document.querySelector('#basket-content');
-      if (!container) return;
-
-      container.innerHTML = '';
-
-      if (!data || data.data.length === 0) {
-        container.innerHTML = '<p>Your basket is empty.</p>';
-        return;
-      }
 
       data.data.forEach((sample: SamplesDetails) => {
         const item = document.createElement('div');
