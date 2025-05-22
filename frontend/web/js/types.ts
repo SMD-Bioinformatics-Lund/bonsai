@@ -1,5 +1,7 @@
-interface JobStatus {
-  status: string;
+import { DistanceMethod, ClusterMethod, TypingMethod, JobStatusEnum } from "./constants"
+
+export interface JobStatus {
+  status: JobStatusEnum;
   queue: string;
   result: string;
   error: string;
@@ -8,46 +10,26 @@ interface JobStatus {
   finished_at: string | null;
 }
 
-enum typingMethod {
-  mlst,
-  cgmlst,
-  ska,
-  minhash,
-}
-
-enum distanceMethod {
-  jaccard,
-  hamming,
-}
-
-enum clusterMethod {
-  single,
-  complete,
-  average,
-  neighbor_joining,
-  MSTreeV2,
-}
-
-interface ApiJobSubmission {
+export interface ApiJobSubmission {
   id: string;
   task: string;
 }
 
-interface ApiClusterInput {
+export interface ApiClusterInput {
   sampleIds: string[];
-  distance: distanceMethod;
-  method: clusterMethod;
+  distance: DistanceMethod;
+  method: ClusterMethod;
 }
 
-interface ApiFindSimilarInput {
+export interface ApiFindSimilarInput {
   limit: number | null; // number of samples to return
   similarity: number; // min similarity
   cluster: boolean; // cluster similar samples
-  typing_method: typingMethod | null; // use typing method if cluster is true
-  cluster_method: clusterMethod | null; // use cluster method if cluster is true
+  typing_method: TypingMethod | null; // use typing method if cluster is true
+  cluster_method: ClusterMethod | null; // use cluster method if cluster is true
 }
 
-interface ApiGetSamplesDetailsInput {
+export interface ApiGetSamplesDetailsInput {
   sid: string[];
   limit: number;
   skip: number;
@@ -55,7 +37,7 @@ interface ApiGetSamplesDetailsInput {
   qc: boolean;
 }
 
-interface ColumnDefinition {
+export interface ColumnDefinition {
   id: string;
   label: string;
   path: string;
@@ -67,7 +49,7 @@ interface ColumnDefinition {
   filter_param: string;
 }
 
-interface GroupInfo {
+export interface GroupInfo {
   group_id: string;
   display_name: string;
   description: string;
@@ -77,7 +59,7 @@ interface GroupInfo {
   modified_at: string;
 }
 
-interface SamplesDetails {
+export interface SamplesDetails {
   sample_id: string;
   sample_name: string
   lims_id: string
@@ -85,11 +67,11 @@ interface SamplesDetails {
   created_at: string
 }
 
-interface ApiSampleDetailsResponse {
+export interface ApiSampleDetailsResponse {
   data: SamplesDetails[]
   records_total: number
   records_filtered: number
 }
 
-type CallbackFunc = (ids: string[]) => void
-type TblStateCallbackFunc = (selectedRows: string[]) => void
+export type CallbackFunc = (ids: string[]) => void
+export type TblStateCallbackFunc = (selectedRows: string[]) => void

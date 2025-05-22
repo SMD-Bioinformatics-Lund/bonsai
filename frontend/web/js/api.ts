@@ -1,3 +1,6 @@
+import { JobStatus, ApiGetSamplesDetailsInput, ApiSampleDetailsResponse, ApiClusterInput, ApiJobSubmission, ApiFindSimilarInput, GroupInfo } from "./types";
+import { JobStatusEnum, TypingMethod } from "./constants";
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -115,7 +118,6 @@ function objectToQueryParams(query: Record<string, any>): string {
   return params.toString();
 }
 
-
 export class ApiService {
   constructor(private http: HttpClient) {}
 
@@ -133,7 +135,7 @@ export class ApiService {
     }
   };
 
-  clusterSamples = async (method: typingMethod, params: ApiClusterInput) => {
+  clusterSamples = async (method: TypingMethod, params: ApiClusterInput) => {
     return this.http.request<ApiJobSubmission>(`/cluster/${method}`, {
       method: "POST",
       body: JSON.stringify(params),
@@ -158,4 +160,37 @@ export class ApiService {
       console.error("Unexpected error:", error);
     }
   };
+}
+
+export async function pollJob(checkJobFn: () => Promise<JobStatus>, waitTime: number) {
+    /* Generic polling function that  */
+    let result = await checkJobFn()
+    while (validateJobStatus(result)) {
+        await wait(waitTime)
+        result = await checkJobFn()
+    }
+    return result.result
+}
+
+function wait(ms: number = 2000) {
+    // wait between fetch jobs
+    return new Promise(resolve => {
+        setTimeout(resolve, ms)
+    })
+}
+
+function validateJobStatus(job: JobStatus): boolean {
+    // check job status
+    // returns true if run is invalid
+    let isValid = false
+    if ( job.status === JobStatusEnum.FINISHED ) {
+        // if job has finished report result
+        isValid = true
+    } else if ( job.status === JobStatusEnum.FAILED ) {
+        // if job failed raise error
+        throw new Error(`Job failed: ${job.result}`)
+        isValid = true
+    } 
+    console.log(`Job status: ${job.status}; is valid ${isValid}`)
+    return !isValid
 }

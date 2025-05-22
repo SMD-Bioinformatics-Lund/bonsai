@@ -69,7 +69,7 @@
     // template code for searching similar samples
     {{ search_similar_js() }}
 
-    const {api, basket} = bonsai.initialize(apiUrl, accessToken, "")
+    const {api, basket, clusterSamplesInBasket} = bonsai.initialize(apiUrl, accessToken, "")
     const {table, tblState} = initSampleTbl('#sample-table', {
         select: true,
         layout: {

@@ -4,6 +4,7 @@ import 'datatables.net-searchbuilder-bs5';
 import 'datatables.net-select-bs5';
 
 import { ApiService } from "./api";
+import { ApiFindSimilarInput, ApiJobSubmission, TblStateCallbackFunc } from "./types";
 
 
 class TableStateManager {

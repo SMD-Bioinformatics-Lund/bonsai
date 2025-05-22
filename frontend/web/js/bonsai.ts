@@ -4,13 +4,13 @@ import jQuery from "jquery";
 import { throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { getSimilarSamplesV2, initializeSamplesTable } from "./table";
-import { SampleBasket, SamplesInBasketCounter } from "./basket";
+import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
 
 export function initialize(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
-): {api: ApiService, basket: SampleBasket} {
+): {api: ApiService, basket: SampleBasket, clusterSamplesInBasket: (element: HTMLElement) => void} {
   // initialize API
   const auth = new AuthService(bonsaiApiUrl);
   auth.setTokens(accessToken, refreshToken);
@@ -18,11 +18,13 @@ export function initialize(
   const api = new ApiService(http);
 
   // init sample basket and basket counter
-  const basketState = new SampleBasket(api.getSamplesDetails)
+  const basket = new SampleBasket(api.getSamplesDetails)
   const basketCounter = new SamplesInBasketCounter()
-  basketCounter.counter = basketState.getSampleIds.length
+  basketCounter.counter = basket.getSampleIds.length
   // register callback functions
-  basketState.onSelection((sampleIds: string[]) => {basketCounter.counter = sampleIds.length})
+  basket.onSelection((sampleIds: string[]) => {basketCounter.counter = sampleIds.length})
+
+  const clusterSamplesInBasket = (element) => clusterSamples(element, basket.getSampleIds(), api)
 
   // init toasts and tooltips
   const toastElList = [].slice.call(document.querySelectorAll(".toast"));
@@ -36,7 +38,7 @@ export function initialize(
     (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
   );
 
-  return {api: api, basket: basketState};
+  return {api: api, basket: basket, clusterSamplesInBasket: clusterSamplesInBasket};
 }
 
 declare global {
@@ -46,6 +48,7 @@ declare global {
     initSampleTbl: typeof initializeSamplesTable;
     jQuery: typeof jQuery;
     $: typeof jQuery;
+    bootstrap: typeof bootstrap;
   }
 }
 
@@ -54,3 +57,4 @@ window.throwSmallToast = throwSmallToast;
 window.jQuery = jQuery;
 window.$ = jQuery;
 window.initSampleTbl = initializeSamplesTable;
+window.bootstrap = bootstrap;
