@@ -373,26 +373,34 @@
 				"graph-div", JSON.parse(JSON.stringify(data)), function (tree, msg) {
 					treeLoading(tree, msg);
 				});
-			
 
-			const render = (id) => {
-				// render function uses the value of node-label selector
-				// to determine what metadata to show
-				const meta = the_tree.metadata[id];
-				const fieldName = document.querySelector('#tooltip-text').value
-				//const fieldName = document.querySelector('#node-label-text').value
-				return meta && meta[fieldName] ? meta[fieldName] : meta && meta.ID ? meta.ID : "";
+
+			const renderMetadataValue = (nodeId) => {
+				const metadata = the_tree.metadata[nodeId];
+				const selectedField = document.querySelector('#tooltip-text').value;
+
+				if (metadata) {
+					return metadata[selectedField] || metadata.ID || "";
+				}
+				return "";
 			};
+
 			the_tree.addSegmentOverListener((node) => {
-				if ($("#show-node-tooltip").prop("checked")) {
-					if (the_tree.display_category === 'nothing') {
-						const nodeIds = the_tree.grouped_nodes[node.data.idx];
-						const items = $.map(nodeIds, render).map(val => `<li>${val}</li>`).join();
-						showToolTip(String.raw`<ul style="margin:0; padding-left:1.2em">${items}</ul>`);
-					} else {
-						var display = d.data.type;
-						showToolTip(display + "(" + d.data.value + ")");
-					}
+				const tooltipEnabled = $("#show-node-tooltip").prop("checked");
+				if (!tooltipEnabled) return;
+
+				if (the_tree.display_category === 'nothing') {
+					const nodeIds = the_tree.grouped_nodes[node.data.idx];
+					const listItems = nodeIds
+					.map(renderMetadataValue)
+					.map(value => `<li>${value}</li>`)
+					.join("");
+
+					const tooltipHtml = `<ul style="margin:0; padding-left:1.2em">${listItems}</ul>`;
+					showToolTip(tooltipHtml);
+				} else {
+					const { type, value } = node.data;
+					showToolTip(`${type} (${value})`);
 				}
 			});
 
