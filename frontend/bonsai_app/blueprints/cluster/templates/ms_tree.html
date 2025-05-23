@@ -179,51 +179,40 @@
 		var metadata_options = {};
 		var file_chooser = new MSFileChooser(".nwk");
 
-		//update all the select options
 		function addMetadataOptions(options) {
-			var fields = Object.keys(options).sort(function (m, n) { return m === 'nothing' ? -1 : n === 'nothing' ? 1 : ((m < n) ? -1 : 1) });
-			for (var fld_id in fields) {
-				var value = fields[fld_id];
-				var obj = options[value];
-				var category = null;
-				var label = ""
-				if (typeof obj === 'object') {
-					label = obj['label'];
-					category = obj['category'];
-
-				}
-				else {
-					label = obj;
-				}
-				var append_to_1 = $("#metadata-select");
-				var append_to_2 = $("#node-label-text")
-				if (category) {
-					if (!metadata_categories[category]) {
-						metadata_categories[category] = true;
-						append_to_1 = $("<optgroup>").attr("label", category);
-						append_to_2 = $("<optgroup>").attr("label", category);
-						$("#metadata-select").append(append_to_1);
-						$("#node-label-text").append(append_to_2);
+			// sort 'nothing' to the top of the list, rest alphabetically
+			const sortedFields = Object.keys(options).sort((a, b) => { 
+				if (a === 'nothing') return -1; 
+				if (b === 'nothing') return 1 
+				return a.localeCompare(b);
+			});
+			sortedFields.forEach( fieldKey => {
+				const fieldData = options[fieldKey];
+				const label = typeof fieldData === 'object' ? fieldData.label : fieldData;
+				const category = typeof fieldData === 'object' ? fieldData.category : null;
+				const selectElements = ["#metadata-select", "#node-label-text", "#tooltip-text"];
+				selectElements.forEach(selector => { 
+					let targetElement = $(selector);
+					// if categoreis exists group data in optgroups
+					if (category) {
+						if (!metadata_categories[category]) {
+							metadata_categories[category] = true; 
+							const optgroup = $("<optgroup>").attr("label", category); 
+							$(selector).append(optgroup);
+						} 
+						targetElement = $(selector).find(`optgroup[label='${category}']`); 
 					}
-					else {
-						var to_find = "[label='" + category + "']";
-						append_to_1 = $("#metadata-select").find(to_find);
-						append_to_2 = $("#node-label-text").find(to_find);
-
-					}
-
-				}
-				append_to_1.append($("<option>").attr("value", value).text(label));
-				append_to_2.append($("<option>").attr("value", value).text(label));
-			}
+					targetElement.append($("<option>").attr("value", fieldKey).text(label));
+				});
+			});
 		}
 
 		function deleteMetadataCategory() {
-			var category = $("#add-new-values-select").val();
+			const category = $("#add-new-values-select").val();
 			the_tree.removeCategory(category);
-			$("#metadata-select option[value='" + category + "']").remove();
-			$("#node-label-text option[value='" + category + "']").remove();
-			$("#add-new-values-select option[value='" + category + "']").remove();
+			$(`#metadata-select option[value='${category}']`).remove();
+			$(`#node-label-text option[value='${category}']`).remove();
+			$(`#add-new-values-select option[value='${category}']`).remove();
 			delete metadata_options[category];
 		}
 
@@ -233,8 +222,8 @@
 				.duration(200)
 				.style("opacity", .9);
 			tooltip_div.html(msg)
-				.style("left", (e.pageX) + "px")
-				.style("top", (e.pageY - 28) + "px")
+				.style("left", `${e.pageX}px`)
+				.style("top", `${e.pageY - 28}px`)
 				.style("height", "auto");
 			setTimeout(hideToolTip, 2000);
 		}
@@ -385,18 +374,36 @@
 					treeLoading(tree, msg);
 				});
 
-			the_tree.addSegmentOverListener(function (d) {
-				if ($("#show-node-tooltip").prop("checked")) {
-					if (the_tree.display_category === 'nothing') {
-						var node_ids = the_tree.grouped_nodes[d.data.idx];
-						var value = $.map(node_ids, function (idx) { return the_tree.metadata[idx].Name ? the_tree.metadata[idx].Name : the_tree.metadata[idx].ID }).join('<br>');
-						showToolTip(value);
-					} else {
-						var display = d.data.type;
-						showToolTip(display + "(" + d.data.value + ")");
-					}
+
+			const renderMetadataValue = (nodeId) => {
+				const metadata = the_tree.metadata[nodeId];
+				const selectedField = document.querySelector('#tooltip-text').value;
+
+				if (metadata) {
+					return metadata[selectedField] || metadata.ID || "";
+				}
+				return "";
+			};
+
+			the_tree.addSegmentOverListener((node) => {
+				const tooltipEnabled = $("#show-node-tooltip").prop("checked");
+				if (!tooltipEnabled) return;
+
+				if (the_tree.display_category === 'nothing') {
+					const nodeIds = the_tree.grouped_nodes[node.data.idx];
+					const listItems = nodeIds
+					.map(renderMetadataValue)
+					.map(value => `<li>${value}</li>`)
+					.join("");
+
+					const tooltipHtml = `<ul style="margin:0; padding-left:1.2em">${listItems}</ul>`;
+					showToolTip(tooltipHtml);
+				} else {
+					const { type, value } = node.data;
+					showToolTip(`${type} (${value})`);
 				}
 			});
+
 			the_tree.addSegmentOutListener(function (d) {
 				hideToolTip();
 			});
@@ -514,6 +521,9 @@
 
 			$("#metadata-select").on("change", function (e) {
 				the_tree.changeCategory($(this).val());
+			});
+			$("#tooltip-text").change(function (e) {
+				the_tree.setNodeText($(this).val());
 			});
 			$("#node-label-text").change(function (e) {
 				the_tree.setNodeText($(this).val());
