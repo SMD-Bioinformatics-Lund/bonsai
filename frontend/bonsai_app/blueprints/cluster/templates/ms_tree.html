@@ -194,12 +194,12 @@
 				selectElements.forEach(selector => { 
 					let targetElement = $(selector);
 					// if categoreis exists group data in optgroups
-				if (category) {
-					if (!metadata_categories[category]) {
-						metadata_categories[category] = true;
+					if (category) {
+						if (!metadata_categories[category]) {
+							metadata_categories[category] = true; 
 							const optgroup = $("<optgroup>").attr("label", category); 
 							$(selector).append(optgroup);
-					}
+						} 
 						targetElement = $(selector).find(`optgroup[label='${category}']`); 
 					}
 					targetElement.append($("<option>").attr("value", fieldKey).text(label));
@@ -208,11 +208,11 @@
 		}
 
 		function deleteMetadataCategory() {
-			var category = $("#add-new-values-select").val();
+			const category = $("#add-new-values-select").val();
 			the_tree.removeCategory(category);
-			$("#metadata-select option[value='" + category + "']").remove();
-			$("#node-label-text option[value='" + category + "']").remove();
-			$("#add-new-values-select option[value='" + category + "']").remove();
+			$(`#metadata-select option[value='${category}']`).remove();
+			$(`#node-label-text option[value='${category}']`).remove();
+			$(`#add-new-values-select option[value='${category}']`).remove();
 			delete metadata_options[category];
 		}
 
@@ -222,8 +222,8 @@
 				.duration(200)
 				.style("opacity", .9);
 			tooltip_div.html(msg)
-				.style("left", (e.pageX) + "px")
-				.style("top", (e.pageY - 28) + "px")
+				.style("left", `${e.pageX}px`)
+				.style("top", `${e.pageY - 28}px`)
 				.style("height", "auto");
 			setTimeout(hideToolTip, 2000);
 		}
@@ -379,7 +379,8 @@
 				// render function uses the value of node-label selector
 				// to determine what metadata to show
 				const meta = the_tree.metadata[id];
-				const fieldName = document.querySelector('#node-label-text').value
+				const fieldName = document.querySelector('#tooltip-text').value
+				//const fieldName = document.querySelector('#node-label-text').value
 				return meta && meta[fieldName] ? meta[fieldName] : meta && meta.ID ? meta.ID : "";
 			};
 			the_tree.addSegmentOverListener((node) => {
@@ -512,6 +513,9 @@
 
 			$("#metadata-select").on("change", function (e) {
 				the_tree.changeCategory($(this).val());
+			});
+			$("#tooltip-text").change(function (e) {
+				the_tree.setNodeText($(this).val());
 			});
 			$("#node-label-text").change(function (e) {
 				the_tree.setNodeText($(this).val());
