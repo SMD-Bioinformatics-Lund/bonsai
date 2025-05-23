@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added support to add metadata to samples through the config file.
+
 ### Changed
 
 ### Fixed
