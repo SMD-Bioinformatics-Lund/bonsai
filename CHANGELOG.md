@@ -10,6 +10,7 @@
 
 ### Added
 
+- Added the option to select what info is being displayed on mousehover in GrapeTree
 - Added CLI command for validating paths to index and reference files.
 - The CLI command `validate-paths` can send reports via mail.
 
@@ -17,6 +18,7 @@
 
 ### Fixed
 
+- Multiple node labels are now being displayed for grouped nodes in GrapeTree
 - Greater than and lesser than are now being remembered when filtering varians in variants.
 - A redis connection error no longer crash the sample view in the frontend.
 
