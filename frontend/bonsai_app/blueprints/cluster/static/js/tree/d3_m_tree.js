@@ -1169,7 +1169,7 @@ D3MSTree.prototype.getTreeAsNewick = function () {
  * The modified _setNodeText below should allow for the display of multiple sample id
  * labels for grouped nodes, rather than just one.
  * 
- * Markus addendum eddition:
+ * Markus addendum edition:
  * 
  * This function has been modified to allow for displaying other metadata fields than
  * sample ids
