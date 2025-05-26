@@ -1168,9 +1168,9 @@ D3MSTree.prototype.getTreeAsNewick = function () {
  *
  * The modified _setNodeText below should allow for the display of multiple sample id
  * labels for grouped nodes, rather than just one.
- * 
+ *
  * Markus addendum edition:
- * 
+ *
  * This function has been modified to allow for displaying other metadata fields than
  * sample ids
  *
@@ -1193,12 +1193,12 @@ D3MSTree.prototype._setNodeText = function () {
     .attr("text-anchor", "middle")
     .attr("font-size", this.node_font_size)
     .attr("font-family", "sans-serif")
-    .attr("transform", self => `translate(0,${-self.node_font_size / 3})`)
+    .attr("transform", (self) => `translate(0,${-self.node_font_size / 3})`)
     .text(function (it) {
       if (field && field !== "node_id") {
         const metaIds = grouped[it.id];
         if (metaIds) {
-          const display = metaIds.map(id => self.metadata[id][field]);
+          const display = metaIds.map((id) => self.metadata[id][field]);
           return display ? display : "ND";
         } else {
           return "ND";
