@@ -3,37 +3,10 @@
 
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
-        onclick="addSelectedSamplesToBasket(this)" disabled>
-    <i class="bi bi-plus-lg"></i>
-    <span>Add to basket</span>
-</button>
-{% endmacro %}
-
-{% macro add_to_basket_btn_v2() %}
-<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
         onclick="addSamplesToBasket()" disabled>
     <i class="bi bi-plus-lg"></i>
     <span>Add to basket</span>
 </button>
-{% endmacro %}
-
-{% macro add_to_basket_js() %}
-function addSelectedSamplesToBasket(btn) {
-    // add selected samples from table to session storage
-    const body = {
-        selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
-    }
-    const baseUrl = {{ request.script_root|tojson }}
-    fetch(`${baseUrl}/api/basket/add`, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-            'Accept': 'application/json', 
-            'Content-Type': 'application/json' 
-        },
-        credentials: 'same-origin'
-    }).then(response => {location.reload()})
-}
 {% endmacro %}
 
 {% macro search_similar_btn() %}
@@ -64,66 +37,6 @@ function addSelectedSamplesToBasket(btn) {
         </button>
     </form>
 </div>
-{% endmacro %}
-
-{% macro search_similar_js() %}
-async function getSimilarSamples() {
-    const sampleId=window.getSelectedRows().ids()[0]
-    const limit=document.getElementById("similar-samples-limit").value
-    const similarity=document.getElementById("similar-samples-threshold").value
-    const baseUrl = {{ request.script_root|tojson }}
-    try {
-        const response = await fetch(`${baseUrl}/sample/${sampleId}/similar`, {
-            method: "POST",
-            body: JSON.stringify({limit: limit, similarity: similarity}),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        })
-        const jsonData = await response.json()
-        if ( !response.ok ) {
-            console.log(`Error while finding similar samples: ${jsonData.details}`)
-            return false
-        } else {
-            return jsonData
-        }
-    } catch ( error ) {
-        console.error("Error:", error)
-        return false
-    }
-}
-
-async function getSimilarSamplesAndCheckRows(btn) {
-    const parentElem = btn.parentElement.parentElement
-    showSpinner(parentElem)
-    getSimilarSamples().then( async (job) => {
-        if ( job ) {
-            try {
-                let result = await poll(
-                    async () => fetchJobStatus(job.id),  // function to get job status
-                    validateJobStatus,  // validator
-                    resultParser,       // parse results
-                    3000                // interval time
-                )
-                window.selectRows(result.map(sample => sample.sample_id))
-                hideSpinner(parentElem)
-            } catch (err) {
-                throwSmallToast("Error while finding similar samples")
-                hideSpinner(parentElem)
-            }
-        } else {
-            throwSmallToast("Error while finding similar samples")
-            hideSpinner(parentElem)
-        }
-    })
-}
-
-document.getElementById("similar-samples-threshold").addEventListener("input", (thresholdElem) => {
-    const thresholdValue = thresholdElem.data
-    document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
-});
 {% endmacro %}
 
 {% macro qc_bulk_toggle(bad_qc_actions) %}
@@ -209,71 +122,6 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
 {% endmacro %}
 
 {% macro sample_table(table_data) %}
-    {# build sample table #}
-    <table id="sample-table" class="display table table-striped">
-        <thead>
-            <tr>
-                {# build table header #}
-                {% for col in table_data[0] %}
-                    <td>{{ col.label }}</td>
-                {% endfor %}
-            </th>
-        </thead>
-        <tbody>
-            {% for row in table_data %}
-                <tr id="{{ row[0].data }}"
-                 {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}
-                 >
-                    {% for cell in row %}
-                        {{ format_table_cell(cell) }}
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <script>
-        // define data table
-        DataTable.datetime('YYYY-MM-DD')
-        const table = new DataTable('#sample-table', { 
-            select: true,
-            layout: {
-                topStart: 'searchBuilder'
-            },
-        });
-        table.on('select', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-        table.on('deselect', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-
-        // define global functions
-        window.getSelectedRows = () => table.rows('.selected')
-        window.selectRows = (sampleIds) => {
-            table.rows(sampleIds.map(id => `#${id}`)).select()
-            window.updateRowSelectionCounters()
-        }
-
-        window.updateRowSelectionCounters = () => {
-            let nSelectedRows = table.rows('.selected').data().length
-            // enable add to basket + toggle qc buttons when user selects at least one row
-            if ( document.getElementById("add-to-basket-btn") !== null) {
-              document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
-            }
-            if ( document.getElementById("toggle-qc-btn") !== null ) {
-              document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
-            }
-            // enable find simiar samples button when ONE row is selected
-            if ( document.getElementById("select-similar-samples-btn") !== null ) {
-              document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
-            }
-            // enable remove samples btn
-            if (document.getElementById("remove-samples-btn") !== null) {
-                document.getElementById("remove-samples-btn").disabled = 0 > nSelectedRows
-            }
-            sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
-        }
-    </script>
-{% endmacro %}
-
-
-{% macro sample_table_v2(table_data) %}
     {# build sample table #}
     <table id="sample-table" class="display table table-striped">
         <thead>

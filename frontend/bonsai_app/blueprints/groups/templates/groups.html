@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn_v2, qc_bulk_toggle, delete_samples_btn, sample_table_v2 %}
+{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
 {{ super() }}
@@ -34,7 +34,7 @@
         <hr class="mt-2 col-md-2 border border-success border-2">
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
-                {{ add_to_basket_btn_v2() }}
+                {{ add_to_basket_btn() }}
 
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
@@ -57,7 +57,7 @@
                 {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
-        {{ sample_table_v2(table_data) }}
+        {{ sample_table(table_data) }}
     </div>
 </div>
 <script>

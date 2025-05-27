@@ -259,6 +259,7 @@ def group(group_id: str) -> str:
         table_definition=group_info["table_columns"],
         modified=group_info["modified_at"],
         display_qc=display_qc,
+        token=current_user.get_id().get("token"),
     )
 
 
