@@ -7,7 +7,7 @@ import { ApiService } from "./api";
 import { ApiFindSimilarInput, ApiJobSubmission, TblStateCallbackFunc } from "./types";
 
 
-class TableStateManager {
+export class TableStateManager {
   private tableId: string;
   private selectedRows: Set<string>;
   private rowSelectionListeners: Set<TblStateCallbackFunc>;
@@ -85,30 +85,53 @@ class TableStateManager {
   }
 }
 
-export async function getSimilarSamplesV2(
-  tableState: TableStateManager,
-  api: ApiService,
-): Promise<ApiJobSubmission | boolean> {
-  const sampleId = tableState.getSelected()[0];
-  const limitInput = document.getElementById(
-    "similar-samples-limit",
-  ) as HTMLInputElement;
-  const similarityInput = document.getElementById(
-    "similar-samples-threshold",
-  ) as HTMLInputElement;
-  const searchParams: ApiFindSimilarInput = {
-    limit: Number(limitInput.value),
-    similarity: Number(similarityInput.value),
-    cluster: false,
-    typing_method: null,
-    cluster_method: null,
-  };
-  try {
-    return api.findSimilarSamples(sampleId, searchParams);
-  } catch (error) {
-    console.error("Error:", error);
-    return false;
+export class TableController {
+  private table: any;
+  //private tableState: TableStateManager;
+
+  constructor(tableId: string, tableConfig: any) {
+    //this.tableState = new TableStateManager(tableId);
+    this.table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
+
+    // listen for row selection changes in DataTable
+    // this.table.on('select', this.handleRowSelectionChange.bind(this));
+    // this.table.on('deselect', this.handleRowSelectionChange.bind(this));
+    // synchronize selection with the state manager
+    //this.tableState.onSelection(selectedRows => this.synchronizeSelection(selectedRows));
   }
+
+  // private synchronizeSelection(selectedRows: string[]): void {
+  //   //const selectedRows = this.tableState.getSelected();
+  //   this.table.rows().deselect(); // clear current selection
+  //   if (selectedRows.length > 0) {
+  //     this.table.rows(selectedRows).select(); // re-select rows based on state
+  //   }
+  // }
+
+  // private handleRowSelectionChange(): void {
+  //   const rowIds: string[] = Array.from(this.table.rows('.selected').ids());
+  //   this.tableState.setSelected(rowIds);
+  // }
+
+  getTable(): any {
+    return this.table;
+  }
+
+  get selectedRows(): string[] {
+    return this.table.rows('.selected').ids().toArray();
+  }
+
+  set selectedRows(rowIds: string[]) {
+    this.table.rows().deselect(); // clear current selection
+    if (rowIds.length > 0) {
+      this.table.rows(rowIds.map(id => `#${id}`)).select(); // re-select rows based on state
+    }
+  }
+
+
+  // getStateManager(): TableStateManager {
+  //   return this.tableState;
+  // }
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {
@@ -136,25 +159,24 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if ( btn !== null) btn.disabled = 1 !== selectedRows.length
 }
 
-export function initializeSamplesTable(tableId: string, tableConfig: any) {
-  const tblState = new TableStateManager(tableId)
-  const table = new DataTable(tableId, {...tableConfig});
-
-  table.on('select', (e, dt, type, indexes) => {
-    const rowIds: string[] = Array.from(dt.rows('.selected').ids())
-    tblState.setSelected(rowIds)}
-  )
-  table.on('deselect', (e, dt, type, indexes) => {
-    const rowIds: string[] = Array.from(dt.rows('.selected').ids())
-    tblState.setSelected(rowIds)}
-  )
+export function initializeSamplesTable(tableId: string, tableConfig: any): any {
+  const controller = new TableController(tableId, tableConfig);
+  //const table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
 
   // add callback functions
   const funcs: TblStateCallbackFunc[] = new Array(manageAddToBasketBtn, manageRemoveSamplesBtn, manageSelectSimilarBtn)
   for (const callback of funcs ){
-    tblState.onSelection(callback)
+    //controller.getStateManager().onSelection(callback)
+    controller.getTable().on('select deselect', (e, dt, type, indexes) => {
+      const selected: string[] = dt.rows('.selected').ids()
+      callback(selected)
+    });
   }
 
-  return {table, tblState}
+  return controller;
+  // return {
+  //   table: controller.getTable(), 
+  //   tblState: controller.getStateManager(),
+  // }
 }
 
