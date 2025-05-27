@@ -134,6 +134,21 @@ export class ApiService {
     return this.http.request<ApiSampleDetailsResponse>(url);
   };
 
+  deleteSamples = async (sampleIds: string[]) => {
+    if (sampleIds.length === 0) {
+      throw new Error("No sample IDs provided for deletion");
+    }
+    try {
+      return await this.http.request<void>('/samples', {
+        method: "DELETE",
+        body: JSON.stringify(sampleIds),
+      });
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  };
+
   checkJobStatus = async (jobId: string) => {
     try {
       return await this.http.request<ApiJobStatus>(`/job/status/${jobId}`);
@@ -162,6 +177,12 @@ export class ApiService {
 
   getGroup = async (groupId: string) => {
     return this.http.request<GroupInfo>(`/groups/${groupId}`);
+  };
+
+  addSampleToGroup = async (groupId: string, sampleId: string) => {
+    return this.http.request<void>(`/groups/${groupId}/samples?${objectToQueryParams({sample_id: sampleId})}`, {
+      method: "PUT",
+    });
   };
 
   private handleError = (error: unknown) => {

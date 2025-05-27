@@ -5,7 +5,7 @@ import { throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { initializeSamplesTable } from "./table";
 import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
-import { getSimilarSamplesAndCheckRows } from "./similar";
+import { addSelectedSamplesToGroup, deleteSelectedSamples, getSimilarSamplesAndCheckRows } from "./sample";
 
 export function initialize(
   bonsaiApiUrl: string,
@@ -58,6 +58,8 @@ declare global {
     throwSmallToast: (message: string) => void;
     initSampleTbl: typeof initializeSamplesTable;
     getSimilarSamplesAndCheckRows: typeof getSimilarSamplesAndCheckRows;
+    addSelectedSamplesToGroup: typeof addSelectedSamplesToGroup;
+    deleteSelectedSamples: typeof deleteSelectedSamples;
     jQuery: typeof jQuery;
     $: typeof jQuery;
     bootstrap: typeof bootstrap;
@@ -69,4 +71,6 @@ window.jQuery = jQuery;
 window.$ = jQuery;
 window.initSampleTbl = initializeSamplesTable;
 window.bootstrap = bootstrap;
+window.addSelectedSamplesToGroup = addSelectedSamplesToGroup;
+window.deleteSelectedSamples = deleteSelectedSamples;
 window.getSimilarSamplesAndCheckRows = getSimilarSamplesAndCheckRows;

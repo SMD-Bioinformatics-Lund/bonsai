@@ -201,23 +201,11 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
 {% endmacro %}
 
 {% macro delete_samples_btn() %}
-    <form id="remove-samples-form" method=POST action={{ url_for("samples.remove_samples") }}>
-        <input type="text" name="sample-ids" hidden>
-        <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" 
-                type="submit" disabled>
-            <i class="bi bi-trash"></i>
-            <span>Delete samples</span>
-        </button>
-    </form>
-    <script>
-        const removeSamplesForm = document.getElementById("remove-samples-form")
-        removeSamplesForm.addEventListener("submit", event => {
-        event.preventDefault()
-        // add selected samples to form
-        event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows().ids().toArray())
-        removeSamplesForm.submit()
-        })
-    </script>
+    <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" 
+            onclick="deleteSamples()" type="submit" disabled>
+        <i class="bi bi-trash"></i>
+        <span>Delete samples</span>
+    </button>
 {% endmacro %}
 
 {% macro sample_table(table_data) %}

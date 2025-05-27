@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_btn_v2, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table_v2 %}
+{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn_v2, qc_bulk_toggle, delete_samples_btn, sample_table_v2 %}
 
 {% block css %}
 {{ super() }}
@@ -40,13 +40,13 @@
                     {{ delete_samples_btn() }}
 
                     {# Add selected samples to group #}
-                    <div class="dropdown ps-2">
+                    <div class="dropdown ps-2 add-to-group-btn">
                         <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-folder-plus"></i>
                         </button>
                         <ul class="dropdown-menu">
                             {% for group in groups %}
-                                <li><a class="dropdown-item" onclick="addSelectedSamplesToGroup('{{group.group_id}}')">{{ group.display_name }}</a></li>
+                                <li><a class="dropdown-item" data-bi-group-id="{{ group.group_id }}" onclick="addSamplesToGroup(this)">{{ group.display_name }}</a></li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -60,7 +60,6 @@
         {{ sample_table_v2(table_data) }}
     </div>
 </div>
-    <!-- {{ add_to_basket_js() }} -->
 <script>
     //const apiUrl = "{{ config.BONSAI_API_URL }}"
     const apiUrl = "http://localhost:8001"
@@ -90,6 +89,8 @@
 
     // create helper functions for dynamic actions
     const addSamplesToBasket = () => basket.addSamples(table.selectedRows)
+    const addSamplesToGroup = btn => addSelectedSamplesToGroup(btn, table, api);
+    const deleteSamples = () => deleteSelectedSamples(table, api);
     const searchSimilarSamplesAndCheckRows = btn => getSimilarSamplesAndCheckRows(btn, table, api);
 
     document.addEventListener('DOMContentLoaded', () => {

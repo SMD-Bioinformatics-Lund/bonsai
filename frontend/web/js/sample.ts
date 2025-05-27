@@ -1,3 +1,5 @@
+// Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
+
 import { ApiService, pollJob } from "./api";
 import { throwSmallToast } from "./notification";
 import { TableController } from "./table";
@@ -35,4 +37,36 @@ export async function getSimilarSamplesAndCheckRows(
     throwSmallToast("Error while finding similar samples");
   }
   hideSpinner(container);
+}
+
+export function addSelectedSamplesToGroup(element: HTMLElement, table: TableController, api: ApiService): void {
+  const groupId = element.getAttribute("data-bi-group-id");
+  if (groupId === null) return;
+
+  if (table.selectedRows.length === 0) {
+    throwSmallToast("No samples selected", "warning");
+    return;
+  }
+
+  table.selectedRows.forEach(sampleId => {
+    api.addSampleToGroup(groupId, sampleId)
+      .catch(error => {
+        console.error(`Error adding ${sampleId} to group:`, error);
+        throwSmallToast(`Error adding ${sampleId} to group`, "error");
+      });
+  });
+  throwSmallToast(`Added ${table.selectedRows.length} samples to group`, "success");
+};
+
+export function removeSamplesFromGroup(groupId: string, table: TableController, api: ApiService): void {
+}
+
+export function deleteSelectedSamples(table: TableController, api: ApiService): void {
+  api.deleteSamples(table.selectedRows)
+    .then(() => {
+      throwSmallToast(`Deleted ${table.selectedRows.length} samples`, "success");
+    }).catch(error => {
+      console.error("Error removing samples from database", error);
+      throwSmallToast("Error when removing samples", "error");
+    });
 }

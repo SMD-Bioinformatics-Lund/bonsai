@@ -33,7 +33,6 @@ export class TableController {
 function manageAddToBasketBtn(selectedRows: string[]): void {
   /* Enable/ disable button for adding samples to the basket */
   const btn = document.getElementById("add-to-basket-btn") as HTMLButtonElement;
-  console.log(selectedRows)
   if ( btn !== null) btn.disabled = 1 > selectedRows.length
 }
 
