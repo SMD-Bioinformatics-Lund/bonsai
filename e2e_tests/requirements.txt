@@ -5,7 +5,8 @@ pytest
 pytest-html
 
 # for upload script
-pyyaml==6.0.1
-requests==2.32.0
+pyyaml
+requests
 pydantic
 click
+bonsai-prp==1.2.0
