@@ -1,117 +1,18 @@
 import DataTable from "datatables.net-bs5";
 import 'datatables.net-datetime'
-import 'datatables.net-searchbuilder-bs5';
+import 'datatables.net-buttons-bs5';
+import 'datatables.net-buttons/js/buttons.html5.mjs';
 import 'datatables.net-select-bs5';
+import 'datatables.net-searchbuilder-bs5';
 
-import { ApiService } from "./api";
-import { ApiFindSimilarInput, ApiJobSubmission, TblStateCallbackFunc } from "./types";
-
-
-export class TableStateManager {
-  private tableId: string;
-  private selectedRows: Set<string>;
-  private rowSelectionListeners: Set<TblStateCallbackFunc>;
-
-  constructor(tableId: string) {
-    this.tableId = tableId;
-    this.selectedRows = new Set<string>();
-    this.rowSelectionListeners = new Set();
-    this.loadState();
-  }
-
-  toggleRow(rowId: string): void {
-    if (this.selectedRows.has(rowId)) {
-      this.selectedRows.delete(rowId);
-    } else {
-      this.selectedRows.add(rowId);
-    }
-    this.saveState();
-    this.notifyChange();
-  }
-
-  isSelected(rowId: string): boolean {
-    return this.selectedRows.has(rowId);
-  }
-
-  getSelected(): string[] {
-    return Array.from(this.selectedRows);
-  }
-
-  setSelected(rowIds: string[]): void {
-    this.selectedRows = new Set(rowIds);
-    this.saveState();
-    this.notifyChange();
-  }
-
-  clearSelection(): void {
-    this.selectedRows.clear();
-    this.saveState();
-    this.notifyChange();
-  }
-
-  onSelection(callback: TblStateCallbackFunc): void {
-    this.rowSelectionListeners.add(callback);
-  }
-
-  offSelection(callback: TblStateCallbackFunc): void {
-    this.rowSelectionListeners.delete(callback);
-  }
-
-  private notifyChange(): void {
-    const selected = this.getSelected()
-    for (const callback of this.rowSelectionListeners) {
-      callback(selected);
-    }
-  }
-
-  private saveState(): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.getSelected()));
-  }
-
-  private loadState(): void {
-    const state = localStorage.getItem(this.storageKey);
-    if (state) {
-      try {
-        const ids = JSON.parse(state) as string[];
-        this.selectedRows = new Set(ids);
-      } catch (e) {
-        console.error("Failed to parse saved table state", e);
-      }
-    }
-  }
-
-  private get storageKey(): string {
-    return `${this.tableId}_selected_rows`;
-  }
-}
+import { TblStateCallbackFunc } from "./types";
 
 export class TableController {
   private table: any;
-  //private tableState: TableStateManager;
 
   constructor(tableId: string, tableConfig: any) {
-    //this.tableState = new TableStateManager(tableId);
     this.table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
-
-    // listen for row selection changes in DataTable
-    // this.table.on('select', this.handleRowSelectionChange.bind(this));
-    // this.table.on('deselect', this.handleRowSelectionChange.bind(this));
-    // synchronize selection with the state manager
-    //this.tableState.onSelection(selectedRows => this.synchronizeSelection(selectedRows));
   }
-
-  // private synchronizeSelection(selectedRows: string[]): void {
-  //   //const selectedRows = this.tableState.getSelected();
-  //   this.table.rows().deselect(); // clear current selection
-  //   if (selectedRows.length > 0) {
-  //     this.table.rows(selectedRows).select(); // re-select rows based on state
-  //   }
-  // }
-
-  // private handleRowSelectionChange(): void {
-  //   const rowIds: string[] = Array.from(this.table.rows('.selected').ids());
-  //   this.tableState.setSelected(rowIds);
-  // }
 
   getTable(): any {
     return this.table;
@@ -127,11 +28,6 @@ export class TableController {
       this.table.rows(rowIds.map(id => `#${id}`)).select(); // re-select rows based on state
     }
   }
-
-
-  // getStateManager(): TableStateManager {
-  //   return this.tableState;
-  // }
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {
@@ -161,7 +57,6 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
 
 export function initializeSamplesTable(tableId: string, tableConfig: any): any {
   const controller = new TableController(tableId, tableConfig);
-  //const table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
 
   // add callback functions
   const funcs: TblStateCallbackFunc[] = new Array(manageAddToBasketBtn, manageRemoveSamplesBtn, manageSelectSimilarBtn)
@@ -174,9 +69,5 @@ export function initializeSamplesTable(tableId: string, tableConfig: any): any {
   }
 
   return controller;
-  // return {
-  //   table: controller.getTable(), 
-  //   tblState: controller.getStateManager(),
-  // }
 }
 

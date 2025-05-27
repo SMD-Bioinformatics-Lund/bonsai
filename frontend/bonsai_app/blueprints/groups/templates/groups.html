@@ -72,7 +72,10 @@
     const table = initSampleTbl('sample-table', {
         select: true,
         layout: {
-            topStart: 'searchBuilder'
+            top1Start: {
+                buttons: ['selectAll', 'selectNone', 'excel'],
+            },
+            top2Start: 'searchBuilder',
         },
     });
     document.addEventListener('DOMContentLoaded', () => {
@@ -88,7 +91,6 @@
     // create helper functions for dynamic actions
     const addSamplesToBasket = () => basket.addSamples(table.selectedRows)
     const searchSimilarSamplesAndCheckRows = btn => getSimilarSamplesAndCheckRows(btn, table, api);
-    // const result = await pollJob(() => api.checkJobStatus(jobInfo.id), 3000);
 
     document.addEventListener('DOMContentLoaded', () => {
     const offcanvas = document.getElementById('basket-offcanvas');
