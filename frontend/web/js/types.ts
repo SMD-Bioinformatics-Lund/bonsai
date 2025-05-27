@@ -1,14 +1,33 @@
-import { DistanceMethod, ClusterMethod, TypingMethod, JobStatusEnum } from "./constants"
+import {
+  DistanceMethod,
+  ClusterMethod,
+  TypingMethod,
+  JobStatusEnum,
+} from "./constants";
 
-export interface JobStatus {
+interface ApiSampleSimilarity {
+  sample_id: string;
+  similarity: number;
+}
+
+export interface ApiJobStatusBase {
   status: JobStatusEnum;
   queue: string;
-  result: string;
   error: string;
   submitted_at: string;
   started_at: string | null;
   finished_at: string | null;
 }
+
+export interface ApiJobStatusNewick extends ApiJobStatusBase {
+  result: string; // result is a Newick string for tree visualization
+}
+
+export interface ApiJobStatusSimilarity extends ApiJobStatusBase {
+  result: ApiSampleSimilarity[]; // result is an array of sample similarities
+}
+
+export type ApiJobStatus = ApiJobStatusNewick | ApiJobStatusSimilarity;
 
 export interface ApiJobSubmission {
   id: string;
@@ -61,17 +80,17 @@ export interface GroupInfo {
 
 export interface SamplesDetails {
   sample_id: string;
-  sample_name: string
-  lims_id: string
-  assay: string
-  created_at: string
+  sample_name: string;
+  lims_id: string;
+  assay: string;
+  created_at: string;
 }
 
 export interface ApiSampleDetailsResponse {
-  data: SamplesDetails[]
-  records_total: number
-  records_filtered: number
+  data: SamplesDetails[];
+  records_total: number;
+  records_filtered: number;
 }
 
-export type CallbackFunc = (ids: string[]) => void
-export type TblStateCallbackFunc = (selectedRows: string[]) => void
+export type CallbackFunc = (ids: string[]) => void;
+export type TblStateCallbackFunc = (selectedRows: string[]) => void;

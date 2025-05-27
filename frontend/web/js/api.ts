@@ -1,4 +1,12 @@
-import { JobStatus, ApiGetSamplesDetailsInput, ApiSampleDetailsResponse, ApiClusterInput, ApiJobSubmission, ApiFindSimilarInput, GroupInfo } from "./types";
+import {
+  ApiJobStatus,
+  ApiGetSamplesDetailsInput,
+  ApiSampleDetailsResponse,
+  ApiClusterInput,
+  ApiJobSubmission,
+  ApiFindSimilarInput,
+  GroupInfo,
+} from "./types";
 import { JobStatusEnum, TypingMethod } from "./constants";
 
 export class ApiError extends Error {
@@ -110,7 +118,7 @@ function objectToQueryParams(query: Record<string, any>): string {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
     if (Array.isArray(value)) {
-      value.forEach(v => params.append(key, String(v)));
+      value.forEach((v) => params.append(key, String(v)));
     } else if (value !== undefined && value !== null) {
       params.append(key, String(value));
     }
@@ -128,7 +136,7 @@ export class ApiService {
 
   checkJobStatus = async (jobId: string) => {
     try {
-      return await this.http.request<JobStatus>(`/job/status/${jobId}`);
+      return await this.http.request<ApiJobStatus>(`/job/status/${jobId}`);
     } catch (error) {
       this.handleError(error);
       throw error;
@@ -142,7 +150,10 @@ export class ApiService {
     });
   };
 
-  findSimilarSamples = async (sampleId: string, params: ApiFindSimilarInput) => {
+  findSimilarSamples = async (
+    sampleId: string,
+    params: ApiFindSimilarInput,
+  ) => {
     return this.http.request<ApiJobSubmission>(`/samples/${sampleId}/similar`, {
       method: "POST",
       body: JSON.stringify(params),
@@ -162,35 +173,38 @@ export class ApiService {
   };
 }
 
-export async function pollJob(checkJobFn: () => Promise<JobStatus>, waitTime: number) {
-    /* Generic polling function that  */
-    let result = await checkJobFn()
-    while (validateJobStatus(result)) {
-        await wait(waitTime)
-        result = await checkJobFn()
-    }
-    return result.result
+export async function pollJob<T extends ApiJobStatus>(
+  checkJobFn: () => Promise<T>,
+  waitTime: number,
+): Promise<T> {
+  /* Generic polling function that  */
+  let result = await checkJobFn();
+  while (validateJobStatus(result)) {
+    await wait(waitTime);
+    result = await checkJobFn();
+  }
+  return result;
 }
 
 function wait(ms: number = 2000) {
-    // wait between fetch jobs
-    return new Promise(resolve => {
-        setTimeout(resolve, ms)
-    })
+  // wait between fetch jobs
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
-function validateJobStatus(job: JobStatus): boolean {
-    // check job status
-    // returns true if run is invalid
-    let isValid = false
-    if ( job.status === JobStatusEnum.FINISHED ) {
-        // if job has finished report result
-        isValid = true
-    } else if ( job.status === JobStatusEnum.FAILED ) {
-        // if job failed raise error
-        throw new Error(`Job failed: ${job.result}`)
-        isValid = true
-    } 
-    console.log(`Job status: ${job.status}; is valid ${isValid}`)
-    return !isValid
+function validateJobStatus(job: ApiJobStatus): boolean {
+  // check job status
+  // returns true if run is invalid
+  let isValid = false;
+  if (job.status === JobStatusEnum.FINISHED) {
+    // if job has finished report result
+    isValid = true;
+  } else if (job.status === JobStatusEnum.FAILED) {
+    // if job failed raise error
+    throw new Error(`Job failed: ${job.result}`);
+    isValid = true;
+  }
+  console.log(`Job status: ${job.status}; is valid ${isValid}`);
+  return !isValid;
 }

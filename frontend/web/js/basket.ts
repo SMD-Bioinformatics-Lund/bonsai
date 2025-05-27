@@ -1,16 +1,24 @@
 import { ApiService, pollJob } from "./api";
 import { throwSmallToast } from "./notification";
 import { hideSpinner, showSpinner } from "./util";
-import { ApiClusterInput, ApiGetSamplesDetailsInput, ApiSampleDetailsResponse, SamplesDetails } from "./types";
+import {
+  ApiClusterInput,
+  ApiGetSamplesDetailsInput,
+  ApiJobStatusNewick,
+  ApiSampleDetailsResponse,
+  SamplesDetails,
+} from "./types";
 import { ClusterMethod, DistanceMethod, TypingMethod } from "./constants";
 
 export class SampleBasket {
-  private name = 'basket';
+  private name = "basket";
   private sampleIds: Set<string> = new Set();
   private additionListeners: Set<CallableFunction> = new Set();
 
   constructor(
-    private getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>
+    private getSamplesDetails: (
+      query: ApiGetSamplesDetailsInput,
+    ) => Promise<ApiSampleDetailsResponse>,
   ) {
     // load state from local storage
     this.loadState();
@@ -29,13 +37,13 @@ export class SampleBasket {
   };
 
   addSamples = (sampleIds: string[]): void => {
-    sampleIds.forEach(id => this.sampleIds.add(id));
+    sampleIds.forEach((id) => this.sampleIds.add(id));
     this.saveState();
     this.notifyChange();
   };
 
   removeSamples = (sampleIds: string[]): void => {
-    sampleIds.forEach(id => this.sampleIds.delete(id));
+    sampleIds.forEach((id) => this.sampleIds.delete(id));
     this.saveState();
     this.notifyChange();
   };
@@ -49,14 +57,14 @@ export class SampleBasket {
   render = async (): Promise<void> => {
     // render the basket content
     // reset the basket content
-    const container = document.querySelector('#basket-content');
+    const container = document.querySelector("#basket-content");
     if (!container) return;
 
-    container.innerHTML = '';
+    container.innerHTML = "";
     const sampleIds = this.getSampleIds();
     // if no samples in basket, show empty message
     if (sampleIds.length === 0) {
-      container.innerHTML = '<p>Your basket is empty.</p>';
+      container.innerHTML = "<p>Your basket is empty.</p>";
       return;
     }
 
@@ -72,8 +80,8 @@ export class SampleBasket {
       const data = await this.getSamplesDetails(query);
 
       data.data.forEach((sample: SamplesDetails) => {
-        const item = document.createElement('div');
-        item.className = 'card mb-2 rounded-1 p-0 sample_in_basket';
+        const item = document.createElement("div");
+        item.className = "card mb-2 rounded-1 p-0 sample_in_basket";
         item.innerHTML = String.raw`
         <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
             <a class="text-muted d-flex flex-column" href="/">
@@ -88,24 +96,23 @@ export class SampleBasket {
         container.appendChild(item);
       });
 
-      container.querySelectorAll('button[data-id]').forEach(button => {
-        button.addEventListener('click', (e) => {
-          const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+      container.querySelectorAll("button[data-id]").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
           if (id) {
             this.removeSamples([id]);
             this.render(); // Re-render after removal
           }
         });
       });
-
     } catch (error) {
-      console.error('Failed to render basket:', error);
+      console.error("Failed to render basket:", error);
     }
   };
 
   private notifyChange = (): void => {
     const selected = this.getSampleIds();
-    this.additionListeners.forEach(callback => callback(selected));
+    this.additionListeners.forEach((callback) => callback(selected));
   };
 
   private saveState = (): void => {
@@ -130,12 +137,13 @@ export class SampleBasket {
 }
 
 export class SamplesInBasketCounter {
-  private badgeElement: HTMLSpanElement | null
-  private counterElement: HTMLSpanElement | null
+  private badgeElement: HTMLSpanElement | null;
+  private counterElement: HTMLSpanElement | null;
 
-  constructor( private elementId: string = 'samples-in-basket-badge') {
-    this.badgeElement = document.querySelector(`#${elementId}`)
-    this.counterElement = this.badgeElement?.querySelector('#samples-in-basket-counter') ?? null;
+  constructor(private elementId: string = "samples-in-basket-badge") {
+    this.badgeElement = document.querySelector(`#${elementId}`);
+    this.counterElement =
+      this.badgeElement?.querySelector("#samples-in-basket-counter") ?? null;
   }
 
   get counter(): number {
@@ -149,16 +157,20 @@ export class SamplesInBasketCounter {
       this.counterElement.innerHTML = value.toString();
       this.badgeElement.hidden = this.counter == 0;
     } else {
-      console.error('No counter on this page!')
+      console.error("No counter on this page!");
     }
   }
 
   reset(): void {
-    this.counter = 0
+    this.counter = 0;
   }
 }
 
-async function openGrapeTree(newick: string, sampleIds: string[], clusterMethod: TypingMethod): Promise<void> {
+async function openGrapeTree(
+  newick: string,
+  sampleIds: string[],
+  clusterMethod: TypingMethod,
+): Promise<void> {
   // Open grape tree
   const template = document.createElement("template");
   template.innerHTML = String.raw`
@@ -169,17 +181,25 @@ async function openGrapeTree(newick: string, sampleIds: string[], clusterMethod:
       <input type="text" name="metadata" id="metadata-content" value="">
       <input type="submit" value="">
   </form>
-  `
+  `;
   document.body.appendChild(template.content);
-  const submitBnt = document.querySelector('#open-tree-form input[type=submit]') as HTMLInputElement;
+  const submitBnt = document.querySelector(
+    "#open-tree-form input[type=submit]",
+  ) as HTMLInputElement;
   submitBnt.click();
   // clean up
-  document.querySelector('#open-tree-form').remove();
+  document.querySelector("#open-tree-form").remove();
 }
 
 // cluter all samples in basket
-export async function clusterSamples(element: HTMLLinkElement, sampleIds: string[], api: ApiService) {
-  const typingMethodEnum = element.getAttribute("data-bi-typing-method") as TypingMethod;
+export async function clusterSamples(
+  element: HTMLLinkElement,
+  sampleIds: string[],
+  api: ApiService,
+) {
+  const typingMethodEnum = element.getAttribute(
+    "data-bi-typing-method",
+  ) as TypingMethod;
   // base dropdown element
   const baseElement = document.querySelector("#basket-cluster-samples");
   const btn = baseElement.querySelector(".btn") as HTMLButtonElement;
@@ -190,28 +210,28 @@ export async function clusterSamples(element: HTMLLinkElement, sampleIds: string
       body = {
         sampleIds: sampleIds,
         distance: DistanceMethod.HAMMING,
-        method: ClusterMethod.MSTREE2
+        method: ClusterMethod.MSTREE2,
       };
       break;
     case TypingMethod.MLST:
       body = {
         sampleIds: sampleIds,
         distance: DistanceMethod.HAMMING,
-        method: ClusterMethod.MSTREE2
+        method: ClusterMethod.MSTREE2,
       };
       break;
     case TypingMethod.MINHASH:
       body = {
         sampleIds: sampleIds,
         distance: DistanceMethod.HAMMING,
-        method: ClusterMethod.SINGLE
+        method: ClusterMethod.SINGLE,
       };
       break;
     case TypingMethod.SKA:
       body = {
         sampleIds: sampleIds,
         distance: DistanceMethod.HAMMING,
-        method: ClusterMethod.SINGLE
+        method: ClusterMethod.SINGLE,
       };
       break;
   }
@@ -221,10 +241,13 @@ export async function clusterSamples(element: HTMLLinkElement, sampleIds: string
   throwSmallToast(`Clustering samples: ${sampleIds.length}`, "info");
   // start polling for updates
   try {
-    const result = await pollJob(() => api.checkJobStatus(jobInfo.id), 3000);
+    const result = (await pollJob(
+      () => api.checkJobStatus(jobInfo.id),
+      3000,
+    )) as ApiJobStatusNewick;
     hideSpinner(btn);
     // open dendrogram
-    openGrapeTree(result, sampleIds, typingMethodEnum)
+    openGrapeTree(result.result, sampleIds, typingMethodEnum);
   } catch (error) {
     throwSmallToast("A problem occured during clustering", "error");
     hideSpinner(btn);
