@@ -94,7 +94,7 @@ def write_signature(
 
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
-    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures(
+    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures_from_json(
         signature, ksize=cnf.kmer_size
     )
     upd_signatures = []
@@ -109,7 +109,7 @@ def write_signature(
     LOG.info("Writing genome signatures to file")
     try:
         with open(signature_file, "w", encoding="utf-8") as out:
-            sourmash.signature.save_signatures(upd_signatures, out)
+            sourmash.signature.save_signatures_to_json(upd_signatures, out)
     except PermissionError as error:
         msg = f"Dont have permission to write file to disk, {signature_file}"
         LOG.error(msg)
@@ -125,7 +125,7 @@ def remove_signature(sample_id: str, cnf: Settings) -> bool:
     signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
 
     # read signature
-    next(sourmash.signature.load_signatures(signature_file, ksize=cnf.kmer_size))
+    next(sourmash.signature.load_signatures_from_json(signature_file, ksize=cnf.kmer_size))
 
     # remove file
     pathlib.Path(signature_file).unlink()
@@ -150,7 +150,7 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
     """Add genome signature file to sourmash index"""
 
     genome_index = get_sbt_index(cnf=cnf, check=False)
-    sbt_lock_path = f"{genome_index.name}.lock"
+    sbt_lock_path = f"/tmp/{genome_index.name}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
     LOG.debug("Using lock: %s", sbt_lock_path)
 
