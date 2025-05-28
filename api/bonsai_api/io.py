@@ -308,8 +308,8 @@ def _fmt_mtuberculosis(sample: SampleInDatabase):
 
 def sample_to_kmlims(sample: SampleInDatabase) -> pd.DataFrame:
     """Convert sample information to KMLIMS format."""
-    match sample.pipeline.analysis_profile:
-        case "mycobacterium_tuberculosis":
+    match sample.pipeline.assay:
+        case "mtuberculosis":
             pred_res = _fmt_mtuberculosis(sample)
         case _:
             raise NotImplementedError(

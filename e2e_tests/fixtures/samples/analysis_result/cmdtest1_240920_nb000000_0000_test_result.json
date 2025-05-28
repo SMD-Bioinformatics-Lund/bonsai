@@ -12,12 +12,14 @@
     "date": "2024-09-20T00:00:00"
   },
   "pipeline": {
-    "assay": "spyogenes",
-    "release_life_cycle": "test",
     "pipeline": "main.nf",
     "version": "0.9.0",
     "commit": "null",
-    "analysis_profile": ["streptococcus"],
+    "analysis_profile": [
+      "streptococcus"
+    ],
+    "assay": "spyogenes",
+    "release_life_cycle": "test",
     "configuration_files": [
       "/fs1/pipelines/jasen/configs/nextflow.dev.config"
     ],
@@ -52,6 +54,7 @@
         "largest_contig": 405360,
         "n_contigs": 18,
         "n50": 257760,
+        "ng50": null,
         "assembly_gc": 38.19,
         "reference_gc": null,
         "duplication_ratio": null
@@ -658,20 +661,7 @@
             "contig_id": "Contig_9_99.1897",
             "query_start_pos": 131600,
             "query_end_pos": 133516,
-            "strand": "-",
-            "phenotypes": [
-              {
-                "name": "tetracycline",
-                "group": "tetracycline",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "-"
           }
         ],
         "variants": []
