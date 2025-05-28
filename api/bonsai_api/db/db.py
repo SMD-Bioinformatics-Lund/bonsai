@@ -2,7 +2,7 @@
 
 import logging
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
 
 from ..config import settings
 
@@ -15,7 +15,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
     def __init__(self) -> None:
         """Constructor function."""
         self.client: AsyncIOMotorClient | None = None
-        self.db = None
+        self.db: AsyncIOMotorDatabase | None = None
         self.sample_group_collection: AsyncIOMotorCollection | None = None
         self.sample_collection: AsyncIOMotorCollection | None = None
         self.location_collection: AsyncIOMotorCollection | None = None
@@ -26,11 +26,11 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         if self.client is None:
             raise ValueError("Database connection not initialized.")
         # define collection shorthands
-        self.db = self.client[settings.database_name]
-        self.sample_group_collection: AsyncIOMotorCollection = self.db.sample_group
-        self.sample_collection: AsyncIOMotorCollection = self.db.sample
-        self.location_collection: AsyncIOMotorCollection = self.db.location
-        self.user_collection: AsyncIOMotorCollection = self.db.user
+        self.db = self.client.get_database(settings.database_name)
+        self.sample_group_collection = self.db.get_collection("sample_group")
+        self.sample_collection = self.db.get_collection("sample")
+        self.location_collection = self.db.get_collection("location")
+        self.user_collection = self.db.get_collection("user")
 
     def close(self) -> None:
         """Close database connection."""
