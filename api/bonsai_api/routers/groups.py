@@ -136,7 +136,7 @@ async def update_group_info(
 )
 async def add_samples_to_group(
     sample_id: str,
-    group_id: str = Path(..., tilte="The id of the group to get"),
+    group_id: str = Path(..., title="The id of the group to get"),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
