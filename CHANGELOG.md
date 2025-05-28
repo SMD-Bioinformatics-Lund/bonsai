@@ -7,6 +7,8 @@
 
 ### Changed
 
+- Uppdated prp to version 1.2.1
+
 ### Fixed
 
 - Fixed number of missing alleles displayed from cgmlst
