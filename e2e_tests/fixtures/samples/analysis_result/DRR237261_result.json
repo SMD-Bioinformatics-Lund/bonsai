@@ -12,12 +12,14 @@
     "date": null
   },
   "pipeline": {
-    "assay": "saureus",
-    "release_life_cycle": "test",
     "pipeline": "main.nf",
     "version": "0.9.0",
     "commit": "null",
-    "analysis_profile": ["staphylococcus_aureus"],
+    "analysis_profile": [
+      "staphylococcus_aureus"
+    ],
+    "assay": "saureus",
+    "release_life_cycle": "test",
     "configuration_files": [
       "/fs1/pipelines/jasen_dev/configs/nextflow.dev.config"
     ],
@@ -2460,20 +2462,7 @@
             "contig_id": "Contig_15_64.6417",
             "query_start_pos": 24142,
             "query_end_pos": 24558,
-            "strand": "-",
-            "phenotypes": [
-              {
-                "name": "fosfomycin",
-                "group": "fosfomycin",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "-"
           },
           {
             "gene_symbol": "gyrA_S84L",
@@ -2490,20 +2479,7 @@
             "contig_id": "Contig_36_79.9135",
             "query_start_pos": 15749,
             "query_end_pos": 18409,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "quinolone",
-                "group": "quinolone",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           },
           {
             "gene_symbol": "mecA",
@@ -2520,20 +2496,7 @@
             "contig_id": "Contig_36_79.9135",
             "query_start_pos": 47847,
             "query_end_pos": 49850,
-            "strand": "-",
-            "phenotypes": [
-              {
-                "name": "methicillin",
-                "group": "beta-lactam",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "-"
           },
           {
             "gene_symbol": "mecR1",
@@ -2550,20 +2513,7 @@
             "contig_id": "Contig_36_79.9135",
             "query_start_pos": 49950,
             "query_end_pos": 50924,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "methicillin",
-                "group": "beta-lactam",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           },
           {
             "gene_symbol": "mepA",
@@ -2580,20 +2530,7 @@
             "contig_id": "Contig_25_70.165",
             "query_start_pos": 69257,
             "query_end_pos": 70609,
-            "strand": "-",
-            "phenotypes": [
-              {
-                "name": "tigecycline",
-                "group": "tetracycline",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "-"
           },
           {
             "gene_symbol": "murA_G257D",
@@ -2610,20 +2547,7 @@
             "contig_id": "Contig_42_64.3201",
             "query_start_pos": 34697,
             "query_end_pos": 35959,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "fosfomycin",
-                "group": "fosfomycin",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           },
           {
             "gene_symbol": "parC_S80Y",
@@ -2640,20 +2564,7 @@
             "contig_id": "Contig_40_56.3226",
             "query_start_pos": 12025,
             "query_end_pos": 14424,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "quinolone",
-                "group": "quinolone",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           },
           {
             "gene_symbol": "tet(38)",
@@ -2670,20 +2581,7 @@
             "contig_id": "Contig_2_76.421",
             "query_start_pos": 46173,
             "query_end_pos": 47522,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "tetracycline",
-                "group": "tetracycline",
-                "type": "AMR",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           }
         ],
         "variants": []
@@ -2716,31 +2614,7 @@
             "contig_id": "Contig_32_60.2179",
             "query_start_pos": 16634,
             "query_end_pos": 18073,
-            "strand": "+",
-            "phenotypes": [
-              {
-                "name": "chloramphenicol",
-                "group": "macrolide/phenicol",
-                "type": "STRESS",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              },
-              {
-                "name": "erythromycin",
-                "group": "macrolide/phenicol",
-                "type": "STRESS",
-                "resistance_level": null,
-                "annotation_type": "tool",
-                "annotation_author": null,
-                "reference": [],
-                "note": null,
-                "source": null
-              }
-            ]
+            "strand": "+"
           }
         ],
         "variants": []

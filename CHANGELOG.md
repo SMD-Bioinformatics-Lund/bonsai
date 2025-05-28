@@ -2,9 +2,16 @@
 
 ### Added
 
+- Added support to add metadata to samples through the config file.
+- Added sample `assay` and `release_life_cycle` to table and sample overview
+
 ### Changed
 
+- Uppdated prp to version 1.2.1
+
 ### Fixed
+
+- Fixed number of missing alleles displayed from cgmlst
 
 ## [v.1.1.0]
 
