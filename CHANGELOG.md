@@ -2,9 +2,14 @@
 
 ### Added
 
+- Added support to add metadata to samples through the config file.
+- Added sample `assay` and `release_life_cycle` to table and sample overview
+
 ### Changed
 
 ### Fixed
+
+- Fixed number of missing alleles displayed from cgmlst
 
 ## [v.1.1.0]
 
