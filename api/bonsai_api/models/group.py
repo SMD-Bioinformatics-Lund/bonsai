@@ -77,6 +77,18 @@ VALID_PREDICTION_COLS: list[OverviewTableColumn] = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="assay",
+        label="Assay",
+        path="$.assay",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="release_life_cycle",
+        label="Release life cycle",
+        path="$.release_life_cycle",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="sequencing_run",
         label="Sequencing run",
         path="$.sequencing_run",
