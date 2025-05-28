@@ -2,7 +2,8 @@
 
 import smtplib
 from email.message import EmailMessage
-from .config import SmtpConfig, EmailConfig
+
+from .config import EmailConfig, SmtpConfig
 
 
 def get_smtp_connection(cnf: SmtpConfig) -> smtplib.SMTP:
