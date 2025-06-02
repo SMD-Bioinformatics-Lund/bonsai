@@ -1,6 +1,7 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
 import { ApiService, pollJob } from "./api";
+import { emitEvent } from "./event-bus";
 import { throwSmallToast } from "./notification";
 import { TableController } from "./table";
 import { ApiJobStatusSimilarity } from "./types";
@@ -62,9 +63,14 @@ export function removeSamplesFromGroup(groupId: string, table: TableController, 
 }
 
 export function deleteSelectedSamples(table: TableController, api: ApiService): void {
-  api.deleteSamples(table.selectedRows)
+  const selectedSamples = table.selectedRows;
+  api.deleteSamples(selectedSamples)
     .then(() => {
-      throwSmallToast(`Deleted ${table.selectedRows.length} samples`, "success");
+      throwSmallToast(`Deleted ${selectedSamples.length} samples`, "success");
+      table.removeSamples(selectedSamples);
+      table.selectedRows = []; // clear selection after deletion
+      // Notify other components or update UI as needed
+      emitEvent('samples:deleted', { sampleIds: selectedSamples });
     }).catch(error => {
       console.error("Error removing samples from database", error);
       throwSmallToast("Error when removing samples", "error");

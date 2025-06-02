@@ -6,6 +6,8 @@ import { ApiService, AuthService, HttpClient } from "./api";
 import { initializeSamplesTable } from "./table";
 import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
 import { addSelectedSamplesToGroup, deleteSelectedSamples, getSimilarSamplesAndCheckRows } from "./sample";
+import { GroupsComponent } from "./components/groups";
+import "./components/groups";
 
 export function initialize(
   bonsaiApiUrl: string,
@@ -63,6 +65,9 @@ declare global {
     jQuery: typeof jQuery;
     $: typeof jQuery;
     bootstrap: typeof bootstrap;
+  } 
+  interface HTMLElementTagNameMap {
+    "groups-component": GroupsComponent;
   }
 }
 

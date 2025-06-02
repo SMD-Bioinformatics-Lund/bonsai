@@ -28,6 +28,11 @@ export class TableController {
       this.table.rows(rowIds.map(id => `#${id}`)).select(); // re-select rows based on state
     }
   }
+
+  /* Remove samples from the table */
+  removeSamples(rowIds: string[]): void {
+    this.table.rows(rowIds.map(id => `#${id}`)).remove().draw();
+  }
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {
