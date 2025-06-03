@@ -1,30 +1,30 @@
 import * as bootstrap from "bootstrap";
 import jQuery from "jquery";
 
-import { throwSmallToast } from "./notification";
+import { initToast, throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
-import { initializeSamplesTable } from "./table";
+import { initSamplesTable } from "./table";
 import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
-import { addSelectedSamplesToGroup, deleteSelectedSamples, getSimilarSamplesAndCheckRows } from "./sample";
+import {
+  addSelectedSamplesToGroup,
+  deleteSelectedSamples,
+  getSimilarSamplesAndCheckRows,
+} from "./sample";
 import { GroupsComponent } from "./components/groups";
 import "./components/groups";
 
-export function initialize(
-  bonsaiApiUrl: string,
-  accessToken: string,
-  refreshToken: string,
-): {
-  api: ApiService;
-  basket: SampleBasket;
-  clusterSamplesInBasket: (element: HTMLElement) => void;
-} {
-  // initialize API
-  const auth = new AuthService(bonsaiApiUrl);
-  auth.setTokens(accessToken, refreshToken);
-  const http = new HttpClient(bonsaiApiUrl, auth);
-  const api = new ApiService(http);
+const sampleTableCongig = {
+  select: true,
+  layout: {
+    top1Start: {
+      buttons: ["selectAll", "selectNone", "excel"],
+    },
+    top2Start: "searchBuilder",
+  },
+};
 
-  // init sample basket and basket counter
+/* Initialize sample basket */
+function initBasket(api: ApiService): SampleBasket {
   const basket = new SampleBasket(api.getSamplesDetails);
   const basketCounter = new SamplesInBasketCounter();
   basketCounter.counter = basket.getSampleIds.length;
@@ -33,39 +33,93 @@ export function initialize(
     basketCounter.counter = sampleIds.length;
   });
 
-  const clusterSamplesInBasket = (element) =>
-    clusterSamples(element, basket.getSampleIds(), api);
-
-  // init toasts and tooltips
-  const toastElList = [].slice.call(document.querySelectorAll(".toast"));
-  const toastList = toastElList.map((toastEl) => {
-    return new bootstrap.Toast(toastEl);
+  // assign functions to DOM objects
+  const clusterBtns = document.querySelectorAll(
+    "#basket-cluster-btn a",
+  ) as NodeListOf<HTMLLinkElement>;
+  clusterBtns.forEach((element) => {
+    element.onclick = () => clusterSamples(element, basket.getSampleIds(), api);
   });
-  const tooltipTriggerList = document.querySelectorAll(
-    '[data-bs-toggle="tooltip"]',
-  );
-  const tooltipList = [...tooltipTriggerList].map(
-    (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
-  );
+  const clearBasketBtn = document.getElementById(
+    "clear-basket-btn",
+  ) as HTMLButtonElement;
+  if (clearBasketBtn) {
+    clearBasketBtn.onclick = () => {
+      basket.clear();
+      basket.render();
+    };
+  }
 
-  return {
-    api: api,
-    basket: basket,
-    clusterSamplesInBasket: clusterSamplesInBasket,
-  };
+  // setup listeners for rendering sample basket when opening it
+  const offcanvas = document.getElementById("basket-offcanvas");
+  if (offcanvas) {
+    offcanvas.addEventListener("show.bs.offcanvas", () => {
+      basket.render(); // Assuming you have an instance named sampleBasket
+    });
+  }
+  return basket;
+}
+
+function initApi(
+  bonsaiApiUrl: string,
+  accessToken: string,
+  refreshToken: string,
+) {
+  const auth = new AuthService(bonsaiApiUrl);
+  auth.setTokens(accessToken, refreshToken);
+  const http = new HttpClient(bonsaiApiUrl, auth);
+  const api = new ApiService(http);
+  return api;
+}
+
+/* Initialize interactive elements for the group view. */
+export function initGroupView(
+  bonsaiApiUrl: string,
+  accessToken: string,
+  refreshToken: string,
+) {
+  // setup base functionality
+  const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
+  const basket = initBasket(api);
+  const table = initSamplesTable("sample-table", sampleTableCongig);
+  initToast();
+
+  // attach function to DOM element
+  const addToBasketBtn = document.getElementById(
+    "add-to-basket-btn",
+  ) as HTMLButtonElement;
+  if (addToBasketBtn)
+    addToBasketBtn.onclick = () => basket.addSamples(table.selectedRows);
+
+  const deleteSamplesBtn = document.getElementById(
+    "remove-samples-btn",
+  ) as HTMLButtonElement;
+  if (deleteSamplesBtn)
+    deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
+
+  const selectSimilarSamplesBtn = document.getElementById(
+    "select-similar-samples-btn",
+  ) as HTMLButtonElement;
+  if (selectSimilarSamplesBtn)
+    selectSimilarSamplesBtn.onclick = () =>
+      getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api);
+
+  const addToGroupBtns = document.querySelectorAll(
+    "#add-to-group-btn a",
+  ) as NodeListOf<HTMLLinkElement>;
+  addToGroupBtns.forEach((element) => {
+    element.onclick = () =>
+      addSelectedSamplesToGroup(element, table.selectedRows, api);
+  });
 }
 
 declare global {
   interface Window {
     throwSmallToast: (message: string) => void;
-    initSampleTbl: typeof initializeSamplesTable;
-    getSimilarSamplesAndCheckRows: typeof getSimilarSamplesAndCheckRows;
-    addSelectedSamplesToGroup: typeof addSelectedSamplesToGroup;
-    deleteSelectedSamples: typeof deleteSelectedSamples;
     jQuery: typeof jQuery;
     $: typeof jQuery;
     bootstrap: typeof bootstrap;
-  } 
+  }
   interface HTMLElementTagNameMap {
     "groups-component": GroupsComponent;
   }
@@ -74,8 +128,4 @@ declare global {
 window.throwSmallToast = throwSmallToast;
 window.jQuery = jQuery;
 window.$ = jQuery;
-window.initSampleTbl = initializeSamplesTable;
 window.bootstrap = bootstrap;
-window.addSelectedSamplesToGroup = addSelectedSamplesToGroup;
-window.deleteSelectedSamples = deleteSelectedSamples;
-window.getSimilarSamplesAndCheckRows = getSimilarSamplesAndCheckRows;

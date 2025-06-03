@@ -2,8 +2,7 @@
 {% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
-<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
-        onclick="addSamplesToBasket()" disabled>
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
     <i class="bi bi-plus-lg"></i>
     <span>Add to basket</span>
 </button>
@@ -30,8 +29,7 @@
         <input type="text" name="similar-samples-threshold" 
                 id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
                 placeholder="Min similarity" value="0.95" required>
-        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2"
-                onclick="searchSimilarSamplesAndCheckRows(this)">
+        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2" >
             <i class="bi bi-search"></i>
             Search
         </button>
@@ -114,8 +112,7 @@
 {% endmacro %}
 
 {% macro delete_samples_btn() %}
-    <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" 
-            onclick="deleteSamples()" type="submit" disabled>
+    <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" disabled>
         <i class="bi bi-trash"></i>
         <span>Delete samples</span>
     </button>

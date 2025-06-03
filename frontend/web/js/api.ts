@@ -139,7 +139,7 @@ export class ApiService {
       throw new Error("No sample IDs provided for deletion");
     }
     try {
-      return await this.http.request<void>('/samples', {
+      return await this.http.request<void>("/samples", {
         method: "DELETE",
         body: JSON.stringify(sampleIds),
       });
@@ -179,10 +179,17 @@ export class ApiService {
     return this.http.request<GroupInfo>(`/groups/${groupId}`);
   };
 
+  getGroups = async () => {
+    return this.http.request<GroupInfo[]>(`/groups/`);
+  };
+
   addSampleToGroup = async (groupId: string, sampleId: string) => {
-    return this.http.request<void>(`/groups/${groupId}/samples?${objectToQueryParams({sample_id: sampleId})}`, {
-      method: "PUT",
-    });
+    return this.http.request<void>(
+      `/groups/${groupId}/samples?${objectToQueryParams({ sample_id: sampleId })}`,
+      {
+        method: "PUT",
+      },
+    );
   };
 
   private handleError = (error: unknown) => {

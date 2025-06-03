@@ -69,7 +69,6 @@
 
 {% macro sample_basket_offcanvas(current_user) %}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
-    {% set samples = current_user.basket %} 
     <div class="offcanvas-body">
         <div id="basket-content" class="overflow-auto" style="max-height: 60vh;"></div>
         <hr>
@@ -106,25 +105,21 @@
                     <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-cgmlst-btn"
                                data-bi-typing-method="cgmlst">cgMLST</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-minhash-btn"
                                data-bi-typing-method="minhash">MinHash</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-snv-btn"
                                data-bi-typing-method="ska">SNV</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-mlst-btn"
                                data-bi-typing-method="mlst">MLST</a>
                         </li>

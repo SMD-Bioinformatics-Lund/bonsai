@@ -47,9 +47,9 @@
                         <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-folder-plus"></i>
                         </button>
-                        <ul class="dropdown-menu">
+                        <ul id="add-to-group-container" class="dropdown-menu">
                             {% for group in groups %}
-                                <li><a class="dropdown-item" data-bi-group-id="{{ group.group_id }}" onclick="addSamplesToGroup(this)">{{ group.display_name }}</a></li>
+                                <li><a class="dropdown-item" data-bi-group-id="{{ group.group_id }}">{{ group.display_name }}</a></li>
                             {% endfor %}
                         </ul>
                     </div>
@@ -70,39 +70,8 @@
     // template code for adding to basket
     // template code for searching similar samples
 
-    const {api, basket, clusterSamplesInBasket} = bonsai.initialize(apiUrl, accessToken, "")
-    const table = initSampleTbl('sample-table', {
-        select: true,
-        layout: {
-            top1Start: {
-                buttons: ['selectAll', 'selectNone', 'excel'],
-            },
-            top2Start: 'searchBuilder',
-        },
-    });
     document.addEventListener('DOMContentLoaded', () => {
-        const clearBtn = document.getElementById('clear-basket-btn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-            basket.clear();
-            basket.render();
-            });
-        }
-    });
-
-    // create helper functions for dynamic actions
-    const addSamplesToBasket = () => basket.addSamples(table.selectedRows)
-    const addSamplesToGroup = btn => addSelectedSamplesToGroup(btn, table, api);
-    const deleteSamples = () => deleteSelectedSamples(table, api);
-    const searchSimilarSamplesAndCheckRows = btn => getSimilarSamplesAndCheckRows(btn, table, api);
-
-    document.addEventListener('DOMContentLoaded', () => {
-    const offcanvas = document.getElementById('basket-offcanvas');
-    if (offcanvas) {
-        offcanvas.addEventListener('show.bs.offcanvas', () => {
-        basket.render(); // Assuming you have an instance named sampleBasket
-        });
-    }
+        bonsai.initGroupView(apiUrl, accessToken, "")
     });
 </script>
 {% endblock content %}

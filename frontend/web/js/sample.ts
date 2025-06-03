@@ -40,7 +40,11 @@ export async function getSimilarSamplesAndCheckRows(
   hideSpinner(container);
 }
 
-export function addSelectedSamplesToGroup(element: HTMLElement, table: TableController, api: ApiService): void {
+export function addSelectedSamplesToGroup(
+  element: HTMLElement,
+  table: TableController,
+  api: ApiService,
+): void {
   const groupId = element.getAttribute("data-bi-group-id");
   if (groupId === null) return;
 
@@ -49,29 +53,39 @@ export function addSelectedSamplesToGroup(element: HTMLElement, table: TableCont
     return;
   }
 
-  table.selectedRows.forEach(sampleId => {
-    api.addSampleToGroup(groupId, sampleId)
-      .catch(error => {
-        console.error(`Error adding ${sampleId} to group:`, error);
-        throwSmallToast(`Error adding ${sampleId} to group`, "error");
-      });
+  table.selectedRows.forEach((sampleId) => {
+    api.addSampleToGroup(groupId, sampleId).catch((error) => {
+      console.error(`Error adding ${sampleId} to group:`, error);
+      throwSmallToast(`Error adding ${sampleId} to group`, "error");
+    });
   });
-  throwSmallToast(`Added ${table.selectedRows.length} samples to group`, "success");
-};
-
-export function removeSamplesFromGroup(groupId: string, table: TableController, api: ApiService): void {
+  throwSmallToast(
+    `Added ${table.selectedRows.length} samples to group`,
+    "success",
+  );
 }
 
-export function deleteSelectedSamples(table: TableController, api: ApiService): void {
+export function removeSamplesFromGroup(
+  groupId: string,
+  table: TableController,
+  api: ApiService,
+): void {}
+
+export function deleteSelectedSamples(
+  table: TableController,
+  api: ApiService,
+): void {
   const selectedSamples = table.selectedRows;
-  api.deleteSamples(selectedSamples)
+  api
+    .deleteSamples(selectedSamples)
     .then(() => {
       throwSmallToast(`Deleted ${selectedSamples.length} samples`, "success");
       table.removeSamples(selectedSamples);
       table.selectedRows = []; // clear selection after deletion
       // Notify other components or update UI as needed
-      emitEvent('samples:deleted', { sampleIds: selectedSamples });
-    }).catch(error => {
+      emitEvent("samples:deleted", { sampleIds: selectedSamples });
+    })
+    .catch((error) => {
       console.error("Error removing samples from database", error);
       throwSmallToast("Error when removing samples", "error");
     });

@@ -45,3 +45,17 @@ export const throwSmallToast = (message: string, type: string = "info") => {
     toast.show();
   }
 };
+
+/* Setup bootstrap toast */
+export function initToast() {
+  const toastElList = [].slice.call(document.querySelectorAll(".toast"));
+  toastElList.map((toastEl) => {
+    return new bootstrap.Toast(toastEl);
+  });
+  const tooltipTriggerList = document.querySelectorAll(
+    '[data-bs-toggle="tooltip"]',
+  );
+  [...tooltipTriggerList].map(
+    (tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl),
+  );
+}
