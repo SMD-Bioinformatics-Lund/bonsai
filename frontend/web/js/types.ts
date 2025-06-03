@@ -92,5 +92,16 @@ export interface ApiSampleDetailsResponse {
   records_filtered: number;
 }
 
+export interface ApiUserInfo {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  disabled: boolean;
+  roles: string[];
+  authentication_method: string;
+}
+
 export type CallbackFunc = (ids: string[]) => void;
 export type TblStateCallbackFunc = (selectedRows: string[]) => void;

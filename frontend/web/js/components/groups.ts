@@ -1,45 +1,41 @@
-import { LitElement, html } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
 import { onEvent } from "../event-bus";
 import { GroupInfo } from "../types";
 
-@customElement("group-component")
-export class GroupComponent extends LitElement {
-  @property({ type: Object })
-  accessor groupInfo: GroupInfo;
 
-  protected render() {
-    return html`
-      <div class="card group-card position-relative">
-        <a
-          class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle"
-          role="button"
-          href="/"
-        >
-          <i class="bi bi-pencil"></i>
-        </a>
-      </div>
-    `;
-  }
+function renderGroup(groupInfo: GroupInfo, isAdmin: boolean): string {
+  return String.raw`
+  <div class="card group-card position-relative">
+    <a
+      class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle"
+      role="button"
+      href="/"
+    >
+      <i class="bi bi-pencil"></i>
+    </a>
+  </div>
+  `
 }
 
-/* Render cards for each group. */
-@customElement("groups-component")
-export class GroupsComponent extends LitElement {
-  @state()
-  private accessor groupInfo: any[] = [];
+const template = document.createElement("template");
+template.innerHTML = String.raw``
 
-  connectedCallback(): void {
-    super.connectedCallback();
-    onEvent("samples:deleted", () => {
-      this.groupInfo = []; //await this.getGroupsInfo();
-    });
+/* Render cards for each group. */
+export class GroupsController {
+  private container : HTMLElement;
+
+  constrictor(parentElement: HTMLElement, getGroupInfo: () => Promise<GroupInfo[]>, isAdmin: boolean) {
+    parentElement.appendChild(template.content)
+    this.container = parentElement.querySelector(".container") as HTMLElement;
   }
 
   render() {
-    return html` <div class="container">
-      <h1>Groups</h1>
-      <p>This is a placeholder for the groups component.</p>
-    </div>`;
+    // create container element
+    const groups: GroupInfo[] = await getGroupInfo();
+    groups.forEach(group => {
+      return String.raw` <div class="container">
+        <h1>${group.display_name}</h1>
+        <p>This is a placeholder for the groups component.</p>
+      </div>`;
+    });
   }
 }

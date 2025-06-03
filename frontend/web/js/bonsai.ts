@@ -12,6 +12,7 @@ import {
 } from "./sample";
 import { GroupsComponent } from "./components/groups";
 import "./components/groups";
+import { User } from "./user";
 
 const sampleTableCongig = {
   select: true,
@@ -73,7 +74,7 @@ function initApi(
 }
 
 /* Initialize interactive elements for the group view. */
-export function initGroupView(
+export async function initGroupView(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
@@ -82,6 +83,9 @@ export function initGroupView(
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
   const basket = initBasket(api);
   const table = initSamplesTable("sample-table", sampleTableCongig);
+  // get logged in user
+  const userInfo = await api.getUserInfo();
+  const user = new User(userInfo);
   initToast();
 
   // attach function to DOM element

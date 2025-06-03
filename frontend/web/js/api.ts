@@ -6,6 +6,7 @@ import {
   ApiJobSubmission,
   ApiFindSimilarInput,
   GroupInfo,
+  ApiUserInfo,
 } from "./types";
 import { JobStatusEnum, TypingMethod } from "./constants";
 
@@ -128,6 +129,11 @@ function objectToQueryParams(query: Record<string, any>): string {
 
 export class ApiService {
   constructor(private http: HttpClient) {}
+
+  getUserInfo = async () => {
+    const url = `/user/me`;
+    return this.http.request<ApiUserInfo>(url);
+  };
 
   getSamplesDetails = async (query: ApiGetSamplesDetailsInput) => {
     const url = `/samples/?${objectToQueryParams(query)}`;
