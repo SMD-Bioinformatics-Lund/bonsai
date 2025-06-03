@@ -132,11 +132,11 @@ async def update_group_info(
 
 
 @router.put(
-    "/groups/{group_id}/sample", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
 )
-async def add_sample_to_group(
+async def add_samples_to_group(
     sample_id: str,
-    group_id: str = Path(..., tilte="The id of the group to get"),
+    group_id: str = Path(..., title="The id of the group to get"),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
