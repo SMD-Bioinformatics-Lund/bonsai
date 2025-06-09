@@ -9,8 +9,9 @@ import {
   addSelectedSamplesToGroup,
   deleteSelectedSamples,
   getSimilarSamplesAndCheckRows,
+  removeSamplesFromGroup,
 } from "./sample";
-import { GroupsComponent } from "./components/groups";
+import { GroupList } from "./components/groups";
 import "./components/groups";
 import { User } from "./user";
 
@@ -88,6 +89,16 @@ export async function initGroupView(
   const user = new User(userInfo);
   initToast();
 
+  // render groups component
+  const groupList = document.createElement("group-list") as GroupList;
+  groupList.getGroupInfo = api.getGroups;
+  groupList.isAdmin = user.isAdmin;
+
+  const groupContainer = document.getElementById(
+    "group-container",
+  ) as HTMLElement;
+  if (groupContainer) groupContainer.appendChild(groupList);
+
   // attach function to DOM element
   const addToBasketBtn = document.getElementById(
     "add-to-basket-btn",
@@ -109,12 +120,18 @@ export async function initGroupView(
       getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api);
 
   const addToGroupBtns = document.querySelectorAll(
-    "#add-to-group-btn a",
+    "#add-to-group-container a",
   ) as NodeListOf<HTMLLinkElement>;
   addToGroupBtns.forEach((element) => {
     element.onclick = () =>
       addSelectedSamplesToGroup(element, table.selectedRows, api);
   });
+
+  const removeFromGroupBtn = document.getElementById('remove-from-group-btn') as HTMLButtonElement;
+  if (removeFromGroupBtn) removeFromGroupBtn.onclick = () => {
+      const groupId: string = removeFromGroupBtn.getAttribute("data-bi-group-id");
+      removeSamplesFromGroup(groupId, table, api);
+  };
 }
 
 declare global {
@@ -125,7 +142,7 @@ declare global {
     bootstrap: typeof bootstrap;
   }
   interface HTMLElementTagNameMap {
-    "groups-component": GroupsComponent;
+    "groups-list": GroupList;
   }
 }
 

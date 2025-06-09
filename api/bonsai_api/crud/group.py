@@ -136,15 +136,31 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def append_sample_to_group(db: Database, sample_id: str, group_id: str) -> None:
+async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
     """Create a new collection document."""
-    sample_obj = await get_sample(db, sample_id)
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
             "$set": {"modified_at": get_timestamp()},
             "$addToSet": {
-                "included_samples": sample_obj.sample_id,
+                "included_samples": { "$each": sample_ids },
+            },
+        },
+    )
+    if not update_obj.matched_count == 1:
+        raise EntryNotFound(group_id)
+    if not update_obj.modified_count == 1:
+        raise UpdateDocumentError(group_id)
+
+
+async def remove_samples_from_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
+    """Create a new collection document."""
+    update_obj = await db.sample_group_collection.update_one(
+        {"group_id": group_id},
+        {
+            "$set": {"modified_at": get_timestamp()},
+            "$pull": {
+                "included_samples": {"$in" :sample_ids},
             },
         },
     )

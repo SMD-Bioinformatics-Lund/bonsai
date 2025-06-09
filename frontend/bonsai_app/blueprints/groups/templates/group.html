@@ -33,7 +33,7 @@
                     {{ delete_samples_btn() }}
 
                     {# remove samples from group #}
-                    <button class="btn btn-sm btn-secondary ms-1" onclick="removeSelectedSamplesFromGroup('{{ title }}')">
+                    <button id="remove-from-group-btn" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ title }}">
                         <i class="bi bi-folder-minus"></i>
                     </button>
                 {% endif %}
@@ -59,39 +59,8 @@
     // template code for adding to basket
     // template code for searching similar samples
 
-    const {api, basket, clusterSamplesInBasket} = bonsai.initialize(apiUrl, accessToken, "")
-    const table = initSampleTbl('sample-table', {
-        select: true,
-        layout: {
-            top1Start: {
-                buttons: ['selectAll', 'selectNone', 'excel'],
-            },
-            top2Start: 'searchBuilder',
-        },
-    });
     document.addEventListener('DOMContentLoaded', () => {
-        const clearBtn = document.getElementById('clear-basket-btn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-            basket.clear();
-            basket.render();
-            });
-        }
-    });
-
-    // create helper functions for dynamic actions
-    const addSamplesToBasket = () => basket.addSamples(table.selectedRows)
-    const addSamplesToGroup = btn => addSelectedSamplesToGroup(btn, table, api);
-    const deleteSamples = () => deleteSelectedSamples(table, api);
-    const searchSimilarSamplesAndCheckRows = btn => getSimilarSamplesAndCheckRows(btn, table, api);
-
-    document.addEventListener('DOMContentLoaded', () => {
-    const offcanvas = document.getElementById('basket-offcanvas');
-    if (offcanvas) {
-        offcanvas.addEventListener('show.bs.offcanvas', () => {
-        basket.render(); // Assuming you have an instance named sampleBasket
-        });
-    }
+        bonsai.initGroupView(apiUrl, accessToken, "")
     });
 </script>
 {% endblock content %}

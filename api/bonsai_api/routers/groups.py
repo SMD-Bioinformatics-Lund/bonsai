@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 from .shared import RouterTags
 
 from ..crud.errors import EntryNotFound, UpdateDocumentError
-from ..crud.group import append_sample_to_group
+import bonsai_api.crud.group as crud_group
 from ..crud.group import create_group as create_group_record
 from ..crud.group import delete_group, get_group, get_groups, update_group
 from ..crud.sample import get_samples_summary
@@ -135,8 +135,8 @@ async def update_group_info(
     "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
 )
 async def add_samples_to_group(
-    sample_id: str,
     group_id: str = Path(..., title="The id of the group to get"),
+    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
@@ -145,7 +145,34 @@ async def add_samples_to_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        await append_sample_to_group(db, sample_id, group_id)
+        await crud_group.add_samples_to_group(db, group_id, sample_ids)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=sample_id,
+        ) from error
+    except UpdateDocumentError as error:
+        raise HTTPException(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            detail=sample_id,
+        ) from error
+
+
+@router.delete(
+    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+)
+async def remove_sample_from_group(
+    group_id: str = Path(..., title="The id of the group to get"),
+    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
+    db: Database = Depends(get_db),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Add one or more samples to a group"""
+    # cast input information as group db object
+    try:
+        await crud_group.remove_samples_from_group(db, group_id, sample_ids)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

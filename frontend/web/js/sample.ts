@@ -42,34 +42,56 @@ export async function getSimilarSamplesAndCheckRows(
 
 export function addSelectedSamplesToGroup(
   element: HTMLElement,
-  table: TableController,
+  selectedSamples: string[],
   api: ApiService,
 ): void {
   const groupId = element.getAttribute("data-bi-group-id");
   if (groupId === null) return;
 
-  if (table.selectedRows.length === 0) {
+  if (selectedSamples.length === 0) {
     throwSmallToast("No samples selected", "warning");
     return;
   }
 
-  table.selectedRows.forEach((sampleId) => {
-    api.addSampleToGroup(groupId, sampleId).catch((error) => {
-      console.error(`Error adding ${sampleId} to group:`, error);
-      throwSmallToast(`Error adding ${sampleId} to group`, "error");
-    });
+  api.addSamplesToGroup(groupId, selectedSamples)
+  .then(() => {
+    emitEvent("samples:added-to-group", {}) // Notify other components or update UI as needed
+    throwSmallToast(
+      `Added ${selectedSamples.length} samples to group`,
+      "success",
+    );
+  })
+  .catch(error => {
+    console.error(`Error adding ${selectedSamples.length} samples to group:`, error);
+    throwSmallToast(`Error adding ${selectedSamples.length} samples to group`, "error");
   });
-  throwSmallToast(
-    `Added ${table.selectedRows.length} samples to group`,
-    "success",
-  );
 }
 
 export function removeSamplesFromGroup(
   groupId: string,
   table: TableController,
   api: ApiService,
-): void {}
+): void {
+  const selectedSamples = table.selectedRows;
+  if (selectedSamples.length === 0) {
+    throwSmallToast("No samples selected", "warning");
+    return;
+  }
+  api.removeSamplesFromGroup(groupId, selectedSamples)
+  .then(() => {
+    emitEvent("samples:removed-from-group", {}) // Notify other components or update UI as needed
+    table.removeSamples(selectedSamples);
+    table.selectedRows = []; // clear selection after deletion
+    throwSmallToast(
+      `Removed ${selectedSamples.length} samples from group`,
+      "success",
+    );
+  })
+  .catch(error => {
+    console.error(`Error removing ${selectedSamples.length} from group:`, error);
+    throwSmallToast(`Error removing ${selectedSamples.length} from group`, "error");
+  });
+}
 
 export function deleteSelectedSamples(
   table: TableController,

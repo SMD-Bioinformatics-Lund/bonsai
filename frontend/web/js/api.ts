@@ -131,7 +131,7 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   getUserInfo = async () => {
-    const url = `/user/me`;
+    const url = `/users/me`;
     return this.http.request<ApiUserInfo>(url);
   };
 
@@ -189,11 +189,20 @@ export class ApiService {
     return this.http.request<GroupInfo[]>(`/groups/`);
   };
 
-  addSampleToGroup = async (groupId: string, sampleId: string) => {
+  addSamplesToGroup = async (groupId: string, sampleIds: string[]) => {
     return this.http.request<void>(
-      `/groups/${groupId}/samples?${objectToQueryParams({ sample_id: sampleId })}`,
+      `/groups/${groupId}/samples?${objectToQueryParams({ s: sampleIds })}`,
       {
         method: "PUT",
+      },
+    );
+  };
+
+  removeSamplesFromGroup = async (groupId: string, sampleIds: string[]) => {
+    return this.http.request<void>(
+      `/groups/${groupId}/samples?${objectToQueryParams({ s: sampleIds })}`,
+      {
+        method: "DELETE",
       },
     );
   };
