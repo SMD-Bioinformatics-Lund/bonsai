@@ -12,7 +12,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
 from flask_login import current_user, login_required
@@ -60,9 +59,7 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     token = TokenObject(**current_user.get_id())
-    all_groups = get_groups(token)
     all_samples = get_samples(token, limit=0, skip=0)
-    basket = session
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
@@ -99,9 +96,7 @@ def groups() -> str:
     return render_template(
         "groups.html",
         title="Groups",
-        groups=all_groups,
         table_data=table_data,
-        basket=basket,
         token=current_user.get_id().get("token"),
         bad_qc_actions=bad_qc_actions,
     )

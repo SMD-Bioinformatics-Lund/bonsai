@@ -26,17 +26,8 @@
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
 
-                    {# Add selected samples to group #}
-                    <div class="dropdown ps-2 add-to-group-btn">
-                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-folder-plus"></i>
-                        </button>
-                        <ul id="add-to-group-container" class="dropdown-menu">
-                            {% for group in groups %}
-                                <li><a class="dropdown-item" data-bi-group-id="{{ group.group_id }}">{{ group.display_name }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                    {# Target for dropdown for adding samples to group #}
+                    <div id="add-samples-to-group-container"></div>
                 {% endif %}
 
                 {{ search_similar_btn() }}

@@ -18,7 +18,7 @@ export class TableController {
     return this.table;
   }
 
-  get selectedRows(): string[] {
+  getSelectedRows(): string[] {
     return this.table.rows(".selected").ids().toArray();
   }
 
@@ -66,7 +66,7 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(tableId: string, tableConfig: any): any {
+export function initSamplesTable(tableId: string, tableConfig: any): TableController {
   const controller = new TableController(tableId, tableConfig);
 
   // add callback functions

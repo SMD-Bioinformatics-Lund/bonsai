@@ -1,4 +1,5 @@
-import { onEvent } from "../event-bus";
+import { emitEvent, onEvent } from "../event-bus";
+import { throwSmallToast } from "../notification";
 import { GroupInfo } from "../types";
 import { LitElement, html, TemplateResult } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
@@ -99,5 +100,77 @@ export class GroupList extends LitElement {
           : ""}
       </div>
     `;
+  }
+}
+
+@customElement("group-selector")
+export class GroupSelector extends LitElement {
+  @property({ attribute: false }) accessor getGroupInfo!: () => Promise<
+    GroupInfo[]
+  >;
+  @property({ attribute: false }) accessor getSelectedSamples!: () => string[];
+  @property({ attribute: false }) accessor AddToGroupFunc!: (groupId: string, sampleIds: string[]) => Promise<void>;
+  @state() private accessor groups: GroupInfo[] = [];
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.loadGroups();
+  }
+
+  async loadGroups() {
+    if (this.getGroupInfo) {
+      try {
+        this.groups = await this.getGroupInfo();
+      } catch (err) {
+        console.error("Failed to load groups:", err);
+      }
+    }
+  }
+
+  protected createRenderRoot(): HTMLElement | DocumentFragment {
+    // Override the default shadow DOM to use light DOM
+    // This allows the component to be styled with bootstrap classes
+    return this;
+  }
+
+  private addSamplesToGroup(e: Event) {
+    const selection = e.target as HTMLUListElement
+    const groupId: string = selection.getAttribute('data-group-id')
+    if (groupId === null) return;
+
+    const selectedSamples = this.getSelectedSamples()
+    if (selectedSamples.length === 0) {
+      throwSmallToast("No samples selected", "warning");
+      return;
+    }
+
+    this.AddToGroupFunc(groupId, selectedSamples)
+    .then(() => {
+      emitEvent("samples:added-to-group", {}) // Notify other components or update UI as needed
+      throwSmallToast(
+        `Added ${selectedSamples.length} samples to group`,
+        "success",
+      );
+    })
+    .catch(error => {
+      console.error(`Error adding ${selectedSamples.length} samples to group:`, error);
+      throwSmallToast(`Error adding ${selectedSamples.length} samples to group`, "error");
+    });
+  }
+
+  protected render() {
+    return html`
+    <div class="dropdown ps-2 add-to-group-btn">
+      <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Add to group
+        <i class="bi bi-folder-plus"></i>
+      </button>
+      <ul class="dropdown-menu">
+        ${this.groups.map( group => {
+          return html`<li><a @click=${this.addSamplesToGroup} class="dropdown-item" data-group-id="${group.group_id}">${group.display_name}</a></li>`
+        })}
+      </ul>
+    </div>
+    `
   }
 }

@@ -11,7 +11,7 @@ import {
   getSimilarSamplesAndCheckRows,
   removeSamplesFromGroup,
 } from "./sample";
-import { GroupList } from "./components/groups";
+import { GroupList, GroupSelector } from "./components/groups";
 import "./components/groups";
 import { User } from "./user";
 
@@ -104,7 +104,7 @@ export async function initGroupView(
     "add-to-basket-btn",
   ) as HTMLButtonElement;
   if (addToBasketBtn)
-    addToBasketBtn.onclick = () => basket.addSamples(table.selectedRows);
+    addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
 
   const deleteSamplesBtn = document.getElementById(
     "remove-samples-btn",
@@ -124,8 +124,20 @@ export async function initGroupView(
   ) as NodeListOf<HTMLLinkElement>;
   addToGroupBtns.forEach((element) => {
     element.onclick = () =>
-      addSelectedSamplesToGroup(element, table.selectedRows, api);
+      addSelectedSamplesToGroup(element, table.getSelectedRows(), api);
   });
+
+  // setup add samples to group component
+  const groupSelectorContainer = document.getElementById(
+    "add-samples-to-group-container",
+  ) as HTMLElement;
+  if (groupSelectorContainer) {
+    const addToGroupSelector = document.createElement("group-selector") as GroupSelector;
+    addToGroupSelector.getGroupInfo = api.getGroups;
+    addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
+    addToGroupSelector.AddToGroupFunc = api.addSamplesToGroup.bind(api)
+    groupSelectorContainer.appendChild(addToGroupSelector);
+  }
 
   const removeFromGroupBtn = document.getElementById('remove-from-group-btn') as HTMLButtonElement;
   if (removeFromGroupBtn) removeFromGroupBtn.onclick = () => {

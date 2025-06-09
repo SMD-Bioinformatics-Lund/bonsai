@@ -20,7 +20,7 @@ export async function getSimilarSamplesAndCheckRows(
     "#similar-samples-threshold",
   ) as HTMLInputElement;
   showSpinner(container);
-  const job = await api.findSimilarSamples(dt.selectedRows[0], {
+  const job = await api.findSimilarSamples(dt.getSelectedRows()[0], {
     limit: parseInt(limitInput.value),
     similarity: parseFloat(similarityInput.value),
     cluster: false,
@@ -40,39 +40,12 @@ export async function getSimilarSamplesAndCheckRows(
   hideSpinner(container);
 }
 
-export function addSelectedSamplesToGroup(
-  element: HTMLElement,
-  selectedSamples: string[],
-  api: ApiService,
-): void {
-  const groupId = element.getAttribute("data-bi-group-id");
-  if (groupId === null) return;
-
-  if (selectedSamples.length === 0) {
-    throwSmallToast("No samples selected", "warning");
-    return;
-  }
-
-  api.addSamplesToGroup(groupId, selectedSamples)
-  .then(() => {
-    emitEvent("samples:added-to-group", {}) // Notify other components or update UI as needed
-    throwSmallToast(
-      `Added ${selectedSamples.length} samples to group`,
-      "success",
-    );
-  })
-  .catch(error => {
-    console.error(`Error adding ${selectedSamples.length} samples to group:`, error);
-    throwSmallToast(`Error adding ${selectedSamples.length} samples to group`, "error");
-  });
-}
-
 export function removeSamplesFromGroup(
   groupId: string,
   table: TableController,
   api: ApiService,
 ): void {
-  const selectedSamples = table.selectedRows;
+  const selectedSamples = table.getSelectedRows();
   if (selectedSamples.length === 0) {
     throwSmallToast("No samples selected", "warning");
     return;
