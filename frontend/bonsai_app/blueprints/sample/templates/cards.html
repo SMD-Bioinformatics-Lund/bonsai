@@ -1098,9 +1098,21 @@
             </div>
         </div>
         <div class="content">
-            <div id="tree-body" class="job-success">
-            </div>
+            <div id="tree-body" class="job-success"></div>
         </div>
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro similar_samples_card_v2() %}
+<div id="similar-samples-card"
+     class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
+     style="width: 24rem;">
+    <div class="card-header">Similar samples</div>
+    <div class="card-body">
+        <spinner-element></spinner-element>
+        <div id="tree-body" class="tree-body"></div>
     </div>
 </div>
 {% endmacro %}

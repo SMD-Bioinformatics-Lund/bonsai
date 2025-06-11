@@ -7,6 +7,7 @@ import {
   ApiFindSimilarInput,
   GroupInfo,
   ApiUserInfo,
+  ApiSampleQcStatus,
 } from "./types";
 import { JobStatusEnum, TypingMethod } from "./constants";
 
@@ -155,6 +156,14 @@ export class ApiService {
     }
   };
 
+  setSampleQc = async (sampleId: string, params: ApiSampleQcStatus) => {
+    const url = `/samples/${sampleId}/qc_status`;
+    return this.http.request<ApiSampleQcStatus>(url, {
+      method: "PUT",
+      body: JSON.stringify(params),
+    });
+  };
+
   checkJobStatus = async (jobId: string) => {
     try {
       return await this.http.request<ApiJobStatus>(`/job/status/${jobId}`);
@@ -219,18 +228,33 @@ export class ApiService {
 export async function pollJob<T extends ApiJobStatus>(
   checkJobFn: () => Promise<T>,
   waitTime: number,
+  maxRetries: number = 10, // Default maximum retries
 ): Promise<T> {
-  /* Generic polling function that  */
+  /* Generic polling function with timeout mechanism */
+  let retries = 0;
   let result = await checkJobFn();
   while (validateJobStatus(result)) {
+    if (retries >= maxRetries) {
+      throw new Error("Polling exceeded maximum retries");
+    }
     await wait(waitTime);
     result = await checkJobFn();
+    retries++;
   }
   return result;
 }
 
-function wait(ms: number = 2000) {
-  // wait between fetch jobs
+/**
+ * Pauses execution for a specified duration.
+ * 
+ * This function is primarily used in the polling mechanism to introduce
+ * a delay between successive API calls. It ensures that the polling
+ * does not overwhelm the server with rapid requests.
+ * 
+ * @param ms - The duration to wait in milliseconds. Defaults to 2000ms.
+ * @returns A promise that resolves after the specified duration.
+ */
+export function wait(ms: number = 2000) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
@@ -238,16 +262,15 @@ function wait(ms: number = 2000) {
 
 function validateJobStatus(job: ApiJobStatus): boolean {
   // check job status
-  // returns true if run is invalid
-  let isValid = false;
+  // returns true if run is valid
   if (job.status === JobStatusEnum.FINISHED) {
     // if job has finished report result
-    isValid = true;
+    return false;
   } else if (job.status === JobStatusEnum.FAILED) {
     // if job failed raise error
     throw new Error(`Job failed: ${job.result}`);
-    isValid = true;
+  } else {
+    return true;
   }
-  console.log(`Job status: ${job.status}; is valid ${isValid}`);
-  return !isValid;
+  console.log(`Job status: ${job.status}; continuing polling: true`);
 }

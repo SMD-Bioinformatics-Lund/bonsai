@@ -52,6 +52,9 @@ export function initToast() {
   toastElList.map((toastEl) => {
     return new bootstrap.Toast(toastEl);
   });
+}
+
+export function initTooltip() {
   const tooltipTriggerList = document.querySelectorAll(
     '[data-bs-toggle="tooltip"]',
   );

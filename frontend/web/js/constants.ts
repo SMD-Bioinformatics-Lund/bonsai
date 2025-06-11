@@ -28,3 +28,11 @@ export enum ClusterMethod {
   NEIGHBORJOINING = "neighbor_joining",
   MSTREE2 = "MSTreeV2",
 }
+
+export enum FailedQcActions {
+  REEXTRACTION = "new extraction",
+  RESEQUENCE = "resequence",
+  FAILED = "permanent fail",
+}
+
+export const ApiJobTimeout = 3000;

@@ -1,4 +1,4 @@
-{% from  'sidebar.html' import qc_classification_form_fields, qc_form_controls_js  %}
+{% from  'sidebar.html' import qc_classification_form_fields  %}
 {% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
@@ -71,44 +71,6 @@
             </div>
         </form>
     </div>
-    <script>
-     // QC form controls:
-     {{ qc_form_controls_js() }}
-
-     // Add data from JS table to QC form before dispatching POST
-     const qcForm = document.getElementById("qc-form-control");
-     qcForm.addEventListener("submit", (e) => {
-         e.preventDefault();
-         addSelectedSamplesToQcForm(qcForm)
-         qcForm.submit()
-     });
-
-     /**
-      * Adds selected samples to HTML form by creating and appending
-      * hidden input elements with the sample IDs.
-      *
-      * @param   {HTMLFormElement}  form    The HTML form element to which the selected samples will be added.
-      */
-     function addSelectedSamplesToQcForm(form) {
-         // Remove existing hidden inputs with the name 'qc-selected-samples'
-         var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
-         existingInputs.forEach(existingInput => {
-             existingInput.parentNode.removeChild(existingInput);
-         });
-
-         // Iterate over the selectedSamples array and add as hidden inputs to the form
-         window.getSelectedRows().ids().toArray().forEach(sampleId => {
-            // Create a hidden input element
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'qc-selected-samples'; // Adjust the name as needed
-            input.value = sampleId
-
-            // Append the input element to the form
-            form.appendChild(input);
-         });
-     }
-    </script>
 {% endmacro %}
 
 {% macro delete_samples_btn() %}

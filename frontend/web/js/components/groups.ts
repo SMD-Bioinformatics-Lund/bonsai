@@ -31,8 +31,7 @@ function groupCardTemplate(group: GroupInfo, isAdmin: boolean): TemplateResult {
               >Samples: ${group.included_samples.length}</span
             >
             ${group.description
-              ? html`<p class="card-text text-wrap"
-                  >${group.description}</p>`
+              ? html`<p class="card-text text-wrap">${group.description}</p>`
               : ""}
           </div>
           <div
@@ -55,7 +54,7 @@ export class GroupList extends LitElement {
   >;
   @property({ type: Boolean }) accessor isAdmin = false;
 
-  @state() private accessor groups: GroupInfo[] = [];
+  @property() private accessor groups: GroupInfo[] = [];
 
   connectedCallback() {
     super.connectedCallback();
@@ -64,9 +63,9 @@ export class GroupList extends LitElement {
   }
 
   setupEventListeners() {
-    onEvent("samples:deleted", () => this.loadGroups())
-    onEvent("samples:added-to-group", () => this.loadGroups())
-  };
+    onEvent("samples:deleted", () => this.loadGroups());
+    onEvent("samples:added-to-group", () => this.loadGroups());
+  }
 
   async loadGroups() {
     if (this.getGroupInfo) {
@@ -89,12 +88,17 @@ export class GroupList extends LitElement {
       <div class="row">
         ${this.groups.map((group) => groupCardTemplate(group, this.isAdmin))}
         ${this.isAdmin
-          ? html`
-          <div class="col-sm-6 col-md-4 col-lg-auto py-2">
-            <a class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center" href="/groups/edit">
-              <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center" style="width: 3.75rem; height: 3.75rem; font-size: 2.5rem; line-height: 0;">
-                <i class="bi bi-plus-lg"></i>
-              </div>
+          ? html` <div class="col-sm-6 col-md-4 col-lg-auto py-2">
+              <a
+                class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center"
+                href="/groups/edit"
+              >
+                <div
+                  class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center"
+                  style="width: 3.75rem; height: 3.75rem; font-size: 2.5rem; line-height: 0;"
+                >
+                  <i class="bi bi-plus-lg"></i>
+                </div>
               </a>
             </div>`
           : ""}
@@ -109,7 +113,10 @@ export class GroupSelector extends LitElement {
     GroupInfo[]
   >;
   @property({ attribute: false }) accessor getSelectedSamples!: () => string[];
-  @property({ attribute: false }) accessor AddToGroupFunc!: (groupId: string, sampleIds: string[]) => Promise<void>;
+  @property({ attribute: false }) accessor AddToGroupFunc!: (
+    groupId: string,
+    sampleIds: string[],
+  ) => Promise<void>;
   @state() private accessor groups: GroupInfo[] = [];
 
   connectedCallback() {
@@ -134,43 +141,61 @@ export class GroupSelector extends LitElement {
   }
 
   private addSamplesToGroup(e: Event) {
-    const selection = e.target as HTMLUListElement
-    const groupId: string = selection.getAttribute('data-group-id')
+    const selection = e.target as HTMLUListElement;
+    const groupId: string = selection.getAttribute("data-group-id");
     if (groupId === null) return;
 
-    const selectedSamples = this.getSelectedSamples()
+    const selectedSamples = this.getSelectedSamples();
     if (selectedSamples.length === 0) {
       throwSmallToast("No samples selected", "warning");
       return;
     }
 
     this.AddToGroupFunc(groupId, selectedSamples)
-    .then(() => {
-      emitEvent("samples:added-to-group", {}) // Notify other components or update UI as needed
-      throwSmallToast(
-        `Added ${selectedSamples.length} samples to group`,
-        "success",
-      );
-    })
-    .catch(error => {
-      console.error(`Error adding ${selectedSamples.length} samples to group:`, error);
-      throwSmallToast(`Error adding ${selectedSamples.length} samples to group`, "error");
-    });
+      .then(() => {
+        emitEvent("samples:added-to-group", {}); // Notify other components or update UI as needed
+        throwSmallToast(
+          `Added ${selectedSamples.length} samples to group`,
+          "success",
+        );
+      })
+      .catch((error) => {
+        console.error(
+          `Error adding ${selectedSamples.length} samples to group:`,
+          error,
+        );
+        throwSmallToast(
+          `Error adding ${selectedSamples.length} samples to group`,
+          "error",
+        );
+      });
   }
 
   protected render() {
     return html`
-    <div class="dropdown ps-2 add-to-group-btn">
-      <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Add to group
-        <i class="bi bi-folder-plus"></i>
-      </button>
-      <ul class="dropdown-menu">
-        ${this.groups.map( group => {
-          return html`<li><a @click=${this.addSamplesToGroup} class="dropdown-item" data-group-id="${group.group_id}">${group.display_name}</a></li>`
-        })}
-      </ul>
-    </div>
-    `
+      <div class="dropdown ps-2 add-to-group-btn">
+        <button
+          class="btn btn-sm btn-secondary dropdown-toggle"
+          type="button"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        >
+          Add to group
+          <i class="bi bi-folder-plus"></i>
+        </button>
+        <ul class="dropdown-menu">
+          ${this.groups.map((group) => {
+            return html`<li>
+              <a
+                @click=${this.addSamplesToGroup}
+                class="dropdown-item"
+                data-group-id="${group.group_id}"
+                >${group.display_name}</a
+              >
+            </li>`;
+          })}
+        </ul>
+      </div>
+    `;
   }
 }

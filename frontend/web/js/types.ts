@@ -86,6 +86,12 @@ export interface SamplesDetails {
   created_at: string;
 }
 
+export interface ApiSampleQcStatus {
+  status: string;
+  action: string | null;
+  comment: string | null;
+}
+
 export interface ApiSampleDetailsResponse {
   data: SamplesDetails[];
   records_total: number;

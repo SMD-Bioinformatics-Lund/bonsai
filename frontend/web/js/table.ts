@@ -66,7 +66,10 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(tableId: string, tableConfig: any): TableController {
+export function initSamplesTable(
+  tableId: string,
+  tableConfig: any,
+): TableController {
   const controller = new TableController(tableId, tableConfig);
 
   // add callback functions
@@ -74,6 +77,7 @@ export function initSamplesTable(tableId: string, tableConfig: any): TableContro
     manageAddToBasketBtn,
     manageRemoveSamplesBtn,
     manageSelectSimilarBtn,
+    manageAnnotateQcBtn,
   ];
   for (const callback of funcs) {
     //controller.getStateManager().onSelection(callback)

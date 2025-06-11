@@ -1,19 +1,23 @@
 import * as bootstrap from "bootstrap";
 import jQuery from "jquery";
 
-import { initToast, throwSmallToast } from "./notification";
+import { initToast, initTooltip, throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { initSamplesTable } from "./table";
 import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
 import {
-  addSelectedSamplesToGroup,
   deleteSelectedSamples,
+  findAndClusterSimilarSamples,
   getSimilarSamplesAndCheckRows,
+  initSetSampleQc,
   removeSamplesFromGroup,
 } from "./sample";
 import { GroupList, GroupSelector } from "./components/groups";
 import "./components/groups";
+import "./components/spinner-element";
 import { User } from "./user";
+import { ClusterMethod, TypingMethod } from "./constants";
+import { ApiFindSimilarInput } from "./types";
 
 const sampleTableCongig = {
   select: true,
@@ -79,7 +83,7 @@ export async function initGroupView(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
-) {
+): Promise<void> {
   // setup base functionality
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
   const basket = initBasket(api);
@@ -88,6 +92,7 @@ export async function initGroupView(
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
   initToast();
+  initTooltip();
 
   // render groups component
   const groupList = document.createElement("group-list") as GroupList;
@@ -119,31 +124,75 @@ export async function initGroupView(
     selectSimilarSamplesBtn.onclick = () =>
       getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api);
 
-  const addToGroupBtns = document.querySelectorAll(
-    "#add-to-group-container a",
-  ) as NodeListOf<HTMLLinkElement>;
-  addToGroupBtns.forEach((element) => {
-    element.onclick = () =>
-      addSelectedSamplesToGroup(element, table.getSelectedRows(), api);
-  });
-
   // setup add samples to group component
   const groupSelectorContainer = document.getElementById(
     "add-samples-to-group-container",
   ) as HTMLElement;
   if (groupSelectorContainer) {
-    const addToGroupSelector = document.createElement("group-selector") as GroupSelector;
+    const addToGroupSelector = document.createElement(
+      "group-selector",
+    ) as GroupSelector;
     addToGroupSelector.getGroupInfo = api.getGroups;
     addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
-    addToGroupSelector.AddToGroupFunc = api.addSamplesToGroup.bind(api)
+    addToGroupSelector.AddToGroupFunc = api.addSamplesToGroup.bind(api);
     groupSelectorContainer.appendChild(addToGroupSelector);
   }
 
-  const removeFromGroupBtn = document.getElementById('remove-from-group-btn') as HTMLButtonElement;
-  if (removeFromGroupBtn) removeFromGroupBtn.onclick = () => {
-      const groupId: string = removeFromGroupBtn.getAttribute("data-bi-group-id");
+  // setup qc classification
+  const qcStatusForm = document.getElementById(
+    "qc-form-control",
+  ) as HTMLButtonElement;
+  if (qcStatusForm)
+    initSetSampleQc(
+      table.getSelectedRows.bind(table),
+      api.setSampleQc.bind(api),
+      qcStatusForm,
+    );
+
+  const removeFromGroupBtn = document.getElementById(
+    "remove-from-group-btn",
+  ) as HTMLButtonElement;
+  if (removeFromGroupBtn)
+    removeFromGroupBtn.onclick = () => {
+      const groupId: string =
+        removeFromGroupBtn.getAttribute("data-bi-group-id");
       removeSamplesFromGroup(groupId, table, api);
+    };
+}
+
+/* Initialize interactive elements for the sample view. */
+export async function initSampleView(
+  bonsaiApiUrl: string,
+  accessToken: string,
+  refreshToken: string,
+  sampleId: string,
+): Promise<string> {
+  // setup base functionality
+  const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
+  initToast();
+
+  const qcStatusForm = document.getElementById(
+    "qc-form-control",
+  ) as HTMLButtonElement;
+  if (qcStatusForm)
+    initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), qcStatusForm);
+
+  // find similar samples and draw a dendrogram from the result
+  const searchParams: ApiFindSimilarInput = {
+    limit: 10,
+    similarity: 0.9,
+    cluster: true,
+    typing_method: TypingMethod.MINHASH,
+    cluster_method: ClusterMethod.SINGLE,
   };
+  const similarSamplesCard = document.getElementById("similar-samples-card");
+  const newick = await findAndClusterSimilarSamples(
+    sampleId,
+    (sampleId: string) => api.findSimilarSamples(sampleId, searchParams),
+    api.checkJobStatus.bind(api),
+    similarSamplesCard
+  );
+  return newick
 }
 
 declare global {

@@ -1,11 +1,19 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
-import { ApiService, pollJob } from "./api";
+import { ApiService, pollJob, wait } from "./api";
 import { emitEvent } from "./event-bus";
 import { throwSmallToast } from "./notification";
 import { TableController } from "./table";
-import { ApiJobStatusSimilarity } from "./types";
+import {
+  ApiJobStatusNewick,
+  ApiJobStatusSimilarity,
+  ApiJobSubmission,
+  ApiSampleQcStatus,
+} from "./types";
 import { hideSpinner, showSpinner } from "./util";
+import { ApiJobTimeout } from "./constants";
+import SpinnerElement from "./components/spinner-element";
+
 
 export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,
@@ -50,20 +58,27 @@ export function removeSamplesFromGroup(
     throwSmallToast("No samples selected", "warning");
     return;
   }
-  api.removeSamplesFromGroup(groupId, selectedSamples)
-  .then(() => {
-    emitEvent("samples:removed-from-group", {}) // Notify other components or update UI as needed
-    table.removeSamples(selectedSamples);
-    table.selectedRows = []; // clear selection after deletion
-    throwSmallToast(
-      `Removed ${selectedSamples.length} samples from group`,
-      "success",
-    );
-  })
-  .catch(error => {
-    console.error(`Error removing ${selectedSamples.length} from group:`, error);
-    throwSmallToast(`Error removing ${selectedSamples.length} from group`, "error");
-  });
+  api
+    .removeSamplesFromGroup(groupId, selectedSamples)
+    .then(() => {
+      emitEvent("samples:removed-from-group", {}); // Notify other components or update UI as needed
+      table.removeSamples(selectedSamples);
+      table.selectedRows = []; // clear selection after deletion
+      throwSmallToast(
+        `Removed ${selectedSamples.length} samples from group`,
+        "success",
+      );
+    })
+    .catch((error) => {
+      console.error(
+        `Error removing ${selectedSamples.length} from group:`,
+        error,
+      );
+      throwSmallToast(
+        `Error removing ${selectedSamples.length} from group`,
+        "error",
+      );
+    });
 }
 
 export function deleteSelectedSamples(
@@ -84,4 +99,94 @@ export function deleteSelectedSamples(
       console.error("Error removing samples from database", error);
       throwSmallToast("Error when removing samples", "error");
     });
+}
+
+/* Setup listeners and functionality of set Qc status form */
+export function initSetSampleQc(
+  getSampleIds: () => string[],
+  submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<void>,
+  form: HTMLElement,
+) {
+  const passedQcBtn = form.querySelector("#passed-qc-btn") as HTMLButtonElement;
+  const failedQcBtn = form.querySelector("#failed-qc-btn") as HTMLButtonElement;
+  const failedQcAction = form.querySelector(
+    "#failed-qc-action",
+  ) as HTMLSelectElement;
+  const failedQcComment = form.querySelector(
+    "#failed-qc-comment-container",
+  ) as HTMLTextAreaElement;
+  const submitBtn = form.querySelector("#qc-submit-btn") as HTMLButtonElement;
+
+  const hideQcRejection = () => {
+    failedQcAction.disabled = true;
+    failedQcAction.hidden = true;
+    failedQcAction.value = "0";
+    failedQcComment.hidden = true;
+  };
+
+  const showQcRejection = () => {
+    failedQcAction.disabled = false;
+    failedQcAction.hidden = false;
+    failedQcComment.hidden = false;
+  };
+
+  passedQcBtn.onclick = hideQcRejection;
+  failedQcBtn.onclick = showQcRejection;
+  form.onchange = () => {
+    const qcStatus = form.querySelector(
+      "input[name='qc-validation']:checked",
+    ) as HTMLInputElement;
+    submitBtn.disabled =
+      failedQcAction.value === "" && qcStatus.value === "failed";
+  };
+
+  // add submit function
+  submitBtn.onclick = (e: Event) => {
+    e.preventDefault();
+    const sampleIds = getSampleIds();
+    const status = form.querySelector(
+      "input[name='qc-validation']:checked",
+    ) as HTMLInputElement;
+    const isFailed: boolean = status.value === "failed";
+    const qcStatus: ApiSampleQcStatus = {
+      status: status.value,
+      action: isFailed ? failedQcAction.value : null,
+      comment: isFailed ? failedQcComment.querySelector("textarea").value : "",
+    };
+    sampleIds.forEach((sampleId) => {
+      submitQc(sampleId, qcStatus).catch((e: Error) => {
+        console.error(`Error updating QC of sample: ${sampleId}`, e);
+        throwSmallToast(`Failed to update QC of sample ${sampleId}`, "error");
+      });
+      wait(100);
+    });
+    throwSmallToast(`Updated Qc of ${sampleIds.length} sample`, "success");
+  };
+}
+
+/* Find samples similar to the given sample id, cluster them and plot as dendrogram */
+export async function findAndClusterSimilarSamples(
+  sampleId: string,
+  clusterSimilarFn: (sampleId: string) => Promise<ApiJobSubmission>,
+  checkJobFn: (id: string) => Promise<ApiJobStatusNewick>,
+  container: HTMLElement,
+): Promise<string> {
+  const spinner = container.querySelector("spinner-element") as SpinnerElement;
+  spinner?.show()
+  // queue similar samples job
+  let jobResult: ApiJobStatusNewick;
+  try {
+    const job = await clusterSimilarFn(sampleId);
+    jobResult = await pollJob(() => checkJobFn(job.id), ApiJobTimeout);
+    // draw dendrogam in container element
+    //drawDendrogram("#tree-body", jobResult.result, sampleId);
+  } catch (error) {
+    container.hidden = true;
+    console.error("An error occured.", error);
+    throwSmallToast("An error occured when finding similar samples", "error");
+    throw error;
+  } finally {
+    spinner?.hide()
+  }
+  return jobResult.result
 }
