@@ -151,7 +151,7 @@ def schedule_find_similar_and_cluster(
         )
         LOG.debug("Submitting job, %s to %s", task, job.worker_name)
     else:
-        raise ValueError(f"{typing_method} is not implemented yet")
+        raise NotImplementedError(f"{typing_method} is not implemented yet")
     return SubmittedJob(id=job.id, task=task)
 
 

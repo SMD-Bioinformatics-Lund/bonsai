@@ -616,5 +616,7 @@ async def find_similar_samples(
                 limit=body.limit,
             )
     except ConnectionError as error:
-        raise HTTPException(status_code=500, detail=str(error))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
+    except NotImplementedError as error:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error))
     return submission_info
