@@ -13,6 +13,8 @@ import {
 } from "./sample";
 import { GroupList } from "./components/groups";
 import "./components/groups";
+import "./components/add-to-basket-btn";
+import "./components/similar-samples-dropdown";
 import { User } from "./user";
 
 const sampleTableCongig = {

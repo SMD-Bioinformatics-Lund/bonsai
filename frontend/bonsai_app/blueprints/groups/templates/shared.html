@@ -2,39 +2,11 @@
 {% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
-<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
-    <i class="bi bi-plus-lg"></i>
-    <span>Add to basket</span>
-</button>
+<add-to-basket-btn></add-to-basket-btn>
 {% endmacro %}
 
 {% macro search_similar_btn() %}
-<div id="find-similar-dropdown" class="dropdown similar-samples-container">
-    <button id="select-similar-samples-btn" 
-            class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
-            data-bs-toggle="dropdown" disabled>
-        <span class="content">
-            <i class="bi bi-search"></i>
-            <span>Find similar</span>
-        </span>
-        <span class="loading align-middle d-none">
-            <span class="spinner-grow text-success spinner-grow-sm" role="status"></span>
-            Loading...
-        </span>
-    </button>
-    <form class="dropdown-menu dropdown-menu-end p-2 needs-validation">
-        <input type="text" name="similar-samples-limit" 
-                id="similar-samples-limit" class="form-control form-control-sm" 
-                placeholder="Number of samples" value="50" required>
-        <input type="text" name="similar-samples-threshold" 
-                id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
-                placeholder="Min similarity" value="0.95" required>
-        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2" >
-            <i class="bi bi-search"></i>
-            Search
-        </button>
-    </form>
-</div>
+<similar-samples-dropdown></similar-samples-dropdown>
 {% endmacro %}
 
 {% macro qc_bulk_toggle(bad_qc_actions) %}
