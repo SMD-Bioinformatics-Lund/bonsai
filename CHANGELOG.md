@@ -7,7 +7,7 @@
 
 ### Changed
 
-- Uppdated prp to version 1.3.0
+- Uppdated prp to version 1.3.1
 
 ### Fixed
 
