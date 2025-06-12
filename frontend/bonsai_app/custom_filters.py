@@ -226,8 +226,8 @@ def nt_to_aa(nt_seq: str) -> str:
         "GGA": "G",
         "GGG": "G",
     }
-    stop_codons = (["TAA", "TAG", "TGA"],)
-    start_codons = (["TTG", "CTG", "ATT", "ATC", "ATA", "ATG", "GTG"],)
+    stop_codons = ["TAA", "TAG", "TGA"]
+    start_codons = ["TTG", "CTG", "ATT", "ATC", "ATA", "ATG", "GTG"]
     aa_seq = ""
     for pos in range(0, len(nt_seq), 3):
         codon = nt_seq[pos : pos + 3].upper()
