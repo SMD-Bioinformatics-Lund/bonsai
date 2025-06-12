@@ -105,6 +105,7 @@ export function deleteSelectedSamples(
 export function initSetSampleQc(
   getSampleIds: () => string[],
   submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<void>,
+  onStatusChange: (status: ApiSampleQcStatus) => void,
   form: HTMLElement,
 ) {
   const passedQcBtn = form.querySelector("#passed-qc-btn") as HTMLButtonElement;
@@ -160,6 +161,7 @@ export function initSetSampleQc(
       });
       wait(100);
     });
+    onStatusChange(qcStatus);  // update displayed content function
     throwSmallToast(`Updated Qc of ${sampleIds.length} sample`, "success");
   };
 }
@@ -189,4 +191,41 @@ export async function findAndClusterSimilarSamples(
     spinner?.hide()
   }
   return jobResult.result
+}
+
+/* update qc status in header section of sample view */
+export function updateQcStatus(status: ApiSampleQcStatus): void {
+  const header = document.getElementById('sample-header')
+  if (!header) return;
+
+  const statusField = header.querySelector("span[name='qc-status']") as HTMLSpanElement;
+  const actionContainer = header.querySelector("span[name='container']") as HTMLSpanElement;
+  const actionField = header.querySelector("span[name='action']") as HTMLSpanElement;
+  const commentField = header.querySelector("span[name='comment']") as HTMLSpanElement;
+
+  if (!statusField || !actionContainer || !actionField || !commentField) {
+    console.error('DOM elements used by QC status update function were not found');
+    return;
+  }
+
+  // Set status text and formatting
+  statusField.innerText = status.status ? status.status.charAt(0).toUpperCase() + status.status.slice(1) : '';
+  if (status.status === 'passed') {
+    statusField.className = 'text-success';
+  } else if (status.status === 'failed') {
+    statusField.className = 'text-danger';
+  } else {
+    statusField.className = '';
+  }
+
+  // Show/hide action/comment container
+  if (status.status === 'failed' && status.action) {
+    actionContainer.hidden = false;
+    actionField.innerText = status.action ? status.action.charAt(0).toUpperCase() + status.action.slice(1) : '';
+    commentField.innerText = status.comment ? status.comment.charAt(0).toUpperCase() + status.comment.slice(1) : '';
+  } else {
+    actionContainer.hidden = true;
+    actionField.innerText = '';
+    commentField.innerText = '';
+  }
 }

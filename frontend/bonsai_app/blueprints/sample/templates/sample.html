@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar, table_of_content with context %}
-{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, oh_card, tb_lineage_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, shigella_typing_card, emm_card, similar_samples_card_v2, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
+{% from "cards.html" import sample_header, resistance_summary_card, resistance_table_card, virulence_card, species_prediction_card, amr_prediction_card, stx_card, oh_card, tb_lineage_card, analysis_meta_pipeline, analysis_meta_databases, mlst_card, shigella_typing_card, emm_card, similar_samples_card, qc_card_postalign, qc_card_generic, cgmlst_qc_card %}
 
 {% block css %}
 {{ super() }}
@@ -49,7 +49,7 @@
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="epi-typing-heading" class="row justify-content-md-center">
                 <div class="col-md-auto">
-                    {{ similar_samples_card_v2() }}
+                    {{ similar_samples_card() }}
                 </div>
                 {% for res in sample.typing_result %}
                     {% if res.type == "mlst" %}

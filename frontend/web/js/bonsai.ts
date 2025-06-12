@@ -11,6 +11,7 @@ import {
   getSimilarSamplesAndCheckRows,
   initSetSampleQc,
   removeSamplesFromGroup,
+  updateQcStatus,
 } from "./sample";
 import { GroupList, GroupSelector } from "./components/groups";
 import "./components/groups";
@@ -146,8 +147,11 @@ export async function initGroupView(
     initSetSampleQc(
       table.getSelectedRows.bind(table),
       api.setSampleQc.bind(api),
+      status => console.log('table needs to be redrawn'),
       qcStatusForm,
     );
+    // FIXME updating individual cells did not work for some reason
+    // the entire table might need to be redrawn.
 
   const removeFromGroupBtn = document.getElementById(
     "remove-from-group-btn",
@@ -172,10 +176,16 @@ export async function initSampleView(
   initToast();
 
   const qcStatusForm = document.getElementById(
-    "qc-form-control",
+    "qc-classification-form",
   ) as HTMLButtonElement;
-  if (qcStatusForm)
-    initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), qcStatusForm);
+  if (qcStatusForm) {
+    initSetSampleQc(
+      () => [sampleId], 
+      api.setSampleQc.bind(api), 
+      updateQcStatus,
+      qcStatusForm
+    );
+  }
 
   // find similar samples and draw a dendrogram from the result
   const searchParams: ApiFindSimilarInput = {
