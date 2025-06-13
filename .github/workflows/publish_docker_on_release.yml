@@ -23,7 +23,7 @@ jobs:
 
       - name: Export tags to env
         run: |
-          FRONTEND_VERSION=$(head -2 frontend/app/__version__.py | tail -1 | cut -d'"' -f2);
+          FRONTEND_VERSION=$(tail -1 frontend/bonsai_app/__version__.py | cut -d'"' -f2);
           echo "TOOL_VERSION=${FRONTEND_VERSION}" >> $GITHUB_ENV
           echo "TAG_LATEST=latest" >> $GITHUB_ENV
 
@@ -60,7 +60,7 @@ jobs:
 
       - name: Export tags to env
         run: |
-          API_VERSION=$(head -3 api/app/__version__.py | tail -1 | cut -d'"' -f2);
+          API_VERSION=$(tail -1 api/bonsai_api/__version__.py | cut -d'"' -f2);
           echo "TOOL_VERSION=${API_VERSION}" >> $GITHUB_ENV
           echo "TAG_LATEST=latest" >> $GITHUB_ENV
 
