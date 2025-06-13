@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Fixed
+
+- Fixed workflow for publishing docker images on tagged releases.
+
 ## [v.1.2.0]
 
 ### Added
