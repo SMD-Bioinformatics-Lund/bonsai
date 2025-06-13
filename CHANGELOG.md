@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [v.1.2.0]
+
 ### Added
 
 - Added support to add metadata to samples through the config file.
