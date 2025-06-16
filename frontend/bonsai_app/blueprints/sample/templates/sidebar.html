@@ -97,7 +97,6 @@
             <div class="col-auto">
                 <button
                     id="qc-submit-btn"
-                    type="submit"
                     class="btn btn-sm btn-outline-secondary"
                     disabled
                 >Confirm</button>
@@ -165,12 +164,7 @@
         - sample_id:                str                     Current sample id
 
     #}
-    <form
-        action="{{ url_for('samples.update_qc_classification', sample_id=sample_id) }}"
-        method="post"
-        name="qc-classification"
-        class="form-control"
-    >
+    <form id="qc-classification-form" name="qc-classification" class="form-control">
         {{ qc_classification_form_fields(
         bad_qc_actions=bad_qc_actions,
         selected_qc_status=sample_qc_classification_obj.status,
@@ -248,13 +242,10 @@
     </div>
 </aside>
 <script>
-    {{ qc_form_controls_js() }}
-
     function removeComment(btn) {
         // remove comment from sample
         const apiURL = "{{ config.BONSAI_API_URL }}"
         fetch(`${apiURL}/samples/basket/add`, {
-
         }).then(response => {
             btn.parentElement.remove()
         })

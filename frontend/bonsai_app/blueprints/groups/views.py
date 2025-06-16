@@ -12,7 +12,6 @@ from flask import (
     redirect,
     render_template,
     request,
-    session,
     url_for,
 )
 from flask_login import current_user, login_required
@@ -60,14 +59,9 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     token = TokenObject(**current_user.get_id())
-    all_groups = get_groups(token)
     all_samples = get_samples(token, limit=0, skip=0)
-    basket = session
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
-
-    # Pre-select samples in sample table:
-    selected_samples = request.args.getlist("samples")
 
     # get default columns from api
     default_columns: list[dict[str, str | bool | jsonPath | None]] = []
@@ -102,12 +96,9 @@ def groups() -> str:
     return render_template(
         "groups.html",
         title="Groups",
-        groups=all_groups,
         table_data=table_data,
-        basket=basket,
         token=current_user.get_id().get("token"),
         bad_qc_actions=bad_qc_actions,
-        selected_samples=selected_samples,
     )
 
 
@@ -263,6 +254,7 @@ def group(group_id: str) -> str:
         table_definition=group_info["table_columns"],
         modified=group_info["modified_at"],
         display_qc=display_qc,
+        token=current_user.get_id().get("token"),
     )
 
 

@@ -33,12 +33,10 @@
                     <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
                         <i class="bi bi-basket3 fs-4"></i>
                         {% set basket=current_user.basket %}
-                        {% if basket | length > 0 %}
-                            <span id="samples-in-basket-badge" class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
-                                <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
-                                <span class="visually-hidden">Samples in basket</span>
-                            </span>
-                        {% endif %}
+                        <span id="samples-in-basket-badge" hidden class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
+                            <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
+                            <span class="visually-hidden">Samples in basket</span>
+                        </span>
                     </a>
                 </li>
             {% else %}
@@ -71,34 +69,8 @@
 
 {% macro sample_basket_offcanvas(current_user) %}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
-    {% set samples = current_user.basket %} 
-    <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="sample-basket-offcanvas-label">
-            {% if samples | length > 0 %}
-                Samples
-            {% else %}
-                Your basket is empty
-            {% endif %}
-        </h5>
-        <button id="close-basket-btn" type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" data-test-id="close-basket-btn"></button>
-    </div>
     <div class="offcanvas-body">
-        <div class="overflow-auto" style="max-height: 60vh;">
-            {# Create sample cards in basket #}
-            {% for sample in samples %}
-                <div class="card mb-2 rounded-1 p-0 sample_in_basket">
-                    <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
-                        <a class="text-muted d-flex flex-column" href="{{ url_for('samples.sample', sample_id=sample.sample_id) }}">
-                            <h6 id="{{ sample.sample_id }}" class="text-uppercase fw-bold text-muted my-0 py-0">{{ sample.sample_id }}</h6>
-                            <i class="text-muted fs-6 fw-light p-0">{{ sample.analysis_profile }}</i>
-                        </a>
-                        <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" onclick="removeSampleFromBasket(this)" type="button">
-                            <i class="bi bi-trash3-fill"></i>
-                        </button>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+        <div id="basket-content" class="overflow-auto" style="max-height: 60vh;"></div>
         <hr>
         <div class="row">
             <div class="col-auto">
@@ -106,7 +78,6 @@
                     id="clear-basket-btn"
                     class="btn btn-outline-danger btn-sm float-right"
                     aria-label="Clear basket"
-                    onclick="removeAllSamplesFromBasket()"
                     data-test-id="clear-basket-btn"
                     type="button">
                     <i class="bi btn-sm bi-trash3-fill">Clear basket</i>
@@ -116,16 +87,11 @@
         <hr>
         <div class="row">
             <div class="col-auto">
-                {% set has_same_profile = samples | has_same_assay %}
-                <div id="basket-cluster-samples" 
-                     class="dropdown"
-                     data-bi-cluster-route="{{url_for('cluster.cluster')}}">
-                    <input name="sample-ids" type="text" value='{{ samples | default("") | tojson }}' hidden>
+                <div id="basket-cluster-samples" class="dropdown">
                     <button 
                       class="btn btn-success dropdown-toggle" 
                       type="button" data-bs-toggle="dropdown"
                       data-test-id="cluster-samples-dropdown-btn"
-                      {% if not has_same_profile and samples | length > 1 or samples | length < 2 %}disabled{% endif %}
                     >
                         <span class="content">
                             <i class="bi bi-diagram-3-fill"></i>
@@ -139,52 +105,29 @@
                     <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-cgmlst-btn"
                                data-bi-typing-method="cgmlst">cgMLST</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-minhash-btn"
                                data-bi-typing-method="minhash">MinHash</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-snv-btn"
                                data-bi-typing-method="ska">SNV</a>
                         </li>
                         <li>
                             <a class="dropdown-item" href="#" 
-                               onclick="clusterSamplesInBasket(this)"
                                data-test-id="cluster-mlst-btn"
                                data-bi-typing-method="mlst">MLST</a>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="col-auto">
-                <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"  {% if samples | length == 0 %} disabled {% endif %}>
-                        Analysis
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Resistance</a></li>
-                        <li><a class="dropdown-item" href="#">Virulence</a></li>
-                        <li><a class="dropdown-item" href="#">Epidemiology</a></li>
-                    </ul>
-                </div>
-            </div>
         </div>
     </div>
-    <form id="open-tree-form" action="{{ url_for('cluster.tree') }}" method="POST" hidden target="_blank">
-        <input type="text" name="newick" id="newick-content">
-        <input type="text" name="typing_data" id="typing-data-content">
-        <input type="text" name="sample-ids" id="sample-ids-content">
-        <input type="text" name="metadata" id="metadata-content">
-        <input type="submit" value="">
-    </form>
 </div>
 {% endmacro %}
 
