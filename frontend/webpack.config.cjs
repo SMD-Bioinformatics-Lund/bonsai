@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const resolve = require('path').resolve;
 const config = {
   devtool: 'inline-source-map',
-  entry: __dirname + '/frontend/web/js/bonsai',
+  entry: __dirname + '/web/js/bonsai',
   output:{
     path: resolve('./build/js'),
     filename: 'bonsai.min.js',

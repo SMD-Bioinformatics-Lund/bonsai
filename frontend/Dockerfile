@@ -1,3 +1,17 @@
+################
+# BUILDER NODE #
+################
+
+FROM node:lts-alpine AS node-builder
+WORKDIR /usr/src/app
+COPY package.json package-lock.json webpack.config.cjs tsconfig.json ./
+COPY web web
+RUN npm install && npm run build
+
+#############
+# BUILD APP #
+#############
+
 FROM python:3.11.3
 
 # Set build variables
@@ -13,6 +27,9 @@ RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbi
 WORKDIR /home/worker/app
 COPY bonsai_app bonsai_app/
 COPY pyproject.toml setup.py setup.cfg ./
+
+# Copy compiled web assets
+COPY --from=node-builder /usr/src/app/build/*/bonsai.min.* bonsai_app/blueprints/public/static/
 
 # Change ownership
 RUN chown -R worker:worker .
