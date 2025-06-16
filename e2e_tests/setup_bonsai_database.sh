@@ -14,7 +14,6 @@ bonsai_api create-user -u user -p user -m user@mail.com -r user
 bonsai_api create-group -i mtuberculosis -n "M. tuberculosis" -d "Tuberculosis test samples"
 bonsai_api create-group -i saureus -n "S. aureus" -d "MRSA test samples"
 bonsai_api create-group -i ecoli -n "E. coli" -d "E. coli test samples"
-bonsai_api create-group -i streptococcus -n "Streptococcus spp" -d "S. pyogenes test samples"
 
 # 4. run commands given to container to start the API
 # ===============================
