@@ -12,7 +12,7 @@
     "select2": "^4.1.0-rc.0"
   },
   "name": "bonsai",
-  "description": "> [!WARNING] > Bonsai is under development in an alpha stage. Expect uneven documentation, breaking changes, and bugs until the official 1.0 release.",
+  "description": "",
   "version": "1.0.0",
   "main": "index.js",
   "directories": {
@@ -30,7 +30,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack",
+    "build": "webpack --mode production",
     "buildcp": "webpack && cp --verbose build/js/bonsai.min.js frontend/bonsai_app/blueprints/public/static/",
     "lint": "eslint frontend/web",
     "lint:fix": "npm run lint -- --fix",
