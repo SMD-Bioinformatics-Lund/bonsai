@@ -27,7 +27,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-bonsai.min.js
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -148,3 +148,7 @@ reports/*
 # editor related files
 *~
 .vscode
+
+# Bonsai specific
+bonsai.min.js
+*.lock
