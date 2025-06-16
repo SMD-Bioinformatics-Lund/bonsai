@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table %}
+{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
 {{ super() }}
@@ -9,8 +9,6 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
-<script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}
@@ -18,40 +16,18 @@
     <div class="card-body br-main">
         <h5 class="card-title text-uppercase fw-light">Groups</h5>
         <hr class="mt-2 col-md-2 border border-success border-2">
-        {% if groups %}
-        <div class="d-flex justify-content-start">
-            <div class="row">
-                {% for group in groups %}
-                    <div class="col-sm-6 col-md-4 col-lg-auto py-2">
-                        {{ group_card(group, current_user.is_admin) }}
-                    </div>
-                {% endfor %}
-                {% if current_user.is_admin %}
-                    <div class="col-sm-6 col-md-4 col-lg-auto py-2">{{ create_group_card() }}</div>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
+        <div id="group-container"></div>
         <h5 class="card-title text-uppercase fw-light pt-4">All samples</h5>
         <hr class="mt-2 col-md-2 border border-success border-2">
         <nav class="navbar bg-light">
-            <div class="container-fluid justify-content-start">
+            <div id="user-action-container" class="container-fluid justify-content-start">
                 {{ add_to_basket_btn() }}
 
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
 
-                    {# Add selected samples to group #}
-                    <div class="dropdown ps-2">
-                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-folder-plus"></i>
-                        </button>
-                        <ul class="dropdown-menu">
-                            {% for group in groups %}
-                                <li><a class="dropdown-item" onclick="addSelectedSamplesToGroup('{{group.group_id}}')">{{ group.display_name }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                    {# Target for dropdown for adding samples to group #}
+                    <div id="add-samples-to-group-container"></div>
                 {% endif %}
 
                 {{ search_similar_btn() }}
@@ -63,66 +39,14 @@
     </div>
 </div>
 <script>
-    const apiURL = "{{ config.BONSAI_API_URL }}"
+    //const apiUrl = "{{ config.BONSAI_API_URL }}"
+    const apiUrl = "http://localhost:8001"
+    const accessToken = "{{ token }}"
     // template code for adding to basket
-    {{ add_to_basket_js() }}
     // template code for searching similar samples
-    {{ search_similar_js() }}
-</script>
-<script>
-    function addSelectedSamplesToGroup(groupId) {
-        const body = {
-            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
-        }
-        const baseUrl = {{ request.script_root|tojson }}
-        fetch(`${baseUrl}/api/groups/${groupId}/samples`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        }).then(response => {
-            response.ok ?  location.reload() : throwSmallToast("The samples could not be added to the group", "error")
-        })
-    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        bonsai.initGroupView(apiUrl, accessToken, "")
+    });
 </script>
 {% endblock content %}
-
-{% macro group_card(group, is_admin=False) %}
-<div class="card group-card position-relative">
-    {% if is_admin %}
-        <a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle"
-                role="button"
-                href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}">
-            <i class="bi bi-pencil"></i>
-        </a>
-    {% endif %}
-    <a class="link-dark text-decoration-none" href="{{ url_for('groups.group', group_id=group.group_id) }}">
-        <div class="card-body">
-            <h5 class="card-title mb-0">{{ group.display_name }}</h5>
-            <span class="text-muted text-uppercase fw-semibold n-samples">Samples: {{ group.included_samples | length }}</span>
-            {% if group.description %}
-                <p class="card-text text-wrap">{{ group.description | truncate(40) }}</p>
-            {% endif %}
-        </div>
-        <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
-            <span class="last-update text-uppercase fw-semibold text-muted">Updated: {{ group.modified_at | strftime }}</span>
-        </div>
-    </a>
-</div>
-{% endmacro %}
-
-{% macro create_group_card() %}
-<div class="card group-card position-relative text-center border-success h-100">
-    {# Card for createing groups with similar layout as the group_card #}
-    <a class="link-dark text-decoration-none h-100" href="{{ url_for('groups.edit_groups') }}">
-        <div class="card-body">
-            <p class="text-success position-absolute top-50 start-50 translate-middle fs-1 p-0">
-                <i class="bi bi-plus-lg"></i>
-            </p>
-        </div>
-    </a>
-</div>
-{% endmacro %}
