@@ -244,7 +244,7 @@
 <script>
     function removeComment(btn) {
         // remove comment from sample
-        const apiURL = "{{ config.BONSAI_API_URL }}"
+        const apiUrl = "{{ config.API_EXTERNAL_URL }}"
         fetch(`${apiURL}/samples/basket/add`, {
         }).then(response => {
             btn.parentElement.remove()
