@@ -5,7 +5,7 @@ import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-select-bs5";
 import "datatables.net-searchbuilder-bs5";
 
-import { TblStateCallbackFunc } from "./types";
+import { TblStateCallbackFunc } from "../types";
 
 export class TableController {
   private table: any;
@@ -80,7 +80,6 @@ export function initSamplesTable(
     manageAnnotateQcBtn,
   ];
   for (const callback of funcs) {
-    //controller.getStateManager().onSelection(callback)
     controller.getTable().on("select deselect", (e, dt, type, indexes) => {
       const selected: string[] = dt.rows(".selected").ids();
       callback(selected);

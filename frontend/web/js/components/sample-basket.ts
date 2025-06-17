@@ -1,5 +1,5 @@
 import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse } from "../types";
-import { BasketState } from "../state/basket";
+import { BasketState } from "../state/basket-state";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
