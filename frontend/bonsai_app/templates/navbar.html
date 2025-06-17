@@ -31,12 +31,8 @@
                 {{ user_dropdown(current_user) }}
                 <li class="nav-item d-flex flex-row">
                     <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
+                        <span id="samples-counter"></span>
                         <i class="bi bi-basket3 fs-4"></i>
-                        {% set basket=current_user.basket %}
-                        <span id="samples-in-basket-badge" hidden class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
-                            <span id="samples-in-basket-counter" data-test-id="samples-in-basket-counter">{{ basket | length }}</span>
-                            <span class="visually-hidden">Samples in basket</span>
-                        </span>
                     </a>
                 </li>
             {% else %}

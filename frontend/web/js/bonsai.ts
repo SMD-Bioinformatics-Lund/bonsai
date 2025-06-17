@@ -4,7 +4,6 @@ import jQuery from "jquery";
 import { initToast, initTooltip, throwSmallToast } from "./notification";
 import { ApiService, AuthService, HttpClient } from "./api";
 import { initSamplesTable } from "./table";
-import { clusterSamples, SampleBasket, SamplesInBasketCounter } from "./basket";
 import {
   deleteSelectedSamples,
   findAndClusterSimilarSamples,
@@ -12,13 +11,19 @@ import {
   initSetSampleQc,
   removeSamplesFromGroup,
   updateQcStatus,
-} from "./sample";
+  clusterSamples, 
+} from "./sample-actions";
 import { GroupList, GroupSelector } from "./components/groups";
-import "./components/groups";
-import "./components/spinner-element";
 import { User } from "./user";
 import { ClusterMethod, TypingMethod } from "./constants";
 import { ApiFindSimilarInput } from "./types";
+import { BasketState } from "./state/basket";
+import { SampleBasketCounter } from "./components/samples-basket-counter";
+import { BasketComponent } from "./components/sample-basket";
+
+import "./components/groups";
+import "./components/spinner-element";
+
 
 const sampleTableCongig = {
   select: true,
@@ -29,31 +34,38 @@ const sampleTableCongig = {
     top2Start: "searchBuilder",
   },
 };
-
 /* Initialize sample basket */
-function initBasket(api: ApiService): SampleBasket {
-  const basket = new SampleBasket(api.getSamplesDetails);
-  const basketCounter = new SamplesInBasketCounter();
-  basketCounter.counter = basket.getSampleIds.length;
-  // register callback functions
-  basket.onSelection((sampleIds: string[]) => {
-    basketCounter.counter = sampleIds.length;
-  });
+function initBasket(api: ApiService): BasketState | void {
+  const basketElement = document.querySelector("#basket-content") as HTMLElement;
+  const counterElement = document.querySelector("#samples-counter") as HTMLElement;
+  if (!basketElement && !counterElement) {
+    console.error('No DOM element for the basket found!');
+    return;
+  }
+
+  const basketState = new BasketState();
+  // init number of samples in basket counter
+  const basketCounter = new SampleBasketCounter();
+  basketCounter.basketState = basketState;
+  counterElement.appendChild(basketCounter);
+
+  // init component for samples in basket
+  const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
+  basketElement.appendChild(basketComponent);
 
   // assign functions to DOM objects
   const clusterBtns = document.querySelectorAll(
     "#basket-cluster-btn a",
   ) as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
-    element.onclick = () => clusterSamples(element, basket.getSampleIds(), api);
+    element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
   });
   const clearBasketBtn = document.getElementById(
     "clear-basket-btn",
   ) as HTMLButtonElement;
   if (clearBasketBtn) {
     clearBasketBtn.onclick = () => {
-      basket.clear();
-      basket.render();
+      basketState.clear();
     };
   }
 
@@ -61,10 +73,10 @@ function initBasket(api: ApiService): SampleBasket {
   const offcanvas = document.getElementById("basket-offcanvas");
   if (offcanvas) {
     offcanvas.addEventListener("show.bs.offcanvas", () => {
-      basket.render(); // Assuming you have an instance named sampleBasket
+      basketComponent.render(); // Assuming you have an instance named sampleBasket
     });
   }
-  return basket;
+  return basketState;
 }
 
 function initApi(
@@ -88,6 +100,10 @@ export async function initGroupView(
   // setup base functionality
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
   const basket = initBasket(api);
+  if (!basket) {
+    console.error("Something went wrong when initialize the basket")
+    return
+  }
   const table = initSamplesTable("sample-table", sampleTableCongig);
   // get logged in user
   const userInfo = await api.getUserInfo();
@@ -147,7 +163,7 @@ export async function initGroupView(
     initSetSampleQc(
       table.getSelectedRows.bind(table),
       api.setSampleQc.bind(api),
-      status => console.log('table needs to be redrawn'),
+      () => console.log('table needs to be redrawn'),
       qcStatusForm,
     );
     // FIXME updating individual cells did not work for some reason
