@@ -1,9 +1,9 @@
 import * as bootstrap from "bootstrap";
 import jQuery from "jquery";
 
-import { initToast, initTooltip, throwSmallToast } from "./notification";
+import { initToast, initTooltip, throwSmallToast } from "./utils/notification";
 import { ApiService, AuthService, HttpClient } from "./api";
-import { initSamplesTable } from "./table";
+import { initSamplesTable } from "./utils/table-controller";
 import {
   deleteSelectedSamples,
   findAndClusterSimilarSamples,
@@ -11,17 +11,19 @@ import {
   initSetSampleQc,
   removeSamplesFromGroup,
   updateQcStatus,
-  clusterSamples, 
-} from "./sample-actions";
-import { GroupList, GroupSelector } from "./components/groups";
+} from "./actions/sample-actions";
+import { clusterSamples } from "./actions/cluster-actions";
+import { GroupList } from "./components/group-list";
+import { GroupSelector } from "./components/group-selector";
 import { User } from "./user";
 import { ClusterMethod, TypingMethod } from "./constants";
 import { ApiFindSimilarInput } from "./types";
-import { BasketState } from "./state/basket";
+import { BasketState } from "./state/basket-state";
 import { SampleBasketCounter } from "./components/samples-basket-counter";
 import { BasketComponent } from "./components/sample-basket";
 
-import "./components/groups";
+import "./components/group-list";
+import "./components/group-selector";
 import "./components/spinner-element";
 
 

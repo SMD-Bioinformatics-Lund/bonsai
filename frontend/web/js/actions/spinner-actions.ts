@@ -1,3 +1,5 @@
+// Functions that interact with jinja2 spinner elements
+
 // functions for hide/ showing spinner
 export const showSpinner = (containerElement: HTMLElement): void => {
   // show spinner and hide content
