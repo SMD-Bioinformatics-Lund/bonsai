@@ -1,0 +1,6 @@
+@import './base.css';
+
+.container {
+    display: flex;
+    align-items: center;
+}
