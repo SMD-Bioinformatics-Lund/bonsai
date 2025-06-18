@@ -59,7 +59,8 @@
                     </span>
                 {% endfor %}
             </div>
-            <p class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></p>
+            <div class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></div>
+            <div class="pb-4">ASSAY: <span class="fst-italic">{{ sample.pipeline.assay }}</span></div>
             <div class="row gx-5">
                 <div class="col-md-auto">
                     {{ qc_status_info(sample.qc_status.status, sample.qc_status.action, sample.qc_status.comment) }}
