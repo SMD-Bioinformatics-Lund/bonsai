@@ -48,7 +48,7 @@ async def get_users_me(
 async def get_samples_in_basket(
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
-    ]
+    ],
 ) -> list[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     return current_user.basket

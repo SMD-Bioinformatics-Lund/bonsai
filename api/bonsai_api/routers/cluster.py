@@ -3,11 +3,21 @@
 import logging
 from pathlib import Path
 
+from bonsai_api.crud.errors import EntryNotFound
+from bonsai_api.crud.sample import (
+    TypingProfileOutput,
+    get_signature_path_for_samples,
+    get_ska_index_path_for_samples,
+    get_typing_profiles,
+)
+from bonsai_api.db import Database, get_db
 from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
 )
-from bonsai_api.redis.minhash import schedule_add_genome_signature_to_index
+from bonsai_api.redis.minhash import (
+    schedule_add_genome_signature_to_index,
+)
 from bonsai_api.redis.minhash import (
     schedule_cluster_samples as schedule_minhash_cluster_samples,
 )
@@ -18,15 +28,6 @@ from bonsai_models.models.base import RWModel
 from bonsai_models.models.cluster import DistanceMethod, TypingMethod
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ConfigDict, Field
-
-from bonsai_api.crud.errors import EntryNotFound
-from bonsai_api.crud.sample import (
-    TypingProfileOutput,
-    get_signature_path_for_samples,
-    get_ska_index_path_for_samples,
-    get_typing_profiles,
-)
-from bonsai_api.db import Database, get_db
 
 from .shared import RouterTags
 
@@ -107,8 +108,14 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
     force: bool = False
 
 
-@router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash", RouterTags.CLS])
-async def index_genome_signatures(index_input: IndexInput, db: Database = Depends(get_db)) -> dict[str, str]:
+@router.post(
+    "/minhash/index",
+    status_code=status.HTTP_202_ACCEPTED,
+    tags=["minhash", RouterTags.CLS],
+)
+async def index_genome_signatures(
+    index_input: IndexInput, db: Database = Depends(get_db)
+) -> dict[str, str]:
     """Entrypoint for scheduling indexing of sourmash signatures.
 
     :raises HTTPException: Return 500 HTTP error signature path cant be generated

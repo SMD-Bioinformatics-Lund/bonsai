@@ -5,10 +5,17 @@ import pathlib
 from typing import Annotated, Union
 
 from bonsai_api.crud.metadata import add_metadata_to_sample
-from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
+from bonsai_api.crud.sample import (
+    EntryNotFound,
+    add_comment,
+    add_location,
+)
 from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
-from bonsai_api.crud.sample import get_sample, get_samples_summary
+from bonsai_api.crud.sample import (
+    get_sample,
+    get_samples_summary,
+)
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
 from bonsai_api.crud.sample import (
@@ -631,7 +638,11 @@ async def find_similar_samples(
                 limit=body.limit,
             )
     except ConnectionError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        )
     except NotImplementedError as error:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error))
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)
+        )
     return submission_info

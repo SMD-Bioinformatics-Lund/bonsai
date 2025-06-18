@@ -19,11 +19,25 @@ def test_sample_to_kmlims(mtuberculosis_sample):
     assert len(result) == n_exp_antibiotics + 3  # + lineage, qc, and spp pred
 
     # test that valid parameter codes are used
-    VALID_PARAMS = ('RIF_NGS', 'INH_NGSH', 'INH_NGSL', 'PYR_NGS', 'ETB_NGS', 'AMI_NGS', 'LEV_NGS', 'MTBC_QC', 'MTBC_ART', 'MTBC_LINEAGE')
+    VALID_PARAMS = (
+        "RIF_NGS",
+        "INH_NGSH",
+        "INH_NGSL",
+        "PYR_NGS",
+        "ETB_NGS",
+        "AMI_NGS",
+        "LEV_NGS",
+        "MTBC_QC",
+        "MTBC_ART",
+        "MTBC_LINEAGE",
+    )
     matched_params = (
-        result
-        .assign(matched=lambda col: col['parameter'].apply(lambda param: param in VALID_PARAMS))
-        .set_index('parameter')
-        .loc[:,'matched']
+        result.assign(
+            matched=lambda col: col["parameter"].apply(
+                lambda param: param in VALID_PARAMS
+            )
         )
+        .set_index("parameter")
+        .loc[:, "matched"]
+    )
     assert matched_params.all()

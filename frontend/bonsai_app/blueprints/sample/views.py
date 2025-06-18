@@ -22,6 +22,7 @@ from flask_login import current_user, login_required
 from requests import HTTPError
 
 from ...bonsai import (
+    SubmittedJob,
     TokenObject,
     cgmlst_cluster_samples,
     delete_samples,
@@ -36,7 +37,6 @@ from ...bonsai import (
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
-    SubmittedJob,
 )
 from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
@@ -153,11 +153,9 @@ def sample(sample_id: str) -> str:
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
-    
-    #similar_samples=similar_samples,
+    # similar_samples=similar_samples,
     return render_template(
         "sample.html",
         sample=sample_info,
@@ -167,7 +165,7 @@ def sample(sample_id: str) -> str:
         extended=extended,
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
-        token=token.token
+        token=token.token,
     )
 
 
@@ -354,7 +352,7 @@ def resistance_variants(sample_id: str) -> str:
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
-        metadata_tbls=meta_tbls
+        metadata_tbls=meta_tbls,
     )
 
 
@@ -370,10 +368,13 @@ def metadata(sample_id: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    
+
     kw_metadata, metadata_tbls = split_metadata(sample_info)
     kw_tbl = kw_metadata_to_table(kw_metadata)
-    grouped_meta_tbl = {name: list(gr) for name, gr in groupby(metadata_tbls, key=lambda x: x['category'])}
+    grouped_meta_tbl = {
+        name: list(gr)
+        for name, gr in groupby(metadata_tbls, key=lambda x: x["category"])
+    }
 
     return render_template(
         "metadata.html",
@@ -397,9 +398,9 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    
+
     _, metadata_tbls = split_metadata(sample_info)
-    indexed_tbls = {tbl['fieldname']: tbl for tbl in metadata_tbls}
+    indexed_tbls = {tbl["fieldname"]: tbl for tbl in metadata_tbls}
     table = indexed_tbls.get(fieldname, None)
 
     return render_template(
