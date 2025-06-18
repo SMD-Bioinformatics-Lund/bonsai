@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, search_similar_js, add_to_basket_btn, add_to_basket_js, qc_bulk_toggle, delete_samples_btn, sample_table %}
+{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn, sample_table %}
 
 {% block css %}
     {{ super() }}
@@ -10,7 +10,6 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
-    <script src="{{ url_for('groups.static', filename='jquery-3.7.1.min.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}
@@ -34,7 +33,7 @@
                     {{ delete_samples_btn() }}
 
                     {# remove samples from group #}
-                    <button class="btn btn-sm btn-secondary ms-1" onclick="removeSelectedSamplesFromGroup('{{ title }}')">
+                    <button id="remove-from-group-btn" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ title }}">
                         <i class="bi bi-folder-minus"></i>
                     </button>
                 {% endif %}
@@ -42,22 +41,6 @@
                 {% if display_qc %}
                     {{ qc_bulk_toggle(bad_qc_actions)}}
                 {% endif %}
-                <form id="sampleForm" class="execute-form" method="POST" action="{{ url_for('cluster.tree') }}">
-                    <input type="hidden" id="cluster-typing-data" name="typing-data" value="cgmlst">
-                    <input type="hidden" id="cluster-distance-metric" name="distance-metric" value="jaccard">
-                    <input type="hidden" id="cluster-clustering-method" name="clustering-method" value="MSTreeV2">
-                    <button id="cluster-button" class="btn btn-sm btn-outline-success ms-2"
-                            disabled>
-                        <span class="content">
-                            <i class="bi bi-diagram-3-fill"></i>
-                            Cluster
-                        </span>
-                        <span class="loading align-middle d-none">
-                            <span class="spinner-grow text-light spinner-grow-sm" role="status"></span>
-                            Loading...
-                        </span>
-                    </button>
-                </form>
                 {# toggle display qc values #}
                 <a class="btn btn-sm btn-outline-primary {% if display_qc %}active{% endif %} ms-2" 
                    data-test-id="open-qc-view-btn"
@@ -70,138 +53,13 @@
     </div>
 </div>
 <script>
-    const apiURL = "{{ config.BONSAI_API_URL }}"
+    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
+    const accessToken = "{{ token }}"
     // template code for adding to basket
-    {{ add_to_basket_js() }}
     // template code for searching similar samples
-    {{ search_similar_js() }}
-    // store url to tree page
-    const treeViewUrl = `${document.location.host}{{url_for('cluster.tree')}}`
-    const orgButtonText = document.getElementById("cluster-button").innerText
 
-    // load all javascript after load
-    const clusterButtonError = () => {
-        // Disable clustering buttin on case of an error
-        const button = document.getElementById("cluster-button")
-        hideSpinner(button)
-    }
-
-    async function openTreeView ({newick, typingData}) {
-        // Open a tree view as a new tab my creating a form and submit it
-        const form = document.getElementById("open-tree-form")
-        // add metadata and newick file to form
-        const newickInput = form.querySelector("#newick-content")
-        newickInput.setAttribute("value", newick)
-        const sampleIdInput = form.querySelector("#sample-ids-content")
-        const metadataInput = form.querySelector("#metadata-content")
-        const typingDataInput = form.querySelector("#typing-data-content")
-        const tableDefinition = {{ table_definition | tojson | safe }}
-        typingDataInput.setAttribute("value", typingData)
-        sampleIdInput.setAttribute("value", 
-            window.sessionStorage.getItem("clusteredSamples")
-        )
-        metadataInput.setAttribute("value", JSON.stringify(tableDefinition))
-        const submitBnt = form.querySelector("input[type=submit]")
-        submitBnt.click()
-    }
-
-    // add submit clustering function
-    document
-    .getElementById("cluster-button")
-    .addEventListener("click", (event) => {
-        event.preventDefault()  // prevent normal behaviour
-        // show spinner
-        const button = document.getElementById("cluster-button")
-        showSpinner(button)
-        
-        // get sample ids for checked samples
-        const sampleId = window.getSelectedRows().ids().toArray()
-        const distance = document.getElementById("cluster-distance-metric").value
-        // if there are more than 1k samples use minhash instead of cgmlst
-        const typingData = sampleId.length > 1000 ? "minhash" : document.getElementById("cluster-typing-data").value
-        // minhash doesnt support neigbour joining
-        const method = typingData === "minhash" ? "single" : document.getElementById("cluster-clustering-method").value
-        // setup and submit clustering job
-        const xhr = new XMLHttpRequest()
-        const entrypointURL = `${apiURL}/cluster/${typingData}`
-        // add event listeners for processing different outcomes of request
-        xhr.addEventListener("load", event => {
-            // successful request
-            if(xhr.readyState == 4 && xhr.status == 201) {
-                // instead open a new tab by mocking a submission
-                const jobId = JSON.parse(xhr.responseText)
-                try {
-                    (async () => {
-                        // start polling for cluster results
-                        let newick = await poll(
-                            async () => fetchJobStatus(jobId.id),  // GET job status
-                            validateJobStatus,  // validator
-                            resultParser,       // parse results
-                            3000                // interval time
-                        )
-                        // open grape tree
-                        openTreeView({newick: newick, typingData: typingData})
-                        hideSpinner(button)
-                    })()
-                } catch (error) {
-                    throwSmallToast(error, "error")
-                }
-            } else {
-                clusterButtonError()
-                throwSmallToast(xhr.responseText)
-                console.log(xhr)
-            }
-        })
-
-        xhr.addEventListener("abort", event => {
-            // failed request disable button and warn user
-            alert("clustering was aborted")
-        })
-
-        xhr.addEventListener("error", event => {
-            // failed request disable button and warn user
-            clusterButtonError()
-            throwSmallToast(xhr.responseText)
-        })
-
-        // make request
-        xhr.open("POST", entrypointURL, true)
-        // set request token header
-        xhr.setRequestHeader("Authorization", `Bearer ${localStorage.getItem("token")}`)
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.setRequestHeader("Access-Control-Allow-Origin", '*')
-        window.sessionStorage.setItem("clusteredSamples", JSON.stringify({sample_id: sampleId}))
-        xhr.send(JSON.stringify({"sample_ids": sampleId, "method": method, "distance": distance}))
-    })
-
-    // update functions for selecting and deselecting rows
-    table.on('select', (e, dt, type, indexes) => {
-        window.updateRowSelectionCounters()
-        document.getElementById("cluster-button").disabled = window.getSelectedRows().data().length < 2
-    })
-    table.on('deselect', (e, dt, type, indexes) => {
-        window.updateRowSelectionCounters()
-        document.getElementById("cluster-button").disabled = window.getSelectedRows().data().length < 2
-    })
-</script>
-<script>
-    function removeSelectedSamplesFromGroup(groupId) {
-        const body = {
-            selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
-        }
-        const baseUrl = {{ request.script_root|tojson }}
-        fetch(`${baseUrl}/api/groups/${groupId}/samples`, {
-            method: "DEL",
-            body: JSON.stringify(body),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        }).then(response => {
-            response.ok ?  location.reload() : throwSmallToast("The samples could not be removed from group.", "error")
-        })
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        bonsai.initGroupView(apiUrl, accessToken, "")
+    });
 </script>
 {% endblock content %}
-

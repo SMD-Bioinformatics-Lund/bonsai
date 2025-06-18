@@ -153,45 +153,21 @@ def sample(sample_id: str) -> str:
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    # Get the most similar samples and calculate the pair-wise similaity
-    typing_method = settings.sample_view_typing_method
-    try:
-        job: SubmittedJob = find_and_cluster_similar_samples(
-            token,
-            sample_id=sample_id,
-            limit=settings.sample_view_similarity_limit,
-            similarity=settings.sample_view_similarity_threshold,
-            typing_method=typing_method,
-            cluster_method=settings.sample_view_cluster_method,
-        )
-        similar_samples: dict[str, Any] | None = {
-            "job": job.model_dump(),
-            "typing_method": typing_method,
-        }
-    except HTTPError as error:
-        flash(
-            f"A error occured when trying to find similar samples", category="warning"
-        )
-        LOG.error(
-            "Error when queueing redis job 'find similar samples' for sample '%s'; error: %s",
-            sample_id,
-            str(error),
-        )
-        similar_samples = None
     
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
     
+    #similar_samples=similar_samples,
     return render_template(
         "sample.html",
         sample=sample_info,
         title=sample_id,
         is_filtered=bool(group_id),
-        similar_samples=similar_samples,
         bad_qc_actions=bad_qc_actions,
         extended=extended,
         kw_metadata=kw_meta_records,
-        metadata_tbls=meta_tbls
+        metadata_tbls=meta_tbls,
+        token=token.token
     )
 
 

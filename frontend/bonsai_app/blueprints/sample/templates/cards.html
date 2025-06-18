@@ -12,8 +12,32 @@
 {% endmacro %}
 
 
+{% macro qc_status_info(status, action="", comment="") %}
+<div id="qc-status-info">
+    {% if status == "passed" %}
+        {% set txt_fmt="text-success" %}
+    {% elif status == "failed" %}
+        {% set txt_fmt="text-danger" %}
+    {% else %}
+        {% set txt_fmt="" %}
+    {% endif %}
+    <p class="card-text">
+        QC: 
+        <strong>
+            <span name="qc-status" class="{{ txt_fmt }}">{{ status | capitalize }}</span>
+        </strong>
+        <span name="container" {% if action is none %}hidden{% endif %}>
+            <span name="action">{{ action | capitalize }}</span>
+            —
+            <span name="comment">{{ comment | capitalize }}</span>
+        </span>
+    </p>
+</div>
+{% endmacro %}
+
+
 {% macro sample_header(sample, class_names="br-header") %}
-<div class="p-2 {{class_names}}">
+<div id="sample-header" class="p-2 {{class_names}}">
     <div class="card">
         <div class="card-body">
             <div class="d-flex">
@@ -39,15 +63,7 @@
             <div class="pb-4">ASSAY: <span class="fst-italic">{{ sample.pipeline.assay }}</span></div>
             <div class="row gx-5">
                 <div class="col-md-auto">
-                    <p class="card-text">
-                        {% if sample.qc_status.status == "passed" %}
-                            QC: <strong class="text-success">{{ sample.qc_status.status | capitalize }}</strong>
-                        {% elif sample.qc_status.status == "failed" %}
-                            QC: <strong class="text-danger">{{ sample.qc_status.status | capitalize }}</strong>; {{ sample.qc_status.action }}, {{ sample.qc_status.comment }}
-                        {% else %}
-                            QC: <strong>{{ sample.qc_status.status | capitalize }}</strong>
-                        {% endif %}
-                    </p>
+                    {{ qc_status_info(sample.qc_status.status, sample.qc_status.action, sample.qc_status.comment) }}
                 </div>
             </div>
             <div class="row gx-5">
@@ -1085,23 +1101,14 @@
 {% endmacro %}
 
 
-{% macro similar_samples_card(data) %}
+{% macro similar_samples_card() %}
 <div id="similar-samples-card"
      class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
      style="width: 24rem;">
-    <div class="card-header">
-        Similar samples {% if data is not none %}[<i>{{ data.typing_method }}</i>]{% endif %}
-    </div>
-    <div id="similar-samples-cluster" class="card-body" data-job-id="{{data.job.id}}">
-        <div class="d-flex justify-content-center loading my-5">
-            <div class="spinner-border text-success" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-        <div class="content">
-            <div id="tree-body" class="job-success">
-            </div>
-        </div>
+    <div class="card-header">Similar samples</div>
+    <div class="card-body">
+        <spinner-element></spinner-element>
+        <div id="tree-body" class="tree-body"></div>
     </div>
 </div>
 {% endmacro %}

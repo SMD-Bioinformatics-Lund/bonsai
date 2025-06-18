@@ -70,7 +70,7 @@ def api_authentication(func: Callable[..., Any]) -> Callable[..., Any]:
 def get_current_user(headers: CaseInsensitiveDict[str]):
     """Get current user from token"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/me"
+    url = f"{settings.api_internal_url}/users/me"
     resp = requests_get(url, headers=headers)
 
     resp.raise_for_status()
@@ -81,7 +81,7 @@ def get_current_user(headers: CaseInsensitiveDict[str]):
 def get_users(headers: CaseInsensitiveDict[str]):
     """Get current user from the database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/"
+    url = f"{settings.api_internal_url}/users/"
     resp = requests_get(url, headers=headers)
 
     resp.raise_for_status()
@@ -92,7 +92,7 @@ def get_users(headers: CaseInsensitiveDict[str]):
 def create_user(headers: CaseInsensitiveDict[str], user_obj: str):
     """Create a new user."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/"
+    url = f"{settings.api_internal_url}/users/"
     resp = requests_post(url, headers=headers, json=user_obj)
 
     resp.raise_for_status()
@@ -104,7 +104,7 @@ def get_user(headers: CaseInsensitiveDict[str], username: str):
     """Get current user from token"""
     # username = kwargs.get("username")
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/{username}"
+    url = f"{settings.api_internal_url}/users/{username}"
     resp = requests_get(url, headers=headers)
 
     resp.raise_for_status()
@@ -115,7 +115,7 @@ def get_user(headers: CaseInsensitiveDict[str], username: str):
 def update_user(headers: CaseInsensitiveDict[str], username: str, user: dict[str, str]):
     """Delete the user from the database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/{username}"
+    url = f"{settings.api_internal_url}/users/{username}"
     resp = requests_put(url, headers=headers, json=user)
 
     resp.raise_for_status()
@@ -126,7 +126,7 @@ def update_user(headers: CaseInsensitiveDict[str], username: str, user: dict[str
 def delete_user(headers: CaseInsensitiveDict[str], username: str):
     """Delete the user from the database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/{username}"
+    url = f"{settings.api_internal_url}/users/{username}"
     resp = requests_delete(url, headers=headers)
 
     resp.raise_for_status()
@@ -139,7 +139,7 @@ def get_auth_token(username: str, password: str) -> TokenObject:
     headers: CaseInsensitiveDict[str] = CaseInsensitiveDict()
     headers["Content-Type"] = "application/x-www-form-urlencoded"
 
-    url = f"{settings.bonsai_api_url}/token"
+    url = f"{settings.api_internal_url}/token"
     resp = requests_post(
         url,
         data={"username": username, "password": password},
@@ -156,7 +156,7 @@ def get_auth_token(username: str, password: str) -> TokenObject:
 def get_groups(headers: CaseInsensitiveDict[str]):
     """Get groups from database"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/"
+    url = f"{settings.api_internal_url}/groups/"
     LOG.error("query api url: %s", url)
     resp = requests_get(url, headers=headers)
 
@@ -168,7 +168,7 @@ def get_groups(headers: CaseInsensitiveDict[str]):
 def get_group_by_id(headers: CaseInsensitiveDict[str], group_id: str):
     """Get a group with its group_id from database"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/{group_id}"
+    url = f"{settings.api_internal_url}/groups/{group_id}"
     current_app.logger.debug("Query API for group %s", group_id)
     resp = requests_get(url, headers=headers)
 
@@ -180,7 +180,7 @@ def get_group_by_id(headers: CaseInsensitiveDict[str], group_id: str):
 def delete_group(headers: CaseInsensitiveDict[str], group_id: str):
     """Remove group from database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/{group_id}"
+    url = f"{settings.api_internal_url}/groups/{group_id}"
     resp = requests_delete(url, headers=headers)
 
     resp.raise_for_status()
@@ -193,7 +193,7 @@ def update_group(
 ):
     """Update information in database for a group with group_id."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/{group_id}"
+    url = f"{settings.api_internal_url}/groups/{group_id}"
     resp = requests_put(url, json=data, headers=headers)
 
     resp.raise_for_status()
@@ -204,7 +204,7 @@ def update_group(
 def create_group(headers: CaseInsensitiveDict[str], data: dict[str, Any]):
     """create new group."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/"
+    url = f"{settings.api_internal_url}/groups/"
     resp = requests_post(url, json=data, headers=headers)
 
     resp.raise_for_status()
@@ -218,7 +218,7 @@ def add_samples_to_basket(
     """create new group."""
     serialised_info = [smp.model_dump() for smp in samples]
     # conduct query
-    url = f"{settings.bonsai_api_url}/users/basket"
+    url = f"{settings.api_internal_url}/users/basket"
     resp = requests_put(url, json=serialised_info, headers=headers)
 
     resp.raise_for_status()
@@ -230,7 +230,7 @@ def remove_samples_from_basket(
     headers: CaseInsensitiveDict[str], sample_ids: list[str]
 ):
     """create new group."""
-    url = f"{settings.bonsai_api_url}/users/basket"
+    url = f"{settings.api_internal_url}/users/basket"
     resp = requests_delete(url, json=sample_ids, headers=headers)
 
     resp.raise_for_status()
@@ -246,7 +246,7 @@ def get_samples(
 ):
     """Get multipe samples from database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/"
+    url = f"{settings.api_internal_url}/samples/"
     # get limit, offeset and skip values
     params: dict[str, int | list[str]] = {"limit": limit, "skip": skip}
     if sample_ids is not None:
@@ -267,7 +267,7 @@ def get_samples(
 def delete_samples(headers: CaseInsensitiveDict[str], sample_ids: List[str]):
     """Remove samples from database."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/"
+    url = f"{settings.api_internal_url}/samples/"
     resp = requests_delete(url, headers=headers, json=sample_ids)
 
     resp.raise_for_status()
@@ -285,7 +285,7 @@ def get_samples_in_group(
 ):
     """Search the database for the samples that are part of a given group."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/groups/{group_id}/samples"
+    url = f"{settings.api_internal_url}/groups/{group_id}/samples"
     if group_id is None:
         raise ValueError("No sample id provided.")
 
@@ -311,7 +311,7 @@ def get_sample_by_id(
 ) -> dict[str, Any]:
     """Get sample from database by id"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}"
+    url = f"{settings.api_internal_url}/samples/{sample_id}"
     resp = requests_get(url, headers=headers)
     current_app.logger.debug("Query API for sample %s", sample_id)
 
@@ -322,7 +322,7 @@ def get_sample_by_id(
 @api_authentication
 def cgmlst_cluster_samples(headers: CaseInsensitiveDict[str]):
     """Get groups from database"""
-    url = f"{settings.bonsai_api_url}/cluster/cgmlst"
+    url = f"{settings.api_internal_url}/cluster/cgmlst"
     resp = requests_post(url, headers=headers)
 
     resp.raise_for_status()
@@ -336,7 +336,7 @@ def post_comment_to_sample(
     """Post comment to sample"""
     data = {"comment": comment, "username": user_name}
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/comment"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/comment"
     resp = requests_post(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
@@ -348,7 +348,7 @@ def remove_comment_from_sample(
 ):
     """Post comment to sample"""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/comment/{comment_id}"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/comment/{comment_id}"
     resp = requests_delete(url, headers=headers)
     resp.raise_for_status()
     return resp.json()
@@ -369,7 +369,7 @@ def update_sample_qc_classification(
         "comment": comment,
     }
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/qc_status"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/qc_status"
     resp = requests_put(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
@@ -388,7 +388,7 @@ def update_variant_info(
         **status,
     }
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/resistance/variants"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/resistance/variants"
     resp = requests_put(url, headers=headers, json=data)
     resp.raise_for_status()
     return resp.json()
@@ -403,7 +403,7 @@ def cluster_samples(
     distance: str = "jaccard",
 ) -> SubmittedJob:
     """Cluster samples on selected typing result."""
-    url = f"{settings.bonsai_api_url}/cluster/{typing_method}/"
+    url = f"{settings.api_internal_url}/cluster/{typing_method}/"
     resp = requests_post(
         url,
         headers=headers,
@@ -426,7 +426,7 @@ def find_samples_similar_to_reference(
 ) -> SubmittedJob:
     """Find samples with closest minhash distance to reference."""
     # conduct query
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/similar"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/similar"
     current_app.logger.debug(
         "Query API for samples similar to %s, similarity: %s, limit: %s",
         sample_id,
@@ -453,7 +453,7 @@ def find_and_cluster_similar_samples(
 ) -> SubmittedJob:
     """Find samples with closest minhash distance to reference."""
 
-    url = f"{settings.bonsai_api_url}/samples/{sample_id}/similar"
+    url = f"{settings.api_internal_url}/samples/{sample_id}/similar"
     current_app.logger.debug(
         "Query API for samples similar to %s, similarity: %f, limit: %d",
         sample_id,
@@ -480,7 +480,7 @@ def find_and_cluster_similar_samples(
 @api_authentication
 def get_lims_export_file(headers: CaseInsensitiveDict[str], sample_id: str) -> str:
     """Query the API for a lims export file."""
-    url = f"{settings.bonsai_api_url}/export/{sample_id}/lims"
+    url = f"{settings.api_internal_url}/export/{sample_id}/lims"
     resp = requests_get(url, headers=headers)
     resp.raise_for_status()
     return resp.text
@@ -493,14 +493,14 @@ def get_valid_group_columns(headers: CaseInsensitiveDict[str], group_id: str | N
         "groups/default/columns" if group_id is None 
         else f"groups/{group_id}/columns"
     )
-    resp = requests_get(f"{settings.bonsai_api_url}/{partial_url}", params={"qc": qc}, headers=headers)
+    resp = requests_get(f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers)
     resp.raise_for_status()
     return resp.json()
 
 
 def get_antibiotics():
     """Query the API for antibiotics."""
-    url = f"{settings.bonsai_api_url}/resources/antibiotics"
+    url = f"{settings.api_internal_url}/resources/antibiotics"
     resp = requests_get(url)
     resp.raise_for_status()
     return resp.json()
@@ -508,7 +508,7 @@ def get_antibiotics():
 
 def get_variant_rejection_reasons():
     """Query the API for antibiotics."""
-    url = f"{settings.bonsai_api_url}/resources/variant/rejection"
+    url = f"{settings.api_internal_url}/resources/variant/rejection"
     resp = requests_get(url)
     resp.raise_for_status()
     return resp.json()
