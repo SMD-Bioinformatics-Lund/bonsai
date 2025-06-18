@@ -1,7 +1,6 @@
 """Tests for Jinja custom filters."""
 
 import pytest
-
 from bonsai_app.custom_filters import human_readable_large_numbers
 
 

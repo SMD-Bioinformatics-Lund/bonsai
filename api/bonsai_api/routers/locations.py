@@ -16,6 +16,7 @@ from bonsai_models.models.location import (
 )
 from bonsai_models.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+
 from .shared import RouterTags
 
 router = APIRouter()

@@ -487,13 +487,16 @@ def get_lims_export_file(headers: CaseInsensitiveDict[str], sample_id: str) -> s
 
 
 @api_authentication
-def get_valid_group_columns(headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False):
+def get_valid_group_columns(
+    headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False
+):
     """Query API for valid group columns."""
     partial_url: str = (
-        "groups/default/columns" if group_id is None 
-        else f"groups/{group_id}/columns"
+        "groups/default/columns" if group_id is None else f"groups/{group_id}/columns"
     )
-    resp = requests_get(f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers)
+    resp = requests_get(
+        f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers
+    )
     resp.raise_for_status()
     return resp.json()
 

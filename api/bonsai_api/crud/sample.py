@@ -348,7 +348,9 @@ async def get_samples(
                     "This can be caused if the data format has been updated. "
                     "If that is the case the database needs to be migrated. "
                     "See the documentation for more information."
-                ), samp.get("sample_id", "unknown id"))
+                ),
+                samp.get("sample_id", "unknown id"),
+            )
             raise err
         # Compute tags
         tags = compute_phenotype_tags(sample)

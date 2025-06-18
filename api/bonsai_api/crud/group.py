@@ -136,14 +136,16 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
+async def add_samples_to_group(
+    db: Database, group_id: str, sample_ids: list[str]
+) -> None:
     """Create a new collection document."""
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
             "$set": {"modified_at": get_timestamp()},
             "$addToSet": {
-                "included_samples": { "$each": sample_ids },
+                "included_samples": {"$each": sample_ids},
             },
         },
     )
@@ -153,14 +155,16 @@ async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str
         raise UpdateDocumentError(group_id)
 
 
-async def remove_samples_from_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
+async def remove_samples_from_group(
+    db: Database, group_id: str, sample_ids: list[str]
+) -> None:
     """Create a new collection document."""
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
             "$set": {"modified_at": get_timestamp()},
             "$pull": {
-                "included_samples": {"$in" :sample_ids},
+                "included_samples": {"$in": sample_ids},
             },
         },
     )

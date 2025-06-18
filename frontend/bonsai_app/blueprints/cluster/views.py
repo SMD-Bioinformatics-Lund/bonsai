@@ -66,7 +66,10 @@ def get_value(sample: dict[str | int, Any], value: str | int) -> str | int | flo
     return "-" if val is None else val
 
 
-def fmt_metadata(sample_obj: dict[str, str | int | list[str | dict[str, Any]]], column: dict[str, Any]) -> str:
+def fmt_metadata(
+    sample_obj: dict[str, str | int | list[str | dict[str, Any]]],
+    column: dict[str, Any],
+) -> str:
     data = get_json_path(sample_obj, column["path"])
     match column["type"]:
         case "tags":
@@ -82,13 +85,15 @@ def fmt_metadata(sample_obj: dict[str, str | int | list[str | dict[str, Any]]], 
         case "date":
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
         case "list":
-            fmt_data = ', '.join(data)
+            fmt_data = ", ".join(data)
         case _:
             fmt_data = data
     return fmt_data
 
 
-def gather_metadata(samples: list[dict[str, Any]], column_definition: list[Any]) -> MetaData:
+def gather_metadata(
+    samples: list[dict[str, Any]], column_definition: list[Any]
+) -> MetaData:
     """Create metadata structure.
 
     GrapeTree metadata structure
@@ -107,7 +112,9 @@ def gather_metadata(samples: list[dict[str, Any]], column_definition: list[Any])
     """
     # Get which metadata points to display
     # skip column with sample button
-    columns = [col for col in column_definition if not col["hidden"] and col["label"] != ""]
+    columns = [
+        col for col in column_definition if not col["hidden"] and col["label"] != ""
+    ]
     # create metadata structure
     metadata: dict[str, dict[str, str | int | float | None]] = {}
     for sample in samples:
@@ -119,7 +126,10 @@ def gather_metadata(samples: list[dict[str, Any]], column_definition: list[Any])
         }
         # exclude metadata tables as they cant be rendered
         meta_records: dict[str, str] = {
-            meta['fieldname']: meta['value'] for meta in sample['metadata'] if meta['type'] != 'table'}
+            meta["fieldname"]: meta["value"]
+            for meta in sample["metadata"]
+            if meta["type"] != "table"
+        }
         metadata[sample_id] = {**default_cols, **meta_records}
     # build list of unique columns
     metadata_list: set[str] = set()
