@@ -112,7 +112,7 @@ class IgvData(RWModel):
 
 def build_api_url(path: str, **kwargs):
     """Build api URL path."""
-    base_url = f"{settings.bonsai_api_url}{path}"
+    base_url = f"{settings.api_external_url}{path}"
     params = [f"{key}={val}" for key, val in kwargs.items()]
     if len(params) > 0:
         url = f"{base_url}?{'&'.join(params)}"
@@ -159,7 +159,7 @@ def make_igv_tracks(
     # get reference genome
     ref_genome = sample_obj["reference_genome"]
     entrypoint_url = os.path.join(
-        settings.bonsai_api_url, "resources", "genome", "info"
+        settings.api_external_url, "resources", "genome", "info"
     )
     reference = IgvReferenceGenome(
         name=ref_genome["accession"],
@@ -183,7 +183,7 @@ def make_igv_tracks(
 
     # generate read mapping track
     bam_entrypoint_url = os.path.join(
-        settings.bonsai_api_url, "samples", sample_obj["sample_id"], "alignment"
+        settings.api_external_url, "samples", sample_obj["sample_id"], "alignment"
     )
     tracks = [
         IgvAlignmentTrack(

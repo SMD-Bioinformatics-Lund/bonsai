@@ -1,35 +1,15 @@
-{% from  'sidebar.html' import qc_classification_form_fields, qc_form_controls_js  %}
+{% from  'sidebar.html' import qc_classification_form_fields  %}
 {% from "cell_fmt.html" import format_table_cell %}
 
 {% macro add_to_basket_btn() %}
-<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn"
-        onclick="addSelectedSamplesToBasket(this)" disabled>
+<button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
     <i class="bi bi-plus-lg"></i>
     <span>Add to basket</span>
 </button>
 {% endmacro %}
 
-{% macro add_to_basket_js() %}
-function addSelectedSamplesToBasket(btn) {
-    // add selected samples from table to session storage
-    const body = {
-        selectedSamples: JSON.parse(sessionStorage.getItem("selectedSamples"))
-    }
-    const baseUrl = {{ request.script_root|tojson }}
-    fetch(`${baseUrl}/api/basket/add`, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-            'Accept': 'application/json', 
-            'Content-Type': 'application/json' 
-        },
-        credentials: 'same-origin'
-    }).then(response => {location.reload()})
-}
-{% endmacro %}
-
 {% macro search_similar_btn() %}
-<div id="find-similar-dropdown" class="dropdown">
+<div id="find-similar-dropdown" class="dropdown similar-samples-container">
     <button id="select-similar-samples-btn" 
             class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
             data-bs-toggle="dropdown" disabled>
@@ -49,73 +29,12 @@ function addSelectedSamplesToBasket(btn) {
         <input type="text" name="similar-samples-threshold" 
                 id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
                 placeholder="Min similarity" value="0.95" required>
-        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2"
-                onclick="getSimilarSamplesAndCheckRows(this)">
+        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2" >
             <i class="bi bi-search"></i>
             Search
         </button>
     </form>
 </div>
-{% endmacro %}
-
-{% macro search_similar_js() %}
-async function getSimilarSamples() {
-    const sampleId=window.getSelectedRows().ids()[0]
-    const limit=document.getElementById("similar-samples-limit").value
-    const similarity=document.getElementById("similar-samples-threshold").value
-    const baseUrl = {{ request.script_root|tojson }}
-    try {
-        const response = await fetch(`${baseUrl}/sample/${sampleId}/similar`, {
-            method: "POST",
-            body: JSON.stringify({limit: limit, similarity: similarity}),
-            headers: {
-                'Accept': 'application/json', 
-                'Content-Type': 'application/json' 
-            },
-            credentials: 'same-origin'
-        })
-        const jsonData = await response.json()
-        if ( !response.ok ) {
-            console.log(`Error while finding similar samples: ${jsonData.details}`)
-            return false
-        } else {
-            return jsonData
-        }
-    } catch ( error ) {
-        console.error("Error:", error)
-        return false
-    }
-}
-
-async function getSimilarSamplesAndCheckRows(btn) {
-    const parentElem = btn.parentElement.parentElement
-    showSpinner(parentElem)
-    getSimilarSamples().then( async (job) => {
-        if ( job ) {
-            try {
-                let result = await poll(
-                    async () => fetchJobStatus(job.id),  // function to get job status
-                    validateJobStatus,  // validator
-                    resultParser,       // parse results
-                    3000                // interval time
-                )
-                window.selectRows(result.map(sample => sample.sample_id))
-                hideSpinner(parentElem)
-            } catch (err) {
-                throwSmallToast("Error while finding similar samples")
-                hideSpinner(parentElem)
-            }
-        } else {
-            throwSmallToast("Error while finding similar samples")
-            hideSpinner(parentElem)
-        }
-    })
-}
-
-document.getElementById("similar-samples-threshold").addEventListener("input", (thresholdElem) => {
-    const thresholdValue = thresholdElem.data
-    document.getElementById("similar-samples-button").disabled = isNaN(parseInt(thresholdValue))
-});
 {% endmacro %}
 
 {% macro qc_bulk_toggle(bad_qc_actions) %}
@@ -152,64 +71,13 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             </div>
         </form>
     </div>
-    <script>
-     // QC form controls:
-     {{ qc_form_controls_js() }}
-
-     // Add data from JS table to QC form before dispatching POST
-     const qcForm = document.getElementById("qc-form-control");
-     qcForm.addEventListener("submit", (e) => {
-         e.preventDefault();
-         addSelectedSamplesToQcForm(qcForm)
-         qcForm.submit()
-     });
-
-     /**
-      * Adds selected samples to HTML form by creating and appending
-      * hidden input elements with the sample IDs.
-      *
-      * @param   {HTMLFormElement}  form    The HTML form element to which the selected samples will be added.
-      */
-     function addSelectedSamplesToQcForm(form) {
-         // Remove existing hidden inputs with the name 'qc-selected-samples'
-         var existingInputs = form.querySelectorAll('input[name="qc-selected-samples"]');
-         existingInputs.forEach(existingInput => {
-             existingInput.parentNode.removeChild(existingInput);
-         });
-
-         // Iterate over the selectedSamples array and add as hidden inputs to the form
-         window.getSelectedRows().ids().toArray().forEach(sampleId => {
-            // Create a hidden input element
-            var input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'qc-selected-samples'; // Adjust the name as needed
-            input.value = sampleId
-
-            // Append the input element to the form
-            form.appendChild(input);
-         });
-     }
-    </script>
 {% endmacro %}
 
 {% macro delete_samples_btn() %}
-    <form id="remove-samples-form" method=POST action={{ url_for("samples.remove_samples") }}>
-        <input type="text" name="sample-ids" hidden>
-        <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" 
-                type="submit" disabled>
-            <i class="bi bi-trash"></i>
-            <span>Delete samples</span>
-        </button>
-    </form>
-    <script>
-        const removeSamplesForm = document.getElementById("remove-samples-form")
-        removeSamplesForm.addEventListener("submit", event => {
-        event.preventDefault()
-        // add selected samples to form
-        event.target.querySelector("input").value = JSON.stringify(window.getSelectedRows().ids().toArray())
-        removeSamplesForm.submit()
-        })
-    </script>
+    <button id="remove-samples-btn" class="btn btn-sm btn-outline-danger ms-1" disabled>
+        <i class="bi bi-trash"></i>
+        <span>Delete samples</span>
+    </button>
 {% endmacro %}
 
 {% macro sample_table(table_data) %}
@@ -235,47 +103,4 @@ document.getElementById("similar-samples-threshold").addEventListener("input", (
             {% endfor %}
         </tbody>
     </table>
-    <script>
-        // define data table
-        DataTable.datetime('YYYY-MM-DD')
-        const table = new DataTable('#sample-table', { 
-            select: true,
-            layout: {
-                topStart: 'searchBuilder'
-            },
-        });
-        table.on('select', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-        table.on('deselect', (e, dt, type, indexes) => window.updateRowSelectionCounters());
-
-        // define global functions
-        window.getSelectedRows = () => table.rows('.selected')
-        window.selectRows = (sampleIds) => {
-            table.rows(sampleIds.map(id => `#${id}`)).select()
-            window.updateRowSelectionCounters()
-        }
-
-        window.updateRowSelectionCounters = () => {
-            let nSelectedRows = table.rows('.selected').data().length
-            // enable add to basket + toggle qc buttons when user selects at least one row
-            if ( document.getElementById("add-to-basket-btn") !== null) {
-              document.getElementById("add-to-basket-btn").disabled = 1 > nSelectedRows
-            }
-            if ( document.getElementById("toggle-qc-btn") !== null ) {
-              document.getElementById("toggle-qc-btn").disabled = 1 > nSelectedRows
-            }
-            // enable find simiar samples button when ONE row is selected
-            if ( document.getElementById("select-similar-samples-btn") !== null ) {
-              document.getElementById("select-similar-samples-btn").disabled = 1 !== nSelectedRows
-            }
-            // enable remove samples btn
-            if (document.getElementById("remove-samples-btn") !== null) {
-                document.getElementById("remove-samples-btn").disabled = 0 > nSelectedRows
-            }
-            sessionStorage.setItem("selectedSamples", JSON.stringify(table.rows('.selected').ids().toArray()));
-        }
-
-        // init tooltips
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-    </script>
 {% endmacro %}

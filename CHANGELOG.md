@@ -1,8 +1,16 @@
 ## [Unreleased]
 
+### Added
+
+- Split `BONSAI_API_URL` to two URLs, one for internal frontend-api communication and one for external browser to api communication.
+
 ### Fixed
 
 - Fixed workflow for publishing docker images on tagged releases.
+
+### Changed
+
+- Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
 
 ## [v.1.2.0]
 

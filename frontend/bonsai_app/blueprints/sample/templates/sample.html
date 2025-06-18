@@ -9,9 +9,9 @@
 
 {% block scripts %}
 {{ super() }}
-<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
+<script src="https://unpkg.com/tidytree@0.5.0/dist/tidytree.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
 {% endblock scripts %}
 
 
@@ -49,9 +49,7 @@
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="epi-typing-heading" class="row justify-content-md-center">
                 <div class="col-md-auto">
-                    {% if simiar_samples is defined %}
-                        {{ similar_samples_card(similar_samples) }}
-                    {% endif %}
+                    {{ similar_samples_card() }}
                 </div>
                 {% for res in sample.typing_result %}
                     {% if res.type == "mlst" %}
@@ -164,29 +162,16 @@
     </main>
 </div>
 <script>
-    const apiURL = "{{ config.BONSAI_API_URL }}"
+    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
+    const accessToken = "{{ token }}"
     const sampleId = getSampleId()
 
-    function drawDendrogram(newick, sampleId) {
-        const tree = new TidyTree(newick, { 
-            parent: "#tree-body",
-            //layout: "circle",
-            layout: "vertical",
-            type: "dendrogram",
-            mode: "square",
-            ruler: false,
-            leafLabels: true,
-            margin: [10, 10, 80, 10]
-        });
-        // hightlight current sample
-        tree.search(d => d.data.id.includes(sampleId)).selectAll("circle").style("fill", "steelblue").attr("r", 5);
-        // leaves
-        const leaves = tree.data.getLeafs()
-        tree.eachLeafLabel(label => {
-            label.style['cursor'] = 'pointer'  // set mouse pointer style
-            label.onclick = () => openSamplePage(label.innerHTML);
+    document.addEventListener('DOMContentLoaded', () => {
+        // get similar samples newick
+        bonsai.initSampleView(apiUrl, accessToken, "", sampleId).then(nwk => {
+          drawDendrogram('#tree-body', nwk, sampleId)
         })
-    }
+    });
 
     function getSampleId() {
         // get sample id from the URL
@@ -194,52 +179,41 @@
         return window.location.pathname.split('/')[samplePos + 1]
     }
 
-    function openSamplePage(sampleId) {
-        const groupNamePos = window.location.pathname.split('/').indexOf('sample')
-        const baseUrl = window.location.pathname.split('/').slice(0, groupNamePos).join('/') 
-        window.open(`${baseUrl}/sample/${sampleId}`)
-    }
+    function drawDendrogram(
+      containerSelector,
+      newick,
+      sampleId,
+    ) {
+      const tree = new TidyTree(newick, {
+        parent: containerSelector,
+        //layout: "circle",
+        layout: "vertical",
+        type: "dendrogram",
+        mode: "square",
+        ruler: false,
+        leafLabels: true,
+        margin: [10, 10, 80, 10],
+      });
+    // hightlight current sample
+    tree
+      .search((d) => d.data.id.includes(sampleId))
+      .selectAll("circle")
+      .style("fill", "steelblue")
+      .attr("r", 5);
+    // leaves
+    tree.eachLeafLabel((label) => {
+      label.style["cursor"] = "pointer"; // set mouse pointer style
+      label.onclick = () => openSamplePage(label.innerHTML);
+    });
+  }
 
-    async function fetchNewickAndDrawDendrogram() {
-        // wait until cluster job has fhinished 
-        // and then draw dendrogram
-        const jobId = (
-            document.getElementById("similar-samples-cluster")
-                    .getAttribute("data-job-id"))
-        const card = document.getElementById('similar-samples-card')
-        // if job is not none
-        if ( typeof jobId === 'string' ) {
-            // poll job result
-            try {
-                let result = await poll(
-                    async () => fetchJobStatus(jobId),  // GET job status
-                    validateJobStatus,  // validator
-                    resultParser,       // parse results
-                    3000                // interval time
-                )
-                hideSpinner(card)
-                drawDendrogram(result, sampleId)
-            } catch (err) {
-                card.hidden = true
-                throwSmallToast(err, "error")
-            }
-        } else {
-            card.hidden = true
-            throwSmallToast("No cluster job detected", "error")
-        }
-    }
-    window.onload = () => {
-        // run function when window have loaded
-        fetchNewickAndDrawDendrogram()
-    }
-</script>
-<script>
-    //const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
-
-    // init popovers
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
+  function openSamplePage(sampleId) {
+    const groupNamePos = window.location.pathname.split("/").indexOf("sample");
+    const baseUrl = window.location.pathname
+      .split("/")
+      .slice(0, groupNamePos)
+      .join("/");
+    window.open(`${baseUrl}/sample/${sampleId}`);
+  }
 </script>
 {% endblock content %}

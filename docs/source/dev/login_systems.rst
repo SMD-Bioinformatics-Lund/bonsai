@@ -104,7 +104,7 @@ Here is a example of an LDAP based authentication configuration using docker-com
          environment:
             - FLASK_APP=app.app:create_app
             - FLASK_ENV=development 
-            - "BONSAI_API_URL=http://mtlucmds2.lund.skane.se:8811"
+            - "API_EXTERNAL_URL=http://mtlucmds2.lund.skane.se:8811"
          networks:
             - bonsai-net
          command: "flask run --debug --host 0.0.0.0"
