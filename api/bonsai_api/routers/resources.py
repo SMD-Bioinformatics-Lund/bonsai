@@ -4,7 +4,6 @@ import logging
 import pathlib
 from typing import Annotated
 
-from .shared import RouterTags
 from bonsai_api.config import settings
 from bonsai_api.io import (
     InvalidRangeError,
@@ -16,6 +15,8 @@ from bonsai_models.models.antibiotics import ANTIBIOTICS
 from bonsai_models.models.qc import VARIANT_REJECTION_REASONS
 from fastapi import APIRouter, Header, HTTPException, Query, status
 from fastapi.responses import FileResponse
+
+from .shared import RouterTags
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()

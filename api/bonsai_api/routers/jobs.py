@@ -3,8 +3,9 @@
 import logging
 
 from bonsai_api.redis.queue import JobStatus, check_redis_job_status
-from .shared import RouterTags
 from fastapi import APIRouter, status
+
+from .shared import RouterTags
 
 LOG = logging.getLogger(__name__)
 

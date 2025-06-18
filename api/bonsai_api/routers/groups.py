@@ -1,8 +1,6 @@
 """Entrypoints for getting group data."""
 
-
 import bonsai_api.crud.group as crud_group
-
 from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
 from bonsai_api.crud.group import create_group as create_group_record
 from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
@@ -140,11 +138,15 @@ async def update_group_info(
 
 
 @router.put(
-    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}/samples",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
 )
 async def add_samples_to_group(
     group_id: str = Path(..., title="The id of the group to get"),
-    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
+    sample_ids: list[str] = Query(
+        ..., alias="s", title="The ids of the samples to add to the group"
+    ),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
@@ -167,11 +169,15 @@ async def add_samples_to_group(
 
 
 @router.delete(
-    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}/samples",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
 )
 async def remove_sample_from_group(
     group_id: str = Path(..., title="The id of the group to get"),
-    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
+    sample_ids: list[str] = Query(
+        ..., alias="s", title="The ids of the samples to add to the group"
+    ),
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
