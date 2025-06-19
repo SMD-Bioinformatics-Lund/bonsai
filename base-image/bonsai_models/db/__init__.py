@@ -1,0 +1,1 @@
+"""Data stored in database."""

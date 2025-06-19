@@ -215,7 +215,9 @@ def group(group_id: str) -> str:
     # get columns from api
     group_columns: list[dict[str, Any]] = []
     for col in (
-        get_valid_group_columns(token_obj=token, qc=True) if display_qc else group_info["table_columns"]
+        get_valid_group_columns(token_obj=token, qc=True)
+        if display_qc
+        else group_info["table_columns"]
     ):
         if col["hidden"]:
             continue

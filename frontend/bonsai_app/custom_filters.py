@@ -1,15 +1,15 @@
 """Custom jinja3 template tests."""
 
-from datetime import datetime
 import logging
 import math
 import re
 from collections import defaultdict
+from datetime import datetime
 from itertools import chain
 from typing import Any, Callable, Dict, List
 from zoneinfo import ZoneInfo
 
-from dateutil.parser import parse, ParserError
+from dateutil.parser import ParserError, parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES, settings
