@@ -1,29 +1,9 @@
 """Species related data models."""
 
-from enum import StrEnum
-
 from pydantic import Field
+from bonsai_models.base import RWModel
 
-from .base import RWModel
-
-
-class TaxLevel(StrEnum):
-    """Braken phylogenetic level."""
-
-    P = "phylum"
-    C = "class"
-    O = "order"
-    F = "family"
-    G = "genus"
-    S = "species"
-
-
-class SppPredictionSoftware(StrEnum):
-    """Container for prediciton software names."""
-
-    MYKROBE = "mykrobe"
-    TBPROFILER = "tbprofiler"
-    BRACKEN = "bracken"
+from .constants import SppPredictionSoftware, TaxLevel
 
 
 class SpeciesPrediction(RWModel):

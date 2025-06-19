@@ -1,45 +1,9 @@
 """Antibiotic information."""
 
-from enum import StrEnum
 from typing import Sequence
-
 from pydantic import BaseModel
 
-
-class AntibioticFamily(StrEnum):
-    """Antibiotic classes"""
-
-    AMINOCYCLITOL = "aminocyclitol"
-    AMINOGLYCOSIDE = "aminoglycoside"
-    AMPHENICOL = "amphenicol"
-    NITROIMIDAZOLE = "nitroimidazole"
-    FLUOROQUINOLONE = "fluoroquinolone"
-    FOSFOMYCIN = "fosfomycin"
-    IMINOPHENAZINE = "iminophenazine"
-    STEROID_ANTIBACTERIAL = "steroid antibacterial"
-    POLYMYXIN = "polymyxin"
-    DIARYLQUINOLINE = "diarylquinoline"
-    RIFAMYCIN = "rifamycin"
-    PSEUDOMONIC_ACID = "pseudomonic acid"
-    SALICYLIC_ACID_ANTI_FOLATE = "salicylic acid - anti-folate"
-    TETRACYCLINE = "tetracycline"
-    MACROLIDE = "macrolide"
-    LINCOSAMIDE = "lincosamide"
-    STREPTOGRAMIN_B = "streptogramin b"
-    ISONICOTINIC_ACID = "isonicotinic acid hydrazide"
-    IONOPHORES = "ionophores"
-    FOLATE_PATHWAY_ANTAGONIST = "folate pathway antagonist"
-    THIOAMIDE = "thioamide"
-    BETA_LACTAM = "beta-lactam"
-    OXAZOLIDINONE = "oxazolidinone"
-    STREPTOGRAMIN_A = "streptogramin a"
-    GLYCOPEPTIDE = "glycopeptide"
-    ANALOG_OF_D_ALANINE = "analog of d-alanine"
-    NICOTINAMIDE = "synthetic derivative of nicotinamide"
-    QUINOLONE = "quinolone"
-    PLEUROMUTILIN = "pleuromutilin"
-    UNSPECIFIED = "unspecified"
-    DEV = "under_development"
+from bonsai_models.constants import AntibioticFamily
 
 
 class AntibioticInfo(BaseModel):  # pylint: disable=too-few-public-methods

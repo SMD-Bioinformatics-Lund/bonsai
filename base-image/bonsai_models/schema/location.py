@@ -1,8 +1,10 @@
 """Data modules for location information."""
 
+import datetime
 from pydantic import BaseModel, Field, field_validator
 
-from .base import DBModelMixin, ModifiedAt
+from bonsai_models.utils.timestamp import get_timestamp
+from bonsai_models.base import RWModel
 
 Position = tuple[float, float]
 
@@ -17,7 +19,7 @@ def validate_coordinates(coords: Position) -> Position:
     return coords
 
 
-class GeoCoordinate(BaseModel):  # pylint: disable=too-few-public-methods
+class GeoCoordinate(BaseModel):
     """Container of coordinates."""
 
     coordinates: Position
@@ -44,7 +46,7 @@ class GeoJSONPoint(GeoCoordinate):  # pylint: disable=too-few-public-methods
     type: str = "Point"
 
 
-class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
+class GeoJSONPolygon(BaseModel):
     """Container of a GeoJSON representation of a polygon."""
 
     type: str = "Polygon"
@@ -55,7 +57,7 @@ class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
     @classmethod
     def check_closed_polygon(
         cls, coords
-    ):  # pylint: disable=too-few-public-methods,no-self-argument
+    ):  # pylint: disable=no-self-argument
         """Verify that polygon is closed."""
 
         base_message = "Invalid Polygon GeoJSON object"
@@ -70,24 +72,19 @@ class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
         return coords
 
 
-class LocationBase(ModifiedAt):  # pylint: disable=too-few-public-methods
+class LocationBase(RWModel):
     """Contianer for geo locations, based on GeoJSON format."""
 
     display_name: str = Field(..., min_length=0, alias="displayName")
     disabled: bool = False
 
 
-class LocationInputCreate(GeoCoordinate):  # pylint: disable=too-few-public-methods
+class LocationCreate(GeoCoordinate):
     """Contianer for geo locations, based on GeoJSON format."""
 
 
-class LocationInputDatabase(LocationBase):  # pylint: disable=too-few-public-methods
-    """Contianer for geo locations, based on GeoJSON format."""
+class LocationResponse(LocationBase):
+    """Return basic geolocation information."""
 
-    location: GeoJSONPoint = Field(..., alias="geoLocation")
-
-
-class LocationOutputDatabase(
-    LocationInputDatabase, DBModelMixin
-):  # pylint: disable=too-few-public-methods
-    """Contianer for geo locations, based on GeoJSON format."""
+    created_at: datetime.datetime = Field(default_factory=get_timestamp)
+    modified_at: datetime.datetime = Field(default_factory=get_timestamp)
