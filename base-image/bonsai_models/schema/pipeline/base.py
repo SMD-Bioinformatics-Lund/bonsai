@@ -1,7 +1,7 @@
 """Pipeline results."""
 
-from typing import Literal
-from pydantic import Field
+from typing import Generic, Literal, TypeVar
+from pydantic import BaseModel, Field
 
 from bonsai_models.base import ApiModel
 from bonsai_models.schema.pipeline.constants import TypingMethod, TypingSoftware
@@ -12,11 +12,52 @@ from .qc import QcMethodIndex
 from .species import SppMethodIndex
 from .typing_result import (EmmTypingMethodIndex, ResultLineageBase,
                            ShigaTypingMethodIndex, SpatyperTypingMethodIndex,
-                           TbProfilerLineage, TypingResultCgMlst,
-                           TypingResultGeneAllele, TypingResultMlst)
+                           TbProfilerLineage, TypingResultCgMlst, TypingResultEmm,
+                           TypingResultGeneAllele, TypingResultMlst, TypingResultSpatyper)
 
-SCHEMA_VERSION: int = 2
 
+TType = TypeVar("TType")
+TSoftware = TypeVar("TSoftware")
+TResult = TypeVar("TResult")
+
+
+class ResultIndexBase(BaseModel, Generic[TType, TSoftware, TResult]):
+    """Container for key-value lookup of analytical results."""
+
+    type: TType
+    software: TSoftware | None
+    result: TResult
+
+
+CgmlstResultIndex = ResultIndexBase[
+    Literal[TypingMethod.CGMLST],
+    Literal[TypingSoftware.CHEWBBACA],
+    TypingResultCgMlst
+]
+
+MlstResultIndex = ResultIndexBase[
+    Literal[TypingMethod.MLST],
+    Literal[TypingSoftware.MLST],
+    TypingResultMlst
+]
+
+LineageResultIndex = ResultIndexBase[
+    Literal[TypingMethod.LINEAGE],
+    Literal[TypingSoftware.TBPROFILER],
+    TbProfilerLineage
+]
+
+SpatyperResultIndex = ResultIndexBase[
+    Literal[TypingMethod.SPATYPE],
+    Literal[TypingSoftware.SPATYPER],
+    TypingResultSpatyper
+]
+
+EmmResultIndex = ResultIndexBase[
+    Literal[TypingMethod.EMMTYPE],
+    Literal[TypingSoftware.EMMTYPER],
+    TypingResultEmm
+]
 
 class MethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
@@ -53,7 +94,6 @@ class ReferenceGenome(ApiModel):
 class PipelineResult(ApiModel):
     """Input format of sample object from pipeline."""
 
-    schema_version: Literal[2] = SCHEMA_VERSION
     sample_id: str = Field(..., alias="sampleId", min_length=3, max_length=100)
     sample_name: str
     lims_id: str
