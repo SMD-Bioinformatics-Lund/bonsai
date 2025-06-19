@@ -34,3 +34,4 @@ class UserResponse(UserBase):
 
     authentication_method: str = "simple"
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
+    modified_at: datetime.datetime = Field(default_factory=get_timestamp)
