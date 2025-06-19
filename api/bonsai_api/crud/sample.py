@@ -8,12 +8,12 @@ from bonsai_api.crud.location import get_location
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.db import Database
 from bonsai_api.parse import replace_cgmlst_errors
-from bonsai_models.models.antibiotics import ANTIBIOTICS
-from bonsai_models.models.base import MultipleRecordsResponseModel, RWModel
-from bonsai_models.models.location import LocationOutputDatabase
-from bonsai_models.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from bonsai_models.models.qc import QcClassification, VariantAnnotation
-from bonsai_models.models.sample import (
+from bonsai_models.schema.antibiotics import ANTIBIOTICS
+from bonsai_models.schema.base import MultipleRecordsResponseModel, RWModel
+from bonsai_models.schema.location import LocationOutputDatabase
+from bonsai_models.schema.pipeline.phenotype import AnnotationType, ElementType, PhenotypeInfo
+from bonsai_models.schema.qc import QcClassification, VariantAnnotation
+from bonsai_models.schema.sample import (
     Comment,
     CommentInDatabase,
     MultipleSampleRecordsResponseModel,
@@ -21,7 +21,6 @@ from bonsai_models.models.sample import (
     SampleInCreate,
     SampleInDatabase,
 )
-from bonsai_models.models.tags import TagList
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor

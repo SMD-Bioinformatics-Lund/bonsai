@@ -1,5 +1,4 @@
-"""Contain all constants used by various data modules."""
-
+"""Constants used for pipeline results."""
 
 from enum import StrEnum
 
@@ -19,7 +18,7 @@ class TypingSoftware(StrEnum):
 
 
 class TypingMethod(StrEnum):
-    """Valid typing methods."""
+    """Valid typing methods used by different softwares."""
 
     MLST = "mlst"
     CGMLST = "cgmlst"
@@ -63,6 +62,7 @@ class QcSoftware(StrEnum):
     CHEWBBACA = TypingSoftware.CHEWBBACA.value
     GAMBITCORE = "gambitcore"
 
+
 class PredictionSoftware(StrEnum):
     """Container for prediciton software names."""
 
@@ -102,3 +102,81 @@ class VariantSubType(StrEnum):
     INVERSION = "INV"
     DUPLICATION = "DUP"
     TRANSLOCATION = "BND"
+
+
+class ElementType(StrEnum):
+    """Categories of resistance and virulence genes."""
+
+    AMR = "AMR"
+    STRESS = "STRESS"
+    VIR = "VIRULENCE"
+    ANTIGEN = "ANTIGEN"
+
+
+class ElementStressSubtype(StrEnum):
+    """Categories of resistance and virulence genes."""
+
+    ACID = "ACID"
+    BIOCIDE = "BIOCIDE"
+    METAL = "METAL"
+    HEAT = "HEAT"
+
+
+class ElementAmrSubtype(StrEnum):
+    """Categories of resistance genes."""
+
+    AMR = "AMR"
+    POINT = "POINT"
+
+
+class ElementVirulenceSubtype(StrEnum):
+    """Categories of resistance and virulence genes."""
+
+    VIR = "VIRULENCE"
+    ANTIGEN = "ANTIGEN"
+    TOXIN = "TOXIN"
+
+
+class AnnotationType(StrEnum):
+    """Valid annotation types."""
+
+    TOOL = "tool"
+    USER = "user"
+
+
+class ElementSerotypeSubtype(StrEnum):
+    """Categories of serotype genes."""
+
+    ANTIGEN = "ANTIGEN"
+
+
+class SoupType(StrEnum):
+    """Type of software of unkown provenance."""
+
+    DB = "database"
+    SW = "software"
+
+
+class ValidQualityStr(StrEnum):
+    """Valid strings for qc entries."""
+
+    LOWCONTIGQUAL = "-"
+
+
+class TaxLevel(StrEnum):
+    """Braken phylogenetic level."""
+
+    P = "phylum"
+    C = "class"
+    O = "order"
+    F = "family"
+    G = "genus"
+    S = "species"
+
+
+class SppPredictionSoftware(StrEnum):
+    """Container for prediciton software names."""
+
+    MYKROBE = "mykrobe"
+    TBPROFILER = "tbprofiler"
+    BRACKEN = "bracken"
