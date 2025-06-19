@@ -1,12 +1,12 @@
 """Species related data models."""
 
 from pydantic import Field
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 
 from .constants import SppPredictionSoftware, TaxLevel
 
 
-class SpeciesPrediction(RWModel):
+class SpeciesPrediction(ApiModel):
     """Species prediction results."""
 
     scientific_name: str = Field(..., alias="scientificName")
@@ -34,7 +34,7 @@ class MykrobeSpeciesPrediction(SpeciesPrediction):
     species_coverage: float = Field(..., description="Species kmer converage.")
 
 
-class SppMethodIndex(RWModel):
+class SppMethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     software: SppPredictionSoftware

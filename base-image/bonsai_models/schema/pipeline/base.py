@@ -3,7 +3,7 @@
 from typing import Literal
 from pydantic import Field
 
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 from bonsai_models.schema.pipeline.constants import TypingMethod, TypingSoftware
 from .metadata import PipelineInfo, SequencingInfo
 from .phenotype import (AMRMethodIndex, StressMethodIndex, VariantBase,
@@ -18,7 +18,7 @@ from .typing_result import (EmmTypingMethodIndex, ResultLineageBase,
 SCHEMA_VERSION: int = 2
 
 
-class MethodIndex(RWModel):
+class MethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     type: TypingMethod
@@ -33,14 +33,14 @@ class MethodIndex(RWModel):
     )
 
 
-class IgvAnnotationTrack(RWModel):
+class IgvAnnotationTrack(ApiModel):
     """IGV annotation track data."""
 
     name: str  # track name to display
     file: str  # path to the annotation file
 
 
-class ReferenceGenome(RWModel):
+class ReferenceGenome(ApiModel):
     """Reference genome."""
 
     name: str
@@ -50,9 +50,10 @@ class ReferenceGenome(RWModel):
     genes: str
 
 
-class PipelineResult(RWModel):
+class PipelineResult(ApiModel):
     """Input format of sample object from pipeline."""
 
+    schema_version: Literal[2] = SCHEMA_VERSION
     sample_id: str = Field(..., alias="sampleId", min_length=3, max_length=100)
     sample_name: str
     lims_id: str
@@ -67,7 +68,6 @@ class PipelineResult(RWModel):
     # species identification
     species_prediction: list[SppMethodIndex] = Field(..., alias="speciesPrediction")
 
-    schema_version: Literal[2] = SCHEMA_VERSION
     # optional typing
     typing_result: list[
         (

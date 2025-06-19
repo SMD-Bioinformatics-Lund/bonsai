@@ -4,10 +4,10 @@ import datetime
 from pydantic import EmailStr, Field
 
 from bonsai_models.utils.timestamp import get_timestamp
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 
 
-class UserBase(RWModel):
+class UserBase(ApiModel):
     """Base user model"""
 
     username: str

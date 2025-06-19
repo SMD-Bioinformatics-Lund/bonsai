@@ -3,7 +3,7 @@
 import datetime
 from pydantic import Field
 
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 from bonsai_models.constants import (ResistanceTag, TagSeverity, TagType,
                                      VirulenceTag)
 from bonsai_models.schema.metadata import InputMetaEntry
@@ -12,7 +12,7 @@ from bonsai_models.schema.qc import SampleQcClassification
 from bonsai_models.utils.timestamp import get_timestamp
 
 
-class Tag(RWModel):
+class Tag(ApiModel):
     """Tag data structure."""
 
     type: TagType
@@ -24,7 +24,7 @@ class Tag(RWModel):
 TagList = list[Tag]
 
 
-class CommentBase(RWModel):
+class CommentBase(ApiModel):
     """Contianer for comments."""
 
     username: str = Field(..., min_length=0)

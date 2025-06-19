@@ -22,9 +22,14 @@ class ObjectId(BaseObjectId):
         return BaseObjectId(v)
 
 
-class RWModel(BaseModel):
-    """Base model for read/ write operations"""
-
+class ApiModel(BaseModel):
+    """
+    ApiModel serves as the base model for read and write operations, providing common configuration for all derived models.
+    It utilizes Pydantic's ConfigDict to:
+    - Allow population of fields by their names.
+    - Use enum values instead of enum members.
+    - Serialize ObjectId instances as strings in JSON output.
+    """
     model_config = ConfigDict(
         populate_by_name=True, use_enum_values=True, json_encoders={ObjectId: str}
     )
@@ -33,7 +38,7 @@ class RWModel(BaseModel):
 T = TypeVar("T")
 
 
-class MultipleRecordsResponseModel(RWModel, Generic[T]
+class MultipleRecordsResponseModel(ApiModel, Generic[T]
 ):
     """Generic response model for multiple data records."""
 

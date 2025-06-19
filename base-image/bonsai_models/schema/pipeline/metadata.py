@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pydantic import BaseModel
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 
 from .constants import SoupType
 
@@ -15,7 +15,7 @@ class SoupVersion(BaseModel):
     type: SoupType
 
 
-class SequencingInfo(RWModel):
+class SequencingInfo(ApiModel):
     """Information on the sample was sequenced."""
 
     run_id: str
@@ -25,7 +25,7 @@ class SequencingInfo(RWModel):
     date: datetime | None = None
 
 
-class PipelineInfo(RWModel):
+class PipelineInfo(ApiModel):
     """Information on the sample was analysed."""
 
     pipeline: str
