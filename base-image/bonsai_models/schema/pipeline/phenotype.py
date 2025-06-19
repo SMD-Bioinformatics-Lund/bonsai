@@ -5,9 +5,9 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 from bonsai_models.constants import SampleQcStatus
-from bonsai_models.schema.qc import VaraintRejectionReason
+from bonsai_models.schema.qc import VariantRejectionReason
 from .constants import (AnnotationType, ElementAmrSubtype,
                        ElementSerotypeSubtype, ElementStressSubtype,
                        ElementType, ElementVirulenceSubtype,
@@ -15,7 +15,7 @@ from .constants import (AnnotationType, ElementAmrSubtype,
                        VariantType)
 
 
-class PhenotypeInfo(RWModel):
+class PhenotypeInfo(ApiModel):
     """Phenotype information."""
 
     name: str
@@ -34,7 +34,7 @@ class PhenotypeInfo(RWModel):
     source: str | None = Field(None, description="Source of variant")
 
 
-class DatabaseReference(RWModel):
+class DatabaseReference(ApiModel):
     """Reference to a database."""
 
     ref_database: str | None = None
@@ -120,7 +120,7 @@ class ResfinderGene(ResistanceGene):
     )
 
 
-class VariantBase(RWModel):
+class VariantBase(ApiModel):
     """Container for mutation information"""
 
     # classification
@@ -154,7 +154,7 @@ class VariantBase(RWModel):
         ..., description="Describe if variant has passed the tool qc check"
     )
     verified: SampleQcStatus = SampleQcStatus.UNPROCESSED
-    reason: VaraintRejectionReason | None = None
+    reason: VariantRejectionReason | None = None
 
     @model_validator(mode="after")
     def check_assigned_ref_alt(self) -> Self:
@@ -224,7 +224,7 @@ class ElementTypeResult(BaseModel):
     ] = []
 
 
-class AMRMethodIndex(RWModel):
+class AMRMethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     type: Literal[ElementType.AMR]
@@ -232,7 +232,7 @@ class AMRMethodIndex(RWModel):
     result: ElementTypeResult
 
 
-class AntigenMethodIndex(RWModel):
+class AntigenMethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     type: Literal[ElementType.ANTIGEN]
@@ -240,7 +240,7 @@ class AntigenMethodIndex(RWModel):
     result: ElementTypeResult
 
 
-class StressMethodIndex(RWModel):
+class StressMethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     type: Literal[ElementType.STRESS]
@@ -248,7 +248,7 @@ class StressMethodIndex(RWModel):
     result: ElementTypeResult
 
 
-class VirulenceMethodIndex(RWModel):
+class VirulenceMethodIndex(ApiModel):
     """Container for key-value lookup of analytical results."""
 
     type: Literal[ElementType.VIR]

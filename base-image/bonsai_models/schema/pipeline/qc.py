@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 from .constants import QcSoftware, ValidQualityStr
 
 
@@ -56,7 +56,7 @@ class GambitcoreQcResult(BaseModel):
     assembly_qc: str
 
 
-class QcMethodIndex(RWModel):
+class QcMethodIndex(ApiModel):
     """QC results container.
 
     Based on Mongo db Attribute pattern.

@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from ..base import RWModel
+from ..base import ApiModel
 from .pipeline.phenotype import ElementType
 from .sample import SampleSummary
 
@@ -24,7 +24,7 @@ class OverviewTableColumn(BaseModel):
     filter_param: str | None = None
 
 
-class GroupBase(RWModel):
+class GroupBase(ApiModel):
     """Basic group information."""
 
     group_id: str = Field(..., min_length=5)
@@ -32,14 +32,14 @@ class GroupBase(RWModel):
     description: str | None = None
 
 
-class GroupCreate(RWModel):
+class GroupCreate(ApiModel):
     """Represents the input schema for creating a new group via the API."""
     table_columns: list[OverviewTableColumn] = Field(description="Columns to display")
     validated_genes: dict[ElementType, list[str]] | None = Field({})
     included_samples: list[str | SampleSummary] = []
 
 
-class GroupUpdate(RWModel):
+class GroupUpdate(ApiModel):
     """Represents the input schema for updating a group via the API."""
     display_name: str | None = None
     description: str | None = None
