@@ -20,3 +20,6 @@ dev = ["black", "pylint", "isort"]
 
 [tool.setuptools.dynamic]
 version = {attr = "bonsai_models.__version__"}
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["too-few-public-methods"]
