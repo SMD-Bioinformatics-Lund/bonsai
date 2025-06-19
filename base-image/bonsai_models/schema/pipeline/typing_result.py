@@ -4,13 +4,13 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 from .constants import (ChewbbacaErrors, MlstErrors, TypingMethod,
                         TypingSoftware)
 from .phenotype import SerotypeGene, VirulenceGene
 
 
-class ResultMlstBase(RWModel):
+class ResultMlstBase(ApiModel):
     """Base class for storing MLST-like typing results"""
 
     alleles: dict[str, int | str | list[Any] | None]
@@ -30,7 +30,7 @@ class TypingResultCgMlst(ResultMlstBase):
     n_missing: int = Field(0, alias="nNovel")
 
 
-class TypingResultShiga(RWModel):
+class TypingResultShiga(ApiModel):
     """Container for shigatype gene information"""
 
     rfb: str | None = None
@@ -44,7 +44,7 @@ class TypingResultShiga(RWModel):
     comments: str | None = None
 
 
-class ShigaTypingMethodIndex(RWModel):
+class ShigaTypingMethodIndex(ApiModel):
     """Method Index Shiga."""
 
     type: Literal[TypingMethod.SHIGATYPE]
@@ -52,7 +52,7 @@ class ShigaTypingMethodIndex(RWModel):
     result: TypingResultShiga
 
 
-class TypingResultEmm(RWModel):
+class TypingResultEmm(ApiModel):
     """Container for emmtype gene information"""
 
     cluster_count: int
@@ -61,7 +61,7 @@ class TypingResultEmm(RWModel):
     emm_cluster: str | None = None
 
 
-class EmmTypingMethodIndex(RWModel):
+class EmmTypingMethodIndex(ApiModel):
     """Method Index Emm."""
 
     type: Literal[TypingMethod.EMMTYPE]
@@ -69,7 +69,7 @@ class EmmTypingMethodIndex(RWModel):
     result: TypingResultEmm
 
 
-class ResultLineageBase(RWModel):
+class ResultLineageBase(ApiModel):
     """Lineage results"""
 
     lineage_depth: float | None = None
@@ -77,7 +77,7 @@ class ResultLineageBase(RWModel):
     sublineage: str
 
 
-class LineageInformation(RWModel):
+class LineageInformation(ApiModel):
     """Base class for storing lineage information typing results"""
 
     lineage: str | None
@@ -100,7 +100,7 @@ class TypingResultGeneAllele(VirulenceGene, SerotypeGene):
 CgmlstAlleles = dict[str, (int | None | ChewbbacaErrors | MlstErrors | list[int])]
 
 
-class TypingResultSpatyper(RWModel):
+class TypingResultSpatyper(ApiModel):
     """Spatyper results"""
 
     sequence_name: str | None
@@ -108,7 +108,7 @@ class TypingResultSpatyper(RWModel):
     type: str | None
 
 
-class SpatyperTypingMethodIndex(RWModel):
+class SpatyperTypingMethodIndex(ApiModel):
     """Method Index Spatyper."""
 
     type: Literal[TypingMethod.SPATYPE]

@@ -4,7 +4,7 @@ import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from bonsai_models.utils.timestamp import get_timestamp
-from bonsai_models.base import RWModel
+from bonsai_models.base import ApiModel
 
 Position = tuple[float, float]
 
@@ -72,7 +72,7 @@ class GeoJSONPolygon(BaseModel):
         return coords
 
 
-class LocationBase(RWModel):
+class LocationBase(ApiModel):
     """Contianer for geo locations, based on GeoJSON format."""
 
     display_name: str = Field(..., min_length=0, alias="displayName")

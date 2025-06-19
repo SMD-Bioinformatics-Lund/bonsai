@@ -2,12 +2,12 @@
 
 from pydantic import BaseModel
 
-from ..base import RWModel
+from ..base import ApiModel
 from ..constants import (BadSampleQualityAction, ResistanceLevel,
                          SampleQcStatus, TagSeverity)
 
 
-class VaraintRejectionReason(BaseModel):
+class VariantRejectionReason(BaseModel):
     """Data model for reasons rejecting a variant."""
 
     label: str
@@ -16,13 +16,13 @@ class VaraintRejectionReason(BaseModel):
 
 
 VARIANT_REJECTION_REASONS = [
-    VaraintRejectionReason(label="LOW", description="Low coverage"),
-    VaraintRejectionReason(label="A", description="Likely artifact"),
-    VaraintRejectionReason(label="SYN", description="Synonymous mutation"),
+    VariantRejectionReason(label="LOW", description="Low coverage"),
+    VariantRejectionReason(label="A", description="Likely artifact"),
+    VariantRejectionReason(label="SYN", description="Synonymous mutation"),
 ]
 
 
-class SampleQcClassification(RWModel):  # pylint: disable=too-few-public-methods
+class SampleQcClassification(ApiModel):  # pylint: disable=too-few-public-methods
     """The classification of sample quality."""
 
     status: SampleQcStatus = SampleQcStatus.UNPROCESSED
@@ -30,11 +30,11 @@ class SampleQcClassification(RWModel):  # pylint: disable=too-few-public-methods
     comment: str = ""
 
 
-class VariantQcAnnotation(RWModel):  # pylint: disable=too-few-public-methods
+class VariantQcAnnotation(ApiModel):  # pylint: disable=too-few-public-methods
     """User variant annotation."""
 
     variant_ids: list[str]
     verified: SampleQcClassification | None = None
-    reason: VaraintRejectionReason | None = None
+    reason: VariantRejectionReason | None = None
     phenotypes: list[str] | None = None
     resistance_lvl: ResistanceLevel | None = None
