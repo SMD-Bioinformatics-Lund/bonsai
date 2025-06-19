@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 from ..base import ApiModel
 from .pipeline.phenotype import ElementType
-from .sample import SampleSummary
 
 FilterParams = list[dict[str, str | int | float],]
 
@@ -36,7 +35,7 @@ class GroupCreate(ApiModel):
     """Represents the input schema for creating a new group via the API."""
     table_columns: list[OverviewTableColumn] = Field(description="Columns to display")
     validated_genes: dict[ElementType, list[str]] | None = Field({})
-    included_samples: list[str | SampleSummary] = []
+    included_samples: list[str] = []
 
 
 class GroupUpdate(ApiModel):
@@ -45,7 +44,7 @@ class GroupUpdate(ApiModel):
     description: str | None = None
     table_columns: list[OverviewTableColumn] | None = None
     validated_genes: dict[ElementType, list[str]] | None = None
-    included_samples: list[str | SampleSummary] | None = None
+    included_samples: list[str] | None = None
 
 
 VALID_BASE_COLS: list[OverviewTableColumn] = [
