@@ -1,35 +1,15 @@
 """Routes related to collections of samples."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-from .base import DBModelMixin, ModifiedAt, ObjectId, RWModel
-from .phenotype import ElementType
+from ..base import RWModel
+from .pipeline.phenotype import ElementType
 from .sample import SampleSummary
 
 FilterParams = list[dict[str, str | int | float],]
 
 
-class IncludedSamples(RWModel):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-    included_samples: list[str | SampleSummary] = []
-
-    model_config = ConfigDict(json_encoders={ObjectId: str})
-
-
-class UpdateIncludedSamples(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-
-class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Basic specie information."""
-
-    group_id: str = Field(..., min_length=5)
-    display_name: str = Field(..., min_length=1, max_length=45)
-    description: str | None = None
-
-
-class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
+class OverviewTableColumn(BaseModel):
     """Definition of how to display and function of overview table."""
 
     id: str = Field(..., description="Column id")
@@ -42,6 +22,30 @@ class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
     filterable: bool = False
     filter_type: str | None = None
     filter_param: str | None = None
+
+
+class GroupBase(RWModel):
+    """Basic group information."""
+
+    group_id: str = Field(..., min_length=5)
+    display_name: str = Field(..., min_length=1, max_length=45)
+    description: str | None = None
+
+
+class GroupCreate(RWModel):
+    """Represents the input schema for creating a new group via the API."""
+    table_columns: list[OverviewTableColumn] = Field(description="Columns to display")
+    validated_genes: dict[ElementType, list[str]] | None = Field({})
+    included_samples: list[str | SampleSummary] = []
+
+
+class GroupUpdate(RWModel):
+    """Represents the input schema for updating a group via the API."""
+    display_name: str | None = None
+    description: str | None = None
+    table_columns: list[OverviewTableColumn] | None = None
+    validated_genes: dict[ElementType, list[str]] | None = None
+    included_samples: list[str | SampleSummary] | None = None
 
 
 VALID_BASE_COLS: list[OverviewTableColumn] = [
@@ -159,6 +163,13 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="qc",
+        label="QC",
+        type="qc",
+        path="$.qc_status.status",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="n50",
         label="N50",
         type="number",
@@ -210,20 +221,3 @@ VALID_QC_COLS = [
 # create combination of valid columns
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
 qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
-
-
-class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
-    """Defines expected input format for groups."""
-
-    table_columns: list[OverviewTableColumn] = Field(description="Columns to display")
-    validated_genes: dict[ElementType, list[str]] | None = Field({})
-
-
-class GroupInfoDatabase(
-    DBModelMixin, ModifiedAt, GroupInCreate
-):  # pylint: disable=too-few-public-methods
-    """Defines group info stored in the databas."""
-
-
-class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
-    """Defines output structure of group info."""

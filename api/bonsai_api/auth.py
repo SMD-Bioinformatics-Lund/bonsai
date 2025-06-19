@@ -5,7 +5,7 @@ import string
 from datetime import datetime, timedelta
 from typing import Any
 
-from bonsai_models.util import get_timestamp
+from bonsai_models.utils.timestamp import get_timestamp
 from jose import jwt
 from passlib.context import CryptContext
 

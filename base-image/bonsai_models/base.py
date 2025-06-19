@@ -1,12 +1,9 @@
 """Generic database objects of which several other models are based on."""
 
-import datetime
-from typing import Any
+from typing import Generic, TypeVar
 
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field
-
-from ..utils import get_timestamp
 
 
 class ObjectId(BaseObjectId):
@@ -25,39 +22,22 @@ class ObjectId(BaseObjectId):
         return BaseObjectId(v)
 
 
-class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
+class RWModel(BaseModel):
     """Base model for read/ write operations"""
 
     model_config = ConfigDict(
-        allow_population_by_alias=True,
-        populate_by_name=True,
-        use_enum_values=True,
+        populate_by_name=True, use_enum_values=True, json_encoders={ObjectId: str}
     )
 
 
-class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
-    """Add explicit time stamps to database model."""
-
-    created_at: datetime.datetime = Field(default_factory=get_timestamp)
+T = TypeVar("T")
 
 
-class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
-    """Default database model."""
-
-    id: str | None = Field(None)
-
-
-class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
-    """Base RW model that keep reocrds of when a document was last modified."""
-
-    created_at: datetime.datetime = Field(default_factory=get_timestamp)
-    modified_at: datetime.datetime = Field(default_factory=get_timestamp)
-
-
-class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods
+class MultipleRecordsResponseModel(RWModel, Generic[T]
+):
     """Generic response model for multiple data records."""
 
-    data: list[dict[str, Any]] = Field(...)
+    data: list[T] = Field(...)
     records_total: int = Field(
         ...,
         alias="recordsTotal",

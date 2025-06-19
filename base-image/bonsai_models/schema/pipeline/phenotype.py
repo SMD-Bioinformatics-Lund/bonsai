@@ -1,60 +1,18 @@
 """Datamodels used for prediction results."""
 
-from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 from typing_extensions import Self
 
-from .base import RWModel
-from .qc import SampleQcClassification, VaraintRejectionReason
-from .constants import PredictionSoftware, SequenceStand, VariantSubType, VariantType
-
-
-class ElementType(StrEnum):
-    """Categories of resistance and virulence genes."""
-
-    AMR = "AMR"
-    STRESS = "STRESS"
-    VIR = "VIRULENCE"
-    ANTIGEN = "ANTIGEN"
-
-
-class ElementStressSubtype(StrEnum):
-    """Categories of resistance and virulence genes."""
-
-    ACID = "ACID"
-    BIOCIDE = "BIOCIDE"
-    METAL = "METAL"
-    HEAT = "HEAT"
-
-
-class ElementAmrSubtype(StrEnum):
-    """Categories of resistance genes."""
-
-    AMR = "AMR"
-    POINT = "POINT"
-
-
-class ElementVirulenceSubtype(StrEnum):
-    """Categories of resistance and virulence genes."""
-
-    VIR = "VIRULENCE"
-    ANTIGEN = "ANTIGEN"
-    TOXIN = "TOXIN"
-
-
-class AnnotationType(StrEnum):
-    """Valid annotation types."""
-
-    TOOL = "tool"
-    USER = "user"
-
-
-class ElementSerotypeSubtype(StrEnum):
-    """Categories of serotype genes."""
-
-    ANTIGEN = "ANTIGEN"
+from bonsai_models.base import RWModel
+from bonsai_models.constants import SampleQcStatus
+from bonsai_models.schema.qc import VaraintRejectionReason
+from .constants import (AnnotationType, ElementAmrSubtype,
+                       ElementSerotypeSubtype, ElementStressSubtype,
+                       ElementType, ElementVirulenceSubtype,
+                       PredictionSoftware, SequenceStand, VariantSubType,
+                       VariantType)
 
 
 class PhenotypeInfo(RWModel):
@@ -120,10 +78,9 @@ class AmrFinderGene(GeneBase):
     """Container for Resfinder gene prediction information"""
 
     contig_id: str
-    query_start_pos: int = Field(
-        default=None, description="Start position on the assembly"
+    query_start_pos: int | None = Field(None, description="Start position on the assembly"
     )
-    query_end_pos: int = Field(default=None, description="End position on the assembly")
+    query_end_pos: int | None = Field(None, description="End position on the assembly")
     strand: SequenceStand
 
 
@@ -196,7 +153,7 @@ class VariantBase(RWModel):
     passed_qc: bool | None = Field(
         ..., description="Describe if variant has passed the tool qc check"
     )
-    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+    verified: SampleQcStatus = SampleQcStatus.UNPROCESSED
     reason: VaraintRejectionReason | None = None
 
     @model_validator(mode="after")

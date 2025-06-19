@@ -4,9 +4,10 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from .base import RWModel
+from bonsai_models.base import RWModel
+from .constants import (ChewbbacaErrors, MlstErrors, TypingMethod,
+                        TypingSoftware)
 from .phenotype import SerotypeGene, VirulenceGene
-from .constants import TypingMethod, TypingSoftware, ChewbbacaErrors, MlstErrors
 
 
 class ResultMlstBase(RWModel):
