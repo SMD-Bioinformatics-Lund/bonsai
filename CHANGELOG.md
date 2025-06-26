@@ -7,6 +7,7 @@
 ### Fixed
 
 - Fixed workflow for publishing docker images on tagged releases.
+- Fixed delete samples bug
 
 ### Changed
 

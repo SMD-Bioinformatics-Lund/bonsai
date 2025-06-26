@@ -85,7 +85,7 @@ export function deleteSelectedSamples(
   table: TableController,
   api: ApiService,
 ): void {
-  const selectedSamples = table.selectedRows;
+  const selectedSamples = table.getSelectedRows();
   api
     .deleteSamples(selectedSamples)
     .then(() => {
