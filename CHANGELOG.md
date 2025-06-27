@@ -8,6 +8,7 @@
 
 - Fixed workflow for publishing docker images on tagged releases.
 - Fixed delete samples bug.
+- Fixed `upload_sample.py` add to group bug.
 
 ### Changed
 

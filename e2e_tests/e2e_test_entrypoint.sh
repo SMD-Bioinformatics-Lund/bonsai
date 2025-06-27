@@ -3,7 +3,14 @@ set -e
 
 # Load test samples
 # =================
-find /app/fixtures/samples/ -name *yaml -exec /app/upload_sample.py --user admin --password admin --api http://api:8000/ --input {} \;
+for file in /app/fixtures/samples/*.yaml; do
+  echo "Uploading sample $file"
+  /app/upload_sample.py \
+    --user     admin \
+    --password admin \
+    --api      http://api:8000/ \
+    --input    "$file"
+done
 
 # Run container CMD
 # =================
