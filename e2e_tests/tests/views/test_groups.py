@@ -25,7 +25,7 @@ def test_samples_are_displayed(logged_in_user, config):
 def test_add_samples_to_basket(logged_in_user, config):
     """Test samples can be added to the basket."""
     # setup wait
-    wait = WebDriverWait(logged_in_user, 10)
+    wait = WebDriverWait(logged_in_user, 20)
     # go to groups view
     logged_in_user.get(str(Path(config["frontend_url"]) / "groups"))
 

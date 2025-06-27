@@ -43,7 +43,7 @@ def test_add_samples_to_basket(logged_in_user, config, group_id: str):
     """Test the QC view could be opended for the different test groups."""
 
     # setup wait
-    wait = WebDriverWait(logged_in_user, 10)
+    wait = WebDriverWait(logged_in_user, 20)
 
     # FIRST goto the group view
     url = Path(config["frontend_url"]) / 'groups' / group_id

@@ -7,10 +7,13 @@
 ### Fixed
 
 - Fixed workflow for publishing docker images on tagged releases.
+- Fixed delete samples bug.
+- Fixed `upload_sample.py` add to group bug.
 
 ### Changed
 
 - Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
+- Updated `WebDriverWait` time in e2e tests.
 
 ## [v.1.2.0]
 
