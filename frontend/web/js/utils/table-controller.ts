@@ -61,7 +61,7 @@ function manageRemoveSamplesBtn(selectedRows: string[]): void {
 function manageSelectSimilarBtn(selectedRows: string[]): void {
   /* Enable or disable search for similar samples button */
   const btn = document.getElementById(
-    "select-similar-samples-btn",
+    "similar-samples-dropdown-btn",
   ) as HTMLButtonElement;
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }

@@ -39,7 +39,7 @@ const sampleTableCongig = {
 /* Initialize sample basket */
 function initBasket(api: ApiService): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
-  const counterElement = document.querySelector("#samples-counter") as HTMLElement;
+  const counterElement = document.querySelector("#basket-counter-container") as HTMLElement;
   if (!basketElement && !counterElement) {
     console.error('No DOM element for the basket found!');
     return;
@@ -57,11 +57,12 @@ function initBasket(api: ApiService): BasketState | void {
 
   // assign functions to DOM objects
   const clusterBtns = document.querySelectorAll(
-    "#basket-cluster-btn a",
+    "#basket-cluster-samples a",
   ) as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
     element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
   });
+
   const clearBasketBtn = document.getElementById(
     "clear-basket-btn",
   ) as HTMLButtonElement;
@@ -128,7 +129,10 @@ export async function initGroupView(
     "add-to-basket-btn",
   ) as HTMLButtonElement;
   if (addToBasketBtn)
-    addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
+    addToBasketBtn.onclick = () => {
+      basket.addSamples(table.getSelectedRows());
+      window.location.reload();
+    };
 
   const deleteSamplesBtn = document.getElementById(
     "remove-samples-btn",
