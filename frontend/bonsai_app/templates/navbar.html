@@ -31,7 +31,7 @@
                 {{ user_dropdown(current_user) }}
                 <li class="nav-item d-flex flex-row">
                     <a id="open-basket-btn" class="nav-link align-self-center" data-bs-toggle="offcanvas" href="#basket-offcanvas" role="button" data-test-id="open-basket-btn">
-                        <span id="samples-counter"></span>
+                        <span id="basket-counter-container"></span>
                         <i class="bi bi-basket3 fs-4"></i>
                     </a>
                 </li>
@@ -65,6 +65,10 @@
 
 {% macro sample_basket_offcanvas(current_user) %}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="basket-offcanvas" aria-labelledby="sample-basket-offcanvas-label">
+    <div class="offcanvas-header">
+        <h5 id="sample-basket-offcanvas-label" class="offcanvas-title">Sample basket</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close" id="close-basket-btn" data-test-id="close-basket-btn"></button>
+    </div>
     <div class="offcanvas-body">
         <div id="basket-content" class="overflow-auto" style="max-height: 60vh;"></div>
         <hr>

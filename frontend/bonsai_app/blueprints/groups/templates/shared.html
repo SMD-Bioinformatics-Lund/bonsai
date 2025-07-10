@@ -10,7 +10,7 @@
 
 {% macro search_similar_btn() %}
 <div id="find-similar-dropdown" class="dropdown similar-samples-container">
-    <button id="select-similar-samples-btn" 
+    <button id="similar-samples-dropdown-btn"
             class="btn btn-sm btn-outline-secondary dropdown-toggle ms-4" 
             data-bs-toggle="dropdown" disabled>
         <span class="content">
@@ -29,7 +29,7 @@
         <input type="text" name="similar-samples-threshold" 
                 id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
                 placeholder="Min similarity" value="0.95" required>
-        <button type="button" id="similar-samples-button" class="btn btn-sm btn-outline-success mt-2" >
+        <button type="button" id="select-similar-samples-btn" class="btn btn-sm btn-outline-success mt-2" >
             <i class="bi bi-search"></i>
             Search
         </button>
