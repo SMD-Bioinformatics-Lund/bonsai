@@ -27,7 +27,7 @@ import "./components/group-selector";
 import "./components/spinner-element";
 
 
-const sampleTableCongig = {
+const sampleTableConfig = {
   select: true,
   layout: {
     top1Start: {
@@ -35,6 +35,7 @@ const sampleTableCongig = {
     },
     top2Start: "searchBuilder",
   },
+  scrollX: true,
 };
 /* Initialize sample basket */
 function initBasket(api: ApiService): BasketState | void {
@@ -107,7 +108,16 @@ export async function initGroupView(
     console.error("Something went wrong when initialize the basket")
     return
   }
-  const table = initSamplesTable("sample-table", sampleTableCongig);
+  const headers = document.querySelectorAll<HTMLTableCellElement>(
+    "#sample-table thead td",
+  );
+  const tableConfig = { ...sampleTableConfig };
+  headers.forEach((cell, idx) => {
+    if (cell.textContent?.trim() === "Date") {
+      tableConfig["order"] = [[idx, "desc"]];
+    }
+  });
+  const table = initSamplesTable("sample-table", tableConfig);
   // get logged in user
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);

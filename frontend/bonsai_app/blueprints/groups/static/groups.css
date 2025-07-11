@@ -50,6 +50,10 @@
     flex-grow: 1;
 }
 
-#add-to-basket-btn { 
+#add-to-basket-btn {
   width: 10em;
+}
+
+#sample-table_wrapper {
+  overflow-x: auto;
 }
