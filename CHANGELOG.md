@@ -11,6 +11,8 @@
 - Fixed `upload_sample.py` add to group bug.
 - Fixed close basket bug.
 - Fixed find closest samples bug.
+- Fixed sort on date
+- Fixed overlapping table
 
 ### Changed
 
