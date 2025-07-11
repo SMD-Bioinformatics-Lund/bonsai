@@ -5,14 +5,13 @@ import logging
 from asyncio import TimeoutError
 from pathlib import Path
 
+from bonsai_api.config import settings
+from bonsai_api.io import is_file_readable
+from bonsai_api.redis import minhash, ska
+from bonsai_api.redis.queue import JobFailedError
+from bonsai_api.redis.utils import SubmittedJob, wait_for_job
+from bonsai_models.models.sample import SampleInDatabase
 from pydantic import BaseModel
-
-from ..config import settings
-from ..io import is_file_readable
-from ..models.sample import SampleInDatabase
-from ..redis import minhash, ska
-from ..redis.queue import JobFailedError
-from ..redis.utils import SubmittedJob, wait_for_job
 
 LOG = logging.getLogger(__name__)
 
@@ -26,10 +25,10 @@ class MissingFile(BaseModel):
     path: Path
 
 
-MISSING_FILES = list[MissingFile]
+MissingFiles = list[MissingFile]
 
 
-def verify_reference_genome(sample: SampleInDatabase) -> MISSING_FILES:
+def verify_reference_genome(sample: SampleInDatabase) -> MissingFiles:
     """Verify paths to the reference genome and assets."""
     missing_files: MISSING_FILES = []
 

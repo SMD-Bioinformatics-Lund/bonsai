@@ -2,22 +2,19 @@
 
 from datetime import timedelta
 
+from bonsai_api.auth import create_access_token
+from bonsai_api.config import settings
+from bonsai_api.crud.user import authenticate_user
+from bonsai_api.db import Database, get_db
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..auth import create_access_token
-from ..config import settings
-from ..crud.user import authenticate_user
-from ..db import Database, get_db
+from .shared import RouterTags
 
 router = APIRouter()
 
-DEFAULT_TAGS = [
-    "authentication",
-]
 
-
-@router.post("/token", tags=DEFAULT_TAGS)
+@router.post("/token", tags=[RouterTags.AUTH])
 async def login_for_access_token(
     db: Database = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
