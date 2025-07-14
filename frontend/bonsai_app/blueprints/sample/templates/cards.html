@@ -944,7 +944,7 @@
                 </tr>
                 <tr>
                     <th>Profile</th>
-                    <td>{{ sample_info.pipeline.analysis_profile }}</td>
+                    <td>{{ sample_info.pipeline.analysis_profile | join(', ') }}</td>
                 </tr>
             </tbody>
         </table>
@@ -953,7 +953,7 @@
 {% endmacro %}
 
 {% macro analysis_meta_databases(sample_info) %}
-{% set meta=sample_info["pipeline"]%}
+{% set meta = sample_info["pipeline"] %}
 <div class="card">
     <div class="card-body">
         <h6 class="card-title">
@@ -961,7 +961,7 @@
         </h6>
         <table class="table">
             <tbody>
-                {% for db in meta["databases"] %}
+                {% for db in meta["softwares"] if db.type == 'database' %}
                 <tr>
                     <th>{{ db["name"] }}</th>
                     <td>{{ make_db_link(db) }}</td>

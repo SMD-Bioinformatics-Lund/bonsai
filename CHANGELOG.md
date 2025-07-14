@@ -15,6 +15,7 @@
 - Fixed sort on date
 - Fixed overlapping table
 - Fixed missing QC column in QC view
+- Fixed faulty display of analysis metadata in `Pipeline` and `Databases` cards
 
 ### Changed
 
