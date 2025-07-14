@@ -173,6 +173,13 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="qc",
+        label="QC",
+        type="qc",
+        path="$.qc_status.status",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="n50",
         label="N50",
         type="number",
