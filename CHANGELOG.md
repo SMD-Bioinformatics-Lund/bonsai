@@ -3,6 +3,7 @@
 ### Added
 
 - Split `BONSAI_API_URL` to two URLs, one for internal frontend-api communication and one for external browser to api communication.
+- Added sequencing run id to sample page
 
 ### Fixed
 
