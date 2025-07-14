@@ -13,6 +13,7 @@
 - Fixed find closest samples bug.
 - Fixed sort on date
 - Fixed overlapping table
+- Fixed missing QC column in QC view
 
 ### Changed
 
