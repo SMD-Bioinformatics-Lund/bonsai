@@ -46,7 +46,7 @@ export class BasketComponent extends HTMLElement {
         item.className = "card mb-2 rounded-1 p-0 sample_in_basket";
         item.innerHTML = String.raw`
         <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
-            <a class="text-muted d-flex flex-column" href="/">
+            <a class="text-muted d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
                 <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
                 <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
             </a>

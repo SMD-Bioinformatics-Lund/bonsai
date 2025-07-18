@@ -54,6 +54,7 @@ services:
     ports: 
       - "8000:5000"
     environment:
+      - API_EXTERNAL_URL=${API_EXTERNAL_URL}
       - FLASK_APP=bonsai_app.app:create_app
       - FLASK_ENV=development 
       - TZ=Europe/Stockholm
