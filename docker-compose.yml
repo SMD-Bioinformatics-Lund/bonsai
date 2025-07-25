@@ -13,6 +13,7 @@ services:
       - bonsai-net
 
   redis:
+    container_name: redis
     image: redis:7.0.10
     networks:
       - bonsai-net
