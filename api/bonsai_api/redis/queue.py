@@ -50,6 +50,7 @@ class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
 
     status: JobStatusCodes
     queue: str
+    task: str
     result: Any
     error: str | None = None
     submitted_at: datetime
