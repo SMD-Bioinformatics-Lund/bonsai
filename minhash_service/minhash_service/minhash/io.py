@@ -110,6 +110,7 @@ def write_signature(
     try:
         with open(signature_file, "w", encoding="utf-8") as out:
             sourmash.signature.save_signatures_to_json(upd_signatures, out)
+        LOG.info("Wrote genome signatures to file to %s", signature_file)
     except PermissionError as error:
         msg = f"Dont have permission to write file to disk, {signature_file}"
         LOG.error(msg)
@@ -157,7 +158,14 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
     signatures = []
     for sample_id in sample_ids:
         signature = read_signature(sample_id, cnf)
+        if not signature:
+            LOG.warning("No signatures found for sample %s", sample_id)
+            continue
         signatures.append(signature[0])
+    
+    if not signatures:
+        LOG.warning("No signatures to add.")
+        return False
 
     # add signature to existing index
     # acquire lock to append signatures to database
@@ -167,10 +175,19 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
         try:
             index_path = get_sbt_index(cnf=cnf)
             tree = sourmash.load_file_as_index(str(index_path))
-        except ValueError as error:
-            LOG.warning("Error when reading index, %s; creating new index", error)
-            tree = sourmash.sbtmh.create_sbt_index()
-        except FileNotFoundError:
+            LOG.debug("Loaded index: %s (type: %s)", index_path, type(tree).__name__)
+
+            # If index is not SBT (e.g., ZipFileLinearIndex), rebuild as SBT
+            if not hasattr(tree, "add_node"):
+                LOG.warning("Index is not SBT. Rebuilding as SBT for updates.")
+                existing_sigs = [s for s in tree.signatures()]
+                tree = sourmash.sbtmh.create_sbt_index()
+                for s in existing_sigs:
+                    leaf = SigLeaf(s.md5sum(), s)
+                    tree.add_node(leaf)
+
+        except (ValueError, FileNotFoundError):
+            LOG.info("Index not found or invalid. Creating new SBT index.")
             tree = sourmash.sbtmh.create_sbt_index()
 
         # add generated signature to bloom tree
@@ -182,6 +199,7 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
         try:
             index_path = get_sbt_index(cnf=cnf, check=False)
             tree.save(str(index_path))
+            LOG.info("Updated index saved to %s", index_path)
         except PermissionError as err:
             LOG.error("Dont have permission to write file to disk")
             raise err
@@ -193,7 +211,7 @@ def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
     """Add genome signature file to sourmash index"""
 
     genome_index = get_sbt_index(cnf=cnf, check=False)
-    sbt_lock_path = f"{genome_index.name}.lock"
+    sbt_lock_path = f"/tmp/{genome_index.name}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
     LOG.debug("Using lock: %s", sbt_lock_path)
 
@@ -206,7 +224,7 @@ def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
         old_index = sourmash.load_file_as_index(str(index_path))
 
         # add signatures not among the sample ids a new index
-        LOG.info("Removing %d genome signatures to index", len(sample_ids))
+        LOG.info("Removing %d genome signatures from index", len(sample_ids))
         new_index = sourmash.sbtmh.create_sbt_index()
         for signature in old_index.signatures():
             sample_id = signature.name
