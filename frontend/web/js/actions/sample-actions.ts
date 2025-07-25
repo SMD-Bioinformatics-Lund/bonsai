@@ -4,6 +4,8 @@ import { ApiService, pollJob, wait } from "../api";
 import { emitEvent } from "../utils/event-bus";
 import { throwSmallToast } from "../utils/notification";
 import { TableController } from "../utils/table-controller";
+import { ClusterMethod, TypingMethod } from "../constants";
+import { ApiFindSimilarInput } from "../types";
 import {
   ApiJobStatusNewick,
   ApiJobStatusSimilarity,
@@ -169,28 +171,87 @@ export function initSetSampleQc(
 /* Find samples similar to the given sample id, cluster them and plot as dendrogram */
 export async function findAndClusterSimilarSamples(
   sampleId: string,
-  clusterSimilarFn: (sampleId: string) => Promise<ApiJobSubmission>,
-  checkJobFn: (id: string) => Promise<ApiJobStatusNewick>,
-  container: HTMLElement,
+  api: ApiService,
 ): Promise<string> {
+  const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
   spinner?.show()
+  const searchParams: ApiFindSimilarInput = {
+    limit: 10,
+    similarity: 0.9,
+    cluster: true,
+    typing_method: TypingMethod.MINHASH,
+    cluster_method: ClusterMethod.SINGLE,
+  };
   // queue similar samples job
   let jobResult: ApiJobStatusNewick;
+  const job = await api.findSimilarSamples(sampleId, searchParams);
+  console.log("Waiting for the following job ID:", job.id);
   try {
-    const job = await clusterSimilarFn(sampleId);
-    jobResult = await pollJob(() => checkJobFn(job.id), ApiJobTimeout);
+    const jobFunc = async () =>
+      api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
+    const jobResult = await pollJob(jobFunc, 3000, 40);
+    console.log("Here is the find similar result:", jobResult.result);
+
     // draw dendrogam in container element
-    //drawDendrogram("#tree-body", jobResult.result, sampleId);
+    drawDendrogram("#tree-body", jobResult.result, sampleId);
   } catch (error) {
     container.hidden = true;
-    console.error("An error occured.", error);
-    throwSmallToast("An error occured when finding similar samples", "error");
+    throwSmallToast("Error while finding similar samples");
+    console.error("Error while checking job status:", error);
     throw error;
-  } finally {
+  }
+  finally {
     spinner?.hide()
   }
   return jobResult.result
+}
+
+/* Draw dendrogram from Newick string */
+export function drawDendrogram(
+  containerSelector: string,
+  newick: string,
+  sampleId: string,
+): void {
+  const container = document.querySelector(containerSelector);
+  if (!container) {
+    console.error(`Container element not found: ${containerSelector}`);
+    return;
+  }
+  if (!(window as any).TidyTree) {
+    console.error('TidyTree library is not loaded');
+    return;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tree = new (window as any).TidyTree(newick, {
+    parent: container,
+    layout: "vertical",
+    type: "dendrogram",
+    mode: "square",
+    ruler: false,
+    leafLabels: true,
+    margin: [10, 10, 80, 10],
+  });
+
+  tree
+    .search((d: { data: { id: string } }) => d.data.id.includes(sampleId))
+    .selectAll("circle")
+    .style("fill", "steelblue")
+    .attr("r", 5);
+
+  tree.eachLeafLabel((label: HTMLElement) => {
+    label.style.cursor = "pointer";
+    label.onclick = () => openSamplePage(label.innerHTML);
+  });
+}
+
+function openSamplePage(id: string): void {
+  const groupNamePos = window.location.pathname.split("/").indexOf("sample");
+  const baseUrl = window.location.pathname
+    .split("/")
+    .slice(0, groupNamePos)
+    .join("/");
+  window.open(`${baseUrl}/sample/${id}`);
 }
 
 /* update qc status in header section of sample view */

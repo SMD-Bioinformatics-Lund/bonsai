@@ -228,19 +228,23 @@ export class ApiService {
 export async function pollJob<T extends ApiJobStatus>(
   checkJobFn: () => Promise<T>,
   waitTime: number,
-  maxRetries: number = 10, // Default maximum retries
+  maxRetries: number = 20 // allow more retries for long jobs
 ): Promise<T> {
-  /* Generic polling function with timeout mechanism */
   let retries = 0;
   let result = await checkJobFn();
+  console.log(`Initial job status: ${result.status}`);
+
   while (validateJobStatus(result)) {
     if (retries >= maxRetries) {
-      throw new Error("Polling exceeded maximum retries");
+      throw new Error(`Polling exceeded maximum retries (${maxRetries})`);
     }
+    console.log(`Retry ${retries + 1}/${maxRetries} - Status: ${result.status}`);
     await wait(waitTime);
     result = await checkJobFn();
     retries++;
   }
+
+  console.log(`Job finished with status: ${result.status}`);
   return result;
 }
 
@@ -265,12 +269,13 @@ function validateJobStatus(job: ApiJobStatus): boolean {
   // returns true if run is valid
   if (job.status === JobStatusEnum.FINISHED) {
     // if job has finished report result
+    console.log(`Job is finished.`);
     return false;
   } else if (job.status === JobStatusEnum.FAILED) {
-    // if job failed raise error
+    console.error(`Job failed: ${job.result}`);
     throw new Error(`Job failed: ${job.result}`);
   } else {
+    console.log(`Job status: ${job.status}, continuing polling...`);
     return true;
   }
-  console.log(`Job status: ${job.status}; continuing polling: true`);
 }
