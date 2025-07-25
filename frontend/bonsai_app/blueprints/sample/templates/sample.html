@@ -10,7 +10,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="https://d3js.org/d3.v5.min.js"></script>
-<script src="https://unpkg.com/tidytree@0.5.0/dist/tidytree.min.js"></script>
+<script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
 {% endblock scripts %}
 
@@ -168,9 +168,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
-        bonsai.initSampleView(apiUrl, accessToken, "", sampleId).then(nwk => {
-          drawDendrogram('#tree-body', nwk, sampleId)
-        })
+        bonsai.initSampleView(apiUrl, accessToken, "", sampleId)
     });
 
     function getSampleId() {
@@ -178,42 +176,5 @@
         const samplePos = window.location.pathname.split('/').indexOf('sample')
         return window.location.pathname.split('/')[samplePos + 1]
     }
-
-    function drawDendrogram(
-      containerSelector,
-      newick,
-      sampleId,
-    ) {
-      const tree = new TidyTree(newick, {
-        parent: containerSelector,
-        //layout: "circle",
-        layout: "vertical",
-        type: "dendrogram",
-        mode: "square",
-        ruler: false,
-        leafLabels: true,
-        margin: [10, 10, 80, 10],
-      });
-    // hightlight current sample
-    tree
-      .search((d) => d.data.id.includes(sampleId))
-      .selectAll("circle")
-      .style("fill", "steelblue")
-      .attr("r", 5);
-    // leaves
-    tree.eachLeafLabel((label) => {
-      label.style["cursor"] = "pointer"; // set mouse pointer style
-      label.onclick = () => openSamplePage(label.innerHTML);
-    });
-  }
-
-  function openSamplePage(sampleId) {
-    const groupNamePos = window.location.pathname.split("/").indexOf("sample");
-    const baseUrl = window.location.pathname
-      .split("/")
-      .slice(0, groupNamePos)
-      .join("/");
-    window.open(`${baseUrl}/sample/${sampleId}`);
-  }
 </script>
 {% endblock content %}

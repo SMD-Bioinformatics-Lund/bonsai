@@ -17,18 +17,23 @@
 - Fixed missing QC column in QC view
 - Fixed faulty display of analysis metadata in `Pipeline` and `Databases` cards
 - Fixed routing path bugs
+- Fixed find and cluster similar samples calling bug
+- Fixed signature removal bug
+- Fixed faulty adding of signature to index bug
 
 ### Changed
 
 - Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
 - Updated `WebDriverWait` time in e2e tests.
 
-## [v.1.2.0]
+## [v1.2.0]
 
 ### Added
 
 - Added support to add metadata to samples through the config file.
 - Added sample `assay` and `release_life_cycle` to table and sample overview
+- Added better logging for minhash calls
+- Added task to JobStatus model
 
 ### Changed
 
@@ -38,7 +43,7 @@
 
 - Fixed number of missing alleles displayed from cgmlst
 
-## [v.1.1.0]
+## [v1.1.0]
 
 ### Added
 
