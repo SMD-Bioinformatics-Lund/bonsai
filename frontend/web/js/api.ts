@@ -93,7 +93,7 @@ export class HttpClient {
       ...this.authService.getAuthHeader(),
       ...options.headers,
     };
-
+    
     const response = await fetch(`${this.apiUrl}${endpoint}`, {
       ...options,
       headers,
@@ -146,7 +146,7 @@ export class ApiService {
       throw new Error("No sample IDs provided for deletion");
     }
     try {
-      return await this.http.request<void>("/samples", {
+      return await this.http.request<void>(`/samples/`, {
         method: "DELETE",
         body: JSON.stringify(sampleIds),
       });
