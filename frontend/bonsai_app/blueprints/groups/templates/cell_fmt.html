@@ -94,7 +94,7 @@
     {% elif cell_info.type == 'mlst' %}
         {{ render_mlst(cell_info.data) }}
     {% elif cell_info.type in ['number', 'integer', 'float'] %}
-        <td data-search="{{ cell_info.data }}">{{ cell_info.data | fmt_to_human_readable }}</td>
+        <td data-search="{{ cell_info.data }}" data-sort="{{ cell_info.data }}">{{ cell_info.data | fmt_to_human_readable }}</td>
     {% else %}
         <td>{{ cell_info.data }}</td>
     {% endif %}
