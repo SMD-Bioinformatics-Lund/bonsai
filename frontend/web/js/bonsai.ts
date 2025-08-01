@@ -16,8 +16,6 @@ import { clusterSamples } from "./actions/cluster-actions";
 import { GroupList } from "./components/group-list";
 import { GroupSelector } from "./components/group-selector";
 import { User } from "./user";
-import { ClusterMethod, TypingMethod } from "./constants";
-import { ApiFindSimilarInput } from "./types";
 import { BasketState } from "./state/basket-state";
 import { SampleBasketCounter } from "./components/samples-basket-counter";
 import { BasketComponent } from "./components/sample-basket";
@@ -219,21 +217,7 @@ export async function initSampleView(
     );
   }
 
-  // find similar samples and draw a dendrogram from the result
-  const searchParams: ApiFindSimilarInput = {
-    limit: 10,
-    similarity: 0.9,
-    cluster: true,
-    typing_method: TypingMethod.MINHASH,
-    cluster_method: ClusterMethod.SINGLE,
-  };
-  const similarSamplesCard = document.getElementById("similar-samples-card");
-  const newick = await findAndClusterSimilarSamples(
-    sampleId,
-    (sampleId: string) => api.findSimilarSamples(sampleId, searchParams),
-    api.checkJobStatus.bind(api),
-    similarSamplesCard
-  );
+  const newick = await findAndClusterSimilarSamples(sampleId, api);
   return newick
 }
 

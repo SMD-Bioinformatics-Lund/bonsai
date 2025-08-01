@@ -160,6 +160,12 @@ def find_similar_and_cluster(
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
         raise ValueError(msg) from error
+    LOG.info(
+        "Finding samples similar to %s with min similarity %s; limit %s",
+        sample_id,
+        min_similarity,
+        limit,
+    )
     sample_ids = get_similar_signatures(
         sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
     )
@@ -168,6 +174,11 @@ def find_similar_and_cluster(
     if len(sample_ids) < 2:
         LOG.warning("Invalid number of samples found, %d", len(sample_ids))
         return "()"
+    sids = [sid.sample_id for sid in sample_ids]
     # cluster samples
-    newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method, cnf=settings)
+    LOG.info(
+        "Clustering the following samples to %s: ",
+        ", ".join(sids),
+    )
+    newick: str = cluster_signatures(sids, method, cnf=settings)
     return newick
