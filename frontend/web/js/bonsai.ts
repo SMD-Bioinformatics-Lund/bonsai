@@ -33,6 +33,7 @@ const sampleTableConfig = {
     },
     top2Start: "searchBuilder",
   },
+  lengthMenu: [10, 25, 50, 100, { label: 'All', value: -1 }],
   scrollX: true,
 };
 /* Initialize sample basket */
