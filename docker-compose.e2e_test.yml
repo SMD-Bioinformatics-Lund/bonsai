@@ -37,6 +37,11 @@ services:
     volumes:
       - "./e2e_tests/fixtures/samples/ska:/data/index_files/ska"
 
+  frontend:
+    environment:
+      - API_INTERNAL_URL=http://api:8000
+      - API_EXTERNAL_URL=http://api:8000
+
   api:
     volumes:
      - "./e2e_tests/setup_bonsai_database.sh:/tmp/setup_bonsai_database.sh"
