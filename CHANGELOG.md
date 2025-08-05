@@ -20,6 +20,7 @@
 - Fixed find and cluster similar samples calling bug
 - Fixed signature removal bug
 - Fixed faulty adding of signature to index bug
+- Fixed grapetree rendering with apache subdir
 
 ### Changed
 

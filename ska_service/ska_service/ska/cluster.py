@@ -55,8 +55,6 @@ def calc_snv_distance(aln: MultipleSeqAlignment) -> DistanceMatrix:
     return dm
 
 
-
-
 def cluster_distances(dm: DistanceMatrix, method: ClusterMethod) -> str:
     """Cluster two or more samples from a distance matrix."""
 

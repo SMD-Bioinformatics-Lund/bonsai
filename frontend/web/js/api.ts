@@ -93,7 +93,7 @@ export class HttpClient {
       ...this.authService.getAuthHeader(),
       ...options.headers,
     };
-    
+
     const response = await fetch(`${this.apiUrl}${endpoint}`, {
       ...options,
       headers,
