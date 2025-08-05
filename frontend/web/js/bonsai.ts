@@ -140,7 +140,6 @@ export async function initGroupView(
   if (addToBasketBtn)
     addToBasketBtn.onclick = () => {
       basket.addSamples(table.getSelectedRows());
-      window.location.reload();
     };
 
   const deleteSamplesBtn = document.getElementById(
