@@ -7,3 +7,7 @@ user_password: user
 # Selenium remote driver, can be chrome or firefox
 remote_browser: chrome
 remote_webdriver: http://chrome:4444/wd/hub
+options:
+  credentials_enable_service: False
+  profile.password_manager_enabled: False
+  profile.password_manager_leak_detection: False
