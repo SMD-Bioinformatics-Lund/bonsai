@@ -13,7 +13,7 @@ class BasketOffcanvas:
     def __init__(self, driver: WebDriver, timeout: int = 10):
         self.driver = driver
         self.timeout = timeout
-        self.wait = WebDriverWait(driver, timeout)
+        self.wait = WebDriverWait(self.driver, timeout)
 
         self.basket_offcanvas_selector = get_test_id_selector("basket-offcanvas")
         self.open_basket_btn_selector = get_test_id_selector("open-basket-btn")
