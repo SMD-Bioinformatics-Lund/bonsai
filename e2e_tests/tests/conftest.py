@@ -3,54 +3,15 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pages.login_page import LoginPage
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.remote.webelement import WebElement
 
 LOG = logging.getLogger(__name__)
 
 
-def get_element_by_test_id(driver: webdriver, test_id: str) -> WebElement:
-    """Get HTML DOM element with a given test id.
-
-    Args:
-        driver (webdriver): Selenium web driver
-        test_id (str): id for DOM element
-
-    Raises:
-        NoSuchElementException: raised if no element was found.
-
-    Returns:
-        WebElement: Returns the element
-    """
-    try:
-        element: WebElement = driver.find_element(
-            By.XPATH, f"//*[@data-test-id='{test_id}']"
-        )
-    except NoSuchElementException:
-        raise NoSuchElementException(f"No element with the test id: {test_id}")
-    return element
-
-
-def get_bootstrap_alert(driver, severity: str = "all") -> WebElement | None:
-    """Get bootstrap alert."""
-    query_class_names = "alert"
-    if not severity == "all":
-        query_class_names = f"{query_class_names} alert-{severity}"
-
-    # look for alert DOM element
-    try:
-        element: WebElement = driver.find_element(By.CLASS_NAME, query_class_names)
-    except NoSuchElementException:
-        LOG.debug("No alert was found!")
-        return None
-    return element
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def remote_driver(config) -> webdriver:
     """Setup remote driver."""
     browsers = {
@@ -59,62 +20,44 @@ def remote_driver(config) -> webdriver:
     }
     # get related driver configuration
     driver_config = browsers.get(config["remote_browser"])
+    options = driver_config()
+    options.add_experimental_option("prefs", config.get("options", {}))
     if driver_config is None:
         raise ValueError("Invalid webdriver configuration")
     with webdriver.Remote(
-        command_executor=config["remote_webdriver"], options=driver_config()
+        command_executor=config["remote_webdriver"], options=options
     ) as driver:
         yield driver
 
 
-@pytest.fixture(scope="session")
-def logged_in_admin(remote_driver, config):
-    """Logging in to Bonsai using the admin credentials in config.yml."""
-    remote_driver.maximize_window()
+@pytest.fixture()
+def login_user(remote_driver: webdriver, base_url) -> callable:
+    def _login(username: str, password: str) -> webdriver:
+        """Login to the application."""
+        page = LoginPage(remote_driver, base_url=base_url)
+        page.load()
+        page.login(username, password)
+        return remote_driver
 
-    # goto login url
-    url = Path(config["frontend_url"]) / "login"
-    remote_driver.get(str(url))
-
-    # login to bonsai
-    # write username
-    get_element_by_test_id(remote_driver, "username-input").send_keys(
-        config["admin_username"]
-    )
-
-    # write password
-    get_element_by_test_id(remote_driver, "password-input").send_keys(
-        config["admin_password"]
-    )
-
-    # click login button
-    get_element_by_test_id(remote_driver, "login-btn").click()
-    return remote_driver
+    return _login
 
 
-@pytest.fixture(scope="session")
-def logged_in_user(remote_driver, config):
-    """Logging in to Bonsai using the user credentials in config.yml."""
-    remote_driver.maximize_window()
+@pytest.fixture(scope="function")
+def logged_in_admin(login_user, config):
+    """Logs in as admin and returns a logged-in Selenium driver instance."""
 
-    # goto login url
-    url = Path(config["frontend_url"]) / "login"
-    remote_driver.get(str(url))
+    driver = login_user(config["admin_username"], config["admin_password"])
+    LOG.warning("In login admin fixture, current URL: %s", driver.current_url)
+    return driver
 
-    # login to bonsai
-    # write username
-    get_element_by_test_id(remote_driver, "username-input").send_keys(
-        config["user_username"]
-    )
 
-    # write password
-    get_element_by_test_id(remote_driver, "password-input").send_keys(
-        config["user_password"]
-    )
+@pytest.fixture(scope="function")
+def logged_in_user(login_user, config):
+    """Logs in to Bonsai as a user and returns a logged-in Selenium driver instance."""
 
-    # click login button
-    get_element_by_test_id(remote_driver, "login-btn").click()
-    return remote_driver
+    driver = login_user(config["user_username"], config["user_password"])
+    LOG.warning("In login user fixture, current URL: %s", driver.current_url)
+    return driver
 
 
 @pytest.fixture(scope="session")
@@ -123,3 +66,10 @@ def config():
     config_path = Path(".") / "config.yml"
     with config_path.open() as cnf_file:
         return yaml.safe_load(cnf_file)
+
+
+@pytest.fixture(scope="session")
+def base_url(config):
+    """Base URL for the application."""
+
+    return config.get("frontend_url", "http://localhost:8000")
