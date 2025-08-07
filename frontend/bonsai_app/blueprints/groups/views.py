@@ -243,9 +243,14 @@ def group(group_id: str) -> str:
         if len(row) > 0:
             table_data.append(row)
 
+    # indicate view in title, used for testing
+    title = f"Group - {group_id}"
+    if display_qc:
+        title += " - QC results"
     return render_template(
         "group.html",
-        title=group_id,
+        title=title,
+        group_id=group_id,
         group_name=group_info["display_name"],
         bad_qc_actions=bad_qc_actions,
         selected_samples=selected_samples,
