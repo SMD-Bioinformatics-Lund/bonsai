@@ -2,7 +2,7 @@
 
 import logging
 
-from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -14,8 +14,8 @@ LOG = logging.getLogger(__name__)
 class LoginPage:
     """Login page object model."""
 
-    def __init__(self, driver: webdriver, base_url: str, timeout: int = 10):
-        self.driver: webdriver = driver
+    def __init__(self, driver: WebDriver, base_url: str, timeout: int = 10):
+        self.driver = driver
         self.timeout: int = timeout
         self.wait: WebDriverWait = WebDriverWait(driver, timeout)
         self.base_url: str = base_url

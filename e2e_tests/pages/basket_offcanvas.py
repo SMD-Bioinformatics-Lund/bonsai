@@ -1,6 +1,6 @@
 """POM operations for the sample offcanvas in the basket."""
 
-from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -10,7 +10,7 @@ from .utils import get_test_id_selector
 class BasketOffcanvas:
     """Basket offcanvas page object model."""
 
-    def __init__(self, driver: webdriver, timeout: int = 10):
+    def __init__(self, driver: WebDriver, timeout: int = 10):
         self.driver = driver
         self.timeout = timeout
         self.wait = WebDriverWait(driver, timeout)

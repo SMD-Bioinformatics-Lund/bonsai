@@ -1,6 +1,6 @@
 import logging
 
-from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
@@ -13,7 +13,7 @@ def get_test_id_selector(test_id: str) -> tuple[str, str]:
     return By.XPATH, f"//*[@data-test-id='{test_id}']"
 
 
-def get_element_by_test_id(driver: webdriver, test_id: str) -> WebElement:
+def get_element_by_test_id(driver: WebDriver, test_id: str) -> WebElement:
     """Get HTML DOM element with a given test id.
 
     Args:
@@ -34,7 +34,7 @@ def get_element_by_test_id(driver: webdriver, test_id: str) -> WebElement:
     return element
 
 
-def get_bootstrap_alert(driver: webdriver, severity: str = "all") -> WebElement | None:
+def get_bootstrap_alert(driver: WebDriver, severity: str = "all") -> WebElement | None:
     """Get bootstrap alert."""
     query_class_names = "alert"
     if not severity == "all":

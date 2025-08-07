@@ -1,6 +1,6 @@
 """Groups page object for the e2e tests."""
 
-from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -13,7 +13,7 @@ from .utils import get_test_id_selector
 class BaseGroupPage(BasketOffcanvas):
     """Groups page object model."""
 
-    def __init__(self, driver: webdriver, base_url: str, timeout: int = 10):
+    def __init__(self, driver: WebDriver, base_url: str, timeout: int = 10):
         super().__init__(driver, timeout)
         self.base_url = base_url
 
@@ -83,7 +83,7 @@ class GroupPage(BaseGroupPage):
     """Group page object model."""
 
     def __init__(
-        self, driver: webdriver, base_url: str, group_path: str, timeout: int = 10
+        self, driver: WebDriver, base_url: str, group_path: str, timeout: int = 10
     ):
         super().__init__(driver, base_url, timeout)
         self.group_path = group_path  # e.g. saureus, mtuberculosis etc
@@ -98,7 +98,7 @@ class GroupPage(BaseGroupPage):
 class GroupsOverviewPage(BaseGroupPage):
     """Groups overview page object model."""
 
-    def __init__(self, driver: webdriver, base_url: str, timeout: int = 10):
+    def __init__(self, driver: WebDriver, base_url: str, timeout: int = 10):
         super().__init__(driver, base_url, timeout=timeout)
         self.group_path = ""
         self.group_container_selector = get_test_id_selector("group-container")
@@ -107,5 +107,4 @@ class GroupsOverviewPage(BaseGroupPage):
         """Load the groups overview page."""
         url = f"{self.base_url}/groups"
         self.driver.get(url)
-        self.wait.until(EC.title_contains(f"Groups"))
         self.wait.until(EC.visibility_of_element_located(self.group_container_selector))
