@@ -11,6 +11,7 @@ services:
       - TESTING=True
     volumes: 
       - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
+
   api:
     environment:
       - SMTP__HOST=mailhog
@@ -23,6 +24,11 @@ services:
       - ska_service
       - allele_cluster_service
       - mailhog
+
+  e2e-tests:
+    volumes:
+     - ./e2e_tests:/app/
+
   mailhog:
     image: mailhog/mailhog
     logging:

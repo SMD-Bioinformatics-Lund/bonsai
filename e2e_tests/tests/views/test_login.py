@@ -1,8 +1,9 @@
 """Test basic Bonsai functionality."""
+
 from pathlib import Path
 from urllib.parse import urlparse
 
-from ..conftest import get_bootstrap_alert, get_element_by_test_id
+from pages.utils import get_bootstrap_alert, get_element_by_test_id
 
 
 def test_accessable_landingpage(remote_driver, config):

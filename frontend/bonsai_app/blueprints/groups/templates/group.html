@@ -44,7 +44,7 @@
                 {# toggle display qc values #}
                 <a class="btn btn-sm btn-outline-primary {% if display_qc %}active{% endif %} ms-2" 
                    data-test-id="open-qc-view-btn"
-                   href="{{ url_for('groups.group', group_id=title, qc=not display_qc) }}">
+                   href="{{ url_for('groups.group', group_id=group_id, qc=not display_qc) }}">
                    Show QC
                 </a>
             </div>
