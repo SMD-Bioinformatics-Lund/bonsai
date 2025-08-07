@@ -1,28 +1,37 @@
 """Test functionality of admin page."""
-from pathlib import Path
+
+import logging
+
 import pytest
+from pages.groups_page import GroupsOverviewPage
 from selenium.common.exceptions import NoSuchElementException
 
-from ..conftest import get_element_by_test_id
+LOG = logging.getLogger(__name__)
+
 
 def test_admin_console_not_accessable_by_user(logged_in_user, config):
     """Test that the admin console is not accessable by user."""
-    # FIRST go to landing page
-    logged_in_user.get(str(Path(config["frontend_url"])))
+
+    groups_page = GroupsOverviewPage(logged_in_user, base_url=config["frontend_url"])
+
+    # FIRST go to groups page
+    groups_page.load()
 
     # TEST that admin panel button is not accessable to a regular user
     with pytest.raises(NoSuchElementException):
-        get_element_by_test_id(logged_in_user, "admin-panel-navbar-btn")
+        groups_page.click_admin_panel()
 
 
 def test_admin_console_accessable_by_admin(logged_in_admin, config):
     """Test that the admin console is not accessable by user."""
-    # FIRST go to landing page
-    logged_in_admin.get(str(Path(config["frontend_url"])))
+
+    groups_page = GroupsOverviewPage(logged_in_admin, base_url=config["frontend_url"])
+
+    # FIRST load groups view
+    groups_page.load()
 
     # THEN click the admin panel button
-    admin_panel_btn = get_element_by_test_id(logged_in_admin, "admin-panel-navbar-btn")
-    admin_panel_btn.click()
+    groups_page.click_admin_panel()
 
     # TEST that the admin panel loaded
-    assert "bonsai" in logged_in_admin.title.lower()
+    assert "Admin Panel" in logged_in_admin.title

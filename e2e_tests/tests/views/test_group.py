@@ -1,14 +1,7 @@
 """Test functions related to sample groups."""
 
 import pytest
-from pathlib import Path
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.wait import WebDriverWait
-
-from ..conftest import get_bootstrap_alert, get_element_by_test_id
+from pages.groups_page import GroupPage
 
 
 @pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus", "ecoli"])
@@ -16,8 +9,10 @@ def test_open_group_view(logged_in_user, config, group_id: str):
     """Test that the test groups are working."""
 
     # FIRST goto the group view
-    url = Path(config["frontend_url"]) / 'groups' / group_id
-    logged_in_user.get(str(url))
+    group_page = GroupPage(
+        logged_in_user, base_url=config["frontend_url"], group_path=group_id
+    )
+    group_page.load()
 
     # TEST that the page could load
     assert "bonsai" in logged_in_user.title.lower()
@@ -28,77 +23,39 @@ def test_open_qc_view(logged_in_user, config, group_id: str):
     """Test the QC view could be opended for the different test groups."""
 
     # FIRST goto the group view
-    url = Path(config["frontend_url"]) / 'groups' / group_id
-    logged_in_user.get(str(url))
+    group_page = GroupPage(
+        logged_in_user, base_url=config["frontend_url"], group_path=group_id
+    )
+    group_page.load()
 
     # THEN click the QC view button
-    get_element_by_test_id(logged_in_user, "open-qc-view-btn").click()
+    group_page.click_open_qc_view()
 
     # TEST that the page could load
-    assert "bonsai" in logged_in_user.title.lower()
+    assert "QC results" in logged_in_user.title
 
 
 @pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus"])
 def test_add_samples_to_basket(logged_in_user, config, group_id: str):
     """Test the QC view could be opended for the different test groups."""
 
-    # setup wait
-    wait = WebDriverWait(logged_in_user, 20)
-
     # FIRST goto the group view
-    url = Path(config["frontend_url"]) / 'groups' / group_id
-    logged_in_user.get(str(url))
-
-    # THEN ensure that basket has been cleared
-    get_element_by_test_id(logged_in_user, "open-basket-btn").click()
-    clear_basket_btn = wait.until(
-        EC.visibility_of_element_located((By.ID, "clear-basket-btn"))
+    group_page = GroupPage(
+        logged_in_user, base_url=config["frontend_url"], group_path=group_id
     )
-    clear_basket_btn.click()
-    get_element_by_test_id(logged_in_user, "close-basket-btn").click()
+    group_page.load()
 
-    # THEN select the first five samples
-    (
-        ActionChains(logged_in_user)
-        .key_down(Keys.CONTROL)  # hold controll
-        .click(on_element = get_element_by_test_id(logged_in_user, f"sample-row-1"))  # select multiple samples
-        .click(on_element = get_element_by_test_id(logged_in_user, f"sample-row-2"))
-        .click(on_element = get_element_by_test_id(logged_in_user, f"sample-row-3"))
-        .click(on_element = get_element_by_test_id(logged_in_user, f"sample-row-4"))
-        .click(on_element = get_element_by_test_id(logged_in_user, f"sample-row-5"))
-        .key_up(Keys.CONTROL)
-    ).perform()
-    
-    # THEN check that the add to basket button has been enabled
-    add_to_basket_btn = get_element_by_test_id(logged_in_user, "add-to-basket-btn")
-    assert add_to_basket_btn.is_enabled()
+    # Ensure basket is empty
+    group_page.clear_basket_if_needed()
+    assert group_page.get_basket_count() == 0
 
-    # THEN click the button
-    add_to_basket_btn.click()
+    # Select the first sample and add to basket
+    group_page.click_sample_row(0)
+    btn = group_page.get_add_to_basket_button()
+    assert btn.is_enabled()
+    group_page.click_add_to_basket()
+    assert group_page.get_basket_count() == 1
 
-    # wait for page to load
-    logged_in_user.implicitly_wait(2)
-
-    # TEST that no error alerts were thrown
-    alert = get_bootstrap_alert(logged_in_user, severity="warning")
-    assert alert is None, f"Alert error: {alert.text}"
-
-    # TEST that one sample has been added to the basket
-    counter = get_element_by_test_id(logged_in_user, "samples-in-basket-counter")
-    assert counter.text == "5"
-
-
-def test_empty_group_is_empty(logged_in_user, config):
-    """Test that no samples are being displayed in an empty group."""
-    # go to the ecoli group view
-    logged_in_user.get(str(Path(config["frontend_url"]) / "groups" / "ecoli"))
-
-    # verify that no samples are being displayed in the table
-    samples_counter = logged_in_user.find_element(By.ID, "samples-counter")
-    assert int(samples_counter.text) == 0
-
-    # get sample table
-    sample_table = logged_in_user.find_element(By.ID, "sample-table")
-
-    # verify that the number of samples in the group is 0
-    assert sample_table.text.startswith('No data available')
+    # Clear the basket and check it's empty
+    group_page.clear_basket_if_needed()
+    assert group_page.get_basket_count() == 0

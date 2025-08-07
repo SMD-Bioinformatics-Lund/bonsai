@@ -36,6 +36,7 @@ const sampleTableConfig = {
     top2Start: "searchBuilder",
   },
   scrollX: true,
+  pageLength: 50,
 };
 /* Initialize sample basket */
 function initBasket(api: ApiService): BasketState | void {
@@ -139,10 +140,7 @@ export async function initGroupView(
     "add-to-basket-btn",
   ) as HTMLButtonElement;
   if (addToBasketBtn)
-    addToBasketBtn.onclick = () => {
-      basket.addSamples(table.getSelectedRows());
-      window.location.reload();
-    };
+    addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
 
   const deleteSamplesBtn = document.getElementById(
     "remove-samples-btn",
