@@ -28,6 +28,7 @@ def remote_driver(config) -> WebDriver:
     with webdriver.Remote(
         command_executor=config["remote_webdriver"], options=options
     ) as driver:
+        driver.implicitly_wait(2)
         yield driver
 
 

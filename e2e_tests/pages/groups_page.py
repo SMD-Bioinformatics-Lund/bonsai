@@ -7,7 +7,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 
 from .basket_offcanvas import BasketOffcanvas
-from .utils import get_test_id_selector
+from .utils import get_test_id_selector, reload_page_with_retries
 
 
 class BaseGroupPage(BasketOffcanvas):
@@ -91,7 +91,8 @@ class GroupPage(BaseGroupPage):
     def load(self):
         """Load the groups page."""
         url = f"{self.base_url}/groups/{self.group_path}"
-        self.driver.get(url)
+        #self.driver.get(url)
+        reload_page_with_retries(self.driver, url)
         self.wait.until(EC.title_contains(f"Group - {self.group_path}"))
 
 
@@ -106,5 +107,5 @@ class GroupsOverviewPage(BaseGroupPage):
     def load(self):
         """Load the groups overview page."""
         url = f"{self.base_url}/groups"
-        self.driver.get(url)
+        reload_page_with_retries(self.driver, url)
         self.wait.until(EC.visibility_of_element_located(self.group_container_selector))
