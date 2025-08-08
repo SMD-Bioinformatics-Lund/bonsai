@@ -13,7 +13,7 @@ services:
      - "7900:7900"
     networks:
      - bonsai-net
-    
+
   e2e-tests:
     container_name: e2e-tests
     build: 

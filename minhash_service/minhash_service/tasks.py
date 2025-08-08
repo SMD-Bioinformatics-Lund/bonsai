@@ -56,12 +56,18 @@ def add_to_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = add_signatures_to_index(sample_ids, cnf=settings)
+    res, warnings = add_signatures_to_index(sample_ids, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
+        if warnings:
+            warning_text = "; ".join(warnings)
+            msg += f" (Warnings: {warning_text})"
     else:
         msg = f"Failed to append signatures, {signatures}"
+        if warnings:
+            warning_text = "; ".join(warnings)
+            msg += f" (Warnings: {warning_text})"
     return msg
 
 
@@ -160,6 +166,12 @@ def find_similar_and_cluster(
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
         raise ValueError(msg) from error
+    LOG.info(
+        "Finding samples similar to %s with min similarity %s; limit %s",
+        sample_id,
+        min_similarity,
+        limit,
+    )
     sample_ids = get_similar_signatures(
         sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
     )
@@ -168,6 +180,11 @@ def find_similar_and_cluster(
     if len(sample_ids) < 2:
         LOG.warning("Invalid number of samples found, %d", len(sample_ids))
         return "()"
+    sids = [sid.sample_id for sid in sample_ids]
     # cluster samples
-    newick: str = cluster_signatures([sid.sample_id for sid in sample_ids], method, cnf=settings)
+    LOG.info(
+        "Clustering the following samples to %s: ",
+        ", ".join(sids),
+    )
+    newick: str = cluster_signatures(sids, method, cnf=settings)
     return newick
