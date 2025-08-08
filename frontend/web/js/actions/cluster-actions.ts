@@ -12,7 +12,7 @@ async function openGrapeTree(
   // Open grape tree
   const template = document.createElement("template");
   template.innerHTML = String.raw`
-  <form id="open-tree-form" action="/tree" method="POST" hidden target="_blank">
+  <form id="open-tree-form" action="${baseUrl}/tree" method="POST" hidden target="_blank">
       <input type="text" name="newick" id="newick-content" value="${newick}">
       <input type="text" name="typing_data" id="typing-data-content" value="${clusterMethod}">
       <input type="text" name="sample-ids" id="sample-ids-content" value='${JSON.stringify({ sample_id: sampleIds })}'>

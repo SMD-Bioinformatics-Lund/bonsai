@@ -50,7 +50,7 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
 
 
 @router.post(
-    "/cluster/{typing_method}/",
+    "/cluster/{typing_method}",
     status_code=status.HTTP_201_CREATED,
     response_model=SubmittedJob,
     tags=["minhash", *DEFAULT_TAGS],
