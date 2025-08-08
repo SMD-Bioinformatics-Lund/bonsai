@@ -56,12 +56,18 @@ def add_to_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = add_signatures_to_index(sample_ids, cnf=settings)
+    res, warnings = add_signatures_to_index(sample_ids, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
+        if warnings:
+            warning_text = "; ".join(warnings)
+            msg += f" (Warnings: {warning_text})"
     else:
         msg = f"Failed to append signatures, {signatures}"
+        if warnings:
+            warning_text = "; ".join(warnings)
+            msg += f" (Warnings: {warning_text})"
     return msg
 
 

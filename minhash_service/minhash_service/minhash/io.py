@@ -147,25 +147,34 @@ def check_signature(sample_id: str, cnf: Settings) -> bool:
         return True
 
 
-def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
-    """Add genome signature file to sourmash index"""
+def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool, list[str]]:
+    """Add genome signature file to sourmash index
+    
+    Returns:
+        tuple[bool, list[str]]: (success status, list of warning messages)
+    """
 
     genome_index = get_sbt_index(cnf=cnf, check=False)
     sbt_lock_path = f"/tmp/{genome_index.name}.lock"
     lock = fasteners.InterProcessLock(sbt_lock_path)
     LOG.debug("Using lock: %s", sbt_lock_path)
 
+    warnings = []
     signatures = []
     for sample_id in sample_ids:
         signature = read_signature(sample_id, cnf)
         if not signature:
-            LOG.warning("No signatures found for sample %s", sample_id)
+            warning_msg = f"No signatures found for sample {sample_id}"
+            LOG.warning(warning_msg)
+            warnings.append(warning_msg)
             continue
         signatures.append(signature[0])
-    
+
     if not signatures:
-        LOG.warning("No signatures to add.")
-        return False
+        warning_msg = "No signatures to add."
+        LOG.warning(warning_msg)
+        warnings.append(warning_msg)
+        return False, warnings
 
     # add signature to existing index
     # acquire lock to append signatures to database
@@ -179,11 +188,13 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
 
             # If index is not SBT (e.g., ZipFileLinearIndex), rebuild as SBT
             if not hasattr(tree, "add_node"):
-                LOG.warning("Index is not SBT. Rebuilding as SBT for updates.")
+                warning_msg = "Index is not SBT. Rebuilding as SBT for updates."
+                LOG.warning(warning_msg)
+                warnings.append(warning_msg)
                 existing_sigs = [s for s in tree.signatures()]
                 tree = sourmash.sbtmh.create_sbt_index()
                 for s in existing_sigs:
-                    leaf = SigLeaf(s.md5sum(), s)
+                    leaf = sourmash.sbtmh.SigLeaf(s.md5sum(), s)
                     tree.add_node(leaf)
 
         except (ValueError, FileNotFoundError):
@@ -204,7 +215,7 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> bool:
             LOG.error("Dont have permission to write file to disk")
             raise err
 
-    return True
+    return True, warnings
 
 
 def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
