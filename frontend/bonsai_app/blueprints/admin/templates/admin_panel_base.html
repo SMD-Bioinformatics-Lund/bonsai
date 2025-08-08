@@ -1,5 +1,9 @@
 {% extends "layout.html" %}
 
+{% block title %}
+    Bonsai - Admin Panel
+{% endblock title %}
+
 {% block css %}
 {{ super() }}
 <link rel="stylesheet" href="{{url_for('admin.static', filename='admin.css')}}">
