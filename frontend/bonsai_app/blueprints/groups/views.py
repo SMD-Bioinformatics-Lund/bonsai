@@ -213,6 +213,16 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # get columns from api
+    """TODO
+    
+    Create a structured representation of your table data in the Flask view function. Each cell can include:
+
+    value: the raw or display value
+    style: CSS classes or inline styles
+    tooltip: optional tooltip text
+    link: optional URL for anchor tags
+    render_macro: optional macro name to use in Jinja
+    """
     group_columns: list[dict[str, Any]] = []
     for col in (
         get_valid_group_columns(token_obj=token, qc=True) if display_qc else group_info["table_columns"]
