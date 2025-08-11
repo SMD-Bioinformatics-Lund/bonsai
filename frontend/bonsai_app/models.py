@@ -16,6 +16,16 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     )
 
 
+class ApiGetSamplesDetailsInput(BaseModel):
+    """Input parameters for getting sample details."""
+
+    limit: int | None = None
+    skip: int | None = None
+    prediction_result: bool = True
+    qc_metrics: bool = False
+    sid: list[str] | None = None
+
+
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
     """Contaner for sample baskt content."""
 
