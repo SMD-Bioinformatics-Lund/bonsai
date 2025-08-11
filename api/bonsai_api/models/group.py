@@ -105,7 +105,7 @@ VALID_PREDICTION_COLS: list[OverviewTableColumn] = [
         id="qc",
         label="QC",
         type="qc",
-        path="$.qc_status.status",
+        path="$.qc_status",
         sortable=True,
     ),
     OverviewTableColumn(
