@@ -90,34 +90,41 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-@router.get(
-    "/samples/",
+class ApiGetSamplesDetailsInput(BaseModel):
+    """Input parameters for getting sample details."""
+
+    limit: int = Field(default=10, gt=-1, title="Limit the output to x samples")
+    skip: int = Field(default=0, gt=-1, title="Skip x samples")
+    prediction_result: bool = Field(
+        default=True, title="Include prediction results"
+    )
+    qc_metrics: bool = Field(default=False, title="Include QC metrics")
+    sid: list[str] | None = Field(
+        None, description="Optional limit query to samples ids"
+    )
+
+
+@router.post(
+    "/samples/summary",
     response_model_by_alias=False,
     response_model=MultipleRecordsResponseModel,
     tags=[RouterTags.SAMPLE],
 )
 async def samples_summary(
-    limit: int = Query(10, gt=-1),
-    skip: int = Query(0, gt=-1),
-    prediction_result: bool = Query(True, description="Include prediction results"),
-    qc_metrics: bool = Query(False, description="Include QC metrics"),
-    sid: list[str] | None = Query(
-        None, description="Optional limit query to samples ids"
-    ),
+    query: ApiGetSamplesDetailsInput,
     db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Entrypoint for getting a summary for multiple samples."""
-    # query samples
     db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
-        limit=limit,
-        skip=skip,
-        prediction_result=prediction_result,
-        include_samples=sid,
-        qc_metrics=qc_metrics,
+        limit=query.limit,
+        skip=query.skip,
+        prediction_result=query.prediction_result,
+        include_samples=query.sid,
+        qc_metrics=query.qc_metrics,
     )
     return db_obj
 
