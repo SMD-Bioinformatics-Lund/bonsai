@@ -93,8 +93,8 @@ UPDATE_PERMISSION = "samples:update"
 class ApiGetSamplesDetailsInput(BaseModel):
     """Input parameters for getting sample details."""
 
-    limit: int = Field(default=10, gt=-1, title="Limit the output to x samples")
-    skip: int = Field(default=0, gt=-1, title="Skip x samples")
+    limit: int | None = Field(default=None, gt=-1, title="Limit the output to x samples")
+    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
     prediction_result: bool = Field(
         default=True, title="Include prediction results"
     )
