@@ -19,8 +19,8 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
 class ApiGetSamplesDetailsInput(BaseModel):
     """Input parameters for getting sample details."""
 
-    limit: int = 10
-    skip: int = 0
+    limit: int | None = None
+    skip: int | None = None
     prediction_result: bool = True
     qc_metrics: bool = False
     sid: list[str] | None = None

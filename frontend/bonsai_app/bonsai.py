@@ -240,8 +240,8 @@ def remove_samples_from_basket(
 @api_authentication
 def get_samples(
     headers: CaseInsensitiveDict[str],
-    limit: int = 20,
-    skip: int = 0,
+    limit: int | None= None,
+    skip: int | None = None,
     sample_ids: list[str] | None = None,
 ):
     """Get multipe samples from database.
