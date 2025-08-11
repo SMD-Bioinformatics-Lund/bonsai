@@ -24,6 +24,7 @@
 
 ### Changed
 
+- Entrypoint GET `/samples`was changed to POST `/samples/summary` to mitigate URL length limitations.
 - Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
 - Updated `WebDriverWait` time in e2e tests.
 - Updated minhash error throwing for missing sig files
