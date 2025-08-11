@@ -201,8 +201,8 @@ QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
 
 async def get_samples_summary(
     db: Database,
-    limit: int = 0,
-    skip: int = 0,
+    limit: int | None = None,
+    skip: int | None = None,
     include_samples: List[str] | None = None,
     prediction_result: bool = True,
     qc_metrics: bool = False,
@@ -286,9 +286,9 @@ async def get_samples_summary(
 
     # add limit, skip and count total records in db
     facet_pipe: list[dict[str, int]] = []
-    if limit > 0:
+    if isinstance(limit, int) and limit > 0:
         facet_pipe.append({"$limit": limit})
-    if skip > 0:
+    if isinstance(skip, int) and skip > 0:
         facet_pipe.append({"$skip": skip})
 
     pipeline.append(
