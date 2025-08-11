@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
-from .models import SampleBasketObject, SubmittedJob
+from .models import SampleBasketObject, SubmittedJob, ApiGetSamplesDetailsInput
 
 LOG = logging.getLogger(__name__)
 
@@ -244,17 +244,19 @@ def get_samples(
     skip: int = 0,
     sample_ids: list[str] | None = None,
 ):
-    """Get multipe samples from database."""
+    """Get multipe samples from database.
+    
+    If sample_ids is provided it will return only those samples.
+    """
     # conduct query
-    url = f"{settings.api_internal_url}/samples/"
+    url = f"{settings.api_internal_url}/samples/summary"
     # get limit, offeset and skip values
-    params: dict[str, int | list[str]] = {"limit": limit, "skip": skip}
     if sample_ids is not None:
         # sanity check list
         if len(sample_ids) == 0:
             raise ValueError("sample_ids list cant be empty!")
-        params["sid"] = sample_ids
-    resp = requests_get(url, headers=headers, params=params)
+    data = ApiGetSamplesDetailsInput.model_validate({"limit": limit, "skip": skip, "sid": sample_ids})
+    resp = requests_post(url, headers=headers, json=data.model_dump())
 
     try:
         resp.raise_for_status()
