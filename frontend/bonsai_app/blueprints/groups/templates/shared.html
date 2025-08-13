@@ -1,5 +1,5 @@
 {% from  'sidebar.html' import qc_classification_form_fields  %}
-{% from "cell_fmt.html" import format_table_cell %}
+{% import "cell_fmt.html" as render_funcs %}
 
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
@@ -86,21 +86,52 @@
         <thead>
             <tr>
                 {# build table header #}
-                {% for col in table_data[0] %}
-                    <td>{{ col.label }}</td>
+                {% for column in table_data.columns %}
+                    {% if column.label is not none %}
+                        <td>{{ column.label }}</td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
                 {% endfor %}
             </th>
         </thead>
         <tbody>
-            {% for row in table_data %}
-                <tr id="{{ row[0].data }}"
-                 {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}
-                 >
-                    {% for cell in row %}
-                        {{ format_table_cell(cell) }}
+            {% for row in table_data.rows %}
+                <tr {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
+                    {% for col_info in table_data.columns %}
+                        {% set cell_data=row[col_info.id] %}
+                        {{ render_funcs[col_info.renderer](cell_data) }}
                     {% endfor %}
                 </tr>
             {% endfor %}
         </tbody>
     </table>
+{% endmacro %}
+
+
+{% macro render_cell(cell_info) %}
+    {% set style = cell_info.style or '' %}
+    {% set tooltip = cell_info.tooltip or '' %}
+    {% set link = cell_info.link %}
+    {% set data = cell_info.data %}
+    {% set macro = cell_info.render_macro %}
+
+    {% if cell_info.type == "list" %}
+        {% set data = data | join(', ') %}
+    {% elif cell_info.type == "number" %}
+        {% set data = data | fmt_number %}
+    {% endif %}
+
+    {% if macro %}
+        {{ render_funcs[macro](cell_info) }}
+    {% else %}
+        <td class="{{ style }}" 
+            {% if tooltip %}
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="{{ cell_info.tooltip }}">
+            {% endif %}
+        >
+            {{ data }}
+        </td>
+    {% endif %}
 {% endmacro %}

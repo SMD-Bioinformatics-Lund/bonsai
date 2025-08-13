@@ -1,12 +1,14 @@
 """Routes related to collections of samples."""
 
 from typing import Dict, List, Literal
+from datetime import datetime
 
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, RWModel
 from .sample import SampleSummary
+from bonsai_api.utils import get_timestamp
 
 FilterParams = List[Dict[str, str | int | float],]
 
@@ -31,29 +33,35 @@ class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
     description: str | None = None
 
 
-class SampleTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
+class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-methods
     """Definition of how to display and function of overview table."""
 
     id: str = Field(..., description="Column id")
     label: str = Field(..., description="Display name")
     path: str = Field(..., description="JSONpath describing how to access the data")
-    type: Literal["string", "number", "date", "boolean", "custom"] = "string"
-    source: Literal["result", "metadata"] = "result"  # where the data is from, analysis result or metadata
-    # display params
+    type: Literal["string", "number", "date", "boolean", "list", "custom"] = "string"
+    source: Literal["static", "metadata"] = "static"  # where the columns are predefined or relate to metadata
     renderer: str | None = None
     sortable: bool = False
     filterable: bool = False
 
 
-VALID_BASE_COLS: list[SampleTableColumn] = [
-    SampleTableColumn(
+class SampleTableColumnDB(SampleTableColumnInput):  # pylint: disable=too-few-public-methods
+    """Database representation of a column."""
+
+    created_at: datetime = Field(default_factory=get_timestamp)
+    modified_at: datetime = Field(default_factory=get_timestamp)
+
+
+VALID_BASE_COLS: list[SampleTableColumnInput] = [
+    SampleTableColumnInput(
         id="sample_btn",
         label="",
         type="custom",
-        renderer="sample_btn",
+        renderer="sample_btn_renderer",
         path="$.sample_id",
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="sample_id",
         label="Sample Id",
         path="$.sample_id",
@@ -62,52 +70,53 @@ VALID_BASE_COLS: list[SampleTableColumn] = [
 ]
 
 # Prediction result columns
-VALID_PREDICTION_COLS: list[SampleTableColumn] = [
-    SampleTableColumn(
+VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
+    SampleTableColumnInput(
         id="sample_name",
         label="Name",
         path="$.sample_name",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="lims_id",
         label="LIMS id",
         path="$.lims_id",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="assay",
         label="Assay",
         path="$.assay",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="release_life_cycle",
         label="Release life cycle",
         path="$.release_life_cycle",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="sequencing_run",
         label="Sequencing run",
         path="$.sequencing_run",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="taxonomic_name",
         label="Major species",
-        type="taxonomic_name",
+        renderer="taxonomic_name_renderer",
         path="$.species_prediction.scientific_name",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="qc",
         label="QC",
-        type="qc",
+        type="custom",
         path="$.qc_status",
         sortable=True,
+        renderer="qc_status_renderer",
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="profile",
         label="Analysis profile",
         path="$.profile",
@@ -115,40 +124,42 @@ VALID_PREDICTION_COLS: list[SampleTableColumn] = [
         sortable=True,
         filterable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="comments",
         label="Comments",
-        type="comments",
+        type="custom",
         path="$.comments",
+        renderer="comments_renderer",
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="tags",
         label="Tags",
-        type="tags",
+        type="custom",
         path="$.tags",
+        renderer="tags_renderer",
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="mlst",
         label="MLST ST",
         path="$.mlst",
         sortable=True,
         filterable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="stx",
         label="STX typing",
         path="$.stx",
         sortable=True,
         filterable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="oh",
         label="OH typing",
         path="$.oh_type",
         sortable=True,
         filterable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="cdate",
         label="Date",
         type="date",
@@ -159,67 +170,67 @@ VALID_PREDICTION_COLS: list[SampleTableColumn] = [
 
 # Prediction result columns
 VALID_QC_COLS = [
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="sample_name",
         label="Name",
         path="$.sample_name",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="sequencing_run",
         label="Sequencing run",
         path="$.sequencing_run",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="qc",
         label="QC",
-        type="qc",
+        type="custom",
         path="$.qc_status.status",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="n50",
         label="N50",
         type="number",
         path="$.quast.n50",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="n_contigs",
         label="#Contigs",
         path="$.quast.n_contigs",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="median_cov",
         label="Median cov",
         path="$.postalignqc.median_cov",
         sortable=True,
     ),
-    SampleTableColumn(
+    SampleTableColumnInput(
         id="n_reads",
         label="# Reads",
         type="number",
         path="$.postalignqc.n_reads",
         sortable=True,
     ),
-    SampleTableColumn(
-        id="coverage",
+    SampleTableColumnInput(
+        id="pct_cov_over_10",
         label="Cov > 10",
         type="number",
         path='$.postalignqc.pct_above_x["10"]',
         sortable=True,
     ),
-    SampleTableColumn(
-        id="coverage",
+    SampleTableColumnInput(
+        id="pct_cov_over_30",
         label="Cov > 30",
         type="number",
         path='$.postalignqc.pct_above_x["30"]',
         sortable=True,
     ),
-    SampleTableColumn(
-        id="missing_loci",
+    SampleTableColumnInput(
+        id="cgmlst_missing_loci",
         label="# Missing loci",
         type="number",
         path="$.missing_cgmlst_loci",
@@ -235,7 +246,7 @@ qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    table_columns: List[SampleTableColumn] = Field(description="Columns to display")
+    table_columns: List[SampleTableColumnInput] = Field(description="Columns to display")
     validated_genes: Dict[ElementType, List[str]] | None = Field({})
 
 

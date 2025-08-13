@@ -2,7 +2,6 @@
 
 import json
 import logging
-from typing import Any
 from urllib.parse import urlparse
 
 from flask import (
@@ -15,10 +14,9 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from jsonpath2.path import Path as jsonPath
 from requests.exceptions import HTTPError
 
-from ...bonsai import (
+from bonsai_app.bonsai import (
     TokenObject,
     create_group,
     delete_group,
@@ -26,11 +24,12 @@ from ...bonsai import (
     get_groups,
     get_samples,
     get_samples_in_group,
-    get_valid_group_columns,
     update_group,
     update_sample_qc_classification,
+    get_valid_group_columns,
 )
-from ...models import BadSampleQualityAction, PhenotypeType, QualityControlResult
+from bonsai_app.models import BadSampleQualityAction, PhenotypeType, QualityControlResult
+from .controller import format_tablular_data
 
 LOG = logging.getLogger(__name__)
 
@@ -59,39 +58,13 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     token = TokenObject(**current_user.get_id())
-    all_samples = get_samples(token, limit=0, skip=0)
+    samples_info = get_samples(token, limit=0, skip=0)
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    # get default columns from api
-    default_columns: list[dict[str, str | bool | jsonPath | None]] = []
-    for col in get_valid_group_columns(token_obj=token):
-        if col["hidden"]:
-            continue
-        # get path
-        col["path"] = jsonPath.parse_str(col["path"])
-        default_columns.append(col)
-
     # generate table data
-    table_data: list[dict[str, Any]] = []
-    for sample in all_samples["data"]:
-        row: list[dict[str, Any]] = []
-        for col in default_columns:
-            # get sample data from json path
-            raw_data: list[str] = [
-                mat.current_value for mat in col["path"].match(sample)
-            ]
-            data = raw_data[0] if len(raw_data) > 0 else ""
-            row.append(
-                {
-                    "id": col["id"],
-                    "label": col["label"],
-                    "type": col["type"],
-                    "data": data,
-                }
-            )
-        if len(row) > 0:
-            table_data.append(row)
+    col_def = get_valid_group_columns(token)
+    table_data = format_tablular_data(samples_info["data"], col_def)
 
     return render_template(
         "groups.html",
@@ -155,18 +128,18 @@ def edit_groups(group_id: str | None = None):
     }
 
     # get valid columns and set used cols as checked
-    valid_cols = get_valid_group_columns(group_id=group_id, token_obj=token)
     all_group_ids = [group["group_id"] for group in all_groups]
     if group_id is not None and group_id in all_group_ids:
         selected_group = next(
             iter(group for group in all_groups if group["group_id"] == group_id)
         )
-        cols_in_group = [gr["path"] for gr in selected_group["table_columns"]]
+        cols_in_group = selected_group["table_columns"]
     else:
         cols_in_group = []
+    # Parse column definitions and figure out which should be selected
     # annotate if column previously have been selected
-    for column in valid_cols:
-        column["selected"] = column["path"] in cols_in_group
+    #valid_cols: list[dict[str, str | bool]] = [{"column_id": col, "selected": col in cols_in_group} for col in COLUMN_CONFIGS]
+
     return render_template(
         "edit_groups.html",
         title="Groups",
@@ -212,46 +185,10 @@ def group(group_id: str) -> str:
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    # get columns from api
-    """TODO
-    
-    Create a structured representation of your table data in the Flask view function. Each cell can include:
-
-    value: the raw or display value
-    style: CSS classes or inline styles
-    tooltip: optional tooltip text
-    link: optional URL for anchor tags
-    render_macro: optional macro name to use in Jinja
-    """
-    group_columns: list[dict[str, Any]] = []
-    for col in (
-        get_valid_group_columns(token_obj=token, qc=True) if display_qc else group_info["table_columns"]
-    ):
-        if col["hidden"]:
-            continue
-        # get path
-        upd_col = col.copy()
-        upd_col["path"] = jsonPath.parse_str(upd_col["path"])
-        group_columns.append(upd_col)
-
     # generate table data
-    table_data = []
-    for sample in samples_info["data"]:
-        row = []
-        for col in group_columns:
-            # get sample data from json path
-            data = [m.current_value for m in col["path"].match(sample)]
-            data = data[0] if len(data) > 0 else ""
-            row.append(
-                {
-                    "id": col["id"],
-                    "label": col["label"],
-                    "type": col["type"],
-                    "data": data,
-                }
-            )
-        if len(row) > 0:
-            table_data.append(row)
+    columns = group_info.get('table_columns', [])
+    columns = list(DEFAULT_COLUMNS) if len(columns) == 0 else columns
+    table_data = format_tablular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"
