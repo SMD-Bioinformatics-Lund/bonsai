@@ -242,12 +242,15 @@ VALID_QC_COLS = [
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
 qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 
+SCHEMA_VERSION: str = "1"
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    table_columns: List[SampleTableColumnInput] = Field(description="Columns to display")
-    validated_genes: Dict[ElementType, List[str]] | None = Field({})
+    #schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
+    #table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
+    table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
+    validated_genes: dict[ElementType, list[str]] | None = {}
 
 
 class GroupInfoDatabase(
