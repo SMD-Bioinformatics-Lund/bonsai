@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import TypeAdapter
 from pymongo.results import UpdateResult
 
-from bonsai_api.models.group import SampleTableColumn
+from bonsai_api.models.group import SampleTableColumnInput
 from bonsai_api.db import Database
 from bonsai_api.models.metadata import InputMetaEntry, MetaEntriesInDb, MetaEntryInDb
 from bonsai_api.io import parse_metadata_table
@@ -68,7 +68,7 @@ async def get_metadata_fields_for_samples(
             uniq_obj[meta.fieldname] = meta
 
     cols = [
-        SampleTableColumn(
+        SampleTableColumnInput(
             id=entry.fieldname.lower().replace(" ", "-"),
             label=entry.fieldname,
             path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
