@@ -261,3 +261,5 @@ class GroupInfoDatabase(
 
 class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
+
+    table_columns: list[str] = Field(default=[], description="IDs of columns to display.")

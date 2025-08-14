@@ -83,18 +83,7 @@ const updateGroup = (event, method) => {
     const groupColumns = Array
         .from(list)
         .filter(column => column.querySelector('input[role="switch"]').checked)
-        .map(column => {
-            
-            return {
-                id: column['dataset'].id,
-                label: column['dataset'].label,
-                type: column['dataset'].dtype,
-                path: column['dataset'].path,
-                sortable: column.querySelector('input[name="sortable"]').checked,
-                searchable: column.querySelector('input[name="searchable"]').checked,
-                hidden: column.querySelector('input[name="hidden"]').checked
-            }
-        })
+        .map(column => column['dataset'].id)
     // parse samples and validated genes
     const samplesList = document.querySelectorAll('#added-samples-list li')
     let validatedGenes = {}
