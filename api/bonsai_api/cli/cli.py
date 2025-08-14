@@ -123,7 +123,7 @@ def create_group(
         group_id=group_id,
         display_name=name,
         description=description,
-        table_columns=pred_res_cols,
+        table_columns=[col.id for col in pred_res_cols],
         validated_genes=None
     )
     try:
