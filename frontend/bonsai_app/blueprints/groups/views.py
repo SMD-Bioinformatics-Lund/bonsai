@@ -126,8 +126,8 @@ def edit_groups(group_id: str | None = None):
         entry.name.lower().capitalize().replace("_", " "): entry.value
         for entry in PhenotypeType.__members__.values()
     }
-
     # get valid columns and set used cols as checked
+    valid_cols = get_valid_group_columns(group_id=group_id, token_obj=token)
     all_group_ids = [group["group_id"] for group in all_groups]
     if group_id is not None and group_id in all_group_ids:
         selected_group = next(
@@ -136,9 +136,10 @@ def edit_groups(group_id: str | None = None):
         cols_in_group = selected_group["table_columns"]
     else:
         cols_in_group = []
-    # Parse column definitions and figure out which should be selected
+
     # annotate if column previously have been selected
-    #valid_cols: list[dict[str, str | bool]] = [{"column_id": col, "selected": col in cols_in_group} for col in COLUMN_CONFIGS]
+    for column in valid_cols:
+        column["selected"] = column["id"] in cols_in_group
 
     return render_template(
         "edit_groups.html",
@@ -187,7 +188,10 @@ def group(group_id: str) -> str:
 
     # generate table data
     columns = group_info.get('table_columns', [])
-    columns = list(DEFAULT_COLUMNS) if len(columns) == 0 else columns
+    if len(columns) > 0: 
+        columns = get_valid_group_columns(token, group_id=group_id)
+    else: # get default columns
+        columns = get_valid_group_columns(token)
     table_data = format_tablular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
