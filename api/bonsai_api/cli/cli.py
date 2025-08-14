@@ -18,7 +18,7 @@ from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.io import sample_to_kmlims
-from bonsai_api.models.group import GroupInCreate, pred_res_cols
+from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
 from bonsai_api.migrate import migrate_sample_collection, migrate_group_collection, MigrationError
@@ -122,7 +122,7 @@ def create_group(
         group_id=group_id,
         display_name=name,
         description=description,
-        table_columns=[col.id for col in pred_res_cols],
+        table_columns=[SampleTableColumnDB(id=col.id) for col in pred_res_cols],
         validated_genes=None
     )
     try:
@@ -131,9 +131,9 @@ def create_group(
             func = create_group_in_db(db, group_obj)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
-        raise click.UsageError(f'Group with "{id}" exists already') from error
+        raise click.UsageError(f'Group with "{group_id}" exists already') from error
     finally:
-        click.secho(f'Successfully created a group with id: "{id}"', fg="green")
+        click.secho(f'Successfully created a group with id: "{group_id}"', fg="green")
 
 
 @cli.command()
