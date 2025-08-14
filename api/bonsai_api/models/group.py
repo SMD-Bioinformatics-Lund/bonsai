@@ -109,7 +109,7 @@ VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
         sortable=True,
     ),
     SampleTableColumnInput(
-        id="qc",
+        id="qc_status",
         label="QC",
         type="custom",
         path="$.qc_status",
@@ -117,7 +117,7 @@ VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
         renderer="qc_status_renderer",
     ),
     SampleTableColumnInput(
-        id="profile",
+        id="analysis_profile",
         label="Analysis profile",
         path="$.profile",
         type="list",
@@ -139,21 +139,21 @@ VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
         renderer="tags_renderer",
     ),
     SampleTableColumnInput(
-        id="mlst",
+        id="mlst_typing",
         label="MLST ST",
         path="$.mlst",
         sortable=True,
         filterable=True,
     ),
     SampleTableColumnInput(
-        id="stx",
+        id="stx_typing",
         label="STX typing",
         path="$.stx",
         sortable=True,
         filterable=True,
     ),
     SampleTableColumnInput(
-        id="oh",
+        id="oh_typing",
         label="OH typing",
         path="$.oh_type",
         sortable=True,
@@ -183,7 +183,7 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     SampleTableColumnInput(
-        id="qc",
+        id="qc_status",
         label="QC",
         type="custom",
         path="$.qc_status.status",
@@ -247,9 +247,9 @@ SCHEMA_VERSION: str = "1"
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    #schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
-    #table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
-    table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
+    schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
+    table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
+    #table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
     validated_genes: dict[ElementType, list[str]] | None = {}
 
 
