@@ -15,7 +15,7 @@ from ..crud.user import get_current_active_user
 from ..crud.metadata import get_metadata_fields_for_samples
 from ..db import Database, get_db
 from ..models.base import MultipleRecordsResponseModel
-from ..models.group import GroupInCreate, GroupInfoDatabase, pred_res_cols, qc_cols
+from ..models.group import GroupInCreate, GroupInfoDatabase, SampleTableColumnInput, pred_res_cols, qc_cols
 from ..models.user import UserOutputDatabase
 
 router = APIRouter()
@@ -198,8 +198,19 @@ async def get_columns_for_group(
     """Get information of the number of samples per group loaded into the database."""
     group_obj = GroupInfoDatabase.model_validate(await get_group(db, group_id, lookup_samples=False))
     meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
+
+    idx_pred_res_cols = {col.id: col for col in pred_res_cols}
+
+    # expand the column preferences from the group object into a column definition
+    columns: list[SampleTableColumnInput] = []
+    for col in group_obj.table_columns:
+        column_def = idx_pred_res_cols[col.id]
+        # update default sort, search, visibility preferences with what is stored in the group
+        upd_model = column_def.model_copy(update=col.model_dump())
+        columns.append(upd_model)
+
     # add default columns
-    return pred_res_cols + meta_entries
+    return columns + meta_entries
 
 
 @router.get(

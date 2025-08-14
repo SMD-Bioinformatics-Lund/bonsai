@@ -45,8 +45,8 @@
         </div>
         <span class="display-params-input">
             {{ inputCheck(base_id + '_sortable', 'Sortable', name='sortable', checked=col.sortable, disabled=not col.selected) }}
-            {{ inputCheck(base_id + '_searchable', 'Searchable', name='searchable', checked=col.sortable, disabled=not col.selected) }}
-            {{ inputCheck(base_id + '_hidden', 'Hidden', name='hidden', checked=col.hidden, disabled=not col.selected) }}
+            {{ inputCheck(base_id + '_searchable', 'Searchable', name='searchable', checked=col.searchable, disabled=not col.selected) }}
+            {{ inputCheck(base_id + '_hidden', 'Hidden', name='hidden', checked=not col.visible, disabled=not col.selected) }}
         </span>
     </div>
 </div>
@@ -60,7 +60,7 @@
         </div>
         <div class="btn-group pe-4">
             {{ inputCheckBtn('sortable', 'Sortable', checked=col.sortable) }}
-            {{ inputCheckBtn('searchable', 'Searchable', checked=col.sortable) }}
+            {{ inputCheckBtn('searchable', 'Searchable', checked=col.searchable) }}
             {{ inputCheckBtn('hidden', 'Hidden', checked=col.hidden) }}
         </div>
         <div class="fs-4"><i class="bi bi-list"></i></div>

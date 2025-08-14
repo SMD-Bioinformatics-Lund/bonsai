@@ -127,7 +127,6 @@ def edit_groups(group_id: str | None = None):
         for entry in PhenotypeType.__members__.values()
     }
     # get valid columns and set used cols as checked
-    valid_cols = get_valid_group_columns(group_id=group_id, token_obj=token)
     all_group_ids = [group["group_id"] for group in all_groups]
     if group_id is not None and group_id in all_group_ids:
         selected_group = next(
@@ -138,15 +137,19 @@ def edit_groups(group_id: str | None = None):
         cols_in_group = []
 
     # annotate if column previously have been selected
-    for column in valid_cols:
-        column["selected"] = column["id"] in cols_in_group
+    valid_cols_idx = {col["id"]: col for col in get_valid_group_columns(token_obj=token)}
+    for col in cols_in_group:
+        col_id = col["id"]
+        valid_cols_idx[col_id]["selected"] = True
+        for key in ["sortable", "searchable", "visible"]:
+            valid_cols_idx[col_id][key] = col[key]
 
     return render_template(
         "edit_groups.html",
         title="Groups",
         selected_group=group_id,
         groups=all_groups,
-        valid_columns=valid_cols,
+        valid_columns=list(valid_cols_idx.values()),
         valid_phenotypes=valid_phenotypes,
     )
 
