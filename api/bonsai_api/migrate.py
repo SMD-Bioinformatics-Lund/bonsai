@@ -1,14 +1,17 @@
 """Functions for migrating the database between versions."""
+import pathlib
 from typing import Any, Callable
 from bson import json_util
 import click
 import logging
+from copy import copy
 
 from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.models.sample import SampleInCreate
-from bonsai_api.models.group import GroupInCreate
+from bonsai_api.models.group import GroupInCreate, pred_res_cols, qc_cols
 from bonsai_api.models.group import SCHEMA_VERSION as GROUP_SCHEMA_VERSION
 from bonsai_api.crud.sample import update_sample
+from bonsai_api.crud.group import update_group
 from bonsai_api.db import Database
 from prp.models.sample import SCHEMA_VERSION as SAMPLE_SCHEMA_VERSION
 from prp.migration.convert import migrate_result as sample_migrate_result
@@ -65,52 +68,43 @@ def group_pre_1_to_1(group: UnformattedResult) -> UnformattedResult:
     upd_group = copy(group)
 
     # add schema version
-    upd_group["schema_version"] = 1
+    upd_group["schema_version"] = "1"
 
-    # replace SampleTableColumnInput objects with 
+    # build a uniqe index of all valid columns
+    all_valid_cols: list[str] = list({col.id for col in pred_res_cols + qc_cols})
+    ID_MIGRATION_TBL = {"qc": "qc_status", "profile": "analysis_profile", "mlst": "mlst_typing", "stx": "stx_typing", "oh": "oh_typing", "missing_loci": "cgmlst_missing_loci"}
 
+    # replace SampleTableColumnInput objects with the id
+    upd_col_def: list[str] = []
+    for col in upd_group["table_columns"]:
+        upd_id = ID_MIGRATION_TBL.get(col["id"], col["id"])
+        if upd_id not in all_valid_cols:
+            LOG.warning("Failed to migrate column with %s", upd_id)
+            continue
+        upd_col_def.append(upd_id)
+    upd_col_def: list[str] = [col["id"] for col in upd_group["table_columns"]]
+    assert all([isinstance(col, str) and len(col) > 0 for col in upd_col_def])
 
-def v1_to_v2(result: UnformattedResult) -> UnformattedResult:
-    """Convert result in json format from v1 to v2."""
-    input_schema_version = result["schema_version"]
-    if input_schema_version != 1:
-        raise ValueError(f"Invalid schema version '{input_schema_version}' expected 1")
-
-    LOG.info("Migrating from v%d to v%d", input_schema_version, 2)
-    upd_result = copy(result)
-    # split analysis profile into a list and strip white space
-    upd_profile: list[str] = [
-        prof.strip() for prof in result["pipeline"]["analysis_profile"].split(",")
-    ]
-    upd_result["pipeline"]["analysis_profile"] = upd_profile
-    # get assay from upd_profile
-    new_assay: str = next(
-        (
-            config.profile_array_modifiers[prof]
-            for prof in upd_profile
-            if prof in config.profile_array_modifiers
-        ),
-        None,
-    )
-    upd_result["pipeline"]["assay"] = new_assay
-    # add release_life_cycle
-    new_release_life_cycle: str = (
-        "development" if {"dev", "development"} & set(upd_profile) else "production"
-    )
-    upd_result["pipeline"]["release_life_cycle"] = new_release_life_cycle
-    # update schema version
-    upd_result["schema_version"] = 2
-    return upd_result
+    upd_group["table_columns"] = upd_col_def
+    return upd_group
 
 
-
-def migrate_group(group):
+def migrate_group(group: UnformattedResult) -> UnformattedResult:
     """Migrate group documents in the database."""
-    ALL_FUNCS: dict[int, Callable[..., UnformattedResult]] = {"pre_1": group_pre_1_to_1}
-    import pdb; pdb.set_trace()
+    ALL_FUNCS: dict[int, Callable[..., UnformattedResult]] = {}
+
+    # for migrating pre-version 1 data
+    if "schema_version" not in group:
+        group = group_pre_1_to_1(group)
+    
+    # apply migrations for v1 and onwards
+    for start_version, migration_func in ALL_FUNCS.items():
+        if start_version == group['schema_version']:
+            group = migration_func(group)
+    return group
 
 
-async def migrate_group_collection(db: Database, backup_path: str | None):
+async def migrate_group_collection(db: Database, backup_path: pathlib.Path | None):
     if db.sample_group_collection is None:
         raise ValueError
     groups: list[dict[str, Any]] = await get_deprecated_records(db.sample_group_collection, GROUP_SCHEMA_VERSION)
@@ -128,7 +122,20 @@ async def migrate_group_collection(db: Database, backup_path: str | None):
     # 3 migrate data and validate using the current schema
     migrated_groups: list[GroupInCreate] = [
         GroupInCreate.model_validate(
-            group_migrate_result(group)
+            migrate_group(group)
         ) for group in groups
     ]
-    import pdb; pdb.set_trace()
+
+    # 4 backup old records as json array
+    if backup_path is not None:
+        click.secho(f"Backing up old entries to: {backup_path}")
+        new_path = backup_path.joinpath('groups.backup.json')
+        with open(new_path, 'w', encoding='utf-8') as outf:
+            outf.write(json_util.dumps(groups, indent=3))
+
+    # 5 groups in database
+    click.secho(f"Updating samples in the database")
+    for upd_group in migrated_groups:
+        was_updated = await update_group(db, upd_group.group_id, upd_group)
+        if not was_updated:
+            raise MigrationError(f"Sample '{upd_group.group_id}' was not updated.")
