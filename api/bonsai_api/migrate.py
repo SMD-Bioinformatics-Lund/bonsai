@@ -8,7 +8,7 @@ from copy import copy
 
 from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.models.sample import SampleInCreate
-from bonsai_api.models.group import GroupInCreate, pred_res_cols, qc_cols
+from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols, qc_cols
 from bonsai_api.models.group import SCHEMA_VERSION as GROUP_SCHEMA_VERSION
 from bonsai_api.crud.sample import update_sample
 from bonsai_api.crud.group import update_group
@@ -82,7 +82,7 @@ def group_pre_1_to_1(group: UnformattedResult) -> UnformattedResult:
             LOG.warning("Failed to migrate column with %s", upd_id)
             continue
         upd_col_def.append(upd_id)
-    upd_col_def: list[str] = [col["id"] for col in upd_group["table_columns"]]
+    upd_col_def: list[str] = [SampleTableColumnDB(id=col["id"]) for col in upd_group["table_columns"]]
     assert all([isinstance(col, str) and len(col) > 0 for col in upd_col_def])
 
     upd_group["table_columns"] = upd_col_def

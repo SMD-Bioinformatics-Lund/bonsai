@@ -1,14 +1,12 @@
 """Routes related to collections of samples."""
 
 from typing import Dict, List, Literal
-from datetime import datetime
 
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
 
 from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, RWModel
 from .sample import SampleSummary
-from bonsai_api.utils import get_timestamp
 
 FilterParams = List[Dict[str, str | int | float],]
 
@@ -42,15 +40,18 @@ class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-metho
     type: Literal["string", "number", "date", "boolean", "list", "custom"] = "string"
     source: Literal["static", "metadata"] = "static"  # where the columns are predefined or relate to metadata
     renderer: str | None = None
-    sortable: bool = False
-    filterable: bool = False
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
 
 
-class SampleTableColumnDB(SampleTableColumnInput):  # pylint: disable=too-few-public-methods
+class SampleTableColumnDB(BaseModel):  # pylint: disable=too-few-public-methods
     """Database representation of a column."""
 
-    created_at: datetime = Field(default_factory=get_timestamp)
-    modified_at: datetime = Field(default_factory=get_timestamp)
+    id: str = Field(..., description="Column id")
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
 
 
 VALID_BASE_COLS: list[SampleTableColumnInput] = [
@@ -122,7 +123,6 @@ VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
         path="$.profile",
         type="list",
         sortable=True,
-        filterable=True,
     ),
     SampleTableColumnInput(
         id="comments",
@@ -143,21 +143,18 @@ VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
         label="MLST ST",
         path="$.mlst",
         sortable=True,
-        filterable=True,
     ),
     SampleTableColumnInput(
         id="stx_typing",
         label="STX typing",
         path="$.stx",
         sortable=True,
-        filterable=True,
     ),
     SampleTableColumnInput(
         id="oh_typing",
         label="OH typing",
         path="$.oh_type",
         sortable=True,
-        filterable=True,
     ),
     SampleTableColumnInput(
         id="cdate",
@@ -244,11 +241,13 @@ qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 
 SCHEMA_VERSION: str = "1"
 
+
+
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
     schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
-    table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
+    table_columns: list[SampleTableColumnDB] = Field(default=[], description="IDs of columns to display.")
     #table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
     validated_genes: dict[ElementType, list[str]] | None = {}
 
