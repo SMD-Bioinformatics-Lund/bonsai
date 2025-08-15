@@ -2,6 +2,7 @@
 
 ### Added
 
+- Added button for showing only selected rows in the sample table
 - Split `BONSAI_API_URL` to two URLs, one for internal frontend-api communication and one for external browser to api communication.
 - Added sequencing run id to sample page
 
@@ -27,6 +28,8 @@
 
 - Display rejection reason and comments on mouse over in sample table
 - Updated default columns in sample table
+- TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
+- Added start position to detailed variants view
 - Entrypoint GET `/samples` was changed to POST `/samples/summary` to mitigate URL length limitations.
 - Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
 - Updated `WebDriverWait` time in e2e tests.
