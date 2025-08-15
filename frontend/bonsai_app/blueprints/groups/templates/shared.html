@@ -88,9 +88,14 @@
                 {# build table header #}
                 {% for column in table_data.columns %}
                     {% if column.label is not none %}
-                        <td>{{ column.label }}</td>
+                        <th 
+                            data-orderable="{{ column.sortable | lower }}" data-searchable="{{ column.searchable | lower }}"
+                            data-visible="{{ column.visible | lower }}"
+                            >
+                            {{ column.label }}
+                        </th>
                     {% else %}
-                        <td></td>
+                        <th></th>
                     {% endif %}
                 {% endfor %}
             </th>
