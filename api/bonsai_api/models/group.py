@@ -61,6 +61,8 @@ VALID_BASE_COLS: list[SampleTableColumnInput] = [
         type="custom",
         renderer="sample_btn_renderer",
         path="$.sample_id",
+        sortable=False,
+        searchable=False,
     ),
     SampleTableColumnInput(
         id="sample_id",
