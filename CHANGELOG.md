@@ -10,6 +10,9 @@
 
 ### Changed
 
+- TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
+- Added start position to detailed variants view
+
 ## [v2.0.0]
 
 ### Added
