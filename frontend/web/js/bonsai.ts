@@ -29,7 +29,10 @@ const sampleTableConfig = {
   select: true,
   layout: {
     top1Start: {
-      buttons: ["selectAll", "selectNone", "excel"],
+      buttons: ["selectAll", "selectNone", "showSelected"],
+    },
+    top1End: {
+      buttons: ["copy", "csv", "excel"]
     },
     top2Start: "searchBuilder",
   },
