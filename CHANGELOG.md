@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added button for showing only selected rows in the sample table
+
 ### Fixed
 
 - Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
