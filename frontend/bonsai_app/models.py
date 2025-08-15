@@ -1,7 +1,7 @@
 """Data modules shared by the application."""
 
 from enum import Enum
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel, ConfigDict
 
@@ -24,6 +24,27 @@ class ApiGetSamplesDetailsInput(BaseModel):
     prediction_result: bool = True
     qc_metrics: bool = False
     sid: list[str] | None = None
+
+
+class TableColumn(BaseModel):
+    """Data structure for a cell in tabular data."""
+
+    id: str
+    label: str
+    type: str = "string"
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
+    renderer: str = "text_renderer"
+
+
+TableCell = dict[str, Any]
+
+class TableData(BaseModel):
+    """Data structure for tabular data."""
+
+    columns: list[TableColumn]
+    rows: list[TableCell]
 
 
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods

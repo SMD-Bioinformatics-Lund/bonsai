@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Options to make columns sortable, searchable, and visibility are now stored properly.
 - Fixed workflow for publishing docker images on tagged releases.
 - Fixed delete samples bug.
 - Fixed `upload_sample.py` add to group bug.
@@ -25,6 +26,8 @@
 
 ### Changed
 
+- Display rejection reason and comments on mouse over in sample table
+- Updated default columns in sample table
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 - Entrypoint GET `/samples` was changed to POST `/samples/summary` to mitigate URL length limitations.
