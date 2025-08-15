@@ -49,7 +49,8 @@ def format_tablular_data(data: list[dict[str, Any]], column_defs: list[dict[str,
     table_data = TableData(
         columns=[TableColumn(
             id=col['id'], label=col['label'], type=col['type'], 
-            renderer=_get_renderer(col)) for col in column_defs],
+            renderer=_get_renderer(col), sortable=col['sortable'], 
+            searchable=col['searchable'], visible=col['visible']) for col in column_defs],
         rows=rows
     )
     return table_data

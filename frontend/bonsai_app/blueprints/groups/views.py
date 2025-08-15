@@ -264,7 +264,6 @@ def update_qc_classification():
             )
             flash(str(error), "danger")
 
-    # return redirect(url_for("groups.groups", samples=selected_samples))
     # add sample ids as params to referrer url
     url = urlparse(request.referrer)
     sample_id_param = "&".join([f"samples={sid}" for sid in selected_samples])
