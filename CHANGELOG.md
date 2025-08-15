@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- Options to make columns sortable, searchable, and visibility are now stored properly.
 - Fixed workflow for publishing docker images on tagged releases.
 - Fixed delete samples bug.
 - Fixed `upload_sample.py` add to group bug.
@@ -35,6 +36,8 @@
 
 ### Changed
 
+- Display rejection reason and comments on mouse over in sample table
+- Updated default columns in sample table
 - Entrypoint GET `/samples` was changed to POST `/samples/summary` to mitigate URL length limitations.
 - Moved javascript from jinja templates into typescript modules and refactored some page elements into web components.
 - Updated `WebDriverWait` time in e2e tests.
