@@ -2,6 +2,7 @@
 
 ### Added
 
+- Added button for showing only selected rows in the sample table
 
 ### Fixed
 
