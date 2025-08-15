@@ -686,7 +686,7 @@
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
     {% else %}
         <div class="table-responsive">
-            <table class="table table-sm table-hover table-striped">
+            <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped">
                 <thead>
                     <tr>
                         {% if extended %}
@@ -755,6 +755,7 @@
                                 <td>-</td>
                             {% endif %}
                             <td>{{ accession_link(variant.accession, name=variant.reference_sequence) }}</td>
+                            <td>{{ variant.start }}</td>
                             {% if extended %}
                                 <td>{{ variant.variant_effect | replace("_", " ") | replace('variant', '') | capitalize }}</td>
                             {% endif %}
@@ -766,7 +767,12 @@
                                     {{ (variant.frequency * 100) | round(1) }}
                                 {% endif %}
                             </td>
-                            <td>
+                            {% set ns = namespace(all_resistances="", all_who="") %}
+                            {% for phe in variant.phenotypes %}
+                                {% set ns.all_resistances = ns.all_resistances + phe.name %}
+                                {% set ns.all_who = ns.all_who + "who-" ~ phe | lookup_who_group %}
+                            {% endfor %}
+                            <td data-search="{{ ns.all_resistances }} {{ ns.all_who }}">
                                 <ul class="no-bullets">
                                 {% for phenotype in variant.phenotypes %}
                                     <li>
@@ -813,6 +819,11 @@
         </div>
     {% endif %}
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbl = bonsai.initVariantsTable('#tb-profiler-variant-tbl')
+    });
+</script>
 {% endmacro %}
 
 

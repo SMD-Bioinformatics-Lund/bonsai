@@ -23,6 +23,7 @@ import { BasketComponent } from "./components/sample-basket";
 import "./components/group-list";
 import "./components/group-selector";
 import "./components/spinner-element";
+import DataTable from "datatables.net-bs5";
 
 
 const sampleTableConfig = {
@@ -191,6 +192,19 @@ export async function initGroupView(
         removeFromGroupBtn.getAttribute("data-bi-group-id");
       removeSamplesFromGroup(groupId, table, api);
     };
+}
+
+export async function initVariantsTable(tableId: string, search: boolean = true): Promise<Any> {
+  if (document.getElementById(tableId) === null) {
+    console.error(`No table with id: ${tableId} found, cant create datatable`)
+  }
+  console.log(tableId)
+  const tbl = new DataTable(tableId, {
+    paging: false,
+    select: false,
+    searching: search,
+  })
+  return tbl
 }
 
 /* Initialize interactive elements for the sample view. */
