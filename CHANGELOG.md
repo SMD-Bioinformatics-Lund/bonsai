@@ -21,6 +21,7 @@
 - Fixed signature removal bug
 - Fixed faulty adding of signature to index bug
 - Fixed grapetree rendering with apache subdir
+- Fixed ska clustering timeout bug by increasing retries to 100
 
 ### Changed
 

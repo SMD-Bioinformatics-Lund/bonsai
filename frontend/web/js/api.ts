@@ -228,7 +228,7 @@ export class ApiService {
 export async function pollJob<T extends ApiJobStatus>(
   checkJobFn: () => Promise<T>,
   waitTime: number,
-  maxRetries: number = 20 // allow more retries for long jobs
+  maxRetries: number = 100
 ): Promise<T> {
   let retries = 0;
   let result = await checkJobFn();
