@@ -37,6 +37,9 @@
                     <button id="remove-from-group-btn" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ title }}">
                         <i class="bi bi-folder-minus"></i>
                     </button>
+
+                    {# Dropdown for adding samples to group #}
+                    <div id="add-samples-to-group-container"></div>
                 {% endif %}
                 {{ search_similar_btn() }}
                 {% if display_qc %}
