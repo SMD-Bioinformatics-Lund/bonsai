@@ -6,17 +6,17 @@ from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
 
-from ..crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
 import bonsai_api.crud.group as crud_group
-from ..crud.group import create_group as create_group_record
-from ..crud.group import delete_group, get_group, get_groups, update_group
-from ..crud.sample import get_samples_summary
-from ..crud.user import get_current_active_user
-from ..crud.metadata import get_metadata_fields_for_samples
-from ..db import Database, get_db
-from ..models.base import MultipleRecordsResponseModel
-from ..models.group import GroupInCreate, GroupInfoDatabase, SampleTableColumnInput, pred_res_cols, qc_cols
-from ..models.user import UserOutputDatabase
+from bonsai_api.crud.group import create_group as create_group_record
+from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
+from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.crud.metadata import get_metadata_fields_for_samples
+from bonsai_api.db import Database, get_db
+from bonsai_api.models.base import MultipleRecordsResponseModel
+from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase, SampleTableColumnInput, pred_res_cols, qc_cols, DEFAULT_COLUMNS
+from bonsai_api.models.user import UserOutputDatabase
 
 router = APIRouter()
 
@@ -24,14 +24,49 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
+async def build_column_definitions(
+    group_obj: GroupInfoDatabase | None = None,
+    include_qc: bool = False,
+    include_metadata: bool = False,
+    db: Database | None = None
+) -> list[SampleTableColumnInput]:
+    """
+    Build column definitions for sample table display.
+
+    Args:
+        group_obj: Optional group object containing column preferences.
+        qc: Whether to use QC columns.
+        include_metadata: Whether to include metadata fields.
+        db: Database connection, required if include_metadata is True.
+
+    Returns:
+        List of SampleTableColumnInput objects.
+    """
+    base_columns = qc_cols if include_qc else pred_res_cols
+    idx_base_cols = {col.id: col for col in base_columns}
+    columns: list[SampleTableColumnInput] = []
+
+    if group_obj:
+        for col in group_obj.table_columns:
+            column_def = idx_base_cols.get(col.id)
+            if column_def:
+                upd_model = column_def.model_copy(update=col.model_dump())
+                columns.append(upd_model)
+    else:
+        columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
+
+    if include_metadata and db and group_obj:
+        meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
+        columns += meta_entries
+
+    return columns
+
+
 @router.get("/groups/default/columns", tags=[RouterTags.GROUP])
 async def get_valid_columns(qc: bool = False):
     """Get group info schema."""
     # get pipeline analysis related columns
-    if qc:
-        columns = qc_cols
-    else:
-        columns = pred_res_cols
+    columns = await build_column_definitions(include_qc=qc)
     return jsonable_encoder(columns)
 
 
@@ -197,20 +232,8 @@ async def get_columns_for_group(
 ):
     """Get information of the number of samples per group loaded into the database."""
     group_obj = GroupInfoDatabase.model_validate(await get_group(db, group_id, lookup_samples=False))
-    meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
-
-    idx_pred_res_cols = {col.id: col for col in pred_res_cols}
-
-    # expand the column preferences from the group object into a column definition
-    columns: list[SampleTableColumnInput] = []
-    for col in group_obj.table_columns:
-        column_def = idx_pred_res_cols[col.id]
-        # update default sort, search, visibility preferences with what is stored in the group
-        upd_model = column_def.model_copy(update=col.model_dump())
-        columns.append(upd_model)
-
-    # add default columns
-    return columns + meta_entries
+    columns = await build_column_definitions(group_obj=group_obj, include_metadata=True, db=db)
+    return columns
 
 
 @router.get(
