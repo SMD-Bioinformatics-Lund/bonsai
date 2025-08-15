@@ -32,6 +32,9 @@ class TableColumn(BaseModel):
     id: str
     label: str
     type: str = "string"
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
     renderer: str = "text_renderer"
 
 
