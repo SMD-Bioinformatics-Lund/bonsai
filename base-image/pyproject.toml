@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bonsai-data-models"
+dynamic = ["version"]
+dependencies = [
+    "pydantic",
+    "pydantic-settings"
+]
+requires-python = ">= 3.11"
+authors = [
+    {name = "Markus Johansson", email = "markus.h.johansson@skane.se"}
+]
+readme = "README.md"
+
+[project.optional-dependencies]
+dev = ["black", "pylint", "isort"]
+
+[tool.setuptools.dynamic]
+version = {attr = "bonsai_models.__version__"}
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = ["too-few-public-methods"]

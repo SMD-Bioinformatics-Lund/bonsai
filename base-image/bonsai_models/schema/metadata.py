@@ -1,17 +1,10 @@
-"""Models for representing various metadata as either input or in the database."""
+"""Metadata models."""
 
 from datetime import datetime
-from enum import StrEnum
 from typing import Literal
-
 from pydantic import BaseModel
 
-
-class MetadataTypes(StrEnum):
-
-    STR = "string"
-    INT ="integer"
-    FLOAT = "float"
+from bonsai_models.constants import MetadataTypes
 
 
 class GenericMetadataEntry(BaseModel):

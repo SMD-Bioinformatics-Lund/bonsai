@@ -1,9 +1,8 @@
 import pytest
-from flask_login import FlaskLoginClient
-
 from bonsai_app.app import create_app
 from bonsai_app.blueprints.login.views import LoginUser
 from bonsai_app.bonsai import TokenObject
+from flask_login import FlaskLoginClient
 
 
 @pytest.fixture()

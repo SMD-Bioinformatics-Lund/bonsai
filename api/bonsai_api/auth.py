@@ -3,7 +3,9 @@
 import random
 import string
 from datetime import datetime, timedelta
+from typing import Any
 
+from bonsai_models.utils.timestamp import get_timestamp
 from jose import jwt
 from passlib.context import CryptContext
 
@@ -28,13 +30,15 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(
+    data: dict[str, Any], expires_delta: timedelta | None = None
+) -> str:
     """Create new access token."""
-    to_encode: dict = data.copy()
+    to_encode = data.copy()
     if expires_delta:
-        expire: datetime = datetime.utcnow() + expires_delta
+        expire: datetime = get_timestamp() + expires_delta
     else:
-        expire: datetime = datetime.utcnow() + timedelta(minutes=15)
+        expire: datetime = get_timestamp() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=ALGORITHM)
     return encoded_jwt

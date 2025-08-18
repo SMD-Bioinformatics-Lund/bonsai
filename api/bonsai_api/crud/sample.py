@@ -3,32 +3,29 @@
 import logging
 from itertools import groupby
 from typing import Any, Dict, List, Sequence
-from pymongo.results import UpdateResult
 
-from pydantic import ValidationError
-from bson.objectid import ObjectId
-from fastapi.encoders import jsonable_encoder
-from motor.motor_asyncio import AsyncIOMotorCommandCursor
-from prp.models import PipelineResult
-from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from prp.models.tags import TagList
-from prp.parse.typing import replace_cgmlst_errors
-
-from ..crud.location import get_location
-from ..crud.tags import compute_phenotype_tags
-from ..db import Database
-from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import MultipleRecordsResponseModel, RWModel
-from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
+from bonsai_api.crud.location import get_location
+from bonsai_api.crud.tags import compute_phenotype_tags
+from bonsai_api.db import Database
+from bonsai_api.parse import replace_cgmlst_errors
+from bonsai_models.schema.antibiotics import ANTIBIOTICS
+from bonsai_models.schema.base import MultipleRecordsResponseModel, RWModel
+from bonsai_models.schema.location import LocationOutputDatabase
+from bonsai_models.schema.pipeline.phenotype import AnnotationType, ElementType, PhenotypeInfo
+from bonsai_models.schema.qc import QcClassification, VariantAnnotation
+from bonsai_models.schema.sample import (
     Comment,
     CommentInDatabase,
     MultipleSampleRecordsResponseModel,
+    PipelineResult,
     SampleInCreate,
     SampleInDatabase,
-    SampleSummary,
 )
+from bson.objectid import ObjectId
+from fastapi.encoders import jsonable_encoder
+from motor.motor_asyncio import AsyncIOMotorCommandCursor
+from pymongo.results import UpdateResult
+
 from ..redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
@@ -350,7 +347,9 @@ async def get_samples(
                     "This can be caused if the data format has been updated. "
                     "If that is the case the database needs to be migrated. "
                     "See the documentation for more information."
-                ), samp.get("sample_id", "unknown id"))
+                ),
+                samp.get("sample_id", "unknown id"),
+            )
             raise err
         # Compute tags
         tags = compute_phenotype_tags(sample)

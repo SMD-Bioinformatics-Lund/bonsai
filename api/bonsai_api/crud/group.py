@@ -3,13 +3,13 @@
 import logging
 from typing import Any
 
-from prp.models.typing import TypingMethod
+from bonsai_api.db import Database
+from bonsai_api.utils import get_timestamp
+from bonsai_models.models.group import GroupInCreate, GroupInfoDatabase
+from bonsai_models.models.sample import SampleSummary
+from bonsai_models.models.typing import TypingMethod
 from pymongo import ASCENDING
 
-from ..db import Database
-from ..models.group import GroupInCreate, GroupInfoDatabase
-from ..models.sample import SampleSummary
-from ..utils import get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
 from .sample import get_sample
 from .tags import compute_phenotype_tags
@@ -136,14 +136,16 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
+async def add_samples_to_group(
+    db: Database, group_id: str, sample_ids: list[str]
+) -> None:
     """Create a new collection document."""
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
             "$set": {"modified_at": get_timestamp()},
             "$addToSet": {
-                "included_samples": { "$each": sample_ids },
+                "included_samples": {"$each": sample_ids},
             },
         },
     )
@@ -153,14 +155,16 @@ async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str
         raise UpdateDocumentError(group_id)
 
 
-async def remove_samples_from_group(db: Database, group_id: str, sample_ids: list[str]) -> None:
+async def remove_samples_from_group(
+    db: Database, group_id: str, sample_ids: list[str]
+) -> None:
     """Create a new collection document."""
     update_obj = await db.sample_group_collection.update_one(
         {"group_id": group_id},
         {
             "$set": {"modified_at": get_timestamp()},
             "$pull": {
-                "included_samples": {"$in" :sample_ids},
+                "included_samples": {"$in": sample_ids},
             },
         },
     )

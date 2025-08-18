@@ -2,6 +2,12 @@
 # (sudo) docker-compose up -d
 # (sudo) docker-compose down
 services: 
+  base:
+    build:
+      context: ./base-image
+    image: bonsai-base:latest
+    # no need to run this as a service.
+
   mongodb:
     image: mongo:4.4.22
     container_name: bonsai_mongodb
@@ -25,6 +31,7 @@ services:
       network: host
     depends_on:
       - mongodb
+      - base
       - minhash_service
       - ska_service
       - allele_cluster_service
@@ -49,6 +56,8 @@ services:
       context: frontend
       network: host
     depends_on:
+      base:
+        condition: service_started
       api:
         condition: service_healthy
         restart: true

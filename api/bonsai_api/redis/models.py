@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from ..models.base import RWModel
+from bonsai_models.models.base import RWModel
 
 
 class SubmittedJob(RWModel):  # pylint: disable=too-few-public-methods

@@ -3,10 +3,10 @@
 import logging
 from typing import List
 
+from bonsai_models.models.cluster import TypingMethod
 from rq import Retry
 from rq.job import Dependency
 
-from ..models.cluster import TypingMethod
 from .models import ClusterMethod, SubmittedJob
 from .queue import redis
 

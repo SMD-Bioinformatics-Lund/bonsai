@@ -2,32 +2,30 @@
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
-
-from ..crud.errors import EntryNotFound
-from ..crud.location import create_location as create_location_from_db
-from ..crud.location import get_location as get_location_from_db
-from ..crud.location import get_locations as get_locations_from_db
-from ..crud.location import get_locations_within_bbox
-from ..crud.user import get_current_active_user
-from ..db import Database, get_db
-from ..models.location import (
+from bonsai_api.crud.errors import EntryNotFound
+from bonsai_api.crud.location import create_location as create_location_from_db
+from bonsai_api.crud.location import get_location as get_location_from_db
+from bonsai_api.crud.location import get_locations as get_locations_from_db
+from bonsai_api.crud.location import get_locations_within_bbox
+from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.db import Database, get_db
+from bonsai_models.models.location import (
     GeoJSONPolygon,
     LocationInputCreate,
     LocationOutputDatabase,
 )
-from ..models.user import UserOutputDatabase
+from bonsai_models.models.user import UserOutputDatabase
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+
+from .shared import RouterTags
 
 router = APIRouter()
 
-DEFAULT_TAGS = [
-    "locations",
-]
 READ_PERMISSION = "locations:read"
 WRITE_PERMISSION = "locations:write"
 
 
-@router.get("/locations/", tags=DEFAULT_TAGS)
+@router.get("/locations/", tags=[RouterTags.LOC])
 async def get_locations(
     limit: int = Query(10, gt=0),
     skip: int = Query(0, gt=-1),
@@ -51,7 +49,7 @@ async def get_locations(
     return result
 
 
-@router.post("/locations/", tags=DEFAULT_TAGS)
+@router.post("/locations/", tags=[RouterTags.LOC])
 async def create_location(
     location: LocationInputCreate,
     db: Database = Depends(get_db),
@@ -72,7 +70,7 @@ async def create_location(
     return loc
 
 
-@router.get("/locations/bbox", tags=DEFAULT_TAGS)
+@router.get("/locations/bbox", tags=[RouterTags.LOC])
 async def get_location_bbox(
     left: float,
     bottom: float,
@@ -109,7 +107,7 @@ async def get_location_bbox(
     return loc
 
 
-@router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
+@router.get("/locations/{location_id}", tags=[RouterTags.LOC])
 async def get_location(
     location_id: str,
     db: Database = Depends(get_db),
