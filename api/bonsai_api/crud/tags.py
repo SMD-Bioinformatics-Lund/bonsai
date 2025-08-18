@@ -1,12 +1,16 @@
 """Functions for computing tags."""
 
 import logging
+from dataclasses import dataclass
+from typing import Any, Iterable, Protocol, runtime_checkable, Callable
 
 from prp.models.phenotype import ElementType, ElementTypeResult
 from prp.models.typing import TypingMethod
+from prp.models.species import BrackenSpeciesPrediction, MykrobeSpeciesPrediction
 
-from ..models.sample import SampleInDatabase
-from ..models.tags import (
+from bonsai_api.config import BrackenThresholds, MykrobeThresholds, normalize_species_key, thresholds_cfg
+from bonsai_api.models.sample import SampleInDatabase
+from bonsai_api.models.tags import (
     ResistanceTag,
     Tag,
     TagList,
@@ -19,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 # Phenotypic tags
-def add_pvl(tags: TagList, sample: SampleInDatabase) -> Tag:
+def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
     """Check if sample is PVL toxin positive."""
     virs = [
         pred
@@ -57,7 +61,7 @@ def add_pvl(tags: TagList, sample: SampleInDatabase) -> Tag:
         tags.append(tag)
 
 
-def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
+def add_mrsa(tags: TagList, sample: SampleInDatabase) -> None:
     """Check if sample is MRSA.
 
     An SA is classified as MRSA if it carries either mecA, mecB or mecC.
@@ -97,7 +101,7 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> Tag:
     tags.append(tag)
 
 
-def add_stx_type(tags: TagList, sample: SampleInDatabase) -> Tag:
+def add_stx_type(tags: TagList, sample: SampleInDatabase) -> None:
     """Check if sample STX type."""
     for type_res in sample.typing_result:
         if type_res.type == TypingMethod.STX.value:
@@ -110,7 +114,7 @@ def add_stx_type(tags: TagList, sample: SampleInDatabase) -> Tag:
             tags.append(tag)
 
 
-def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
+def add_oh_type(tags: TagList, sample: SampleInDatabase) -> None:
     """Check if sample OH type."""
     for type_res in sample.typing_result:
         if type_res.type in [TypingMethod.OTYPE.value, TypingMethod.HTYPE.value]:
@@ -123,7 +127,7 @@ def add_oh_type(tags: TagList, sample: SampleInDatabase) -> Tag:
             tags.append(tag)
 
 
-def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> Tag:
+def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> None:
     """Get if an E. coli sample is typed as a Shigella."""
     for type_res in sample.typing_result:
         if type_res.type == TypingMethod.SHIGATYPE:
@@ -142,6 +146,118 @@ def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> Tag:
                 tags.append(tag)
 
 
+def _pick_main_bracken(preds: Iterable[BrackenSpeciesPrediction]) -> BrackenSpeciesPrediction:
+    # Robust even if caller doesn't pre-sort
+    try:
+        return max(preds, key=lambda p: p.fraction_total_reads)
+    except ValueError:
+        raise ValueError("Empty Bracken predictions list.")
+
+
+def _pick_main_mykrobe(preds: Iterable[MykrobeSpeciesPrediction]) -> MykrobeSpeciesPrediction:
+    # Species coverage tends to be the meaningful ranking for mykrobe
+    try:
+        return max(preds, key=lambda p: p.species_coverage)
+    except ValueError:
+        raise ValueError("Empty Mykrobe predictions list.")
+
+
+# Protocols define only what we need, decoupling from concrete classes.
+@runtime_checkable
+class BrackenSpecies(Protocol):
+    scientific_name: str
+    fraction_total_reads: float
+    kraken_assigned_reads: int
+    added_reads: int
+
+@runtime_checkable
+class MykrobeSpecies(Protocol):
+    scientific_name: str
+    species_coverage: float
+    phylogenetic_group_coverage: float
+
+
+@dataclass(frozen=True)
+class EvalResult:
+    passed: bool
+    reason: str  # empty when passed
+    software: str
+    species: str
+
+
+def evaluate_bracken(preds: list[BrackenSpeciesPrediction]) -> EvalResult:
+    main = _pick_main_bracken(preds)
+    cfg = thresholds_cfg.species
+    thr: BrackenThresholds = cfg.get_bracken(main.scientific_name)  # guaranteed non-None by validator
+    # Decide on > or >= per your QC policy — here we use >= (inclusive)
+    frac_ok = main.fraction_total_reads >= thr.min_fraction
+    reads = (main.kraken_assigned_reads or 0) + (main.added_reads or 0)
+    reads_ok = reads >= thr.min_reads
+
+    if frac_ok and reads_ok:
+        return EvalResult(True, "", "bracken", normalize_species_key(main.scientific_name))
+
+    reasons: list[str] = []
+    if not frac_ok:
+        reasons.append(f"fraction_total_reads {main.fraction_total_reads:.3f} < min {thr.min_fraction:.3f}")
+    if not reads_ok:
+        reasons.append(f"reads {reads} < min {thr.min_reads}")
+    return EvalResult(False, "; ".join(reasons), "bracken", normalize_species_key(main.scientific_name))
+
+
+def evaluate_mykrobe(preds: list[MykrobeSpecies]) -> EvalResult:
+    main = _pick_main_mykrobe(preds)
+    cfg = thresholds_cfg.species
+    thr: MykrobeThresholds = cfg.get_mykrobe(main.scientific_name)
+
+    sp_ok = main.species_coverage >= thr.min_species_coverage
+    pg_ok = main.phylogenetic_group_coverage >= thr.min_phylogenetic_group_coverage
+
+    if sp_ok and pg_ok:
+        return EvalResult(True, "", "mykrobe", normalize_species_key(main.scientific_name))
+
+    reasons: list[str] = []
+    if not sp_ok:
+        reasons.append(
+            f"species_coverage {main.species_coverage:.3f} < min {thr.min_species_coverage:.3f}"
+        )
+    if not pg_ok:
+        reasons.append(
+            f"phylogenetic_group_coverage {main.phylogenetic_group_coverage:.3f} < min {thr.min_phylogenetic_group_coverage:.3f}"
+        )
+    return EvalResult(False, "; ".join(reasons), "mykrobe", normalize_species_key(main.scientific_name))
+
+
+# Registry for routing (easy to extend)
+SPP_EVALUATORS: dict[str, Callable[[list[Any]], EvalResult]] = {
+    "bracken": evaluate_bracken,
+    "mykrobe": evaluate_mykrobe,
+}
+
+def flag_uncertain_spp_prediction(tags: TagList, sample: SampleInDatabase) -> None:
+    """Flag samples with uncertain species id predictions."""
+    for spp_pred in sample.species_prediction:
+        software = getattr(spp_pred, "software", None)
+        evaluator = SPP_EVALUATORS.get(software)
+        if evaluator is None:
+            raise NotImplemented(f"No function for evaluating {software}")
+
+        # spp_pred.result MUST be a list; evaluator will validate non-empty
+        result = evaluator(spp_pred.result)
+        if not result.passed:
+            # Consider adding details into the tag (label/description/metadata)
+            tag = Tag(
+                type=TagType.QC,
+                label="Contamination or Uncertain Species Prediction",
+                description=(
+                    f"{result.software}/{result.species}: {result.reason} "
+                    f"(see thresholds.toml)"
+                ),
+                severity=TagSeverity.WARNING,
+            )
+            tags.append(tag)
+
+
 # Tagging functions with the species they are applicable for
 ALL_TAG_FUNCS = [
     {"species": ["Staphylococcus aureus"], "func": add_pvl},
@@ -156,6 +272,10 @@ ALL_TAG_FUNCS = [
             "Shigella dysenteriae",
         ],
         "func": add_shigella_typing,
+    },
+    {
+        "species": "all",
+        "func": flag_uncertain_spp_prediction,
     },
 ]
 
@@ -180,6 +300,10 @@ def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
             ) from error
         major_spp = spp_res.result[0].scientific_name
         LOG.debug("Major spp %s in %s", major_spp, str(tag_func["species"]))
-        if major_spp in tag_func["species"]:
+        if major_spp in tag_func["species"] or tag_func['species'] == "all":
             tag_func["func"](tags, sample)
     return tags
+
+
+
+
