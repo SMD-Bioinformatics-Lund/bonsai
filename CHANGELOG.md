@@ -2,6 +2,7 @@
 
 ### Added
 
+- Added tags that warns the user if a sample might be contaminated. Thresholds are read from `thresholds.toml`file.
 - Added button for showing only selected rows in the sample table
 
 ### Fixed
