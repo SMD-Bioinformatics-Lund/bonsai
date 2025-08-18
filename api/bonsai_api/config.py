@@ -8,6 +8,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
 
+# read default config and user defined config
+config_file = [Path(__file__).parent.joinpath("config.toml")]  # built in config file
+
+CUSTOM_CONFIG_ENV_NAME = "CONFIG_FILE"
+custom_config = os.getenv(CUSTOM_CONFIG_ENV_NAME)
+if custom_config is not None:
+    user_cnf = Path(custom_config)
+    if user_cnf.exists():
+        config_file.append(user_cnf)
+
 
 class SmtpConfig(BaseSettings):
     """SMTP server configuration."""
@@ -90,8 +100,9 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
-        env_nested_delimiter="__",
+        toml_file=config_file,
     )
+
 
     @property
     def use_ldap_auth(self) -> bool:
