@@ -1,9 +1,12 @@
 """Mimer api default configuration"""
 
+import re
 import ssl
-from typing import List
+import os
+import tomllib
+from pathlib import Path
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
@@ -36,12 +39,75 @@ class EmailConfig(BaseSettings):
     sender_name: str = "Bonsai"
 
 
+class BrackenThresholds(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    min_fraction: float = Field(ge=0.0, le=1.0)
+    min_reads: int = Field(ge=0)
+
+
+class MykrobeThresholds(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    min_species_coverage: float = Field(ge=0.0, le=1.0)
+    min_phylogenetic_group_coverage: float = Field(ge=0.0, le=1.0)
+
+
+_species_key_pattern = re.compile(r"^[a-z0-9_]+$")
+
+def _validate_species_keys(d: dict[str, object], method_name: str) -> None:
+    for key in d.keys():
+        if key == "default":
+            continue
+        if not _species_key_pattern.fullmatch(key):
+            raise ValueError(
+                f"[species.{method_name}.{key}] is not valid. "
+                f"Use lowercase snake_case (a-z0-9_)."
+            )
+
+def normalize_species_key(name: str) -> str:
+    # Same normalization used by lookup helpers:
+    # lower, spaces/hyphens to underscores; strip stray chars
+    key = name.strip().lower().replace(" ", "_").replace("-", "_")
+    key = re.sub(r"[^a-z0-9_]", "", key)
+    return key
+
+
+class SpeciesCategory(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    bracken: dict[str, BrackenThresholds] = Field(default_factory=dict)
+    mykrobe: dict[str, MykrobeThresholds] = Field(default_factory=dict)
+
+    @model_validator(mode='after')
+    def _validate_species_keys(self) -> "SpeciesCategory":
+        _validate_species_keys(self.bracken, "bracken")
+        _validate_species_keys(self.mykrobe, "mykrobe")
+
+        # Ensure defaults exist if your code relies on them
+        if "default" not in self.bracken:
+            raise ValueError("[species.bracken.default] must be defined.")
+        if "default" not in self.mykrobe:
+            raise ValueError("[species.mykrobe.default] must be defined.")
+        return self
+
+    def get_bracken(self, species: str) -> BrackenThresholds:
+        key = normalize_species_key(species)
+        return self.bracken.get(key) or self.bracken.get("default")
+
+    def get_mykrobe(self, species: str) -> MykrobeThresholds:
+        key = normalize_species_key(species)
+        return self.mykrobe.get(key) or self.mykrobe.get("default")
+
+
+class QCConfig(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    species: SpeciesCategory
+
+
 class Settings(BaseSettings):
     """API configuration."""
 
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
-    allowed_origins: List[str] = []
+    allowed_origins: list[str] = []
 
     # Database connection
     # standard URI has the form:
@@ -151,4 +217,15 @@ USER_ROLES = {
     ],
 }
 
+# load raw thresholds
+thresholds_file = Path(__file__).parent.joinpath("thresholds.toml")  # built in config file
+with thresholds_file.open('rb') as inpt:
+    try:
+        thresholds = tomllib.load(inpt)
+        thresholds_cfg = QCConfig.model_validate(thresholds)
+    except ValidationError as error:
+        raise RuntimeError(f"Invalid QC thresholds in {thresholds_file}:\n{error}") from error
+
+
 settings = Settings()
+
