@@ -9,7 +9,7 @@ from sourmash.sbt import SBT
 from minhash_service.config import Settings
 from minhash_service.minhash.models import SimilarSignatures, SimilarSignature
 
-from .io import get_sbt_index, read_signature
+from .io import get_index_path, read_signature
 
 LOG = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def get_similar_signatures(
 
     # load sourmash index
     LOG.debug("Getting samples similar to: %s", sample_id)
-    index_path = get_sbt_index(cnf)
+    index_path = get_index_path(cnf)
     LOG.debug("Load index file to memory")
     db: SBT = sourmash.load_file_as_index(str(index_path))
 
