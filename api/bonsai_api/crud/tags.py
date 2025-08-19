@@ -206,12 +206,13 @@ def evaluate_bracken(preds: list[BrackenSpeciesPrediction]) -> EvalResult:
 
 
 def evaluate_mykrobe(preds: list[MykrobeSpecies]) -> EvalResult:
+    """Evaluate Mykrobe species prediction results."""
     main = _pick_main_mykrobe(preds)
     cfg = thresholds_cfg.species
     thr: MykrobeThresholds = cfg.get_mykrobe(main.scientific_name)
 
-    sp_ok = main.species_coverage >= thr.min_species_coverage
-    pg_ok = main.phylogenetic_group_coverage >= thr.min_phylogenetic_group_coverage
+    sp_ok = main.species_coverage >= (thr.min_species_coverage * 100)  # transpose 0-1 to 100
+    pg_ok = main.phylogenetic_group_coverage >= (thr.min_phylogenetic_group_coverage * 100)
 
     if sp_ok and pg_ok:
         return EvalResult(True, "", "mykrobe", normalize_species_key(main.scientific_name))
@@ -240,7 +241,7 @@ def flag_uncertain_spp_prediction(tags: TagList, sample: SampleInDatabase) -> No
         software = getattr(spp_pred, "software", None)
         evaluator = SPP_EVALUATORS.get(software)
         if evaluator is None:
-            raise NotImplemented(f"No function for evaluating {software}")
+            raise NotImplementedError(f"No function for evaluating {software}")
 
         # spp_pred.result MUST be a list; evaluator will validate non-empty
         result = evaluator(spp_pred.result)
