@@ -193,6 +193,11 @@ def find_similar_and_cluster(
     return newick
 
 
+def reindex_database():
+    """Trigger a full reindex of the database."""
+    ...
+
+
 def info() -> dict[str, Any]:
     """Get information on sourmash installation and database."""
 
