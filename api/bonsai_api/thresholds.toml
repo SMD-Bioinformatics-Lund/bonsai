@@ -19,8 +19,8 @@ min_fraction = 0.9
 min_reads = 10000
 
 [species.mykrobe.mycobacterium_tuberculosis]
-min_species_coverage = 0.99
-min_phylogenetic_group_coverage = 0.99
+min_species_coverage = 0.95
+min_phylogenetic_group_coverage = 0.95
 
 [species.mykrobe.default]
 min_species_coverage = 1
