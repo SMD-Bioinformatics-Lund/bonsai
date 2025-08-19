@@ -2,6 +2,7 @@
 
 ### Added
 
+- Added tags that warns the user if a sample might be contaminated. Thresholds are read from `thresholds.toml`file.
 - Added button for showing only selected rows in the sample table
 - Split `BONSAI_API_URL` to two URLs, one for internal frontend-api communication and one for external browser to api communication.
 - Added sequencing run id to sample page

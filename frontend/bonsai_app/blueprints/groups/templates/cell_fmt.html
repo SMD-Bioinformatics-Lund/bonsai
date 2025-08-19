@@ -39,13 +39,12 @@
 {% macro render_tags(tag_info)  %}
     <td data-search="{% for tag in tag_info %}{{tag.label}} {% endfor %}">
     {% for tag in tag_info %}
-        <span class="badge text-bg-{{tag.severity}} p-1 me-1">
-            {{tag.label}}
-        </span>
+        <span class="badge text-bg-{{tag.severity}} p-1 me-1"
+              data-bs-toggle="tooltip" data-bs-placement="top" 
+              data-bs-title="{{ tag.description }}">{{tag.label}}</span>
     {% endfor %}
     </td>
 {% endmacro %}
-
 
 {% macro comment_tooltip(comment) %}
 <p class='mb-1'>{{ comment.comment }}</p>
