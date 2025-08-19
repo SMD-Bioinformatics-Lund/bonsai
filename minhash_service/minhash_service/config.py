@@ -2,10 +2,21 @@
 
 from pathlib import Path
 from typing import Any
-from pydantic import DirectoryPath, PositiveInt
+from enum import StrEnum
+from pydantic import PositiveInt
 from pydantic_settings import BaseSettings
 
+
+class IndexFormat(StrEnum):
+    """Valid data formats for sourmash indexes"""
+
+    SBT = "SBT"
+    ZIP = "zip"
+    ROCKSDB = "rocksdb"
+
 class RedisConfig(BaseSettings):
+    """Redis queue configuration."""
+
     host: str = "redis"
     port: PositiveInt = 6379
     queue: str = "minhash"
@@ -17,8 +28,10 @@ class Settings(BaseSettings):
     kmer_size: PositiveInt = 31
     signature_dir: Path = Path("/data/signature_db")
     index_name: str = "genomes"
+    db_format: IndexFormat = IndexFormat.SBT
 
     redis: RedisConfig = RedisConfig()
+
 
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {

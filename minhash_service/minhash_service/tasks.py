@@ -1,10 +1,13 @@
 """Define reddis tasks."""
 import logging
+from typing import Any
 
-from .minhash.cluster import ClusterMethod, cluster_signatures
-from .minhash.io import add_signatures_to_index
+import sourmash
+
+from .minhash.cluster import cluster_signatures, ClusterMethod
+from .minhash.paths import ensure_file_exists, get_index_path
 from .minhash.io import remove_signature as remove_signature_file
-from .minhash.io import remove_signatures_from_index, write_signature
+from .minhash.io import remove_signatures_from_index, write_signature, add_signatures_to_index
 from .minhash.similarity import get_similar_signatures
 from .minhash.models import SimilarSignatures, SignatureFile
 from .config import settings
@@ -81,7 +84,7 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Indexing signatures...")
-    res = remove_signatures_from_index(sample_ids, cnf=settings)
+    res = remove_signatures_from_index(sample_ids)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Removed {signatures}"
@@ -188,3 +191,18 @@ def find_similar_and_cluster(
     )
     newick: str = cluster_signatures(sids, method, cnf=settings)
     return newick
+
+
+def info() -> dict[str, Any]:
+    """Get information on sourmash installation and database."""
+
+    index_path = get_index_path(ensure_exists=False)
+    try:
+        index_exists = ensure_file_exists(index_path)
+    except FileNotFoundError:
+        index_exists = False
+
+    return {
+        "version": sourmash.VERSION,
+        "index": {"path": index_path, "format": settings.db_format.name, "exists": index_exists},
+    }
