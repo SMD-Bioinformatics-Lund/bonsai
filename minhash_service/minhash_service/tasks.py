@@ -1,23 +1,28 @@
 """Define reddis tasks."""
+
 import logging
+import dataclasses
 from typing import Any
 
 import sourmash
 
-from .minhash.cluster import cluster_signatures, ClusterMethod
-from .minhash.paths import ensure_file_exists, get_index_path
-from .minhash.io import remove_signature as remove_signature_file
-from .minhash.io import remove_signatures_from_index, write_signature, add_signatures_to_index
-from .minhash.similarity import get_similar_signatures
-from .minhash.models import SimilarSignatures, SignatureFile
+
 from .config import settings
+from .minhash.cluster import ClusterMethod, cluster_signatures
+from .minhash.io import (
+    save_signature_file, remove_signature_file, read_signature
+)
+from .minhash.models import SignatureFile, SimilarSignatures
+from .minhash.paths import ensure_file_exists, get_index_path, get_signature_files, get_signature_path
+from .minhash.similarity import get_similar_signatures
+from .minhash.index import SourmashIndexStore
 
 LOG = logging.getLogger(__name__)
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
     """
-    Find signatures similar to reference signature.
+    Add a new signature to minhash service by saving it to disk and indexing it.
 
     :param sample_id str: the sample_id
     :param signature dict[str, str]: sourmash signature file in JSON format
@@ -25,7 +30,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     :return: path to the signature
     :rtype: str
     """
-    signature_path = write_signature(sample_id, signature, cnf=settings)
+    signature_path = save_signature_file(sample_id, signature, cnf=settings)
     return str(signature_path)
 
 
@@ -38,15 +43,27 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     :return: The status of the removed job
     :rtype: Dict[str, str | bool]
     """
-    status: bool = remove_signature_file(sample_id, cnf=settings)
+    status: bool = remove_signature_file(sample_id)
     return {"sample_id": sample_id, "removed": status}
 
 
 def check_signature(sample_id: str) -> dict[str, str | bool]:
     """Check if signature exist."""
 
-    status: bool = remove_signature_file(sample_id, cnf=settings)
-    return {"sample_id": sample_id, "removed": status}
+    path = get_signature_path(sample_id, ensure_exists=False)
+    try:
+        ensure_file_exists(path)
+        exists = True
+    except FileNotFoundError:
+        exists = False
+    try:
+        idx_path = get_index_path()
+        idx = SourmashIndexStore(idx_path, settings.db_format)
+        indexed_sigs = idx.list_signatures()
+    except FileNotFoundError:
+        LOG.warning("Index not found")
+
+    return {"sample_id": sample_id, "path": path, "exists": exists, "indexed": sample_id in indexed_sigs}
 
 
 def add_to_index(sample_ids: list[str]) -> str:
@@ -58,20 +75,19 @@ def add_to_index(sample_ids: list[str]) -> str:
     :return: result message
     :rtype: str
     """
-    LOG.info("Indexing signatures...")
-    res, warnings = add_signatures_to_index(sample_ids, cnf=settings)
-    signatures = ", ".join(list(sample_ids))
-    if res:
-        msg = f"Appended {signatures}"
-        if warnings:
-            warning_text = "; ".join(warnings)
-            msg += f" (Warnings: {warning_text})"
-    else:
-        msg = f"Failed to append signatures, {signatures}"
-        if warnings:
-            warning_text = "; ".join(warnings)
-            msg += f" (Warnings: {warning_text})"
-    return msg
+    # read index
+    idx_path = get_index_path()
+    idx = SourmashIndexStore(idx_path, settings.db_format)
+
+    LOG.info("Indexing %d signatures", len(sample_ids))
+    signatures = []
+    for s in sample_ids:
+        path = get_index_path(s)
+        sig = read_signature(path, kmer_size=settings.kmer_size)
+        signatures.append(sig)
+
+    res = idx.add_signatures(signatures)
+    return dataclasses.asdict(res)
 
 
 def remove_from_index(sample_ids: list[str]) -> str:
@@ -83,14 +99,12 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :return: result message
     :rtype: str
     """
-    LOG.info("Indexing signatures...")
-    res = remove_signatures_from_index(sample_ids)
-    signatures = ", ".join(list(sample_ids))
-    if res:
-        msg = f"Removed {signatures}"
-    else:
-        msg = f"Failed to remove signatures, {signatures}"
-    return msg
+    LOG.info("Removing samples %d from index.", len(sample_ids))
+    # read index
+    idx_path = get_index_path()
+    idx = SourmashIndexStore(idx_path, settings.db_format)
+    res = idx.remove_signatures_by_names(sample_ids)
+    return dataclasses.asdict(res)
 
 
 def similar(
@@ -193,9 +207,25 @@ def find_similar_and_cluster(
     return newick
 
 
-def reindex_database():
-    """Trigger a full reindex of the database."""
-    ...
+def reindex_database(drop_db: bool = False) -> dict[str, str | int]:
+    """Reindex the database using all stored signature files."""
+
+    sig_paths = get_signature_files(settings.signature_dir)
+    LOG.info("Got job to reindex all samples %d", len(sig_paths))
+    idx_path = get_index_path()
+    # drop existing database
+    if drop_db:
+        idx_path.unlink()
+
+    idx = SourmashIndexStore(idx_path, index_format=settings.db_format)
+    sigs = [read_signature(path, settings.kmer_size) for path in sig_paths]
+    res = idx.add_signatures(sigs)
+
+    return {
+        "index_format": settings.db_format, 
+        "samples_count": len(sig_paths), 
+        "indexed_count": res.added_count
+    }
 
 
 def info() -> dict[str, Any]:
@@ -207,7 +237,15 @@ def info() -> dict[str, Any]:
     except FileNotFoundError:
         index_exists = False
 
+    n_signatures: int = sum([1 for s in get_signature_files(settings.signature_dir)])
+
     return {
         "version": sourmash.VERSION,
-        "index": {"path": index_path, "format": settings.db_format.name, "exists": index_exists},
+        "kmer_size": settings.kmer_size,
+        "index": {
+            "path": str(index_path),
+            "format": settings.db_format.name,
+            "exists": index_exists,
+        },
+        "signatures": {"path": str(settings.signature_dir), "n_signatures": n_signatures},
     }

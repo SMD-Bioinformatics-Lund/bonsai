@@ -1,4 +1,5 @@
 """Service entrypoint for minhash service."""
+
 import logging
 from logging.config import dictConfig
 

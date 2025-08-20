@@ -1,7 +1,8 @@
 """Data models and types."""
 
-from pydantic import BaseModel
+from enum import StrEnum
 
+from pydantic import BaseModel
 
 Signatures = list[dict[str, int | list[int]]]
 SignatureEntry = dict[str, str | Signatures]
@@ -22,5 +23,12 @@ class SimilarSignature(BaseModel):  # pydantic: disable=too-few-public-methods
     similarity: float
 
 
-SimilarSignatures = list[SimilarSignature]
+class IndexFormat(StrEnum):
+    """Valid data formats for sourmash indexes"""
 
+    SBT = "SBT"
+    ZIP = "zip"
+    ROCKSDB = "rocksdb"
+
+
+SimilarSignatures = list[SimilarSignature]

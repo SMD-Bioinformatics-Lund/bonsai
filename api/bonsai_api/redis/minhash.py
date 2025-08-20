@@ -60,6 +60,20 @@ def schedule_add_genome_signature_to_index(
     return SubmittedJob(id=job.id, task=task)
 
 
+def schedule_get_minhash_info() -> SubmittedJob:
+    """Get staus of the minhash service."""
+    task = "minhash_service.tasks.info"
+    submit_kwargs = {
+        "retry": Retry(max=3, interval=60),
+    }
+    # submit job
+    job = redis.minhash.enqueue(
+        task, job_timeout="5m", **submit_kwargs
+    )
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
+
+
 def schedule_remove_genome_signature_from_index(
     sample_ids: List[str], depends_on: List[str] = None, **enqueue_kwargs
 ) -> SubmittedJob:

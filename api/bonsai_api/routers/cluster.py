@@ -21,7 +21,7 @@ from ..redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from ..redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
 )
-from ..redis.minhash import schedule_add_genome_signature_to_index
+from ..redis.minhash import schedule_add_genome_signature_to_index, schedule_get_minhash_info
 from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
 from ..redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
 
@@ -133,3 +133,10 @@ async def index_genome_signatures(index_input: IndexInput) -> Dict[str, str]:
     signature_paths = [Path(sig["genome_signature"]) for sig in signatures]
     job_id: str = schedule_add_genome_signature_to_index(signature_paths)
     return {"job_id": job_id}
+
+
+@router.get("/minhash/", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
+async def minhash_status() -> Dict[str, str]:
+    """Get status of minhash service."""
+    job_id = schedule_get_minhash_info()
+    return {"job_id": job_id.id}

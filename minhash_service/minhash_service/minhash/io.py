@@ -2,231 +2,239 @@
 
 import gzip
 import logging
-import pathlib
-from typing import Iterable
+import os
+import tempfile
+from pathlib import Path
+from typing import Callable, Iterable
 
-import fasteners
 import sourmash
 from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
 from minhash_service.config import Settings
 
-from .models import SignatureFile, SignatureName
-from .paths import get_signature_path, get_index_path
+from .paths import get_signature_path
 
 LOG = logging.getLogger(__name__)
 Signatures = list[SourmashSignature | FrozenSourmashSignature]
 
 
-def read_signature(sample_id: str, cnf: Settings) -> Signatures:
+def read_signature(sample_id: str, kmer_size: int) -> Signatures:
     """Read signature to memory."""
     # read signature
     signature_path = get_signature_path(sample_id)
-    loaded = sourmash.load_file_as_signatures(signature_path, ksize=cnf.kmer_size)
+    loaded = sourmash.load_file_as_signatures(signature_path, ksize=kmer_size)
 
     # check that were signatures loaded with current kmer
     loaded_sigs = list(loaded)
     if len(loaded_sigs) == 0:
         raise ValueError(
-            f"No signatures, sample id: {sample_id}, ksize: {cnf.kmer_size}, {loaded}"
+            f"No signatures, sample id: {sample_id}, ksize: {kmer_size}, {loaded}"
         )
     return loaded_sigs
 
 
-def write_signature(
-    sample_id: str, signature: SignatureFile, cnf: Settings
-) -> pathlib.Path:
-    """
-    Add genome signature to index.
+def _signature_writer(path: Path, signatures, compress: bool):
+    """Small writer utility."""
+    if compress:
+        # Wrap gzip over a text writer
+        with gzip.open(path, "wt", encoding="utf-8") as out:
+            sourmash.signature.save_signatures_to_json(signatures, out)
+    else:
+        with open(path, "w", encoding="utf-8") as out:
+            sourmash.signature.save_signatures_to_json(signatures, out)
 
-    Create new index if none exist.
-    """
-    # get signature directory
-    LOG.info("Adding signature file for %s", sample_id)
-    signature_db = pathlib.Path(cnf.signature_dir)
-    # make db if signature db is not present
-    if not signature_db.exists():
-        signature_db.mkdir(parents=True, exist_ok=True)
 
-    # Get signature path and check if it exists
-    signature_file = get_signature_path(
-        sample_id, ensure_exists=False
-    )
+def save_signature_file(
+    sample_id: str,
+    payload: bytes | bytearray | memoryview,
+    cnf: Settings,
+    compress: bool = False,
+):
+    """Save a sourmash signature to disk.
+
+    - Accepts raw JSON bytes; if gzipped (by magic bytes), transparently decompresses.
+    - Loads one or more signatures from JSON, sets `name = sample_id` and `filename`
+      to the target file's basename, and writes them back to disk (optionally gzipped).
+    - Returns the final file path.
+
+    Notes:
+      * This function does NOT update/append to any sourmash index; it only writes
+        the signature file on disk.
+
+    """
+    # resolve directories
+    signature_dir = Path(cnf.signature_dir)
+    signature_dir.mkdir(parents=True, exist_ok=True)
+
+    signature_path = get_signature_path(sample_id, ensure_exists=False)
+    if compress and not str(signature_path).endswith(".gz"):
+        signature_path = signature_path.with_suffix(signature_path.suffix + ".gz")
+
+    LOG.info("Saving signature file for %s to %s", sample_id, signature_path)
+
+    # Ensure bytes-like
+    if isinstance(payload, memoryview):
+        payload = payload.tobytes()
 
     # check if compressed and decompress data
-    LOG.info("Check if signature is compressed")
-    if signature[:2] == b"\x1f\x8b":
-        LOG.debug("Decompressing gziped file")
-        signature = gzip.decompress(signature)
-
-    # convert signature from JSON to a mutable signature object
-    # then annotate sample_id as name
-    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures_from_json(
-        signature, ksize=cnf.kmer_size
-    )
-    upd_signatures = []
-    for sig_obj in signatures:
-        sig_obj = sig_obj.to_mutable()
-        sig_obj.name = sample_id  # assign sample id as name
-        sig_obj.filename = pathlib.Path(signature_file).name  # assign a new filename
-        sig_obj = sig_obj.to_frozen()
-        upd_signatures.append(sig_obj)
-
-    # save signature to file
-    LOG.info("Writing genome signatures to file")
     try:
-        with open(signature_file, "w", encoding="utf-8") as out:
-            sourmash.signature.save_signatures_to_json(upd_signatures, out)
-        LOG.info("Wrote genome signatures to file to %s", signature_file)
-    except PermissionError as error:
-        msg = f"Dont have permission to write file to disk, {signature_file}"
-        LOG.error(msg)
-        raise PermissionError(msg) from error
-
-    return signature_file
-
-
-def remove_signature(sample_id: str, cnf: Settings) -> bool:
-    """Remove an existing signature file from disk."""
-    # check that signature doesnt exist
-    # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id)
-
-    # read signature
-    next(sourmash.signature.load_signatures_from_json(signature_file, ksize=cnf.kmer_size))
-
-    # remove file
-    pathlib.Path(signature_file).unlink()
-    LOG.info("Signature file: %s was removed", signature_file)
-    return False
-
-
-def check_signature(sample_id: str) -> bool:
-    """Check if signature exist and has been added to the index."""
-    try:
-        signature_file = get_signature_path(
-            sample_id, ensure_exists=True
+        if payload[:2] == b"\x1f\x8b":
+            LOG.debug("Input seem to be gzipped; decompressing")
+            payload = gzip.decompress(payload)
+    except (OSError, gzip.BadGzipFile) as err:
+        LOG.exception(
+            "Failed to decompress gzipped payload for sample_id=%s", sample_id
         )
-        LOG.info("Checking signature file: %s", signature_file)
-    except FileExistsError:
+        raise ValueError("Invalid gzipped signature payload") from err
+
+    # convert JSON bytes -> sourmash signature
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as e:
+        LOG.exception("Signature JSON is not valid UTF-8 for sample_id=%s", sample_id)
+        raise ValueError("Signature JSON must be UTF-8 encoded") from e
+
+    try:
+        sig_iter: Iterable[FrozenSourmashSignature] = (
+            sourmash.signature.load_signatures_from_json(text, ksize=cnf.kmer_size)
+        )
+    except Exception as e:
+        LOG.exception("Failed to parse signature JSON for sample_id=%s", sample_id)
+        raise ValueError("Invalid signature JSON") from e
+
+    # Normalize signatures: set name and filename
+    upd_signatures: list[FrozenSourmashSignature] = []
+    outfile_name = signature_path.name
+    for sig_obj in sig_iter:
+        upd_sig = sig_obj.to_mutable()
+        upd_sig.name = sample_id
+        upd_sig.filename = outfile_name
+        upd_signatures.append(upd_sig.to_frozen())
+
+    if not upd_signatures:
+        raise ValueError("No signatures found in payload")
+
+    # atomic write signature to disk
+    atomic_save(
+        signature_path,
+        write_to_path=lambda tmp_path: _signature_writer(
+            tmp_path, upd_signatures, compress
+        ),
+    )
+    return signature_path
+
+
+def remove_signature_file(sample_id: str) -> bool:
+    """Remove an existing signature file from filesystem."""
+    try:
+        signature_file = get_signature_path(sample_id, ensure_exists=True)
+        signature_file.unlink()
+    except Exception:
         return False
-    else:
-        return True
-
-
-def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool, list[str]]:
-    """Add genome signature file to sourmash index
-    
-    Returns:
-        tuple[bool, list[str]]: (success status, list of warning messages)
-    """
-
-    genome_index = get_index_path(ensure_exists=False)
-    sbt_lock_path = f"/tmp/{genome_index.name}.lock"
-    lock = fasteners.InterProcessLock(sbt_lock_path)
-    LOG.debug("Using lock: %s", sbt_lock_path)
-
-    warnings = []
-    signatures = []
-    for sample_id in sample_ids:
-        signature = read_signature(sample_id, cnf)
-        if not signature:
-            warning_msg = f"No signatures found for sample {sample_id}"
-            LOG.warning(warning_msg)
-            warnings.append(warning_msg)
-            continue
-        signatures.append(signature[0])
-
-    if not signatures:
-        warning_msg = "No signatures to add."
-        LOG.warning(warning_msg)
-        warnings.append(warning_msg)
-        return False, warnings
-
-    # add signature to existing index
-    # acquire lock to append signatures to database
-    LOG.debug("Attempt to acquire lock to append %s to index...", signatures)
-    with lock:
-        # check if index already exist
-        try:
-            index_path = get_index_path()
-            tree = sourmash.load_file_as_index(str(index_path))
-            LOG.debug("Loaded index: %s (type: %s)", index_path, type(tree).__name__)
-
-            # If index is not SBT (e.g., ZipFileLinearIndex), rebuild as SBT
-            if not hasattr(tree, "add_node"):
-                warning_msg = "Index is not SBT. Rebuilding as SBT for updates."
-                LOG.warning(warning_msg)
-                warnings.append(warning_msg)
-                existing_sigs = [s for s in tree.signatures()]
-                tree = sourmash.sbtmh.create_sbt_index()
-                for s in existing_sigs:
-                    leaf = sourmash.sbtmh.SigLeaf(s.md5sum(), s)
-                    tree.add_node(leaf)
-
-        except (ValueError, FileNotFoundError):
-            LOG.info("Index not found or invalid. Creating new SBT index.")
-            tree = sourmash.sbtmh.create_sbt_index()
-
-        # add generated signature to bloom tree
-        LOG.info("Adding %d genome signatures to index", len(signatures))
-        for signature in signatures:
-            leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-            tree.add_node(leaf)
-        # save updated bloom tree
-        try:
-            index_path = get_index_path(ensure_exists=False)
-            tree.save(str(index_path))
-            LOG.info("Updated index saved to %s", index_path)
-        except PermissionError as err:
-            LOG.error("Dont have permission to write file to disk")
-            raise err
-
-    return True, warnings
-
-
-def remove_signatures_from_index(sample_ids: list[str]) -> bool:
-    """Add genome signature file to sourmash index"""
-
-    genome_index = get_index_path(ensure_exists=False)
-    sbt_lock_path = f"/tmp/{genome_index.name}.lock"
-    lock = fasteners.InterProcessLock(sbt_lock_path)
-    LOG.debug("Using lock: %s", sbt_lock_path)
-
-    # remove signature from existing index
-    # acquire lock to remove signatures from database
-    LOG.debug("Attempt to acquire lock to append %s to index...", sample_ids)
-    with lock:
-        # check if index already exist
-        index_path = get_index_path()
-        old_index = sourmash.load_file_as_index(str(index_path))
-
-        # add signatures not among the sample ids a new index
-        LOG.info("Removing %d genome signatures from index", len(sample_ids))
-        new_index = sourmash.sbtmh.create_sbt_index()
-        for signature in old_index.signatures():
-            sample_id = signature.name
-            if sample_id not in sample_ids:
-                leaf = sourmash.sbtmh.SigLeaf(signature.md5sum(), signature)
-                new_index.add_node(leaf)
-
-        # save new bloom tree
-        try:
-            index_path = get_index_path(ensure_exists=False)
-            new_index.save(str(index_path))
-        except PermissionError as err:
-            LOG.error("Dont have permission to write file to disk")
-            raise err
-
+    LOG.info("Signature file: %s was removed", signature_file)
     return True
 
 
-def list_signatures_in_index() -> list[SignatureName]:
-    """List signatures in index."""
+def atomic_save(
+    path: str | Path,
+    *,
+    write_to_path: Callable[[Path], None],
+    tmp_suffix: str = ".tmp",
+    make_dirs: bool = True,
+    sync: bool = True,
+    perms: int | None = None,
+    inherit_perms_from: str | Path | None = None,
+) -> Path:
+    """
+    Atomically write to `path` by writing to a temporary file in the same
+    directory and then replacing.
 
-    index_path = get_index_path(ensure_exists=False)
-    idx = sourmash.load_file_as_index(str(index_path))
-    return [
-        SignatureName.model_validate({"name": sig.name, "filename": sig.filename})
-        for sig in idx.signatures()
-    ]
+    Parameters
+    ----------
+    path : str | Path
+        Final destination path.
+    write_to_path : Callable[[Path], None]
+        A function that receives the temporary path and is responsible for
+        writing all file contents to it (open/close inside).
+    tmp_suffix : str
+        Suffix appended to the temp file.
+    make_dirs : bool
+        Create parent directories if missing.
+    sync : bool
+        If True, fsync the file and parent directory (where supported).
+    perms : Optional[int]
+        If provided, chmod the temp file to these permissions before replace.
+    inherit_perms_from : str | Path | None
+        If provided and exists, copy its mode (st_mode) to the temp file
+        before replace.
+
+    Returns
+    -------
+    Path
+        The final path.
+
+    Raises
+    ------
+    Any exception raised by `write_to_path` or OS operations will bubble up.
+    """
+    dest = Path(path)
+    parent = dest.parent
+
+    if make_dirs:
+        parent.mkdir(parents=True, exist_ok=True)
+
+    # Create a temp file in the same directory to guarantee same filesystem
+    with tempfile.NamedTemporaryFile(
+        dir=parent, prefix=dest.name, suffix=tmp_suffix, delete=False
+    ) as tmp:
+        tmp_path = Path(tmp.name)
+
+    try:
+        # Let the caller write to the temp path (open/close is their job)
+        write_to_path(tmp_path)
+
+        # Optionally set/inherit permissions
+        if inherit_perms_from:
+            src = Path(inherit_perms_from)
+            if src.exists():
+                st = src.stat()
+                tmp_path.chmod(st.st_mode)
+        elif perms is not None:
+            tmp_path.chmod(perms)
+
+        # Best-effort fsync of the file contents
+        if sync:
+            try:
+                fd = os.open(tmp_path, os.O_RDONLY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+            except Exception:
+                # Not fatal; proceed to replace
+                pass
+
+        # Atomic replace
+        tmp_path.replace(dest)
+
+        # Fsync the directory entry where possible (POSIX)
+        if sync:
+            try:
+                dir_fd = os.open(parent, os.O_DIRECTORY)
+                try:
+                    os.fsync(dir_fd)
+                finally:
+                    os.close(dir_fd)
+            except Exception:
+                # On Windows or certain FS, O_DIRECTORY may not exist; ignore
+                pass
+
+        return dest
+    except Exception:
+        # Cleanup on failure
+        try:
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass
+        raise

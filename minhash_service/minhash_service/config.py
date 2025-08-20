@@ -2,17 +2,12 @@
 
 from pathlib import Path
 from typing import Any
-from enum import StrEnum
+
 from pydantic import PositiveInt
 from pydantic_settings import BaseSettings
 
+from .minhash.models import IndexFormat
 
-class IndexFormat(StrEnum):
-    """Valid data formats for sourmash indexes"""
-
-    SBT = "SBT"
-    ZIP = "zip"
-    ROCKSDB = "rocksdb"
 
 class RedisConfig(BaseSettings):
     """Redis queue configuration."""
