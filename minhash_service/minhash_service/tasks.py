@@ -233,7 +233,8 @@ def info() -> dict[str, Any]:
 
     index_path = get_index_path(ensure_exists=False)
     try:
-        index_exists = ensure_file_exists(index_path)
+        ensure_file_exists(index_path)
+        index_exists = True
     except FileNotFoundError:
         index_exists = False
 
