@@ -9,9 +9,10 @@ from typing import Iterable
 
 import fasteners
 import sourmash
+from sourmash.sbtmh import SBT as SBTIndex
+from sourmash.index.revindex import DiskRevIndex
 
 from .models import IndexFormat, SignatureName
-from .io import atomic_save
 
 LOG = logging.getLogger(__name__)
 
@@ -76,6 +77,18 @@ class SourmashIndexStore:
         if self._index is not None:
             return self._index
 
+        match self.index_format:
+            case IndexFormat.SBT:
+                index = self._load_sbt(create_if_missing)
+            case IndexFormat.ROCKSDB:
+                index = self._load_rocksdb()
+            case _:
+                raise NotImplementedError(f"Unknown index format: {_}")
+        self._index = index
+        return self._index
+    
+    def _load_sbt(self, create_if_missing: bool = True) -> SBTIndex:
+        """Load index in SBT format."""
         try:
             index = sourmash.load_file_as_index(str(self.index_path))
             LOG.debug(
@@ -86,9 +99,25 @@ class SourmashIndexStore:
                 raise
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             index = sourmash.create_sbt_index()
-        self._index = index
-        return self._index
+        return index
     
+    def _load_rocksdb(self, create_if_missing: bool = True):
+        try:
+            index = DiskRevIndex(str(self.index_path))
+            LOG.debug(
+                "Loaded index '%s' (type: %s)", self.index_path, type(index).__name__
+            )
+        except (FileNotFoundError, ValueError):
+            if not create_if_missing:
+                raise
+            LOG.warning("Invalid index: %s, creating new index", self.index_path)
+            index = DiskRevIndex.create_from_sigs([], str(self.index_path))
+        return index
+    
+    def _add_sbt_node(self, signature):
+        """Add a signature node to a SBT index."""
+        self._index.add_node(signature)
+
     def _atomic_save(self):
         """Index specific atomic save."""
 
@@ -135,7 +164,13 @@ class SourmashIndexStore:
                     continue
                 # add signature depending on the db type
                 leaf = sourmash.sbtmh.SigLeaf(md5, sig)
-                index.add_node(leaf)
+                match self.index_format:
+                    case IndexFormat.SBT:
+                        self._add_sbt_node(leaf)
+                    case IndexFormat.ROCKSDB:
+                        ...
+                    case _:
+                        raise NotImplementedError(f"Unknown index format: {_}")
                 added += 1
                 if dedupe_by_md5:
                     existing_md5.add(md5)

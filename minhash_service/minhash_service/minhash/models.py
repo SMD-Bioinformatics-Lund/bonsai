@@ -27,7 +27,6 @@ class IndexFormat(StrEnum):
     """Valid data formats for sourmash indexes"""
 
     SBT = "SBT"
-    ZIP = "zip"
     ROCKSDB = "rocksdb"
 
 
