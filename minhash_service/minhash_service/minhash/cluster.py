@@ -10,6 +10,7 @@ from scipy.cluster import hierarchy
 from minhash_service.config import Settings
 
 from .io import read_signature
+from .paths import get_signature_path
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +46,8 @@ def cluster_signatures(sample_ids: List[str], method: ClusterMethod, cnf: Settin
     siglist = []
     LOG.info("Cluster signatures with sample ids: %s", sample_ids)
     for sample_id in sample_ids:
-        signature = read_signature(sample_id, cnf=cnf)
+        path = get_signature_path(sample_id)
+        signature = read_signature(path, kmer_size=cnf.kmer_size)
         siglist.extend(signature)  # append to all signatures
 
     # create distance matrix

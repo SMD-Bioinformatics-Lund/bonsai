@@ -4,6 +4,7 @@ import contextlib
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+import tempfile
 from typing import Iterable
 
 import fasteners
@@ -83,9 +84,22 @@ class SourmashIndexStore:
         except (FileNotFoundError, ValueError):
             if not create_if_missing:
                 raise
-            LOG.warning("Invalid index: %s", self.index_path)
+            LOG.warning("Invalid index: %s, creating new index", self.index_path)
+            index = sourmash.create_sbt_index()
         self._index = index
         return self._index
+    
+    def _atomic_save(self):
+        """Index specific atomic save."""
+
+        parent = self.index_path.parent  # keep on same file system
+        with tempfile.TemporaryDirectory(dir=parent, prefix=self.index_path.name) as tmp_dir:
+            tmp_dir = Path(tmp_dir)
+            tmp_idx_path = self._index.save(str(tmp_dir / "index"))
+            tmp_idx_path = Path(tmp_idx_path)  # str -> Path
+
+            tmp_idx_path.replace(self.index_path)
+
 
     def list_signatures(self) -> list[SignatureName]:
         """List signatures in index."""
@@ -96,7 +110,7 @@ class SourmashIndexStore:
         ]
 
     def add_signatures(
-        self, signatures: Iterable, dedupe_by_md5: bool = True
+        self, signatures: Iterable[sourmash.SourmashSignature], dedupe_by_md5: bool = True
     ) -> AddResult:
         """Add one or more signatures to index."""
 
@@ -125,8 +139,7 @@ class SourmashIndexStore:
                 added += 1
                 if dedupe_by_md5:
                     existing_md5.add(md5)
-
-            atomic_save(index, write_to_path=lambda path: index.save(str(path)), inherit_perms_from=self.index_path if self.index_path.exists() else None)
+            self._atomic_save()
         return AddResult(ok=True, warnings=warnings, added_count=added)
 
     def remove_signatures_by_names(self, names_to_remove: set[str]) -> RemoveResult:
@@ -148,7 +161,7 @@ class SourmashIndexStore:
                 new_index.add_node(sourmash.sbtmh.SigLeaf(s.md5sum(), s))
 
             self._index = new_index  # replace in-memory cache
-            atomic_save(self._index, write_to_path=lambda path: self._index.save(str(path)), inherit_perms_from=self.index_path if self.index_path.exists() else None)
+            self._atomic_save()
             not_removed = set(names_to_remove) - set(removed)
             if len(not_removed) > 0:
                 warn = f"could not remove {', '.join(not_removed)}"

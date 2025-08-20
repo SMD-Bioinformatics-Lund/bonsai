@@ -68,7 +68,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
 
 def add_to_index(sample_ids: list[str]) -> str:
     """
-    Add signatures to sourmash SBT index.
+    Add signatures to sourmash index.
 
     :param sample_ids list[str]: The path to multiple signature files
 
@@ -76,15 +76,15 @@ def add_to_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     # read index
-    idx_path = get_index_path()
+    idx_path = get_index_path(ensure_exists=False)
     idx = SourmashIndexStore(idx_path, settings.db_format)
 
     LOG.info("Indexing %d signatures", len(sample_ids))
     signatures = []
     for s in sample_ids:
-        path = get_index_path(s)
+        path = get_signature_path(s)
         sig = read_signature(path, kmer_size=settings.kmer_size)
-        signatures.append(sig)
+        signatures.extend(sig)
 
     res = idx.add_signatures(signatures)
     return dataclasses.asdict(res)

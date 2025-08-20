@@ -10,7 +10,7 @@ from minhash_service.config import Settings
 from minhash_service.minhash.models import SimilarSignature, SimilarSignatures
 
 from .io import read_signature
-from .paths import get_index_path
+from .paths import get_index_path, get_signature_path
 
 LOG = logging.getLogger(__name__)
 
@@ -36,7 +36,8 @@ def get_similar_signatures(
     db: SBT = sourmash.load_file_as_index(str(index_path))
 
     # load reference sequence
-    query_signature = read_signature(sample_id, cnf)[0]
+    path = get_signature_path(sample_id)
+    query_signature = read_signature(path, kmer_size=cnf.kmer_size)[0]
 
     # query for similar sequences
     LOG.debug("Searching for signatures with similarity > %f", min_similarity)

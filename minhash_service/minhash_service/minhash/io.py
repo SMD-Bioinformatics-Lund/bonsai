@@ -18,17 +18,16 @@ LOG = logging.getLogger(__name__)
 Signatures = list[SourmashSignature | FrozenSourmashSignature]
 
 
-def read_signature(sample_id: str, kmer_size: int) -> Signatures:
+def read_signature(path: Path, kmer_size: int) -> Signatures:
     """Read signature to memory."""
     # read signature
-    signature_path = get_signature_path(sample_id)
-    loaded = sourmash.load_file_as_signatures(signature_path, ksize=kmer_size)
+    loaded = sourmash.load_file_as_signatures(str(path), ksize=kmer_size)
 
     # check that were signatures loaded with current kmer
     loaded_sigs = list(loaded)
     if len(loaded_sigs) == 0:
         raise ValueError(
-            f"No signatures, sample id: {sample_id}, ksize: {kmer_size}, {loaded}"
+            f"No signatures loaded from, path: {path}, ksize: {kmer_size}, {loaded}"
         )
     return loaded_sigs
 
@@ -162,7 +161,7 @@ def atomic_save(
         Create parent directories if missing.
     sync : bool
         If True, fsync the file and parent directory (where supported).
-    perms : Optional[int]
+    perms : int | None
         If provided, chmod the temp file to these permissions before replace.
     inherit_perms_from : str | Path | None
         If provided and exists, copy its mode (st_mode) to the temp file
@@ -232,6 +231,7 @@ def atomic_save(
         return dest
     except Exception:
         # Cleanup on failure
+        LOG.warning("Cleanup after error when saving file: %s", path)
         try:
             if tmp_path.exists():
                 tmp_path.unlink()
