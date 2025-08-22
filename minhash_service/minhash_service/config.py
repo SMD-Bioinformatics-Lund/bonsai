@@ -2,14 +2,26 @@
 
 from pathlib import Path
 from typing import Any
-from pydantic import DirectoryPath, PositiveInt
+from pydantic import PositiveInt, ConfigDict
 from pydantic_settings import BaseSettings
 
+class MongodbConfig(BaseSettings):
+    """MongoDB configuration for minhash service."""
+
+    model_config = ConfigDict(env_prefix="mongodb_")
+    
+    host: str = "mongodb"
+    port: PositiveInt = 27017
+    database: str = "minhash_db"
+    collection: str = "signatures"
+
+
 class RedisConfig(BaseSettings):
+    model_config = ConfigDict(env_prefix="redis_")
+
     host: str = "redis"
     port: PositiveInt = 6379
     queue: str = "minhash"
-
 
 class Settings(BaseSettings):
     """Minhash service settings."""
@@ -19,6 +31,7 @@ class Settings(BaseSettings):
     index_name: str = "genomes"
 
     redis: RedisConfig = RedisConfig()
+    mongodb: MongodbConfig = MongodbConfig()
 
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {
