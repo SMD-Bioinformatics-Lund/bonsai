@@ -6,15 +6,28 @@ from dataclasses import dataclass
 from pathlib import Path
 import tempfile
 from typing import Iterable
+from abc import ABC, abstractmethod
 
 import fasteners
 import sourmash
-from sourmash.sbtmh import SBT as SBTIndex
+from sourmash.exceptions import Panic
 from sourmash.index.revindex import DiskRevIndex
 
 from .models import IndexFormat, SignatureName
 
 LOG = logging.getLogger(__name__)
+
+
+def create_index_store(
+    index_path: Path, index_format: IndexFormat, lock_path: Path | None = None
+) -> "BaseIndexStore":
+    """Create an index store based on the specified format."""
+    if index_format == IndexFormat.SBT:
+        return SBTIndexStore(index_path, lock_path)
+    elif index_format == IndexFormat.ROCKSDB:
+        return RocksDBIndexStore(index_path, lock_path)
+    else:
+        raise NotImplementedError(f"Unknown index format: {index_format}")
 
 
 @dataclass
@@ -33,19 +46,19 @@ class RemoveResult:
     ok: bool
     warnings: list[str]
     removed_count: int
+    
 
+class BaseIndexStore(ABC):
+    """Base class for index stores."""
 
-class SourmashIndexStore:
-    """Handles sourmash index on disk
+    def __init__(self, index_path: Path, lock_path: Path | None = None):
+        """Initialize the index store with the given path and optional lock path."""
 
-    - support batch operations and atomic saves
-    """
+        # Ensure index_path is a Path object
+        if isinstance(index_path, str):
+            index_path = Path(index_path)
 
-    def __init__(
-        self, index_path: Path, index_format: IndexFormat, lock_path: Path | None = None
-    ):
         self.index_path: Path = index_path
-        self.index_format: IndexFormat = index_format
         # Put the lock near the index by default to scope correctly on multi-host systems
         self.lock_path = (
             lock_path
@@ -57,7 +70,7 @@ class SourmashIndexStore:
         LOG.debug("Index path: %s; lock path: %s", self.index_path, self.lock_path)
 
     @contextlib.contextmanager
-    def locked(self, timeout: float | None = None):
+    def aquire_lock(self, timeout: float | None = None):
         """
         Acquire an interprocess lock for the duration of the block.
         Use this to compose multiple ops transactionally.
@@ -72,23 +85,33 @@ class SourmashIndexStore:
             self._lock.release()
             LOG.debug("Released lock: %s", self.lock_path)
 
+
+    @abstractmethod
+    def list_signatures(self) -> list[SignatureName]:
+        """List signatures in index."""
+
+    @abstractmethod
+    def add_signatures(
+        self, signatures: Iterable[sourmash.SourmashSignature], dedupe_by_md5: bool = True
+    ) -> AddResult:
+        """Add one or more signatures to index."""
+
+    @abstractmethod
+    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
+        """Remove signatures by name."""
+    
+
+class SBTIndexStore(BaseIndexStore):
+    """Handles sourmash SBT index on disk
+
+    - support batch operations and atomic saves
+    """
+
     def _load_index(self, create_if_missing: bool = True):
         """Load index to memory."""
         if self._index is not None:
             return self._index
 
-        match self.index_format:
-            case IndexFormat.SBT:
-                index = self._load_sbt(create_if_missing)
-            case IndexFormat.ROCKSDB:
-                index = self._load_rocksdb()
-            case _:
-                raise NotImplementedError(f"Unknown index format: {_}")
-        self._index = index
-        return self._index
-    
-    def _load_sbt(self, create_if_missing: bool = True) -> SBTIndex:
-        """Load index in SBT format."""
         try:
             index = sourmash.load_file_as_index(str(self.index_path))
             LOG.debug(
@@ -99,25 +122,9 @@ class SourmashIndexStore:
                 raise
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             index = sourmash.create_sbt_index()
-        return index
+        self._index = index
+        return self._index
     
-    def _load_rocksdb(self, create_if_missing: bool = True):
-        try:
-            index = DiskRevIndex(str(self.index_path))
-            LOG.debug(
-                "Loaded index '%s' (type: %s)", self.index_path, type(index).__name__
-            )
-        except (FileNotFoundError, ValueError):
-            if not create_if_missing:
-                raise
-            LOG.warning("Invalid index: %s, creating new index", self.index_path)
-            index = DiskRevIndex.create_from_sigs([], str(self.index_path))
-        return index
-    
-    def _add_sbt_node(self, signature):
-        """Add a signature node to a SBT index."""
-        self._index.add_node(signature)
-
     def _atomic_save(self):
         """Index specific atomic save."""
 
@@ -149,7 +156,7 @@ class SourmashIndexStore:
             warnings.append("No signatures to add")
             return AddResult(ok=False, warnings=warnings, added_count=0)
 
-        with self.locked():
+        with self.aquire_lock():
             index = self._load_index(create_if_missing=True)
 
             existing_md5 = set()
@@ -164,25 +171,19 @@ class SourmashIndexStore:
                     continue
                 # add signature depending on the db type
                 leaf = sourmash.sbtmh.SigLeaf(md5, sig)
-                match self.index_format:
-                    case IndexFormat.SBT:
-                        self._add_sbt_node(leaf)
-                    case IndexFormat.ROCKSDB:
-                        ...
-                    case _:
-                        raise NotImplementedError(f"Unknown index format: {_}")
+                self._index.add_node(leaf)
                 added += 1
                 if dedupe_by_md5:
                     existing_md5.add(md5)
             self._atomic_save()
         return AddResult(ok=True, warnings=warnings, added_count=added)
 
-    def remove_signatures_by_names(self, names_to_remove: set[str]) -> RemoveResult:
+    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
         """
         Remove by signature.name by reconstructing a new SBT (SBT does not support in-place deletion).
         Returns count of removed signatures.
         """
-        with self.locked():
+        with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
             kept, removed = [], 0
             for sig in old_index.signatures():
@@ -201,3 +202,43 @@ class SourmashIndexStore:
             if len(not_removed) > 0:
                 warn = f"could not remove {', '.join(not_removed)}"
                 return RemoveResult(ok=False, warnings=[warn], removed_count=len(removed))
+
+
+class RocksDBIndexStore(BaseIndexStore):
+    """Handles RocksDB index on disk."""
+
+    def _load_index(self, create_if_missing: bool = True):
+        try:
+            index = DiskRevIndex(str(self.index_path))
+            LOG.debug(
+                "Loaded index '%s' (type: %s)", self.index_path, type(index).__name__
+            )
+        except (FileNotFoundError, ValueError):
+            if not create_if_missing:
+                raise
+            LOG.warning("Invalid index: %s, creating new index", self.index_path)
+            index = DiskRevIndex.create_from_sigs([], str(self.index_path))
+        except Panic as err:
+            LOG.error("Sourmash failed to load index: %s", err)
+        return index
+
+    def list_signatures(self) -> list[SignatureName]:
+        """List signatures in index."""
+        index = self._load_index(create_if_missing=True)
+        return [
+            SignatureName(name=sig.name, filename=getattr(sig, "filename", ""))
+            for sig in index.signatures()
+        ]
+    
+    def add_signatures(self, signatures: Iterable[sourmash.SourmashSignature], dedupe_by_md5: bool = True):
+        """Add one or more signatures to index."""
+        warnings: list[str] = []
+        sigs = list(signatures)
+        if not sigs:
+            warnings.append("No signatures to add")
+            return AddResult(ok=False, warnings=warnings, added_count=0)
+        raise NotImplementedError("RocksDBIndexStore does not support adding signatures directly.")
+
+    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
+        """Remove signatures by name."""
+        raise NotImplementedError("RocksDBIndexStore does not support adding signatures directly.")
