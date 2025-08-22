@@ -1,15 +1,57 @@
 """Define reddis tasks."""
+from hashlib import sha256
 import logging
+from pathlib import Path
+
 
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import add_signatures_to_index
 from .minhash.io import remove_signature as remove_signature_file
 from .minhash.io import remove_signatures_from_index, write_signature
 from .minhash.similarity import get_similar_signatures
-from .minhash.models import SimilarSignatures, SignatureFile
+from .minhash.models import SignatureRecord, SimilarSignatures, SignatureFile
+
 from .config import settings
+from .store import SignatureStore
 
 LOG = logging.getLogger(__name__)
+
+
+_STORE: SignatureStore | None = None
+
+def inject_store(store: SignatureStore) -> None:
+    """Inject a SignatureStore instance for use in tasks."""
+    global _STORE
+    _STORE = store
+
+
+def get_store() -> SignatureStore:
+    """Get the injected SignatureStore instance."""
+    if _STORE is None:
+        raise RuntimeError("SignatureStore has not been injected. Call inject_store() first.")
+    return _STORE
+
+
+def _sha256_of_file(path: Path) -> str:
+    """Calculate sha256 checksum of a file."""
+    checksum = sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            checksum.update(chunk)
+    return checksum.hexdigest()
+
+
+def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
+    """
+    Get a directory path based on the checksum.
+
+    This creates a directory structure like:
+    /<first_segment>/<second_segment>/<filename>.sig
+    """
+    first_segment = checksum[:2].lower()
+    second_segment = checksum[2:4].lower()
+    path = settings.signature_dir.joinpath(first_segment, second_segment, file_name)
+    return path
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
@@ -22,8 +64,25 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     :return: path to the signature
     :rtype: str
     """
+    # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=settings)
-    return str(signature_path)
+    signature_path = Path(signature_path)  # Ensure it's a Path object
+    file_checksum = _sha256_of_file(signature_path)
+
+    # upon completion write signature to the disk
+    new_path = _get_directory_from_hash(sample_id, file_checksum)
+    signature_path.replace(new_path)
+
+    # store as a signature record
+    rec = SignatureRecord(
+        sample_id=sample_id,
+        signature_path=new_path,
+        checksum=file_checksum,
+    )
+    store = get_store()
+    store.add_signature(rec)
+
+    return str(new_path)
 
 
 def remove_signature(sample_id: str) -> dict[str, str | bool]:
