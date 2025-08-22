@@ -4,7 +4,6 @@ from logging.config import dictConfig
 
 from redis import Redis
 from rq import Connection, Queue, SimpleWorker
-from rq.serializers import JSONSerializer
 from pymongo import MongoClient
 
 from . import tasks
@@ -34,5 +33,5 @@ def create_app():
     LOG.info("Starting worker...")
     with Connection(redis):
         queue = Queue(settings.redis.queue)
-        worker = SimpleWorker([queue], connection=redis, serializer=JSONSerializer())
+        worker = SimpleWorker([queue], connection=redis)
         worker.work()
