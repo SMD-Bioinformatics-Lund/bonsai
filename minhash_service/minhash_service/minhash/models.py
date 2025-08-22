@@ -55,10 +55,6 @@ class SignatureRecord(BaseModel):
     - `uploaded_at`: UTC timestamp when the record was created
     """
 
-    # MongoDB `_id` (optional). If you prefer to keep domain model clean, remove this
-    # and always use Mongo projection {"_id": 0} in reads.
-    id: ObjectId | None = Field(default=None, alias="_id")
-
     sample_id: SampleIdStr
     signature_path: Path
     checksum: Sha256Hex
@@ -77,11 +73,6 @@ class SignatureRecord(BaseModel):
     )
 
     # ---- serialization helpers --------------------------------------------
-
-    @field_serializer("_id", when_used="json-unless-none")
-    def _ser_object_id(self, v: ObjectId | None, _info):
-        # If you want ObjectId preserved in Python dicts (not JSON), remove this.
-        return str(v) if v is not None else None
 
     @field_serializer("signature_path")
     def _ser_path(self, v: Path, _info) -> str:
