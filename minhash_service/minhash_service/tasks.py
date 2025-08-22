@@ -29,6 +29,43 @@ from .minhash.similarity import get_similar_signatures
 LOG = logging.getLogger(__name__)
 
 
+_STORE: SignatureStore | None = None
+
+def inject_store(store: SignatureStore) -> None:
+    """Inject a SignatureStore instance for use in tasks."""
+    global _STORE
+    _STORE = store
+
+
+def get_store() -> SignatureStore:
+    """Get the injected SignatureStore instance."""
+    if _STORE is None:
+        raise RuntimeError("SignatureStore has not been injected. Call inject_store() first.")
+    return _STORE
+
+
+def _sha256_of_file(path: Path) -> str:
+    """Calculate sha256 checksum of a file."""
+    checksum = sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            checksum.update(chunk)
+    return checksum.hexdigest()
+
+
+def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
+    """
+    Get a directory path based on the checksum.
+
+    This creates a directory structure like:
+    /<first_segment>/<second_segment>/<filename>.sig
+    """
+    first_segment = checksum[:2].lower()
+    second_segment = checksum[2:4].lower()
+    path = settings.signature_dir.joinpath(first_segment, second_segment, file_name)
+    return path
+
+
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
     """
     Find signatures similar to reference signature.
