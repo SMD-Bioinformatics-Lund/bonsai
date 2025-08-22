@@ -41,7 +41,7 @@ def _sha256_of_file(path: Path) -> str:
     return checksum.hexdigest()
 
 
-def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
+def _get_directory_from_hash(checksum: str) -> Path:
     """
     Get a directory path based on the checksum.
 
@@ -50,7 +50,7 @@ def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
     """
     first_segment = checksum[:2].lower()
     second_segment = checksum[2:4].lower()
-    path = settings.signature_dir.joinpath(first_segment, second_segment, file_name)
+    path = settings.signature_dir.joinpath(first_segment, second_segment)
     return path
 
 
@@ -70,8 +70,9 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     file_checksum = _sha256_of_file(signature_path)
 
     # upon completion write signature to the disk
-    new_path = _get_directory_from_hash(sample_id, file_checksum)
-    signature_path.replace(new_path)
+    new_sig_dir = _get_directory_from_hash(file_checksum)
+    new_sig_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
+    new_path = signature_path.replace(new_sig_dir.joinpath(f"{sample_id}.sig"))  # Move file to new path
 
     # store as a signature record
     rec = SignatureRecord(
