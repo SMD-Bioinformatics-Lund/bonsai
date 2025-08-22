@@ -53,7 +53,7 @@ def _sha256_of_file(path: Path) -> str:
     return checksum.hexdigest()
 
 
-def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
+def _get_directory_from_hash(checksum: str) -> Path:
     """
     Get a directory path based on the checksum.
 
@@ -62,7 +62,7 @@ def _get_directory_from_hash(file_name: str, checksum: str) -> Path:
     """
     first_segment = checksum[:2].lower()
     second_segment = checksum[2:4].lower()
-    path = settings.signature_dir.joinpath(first_segment, second_segment, file_name)
+    path = settings.signature_dir.joinpath(first_segment, second_segment)
     return path
 
 
