@@ -35,7 +35,7 @@ def create_app():
     tasks.inject_store(sig_store)
 
     at_store = AuditTrailStore(
-        client[settings.mongodb.database].get_collection("signatures")
+        client[settings.mongodb.database].get_collection("audit_trail")
     )
     tasks.inject_store(at_store)
 
