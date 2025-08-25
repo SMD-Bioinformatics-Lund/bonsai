@@ -1,5 +1,6 @@
 """Functions for reading and writing signatures"""
 
+import datetime
 import gzip
 import logging
 from pathlib import Path

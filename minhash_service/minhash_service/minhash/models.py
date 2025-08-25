@@ -70,6 +70,8 @@ class SignatureRecord(BaseModel):
 
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
     model_config = ConfigDict(
         populate_by_name=True,  # enables setting/getting by "_id" alias
         use_enum_values=True,
