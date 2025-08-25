@@ -52,7 +52,7 @@ class SignatureRecord(BaseModel):
     - `checksum`: hex string (default: sha256)
     - `has_been_indexed`: whether the artifact has been indexed
     - `indexed_at`: UTC timestamp when indexing completed
-    - `exclude_from_index`: flags records to be skipped by indexers
+    - `exclude_from_analysis`: flags records to be skipped by indexers and analysis
     - `_id`: MongoDB Document ID (optional, for round-trip)
     - `uploaded_at`: UTC timestamp when the record was created
     """
@@ -64,7 +64,7 @@ class SignatureRecord(BaseModel):
 
     has_been_indexed: bool = False
     indexed_at: datetime | None = None
-    exclude_from_index: bool = False
+    exclude_from_analysis: bool = False
 
     marked_for_deletion: bool = Field(
         False, description="Flag to mark record for deletion"
