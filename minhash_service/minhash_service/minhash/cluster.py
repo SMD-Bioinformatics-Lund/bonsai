@@ -1,4 +1,5 @@
 """Functions for clustering on minhashes"""
+
 import logging
 from enum import Enum
 from typing import List
@@ -6,8 +7,9 @@ from typing import List
 import sourmash
 from scipy.cluster import hierarchy
 
-from .io import read_signature
 from minhash_service.config import Settings
+
+from .io import read_signature
 
 LOG = logging.getLogger(__name__)
 
