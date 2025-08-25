@@ -142,6 +142,14 @@ class Settings(BaseSettings):
         return log_config
 
 
+    @field_validator("trash_dir", mode="before")
+    @classmethod
+    def ensure_trash_dir_exists(cls, v):
+        """Ensure that the trash directory exists."""
+        v.mkdir(parents=True, exist_ok=True)
+        return v
+
+
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {
     "version": 1,

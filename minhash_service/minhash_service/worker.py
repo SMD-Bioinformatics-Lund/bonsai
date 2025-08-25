@@ -2,6 +2,7 @@
 
 import logging
 
+from pymongo import MongoClient
 from redis import Redis
 from rq import Queue, SimpleWorker
 from rq.cron import CronScheduler
