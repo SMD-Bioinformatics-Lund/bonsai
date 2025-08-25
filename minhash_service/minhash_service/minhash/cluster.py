@@ -2,7 +2,6 @@
 
 import logging
 from enum import Enum
-from typing import List
 
 import sourmash
 from scipy.cluster import hierarchy
@@ -38,14 +37,14 @@ def to_newick(node, newick, parentdist, leaf_names) -> str:
     return newick
 
 
-def cluster_signatures(sample_ids: List[str], method: ClusterMethod, cnf: Settings):
+def cluster_signatures(signature_files: list[str], method: ClusterMethod, cnf: Settings):
     """Cluster multiple samples on their minhash signatures."""
 
     # load sequence signatures to memory
     siglist = []
-    LOG.info("Cluster signatures with sample ids: %s", sample_ids)
-    for sample_id in sample_ids:
-        signature = read_signature(sample_id, cnf=cnf)
+    LOG.info("Cluster %d signatures", len(signature_files))
+    for sig_file in signature_files:
+        signature = read_signature(sig_file, cnf=cnf)
         siglist.extend(signature)  # append to all signatures
 
     # create distance matrix
