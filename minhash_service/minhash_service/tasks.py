@@ -214,6 +214,9 @@ def add_to_index(sample_ids: list[str]) -> str:
     # TODO query all signatures in one go
     for sample_id in sample_ids:
         record = repo.get_by_sample_id(sample_id)
+        if record.exclude_from_analysis:
+            LOG.info("Skipping excluded signature %s", sample_id)
+            continue
         signature_files.append(record.signature_path)
     res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=settings)
     # update indexed status in db
@@ -259,6 +262,26 @@ def remove_from_index(sample_ids: list[str]) -> str:
     return msg
 
 
+def exclude_from_analysis(sample_ids: list[str]) -> str:
+    """
+    Exclude signatures from being included in analysis without removing them.
+
+    :param sample_ids list[str]: Sample ids of signatures to exclude
+
+    :return: result message
+    :rtype: str
+    """
+    LOG.info("Excluding signatures %d from future analysis.", len(sample_ids))
+    # unmark indexed status in db
+    repo = get_signature_repo()
+    for sid in sample_ids:
+        repo.exclude_from_analysis(sid)
+
+    signatures = ", ".join(list(sample_ids))
+    msg = f"Excluded {signatures} from index"
+    return msg
+
+
 def similar(
     sample_id: str, min_similarity: float = 0.5, limit: int | None = None
 ) -> SimilarSignatures:
@@ -272,8 +295,12 @@ def similar(
     :return: list of the similar signatures
     :rtype: SimilarSignatures
     """
+    repo = get_signature_repo()
+    record = repo.get_by_sample_id(sample_id)
+    if record is None:
+        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
     samples = get_similar_signatures(
-        sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
+        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=settings
     )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -305,7 +332,12 @@ def cluster(sample_ids: list[str], cluster_method: str = "single") -> str:
         LOG.error(msg)
         raise ValueError(msg) from error
     # cluster
-    newick: str = cluster_signatures(sample_ids, method, cnf=settings)
+    repo = get_signature_repo()
+    signature_files: list[Path] = []
+    for sample_id in sample_ids:
+        record = repo.get_by_sample_id(sample_id)
+        signature_files.append(record.signature_path)
+    newick: str = cluster_signatures(signature_files, method, cnf=settings)
     return newick
 
 
@@ -341,19 +373,26 @@ def find_similar_and_cluster(
         min_similarity,
         limit,
     )
+    repo = get_signature_repo()
+    record = repo.get_by_sample_id(sample_id)
     sample_ids = get_similar_signatures(
-        sample_id, min_similarity=min_similarity, limit=limit, cnf=settings
+        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=settings
     )
 
     # if 1 or 0 samples were found, return emtpy newick
     if len(sample_ids) < 2:
         LOG.warning("Invalid number of samples found, %d", len(sample_ids))
         return "()"
-    sids = [sid.sample_id for sid in sample_ids]
+    repo = get_signature_repo()
+    signature_files: list[Path] = []
+    for sample_sig in sample_ids:
+        record = repo.get_by_sample_id(sample_sig.sample_id)
+        signature_files.append(record.signature_path)
     # cluster samples
+    sids = [sid.sample_id for sid in sample_ids]
     LOG.info(
         "Clustering the following samples to %s: ",
         ", ".join(sids),
     )
-    newick: str = cluster_signatures(sids, method, cnf=settings)
+    newick: str = cluster_signatures(signature_files, method, cnf=settings)
     return newick
