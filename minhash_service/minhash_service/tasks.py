@@ -1,57 +1,69 @@
 """Define reddis tasks."""
-from hashlib import sha256
+
 import logging
 from pathlib import Path
 
-
-from .minhash.cluster import ClusterMethod, cluster_signatures
-from .minhash.io import add_signatures_to_index
-from .minhash.io import remove_signature as remove_signature_file
-from .minhash.io import remove_signatures_from_index, write_signature
-from .minhash.similarity import get_similar_signatures
-from .minhash.models import SignatureRecord, SimilarSignatures, SignatureFile
-
+from .audit import AuditTrailStore
 from .config import settings
-from .store import SignatureStore
+from .exceptions import FileRemovalError
+from .infrastructure.signature_repository import SignatureRepository
+from .infrastructure.signature_storage import SignatureStorage
+from .minhash.cluster import ClusterMethod, cluster_signatures
+from .minhash.io import (
+    add_signatures_to_index,
+    remove_signatures_from_index,
+    write_signature,
+)
+from .minhash.models import (
+    Event,
+    EventType,
+    SignatureFile,
+    SignatureRecord,
+    SimilarSignatures,
+)
+from .minhash.similarity import get_similar_signatures
 
 LOG = logging.getLogger(__name__)
 
+_SIGNATURE_STORE: SignatureRepository | None = None
+_AUDIT_TRAIL_STORE: AuditTrailStore | None = None
 
-_STORE: SignatureStore | None = None
 
-def inject_store(store: SignatureStore) -> None:
+def inject_store(store: SignatureRepository | AuditTrailStore) -> None:
     """Inject a SignatureStore instance for use in tasks."""
-    global _STORE
-    _STORE = store
+    global _SIGNATURE_STORE
+    global _AUDIT_TRAIL_STORE
+
+    if isinstance(store, SignatureRepository):
+        if _SIGNATURE_STORE is not None:
+            raise RuntimeError("SignatureStore has already been injected.")
+        _SIGNATURE_STORE = store
+    elif isinstance(store, AuditTrailStore):
+        if _AUDIT_TRAIL_STORE is not None:
+            raise RuntimeError("AuditTrailStore has already been injected.")
+        _AUDIT_TRAIL_STORE = store
+    else:
+        raise TypeError(
+            "store must be an instance of SignatureStore or AuditTrailStore"
+        )
 
 
-def get_store() -> SignatureStore:
+def get_signature_repo() -> SignatureRepository:
     """Get the injected SignatureStore instance."""
-    if _STORE is None:
-        raise RuntimeError("SignatureStore has not been injected. Call inject_store() first.")
-    return _STORE
+    if _SIGNATURE_STORE is None:
+        raise RuntimeError(
+            "SignatureStore has not been injected. Call inject_store() first."
+        )
+    return _SIGNATURE_STORE
 
 
-def _sha256_of_file(path: Path) -> str:
-    """Calculate sha256 checksum of a file."""
-    checksum = sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            checksum.update(chunk)
-    return checksum.hexdigest()
-
-
-def _get_directory_from_hash(checksum: str) -> Path:
-    """
-    Get a directory path based on the checksum.
-
-    This creates a directory structure like:
-    /<first_segment>/<second_segment>/<filename>.sig
-    """
-    first_segment = checksum[:2].lower()
-    second_segment = checksum[2:4].lower()
-    path = settings.signature_dir.joinpath(first_segment, second_segment)
-    return path
+def get_audit_trail_repo() -> AuditTrailStore:
+    """Get the injected AuditTrailStore instance."""
+    if _AUDIT_TRAIL_STORE is None:
+        raise RuntimeError(
+            "AuditTrailStore has not been injected. Call inject_store() first."
+        )
+    return _AUDIT_TRAIL_STORE
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
@@ -64,26 +76,43 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     :return: path to the signature
     :rtype: str
     """
+    at = get_audit_trail_repo()
+    store = SignatureStorage(
+        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+    )
+
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=settings)
     signature_path = Path(signature_path)  # Ensure it's a Path object
-    file_checksum = _sha256_of_file(signature_path)
 
     # upon completion write signature to the disk
-    new_sig_dir = _get_directory_from_hash(file_checksum)
-    new_sig_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
-    new_path = signature_path.replace(new_sig_dir.joinpath(f"{sample_id}.sig"))  # Move file to new path
+    file_checksum = store.file_sha256_hex(signature_path)
+    sharded_path = store.ensure_file(signature_path, file_checksum)
 
     # store as a signature record
     rec = SignatureRecord(
         sample_id=sample_id,
-        signature_path=new_path,
+        signature_path=sharded_path,
         checksum=file_checksum,
     )
-    store = get_store()
-    store.add_signature(rec)
+    try:
+        repo = get_signature_repo()
+        repo.add_signature(rec)
+    except Exception as err:
+        LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
+        # create audit trail event
+        event = Event(event_type=EventType.ERROR, sample_id=sample_id, details=str(err))
+        at.log_event(event)
+        raise
 
-    return str(new_path)
+    event = Event(
+        event_type=EventType.UPLOAD,
+        sample_id=sample_id,
+        details="Signature added",
+        metadata={"path": str(sharded_path)},
+    )
+    at.log_event(event)
+    return str(sharded_path)
 
 
 def remove_signature(sample_id: str) -> dict[str, str | bool]:
@@ -95,15 +124,70 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     :return: The status of the removed job
     :rtype: Dict[str, str | bool]
     """
-    status: bool = remove_signature_file(sample_id, cnf=settings)
+    repo = get_signature_repo()
+    at = get_audit_trail_repo()
+    store = SignatureStorage(
+        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+    )
+    # mark sample for deletion in db
+    was_marked = repo.marked_for_deletion(sample_id)
+    if not was_marked:
+        LOG.error(
+            "Signature with sample_id %s could not be marked for deletion", sample_id
+        )
+        raise FileRemovalError(
+            filepath=sample_id, reason="Could not be marked for deletion"
+        )
+
+    # stage file for removal
+    record = repo.get_by_sample_id(sample_id)
+    if record is None:
+        LOG.error("No record found for sample_id %s", sample_id)
+        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
+
+    metadata = {}
+    try:
+        removed_path = store.move_to_trash(record.signature_path, record.checksum)
+        metadata["staged_path"] = str(removed_path)
+
+        status = remove_signatures_from_index([sample_id], cnf=settings)
+
+        # update db record to reflect removal
+        repo.remove_by_sample_id(sample_id)
+    except Exception as err:
+        LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
+        # log audit trail event
+        e = Event(
+            event_type=EventType.ERROR,
+            sample_id=sample_id,
+            details=str(err),
+            metadata=metadata,
+        )
+        at.log_event(e)
+        raise FileRemovalError(
+            filepath=str(record.signature_path), reason=str(err)
+        ) from err
+
+    LOG.info("Signature with sample_id %s was removed", sample_id)
+    e = Event(event_type=EventType.DELETE, sample_id=sample_id, details=str(err))
+    at.log_event(e)
     return {"sample_id": sample_id, "removed": status}
 
 
 def check_signature(sample_id: str) -> dict[str, str | bool]:
     """Check if signature exist."""
 
-    status: bool = remove_signature_file(sample_id, cnf=settings)
-    return {"sample_id": sample_id, "removed": status}
+    store = get_signature_repo()
+    record = store.get_by_sample_id(sample_id)
+    if record is None:
+        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
+
+    return {
+        "sample_id": sample_id,
+        "exists": record.signature_path.exists(),
+        "checksum": record.checksum,
+        "indexed": record.has_been_indexed,
+    }
 
 
 def add_to_index(sample_ids: list[str]) -> str:
