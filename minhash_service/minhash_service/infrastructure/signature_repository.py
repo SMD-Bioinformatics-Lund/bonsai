@@ -8,7 +8,7 @@ from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from ..minhash.models import Event, SignatureRecord
+from ..minhash.models import SignatureRecord
 
 LOG = logging.getLogger(__name__)
 
@@ -70,22 +70,10 @@ class SignatureRepository:
     def get_by_sample_id(self, sample_id: str) -> SignatureRecord | None:
         """Get a signature by sample_id. Returns None if not found."""
 
-        doc = self._col.find_one({"sample_id": sample_id})
+        doc = self._col.find_one({"sample_id": sample_id}, projection={"_id": 0})
         if not doc:
             return None
-        # Option A: drop _id to avoid ObjectId in validation
-        doc.pop("_id", None)
         return SignatureRecord.model_validate(doc)
-
-    def get_signatures(
-        self, *, limit: int | None = None, skip: int = 0
-    ) -> Iterator[SignatureRecord]:
-        """Get all signatures, optionally paginated."""
-        cursor = self._col.find({}, projection={"_id": 0}).skip(skip)
-        if limit:
-            cursor = cursor.limit(limit)
-        for doc in cursor:
-            yield SignatureRecord.model_validate(doc)
 
     def get_unindexed_signatures(
         self, *, limit: int | None = None
@@ -96,6 +84,10 @@ class SignatureRepository:
             cursor = cursor.limit(limit)
         for doc in cursor:
             yield SignatureRecord.model_validate(doc)
+
+    def count_by_checksum(self, checksum: str) -> int:
+        """Count signatures by checksum. Returns 0 if none found."""
+        return self._col.count_documents({"checksum": checksum})
 
     # ---- update -------------------------------------------------------------
     def mark_indexed(self, sample_id: str) -> bool:
