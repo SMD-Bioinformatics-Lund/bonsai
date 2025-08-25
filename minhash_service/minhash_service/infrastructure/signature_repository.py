@@ -8,12 +8,12 @@ from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from .minhash.models import SignatureRecord  # Pydantic v2 model
+from ..minhash.models import Event, SignatureRecord
 
 LOG = logging.getLogger(__name__)
 
 
-class SignatureStore:
+class SignatureRepository:
     """
     Repository for signature CRUD.
 
@@ -28,9 +28,13 @@ class SignatureStore:
     def ensure_indexes(self) -> None:
         """Create indexes if they don't exist."""
         # Unique sample_id ensures deduplication
-        self._col.create_index([("sample_id", ASCENDING)], name="ux_sample_id", unique=True)
+        self._col.create_index(
+            [("sample_id", ASCENDING)], name="ux_sample_id", unique=True
+        )
         # Query accelerator for unindexed signatures
-        self._col.create_index([("has_been_indexed", ASCENDING)], name="ix_has_been_indexed")
+        self._col.create_index(
+            [("has_been_indexed", ASCENDING)], name="ix_has_been_indexed"
+        )
 
     # ---- create -------------------------------------------------------------
     def add_signature(self, signature: SignatureRecord) -> ObjectId | None:
@@ -43,7 +47,10 @@ class SignatureStore:
             LOG.info("Signature added with id: %s", result.inserted_id)
             return result.inserted_id
         except DuplicateKeyError as _:
-            LOG.warning("Duplicate signature for sample_id=%s", getattr(signature, "sample_id", None))
+            LOG.warning(
+                "Duplicate signature for sample_id=%s",
+                getattr(signature, "sample_id", None),
+            )
             return None
         except PyMongoError:
             LOG.exception("Error adding signature")
@@ -96,6 +103,14 @@ class SignatureStore:
         res = self._col.update_one(
             {"sample_id": sample_id, "has_been_indexed": False},
             {"$set": {"has_been_indexed": True}},
+        )
+        return res.modified_count > 0
+
+    def marked_for_deletion(self, sample_id: str) -> bool:
+        """Mark a signature for deletion. Returns True if a document was modified."""
+        res = self._col.update_one(
+            {"sample_id": sample_id, "marked_for_deletion": False},
+            {"$set": {"marked_for_deletion": True}},
         )
         return res.modified_count > 0
 
