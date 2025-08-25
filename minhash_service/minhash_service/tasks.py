@@ -215,7 +215,11 @@ def add_to_index(sample_ids: list[str]) -> str:
     for sample_id in sample_ids:
         record = repo.get_by_sample_id(sample_id)
         signature_files.append(record.signature_path)
-    res, warnings = add_signatures_to_index(signature_files, cnf=settings)
+    res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=settings)
+    # update indexed status in db
+    for sid in indexed_samples:
+        repo.mark_indexed(sid)
+
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
@@ -241,6 +245,12 @@ def remove_from_index(sample_ids: list[str]) -> str:
     """
     LOG.info("Removing signatures from index.")
     res = remove_signatures_from_index(sample_ids, cnf=settings)
+
+    # unmark indexed status in db
+    repo = get_signature_repo()
+    for sid in sample_ids:
+        repo.unmark_indexed(sid)
+
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Removed {signatures}"
