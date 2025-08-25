@@ -27,7 +27,7 @@ class AuditTrailStore:
         Insert an audit event. Returns the inserted ObjectId on success, None otherwise.
         """
         try:
-            result = self._col.insert_one(event)
+            result = self._col.insert_one(event.model_dump())
             LOG.info("Audit event logged with id: %s", result.inserted_id)
             return result.inserted_id
         except PyMongoError:
