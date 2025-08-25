@@ -127,7 +127,7 @@ def check_signature(sample_id: str, cnf: Settings) -> bool:
 
 def add_signatures_to_index(
     signature_files: list[Path], cnf: Settings
-) -> tuple[bool, list[str]]:
+) -> tuple[bool, list[str], list[str]]:
     """Append genome signature files to sourmash index.
 
     Returns:
@@ -154,7 +154,7 @@ def add_signatures_to_index(
         warning_msg = "No signatures to add."
         LOG.warning(warning_msg)
         warnings.append(warning_msg)
-        return False, warnings
+        return False, [], warnings
 
     # add signature to existing index
     # acquire lock to append signatures to database
@@ -195,7 +195,9 @@ def add_signatures_to_index(
             LOG.error("Dont have permission to write file to disk")
             raise err
 
-    return True, warnings
+    added_sigs = [sig.name for sig in signatures]
+    LOG.info("Added signatures to index: %s", ", ".join(added_sigs))
+    return True, added_sigs, warnings
 
 
 def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
