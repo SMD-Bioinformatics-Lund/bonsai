@@ -90,32 +90,32 @@ class SignatureRepository:
         return self._col.count_documents({"checksum": checksum})
 
     # ---- update -------------------------------------------------------------
-    def _set_indexed(self, sample_id: str, indexed: bool) -> bool:
+    def _set_flag(self, sample_id: str, status: bool, flag: str = "has_been_indexed") -> bool:
         """
-        Set the 'has_been_indexed' flag to the desired state.
+        Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
         """
         res = self._col.update_one(
-            {"sample_id": sample_id, "has_been_indexed": {"$ne": indexed}},
-            {"$set": {"has_been_indexed": indexed}},
+            {"sample_id": sample_id, flag: {"$ne": status}},
+            {"$set": {"has_been_indexed": status}},
         )
         return res.modified_count > 0
 
     def mark_indexed(self, sample_id: str) -> bool:
         """Mark a signature as indexed. Returns True if a document was modified."""
-        return self._set_indexed(sample_id, True)
+        return self._set_flag(sample_id, flag="has_been_indexed", status=True)
 
     def unmark_indexed(self, sample_id: str) -> bool:
         """Mark a signature as not indexed. Returns True if a document was modified."""
-        return self._set_indexed(sample_id, False)
+        return self._set_flag(sample_id, flag="has_been_indexed", status=False)
+
+    def exclude_from_analysis(self, sample_id: str) -> bool:
+        """Exclude a sample from future analysis. Returns True if a document was modified."""
+        return self._set_flag(sample_id, flag="exclude_from_analysis", status=False)
 
     def marked_for_deletion(self, sample_id: str) -> bool:
         """Mark a signature for deletion. Returns True if a document was modified."""
-        res = self._col.update_one(
-            {"sample_id": sample_id, "marked_for_deletion": False},
-            {"$set": {"marked_for_deletion": True}},
-        )
-        return res.modified_count > 0
+        return self._set_flag(sample_id, flag="mark_for_deletion", status=False)
 
     # ---- delete -------------------------------------------------------------
     def remove_by_sample_id(self, sample_id: str) -> int:
