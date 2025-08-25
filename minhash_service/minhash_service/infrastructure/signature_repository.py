@@ -90,13 +90,24 @@ class SignatureRepository:
         return self._col.count_documents({"checksum": checksum})
 
     # ---- update -------------------------------------------------------------
-    def mark_indexed(self, sample_id: str) -> bool:
-        """Mark a signature as indexed. Returns True if a document was modified."""
+    def _set_indexed(self, sample_id: str, indexed: bool) -> bool:
+        """
+        Set the 'has_been_indexed' flag to the desired state.
+        Returns True if a document was modified (i.e., state actually changed).
+        """
         res = self._col.update_one(
-            {"sample_id": sample_id, "has_been_indexed": False},
-            {"$set": {"has_been_indexed": True}},
+            {"sample_id": sample_id, "has_been_indexed": {"$ne": indexed}},
+            {"$set": {"has_been_indexed": indexed}},
         )
         return res.modified_count > 0
+
+    def mark_indexed(self, sample_id: str) -> bool:
+        """Mark a signature as indexed. Returns True if a document was modified."""
+        return self._set_indexed(sample_id, True)
+
+    def unmark_indexed(self, sample_id: str) -> bool:
+        """Mark a signature as not indexed. Returns True if a document was modified."""
+        return self._set_indexed(sample_id, False)
 
     def marked_for_deletion(self, sample_id: str) -> bool:
         """Mark a signature for deletion. Returns True if a document was modified."""
