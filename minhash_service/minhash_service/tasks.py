@@ -80,6 +80,10 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     store = SignatureStorage(
         base_dir=settings.signature_dir, trash_dir=settings.trash_dir
     )
+    repo = get_signature_repo()
+    if repo.get_by_sample_id(sample_id) is not None:
+        LOG.warning("Signature with sample_id %s already exists", sample_id)
+        raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
 
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=settings)
@@ -96,7 +100,6 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
         checksum=file_checksum,
     )
     try:
-        repo = get_signature_repo()
         repo.add_signature(rec)
     except Exception as err:
         LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
@@ -147,13 +150,14 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
 
     metadata = {}
     try:
-        removed_path = store.move_to_trash(record.signature_path, record.checksum)
-        metadata["staged_path"] = str(removed_path)
+        repo.remove_by_sample_id(sample_id)
+        # remove signature file if there are not other records with the same checksum
+        if repo.count_by_checksum(record.checksum) == 0:
+            removed_path = store.move_to_trash(record.signature_path, record.checksum)
+            metadata["staged_path"] = str(removed_path)
 
         status = remove_signatures_from_index([sample_id], cnf=settings)
 
-        # update db record to reflect removal
-        repo.remove_by_sample_id(sample_id)
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
         # log audit trail event
@@ -169,7 +173,12 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         ) from err
 
     LOG.info("Signature with sample_id %s was removed", sample_id)
-    e = Event(event_type=EventType.DELETE, sample_id=sample_id, details=str(err))
+    e = Event(
+        event_type=EventType.DELETE,
+        sample_id=sample_id,
+        details="Signature removed",
+        metadata=metadata,
+    )
     at.log_event(e)
     return {"sample_id": sample_id, "removed": status}
 
@@ -199,8 +208,14 @@ def add_to_index(sample_ids: list[str]) -> str:
     :return: result message
     :rtype: str
     """
-    LOG.info("Indexing signatures...")
-    res, warnings = add_signatures_to_index(sample_ids, cnf=settings)
+    LOG.info("Adding %d signatures to index...", len(sample_ids))
+    repo = get_signature_repo()
+    signature_files: list[Path] = []
+    # TODO query all signatures in one go
+    for sample_id in sample_ids:
+        record = repo.get_by_sample_id(sample_id)
+        signature_files.append(record.signature_path)
+    res, warnings = add_signatures_to_index(signature_files, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
         msg = f"Appended {signatures}"
@@ -224,7 +239,7 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :return: result message
     :rtype: str
     """
-    LOG.info("Indexing signatures...")
+    LOG.info("Removing signatures from index.")
     res = remove_signatures_from_index(sample_ids, cnf=settings)
     signatures = ", ".join(list(sample_ids))
     if res:
