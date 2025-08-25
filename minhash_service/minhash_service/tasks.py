@@ -28,42 +28,45 @@ from .minhash.similarity import get_similar_signatures
 
 LOG = logging.getLogger(__name__)
 
+_SIGNATURE_STORE: SignatureRepository | None = None
+_AUDIT_TRAIL_STORE: AuditTrailStore | None = None
 
-_STORE: SignatureStore | None = None
 
-def inject_store(store: SignatureStore) -> None:
+def inject_store(store: SignatureRepository | AuditTrailStore) -> None:
     """Inject a SignatureStore instance for use in tasks."""
-    global _STORE
-    _STORE = store
+    global _SIGNATURE_STORE
+    global _AUDIT_TRAIL_STORE
+
+    if isinstance(store, SignatureRepository):
+        if _SIGNATURE_STORE is not None:
+            raise RuntimeError("SignatureStore has already been injected.")
+        _SIGNATURE_STORE = store
+    elif isinstance(store, AuditTrailStore):
+        if _AUDIT_TRAIL_STORE is not None:
+            raise RuntimeError("AuditTrailStore has already been injected.")
+        _AUDIT_TRAIL_STORE = store
+    else:
+        raise TypeError(
+            "store must be an instance of SignatureStore or AuditTrailStore"
+        )
 
 
-def get_store() -> SignatureStore:
+def get_signature_repo() -> SignatureRepository:
     """Get the injected SignatureStore instance."""
-    if _STORE is None:
-        raise RuntimeError("SignatureStore has not been injected. Call inject_store() first.")
-    return _STORE
+    if _SIGNATURE_STORE is None:
+        raise RuntimeError(
+            "SignatureStore has not been injected. Call inject_store() first."
+        )
+    return _SIGNATURE_STORE
 
 
-def _sha256_of_file(path: Path) -> str:
-    """Calculate sha256 checksum of a file."""
-    checksum = sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            checksum.update(chunk)
-    return checksum.hexdigest()
-
-
-def _get_directory_from_hash(checksum: str) -> Path:
-    """
-    Get a directory path based on the checksum.
-
-    This creates a directory structure like:
-    /<first_segment>/<second_segment>/<filename>.sig
-    """
-    first_segment = checksum[:2].lower()
-    second_segment = checksum[2:4].lower()
-    path = settings.signature_dir.joinpath(first_segment, second_segment)
-    return path
+def get_audit_trail_repo() -> AuditTrailStore:
+    """Get the injected AuditTrailStore instance."""
+    if _AUDIT_TRAIL_STORE is None:
+        raise RuntimeError(
+            "AuditTrailStore has not been injected. Call inject_store() first."
+        )
+    return _AUDIT_TRAIL_STORE
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
