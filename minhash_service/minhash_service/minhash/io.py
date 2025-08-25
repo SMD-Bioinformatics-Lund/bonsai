@@ -1,5 +1,6 @@
 """Functions for reading and writing signatures"""
 
+import datetime
 import gzip
 import logging
 import pathlib
@@ -94,8 +95,8 @@ def write_signature(
 
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
-    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures_from_json(
-        signature, ksize=cnf.kmer_size
+    signatures: Iterable[FrozenSourmashSignature] = (
+        sourmash.signature.load_signatures_from_json(signature, ksize=cnf.kmer_size)
     )
     upd_signatures = []
     for sig_obj in signatures:
@@ -119,21 +120,6 @@ def write_signature(
     return signature_file
 
 
-def remove_signature(sample_id: str, cnf: Settings) -> bool:
-    """Remove an existing signature file from disk."""
-    # check that signature doesnt exist
-    # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
-
-    # read signature
-    next(sourmash.signature.load_signatures_from_json(signature_file, ksize=cnf.kmer_size))
-
-    # remove file
-    pathlib.Path(signature_file).unlink()
-    LOG.info("Signature file: %s was removed", signature_file)
-    return False
-
-
 def check_signature(sample_id: str, cnf: Settings) -> bool:
     """Check if signature exist and has been added to the index."""
     LOG.info("Checking signature file: %s", signature_file)
@@ -147,9 +133,11 @@ def check_signature(sample_id: str, cnf: Settings) -> bool:
         return True
 
 
-def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool, list[str]]:
+def add_signatures_to_index(
+    sample_ids: list[str], cnf: Settings
+) -> tuple[bool, list[str]]:
     """Add genome signature file to sourmash index
-    
+
     Returns:
         tuple[bool, list[str]]: (success status, list of warning messages)
     """

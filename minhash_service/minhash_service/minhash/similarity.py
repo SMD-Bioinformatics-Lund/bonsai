@@ -7,7 +7,7 @@ from sourmash.index import IndexSearchResult as Result
 from sourmash.sbt import SBT
 
 from minhash_service.config import Settings
-from minhash_service.minhash.models import SimilarSignatures, SimilarSignature
+from minhash_service.minhash.models import SimilarSignature, SimilarSignatures
 
 from .io import get_sbt_index, read_signature
 

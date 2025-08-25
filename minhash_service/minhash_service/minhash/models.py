@@ -1,10 +1,10 @@
 """Data models and types."""
 
-from pathlib import Path
 from datetime import datetime, timezone
+from enum import StrEnum
+from pathlib import Path
 from typing import Annotated
 
-from bson import ObjectId
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -13,7 +13,6 @@ from pydantic import (
     field_serializer,
     field_validator,
 )
-
 
 Signatures = list[dict[str, int | list[int]]]
 SignatureEntry = dict[str, str | Signatures]
@@ -39,7 +38,10 @@ SimilarSignatures = list[SimilarSignature]
 
 # Constrain `checksum` to sha256 hex; adjust if you support other algos.
 Sha256Hex = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")]
-SampleIdStr = Annotated[str, StringConstraints(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._-]+$")]
+SampleIdStr = Annotated[
+    str, StringConstraints(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._-]+$")
+]
+
 
 class SignatureRecord(BaseModel):
     """
@@ -55,6 +57,7 @@ class SignatureRecord(BaseModel):
     - `uploaded_at`: UTC timestamp when the record was created
     """
 
+    version: int = Field(1, description="Record schema version")
     sample_id: SampleIdStr
     signature_path: Path
     checksum: Sha256Hex
@@ -63,9 +66,11 @@ class SignatureRecord(BaseModel):
     indexed_at: datetime | None = None
     exclude_from_index: bool = False
 
-    uploaded_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+    marked_for_deletion: bool = Field(
+        False, description="Flag to mark record for deletion"
     )
+
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(
         populate_by_name=True,  # enables setting/getting by "_id" alias
@@ -93,6 +98,49 @@ class SignatureRecord(BaseModel):
     @field_validator("uploaded_at", mode="before")
     @classmethod
     def _ensure_uploaded_at_is_aware(cls, v):
+        if v is None:
+            return datetime.now(timezone.utc)
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+
+class EventType(StrEnum):
+    """Types of audit trail events."""
+
+    UPLOAD = "upload"
+    INDEX = "index"
+    DELETE = "delete"
+    ERROR = "error"
+    OTHER = "other"
+
+
+class Event(BaseModel):
+    """
+    Audit trail event.
+
+    - `event_type`: type of event (upload, index, delete, error, other)
+    - `sample_id`: associated sample_id (if any)
+    - `timestamp`: UTC timestamp when the event occurred
+    - `details`: optional free-form details about the event
+    """
+
+    event_type: EventType
+    sample_id: SampleIdStr | None = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    details: str | None = None
+    user_id: str | None = None
+    metadata: dict[str, str] | None = None
+
+    model_config = ConfigDict(
+        use_enum_values=True,
+    )
+
+    # ---- validators ---------------------------------------------------------
+
+    @field_validator("timestamp", mode="before")
+    @classmethod
+    def _ensure_timestamp_is_aware(cls, v):
         if v is None:
             return datetime.now(timezone.utc)
         if isinstance(v, datetime) and v.tzinfo is None:
