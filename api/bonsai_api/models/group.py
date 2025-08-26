@@ -1,6 +1,6 @@
 """Routes related to collections of samples."""
 
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,125 +31,134 @@ class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
     description: str | None = None
 
 
-class OverviewTableColumn(BaseModel):  # pylint: disable=too-few-public-methods
+class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-methods
     """Definition of how to display and function of overview table."""
 
     id: str = Field(..., description="Column id")
     label: str = Field(..., description="Display name")
     path: str = Field(..., description="JSONpath describing how to access the data")
-    # display params
-    hidden: bool = False
-    type: str = Field(default="string", description="Data type")
-    sortable: bool = False
-    filterable: bool = False
-    filter_type: str | None = None
-    filter_param: str | None = None
+    type: Literal["string", "number", "date", "boolean", "list", "custom"] = "string"
+    source: Literal["static", "metadata"] = "static"  # where the columns are predefined or relate to metadata
+    renderer: str | None = None
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
 
 
-VALID_BASE_COLS: list[OverviewTableColumn] = [
-    OverviewTableColumn(
+class SampleTableColumnDB(BaseModel):  # pylint: disable=too-few-public-methods
+    """Database representation of a column."""
+
+    id: str = Field(..., description="Column id")
+    visible: bool = True
+    sortable: bool = True
+    searchable: bool = True
+
+
+VALID_BASE_COLS: list[SampleTableColumnInput] = [
+    SampleTableColumnInput(
         id="sample_btn",
         label="",
-        type="sample_btn",
+        type="custom",
+        renderer="sample_btn_renderer",
         path="$.sample_id",
+        sortable=False,
+        searchable=False,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="sample_id",
         label="Sample Id",
         path="$.sample_id",
-        hidden=True,
         sortable=True,
     ),
 ]
 
 # Prediction result columns
-VALID_PREDICTION_COLS: list[OverviewTableColumn] = [
-    OverviewTableColumn(
+VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
+    SampleTableColumnInput(
         id="sample_name",
         label="Name",
         path="$.sample_name",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="lims_id",
         label="LIMS id",
         path="$.lims_id",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="assay",
         label="Assay",
         path="$.assay",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="release_life_cycle",
         label="Release life cycle",
         path="$.release_life_cycle",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="sequencing_run",
         label="Sequencing run",
         path="$.sequencing_run",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="taxonomic_name",
         label="Major species",
-        type="taxonomic_name",
+        renderer="taxonomic_name_renderer",
         path="$.species_prediction.scientific_name",
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="qc",
+    SampleTableColumnInput(
+        id="qc_status",
         label="QC",
-        type="qc",
-        path="$.qc_status.status",
+        type="custom",
+        path="$.qc_status",
         sortable=True,
+        renderer="qc_status_renderer",
     ),
-    OverviewTableColumn(
-        id="profile",
+    SampleTableColumnInput(
+        id="analysis_profile",
         label="Analysis profile",
         path="$.profile",
         type="list",
         sortable=True,
-        filterable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="comments",
         label="Comments",
-        type="comments",
+        type="custom",
         path="$.comments",
+        renderer="comments_renderer",
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="tags",
         label="Tags",
-        type="tags",
+        type="custom",
         path="$.tags",
+        renderer="tags_renderer",
     ),
-    OverviewTableColumn(
-        id="mlst",
+    SampleTableColumnInput(
+        id="mlst_typing",
         label="MLST ST",
         path="$.mlst",
         sortable=True,
-        filterable=True,
     ),
-    OverviewTableColumn(
-        id="stx",
+    SampleTableColumnInput(
+        id="stx_typing",
         label="STX typing",
         path="$.stx",
         sortable=True,
-        filterable=True,
     ),
-    OverviewTableColumn(
-        id="oh",
+    SampleTableColumnInput(
+        id="oh_typing",
         label="OH typing",
         path="$.oh_type",
         sortable=True,
-        filterable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="cdate",
         label="Date",
         type="date",
@@ -160,67 +169,67 @@ VALID_PREDICTION_COLS: list[OverviewTableColumn] = [
 
 # Prediction result columns
 VALID_QC_COLS = [
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="sample_name",
         label="Name",
         path="$.sample_name",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="sequencing_run",
         label="Sequencing run",
         path="$.sequencing_run",
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="qc",
+    SampleTableColumnInput(
+        id="qc_status",
         label="QC",
-        type="qc",
+        type="custom",
         path="$.qc_status.status",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="n50",
         label="N50",
         type="number",
         path="$.quast.n50",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="n_contigs",
         label="#Contigs",
         path="$.quast.n_contigs",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="median_cov",
         label="Median cov",
         path="$.postalignqc.median_cov",
         sortable=True,
     ),
-    OverviewTableColumn(
+    SampleTableColumnInput(
         id="n_reads",
         label="# Reads",
         type="number",
         path="$.postalignqc.n_reads",
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="coverage",
+    SampleTableColumnInput(
+        id="pct_cov_over_10",
         label="Cov > 10",
         type="number",
         path='$.postalignqc.pct_above_x["10"]',
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="coverage",
+    SampleTableColumnInput(
+        id="pct_cov_over_30",
         label="Cov > 30",
         type="number",
         path='$.postalignqc.pct_above_x["30"]',
         sortable=True,
     ),
-    OverviewTableColumn(
-        id="missing_loci",
+    SampleTableColumnInput(
+        id="cgmlst_missing_loci",
         label="# Missing loci",
         type="number",
         path="$.missing_cgmlst_loci",
@@ -228,16 +237,24 @@ VALID_QC_COLS = [
     ),
 ]
 
+
+DEFAULT_COLUMNS: list[str] = ['sample_btn', 'sample_name', 'tags', 'assay', 'taxonomic_name', 'qc_status', 'comments', 'cdate']
+
 # create combination of valid columns
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
 qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
+
+SCHEMA_VERSION: str = "1"
+
 
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    table_columns: List[OverviewTableColumn] = Field(description="Columns to display")
-    validated_genes: Dict[ElementType, List[str]] | None = Field({})
+    schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
+    table_columns: list[SampleTableColumnDB] = Field(default=[], description="IDs of columns to display.")
+    #table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
+    validated_genes: dict[ElementType, list[str]] | None = {}
 
 
 class GroupInfoDatabase(
@@ -248,3 +265,5 @@ class GroupInfoDatabase(
 
 class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
+
+    table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
