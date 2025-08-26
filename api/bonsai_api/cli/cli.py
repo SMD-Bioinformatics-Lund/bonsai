@@ -182,16 +182,16 @@ def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     with get_db_connection() as db:
         func = get_samples(db)
         samples = loop.run_until_complete(func)
-    with click.progressbar(
-        samples.data, length=samples.records_filtered, label="Updating tags"
-    ) as prog_bar:
-        for sample in prog_bar:
-            upd_tags = compute_phenotype_tags(sample)
-            upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
-            # update sample as sync function
-            loop = asyncio.get_event_loop()
-            func = update_sample(db, upd_sample)
-            samples = loop.run_until_complete(func)
+        with click.progressbar(
+            samples.data, length=samples.records_filtered, label="Updating tags"
+        ) as prog_bar:
+            for sample in prog_bar:
+                upd_tags = compute_phenotype_tags(sample)
+                upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
+                # update sample as sync function
+                loop = asyncio.get_event_loop()
+                func = update_sample(db, upd_sample)
+                samples = loop.run_until_complete(func)
     click.secho("Updated tags for all samples", fg="green")
 
 
