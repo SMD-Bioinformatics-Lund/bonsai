@@ -2,7 +2,9 @@
 
 import logging
 from pathlib import Path
+import datetime as dt
 
+from . import __version__ as sourmash_version
 from .audit import AuditTrailStore
 from .config import settings
 from .exceptions import FileRemovalError
@@ -11,8 +13,10 @@ from .infrastructure.signature_storage import SignatureStorage
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import (
     add_signatures_to_index,
+    list_signatures_in_index,
     remove_signatures_from_index,
     write_signature,
+    get_sbt_index,
 )
 from .minhash.models import (
     Event,
