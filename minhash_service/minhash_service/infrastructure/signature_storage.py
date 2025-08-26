@@ -91,6 +91,22 @@ class SignatureStorage:
         cannonical.replace(target)
         LOG.info("Moved %s to trash at %s", cannonical, target)
         return target
+    
+    def check_file_integrity(self, path: Path, expected_checksum: str) -> bool:
+        """Check if the file at the given path matches the expected checksum."""
+        if not path.exists():
+            LOG.error("File %s does not exist for integrity check.", path)
+            return False
+        actual_checksum = self.file_sha256_hex(path)
+        if actual_checksum != expected_checksum:
+            LOG.error(
+                "Checksum mismatch for %s: expected %s, got %s",
+                path,
+                expected_checksum,
+                actual_checksum,
+            )
+            return False
+        return True
 
     def purge_path(self, path: Path) -> None:
         """Permanently delete a file from the trash directory."""
