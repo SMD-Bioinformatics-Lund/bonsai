@@ -8,7 +8,6 @@ from rq import Queue, SimpleWorker
 from rq.cron import CronScheduler
 
 from . import tasks
-from .tasks import test_task
 from .audit import AuditTrailStore
 from .config import settings, configure_logging
 from .infrastructure.signature_repository import SignatureRepository
@@ -56,14 +55,14 @@ def create_cron_worker() -> CronScheduler:
     # setup periodic tasks
     if settings.periodic_integrity_check.endabled:
         cron_string = settings.periodic_integrity_check.cron
-        cron.register(test_task,
+        cron.register(tasks.check_data_integrity,
                       queue_name=settings.periodic_integrity_check.queue,
                       cron=cron_string)
         log.info("Scheduling periodic integrity check: %s", cron_string)
 
     if settings.cleanup_removed_files.endabled:
         cron_string = settings.cleanup_removed_files.cron
-        cron.register(test_task,
+        cron.register(tasks.cleanup_removed_files,
                       queue_name=settings.cleanup_removed_files.queue,
                       cron=cron_string)
         log.info("Scheduling cleanup of removed files: %s", cron_string)
