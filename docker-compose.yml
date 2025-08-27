@@ -63,7 +63,6 @@ services:
     command: "flask run --reload --debug --host 0.0.0.0"
 
   minhash_service:
-    container_name: minhash_service
     build: 
       context: minhash_service
       network: host
@@ -76,7 +75,6 @@ services:
     command: minhash-service run-minhash-worker
 
   minhash_cron_service:
-    container_name: minhash_cron_service
     build: 
       context: minhash_service
       network: host
