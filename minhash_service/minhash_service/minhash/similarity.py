@@ -1,13 +1,14 @@
 """Operations on minhash signatures."""
 
 import logging
+from pathlib import Path
 
 import sourmash
 from sourmash.index import IndexSearchResult as Result
 from sourmash.sbt import SBT
 
 from minhash_service.config import Settings
-from minhash_service.minhash.models import SimilarSignatures, SimilarSignature
+from minhash_service.minhash.models import SimilarSignature, SimilarSignatures
 
 from .io import get_sbt_index, read_signature
 
@@ -15,7 +16,7 @@ LOG = logging.getLogger(__name__)
 
 
 def get_similar_signatures(
-    sample_id: str, cnf: Settings, min_similarity: float, limit: int | None = None
+    signature_file: Path, cnf: Settings, min_similarity: float, limit: int | None = None
 ) -> SimilarSignatures:
     """Get find samples that are similar to reference sample.
 
@@ -23,19 +24,19 @@ def get_similar_signatures(
     """
     LOG.info(
         "Finding similar: %s; similarity: %f, limit: %d",
-        sample_id,
+        signature_file.name,
         min_similarity,
         limit,
     )
 
     # load sourmash index
-    LOG.debug("Getting samples similar to: %s", sample_id)
+    LOG.debug("Getting samples similar to: %s", signature_file.name)
     index_path = get_sbt_index(cnf)
     LOG.debug("Load index file to memory")
     db: SBT = sourmash.load_file_as_index(str(index_path))
 
     # load reference sequence
-    query_signature = read_signature(sample_id, cnf)[0]
+    query_signature = read_signature(signature_file, cnf)[0]
 
     # query for similar sequences
     LOG.debug("Searching for signatures with similarity > %f", min_similarity)
@@ -54,5 +55,5 @@ def get_similar_signatures(
         # break iteration if limit is reached
         if isinstance(limit, int) and limit == itr_no:
             break
-    LOG.info("Found %d samples similar to %s", len(samples), sample_id)
+    LOG.info("Found %d samples similar to %s", len(samples), signature_file.name)
     return samples

@@ -2,7 +2,7 @@
 
 import gzip
 import logging
-import pathlib
+from pathlib import Path
 from typing import Iterable
 
 import fasteners
@@ -17,7 +17,7 @@ LOG = logging.getLogger(__name__)
 Signatures = list[SourmashSignature | FrozenSourmashSignature]
 
 
-def get_sbt_index(cnf: Settings, check: bool = True) -> pathlib.Path:
+def get_sbt_index(cnf: Settings, check: bool = True) -> Path:
     """Get sourmash SBT index file."""
     index_path = cnf.signature_dir.joinpath(f"{cnf.index_name}.sbt.zip")
 
@@ -29,9 +29,7 @@ def get_sbt_index(cnf: Settings, check: bool = True) -> pathlib.Path:
     return index_path
 
 
-def get_signature_path(
-    sample_id: str, signature_dir: pathlib.Path, check: bool = True
-) -> str:
+def get_signature_path(sample_id: str, signature_dir: Path, check: bool = True) -> str:
     """
     Get path to a sample signature file.
 
@@ -51,24 +49,19 @@ def get_signature_path(
     return str(signature_path)
 
 
-def read_signature(sample_id: str, cnf: Settings) -> Signatures:
+def read_signature(path: Path, cnf: Settings) -> Signatures:
     """Read signature to memory."""
     # read signature
-    signature_path = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
-    loaded = sourmash.load_file_as_signatures(signature_path, ksize=cnf.kmer_size)
+    loaded = sourmash.load_file_as_signatures(str(path), ksize=cnf.kmer_size)
 
     # check that were signatures loaded with current kmer
     loaded_sigs = list(loaded)
     if len(loaded_sigs) == 0:
-        raise ValueError(
-            f"No signatures, sample id: {sample_id}, ksize: {cnf.kmer_size}, {loaded}"
-        )
+        raise ValueError(f"No signatures with ksize: {cnf.kmer_size} for file {path}")
     return loaded_sigs
 
 
-def write_signature(
-    sample_id: str, signature: SignatureFile, cnf: Settings
-) -> pathlib.Path:
+def write_signature(sample_id: str, signature: SignatureFile, cnf: Settings) -> Path:
     """
     Add genome signature to index.
 
@@ -76,7 +69,7 @@ def write_signature(
     """
     # get signature directory
     LOG.info("Adding signature file for %s", sample_id)
-    signature_db = pathlib.Path(cnf.signature_dir)
+    signature_db = Path(cnf.signature_dir)
     # make db if signature db is not present
     if not signature_db.exists():
         signature_db.mkdir(parents=True, exist_ok=True)
@@ -94,14 +87,14 @@ def write_signature(
 
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
-    signatures: Iterable[FrozenSourmashSignature] = sourmash.signature.load_signatures_from_json(
-        signature, ksize=cnf.kmer_size
+    signatures: Iterable[FrozenSourmashSignature] = (
+        sourmash.signature.load_signatures_from_json(signature, ksize=cnf.kmer_size)
     )
     upd_signatures = []
     for sig_obj in signatures:
         sig_obj = sig_obj.to_mutable()
         sig_obj.name = sample_id  # assign sample id as name
-        sig_obj.filename = pathlib.Path(signature_file).name  # assign a new filename
+        sig_obj.filename = Path(signature_file).name  # assign a new filename
         sig_obj = sig_obj.to_frozen()
         upd_signatures.append(sig_obj)
 
@@ -119,21 +112,6 @@ def write_signature(
     return signature_file
 
 
-def remove_signature(sample_id: str, cnf: Settings) -> bool:
-    """Remove an existing signature file from disk."""
-    # check that signature doesnt exist
-    # Get signature path and check if it exists
-    signature_file = get_signature_path(sample_id, signature_dir=cnf.signature_dir)
-
-    # read signature
-    next(sourmash.signature.load_signatures_from_json(signature_file, ksize=cnf.kmer_size))
-
-    # remove file
-    pathlib.Path(signature_file).unlink()
-    LOG.info("Signature file: %s was removed", signature_file)
-    return False
-
-
 def check_signature(sample_id: str, cnf: Settings) -> bool:
     """Check if signature exist and has been added to the index."""
     LOG.info("Checking signature file: %s", signature_file)
@@ -147,9 +125,11 @@ def check_signature(sample_id: str, cnf: Settings) -> bool:
         return True
 
 
-def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool, list[str]]:
-    """Add genome signature file to sourmash index
-    
+def add_signatures_to_index(
+    signature_files: list[Path], cnf: Settings
+) -> tuple[bool, list[str], list[str]]:
+    """Append genome signature files to sourmash index.
+
     Returns:
         tuple[bool, list[str]]: (success status, list of warning messages)
     """
@@ -161,10 +141,10 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool,
 
     warnings = []
     signatures = []
-    for sample_id in sample_ids:
-        signature = read_signature(sample_id, cnf)
+    for sig_path in signature_files:
+        signature = read_signature(sig_path, cnf)
         if not signature:
-            warning_msg = f"No signatures found for sample {sample_id}"
+            warning_msg = f"No relevant signatures in file {sig_path}"
             LOG.warning(warning_msg)
             warnings.append(warning_msg)
             continue
@@ -174,7 +154,7 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool,
         warning_msg = "No signatures to add."
         LOG.warning(warning_msg)
         warnings.append(warning_msg)
-        return False, warnings
+        return False, [], warnings
 
     # add signature to existing index
     # acquire lock to append signatures to database
@@ -215,7 +195,9 @@ def add_signatures_to_index(sample_ids: list[str], cnf: Settings) -> tuple[bool,
             LOG.error("Dont have permission to write file to disk")
             raise err
 
-    return True, warnings
+    added_sigs = [sig.name for sig in signatures]
+    LOG.info("Added signatures to index: %s", ", ".join(added_sigs))
+    return True, added_sigs, warnings
 
 
 def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
@@ -228,7 +210,9 @@ def remove_signatures_from_index(sample_ids: list[str], cnf: Settings) -> bool:
 
     # remove signature from existing index
     # acquire lock to remove signatures from database
-    LOG.debug("Attempt to acquire lock to append %s to index...", sample_ids)
+    LOG.debug(
+        "Attempt to acquire lock to remove %d signatures from index...", len(sample_ids)
+    )
     with lock:
         # check if index already exist
         index_path = get_sbt_index(cnf)
