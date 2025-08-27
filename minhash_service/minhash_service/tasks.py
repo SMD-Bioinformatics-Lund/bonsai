@@ -8,15 +8,16 @@ from . import __version__ as sourmash_version
 from .audit import AuditTrailStore
 from .config import settings
 from .exceptions import FileRemovalError
+from .integrity.checker import check_signature_integrity
+from .integrity.report_repository import IntegrityReportRepository
+from .integrity.report_model import IntegrityReport, InitiatorType
 from .infrastructure.signature_repository import SignatureRepository
 from .infrastructure.signature_storage import SignatureStorage
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import (
     add_signatures_to_index,
-    list_signatures_in_index,
     remove_signatures_from_index,
     write_signature,
-    get_sbt_index,
 )
 from .minhash.models import (
     Event,
@@ -30,6 +31,7 @@ from .minhash.similarity import get_similar_signatures
 LOG = logging.getLogger(__name__)
 
 _SIGNATURE_STORE: SignatureRepository | None = None
+_REPORT_STORE: SignatureRepository | None = None
 _AUDIT_TRAIL_STORE: AuditTrailStore | None = None
 
 
@@ -37,6 +39,7 @@ def inject_store(store: SignatureRepository | AuditTrailStore) -> None:
     """Inject a SignatureStore instance for use in tasks."""
     global _SIGNATURE_STORE
     global _AUDIT_TRAIL_STORE
+    global _REPORT_STORE
 
     if isinstance(store, SignatureRepository):
         if _SIGNATURE_STORE is not None:
@@ -46,6 +49,10 @@ def inject_store(store: SignatureRepository | AuditTrailStore) -> None:
         if _AUDIT_TRAIL_STORE is not None:
             raise RuntimeError("AuditTrailStore has already been injected.")
         _AUDIT_TRAIL_STORE = store
+    elif isinstance(store, IntegrityReportRepository):
+        if _REPORT_STORE is not None:
+            raise RuntimeError("IntegrityReportRepository has already been injected.")
+        _REPORT_STORE = store
     else:
         raise TypeError(
             "store must be an instance of SignatureStore or AuditTrailStore"
@@ -68,6 +75,15 @@ def get_audit_trail_repo() -> AuditTrailStore:
             "AuditTrailStore has not been injected. Call inject_store() first."
         )
     return _AUDIT_TRAIL_STORE
+
+
+def get_report_repo() -> IntegrityReportRepository:
+    """Get the injected IntegrityReportRepository instance."""
+    if _REPORT_STORE is None:
+        raise RuntimeError(
+            "IntegrityReportRepository has not been injected. Call inject_store() first."
+        )
+    return _REPORT_STORE
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
@@ -402,8 +418,21 @@ def find_similar_and_cluster(
     return newick
 
 
-def test_task() -> str:
-    """A test task that returns the current time."""
-    now = dt.datetime.now(dt.timezone.utc).isoformat()
-    LOG.info("Test task executed at %s", now)
-    return f"Test task executed at {now}"
+def check_data_integrity() -> None:
+    """Check integrity of the minhash service and save report to db."""
+
+    report = check_signature_integrity(InitiatorType.SYSTEM, settings)
+    repo = get_report_repo()
+    LOG.info("Saving report to database")
+    repo.save(report)
+
+
+def cleanup_removed_files() -> None:
+    """Cleanup files marked for removal."""
+    two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
+
+    store = SignatureStorage(
+        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+    )
+    n_removed = store.purge_older_than(cutoff=two_weeks_ago)
+    LOG.info('Cleanup removed %d files', n_removed)
