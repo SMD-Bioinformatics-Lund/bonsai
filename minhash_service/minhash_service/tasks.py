@@ -418,13 +418,22 @@ def find_similar_and_cluster(
     return newick
 
 
-def check_data_integrity() -> None:
+def run_data_integrity_check() -> None:
     """Check integrity of the minhash service and save report to db."""
 
     report = check_signature_integrity(InitiatorType.SYSTEM, settings)
     repo = get_report_repo()
     LOG.info("Saving report to database")
     repo.save(report)
+
+
+def get_data_integrity_report() -> IntegrityReport:
+    """Check integrity of the minhash service and save report to db."""
+
+    LOG.info("Get last integrity report from the database")
+    repo = get_report_repo()
+    report = repo.get_latest()
+    return report
 
 
 def cleanup_removed_files() -> None:
