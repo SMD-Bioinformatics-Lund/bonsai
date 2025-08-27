@@ -69,8 +69,23 @@ services:
       network: host
     depends_on:
       - redis
+      - minhash_cron_service
+    scale: 1
     networks:
       - bonsai-net
+    command: minhash-service run-minhash-worker
+
+  minhash_cron_service:
+    container_name: minhash_cron_service
+    build: 
+      context: minhash_service
+      network: host
+    depends_on:
+      - redis
+    scale: 1
+    networks:
+      - bonsai-net
+    command: minhash-service run-cron-scheduler
 
   ska_service:
     container_name: ska_service

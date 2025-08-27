@@ -400,3 +400,10 @@ def find_similar_and_cluster(
     )
     newick: str = cluster_signatures(signature_files, method, cnf=settings)
     return newick
+
+
+def test_task() -> str:
+    """A test task that returns the current time."""
+    now = dt.datetime.now(dt.timezone.utc).isoformat()
+    LOG.info("Test task executed at %s", now)
+    return f"Test task executed at {now}"
