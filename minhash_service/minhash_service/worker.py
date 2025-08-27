@@ -55,7 +55,7 @@ def create_cron_worker() -> CronScheduler:
     # setup periodic tasks
     if settings.periodic_integrity_check.endabled:
         cron_string = settings.periodic_integrity_check.cron
-        cron.register(tasks.check_data_integrity,
+        cron.register(tasks.run_data_integrity_check,
                       queue_name=settings.periodic_integrity_check.queue,
                       cron=cron_string)
         log.info("Scheduling periodic integrity check: %s", cron_string)
