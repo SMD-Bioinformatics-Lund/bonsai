@@ -1,10 +1,11 @@
 """Command line interface for minhash_service."""
 
 import click
+import logging
 
 from .config import settings
 from .minhash.models import Event, EventType
-from .worker import create_app
+from .worker import create_cron_worker, create_minhash_worker
 from .tasks import get_audit_trail_repo
 from .integrity.checker import check_signature_integrity
 from .integrity.report_model import InitiatorType
@@ -13,13 +14,25 @@ from .integrity.report_model import InitiatorType
 @click.version_option()
 def main():
     """MinHash Service command line interface."""
-    click.echo("MinHash Service CLI")
 
 
 @main.command()
-def run_worker():
+def run_minhash_worker():
     """Run the RQ worker."""
-    create_app()
+    app = create_minhash_worker()
+    log = logging.getLogger(__name__)
+    log.info("Starting worker...")
+    app.work()
+
+
+@main.command()
+def run_cron_scheduler():
+    """Run the RQ worker."""
+    app = create_cron_worker()
+    log = logging.getLogger(__name__)
+    log.info("Starting maintainance worker...")
+    app.start()
+
 
 @main.command()
 @click.option('--store-report', is_flag=True, help="Store the integrity report in the database.")
