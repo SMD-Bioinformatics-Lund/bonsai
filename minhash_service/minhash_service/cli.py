@@ -3,6 +3,7 @@
 import click
 import logging
 
+from .db import MongoDB
 from .config import settings
 from .minhash.models import Event, EventType
 from .worker import create_cron_worker, create_minhash_worker
@@ -38,6 +39,9 @@ def run_cron_scheduler():
 @click.option('--store-report', is_flag=True, help="Store the integrity report in the database.")
 def check_integrity(store_report: bool):
     """Check integrity of stored signatures."""
+    # setup db connection
+    MongoDB.setup(host=settings.mongodb.host, port=settings.mongodb.port, db_name=settings.mongodb.database)
+
     report = check_signature_integrity(initiator=InitiatorType.USER, settings=settings)
     click.secho("Integrity check complete.", fg="green")
     if store_report:
@@ -48,4 +52,4 @@ def check_integrity(store_report: bool):
         # report the event in the audit trail
         at = create_audit_trail_repo()
         at.log_event(Event(event_type=EventType.OTHER, details="Integrity check triggered from the CLI completed and report stored."))
-    print(report)
+    print(report.model_dump_json(indent=2))
