@@ -19,3 +19,4 @@ class RouterTags(StrEnum):
     GROUP = 'groups'
     META = 'metadata'
     USR = 'user'
+    JOB = 'jobs'

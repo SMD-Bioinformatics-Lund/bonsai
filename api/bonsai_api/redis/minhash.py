@@ -161,3 +161,11 @@ def schedule_check_signature(sample_id: str) -> SubmittedJob:
     job = redis.minhash.enqueue(task, sample_id=sample_id, job_timeout="30m")
     LOG.debug("Submitting job, %s to %s", task, job.worker_name)
     return SubmittedJob(id=job.id, task=task)
+
+
+def schedule_get_latest_report() -> SubmittedJob:
+    """Schedule a task to check if signatue has been added for sample id."""
+    task = "minhash_service.tasks.get_data_integrity_report"
+    job = redis.minhash.enqueue(task, job_timeout="30m")
+    LOG.debug("Submitting job, %s to %s", task, job.worker_name)
+    return SubmittedJob(id=job.id, task=task)
