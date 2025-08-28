@@ -6,7 +6,7 @@ import logging
 from .config import settings
 from .minhash.models import Event, EventType
 from .worker import create_cron_worker, create_minhash_worker
-from .tasks import get_audit_trail_repo
+from .factories import create_audit_trail_repo, create_report_repo
 from .integrity.checker import check_signature_integrity
 from .integrity.report_model import InitiatorType
 
@@ -38,12 +38,14 @@ def run_cron_scheduler():
 @click.option('--store-report', is_flag=True, help="Store the integrity report in the database.")
 def check_integrity(store_report: bool):
     """Check integrity of stored signatures."""
-    check_signature_integrity(initiator=InitiatorType.USER, settings=settings)
+    report = check_signature_integrity(initiator=InitiatorType.USER, settings=settings)
     click.secho("Integrity check complete.", fg="green")
     if store_report:
-        # TODO add initiation of data stores and repositories.
         # store the report in the database
+        repo = create_report_repo()
+        repo.save(report)
 
         # report the event in the audit trail
-        at = get_audit_trail_repo()
+        at = create_audit_trail_repo()
         at.log_event(Event(event_type=EventType.OTHER, details="Integrity check triggered from the CLI completed and report stored."))
+    print(report)

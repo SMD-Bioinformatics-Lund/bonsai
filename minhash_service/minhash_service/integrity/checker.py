@@ -3,28 +3,27 @@
 import datetime as dt
 import logging
 
-from minhash_service import __version__ as sourmash_version
 from minhash_service.config import Settings
+from minhash_service.version import __version__ as sourmash_version
 from minhash_service.infrastructure.signature_storage import SignatureStorage
-from minhash_service.tasks import get_signature_repo
+from minhash_service.factories import create_signature_repo
 from minhash_service.minhash.io import (
     list_signatures_in_index,
-    get_sbt_index,
 )
 
 from .report_model import IntegrityReport, InitiatorType
 
 LOG = logging.getLogger(__name__)
 
+
 def check_signature_integrity(initiator: InitiatorType, settings: Settings) -> IntegrityReport:
     """ Check that all signature files recorded in the database exist on disk."""
     start_time = dt.datetime.now(dt.timezone.utc)
-    repo = get_signature_repo()
+    repo = create_signature_repo()
     store = SignatureStorage(
         base_dir=settings.signature_dir, trash_dir=settings.trash_dir
     )
-    idx = get_sbt_index(cnf=settings, check=True)
-    indexed_signatures: list[str] = [sig.name for sig in list_signatures_in_index(idx)]
+    indexed_signatures: list[str] = [sig.name for sig in list_signatures_in_index(settings)]
 
     all_records = repo.get_all_signatures()
     n_signatures: int = 0
