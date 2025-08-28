@@ -114,7 +114,7 @@ class SignatureStorage:
         sidecar = path.with_suffix(path.suffix + ".json")
         sidecar.unlink(missing_ok=True)
 
-    def purge_older_than(self, cutoff: int) -> int:
+    def purge_older_than(self, cutoff: dt.datetime) -> int:
         """Permanently delete files older than a timestamp from the trash directory."""
         removed_count: int = 0
         if not self.trash_dir.exists():
@@ -127,7 +127,7 @@ class SignatureStorage:
                 deleted_at = dt.datetime.fromisoformat(meta["deleted_at"])
                 if deleted_at < cutoff:
                     self.purge_path(path)
-                    purged_count += 1
+                    removed_count += 1
                     LOG.info("Purged %s and its metadata", path)
             except Exception as err:
                 LOG.error("Error processing %s: %s", path, err)

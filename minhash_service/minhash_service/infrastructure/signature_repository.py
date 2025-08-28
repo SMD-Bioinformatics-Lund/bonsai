@@ -96,14 +96,14 @@ class SignatureRepository:
         return self._col.count_documents({"checksum": checksum})
 
     # ---- update -------------------------------------------------------------
-    def _set_flag(self, sample_id: str, status: bool, flag: str = "has_been_indexed") -> bool:
+    def _set_flag(self, sample_id: str, status: bool, flag: str) -> bool:
         """
         Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
         """
         res = self._col.update_one(
             {"sample_id": sample_id, flag: {"$ne": status}},
-            {"$set": {"has_been_indexed": status}},
+            {"$set": {flag: status}},
         )
         return res.modified_count > 0
 
