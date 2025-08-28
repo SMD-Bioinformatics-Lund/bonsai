@@ -378,13 +378,14 @@ def run_data_integrity_check() -> None:
     repo.save(report)
 
 
-def get_data_integrity_report() -> IntegrityReport | None:
+def get_data_integrity_report() -> dict[str, Any] | None:
     """Check integrity of the minhash service and save report to db."""
 
     LOG.info("Get last integrity report from the database")
     repo = create_report_repo()
     report = repo.get_latest()
-    return report
+    if report is not None:
+        return report.model_dump(mode="json")
 
 
 def cleanup_removed_files() -> None:
