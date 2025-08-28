@@ -2,15 +2,14 @@
 
 import logging
 
-from pymongo import MongoClient
 from redis import Redis
 from rq import Queue, SimpleWorker
 from rq.cron import CronScheduler
 
 from . import tasks
-from .audit import AuditTrailStore
 from .config import settings, configure_logging
-from .infrastructure.signature_repository import SignatureRepository
+from .db import MongoDB
+from .factories import initialize_indexes
 
 def create_minhash_worker() -> SimpleWorker:
     """Start a new minhash worker instance."""
@@ -21,23 +20,8 @@ def create_minhash_worker() -> SimpleWorker:
 
     # Create mongo connection at startup
     log.info("Setup mongodb connection: %s:%s", settings.mongodb.host, settings.mongodb.port)
-    client = MongoClient(
-        host=settings.mongodb.host,
-        port=settings.mongodb.port,
-        serverSelectionTimeoutMS=5000,
-    )
-    log.info("Preparing data stores...")
-    sig_store = SignatureRepository(
-        client[settings.mongodb.database].get_collection("signatures")
-    )
-    sig_store.ensure_indexes()
-    tasks.inject_store(sig_store)
-
-    log.info("Setup audit trail...")
-    at_store = AuditTrailStore(
-        client[settings.mongodb.database].get_collection("audit_trail")
-    )
-    tasks.inject_store(at_store)
+    MongoDB.setup(host=settings.mongodb.host, port=settings.mongodb.port, db_name=settings.mongodb.database)
+    initialize_indexes()
 
     queue = Queue(settings.redis.queue, connection=redis)
     worker = SimpleWorker([queue], connection=redis)

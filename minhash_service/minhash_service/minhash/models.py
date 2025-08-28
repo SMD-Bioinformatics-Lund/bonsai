@@ -57,7 +57,7 @@ class SignatureRecord(BaseModel):
     - `uploaded_at`: UTC timestamp when the record was created
     """
 
-    version: int = Field(1, description="Record schema version")
+    version: int = Field(default=1, description="Record schema version")
     sample_id: SampleIdStr
     signature_path: Path
     checksum: Sha256Hex
@@ -66,9 +66,7 @@ class SignatureRecord(BaseModel):
     indexed_at: datetime | None = None
     exclude_from_analysis: bool = False
 
-    marked_for_deletion: bool = Field(
-        False, description="Flag to mark record for deletion"
-    )
+    marked_for_deletion: bool = Field(default=False, description="Flag to mark record for deletion")
 
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

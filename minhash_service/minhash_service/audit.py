@@ -1,6 +1,7 @@
 """Audit trail store."""
 
 import logging
+from typing import Any
 
 from bson import ObjectId
 from pymongo.collection import Collection
@@ -11,7 +12,7 @@ from .minhash.models import Event
 LOG = logging.getLogger(__name__)
 
 
-class AuditTrailStore:
+class AuditTrailRepository:
     """
     Store for audit trail entries.
 
@@ -19,7 +20,7 @@ class AuditTrailStore:
     Pass in a ready Collection (with auth, TLS, timeouts, etc. configured).
     """
 
-    def __init__(self, collection: Collection):
+    def __init__(self, collection: Collection[Any]):
         self._col = collection
 
     def log_event(self, event: Event) -> ObjectId | None:
