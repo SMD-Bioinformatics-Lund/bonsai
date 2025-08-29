@@ -3,7 +3,7 @@
 from enum import StrEnum
 import datetime as dt
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class InitiatorType(StrEnum):
@@ -11,7 +11,15 @@ class InitiatorType(StrEnum):
 
     USER = "user"
     SYSTEM = "system"
-    
+
+
+class ReportStatus(StrEnum):
+    """Status codes for a report."""
+
+    WARNING = "warning"
+    ERROR = "error"
+
+
 class IntegrityReport(BaseModel):
     """Report on the integrity of signature files in the repository."""
 
@@ -25,3 +33,21 @@ class IntegrityReport(BaseModel):
     corrupted_files: list[str]
     should_be_indexed: list[str]
     should_not_be_indexed: list[str]
+
+    @computed_field
+    @property
+    def has_errors(self) -> bool:
+        """True if any integrity errors were found."""
+        return bool(self.missing_files or self.corrupted_files)
+
+    @computed_field
+    @property
+    def error_count(self) -> int:
+        """How many error instances were found (missing + corrupted)."""
+        return len(self.missing_files) + len(self.corrupted_files)
+
+    @computed_field
+    @property
+    def has_warnings(self) -> bool:
+        """True if there are indexing mismatches (non-fatal issues)."""
+        return bool(self.should_be_indexed or self.should_not_be_indexed)

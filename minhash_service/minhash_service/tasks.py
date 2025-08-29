@@ -5,12 +5,13 @@ from pathlib import Path
 import datetime as dt
 from typing import Any
 
-from .config import settings
+from .config import cnf, IntegrityReportLevel
 from .exceptions import FileRemovalError
 from .factories import create_audit_trail_repo, create_report_repo, create_signature_repo
 from .integrity.checker import check_signature_integrity
-from .integrity.report_model import IntegrityReport, InitiatorType
+from .integrity.report_model import InitiatorType
 from .infrastructure.signature_storage import SignatureStorage
+from .notify import dispatch_email, EmailApiInput
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import (
     add_signatures_to_index,
@@ -40,7 +41,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     """
     at = create_audit_trail_repo()
     store = SignatureStorage(
-        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
     )
     repo = create_signature_repo()
     if repo.get_by_sample_id(sample_id) is not None:
@@ -48,7 +49,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
 
     # write signature to disk
-    signature_path = write_signature(sample_id, signature, cnf=settings)
+    signature_path = write_signature(sample_id, signature, cnf=cnf)
     signature_path = Path(signature_path)  # Ensure it's a Path object
 
     # upon completion write signature to the disk
@@ -92,7 +93,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     at = create_audit_trail_repo()
     repo = create_signature_repo()
     store = SignatureStorage(
-        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
     )
     # mark sample for deletion in db
     was_marked = repo.marked_for_deletion(sample_id)
@@ -118,7 +119,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
             removed_path = store.move_to_trash(record.signature_path, record.checksum)
             metadata["staged_path"] = str(removed_path)
 
-        status = remove_signatures_from_index([sample_id], cnf=settings)
+        status = remove_signatures_from_index([sample_id], cnf=cnf)
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -183,7 +184,7 @@ def add_to_index(sample_ids: list[str]) -> str:
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
         signature_files.append(record.signature_path)
-    res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=settings)
+    res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=cnf)
     # update indexed status in db
     for sid in indexed_samples:
         repo.mark_indexed(sid)
@@ -212,7 +213,7 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Removing signatures from index.")
-    res = remove_signatures_from_index(sample_ids, cnf=settings)
+    res = remove_signatures_from_index(sample_ids, cnf=cnf)
 
     # unmark indexed status in db
     repo = create_signature_repo()
@@ -265,7 +266,7 @@ def similar(
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
     samples = get_similar_signatures(
-        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=settings
+        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
     )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -305,7 +306,7 @@ def cluster(sample_ids: list[str], cluster_method: str = "single") -> str:
             LOG.error("No signature for sample id: %s", sample_id)
             continue
         signature_files.append(record.signature_path)
-    newick: str = cluster_signatures(signature_files, method, cnf=settings)
+    newick: str = cluster_signatures(signature_files, method, cnf=cnf)
     return newick
 
 
@@ -346,7 +347,7 @@ def find_similar_and_cluster(
     if record is None:
         raise FileNotFoundError(f"Signature for {sample_id} has not been added to the service.")
     sample_ids = get_similar_signatures(
-        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=settings
+        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
     )
 
     # if 1 or 0 samples were found, return emtpy newick
@@ -365,17 +366,27 @@ def find_similar_and_cluster(
         "Clustering the following samples to %s: ",
         ", ".join(sids),
     )
-    newick: str = cluster_signatures(signature_files, method, cnf=settings)
+    newick: str = cluster_signatures(signature_files, method, cnf=cnf)
     return newick
 
 
 def run_data_integrity_check() -> None:
     """Check integrity of the minhash service and save report to db."""
 
-    report = check_signature_integrity(InitiatorType.SYSTEM, settings)
+    report = check_signature_integrity(InitiatorType.SYSTEM, cnf)
     repo = create_report_repo()
     LOG.info("Saving report to database")
     repo.save(report)
+
+    report_error = cnf.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
+    report_warning = all([
+        cnf.integrity_report_level == IntegrityReportLevel.WARNING, 
+        report.has_errors or report.has_warnings
+    ])
+    if cnf.is_notification_configured and (report_error or report_warning):
+        # notify admins of errror
+        message = EmailApiInput()
+        dispatch_email(cnf.notification_service_api, message)
 
 
 def get_data_integrity_report() -> dict[str, Any] | None:
@@ -393,7 +404,7 @@ def cleanup_removed_files() -> None:
     two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
 
     store = SignatureStorage(
-        base_dir=settings.signature_dir, trash_dir=settings.trash_dir
+        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
     )
     n_removed = store.purge_older_than(cutoff=two_weeks_ago)
     LOG.info('Cleanup removed %d files', n_removed)
