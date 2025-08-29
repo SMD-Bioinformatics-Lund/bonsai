@@ -59,7 +59,7 @@ class Settings(BaseSettings):
         """Use redis queue if configuration is valid."""
         return isinstance(self.smtp.host, str)
 
-    def build_logging_conffig(self) -> dict[str, Any]:
+    def build_logging_config(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
         log_config = LOG_CONFIG.copy()
         # update log levels

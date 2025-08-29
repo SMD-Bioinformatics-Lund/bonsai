@@ -13,7 +13,7 @@ LOG = logging.getLogger(__name__)
 
 def configure_logging(cnf: Settings) -> None:
     """Configure logging from settings."""
-    logging_config.dictConfig(cnf.build_logging_conffig())
+    logging_config.dictConfig(cnf.build_logging_config())
 
 
 class JinjaTemplateRepo:
