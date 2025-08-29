@@ -4,7 +4,7 @@ import click
 import logging
 
 from .db import MongoDB
-from .config import settings
+from .config import cnf
 from .minhash.models import Event, EventType
 from .worker import create_cron_worker, create_minhash_worker
 from .factories import create_audit_trail_repo, create_report_repo
@@ -40,9 +40,9 @@ def run_cron_scheduler():
 def check_integrity(store_report: bool):
     """Check integrity of stored signatures."""
     # setup db connection
-    MongoDB.setup(host=settings.mongodb.host, port=settings.mongodb.port, db_name=settings.mongodb.database)
+    MongoDB.setup(host=cnf.mongodb.host, port=cnf.mongodb.port, db_name=cnf.mongodb.database)
 
-    report = check_signature_integrity(initiator=InitiatorType.USER, settings=settings)
+    report = check_signature_integrity(initiator=InitiatorType.USER, settings=cnf)
     click.secho("Integrity check complete.", fg="green")
     if store_report:
         # store the report in the database
