@@ -62,6 +62,15 @@ services:
       - bonsai-net
     command: "flask run --reload --debug --host 0.0.0.0"
 
+  notification_service:
+    build: 
+      context: notification_service
+      network: host
+    scale: 1
+    networks:
+      - bonsai-net
+    command: "uvicorn notification_service.main:create_api_app --reload --log-level info --host 0.0.0.0"
+
   minhash_service:
     build: 
       context: minhash_service
