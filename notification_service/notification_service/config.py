@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     @property
     def use_redis(self) -> bool:
         """Use redis queue if configuration is valid."""
-        return isinstance(self.smtp.host, str)
+        return isinstance(self.redis.host, str)
 
     def build_logging_config(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
