@@ -9,6 +9,8 @@ services:
   frontend:
     environment:
       - TESTING=True
+      - API_INTERNAL_URL=http://api:8000
+      - API_EXTERNAL_URL=http://localhost:8001
     volumes: 
       - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
 
@@ -24,6 +26,23 @@ services:
       - ska_service
       - allele_cluster_service
       - mailhog
+
+  minhash_service:
+    volumes: 
+      - "./minhash_service/minhash_service:/home/worker/app/minhash_service"
+
+  minhash_cron_service:
+    environment:
+      - INTEGRITY_TASK_CRON=* * * * *
+      - PURGE_FILES_TASK_CRON=* * * * *
+    volumes: 
+      - "./minhash_service/minhash_service:/home/worker/app/minhash_service"
+
+  notification_service:
+    ports: 
+      - "8002:8000"
+    volumes: 
+      - "./notification_service/notification_service:/home/worker/app/notification_service"
 
   e2e-tests:
     volumes:
