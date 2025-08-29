@@ -23,9 +23,17 @@ class EmailApiInput(BaseModel):
 
     @model_validator(mode="after")
     def check_has_message(self):
-        """Check that either message or context has been set"""
-        if self.message is not None or self.context is not None:
+        """Check that the message been set for plain emails."""
+        if self.message is None and self.content_type == ContentType.PLAIN:
             raise ValueError(
-                "Input must contain either a message or context to be templated."
+                "A message must be provided when sending a email in plain text."
+            )
+        return self
+
+    def check_has_message_or_context(self):
+        """Check that either message or context has been set"""
+        if self.message is None and self.context is None:
+            raise ValueError(
+                "A message must be provided when sending a email in plain text."
             )
         return self
