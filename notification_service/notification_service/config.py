@@ -23,7 +23,7 @@ class RedisConfig(BaseSettings):
 
     model_config = ConfigDict(env_prefix="redis_")
 
-    host: str = "redis"
+    host: str | None = None
     port: PositiveInt = 6379
     queue: str = "notification"
 
