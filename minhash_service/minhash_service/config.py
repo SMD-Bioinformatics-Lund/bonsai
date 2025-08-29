@@ -7,7 +7,7 @@ from typing import Any
 from copy import deepcopy
 from logging import config as logging_config
 
-from pydantic import ConfigDict, DirectoryPath, Field, PositiveInt, field_validator
+from pydantic import ConfigDict, DirectoryPath, Field, PositiveInt, ValidationError, computed_field, field_validator, HttpUrl, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -15,6 +15,13 @@ def _get_trash_dir() -> Path:
     """Create a temporary directory for trash."""
     return Path(tempfile.mkdtemp(prefix="minhash_trash_"))
 
+
+class IntegrityReportLevel(StrEnum):
+    """Options what to notify."""
+
+    NEVER = "NEVER"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
 
 class LogLevel(StrEnum):
     """Log level options."""
@@ -46,6 +53,13 @@ class RedisConfig(BaseSettings):
     host: str = "redis"
     port: PositiveInt = 6379
     queue: str = "minhash"
+
+
+class NotificationConfig(BaseSettings):
+    """Configure how to send notifications."""
+
+    sender: str = 'do-not-reply@bonsai.app'
+    sender_name: str = "Bonsai"
 
 
 class BasePeriodicTaskConfig(BaseSettings):
@@ -88,6 +102,11 @@ class Settings(BaseSettings):
     periodic_integrity_check: PeriodicIntegrityCheckConfig = PeriodicIntegrityCheckConfig()
     cleanup_removed_files: CleanupRemovedFilesConfig = CleanupRemovedFilesConfig()
 
+    # notification api
+    notification_service_api: HttpUrl | None = None
+    integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
+
+
     log_level: LogLevel = LogLevel.INFO
 
     @field_validator("trash_dir", mode="before")
@@ -96,6 +115,24 @@ class Settings(BaseSettings):
         """Ensure that the trash directory exists."""
         v.mkdir(parents=True, exist_ok=True)
         return v
+
+    @model_validator(mode="after")
+    def validate_report_service_config(self):
+        """Ensure that API url is set when errors should be reported."""
+        should_notify_failed_report = any([
+            self.integrity_report_level == IntegrityReportLevel.ERROR, 
+            self.integrity_report_level == IntegrityReportLevel.WARNING, 
+        ])
+        if should_notify_failed_report and not self.is_notification_configured:
+            raise ValidationError("Notification serivce URL must be configures.")
+        return self
+
+    @computed_field
+    @property
+    def is_notification_configured(self) -> bool:
+        """Return true URL to notificaiton API has been configured."""
+        return self.notification_service_api is None
+
 
     def build_logging_conffig(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
@@ -135,4 +172,4 @@ def configure_logging(cnf: Settings) -> None:
     logging_config.dictConfig(cnf.build_logging_conffig())
 
 
-settings = Settings()
+cnf = Settings()
