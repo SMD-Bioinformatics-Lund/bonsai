@@ -78,7 +78,7 @@ services:
     depends_on:
       - redis
       - minhash_cron_service
-    scale: 1
+      - notification_service
     networks:
       - bonsai-net
     command: minhash-service run-minhash-worker
