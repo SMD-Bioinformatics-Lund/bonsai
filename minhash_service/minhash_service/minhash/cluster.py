@@ -4,6 +4,7 @@ import logging
 from enum import Enum
 from pathlib import Path
 
+
 import sourmash
 from scipy.cluster import hierarchy
 
