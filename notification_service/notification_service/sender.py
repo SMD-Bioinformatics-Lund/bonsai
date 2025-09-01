@@ -3,7 +3,7 @@
 import smtplib
 from email.message import EmailMessage
 
-from .config import SmtpConfig, settings
+from .config import SmtpConfig
 from .models import ContentType, EmailApiInput
 from .utils import JinjaTemplateRepo
 
@@ -14,9 +14,15 @@ def get_smtp_connection(cnf: SmtpConfig) -> smtplib.SMTP:
     return smtplib.SMTP(host=cnf.host, port=cnf.port, timeout=cnf.timeout)
 
 
-def send_email(sender_email: str, sender_name: str, message_obj: EmailApiInput) -> None:
+def send_email(
+    sender_email: str,
+    sender_name: str,
+    message_obj: EmailApiInput,
+    template_repo: JinjaTemplateRepo,
+    smtp_conn: smtplib.SMTP | None = None,
+) -> None:
     """Send a email."""
-    with get_smtp_connection(settings.smtp) as smtp:
+    with smtp_conn:
         # create new mail
         mail = EmailMessage()
         mail["From"] = sender_name
@@ -28,7 +34,10 @@ def send_email(sender_email: str, sender_name: str, message_obj: EmailApiInput) 
         if message_obj.content_type == ContentType.PLAIN:
             mail.set_content(message_obj.message)
         else:
-            template = JinjaTemplateRepo.get_template(message_obj.template_name)
+            template = template_repo.get_template(message_obj.template_name)
             # pass context to template
-            template.render(message=message_obj.message, **message_obj.context)
-        smtp.send_message(mail)
+            html_content = template.render(
+                message=message_obj.message, **message_obj.context.model_dump()
+            )
+            mail.set_content(html_content, subtype="html")
+        smtp_conn.send_message(mail)
