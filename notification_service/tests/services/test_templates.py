@@ -1,8 +1,6 @@
-from pathlib import Path
-
 import pytest
 
-from notification_service.utils import JinjaTemplateRepo
+from notification_service.services.templates import TemplateRepository
 
 
 def test_jinja_template_repo_setup(tmp_path):
@@ -11,8 +9,7 @@ def test_jinja_template_repo_setup(tmp_path):
     # Create a dummy template file
     template_dir = tmp_path
     (template_dir / "default_email").write_text("Hello {{ message }}")
-    JinjaTemplateRepo._env = None  # Reset for test
-    JinjaTemplateRepo.setup(template_dir)
-    template = JinjaTemplateRepo.get_template("default_email")
+    repo = TemplateRepository(custom_template_dir=template_dir)
+    template = repo.get_template("default_email")
     result = template.render(message="World")
     assert "Hello World" in result

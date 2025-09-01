@@ -4,7 +4,7 @@ import pytest
 
 from notification_service.models import (ContentType, EmailApiInput,
                                          EmailTemplateContext)
-from notification_service.sender import send_email
+from notification_service.services.email import send_email
 
 
 class DummyTemplate:

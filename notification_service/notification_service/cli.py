@@ -13,8 +13,8 @@ def main():
 
 
 @main.command()
-def run_api():
-    """Run the notification serivce API."""
+def run_worker():
+    """Run the notification serivce worker."""
     app = create_worker_app()
     log = logging.getLogger(__name__)
     log.info("Starting email service...")
