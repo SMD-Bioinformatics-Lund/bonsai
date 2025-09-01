@@ -5,10 +5,9 @@ from csv import DictWriter
 from io import StringIO, TextIOWrapper
 
 import click
-from bonsai_api.config import settings
+from email_validator import EmailNotValidError
+from pydantic import validate_email
 from bonsai_api.db.verify import MissingFile
-from bonsai_api.email import create_email, get_smtp_connection
-from email_validator import EmailNotValidError, validate_email
 
 LOG = logging.getLogger(__name__)
 
@@ -39,16 +38,3 @@ def create_missing_file_report(
     for missing_file in missing_files:
         writer.writerow(missing_file.model_dump())
     return file
-
-
-def send_email_report(content: str, email_address: list[str]) -> None:
-    """Send email report."""
-    if settings.smtp is None:
-        raise ValueError("SMTP client has not been configured.")
-
-    with get_smtp_connection(settings.smtp) as smtp:
-        msg = create_email(email_address, settings.email)
-        msg["Subject"] = "[ Bonsai ] database integrity report"
-        msg.set_content(content)
-        smtp.send_message(msg)
-    return None
