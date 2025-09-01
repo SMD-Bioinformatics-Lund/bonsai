@@ -4,7 +4,7 @@ import logging
 
 from .config import settings as cnf
 from .models import EmailApiInput
-from .sender import send_email
+from .services.email import send_email
 
 LOG = logging.getLogger(__name__)
 
