@@ -39,6 +39,10 @@ services:
       - "./minhash_service/minhash_service:/home/worker/app/minhash_service"
 
   notification_service:
+    environment:
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - sender_name="Bonsai team"
     ports: 
       - "8002:8000"
     volumes: 
