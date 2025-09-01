@@ -1,14 +1,27 @@
 """Internal data models."""
 
 from enum import StrEnum
-from typing import Any
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 
 class ContentType(StrEnum):
+    """If email should be rendered as html or in plain text."""
+
     HTML = "html"
     PLAIN = "plain"
+
+
+class EmailTemplateContext(BaseModel):
+    """Defines the names space for contextual information to be rendered in template.
+    
+    This is intended to reserve varialbe names to use in the template.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    user_name: str | None = Field(default=None, examples="Nollan Nollssson", 
+                                  description="Recipients full name.")
 
 
 class EmailApiInput(BaseModel):
@@ -18,7 +31,7 @@ class EmailApiInput(BaseModel):
     subject: str
     template_name: str | None = None
     message: str | None = None
-    context: dict[str, Any] | None = None
+    context: EmailTemplateContext | None = None
     content_type: ContentType = ContentType.PLAIN
 
     @model_validator(mode="after")
