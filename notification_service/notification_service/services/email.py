@@ -37,7 +37,10 @@ def send_email(
             template = template_repo.get_template(message_obj.template_name)
             # pass context to template
             html_content = template.render(
-                message=message_obj.message, **message_obj.context.model_dump()
+                sender_name=sender_name,
+                **message_obj.model_dump(
+                    exclude=["teplate_name", "content_type"]
+                )
             )
             mail.set_content(html_content, subtype="html")
         smtp_conn.send_message(mail)
