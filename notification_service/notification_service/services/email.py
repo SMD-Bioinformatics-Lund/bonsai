@@ -3,9 +3,9 @@
 import smtplib
 from email.message import EmailMessage
 
-from .config import SmtpConfig
-from .models import ContentType, EmailApiInput
-from .utils import JinjaTemplateRepo
+from ..config import SmtpConfig
+from ..models import ContentType, EmailApiInput
+from .templates import TemplateRepository
 
 
 def get_smtp_connection(cnf: SmtpConfig) -> smtplib.SMTP:
@@ -18,7 +18,7 @@ def send_email(
     sender_email: str,
     sender_name: str,
     message_obj: EmailApiInput,
-    template_repo: JinjaTemplateRepo,
+    template_repo: TemplateRepository,
     smtp_conn: smtplib.SMTP | None = None,
 ) -> None:
     """Send a email."""
