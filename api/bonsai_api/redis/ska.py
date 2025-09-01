@@ -3,9 +3,6 @@
 import logging
 from typing import List
 
-from rq import Retry
-from rq.job import Dependency
-
 from .models import ClusterMethod, SubmittedJob
 from .queue import redis
 
