@@ -27,7 +27,7 @@ from bonsai_api.config import settings
 from bonsai_api.notify import EmailApiInput, dispatch_email
 from pymongo.errors import DuplicateKeyError
 
-from .utils import EmailType, create_missing_file_report, send_email_report
+from .utils import EmailType, create_missing_file_report
 
 LOG = getLogger(__name__)
 
