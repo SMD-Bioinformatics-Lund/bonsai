@@ -26,7 +26,8 @@ class JinjaTemplateRepo:
         """Setup jinja2 environment."""
         if cls._env is not None:
             raise RuntimeError("Template environment already loaded!")
-        cls._env = FileSystemLoader(template_dir)
+        loader = FileSystemLoader(template_dir)
+        cls._env = Environment(loader=loader)
         LOG.info("Loaded jinja2 template directory: %s", template_dir)
 
     @classmethod
