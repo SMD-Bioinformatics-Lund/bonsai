@@ -7,8 +7,7 @@ import tomllib
 from typing import Annotated
 from pathlib import Path
 
-from pydantic import AfterValidator, Field, FilePath
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator, AfterValidator, FilePath
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, model_validator, FilePath, AfterValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
@@ -150,9 +149,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 180  # expiration time for accesst token
     api_authentication: bool = True
 
-    # email server
-    smtp: SmtpConfig | None = None
-    email: EmailConfig = EmailConfig()
+    # notification api for sending emails
+    notification_service_api: HttpUrl | None = None
 
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
