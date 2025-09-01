@@ -20,7 +20,7 @@ class EmailTemplateContext(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    user_name: str | None = Field(
+    username: str | None = Field(
         default=None, examples=["Nollan Nollssson"], description="Recipients full name."
     )
 
