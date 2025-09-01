@@ -6,6 +6,7 @@ from . import sender
 from .config import settings
 # from .dispatcher import dispatch_email_job
 from .models import EmailApiInput
+from .utils import JinjaTemplateRepo
 from .version import __version__ as version
 
 router = APIRouter()
@@ -25,6 +26,11 @@ def send_email(request: EmailApiInput):
     if settings.use_redis:
         raise NotImplementedError("Dispatching email jobs is not finished!")
         # dispatch_email_job(**request.model_dump())
+    smtp_conn = sender.get_smtp_connection(settings.smtp)
     sender.send_email(
-        settings.sender_email, settings.sender_name, message_obj=request
+        settings.sender_email,
+        settings.sender_name,
+        message_obj=request,
+        smtp_conn=smtp_conn,
+        template_repo=JinjaTemplateRepo,
     )
