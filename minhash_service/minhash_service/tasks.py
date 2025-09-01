@@ -1,5 +1,4 @@
 """Define reddis tasks."""
-
 import logging
 from pathlib import Path
 import datetime as dt
@@ -12,6 +11,7 @@ from .integrity.checker import check_signature_integrity
 from .integrity.report_model import InitiatorType
 from .infrastructure.signature_storage import SignatureStorage
 from .notify import dispatch_email, EmailApiInput
+
 from .minhash.cluster import ClusterMethod, cluster_signatures
 from .minhash.io import (
     add_signatures_to_index,
@@ -27,6 +27,46 @@ from .minhash.models import (
 from .minhash.similarity import get_similar_signatures
 
 LOG = logging.getLogger(__name__)
+
+_SIGNATURE_STORE: SignatureRepository | None = None
+_AUDIT_TRAIL_STORE: AuditTrailStore | None = None
+
+
+def inject_store(store: SignatureRepository | AuditTrailStore) -> None:
+    """Inject a SignatureStore instance for use in tasks."""
+    global _SIGNATURE_STORE
+    global _AUDIT_TRAIL_STORE
+
+    if isinstance(store, SignatureRepository):
+        if _SIGNATURE_STORE is not None:
+            raise RuntimeError("SignatureStore has already been injected.")
+        _SIGNATURE_STORE = store
+    elif isinstance(store, AuditTrailStore):
+        if _AUDIT_TRAIL_STORE is not None:
+            raise RuntimeError("AuditTrailStore has already been injected.")
+        _AUDIT_TRAIL_STORE = store
+    else:
+        raise TypeError(
+            "store must be an instance of SignatureStore or AuditTrailStore"
+        )
+
+
+def get_signature_repo() -> SignatureRepository:
+    """Get the injected SignatureStore instance."""
+    if _SIGNATURE_STORE is None:
+        raise RuntimeError(
+            "SignatureStore has not been injected. Call inject_store() first."
+        )
+    return _SIGNATURE_STORE
+
+
+def get_audit_trail_repo() -> AuditTrailStore:
+    """Get the injected AuditTrailStore instance."""
+    if _AUDIT_TRAIL_STORE is None:
+        raise RuntimeError(
+            "AuditTrailStore has not been injected. Call inject_store() first."
+        )
+    return _AUDIT_TRAIL_STORE
 
 
 def add_signature(sample_id: str, signature: SignatureFile) -> str:
@@ -44,12 +84,14 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
         base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
     )
     repo = create_signature_repo()
+
     if repo.get_by_sample_id(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
 
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=cnf)
+
     signature_path = Path(signature_path)  # Ensure it's a Path object
 
     # upon completion write signature to the disk
@@ -112,6 +154,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     metadata: dict[str, str] = {}
+
     try:
         repo.remove_by_sample_id(sample_id)
         # remove signature file if there are not other records with the same checksum
@@ -120,6 +163,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
             metadata["staged_path"] = str(removed_path)
 
         status = remove_signatures_from_index([sample_id], cnf=cnf)
+
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -151,6 +195,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
 
     repo = create_signature_repo()
     record = repo.get_by_sample_id(sample_id)
+
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
@@ -173,6 +218,7 @@ def add_to_index(sample_ids: list[str]) -> str:
     """
     LOG.info("Adding %d signatures to index...", len(sample_ids))
     repo = create_signature_repo()
+
     signature_files: list[Path] = []
     # TODO query all signatures in one go
     for sample_id in sample_ids:
@@ -180,11 +226,13 @@ def add_to_index(sample_ids: list[str]) -> str:
         if record is None:
             LOG.warning("No signature stored for %s", sample_id)
             continue
+
         if record.exclude_from_analysis:
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
         signature_files.append(record.signature_path)
     res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=cnf)
+
     # update indexed status in db
     for sid in indexed_samples:
         repo.mark_indexed(sid)
@@ -217,6 +265,7 @@ def remove_from_index(sample_ids: list[str]) -> str:
 
     # unmark indexed status in db
     repo = create_signature_repo()
+
     for sid in sample_ids:
         repo.unmark_indexed(sid)
 
@@ -240,6 +289,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
     LOG.info("Excluding signatures %d from future analysis.", len(sample_ids))
     # unmark indexed status in db
     repo = create_signature_repo()
+
     for sid in sample_ids:
         repo.exclude_from_analysis(sid)
 
@@ -262,11 +312,13 @@ def similar(
     :rtype: SimilarSignatures
     """
     repo = create_signature_repo()
+
     record = repo.get_by_sample_id(sample_id)
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
     samples = get_similar_signatures(
         record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
+
     )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -307,6 +359,7 @@ def cluster(sample_ids: list[str], cluster_method: str = "single") -> str:
             continue
         signature_files.append(record.signature_path)
     newick: str = cluster_signatures(signature_files, method, cnf=cnf)
+
     return newick
 
 
@@ -348,6 +401,7 @@ def find_similar_and_cluster(
         raise FileNotFoundError(f"Signature for {sample_id} has not been added to the service.")
     sample_ids = get_similar_signatures(
         record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
+
     )
 
     # if 1 or 0 samples were found, return emtpy newick
@@ -359,6 +413,7 @@ def find_similar_and_cluster(
         record = repo.get_by_sample_id(sample_sig.sample_id)
         if record is None:
             continue
+
         signature_files.append(record.signature_path)
     # cluster samples
     sids = [sid.sample_id for sid in sample_ids]
@@ -367,6 +422,7 @@ def find_similar_and_cluster(
         ", ".join(sids),
     )
     newick: str = cluster_signatures(signature_files, method, cnf=cnf)
+
     return newick
 
 

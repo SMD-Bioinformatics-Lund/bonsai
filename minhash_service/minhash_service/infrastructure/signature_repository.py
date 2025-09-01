@@ -3,6 +3,7 @@
 import logging
 from typing import Any, Iterable, Iterator
 
+
 from bson import ObjectId
 from pymongo import ASCENDING
 from pymongo.collection import Collection
@@ -97,6 +98,7 @@ class SignatureRepository:
 
     # ---- update -------------------------------------------------------------
     def _set_flag(self, sample_id: str, status: bool, flag: str) -> bool:
+
         """
         Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
@@ -104,6 +106,7 @@ class SignatureRepository:
         res = self._col.update_one(
             {"sample_id": sample_id, flag: {"$ne": status}},
             {"$set": {flag: status}},
+
         )
         return res.modified_count > 0
 

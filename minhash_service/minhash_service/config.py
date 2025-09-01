@@ -32,7 +32,7 @@ class LogLevel(StrEnum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
-
+    
 class MongodbConfig(BaseSettings):
     """MongoDB configuration for minhash service."""
 
@@ -141,7 +141,6 @@ class Settings(BaseSettings):
         log_config["handlers"]["default"]["level"] = self.log_level.value
         log_config["loggers"]["root"]["level"] = self.log_level.value
         return log_config
-
 
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {
