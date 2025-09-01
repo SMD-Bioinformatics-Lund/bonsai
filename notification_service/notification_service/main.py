@@ -1,5 +1,6 @@
 """Contains applicaiton factory function."""
 
+from contextlib import asynccontextmanager
 import logging
 
 from fastapi import FastAPI
@@ -8,6 +9,7 @@ from rq import Queue, SimpleWorker
 
 from .api import router
 from .config import settings
+from .services.templates import TemplateRepository
 from .utils import configure_logging
 
 
@@ -23,13 +25,23 @@ def create_worker_app() -> SimpleWorker:
     return worker
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Instanciate the template repository and add to state."""
+    app.state.template_repo = TemplateRepository(
+        custom_template_dir=settings.template_dir,
+        default_template="default.html",
+    )
+    yield
+
+
 def create_api_app() -> FastAPI:
     """Create email notification rest api."""
     configure_logging(settings)
     log = logging.getLogger(__name__)
     log.info("Setup API")
 
-    app = FastAPI(title="Notification service")
+    app = FastAPI(title="Notification service", lifespan=lifespan)
     app.include_router(router)
 
     return app
