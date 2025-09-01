@@ -7,6 +7,9 @@ ENV PYTHONUNBUFFERED=1
 # Create non-root user to run commands
 RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
 
+# create custom template directory
+RUN mkdir -p /data/templates && chown 1000:1000 /data/templates
+
 # copy project dir
 WORKDIR /home/worker/app
 COPY --chown=worker:worker notification_service notification_service/
