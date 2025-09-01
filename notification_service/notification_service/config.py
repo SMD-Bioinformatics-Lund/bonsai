@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     sender_email: str = "noreply@example.com"
     sender_name: str = "Notification"
 
-    template_dir: Path = Path("templates/")
+    template_dir: Path = Path("/data/templates/")
 
     log_level: LogLevel = LogLevel.INFO
 

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ subject | default("Notification") }}</title>
+    </head>
+    <body>
+        <h2>{{ subject | default("Notification") }}</h2>
+        <p>{{ message }}</p>
+        {% if context %}
+        <ul>
+            {% for key, val in context.items() %}
+                <li><strong>{{ key | capitalize }}</strong> {{ val }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <p>
+            Best regards,
+            {{ sender_name | default("CMD") }}
+        </p>
+    </body>
+</html>

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from redis import Redis
 from rq import Queue
 
@@ -13,10 +11,10 @@ def dispatch_email_job(
     subject: str,
     template_name: str,
     context: dict,
-    job_id: Optional[str] = None,
-    ttl: Optional[int] = None,
-    result_ttl: Optional[int] = None,
-    retry: Optional[int] = None,
+    job_id: str | None = None,
+    ttl: int | None = None,
+    result_ttl: int | None = None,
+    retry: int | None = None,
 ):
     """
     Dispatch an email job to the notification queue.
