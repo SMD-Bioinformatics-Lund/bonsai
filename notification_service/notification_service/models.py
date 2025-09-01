@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ContentType(StrEnum):
@@ -14,14 +14,15 @@ class ContentType(StrEnum):
 
 class EmailTemplateContext(BaseModel):
     """Defines the names space for contextual information to be rendered in template.
-    
+
     This is intended to reserve varialbe names to use in the template.
     """
 
     model_config = ConfigDict(extra="allow")
 
-    user_name: str | None = Field(default=None, examples="Nollan Nollssson", 
-                                  description="Recipients full name.")
+    user_name: str | None = Field(
+        default=None, examples="Nollan Nollssson", description="Recipients full name."
+    )
 
 
 class EmailApiInput(BaseModel):
