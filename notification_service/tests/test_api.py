@@ -10,10 +10,12 @@ client = TestClient(create_api_app())
 def test_root_endpoint():
     """Test that root entry point present the service."""
 
-    resp = client.get("/")
-    assert resp.status_code == 200
-    assert "message" in resp.json()
-    assert "version" in resp.json()
+    app = create_api_app()
+    with TestClient(app) as client:
+        resp = client.get("/")
+        assert resp.status_code == 200
+        assert "message" in resp.json()
+        assert "version" in resp.json()
 
 
 def test_send_email_missing_message():
@@ -23,5 +25,7 @@ def test_send_email_missing_message():
         "subject": "Test",
         "content_type": "plain",
     }
-    resp = client.post("/send-email", json=payload)
-    assert resp.status_code == 422 or resp.status_code == 400
+    app = create_api_app()
+    with TestClient(app) as client:
+        resp = client.post("/send-email", json=payload)
+        assert resp.status_code == 422 or resp.status_code == 400
