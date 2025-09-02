@@ -1,29 +1,33 @@
-""" Module for checking the integrity of signature files recorded in the database. """
+"""Module for checking the integrity of signature files recorded in the database."""
 
 import datetime as dt
 import logging
 
-from minhash_service.config import Settings
-from minhash_service.version import __version__ as sourmash_version
-from minhash_service.infrastructure.signature_storage import SignatureStorage
-from minhash_service.factories import create_signature_repo
-from minhash_service.minhash.io import (
+from minhash_service.core.config import Settings
+from minhash_service.core.factories import create_signature_repo
+from minhash_service.minhash_service.signatures.storage import SignatureStorage
+from minhash_service.analysis.io import (
     list_signatures_in_index,
 )
+from minhash_service.version import __version__ as sourmash_version
 
-from .report_model import IntegrityReport, InitiatorType
+from .report_model import InitiatorType, IntegrityReport
 
 LOG = logging.getLogger(__name__)
 
 
-def check_signature_integrity(initiator: InitiatorType, settings: Settings) -> IntegrityReport:
-    """ Check that all signature files recorded in the database exist on disk."""
+def check_signature_integrity(
+    initiator: InitiatorType, settings: Settings
+) -> IntegrityReport:
+    """Check that all signature files recorded in the database exist on disk."""
     start_time = dt.datetime.now(dt.timezone.utc)
     repo = create_signature_repo()
     store = SignatureStorage(
         base_dir=settings.signature_dir, trash_dir=settings.trash_dir
     )
-    indexed_signatures: list[str] = [sig.name for sig in list_signatures_in_index(settings)]
+    indexed_signatures: list[str] = [
+        sig.name for sig in list_signatures_in_index(settings)
+    ]
 
     all_records = repo.get_all_signatures()
     n_signatures: int = 0
