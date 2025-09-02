@@ -175,7 +175,7 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     repo = create_signature_repo()
 
     loaded_signatures: SourmashSignatures = []
-    loaded_signatures_ids: list[str] = []
+    sample_to_md5s: dict[str, list[str]] = {}
     # TODO query all signatures in one go
     for sample_id in sample_ids:
         record = repo.get_by_sample_id(sample_id)
@@ -187,8 +187,11 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
         sig = read_signature(record.signature_path, cnf.kmer_size)
+        # store md5 sums for sample
+        md5s_for_sample: list[str] = [s.md5sum() for s in sig]
+        sample_to_md5s[sample_id] = md5s_for_sample
+
         loaded_signatures.extend(sig)
-        loaded_signatures_ids.append(sample_id)
 
     # read signatures to memory
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
@@ -196,8 +199,11 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     result = index.add_signatures(loaded_signatures)
 
     # update indexed status in db
-    LOG.info("Updating index status in the database.")
-    for sid in loaded_signatures_ids:
+    indexed_samples: list[str] = [
+        sid for sid, md5s in sample_to_md5s.items() 
+        if any(md5 in result.added_md5s for md5 in md5s)]
+    LOG.info("Updating index status in the database for %d samples.", len(indexed_samples))
+    for sid in indexed_samples:
         repo.mark_indexed(sid)
     
     return asdict(result)
