@@ -199,8 +199,11 @@ def add_to_index(sample_ids: list[str]) -> str:
         signature_files.append(record.signature_path)
     res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=cnf)
     # update indexed status in db
-    LOG.info("Updating index status in the database.")
-    for sid in loaded_signatures_ids:
+    indexed_samples: list[str] = [
+        sid for sid, md5s in sample_to_md5s.items() 
+        if any(md5 in result.added_md5s for md5 in md5s)]
+    LOG.info("Updating index status in the database for %d samples.", len(indexed_samples))
+    for sid in indexed_samples:
         repo.mark_indexed(sid)
     
     return asdict(result)
