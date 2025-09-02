@@ -8,7 +8,7 @@ from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from ..minhash.models import SignatureRecord
+from .models import SignatureRecord
 
 LOG = logging.getLogger(__name__)
 
@@ -74,7 +74,7 @@ class SignatureRepository:
         if not doc:
             return None
         return SignatureRecord.model_validate(doc)
-    
+
     def get_all_signatures(self) -> Iterator[SignatureRecord]:
         """Get all signatures in the database."""
         cursor = self._col.find(projection={"_id": 0})

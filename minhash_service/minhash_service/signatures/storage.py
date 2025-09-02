@@ -1,3 +1,5 @@
+"""Manage the storage of signatures in the service."""
+
 import datetime as dt
 import json
 import logging
@@ -91,7 +93,7 @@ class SignatureStorage:
         cannonical.replace(target)
         LOG.info("Moved %s to trash at %s", cannonical, target)
         return target
-    
+
     def check_file_integrity(self, path: Path, expected_checksum: str) -> bool:
         """Check if the file at the given path matches the expected checksum."""
         if not path.exists():

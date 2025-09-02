@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-import datetime as dt
 from typing import Any
 
 from .config import cnf, IntegrityReportLevel
@@ -18,13 +17,17 @@ from .minhash.io import (
     remove_signatures_from_index,
     write_signature,
 )
-from .minhash.models import (
-    Event,
-    EventType,
-    SignatureFile,
-    SignatureRecord,
+from minhash_service.analysis.models import SignatureFile, SignatureRecord
+from minhash_service.analysis.similarity import get_similar_signatures
+from minhash_service.core.config import IntegrityReportLevel, cnf
+from minhash_service.core.exceptions import FileRemovalError
+from minhash_service.core.factories import (
+    create_audit_trail_repo,
+    create_report_repo,
+    create_signature_repo,
 )
-from .minhash.similarity import get_similar_signatures
+
+from .notify import EmailApiInput, dispatch_email
 
 LOG = logging.getLogger(__name__)
 
@@ -40,9 +43,7 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     :rtype: str
     """
     at = create_audit_trail_repo()
-    store = SignatureStorage(
-        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
-    )
+    store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     repo = create_signature_repo()
     if repo.get_by_sample_id(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
@@ -92,9 +93,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     """
     at = create_audit_trail_repo()
     repo = create_signature_repo()
-    store = SignatureStorage(
-        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
-    )
+    store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     # mark sample for deletion in db
     was_marked = repo.marked_for_deletion(sample_id)
     if not was_marked:
@@ -345,7 +344,9 @@ def find_similar_and_cluster(
     repo = create_signature_repo()
     record = repo.get_by_sample_id(sample_id)
     if record is None:
-        raise FileNotFoundError(f"Signature for {sample_id} has not been added to the service.")
+        raise FileNotFoundError(
+            f"Signature for {sample_id} has not been added to the service."
+        )
     sample_ids = get_similar_signatures(
         record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
     )
@@ -378,11 +379,15 @@ def run_data_integrity_check() -> None:
     LOG.info("Saving report to database")
     repo.save(report)
 
-    report_error = cnf.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
-    report_warning = all([
-        cnf.integrity_report_level == IntegrityReportLevel.WARNING, 
-        report.has_errors or report.has_warnings
-    ])
+    report_error = (
+        cnf.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
+    )
+    report_warning = all(
+        [
+            cnf.integrity_report_level == IntegrityReportLevel.WARNING,
+            report.has_errors or report.has_warnings,
+        ]
+    )
     if cnf.is_notification_configured and (report_error or report_warning):
         # notify admins of errror
         message = EmailApiInput()
@@ -403,8 +408,6 @@ def cleanup_removed_files() -> None:
     """Cleanup files marked for removal."""
     two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
 
-    store = SignatureStorage(
-        base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir
-    )
+    store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     n_removed = store.purge_older_than(cutoff=two_weeks_ago)
-    LOG.info('Cleanup removed %d files', n_removed)
+    LOG.info("Cleanup removed %d files", n_removed)

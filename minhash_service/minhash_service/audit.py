@@ -7,7 +7,7 @@ from bson import ObjectId
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
 
-from .minhash.models import Event
+from .core.models import Event
 
 LOG = logging.getLogger(__name__)
 
