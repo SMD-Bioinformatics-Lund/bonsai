@@ -1,13 +1,23 @@
 """Configuration for minhash service"""
 
-from enum import StrEnum
 import tempfile
+from copy import deepcopy
+from enum import StrEnum
+from logging import config as logging_config
 from pathlib import Path
 from typing import Any
-from copy import deepcopy
-from logging import config as logging_config
 
-from pydantic import ConfigDict, DirectoryPath, Field, PositiveInt, ValidationError, computed_field, field_validator, HttpUrl, model_validator
+from pydantic import (
+    ConfigDict,
+    DirectoryPath,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    ValidationError,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings
 
 
@@ -22,6 +32,7 @@ class IntegrityReportLevel(StrEnum):
     NEVER = "NEVER"
     WARNING = "WARNING"
     ERROR = "ERROR"
+
 
 class LogLevel(StrEnum):
     """Log level options."""
@@ -57,7 +68,7 @@ class RedisConfig(BaseSettings):
 class NotificationConfig(BaseSettings):
     """Configure how to send notifications."""
 
-    sender: str = 'do-not-reply@bonsai.app'
+    sender: str = "do-not-reply@bonsai.app"
     sender_name: str = "Bonsai"
 
 
@@ -98,13 +109,14 @@ class Settings(BaseSettings):
     redis: RedisConfig = RedisConfig()
     mongodb: MongodbConfig = MongodbConfig()
     # periodic tasks
-    periodic_integrity_check: PeriodicIntegrityCheckConfig = PeriodicIntegrityCheckConfig()
+    periodic_integrity_check: PeriodicIntegrityCheckConfig = (
+        PeriodicIntegrityCheckConfig()
+    )
     cleanup_removed_files: CleanupRemovedFilesConfig = CleanupRemovedFilesConfig()
 
     # notification api
     notification_service_api: HttpUrl | None = None
     integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
-
 
     log_level: LogLevel = LogLevel.INFO
 
@@ -118,10 +130,12 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_report_service_config(self):
         """Ensure that API url is set when errors should be reported."""
-        should_notify_failed_report = any([
-            self.integrity_report_level == IntegrityReportLevel.ERROR, 
-            self.integrity_report_level == IntegrityReportLevel.WARNING, 
-        ])
+        should_notify_failed_report = any(
+            [
+                self.integrity_report_level == IntegrityReportLevel.ERROR,
+                self.integrity_report_level == IntegrityReportLevel.WARNING,
+            ]
+        )
         if should_notify_failed_report and not self.is_notification_configured:
             raise ValidationError("Notification serivce URL must be configures.")
         return self
@@ -131,7 +145,6 @@ class Settings(BaseSettings):
     def is_notification_configured(self) -> bool:
         """Return true URL to notificaiton API has been configured."""
         return self.notification_service_api is None
-
 
     def build_logging_conffig(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
@@ -174,9 +187,10 @@ LOG_CONFIG: dict[str, Any] = {
     },
 }
 
-def configure_logging(cnf: Settings) -> None:
+
+def configure_logging(settings: Settings) -> None:
     """Configure logging from settings."""
-    logging_config.dictConfig(cnf.build_logging_conffig())
+    logging_config.dictConfig(settings.build_logging_conffig())
 
 
 cnf = Settings()
