@@ -45,6 +45,7 @@ class AddResult:
     ok: bool
     warnings: list[str]
     added_count: int
+    added_md5s: list[str]
 
 
 @dataclass
@@ -168,6 +169,7 @@ class SBTIndexStore(BaseIndexStore):
             warnings.append("No signatures to add")
             return AddResult(ok=False, warnings=warnings, added_count=0)
 
+        added_md5s: list[str] = []
         with self.aquire_lock():
             index = self._load_index(create_if_missing=True)
 
@@ -185,10 +187,11 @@ class SBTIndexStore(BaseIndexStore):
                 leaf = sourmash.sbtmh.SigLeaf(md5, sig)
                 self._index.add_node(leaf)
                 added += 1
+                added_md5s.append(md5)
                 if dedupe_by_md5:
                     existing_md5.add(md5)
             self._atomic_save()
-        return AddResult(ok=True, warnings=warnings, added_count=added)
+        return AddResult(ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s)
 
     def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
         """
