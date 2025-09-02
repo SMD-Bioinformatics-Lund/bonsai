@@ -1,0 +1,41 @@
+[project]
+name = "notification_service"
+dynamic = ["version"]
+description = "A service that sends email notifications."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+dependencies = [
+    "setuptools",
+    "wheel",
+    "redis",
+    "pydantic-settings",
+    "fastapi[all]==0.115.0",
+    "click==8.1.7",
+    "rq==2.5.0",
+    "jinja2",            # For templating
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "mypy"
+]
+
+[project.scripts]
+notification-service = "email_notification_service.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.dynamic]
+version = {attr = "notification_service.__version__"}

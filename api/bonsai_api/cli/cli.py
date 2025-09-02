@@ -22,9 +22,11 @@ from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
 from bonsai_api.migrate import migrate_sample_collection, migrate_group_collection, MigrationError
+from bonsai_api.config import settings
+from bonsai_api.notify import EmailApiInput, dispatch_email
 from pymongo.errors import DuplicateKeyError
 
-from .utils import EmailType, create_missing_file_report, send_email_report
+from .utils import EmailType, create_missing_file_report
 
 LOG = getLogger(__name__)
 
@@ -264,10 +266,16 @@ def check_paths(
 
     if len(email_addr) > 0:
         # send report as email instead of writing to output
-        try:
-            send_email_report(output_ch.getvalue(), email_address=email_addr)
-        except ValueError as err:
-            LOG.error(str(err))
+        if settings.notification_service_api is None:
+            LOG.error("URL to notification service has not been configured, cant send report...")
+        else:
+            report = EmailApiInput(
+                recipient=email_addr,
+                subject="SKA Integrity report",
+                message=output_ch.getvalue(),
+                content_type='plain'
+            )
+            dispatch_email(api_url=settings.notification_service_api, message=report)
     else:
         output.write(output_ch.getvalue())
     click.secho("Finished validating file paths", fg='green')

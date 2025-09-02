@@ -62,15 +62,37 @@ services:
       - bonsai-net
     command: "flask run --reload --debug --host 0.0.0.0"
 
+  notification_service:
+    build: 
+      context: notification_service
+      network: host
+    scale: 1
+    networks:
+      - bonsai-net
+    command: "uvicorn notification_service.main:create_api_app --reload --log-level info --host 0.0.0.0"
+
   minhash_service:
-    container_name: minhash_service
     build: 
       context: minhash_service
       network: host
     depends_on:
       - redis
+      - minhash_cron_service
+      - notification_service
     networks:
       - bonsai-net
+    command: minhash-service run-minhash-worker
+
+  minhash_cron_service:
+    build: 
+      context: minhash_service
+      network: host
+    depends_on:
+      - redis
+    scale: 1
+    networks:
+      - bonsai-net
+    command: minhash-service run-cron-scheduler
 
   ska_service:
     container_name: ska_service

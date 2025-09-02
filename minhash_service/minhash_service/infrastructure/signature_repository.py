@@ -1,7 +1,8 @@
 """Storage of minhash signatures."""
 
 import logging
-from typing import Iterable, Iterator
+from typing import Any, Iterable, Iterator
+
 
 from bson import ObjectId
 from pymongo import ASCENDING
@@ -21,7 +22,7 @@ class SignatureRepository:
     Pass in a ready Collection (with auth, TLS, timeouts, etc. configured).
     """
 
-    def __init__(self, collection: Collection):
+    def __init__(self, collection: Collection[Any]):
         self._col = collection
 
     # ---- schema management --------------------------------------------------
@@ -74,6 +75,12 @@ class SignatureRepository:
         if not doc:
             return None
         return SignatureRecord.model_validate(doc)
+    
+    def get_all_signatures(self) -> Iterator[SignatureRecord]:
+        """Get all signatures in the database."""
+        cursor = self._col.find(projection={"_id": 0})
+        for doc in cursor:
+            yield SignatureRecord.model_validate(doc)
 
     def get_unindexed_signatures(
         self, *, limit: int | None = None
@@ -90,14 +97,16 @@ class SignatureRepository:
         return self._col.count_documents({"checksum": checksum})
 
     # ---- update -------------------------------------------------------------
-    def _set_flag(self, sample_id: str, status: bool, flag: str = "has_been_indexed") -> bool:
+    def _set_flag(self, sample_id: str, status: bool, flag: str) -> bool:
+
         """
         Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
         """
         res = self._col.update_one(
             {"sample_id": sample_id, flag: {"$ne": status}},
-            {"$set": {"has_been_indexed": status}},
+            {"$set": {flag: status}},
+
         )
         return res.modified_count > 0
 
