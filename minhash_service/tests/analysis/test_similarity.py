@@ -2,8 +2,8 @@
 
 import pytest
 
-from minhash_service.config import Settings
-from minhash_service.minhash.similarity import get_similar_signatures
+from minhash_service.analysis.similarity import get_similar_signatures
+from minhash_service.core.config import Settings
 
 
 @pytest.mark.parametrize("limit,exp_samples", [(None, 4), (4, 4), (2, 2)])
