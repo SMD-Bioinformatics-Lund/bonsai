@@ -9,7 +9,7 @@ import fasteners
 import sourmash
 from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
-from minhash_service.config import Settings
+from minhash_service.core.config import Settings
 
 from .models import SignatureFile, SignatureName
 
@@ -171,7 +171,7 @@ def add_signatures_to_index(
                 warning_msg = "Index is not SBT. Rebuilding as SBT for updates."
                 LOG.warning(warning_msg)
                 warnings.append(warning_msg)
-                existing_sigs = [s for s in tree.signatures()]
+                existing_sigs = list(tree.signatures())
                 tree = sourmash.sbtmh.create_sbt_index()
                 for s in existing_sigs:
                     leaf = sourmash.sbtmh.SigLeaf(s.md5sum(), s)
