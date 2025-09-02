@@ -4,11 +4,10 @@ import logging
 from enum import Enum
 from pathlib import Path
 
-
 import sourmash
 from scipy.cluster import hierarchy
 
-from minhash_service.config import Settings
+from minhash_service.core.config import Settings
 
 from .io import Signatures, read_signature
 
@@ -39,7 +38,9 @@ def to_newick(node, newick, parentdist, leaf_names) -> str:
     return newick
 
 
-def cluster_signatures(signature_files: list[Path], method: ClusterMethod, cnf: Settings):
+def cluster_signatures(
+    signature_files: list[Path], method: ClusterMethod, cnf: Settings
+):
     """Cluster multiple samples on their minhash signatures."""
 
     # load sequence signatures to memory

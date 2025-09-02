@@ -7,10 +7,10 @@ import sourmash
 from sourmash.index import IndexSearchResult as Result
 from sourmash.sbt import SBT
 
-from minhash_service.config import Settings
-from minhash_service.minhash.models import SimilarSignature, SimilarSignatures
+from minhash_service.core.config import Settings
 
-from .io import get_sbt_index, read_signature
+from .io import read_signature
+from .models import SimilarSignature, SimilarSignatures
 
 LOG = logging.getLogger(__name__)
 
