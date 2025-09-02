@@ -6,7 +6,7 @@ import os
 import tomllib
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
@@ -20,23 +20,6 @@ if custom_config is not None:
     user_cnf = Path(custom_config)
     if user_cnf.exists():
         config_file.append(user_cnf)
-
-
-class SmtpConfig(BaseSettings):
-    """SMTP server configuration."""
-
-    host: str
-    port: int = 25
-    timeout: int = Field(60, description="Conection timeout in seconds.")
-    use_tls: bool = False
-    use_ssl: bool = False
-
-
-class EmailConfig(BaseSettings):
-
-    subject_prefix: str = "[ Bonsai ]"
-    sender: str = 'do-not-reply@bonsai.app'
-    sender_name: str = "Bonsai"
 
 
 class BrackenThresholds(BaseModel):
@@ -131,9 +114,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 180  # expiration time for accesst token
     api_authentication: bool = True
 
-    # email server
-    smtp: SmtpConfig | None = None
-    email: EmailConfig = EmailConfig()
+    # notification api for sending emails
+    notification_service_api: HttpUrl | None = None
 
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication

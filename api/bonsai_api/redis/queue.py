@@ -58,7 +58,7 @@ class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
     finished_at: datetime | None
 
 
-def check_redis_job_status(job_id: str, raise_on_exception: False = False) -> JobStatus:
+def check_redis_job_status(job_id: str, raise_on_exception: bool = False) -> JobStatus:
     """Check status of a job."""
     job = Job.fetch(job_id, connection=redis.connection)
     job_info = JobStatus(
