@@ -142,8 +142,9 @@ class Settings(BaseSettings):
         """Ensure that API url is set when errors should be reported."""
         should_notify_failed_report = any(
             [
-                self.integrity_report_level == IntegrityReportLevel.ERROR,
-                self.integrity_report_level == IntegrityReportLevel.WARNING,
+                self.notification.integrity_report_level == IntegrityReportLevel.ERROR,
+                self.notification.integrity_report_level
+                == IntegrityReportLevel.WARNING,
             ]
         )
         if should_notify_failed_report and not self.is_notification_configured:
@@ -154,7 +155,7 @@ class Settings(BaseSettings):
     @property
     def is_notification_configured(self) -> bool:
         """Return true URL to notificaiton API has been configured."""
-        return self.notification_service_api is None
+        return self.notification.api_url is None
 
     def build_logging_conffig(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
