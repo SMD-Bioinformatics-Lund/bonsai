@@ -101,6 +101,7 @@ class SignatureRepository:
         Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
         """
+        LOG.debug("Set flag %s=%s for sample=%s", flag, status, sample_id)
         res = self._col.update_one(
             {"sample_id": sample_id, flag: {"$ne": status}},
             {"$set": {flag: status}},

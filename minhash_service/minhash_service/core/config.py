@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import (
     ConfigDict,
     DirectoryPath,
+    EmailStr,
     Field,
     HttpUrl,
     PositiveInt,
@@ -19,6 +20,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic_settings import BaseSettings
+
+from minhash_service.signatures.models import IndexFormat
 
 
 def _get_trash_dir() -> Path:
@@ -97,12 +100,20 @@ class CleanupRemovedFilesConfig(BasePeriodicTaskConfig):
     cron: str = "0 * * * *"  # cron schedule for periodic tasks
 
 
+class Notification(BaseSettings):
+    """Setup notification service."""
+
+    api_url: HttpUrl | None = None
+    recipient: list[str] = []
+    integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
+
+
 class Settings(BaseSettings):
     """Minhash service settings."""
 
     kmer_size: PositiveInt = 31
     signature_dir: Path = Path("/data/signature_db")
-    index_name: str = "genomes"
+    index_format: IndexFormat = IndexFormat.SBT
     trash_dir: DirectoryPath = Field(
         default_factory=_get_trash_dir, description="Directory for trashed files"
     )
@@ -115,9 +126,8 @@ class Settings(BaseSettings):
     )
     cleanup_removed_files: CleanupRemovedFilesConfig = CleanupRemovedFilesConfig()
 
-    # notification api
-    notification_service_api: HttpUrl | None = None
-    integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
+    # setup notification settings
+    notification: Notification = Notification()
 
     log_level: LogLevel = LogLevel.INFO
 
