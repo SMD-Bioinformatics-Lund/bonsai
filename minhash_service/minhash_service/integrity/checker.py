@@ -5,11 +5,9 @@ import logging
 
 from minhash_service.core.config import Settings
 from minhash_service.core.factories import create_signature_repo
-from minhash_service.minhash_service.signatures.storage import SignatureStorage
-from minhash_service.analysis.io import (
-    list_signatures_in_index,
-)
 from minhash_service.version import __version__ as sourmash_version
+from minhash_service.signatures.storage import SignatureStorage
+from minhash_service.signatures.index import get_index_path, create_index_store
 
 from .report_model import InitiatorType, IntegrityReport
 
@@ -25,8 +23,11 @@ def check_signature_integrity(
     store = SignatureStorage(
         base_dir=settings.signature_dir, trash_dir=settings.trash_dir
     )
+    # load index
+    idx_path = get_index_path(settings.signature_dir, settings.index_format)
+    index = create_index_store(idx_path, settings.index_format)
     indexed_signatures: list[str] = [
-        sig.name for sig in list_signatures_in_index(settings)
+        sig.name for sig in index.list_signatures()
     ]
 
     all_records = repo.get_all_signatures()

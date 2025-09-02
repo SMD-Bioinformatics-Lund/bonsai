@@ -1,27 +1,15 @@
 """Define reddis tasks."""
 
-from dataclasses import asdict
 import datetime as dt
 import gzip
 import json
 import logging
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any, cast
 
-from minhash_service.integrity.checker import check_signature_integrity
-from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
-from minhash_service.signatures.io import (
-    read_signature,
-    write_signature,
-    remove_signatures_from_index
-)
-from minhash_service.signatures.index import create_index_store, get_index_path
-from minhash_service.signatures.storage import SignatureStorage
-from minhash_service.signatures.models import SignatureJSON, GzippedJSON, SignatureRecord, SourmashSignatures
 from minhash_service.analysis.similarity import get_similar_signatures
-from minhash_service.core.models import Event, EventType
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError
 from minhash_service.core.factories import (
@@ -29,6 +17,21 @@ from minhash_service.core.factories import (
     create_report_repo,
     create_signature_repo,
 )
+from minhash_service.core.models import Event, EventType
+from minhash_service.integrity.checker import check_signature_integrity
+from minhash_service.integrity.report_model import InitiatorType
+from minhash_service.signatures.index import create_index_store, get_index_path
+from minhash_service.signatures.io import (
+    read_signature,
+    write_signature,
+)
+from minhash_service.signatures.models import (
+    GzippedJSON,
+    SignatureJSON,
+    SignatureRecord,
+    SourmashSignatures,
+)
+from minhash_service.signatures.storage import SignatureStorage
 
 from .notify import EmailApiInput, dispatch_email
 
@@ -52,7 +55,7 @@ def add_signature(sample_id: str, signature: SignatureJSON | GzippedJSON) -> str
     if repo.get_by_sample_id(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
-    
+
     # check if compressed and decompress data
     LOG.debug("Check if signature is compressed")
     if isinstance(signature, bytes):
@@ -110,6 +113,9 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     at = create_audit_trail_repo()
     repo = create_signature_repo()
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
+    # get index store
+    idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
+    index = create_index_store(idx_path, cnf.index_format)
     # mark sample for deletion in db
     was_marked = repo.marked_for_deletion(sample_id)
     if not was_marked:
@@ -135,7 +141,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
             removed_path = store.move_to_trash(record.signature_path, record.checksum)
             metadata["staged_path"] = str(removed_path)
 
-        status = remove_signatures_from_index([sample_id], cnf=cnf)
+        result = index.remove_signatures([sample_id])
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -159,7 +165,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         metadata=metadata,
     )
     at.log_event(e)
-    return {"sample_id": sample_id, "removed": status}
+    return result.model_dump(mode="json")
 
 
 def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
@@ -200,13 +206,17 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
 
     # update indexed status in db
     indexed_samples: list[str] = [
-        sid for sid, md5s in sample_to_md5s.items() 
-        if any(md5 in result.added_md5s for md5 in md5s)]
-    LOG.info("Updating index status in the database for %d samples.", len(indexed_samples))
+        sid
+        for sid, md5s in sample_to_md5s.items()
+        if any(md5 in result.added_md5s for md5 in md5s)
+    ]
+    LOG.info(
+        "Updating index status in the database for %d samples.", len(indexed_samples)
+    )
     for sid in indexed_samples:
         repo.mark_indexed(sid)
-    
-    return asdict(result)
+
+    return result.model_dump(mode="json")
 
 
 def remove_from_index(sample_ids: list[str]) -> str:
@@ -393,7 +403,8 @@ def run_data_integrity_check() -> None:
     repo.save(report)
 
     report_error = (
-        cnf.notification.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
+        cnf.notification.integrity_report_level == IntegrityReportLevel.ERROR
+        and report.has_errors
     )
     report_warning = all(
         [
@@ -404,7 +415,8 @@ def run_data_integrity_check() -> None:
     if cnf.is_notification_configured and (report_error or report_warning):
         # notify admins of errror
         message = EmailApiInput(
-            recipient=cnf.notification.recipient, subject="MinHash Integrity report")
+            recipient=cnf.notification.recipient, subject="MinHash Integrity report"
+        )
         dispatch_email(str(cnf.notification.api_url), message)
 
 

@@ -1,15 +1,15 @@
 """Models"""
 
+import datetime as dt
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated
-import datetime as dt
+from typing import Annotated, Any
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    StringConstraints,
     Field,
+    StringConstraints,
     field_serializer,
     field_validator,
 )
@@ -17,6 +17,8 @@ from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
 from minhash_service.core.models import SampleIdStr
 
+GzippedJSON = bytes
+SignatureJSON = dict[str, Any]
 SourmashSignatures = list[SourmashSignature | FrozenSourmashSignature]
 
 
