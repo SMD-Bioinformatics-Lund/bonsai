@@ -2,8 +2,8 @@
 
 import pytest
 
-from minhash_service.config import Settings
-from minhash_service.minhash.cluster import ClusterMethod, cluster_signatures
+from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
+from minhash_service.core.config import Settings
 
 
 @pytest.mark.parametrize(
