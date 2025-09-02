@@ -18,10 +18,17 @@ from .models import IndexFormat, SignatureName
 LOG = logging.getLogger(__name__)
 
 
+def get_index_path(signature_dir: Path, fmt: IndexFormat) -> Path:
+    idx_dir = signature_dir / "indexes"
+    idx_dir.mkdir(exist_ok=True)
+    return idx_dir / f"genomes_{fmt.value.lower()}_index"
+
+
 def create_index_store(
     index_path: Path, index_format: IndexFormat, lock_path: Path | None = None
 ) -> "BaseIndexStore":
     """Create an index store based on the specified format."""
+    LOG.debug("Reading index from: %s; format: %s", index_path, index_format)
     if index_format == IndexFormat.SBT:
         idx = SBTIndexStore(index_path, lock_path)
     elif index_format == IndexFormat.ROCKSDB:
