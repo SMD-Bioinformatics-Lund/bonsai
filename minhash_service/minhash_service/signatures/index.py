@@ -4,16 +4,16 @@ import contextlib
 import logging
 import tempfile
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+from pydantic import BaseModel
 
 import fasteners
 import sourmash
 from sourmash.exceptions import Panic
 from sourmash.index.revindex import DiskRevIndex
 
-from .models import IndexFormat, SignatureName
+from .models import IndexFormat, SignatureName, SourmashSignatures
 
 LOG = logging.getLogger(__name__)
 
@@ -38,8 +38,7 @@ def create_index_store(
     return idx
 
 
-@dataclass
-class AddResult:
+class AddResult(BaseModel):
     """Result of adding new signatures to index."""
 
     ok: bool
@@ -48,13 +47,13 @@ class AddResult:
     added_md5s: list[str]
 
 
-@dataclass
-class RemoveResult:
+class RemoveResult(BaseModel):
     """Result of adding new signatures to index."""
 
     ok: bool
     warnings: list[str]
     removed_count: int
+    removed: list [str] = []
 
 
 class BaseIndexStore(ABC):
@@ -191,9 +190,11 @@ class SBTIndexStore(BaseIndexStore):
                 if dedupe_by_md5:
                     existing_md5.add(md5)
             self._atomic_save()
-        return AddResult(ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s)
+        return AddResult(
+            ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s
+        )
 
-    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
+    def remove_signatures(self, names_to_remove: list[str]) -> RemoveResult:
         """
         Remove by signature.name by reconstructing a new SBT.
         SBT does not support in-place deletion.
@@ -201,10 +202,11 @@ class SBTIndexStore(BaseIndexStore):
         """
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
-            kept, removed = [], 0
+            kept: SourmashSignatures = []
+            removed: list[str] = []
             for sig in old_index.signatures():
                 if sig.name in names_to_remove:
-                    removed += 1
+                    removed.append(sig.name)
                 else:
                     kept.append(sig)
 
@@ -220,6 +222,9 @@ class SBTIndexStore(BaseIndexStore):
                 return RemoveResult(
                     ok=False, warnings=[warn], removed_count=len(removed)
                 )
+        return RemoveResult(
+            ok=False, warnings=[], removed_count=len(removed), removed=removed
+        )
 
 
 class RocksDBIndexStore(BaseIndexStore):
