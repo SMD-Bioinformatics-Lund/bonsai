@@ -2,7 +2,8 @@
 
 import logging
 from pathlib import Path
-from typing import Any
+import tempfile
+from typing import Any, cast
 
 from .config import cnf, IntegrityReportLevel
 from .exceptions import FileRemovalError
@@ -16,9 +17,13 @@ from .minhash.io import (
     add_signatures_to_index,
     remove_signatures_from_index,
     write_signature,
+    remove_signatures_from_index
 )
-from minhash_service.analysis.models import SignatureFile, SignatureRecord
+from minhash_service.signatures.index import create_index_store, get_index_path
+from minhash_service.signatures.storage import SignatureStorage
+from minhash_service.signatures.models import SignatureJSON, GzippedJSON, SignatureRecord, SourmashSignatures
 from minhash_service.analysis.similarity import get_similar_signatures
+from minhash_service.core.models import Event, EventType
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError
 from minhash_service.core.factories import (
@@ -32,7 +37,7 @@ from .notify import EmailApiInput, dispatch_email
 LOG = logging.getLogger(__name__)
 
 
-def add_signature(sample_id: str, signature: SignatureFile) -> str:
+def add_signature(sample_id: str, signature: SignatureJSON | GzippedJSON) -> str:
     """
     Find signatures similar to reference signature.
 
@@ -48,23 +53,32 @@ def add_signature(sample_id: str, signature: SignatureFile) -> str:
     if repo.get_by_sample_id(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
+    
+    # check if compressed and decompress data
+    LOG.debug("Check if signature is compressed")
+    if isinstance(signature, bytes):
+        if signature[:2] == b"\x1f\x8b":
+            LOG.debug("Decompressing gziped file")
+            signature = cast(SignatureJSON, json.loads(gzip.decompress(signature)))
+        else:
+            raise ValueError("Unkown file formeat, bytes blob is not a gzipped JSON")
 
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=cnf)
     signature_path = Path(signature_path)  # Ensure it's a Path object
 
-    # upon completion write signature to the disk
-    file_checksum = store.file_sha256_hex(signature_path)
-    sharded_path = store.ensure_file(signature_path, file_checksum)
+        # upon completion write signature to the disk
+        file_checksum = store.file_sha256_hex(signature_path)
+        sharded_path = store.ensure_file(signature_path, file_checksum)
 
     # store as a signature record
-    rec = SignatureRecord(
+    record = SignatureRecord(
         sample_id=sample_id,
         signature_path=sharded_path,
         checksum=file_checksum,
     )
     try:
-        repo.add_signature(rec)
+        repo.add_signature(record)
     except Exception as err:
         LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
         # create audit trail event
@@ -163,7 +177,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
 
 def add_to_index(sample_ids: list[str]) -> str:
     """
-    Add signatures to sourmash SBT index.
+    Add signatures to sourmash index.
 
     :param sample_ids list[str]: The path to multiple signature files
 
@@ -185,26 +199,16 @@ def add_to_index(sample_ids: list[str]) -> str:
         signature_files.append(record.signature_path)
     res, indexed_samples, warnings = add_signatures_to_index(signature_files, cnf=cnf)
     # update indexed status in db
-    for sid in indexed_samples:
+    LOG.info("Updating index status in the database.")
+    for sid in loaded_signatures_ids:
         repo.mark_indexed(sid)
-
-    signatures = ", ".join(list(sample_ids))
-    if res:
-        msg = f"Appended {signatures}"
-        if warnings:
-            warning_text = "; ".join(warnings)
-            msg += f" (Warnings: {warning_text})"
-    else:
-        msg = f"Failed to append signatures, {signatures}"
-        if warnings:
-            warning_text = "; ".join(warnings)
-            msg += f" (Warnings: {warning_text})"
-    return msg
+    
+    return asdict(result)
 
 
 def remove_from_index(sample_ids: list[str]) -> str:
     """
-    Remove signatures from sourmash SBT index.
+    Remove signatures from a sourmash index.
 
     :param sample_ids list[str]: Sample ids of signatures to remove
 
@@ -380,18 +384,19 @@ def run_data_integrity_check() -> None:
     repo.save(report)
 
     report_error = (
-        cnf.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
+        cnf.notification.integrity_report_level == IntegrityReportLevel.ERROR and report.has_errors
     )
     report_warning = all(
         [
-            cnf.integrity_report_level == IntegrityReportLevel.WARNING,
+            cnf.notification.integrity_report_level == IntegrityReportLevel.WARNING,
             report.has_errors or report.has_warnings,
         ]
     )
     if cnf.is_notification_configured and (report_error or report_warning):
         # notify admins of errror
-        message = EmailApiInput()
-        dispatch_email(cnf.notification_service_api, message)
+        message = EmailApiInput(
+            recipient=cnf.notification.recipient, subject="MinHash Integrity report")
+        dispatch_email(str(cnf.notification.api_url), message)
 
 
 def get_data_integrity_report() -> dict[str, Any] | None:
