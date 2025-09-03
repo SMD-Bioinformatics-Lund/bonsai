@@ -26,6 +26,7 @@ from minhash_service.signatures.io import (
     write_signature,
 )
 from minhash_service.signatures.models import (
+    IndexFormat,
     SignatureRecord,
     SourmashSignatures,
 )
@@ -179,22 +180,32 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
 
     loaded_signatures: SourmashSignatures = []
     sample_to_md5s: dict[str, list[str]] = {}
-    # TODO query all signatures in one go
-    for sample_id in sample_ids:
-        record = repo.get_by_sample_id(sample_id)
-        if record is None:
-            LOG.warning("No signature stored for %s", sample_id)
-            continue
 
-        if record.exclude_from_analysis:
-            LOG.info("Skipping excluded signature %s", sample_id)
-            continue
-        sig = read_signature(record.signature_path, cnf.kmer_size)
-        # store md5 sums for sample
-        md5s_for_sample: list[str] = [s.md5sum() for s in sig]
-        sample_to_md5s[sample_id] = md5s_for_sample
+    # load subset of signatures with SBT index as it can append to exising index
+    if cnf.index_format == IndexFormat.SBT:
+        # TODO query all signatures in one go
+        for sample_id in sample_ids:
+            record = repo.get_by_sample_id(sample_id)
+            if record is None:
+                LOG.warning("No signature stored for %s", sample_id)
+                continue
 
-        loaded_signatures.extend(sig)
+            if record.exclude_from_analysis:
+                LOG.info("Skipping excluded signature %s", sample_id)
+                continue
+            sig = read_signature(record.signature_path, cnf.kmer_size)
+            # store md5 sums for sample
+            md5s_for_sample: list[str] = [s.md5sum() for s in sig]
+            sample_to_md5s[sample_id] = md5s_for_sample
+
+            loaded_signatures.extend(sig)
+    else:
+        # rebuild entire index if using RocksDB index
+        for record in repo.get_all_signatures():
+            sig = read_signature(record.signature_path, cnf.kmer_size)
+            md5s_for_sample: list[str] = [s.md5sum() for s in sig]
+            sample_to_md5s[record.sample_id] = md5s_for_sample
+            loaded_signatures.extend(sig)
 
     # read signatures to memory
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
