@@ -75,7 +75,7 @@ def add_signature(sample_id: str, signature: SignatureJSON | GzippedJSON) -> str
             LOG.debug("Decompressing gziped file")
             signature = cast(SignatureJSON, json.loads(gzip.decompress(signature)))
         else:
-            raise ValueError("Unkown file formeat, bytes blob is not a gzipped JSON")
+            raise ValueError("Unknown file format, bytes blob is not a gzipped JSON")
 
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=cnf)
