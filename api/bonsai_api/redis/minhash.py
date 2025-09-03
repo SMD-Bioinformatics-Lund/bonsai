@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 
 DEFAULT_JOB_TIMEOUT = "30m"
 DEFAULT_RETRY = Retry(max=3, interval=60)  # shared default for retry-able jobs
-DISPATCH = "minhash_service.tasks.dispatch"
+DISPATCH = "minhash_service.tasks.dispatch_job"
 
 
 class TaskName(StrEnum):
@@ -81,28 +81,28 @@ def enqueue_job(
         submit_kwargs["depends_on"] = Dependency(
             jobs=list(depends_on), allow_failure=False, enqueue_at_front=True
         )
-    job = queue.enqueue(dispatch, task, **kwargs, **submit_kwargs)
+    job = queue.enqueue(dispatch, task=task, **kwargs, **submit_kwargs)
     LOG.debug("Submitting job, %s to %s", task, getattr(job, "worker_name", None))
     return job
 
 
-def schedule_add_genome_signature(sample_id: str, signature) -> SubmittedJob:
+def schedule_add_genome_signature(sample_id: str, signature_json: str) -> SubmittedJob:
     """Schedule adding a genome signature (no retries by default)."""
-    task = TaskName.ADD_SIGNATURE
+    task = str(TaskName.ADD_SIGNATURE)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
         task=task,
         retry=None,  # keep behavior identical (no retry in original)
         sample_id=sample_id,
-        signature=signature,
+        signature=signature_json,
     )
     return SubmittedJob(id=job.id, task=task)
 
 
 def schedule_remove_genome_signature(sample_id: str) -> SubmittedJob:
     """Schedule removing a genome signature (no retries by default)."""
-    task = TaskName.REMOVE_SIGNATURE
+    task = str(TaskName.REMOVE_SIGNATURE)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -124,7 +124,7 @@ def schedule_add_genome_signature_to_index(
     The job can depend on the completion of previous jobs by providing job IDs via `depends_on`.
     Retries are enabled by default (3x, 60s).
     """
-    task = TaskName.ADD_INDEX
+    task = str(TaskName.ADD_INDEX)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -148,7 +148,7 @@ def schedule_remove_genome_signature_from_index(
     The job can depend on the completion of previous jobs by providing job IDs via `depends_on`.
     Retries are enabled by default (3x, 60s).
     """
-    task = TaskName.REMOVE_INDEX
+    task = str(TaskName.REMOVE_INDEX)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -167,7 +167,7 @@ def schedule_find_similar_samples(
     limit: int | None = None,
 ) -> SubmittedJob:
     """Schedule a job to find similar samples (no retries by default)."""
-    task = TaskName.SEARCH_SIMILAR
+    task = str(TaskName.SEARCH_SIMILAR)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -185,7 +185,7 @@ def schedule_cluster_samples(
     cluster_method: ClusterMethod,
 ) -> SubmittedJob:
     """Schedule a job to cluster the given samples (no retries by default)."""
-    task = TaskName.CLUSTER_SAMPLES
+    task = str(TaskName.CLUSTER_SAMPLES)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -213,7 +213,7 @@ def schedule_find_similar_and_cluster(
     if typing_method != TypingMethod.MINHASH:
         raise NotImplementedError(f"{typing_method} is not implemented yet")
 
-    task = TaskName.SIMILAR_N_CLUSTER
+    task = str(TaskName.SIMILAR_N_CLUSTER)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,  # <-- fixed missing comma from original
@@ -229,7 +229,7 @@ def schedule_find_similar_and_cluster(
 
 def schedule_check_signature(sample_id: str) -> SubmittedJob:
     """Schedule a task to check if a signature exists for the sample."""
-    task = TaskName.CHECK_SIGNATURE
+    task = str(TaskName.CHECK_SIGNATURE)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
@@ -242,7 +242,7 @@ def schedule_check_signature(sample_id: str) -> SubmittedJob:
 
 def schedule_get_latest_report() -> SubmittedJob:
     """Schedule a task to get the latest integrity report."""
-    task = TaskName.GET_REPORT
+    task = str(TaskName.GET_REPORT)
     job = enqueue_job(
         queue=redis.minhash,
         dispatch=DISPATCH,
