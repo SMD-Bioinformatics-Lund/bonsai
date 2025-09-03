@@ -8,9 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import (
-    ConfigDict,
     DirectoryPath,
-    EmailStr,
     Field,
     HttpUrl,
     PositiveInt,
@@ -19,7 +17,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from minhash_service.signatures.models import IndexFormat
 
@@ -61,7 +59,7 @@ class MongodbConfig(BaseSettings):
 class RedisConfig(BaseSettings):
     """Redis configuration for minhash service."""
 
-    model_config = ConfigDict(env_prefix="redis_")
+    model_config = SettingsConfigDict(env_prefix="redis_")
 
     host: str = "redis"
     port: PositiveInt = 6379
@@ -86,7 +84,7 @@ class BasePeriodicTaskConfig(BaseSettings):
 class PeriodicIntegrityCheckConfig(BasePeriodicTaskConfig):
     """Configure scheudling of background tasks."""
 
-    model_config = ConfigDict(env_prefix="integrity_task_")
+    model_config = SettingsConfigDict(env_prefix="integrity_task_")
 
     cron: str = "0 12 * * SAT"  # cron schedule for periodic tasks
 
@@ -94,7 +92,7 @@ class PeriodicIntegrityCheckConfig(BasePeriodicTaskConfig):
 class CleanupRemovedFilesConfig(BasePeriodicTaskConfig):
     """Configure scheudling of background tasks."""
 
-    model_config = ConfigDict(env_prefix="purge_files_task_")
+    model_config = SettingsConfigDict(env_prefix="purge_files_task_")
 
     cron: str = "0 * * * *"  # cron schedule for periodic tasks
 
@@ -132,10 +130,10 @@ class Settings(BaseSettings):
 
     @field_validator("trash_dir", mode="before")
     @classmethod
-    def ensure_trash_dir_exists(cls, v):
+    def ensure_trash_dir_exists(cls, val: Path) -> Path:
         """Ensure that the trash directory exists."""
-        v.mkdir(parents=True, exist_ok=True)
-        return v
+        val.mkdir(parents=True, exist_ok=True)
+        return val
 
     @model_validator(mode="after")
     def validate_report_service_config(self):
