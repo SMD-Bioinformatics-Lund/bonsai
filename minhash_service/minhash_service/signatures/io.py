@@ -9,7 +9,7 @@ from sourmash.signature import FrozenSourmashSignature
 
 from minhash_service.core.exceptions import SignatureNotFoundError
 
-from .models import SignatureJSON, SourmashSignatures
+from .models import SourmashSignatures
 
 LOG = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def read_signature(path: Path, kmer_size: int | None = None) -> SourmashSignatur
 
 def write_signature(
     path: Path,
-    signature: SignatureJSON,
+    signature: str,
     kmer_size: int | None = None,
     name: str | None = None,
 ) -> Path:
