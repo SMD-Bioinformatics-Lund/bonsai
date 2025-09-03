@@ -275,7 +275,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
     return msg
 
 
-def similar(
+def search_similar(
     sample_id: str, min_similarity: float = 0.5, limit: int | None = None
 ) -> list[dict[str, Any]]:
     """
@@ -305,7 +305,7 @@ def similar(
     return results
 
 
-def cluster(sample_ids: list[str], cluster_method: str = "single") -> str:
+def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their sourmash signatures.
 
@@ -397,6 +397,23 @@ def find_similar_and_cluster(
     )
     newick: str = cluster_signatures(signature_files, method, cnf=cnf)
     return newick
+
+
+def check_signature(sample_id: str) -> dict[str, str | bool]:
+    """Check if signature exist."""
+
+    repo = create_signature_repo()
+    record = repo.get_by_sample_id(sample_id)
+
+    if record is None:
+        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
+
+    return {
+        "sample_id": sample_id,
+        "exists": record.signature_path.exists(),
+        "checksum": record.checksum,
+        "indexed": record.has_been_indexed,
+    }
 
 
 def run_data_integrity_check() -> None:
