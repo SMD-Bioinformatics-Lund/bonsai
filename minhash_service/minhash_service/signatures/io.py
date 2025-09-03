@@ -19,16 +19,24 @@ def read_signature(path: Path, kmer_size: int | None = None) -> SourmashSignatur
     # read signature
     loaded = cast(
         Iterable[FrozenSourmashSignature],
-        sourmash.load_file_as_signatures(str(path), ksize=kmer_size))
+        sourmash.load_file_as_signatures(str(path), ksize=kmer_size),
+    )
 
     # check that were signatures loaded with current kmer
     loaded_sigs: SourmashSignatures = list(loaded)
     if len(loaded_sigs) == 0:
-        raise SignatureNotFoundError(f"No signatures with ksize: {kmer_size} for file {path}")
+        raise SignatureNotFoundError(
+            f"No signatures with ksize: {kmer_size} for file {path}"
+        )
     return loaded_sigs
 
 
-def write_signature(path: Path, signature: SignatureJSON, kmer_size: int | None = None, name: str | None = None) -> Path:
+def write_signature(
+    path: Path,
+    signature: SignatureJSON,
+    kmer_size: int | None = None,
+    name: str | None = None,
+) -> Path:
     """
     Write signature to PATH.
 
@@ -40,7 +48,7 @@ def write_signature(path: Path, signature: SignatureJSON, kmer_size: int | None 
     # then annotate sample_id as name
     loaded_signatures = cast(
         Iterable[FrozenSourmashSignature],
-        sourmash.signature.load_signatures_from_json(signature, ksize=kmer_size)
+        sourmash.signature.load_signatures_from_json(signature, ksize=kmer_size),
     )
     upd_signatures: list[FrozenSourmashSignature] = []
     for sig_obj in loaded_signatures:
