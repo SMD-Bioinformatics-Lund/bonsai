@@ -39,6 +39,7 @@ from minhash_service.signatures.io import (
     write_signature,
 )
 from minhash_service.signatures.models import (
+    IndexFormat,
     SignatureRecord,
     SourmashSignatures,
 )
