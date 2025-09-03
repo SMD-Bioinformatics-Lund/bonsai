@@ -111,7 +111,7 @@ class Notification(BaseSettings):
 class Settings(BaseSettings):
     """Minhash service settings."""
 
-    kmer_size: PositiveInt = 31
+    kmer_size: PositiveInt | None = 31
     signature_dir: Path = Path("/data/signature_db")
     index_format: IndexFormat = IndexFormat.SBT
     trash_dir: DirectoryPath = Field(
