@@ -36,11 +36,11 @@ REGISTRY: dict[str, Callable[..., Any]] = {
 }
 
 ALLOWED_ENTRYPOINTS: set[str] = {
-    "minhash_service.tasks.dispatch",
+    "minhash_service.tasks.dispatch_job",
 }
 
 
-def dispatch(*, task: str, **kwargs: dict[str, Any]):
+def dispatch_job(*, task: str, **kwargs: Any):
     """Execute a task."""
     if task not in REGISTRY:
         raise ValueError(f"Unknown task: {task}.")
