@@ -6,10 +6,10 @@ import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterable
-from pydantic import BaseModel
 
 import fasteners
 import sourmash
+from pydantic import BaseModel
 from sourmash.exceptions import Panic
 from sourmash.index.revindex import DiskRevIndex
 
@@ -53,7 +53,7 @@ class RemoveResult(BaseModel):
     ok: bool
     warnings: list[str]
     removed_count: int
-    removed: list [str] = []
+    removed: list[str] = []
 
 
 class BaseIndexStore(ABC):
