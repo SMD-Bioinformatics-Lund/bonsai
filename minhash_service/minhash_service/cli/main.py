@@ -4,7 +4,7 @@ import logging
 
 import click
 from redis import Redis
-from rq import Queue, SimpleWorker
+from rq import Queue
 from rq.cron import CronScheduler
 
 from minhash_service.core.config import Settings, cnf, configure_logging
@@ -17,7 +17,8 @@ from minhash_service.core.models import Event, EventType
 from minhash_service.db import MongoDB
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.tasks import worker as worker_tasks
+from minhash_service.tasks import handlers as worker_tasks
+from minhash_service.tasks.dispatch import SimpleWhitelistWorker
 
 
 def _setup_logging(settings: Settings) -> logging.Logger:
@@ -48,7 +49,7 @@ def run_minhash_worker():
     # setup redis connection
     redis = Redis(host=cnf.redis.host, port=cnf.redis.port)
     queue = Queue(cnf.redis.queue, connection=redis)
-    app = SimpleWorker([queue], connection=redis)
+    app = SimpleWhitelistWorker([queue], connection=redis)
     log.info("Starting worker...")
     app.work()
 
