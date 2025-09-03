@@ -5,7 +5,7 @@ import logging
 import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, cast
 
 import fasteners
 import sourmash
@@ -74,7 +74,7 @@ class BaseIndexStore(ABC):
             else self.index_path.with_suffix(f"{self.index_path.suffix}.lock")
         )
         self._lock = fasteners.InterProcessLock(str(self.lock_path))
-        self._index = None  # lazy loaded
+        self._index: Any = None  # lazy loaded
         LOG.debug("Index path: %s; lock path: %s", self.index_path, self.lock_path)
 
     @contextlib.contextmanager
@@ -116,13 +116,15 @@ class SBTIndexStore(BaseIndexStore):
     - support batch operations and atomic saves
     """
 
-    def _load_index(self, create_if_missing: bool = True):
+    def _load_index(self, create_if_missing: bool = True) -> Any:
         """Load index to memory."""
         if self._index is not None:
             return self._index
 
         try:
-            index = sourmash.load_file_as_index(str(self.index_path))
+            index = cast(
+                sourmash.sbtmh.SBT,
+                sourmash.load_file_as_index(str(self.index_path)))
             LOG.debug(
                 "Loaded index '%s' (type: %s)", self.index_path, type(index).__name__
             )
@@ -166,20 +168,20 @@ class SBTIndexStore(BaseIndexStore):
         sigs = list(signatures)
         if not sigs:
             warnings.append("No signatures to add")
-            return AddResult(ok=False, warnings=warnings, added_count=0)
+            return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
 
         added_md5s: list[str] = []
         with self.aquire_lock():
             index = self._load_index(create_if_missing=True)
 
-            existing_md5 = set()
+            existing_md5: set[str] = set()
             if dedupe_by_md5:
                 for sig in index.signatures():
                     existing_md5.add(sig.md5sum())
 
             added: int = 0
             for sig in sigs:
-                md5 = sig.md5sum()
+                md5 = cast(str, sig.md5sum())
                 if dedupe_by_md5 and md5 in existing_md5:
                     continue
                 # add signature depending on the db type
@@ -230,7 +232,7 @@ class SBTIndexStore(BaseIndexStore):
 class RocksDBIndexStore(BaseIndexStore):
     """Handles RocksDB index on disk."""
 
-    def _load_index(self, create_if_missing: bool = True):
+    def _load_index(self, create_if_missing: bool = True) -> DiskRevIndex:
         try:
             index = DiskRevIndex(str(self.index_path))
             LOG.debug(
@@ -243,6 +245,7 @@ class RocksDBIndexStore(BaseIndexStore):
             index = DiskRevIndex.create_from_sigs([], str(self.index_path))
         except Panic as err:
             LOG.error("Sourmash failed to load index: %s", err)
+            raise
         return index
 
     def list_signatures(self) -> list[SignatureName]:
@@ -263,7 +266,7 @@ class RocksDBIndexStore(BaseIndexStore):
         sigs = list(signatures)
         if not sigs:
             warnings.append("No signatures to add")
-            return AddResult(ok=False, warnings=warnings, added_count=0)
+            return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
         raise NotImplementedError(
             "RocksDBIndexStore does not support adding signatures directly."
         )
