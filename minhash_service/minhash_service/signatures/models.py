@@ -17,8 +17,6 @@ from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
 from minhash_service.core.models import SampleIdStr
 
-GzippedJSON = bytes
-SignatureJSON = dict[str, Any]
 SourmashSignatures = list[SourmashSignature | FrozenSourmashSignature]
 
 

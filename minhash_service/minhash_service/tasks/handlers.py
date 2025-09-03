@@ -39,8 +39,6 @@ from minhash_service.signatures.io import (
     write_signature,
 )
 from minhash_service.signatures.models import (
-    GzippedJSON,
-    SignatureJSON,
     SignatureRecord,
     SourmashSignatures,
 )
@@ -51,31 +49,30 @@ from .notify import EmailApiInput, dispatch_email
 LOG = logging.getLogger(__name__)
 
 
-def add_signature(sample_id: str, signature: SignatureJSON | GzippedJSON) -> str:
+def add_signature(sample_id: str, signature: str) -> str:
     """
     Find signatures similar to reference signature.
 
     :param sample_id str: the sample_id
-    :param signature dict[str, str]: sourmash signature file in JSON format
+    :param signature str: MUST be a JSON sting in sourmash signature format
 
     :return: path to the signature
     :rtype: str
     """
+    # validate signature
+    try:
+        json.loads(signature)
+    except json.JSONDecodeError as err:
+        LOG.debug("Malformed JSON file format: %s", signature)
+        raise ValueError("signature is not a valid JSON string") from err
+    
+    # setup repositories
     at = create_audit_trail_repo()
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     repo = create_signature_repo()
     if repo.get_by_sample_id(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
-
-    # check if compressed and decompress data
-    LOG.debug("Check if signature is compressed")
-    if isinstance(signature, bytes):
-        if signature[:2] == b"\x1f\x8b":
-            LOG.debug("Decompressing gziped file")
-            signature = cast(SignatureJSON, json.loads(gzip.decompress(signature)))
-        else:
-            raise ValueError("Unknown file format, bytes blob is not a gzipped JSON")
 
     # write signature to disk
     signature_path = write_signature(sample_id, signature, cnf=cnf)
