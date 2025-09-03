@@ -10,13 +10,15 @@ from typing import Any, Iterable, cast
 import fasteners
 import sourmash
 from pydantic import BaseModel
-from sourmash.exceptions import Panic
+from sourmash.exceptions import SourmashError
 from sourmash.index.revindex import DiskRevIndex
 
 from .models import IndexFormat, SignatureName, SourmashSignatures
 
 LOG = logging.getLogger(__name__)
 
+SBT_INDEX = sourmash.sbtmh.SBT
+ROCKSDB_INDEX = DiskRevIndex
 
 def get_index_path(signature_dir: Path, fmt: IndexFormat) -> Path:
     idx_dir = signature_dir / "indexes"
@@ -93,9 +95,20 @@ class BaseIndexStore(ABC):
             self._lock.release()
             LOG.debug("Released lock: %s", self.lock_path)
 
+
     @abstractmethod
+    def _load_index(self, create_if_missing: bool) -> SBT_INDEX | ROCKSDB_INDEX:
+        """Index specific load function."""
+
+
     def list_signatures(self) -> list[SignatureName]:
         """List signatures in index."""
+        index = self._load_index(create_if_missing=False)
+        return [
+            SignatureName(name=sig.name, filename=getattr(sig, "filename", ""))
+            for sig in index.signatures()
+        ]
+
 
     @abstractmethod
     def add_signatures(
@@ -148,14 +161,6 @@ class SBTIndexStore(BaseIndexStore):
             tmp_idx_path = Path(tmp_idx_path)  # str -> Path
 
             tmp_idx_path.replace(self.index_path)
-
-    def list_signatures(self) -> list[SignatureName]:
-        """List signatures in index."""
-        index = self._load_index(create_if_missing=False)
-        return [
-            SignatureName(name=sig.name, filename=getattr(sig, "filename", ""))
-            for sig in index.signatures()
-        ]
 
     def add_signatures(
         self,
@@ -243,36 +248,62 @@ class RocksDBIndexStore(BaseIndexStore):
                 raise
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             index = DiskRevIndex.create_from_sigs([], str(self.index_path))
-        except Panic as err:
+        except SourmashError as err:
             LOG.error("Sourmash failed to load index: %s", err)
             raise
         return index
+    
+    def _rebuild_index(self, signatures: Iterable[sourmash.SourmashSignature]) -> DiskRevIndex:
+        """Rebuild the entire index using all samples that should be indexed.
 
-    def list_signatures(self) -> list[SignatureName]:
-        """List signatures in index."""
-        index = self._load_index(create_if_missing=True)
-        return [
-            SignatureName(name=sig.name, filename=getattr(sig, "filename", ""))
-            for sig in index.signatures()
-        ]
+        DiskRevIndex or RocksDB doesnt have an API for appending or removing signatures 
+        from the index.
+        """
+        with self.aquire_lock():
+            parent = self.index_path.parent  # keep on same file system
+            with tempfile.TemporaryDirectory(dir=parent, prefix=self.index_path.name) as tmp_dir:
+                tmp_path = Path(tmp_dir) / "index.tmp"
+                index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
+                tmp_path.replace(self.index_path)  # atomic save
+        return index
 
     def add_signatures(
         self,
         signatures: Iterable[sourmash.SourmashSignature],
-        dedupe_by_md5: bool = True,
-    ):
+        **_
+    ) -> AddResult:
         """Add one or more signatures to index."""
-        warnings: list[str] = []
-        sigs = list(signatures)
-        if not sigs:
-            warnings.append("No signatures to add")
-            return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
-        raise NotImplementedError(
-            "RocksDBIndexStore does not support adding signatures directly."
-        )
+        try:
+            idx = self._rebuild_index(signatures)
+        except Exception as error:
+            result = AddResult(ok=False, warnings=[str(error)], added_count=0, added_md5s=[])
+        else:
+            self._index = idx  # replace in memory index
+            added_md5s: list[str] = [sig.md5sum() for sig in signatures]
+            result = AddResult(ok=True, warnings=[], added_count=len(list(idx.signatures())), added_md5s=added_md5s)
+        return result
 
     def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
-        raise NotImplementedError(
-            "RocksDBIndexStore does not support adding signatures directly."
+        with self.aquire_lock():
+            old_index = self._load_index(create_if_missing=False)
+            kept: SourmashSignatures = []
+            removed: list[str] = []
+            for sig in old_index.signatures():
+                if sig.name in names_to_remove:
+                    removed.append(sig.name)
+                else:
+                    kept.append(sig)
+            
+            # build new index
+            new_idx = self._rebuild_index(kept)
+            self._index = new_idx
+            not_removed = set(names_to_remove) - set(removed)
+            if len(not_removed) > 0:
+                warn = f"could not remove {', '.join(not_removed)}"
+                return RemoveResult(
+                    ok=False, warnings=[warn], removed_count=len(removed)
+                )
+        return RemoveResult(
+            ok=False, warnings=[], removed_count=len(removed), removed=removed
         )
