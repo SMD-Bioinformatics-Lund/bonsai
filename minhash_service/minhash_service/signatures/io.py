@@ -14,7 +14,7 @@ from .models import SourmashSignatures
 LOG = logging.getLogger(__name__)
 
 
-def read_signature(path: Path, kmer_size: int | None = None) -> SourmashSignatures:
+def read_signatures(path: Path, kmer_size: int | None = None) -> SourmashSignatures:
     """Read signature to memory."""
     # read signature
     loaded = cast(
@@ -31,7 +31,7 @@ def read_signature(path: Path, kmer_size: int | None = None) -> SourmashSignatur
     return loaded_sigs
 
 
-def write_signature(
+def write_signatures(
     path: Path,
     signature: str,
     kmer_size: int | None = None,
