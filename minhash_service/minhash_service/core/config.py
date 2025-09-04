@@ -140,14 +140,10 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_report_service_config(self):
         """Ensure that API url is set when errors should be reported."""
-        should_notify_failed_report = any(
-            [
-                self.notification.integrity_report_level == IntegrityReportLevel.ERROR,
-                self.notification.integrity_report_level
-                == IntegrityReportLevel.WARNING,
-            ]
-        )
-        if should_notify_failed_report and not self.is_notification_configured:
+        requires_notifier = self.notification.integrity_report_level in {
+            IntegrityReportLevel.ERROR, IntegrityReportLevel.WARNING
+        }
+        if requires_notifier and not self.is_notification_configured:
             raise ValidationError("Notification serivce URL must be configures.")
         return self
 
@@ -155,9 +151,9 @@ class Settings(BaseSettings):
     @property
     def is_notification_configured(self) -> bool:
         """Return true URL to notificaiton API has been configured."""
-        return self.notification.api_url is None
+        return self.notification.api_url is not None
 
-    def build_logging_conffig(self) -> dict[str, Any]:
+    def build_logging_config(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
         log_config = deepcopy(LOG_CONFIG)
         # update log levels
@@ -193,7 +189,7 @@ LOG_CONFIG: dict[str, Any] = {
 
 def configure_logging(settings: Settings) -> None:
     """Configure logging from settings."""
-    logging_config.dictConfig(settings.build_logging_conffig())
+    logging_config.dictConfig(settings.build_logging_config())
 
 
 cnf = Settings()
