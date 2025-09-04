@@ -1,9 +1,9 @@
 """Factory functions related to data stores and repos."""
 
+from minhash_service.audit import AuditTrailRepository
 from minhash_service.db import MongoDB
 from minhash_service.integrity.report_repository import IntegrityReportRepository
-from minhash_service.infrastructure.signature_repository import SignatureRepository
-from minhash_service.audit import AuditTrailRepository
+from minhash_service.signatures.repository import SignatureRepository
 
 
 def create_signature_repo() -> SignatureRepository:

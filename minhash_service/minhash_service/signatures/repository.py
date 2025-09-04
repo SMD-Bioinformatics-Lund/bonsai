@@ -3,13 +3,12 @@
 import logging
 from typing import Any, Iterable, Iterator
 
-
 from bson import ObjectId
 from pymongo import ASCENDING
 from pymongo.collection import Collection
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from ..minhash.models import SignatureRecord
+from .models import SignatureRecord
 
 LOG = logging.getLogger(__name__)
 
@@ -68,14 +67,31 @@ class SignatureRepository:
             raise
 
     # ---- read ---------------------------------------------------------------
-    def get_by_sample_id(self, sample_id: str) -> SignatureRecord | None:
-        """Get a signature by sample_id. Returns None if not found."""
+    def get_by_sample_id_or_checksum(
+        self, sample_id: str | None = None, checksum: str | None = None
+    ) -> SignatureRecord | None:
+        """Get a signature by either sample_id or checksum. Returns None if not found."""
+        # input validation
+        if sample_id is None and checksum is None:
+            raise ValueError("Either sample_id or checksum must be defined.")
 
-        doc = self._col.find_one({"sample_id": sample_id}, projection={"_id": 0})
+        if sample_id is not None and checksum is not None:
+            raise ValueError("Both sample_id and checksum can't be defined.")
+
+        # build query
+        if sample_id is not None:
+            field_name = "sample_id"
+            query = sample_id
+        else:
+            field_name = "signature_checksum"
+            query = checksum
+
+        # query the database and cast result
+        doc = self._col.find_one({field_name: query}, projection={"_id": 0})
         if not doc:
             return None
         return SignatureRecord.model_validate(doc)
-    
+
     def get_all_signatures(self) -> Iterator[SignatureRecord]:
         """Get all signatures in the database."""
         cursor = self._col.find(projection={"_id": 0})
@@ -98,15 +114,14 @@ class SignatureRepository:
 
     # ---- update -------------------------------------------------------------
     def _set_flag(self, sample_id: str, status: bool, flag: str) -> bool:
-
         """
         Set flags, such as 'has_been_indexed', to the desired state.
         Returns True if a document was modified (i.e., state actually changed).
         """
+        LOG.debug("Set flag %s=%s for sample=%s", flag, status, sample_id)
         res = self._col.update_one(
             {"sample_id": sample_id, flag: {"$ne": status}},
             {"$set": {flag: status}},
-
         )
         return res.modified_count > 0
 

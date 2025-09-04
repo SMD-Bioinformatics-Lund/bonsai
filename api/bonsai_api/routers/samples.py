@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Union
+from typing import Annotated, Any, Union
 
 from fastapi import (
     APIRouter,
@@ -63,7 +63,7 @@ from bonsai_api.redis.minhash import (
     schedule_find_similar_samples,
 )
 from bonsai_api.utils import format_error_message
-from .shared import SAMPLE_ID_PATH, RouterTags
+from .shared import SAMPLE_ID_PATH, RouterTags, parse_signature_json
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -248,7 +248,7 @@ async def add_sample_metadata(
 @router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])
 async def create_genome_signatures_sample(
     sample_id: str,
-    signature: Annotated[bytes, File()],
+    signature: str = Depends(parse_signature_json),
     db: Database = Depends(get_db),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
@@ -259,7 +259,7 @@ async def create_genome_signatures_sample(
         raise HTTPException(
             status_code=404, detail=format_error_message(error)
         ) from error
-
+    
     # abort if signature has already been added
     sig_exist_err = HTTPException(
         status_code=409, detail="Signature is already added to sample"
@@ -275,8 +275,8 @@ async def create_genome_signatures_sample(
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
-    sample_obj = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
-    upd_sample_data = SampleInCreate(**sample_obj)
+    sample_obj: dict[str, Any] = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
+    upd_sample_data = SampleInCreate.model_validate(sample_obj)
     await crud_update_sample(db, upd_sample_data)
 
     return {
