@@ -37,6 +37,7 @@ REGISTRY: dict[str, Callable[..., Any]] = {
 
 ALLOWED_ENTRYPOINTS: set[str] = {
     "minhash_service.tasks.dispatch_job",
+    "minhash_service.tasks.dispatch.dispatch_job",
 }
 
 
