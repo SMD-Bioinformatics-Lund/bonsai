@@ -2,7 +2,6 @@
 
 import logging
 
-from sourmash.sbt import SBT
 from sourmash.search import (
     SearchResult,
     search_databases_with_abund_query,
