@@ -1,14 +1,25 @@
 """Configuration for minhash service"""
 
-from enum import StrEnum
 import tempfile
+from copy import deepcopy
+from enum import StrEnum
+from logging import config as logging_config
 from pathlib import Path
 from typing import Any
-from copy import deepcopy
-from logging import config as logging_config
 
-from pydantic import ConfigDict, DirectoryPath, Field, PositiveInt, ValidationError, computed_field, field_validator, HttpUrl, model_validator
-from pydantic_settings import BaseSettings
+from pydantic import (
+    DirectoryPath,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    ValidationError,
+    computed_field,
+    field_validator,
+    model_validator,
+)
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from minhash_service.signatures.models import IndexFormat
 
 
 def _get_trash_dir() -> Path:
@@ -23,6 +34,7 @@ class IntegrityReportLevel(StrEnum):
     WARNING = "WARNING"
     ERROR = "ERROR"
 
+
 class LogLevel(StrEnum):
     """Log level options."""
 
@@ -32,11 +44,11 @@ class LogLevel(StrEnum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
-    
+
 class MongodbConfig(BaseSettings):
     """MongoDB configuration for minhash service."""
 
-    model_config = ConfigDict(env_prefix="mongodb_")
+    model_config = SettingsConfigDict(env_prefix="mongodb_")
 
     host: str = "mongodb"
     port: PositiveInt = 27017
@@ -48,7 +60,7 @@ class MongodbConfig(BaseSettings):
 class RedisConfig(BaseSettings):
     """Redis configuration for minhash service."""
 
-    model_config = ConfigDict(env_prefix="redis_")
+    model_config = SettingsConfigDict(env_prefix="redis_")
 
     host: str = "redis"
     port: PositiveInt = 6379
@@ -58,7 +70,7 @@ class RedisConfig(BaseSettings):
 class NotificationConfig(BaseSettings):
     """Configure how to send notifications."""
 
-    sender: str = 'do-not-reply@bonsai.app'
+    sender: str = "do-not-reply@bonsai.app"
     sender_name: str = "Bonsai"
 
 
@@ -73,7 +85,7 @@ class BasePeriodicTaskConfig(BaseSettings):
 class PeriodicIntegrityCheckConfig(BasePeriodicTaskConfig):
     """Configure scheudling of background tasks."""
 
-    model_config = ConfigDict(env_prefix="integrity_task_")
+    model_config = SettingsConfigDict(env_prefix="integrity_task_")
 
     cron: str = "0 12 * * SAT"  # cron schedule for periodic tasks
 
@@ -81,17 +93,25 @@ class PeriodicIntegrityCheckConfig(BasePeriodicTaskConfig):
 class CleanupRemovedFilesConfig(BasePeriodicTaskConfig):
     """Configure scheudling of background tasks."""
 
-    model_config = ConfigDict(env_prefix="purge_files_task_")
+    model_config = SettingsConfigDict(env_prefix="purge_files_task_")
 
     cron: str = "0 * * * *"  # cron schedule for periodic tasks
+
+
+class Notification(BaseSettings):
+    """Setup notification service."""
+
+    api_url: HttpUrl | None = None
+    recipient: list[str] = []
+    integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
 
 
 class Settings(BaseSettings):
     """Minhash service settings."""
 
-    kmer_size: PositiveInt = 31
+    kmer_size: PositiveInt | None = 31
     signature_dir: Path = Path("/data/signature_db")
-    index_name: str = "genomes"
+    index_format: IndexFormat = IndexFormat.SBT
     trash_dir: DirectoryPath = Field(
         default_factory=_get_trash_dir, description="Directory for trashed files"
     )
@@ -99,30 +119,33 @@ class Settings(BaseSettings):
     redis: RedisConfig = RedisConfig()
     mongodb: MongodbConfig = MongodbConfig()
     # periodic tasks
-    periodic_integrity_check: PeriodicIntegrityCheckConfig = PeriodicIntegrityCheckConfig()
+    periodic_integrity_check: PeriodicIntegrityCheckConfig = (
+        PeriodicIntegrityCheckConfig()
+    )
     cleanup_removed_files: CleanupRemovedFilesConfig = CleanupRemovedFilesConfig()
 
-    # notification api
-    notification_service_api: HttpUrl | None = None
-    integrity_report_level: IntegrityReportLevel = IntegrityReportLevel.NEVER
-
+    # setup notification settings
+    notification: Notification = Notification()
 
     log_level: LogLevel = LogLevel.INFO
 
     @field_validator("trash_dir", mode="before")
     @classmethod
-    def ensure_trash_dir_exists(cls, v):
+    def ensure_trash_dir_exists(cls, val: Path) -> Path:
         """Ensure that the trash directory exists."""
-        v.mkdir(parents=True, exist_ok=True)
-        return v
+        val.mkdir(parents=True, exist_ok=True)
+        return val
 
     @model_validator(mode="after")
     def validate_report_service_config(self):
         """Ensure that API url is set when errors should be reported."""
-        should_notify_failed_report = any([
-            self.integrity_report_level == IntegrityReportLevel.ERROR, 
-            self.integrity_report_level == IntegrityReportLevel.WARNING, 
-        ])
+        should_notify_failed_report = any(
+            [
+                self.notification.integrity_report_level == IntegrityReportLevel.ERROR,
+                self.notification.integrity_report_level
+                == IntegrityReportLevel.WARNING,
+            ]
+        )
         if should_notify_failed_report and not self.is_notification_configured:
             raise ValidationError("Notification serivce URL must be configures.")
         return self
@@ -131,8 +154,7 @@ class Settings(BaseSettings):
     @property
     def is_notification_configured(self) -> bool:
         """Return true URL to notificaiton API has been configured."""
-        return self.notification_service_api is None
-
+        return self.notification.api_url is None
 
     def build_logging_conffig(self) -> dict[str, Any]:
         """Build logging configuration dictionary."""
@@ -141,6 +163,7 @@ class Settings(BaseSettings):
         log_config["handlers"]["default"]["level"] = self.log_level.value
         log_config["loggers"]["root"]["level"] = self.log_level.value
         return log_config
+
 
 # Logging configuration
 LOG_CONFIG: dict[str, Any] = {
@@ -166,9 +189,10 @@ LOG_CONFIG: dict[str, Any] = {
     },
 }
 
-def configure_logging(cnf: Settings) -> None:
+
+def configure_logging(settings: Settings) -> None:
     """Configure logging from settings."""
-    logging_config.dictConfig(cnf.build_logging_conffig())
+    logging_config.dictConfig(settings.build_logging_conffig())
 
 
 cnf = Settings()

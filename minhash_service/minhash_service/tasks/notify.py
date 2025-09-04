@@ -1,10 +1,12 @@
 """Dispatch email messages using the notification service"""
-from enum import StrEnum
+
 import logging
+from enum import StrEnum
 from typing import Any
+
 import requests
-from requests.exceptions import HTTPError
 from pydantic import BaseModel
+from requests.exceptions import HTTPError
 
 LOG = logging.getLogger(__name__)
 
@@ -17,6 +19,7 @@ class ContentType(StrEnum):
         HTML: Email should be HTML formatted.
         PLAIN: Email using unformatted text.
     """
+
     HTML = "html"
     PLAIN = "plain"
 
@@ -35,7 +38,7 @@ class EmailApiInput(BaseModel):
 def dispatch_email(api_url: str, message: EmailApiInput, timeout: int = 10) -> bool:
     """Dispatch a request to send a email."""
 
-    resp = requests.post(api_url, json=message.model_dump(mode='json'), timeout=timeout)
+    resp = requests.post(api_url, json=message.model_dump(mode="json"), timeout=timeout)
     try:
         resp.raise_for_status()
     except HTTPError as err:
