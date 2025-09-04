@@ -1,6 +1,10 @@
 """Minhash service exceptions."""
 
 
+class SampleNotFoundError(Exception):
+    """Raised when a sample is not found."""
+
+
 class SignatureNotFoundError(Exception):
     """Raised when a signature is not found."""
 
