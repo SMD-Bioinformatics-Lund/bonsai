@@ -53,8 +53,9 @@ class MongodbConfig(BaseSettings):
     host: str = "mongodb"
     port: PositiveInt = 27017
     database: str = "minhash_db"
-    collection: str = "signatures"
-    log_collection: str = "logs"
+    signature_collection: str = "signatures"
+    report_collection: str = "report"
+    audit_trail_collection: str = "audit_trail"
 
 
 class RedisConfig(BaseSettings):
