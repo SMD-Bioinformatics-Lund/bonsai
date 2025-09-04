@@ -77,7 +77,7 @@ class NotificationConfig(BaseSettings):
 class BasePeriodicTaskConfig(BaseSettings):
     """Generic configuration for periodic integrity check task."""
 
-    endabled: bool = True  # enable/disable background task processing
+    enabled: bool = True  # enable/disable background task processing
     cron: str = "0 12 * * SAT"  # cron schedule for periodic tasks
     queue: str = "minhash"  # redis queue name for periodic tasks
 
