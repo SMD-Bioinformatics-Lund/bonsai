@@ -122,6 +122,13 @@ class BaseIndexStore(ABC):
     def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
 
+    @property
+    def index(self) -> SBT_INDEX | ROCKSDB_INDEX:
+        """Return memory representation of index."""
+        if self._index is None:
+            self._load_index(create_if_missing=True)
+        return self._index
+
 
 class SBTIndexStore(BaseIndexStore):
     """Handles sourmash SBT index on disk
