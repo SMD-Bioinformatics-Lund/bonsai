@@ -353,6 +353,7 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
     # cluster
     repo = create_signature_repo()
     signature_files: list[Path] = []
+    md5_to_sample_id: dict[str, str] = {}
     for sample_id in sample_ids:
         record = repo.get_by_sample_id_or_checksum(sample_id)
         if record is None:
