@@ -9,8 +9,9 @@ from typing import Any
 
 from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
 from minhash_service.analysis.similarity import get_similar_signatures
+from minhash_service.analysis.models import SimilarSignatures, AniEstimateOptions, SimilarSignature
 from minhash_service.core.config import IntegrityReportLevel, cnf
-from minhash_service.core.exceptions import FileRemovalError
+from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
 from minhash_service.core.factories import (
     create_audit_trail_repo,
     create_report_repo,
@@ -274,7 +275,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
 
 
 def search_similar(
-    sample_id: str, min_similarity: float = 0.5, limit: int | None = None
+    sample_id: str, estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD, min_similarity: float = 0.5, limit: int | None = None
 ) -> list[dict[str, Any]]:
     """
     Find signatures similar to reference signature.
@@ -288,20 +289,47 @@ def search_similar(
     """
     repo = create_signature_repo()
 
-    record = repo.get_by_sample_id(sample_id)
+    record = repo.get_by_sample_id_or_checksum(sample_id)
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
-    samples = get_similar_signatures(
-        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
+
+    # is allways one sig
+    query = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)[0]
+
+    # check if signature is empty
+    if len(query.minhash) == 0:
+        raise ValueError("Cant perform search, No query hashes?")
+
+    # get index store
+    idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
+    index = create_index_store(idx_path, index_format=cnf.index_format)
+
+    results = get_similar_signatures(
+        query, index, ani_estimate=estimate_ani, min_similarity=min_similarity, limit=limit
     )
+    # lookup sample ids from matches
+    similarity_result: SimilarSignatures = []
+    for res in results:
+        # enforce limit
+        if len(similarity_result) > limit:
+            break
+
+        # use matched signature checksum to lookup the sample
+        match_checksum = res.match.md5sum()
+        sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
+        if sample is None:
+            LOG.warning("Could not find a sample with checksum: %s", match_checksum)
+            raise SampleNotFoundError(f"Cant find a sample with checksum: {match_checksum}")
+        # recast result to a internally maintained data type
+        upd_res = SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
+        similarity_result.append(upd_res)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
-    results = [s.model_dump() for s in samples]
-    return results
+    return [s.model_dump(mode="json") for s in similarity_result]
 
 
 def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
@@ -327,7 +355,7 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
     repo = create_signature_repo()
     signature_files: list[Path] = []
     for sample_id in sample_ids:
-        record = repo.get_by_sample_id(sample_id)
+        record = repo.get_by_sample_id_or_checksum(sample_id)
         if record is None:
             LOG.error("No signature for sample id: %s", sample_id)
             continue
@@ -369,33 +397,24 @@ def find_similar_and_cluster(
         min_similarity,
         limit,
     )
-    repo = create_signature_repo()
-    record = repo.get_by_sample_id(sample_id)
-    if record is None:
-        raise FileNotFoundError(
-            f"Signature for {sample_id} has not been added to the service."
-        )
-    sample_ids = get_similar_signatures(
-        record.signature_path, min_similarity=min_similarity, limit=limit, cnf=cnf
-    )
+    results = search_similar(sample_id=sample_id, min_similarity=min_similarity, limit=limit)
+    LOG.info("Found %d similar samples", len(results))
 
     # if 1 or 0 samples were found, return emtpy newick
-    if len(sample_ids) < 2:
-        LOG.warning("Invalid number of samples found, %d", len(sample_ids))
+    if len(results) < 2:
+        LOG.warning("Invalid number of samples found, %d", len(results))
         return "()"
+
+    repo = create_signature_repo()
     signature_files: list[Path] = []
-    for sample_sig in sample_ids:
-        record = repo.get_by_sample_id(sample_sig.sample_id)
+    for res in results:
+        record = repo.get_by_sample_id_or_checksum(sample_id=res["sample_id"])
         if record is None:
             continue
 
         signature_files.append(record.signature_path)
     # cluster samples
-    sids = [sid.sample_id for sid in sample_ids]
-    LOG.info(
-        "Clustering the following samples to %s: ",
-        ", ".join(sids),
-    )
+    LOG.info("Cluster samples...")
     newick: str = cluster_signatures(signature_files, method, cnf=cnf)
 
     return newick
