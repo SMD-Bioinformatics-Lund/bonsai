@@ -17,11 +17,12 @@ from .models import IndexFormat, SignatureName, SourmashSignatures
 
 LOG = logging.getLogger(__name__)
 
-SBT_INDEX = sourmash.sbtmh.SBT
-ROCKSDB_INDEX = DiskRevIndex
+SBTIndex = sourmash.sbtmh.SBT
+RocksDBIndex = DiskRevIndex
 
 
 def get_index_path(signature_dir: Path, fmt: IndexFormat) -> Path:
+    """Build a path to index file or directory."""
     idx_dir = signature_dir / "indexes"
     idx_dir.mkdir(exist_ok=True)
     return idx_dir / f"genomes_{fmt.value.lower()}_index"
@@ -97,7 +98,7 @@ class BaseIndexStore(ABC):
             LOG.debug("Released lock: %s", self.lock_path)
 
     @abstractmethod
-    def _load_index(self, create_if_missing: bool) -> SBT_INDEX | ROCKSDB_INDEX:
+    def _load_index(self, create_if_missing: bool) -> SBTIndex | RocksDBIndex:
         """Index specific load function."""
 
     def list_signatures(self) -> list[SignatureName]:
@@ -121,7 +122,7 @@ class BaseIndexStore(ABC):
         """Remove signatures by name."""
 
     @property
-    def index(self) -> SBT_INDEX | ROCKSDB_INDEX:
+    def index(self) -> SBTIndex | RocksDBIndex:
         """Return memory representation of index."""
         if self._index is None:
             self._load_index(create_if_missing=True)
