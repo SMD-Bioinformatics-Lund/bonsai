@@ -2,6 +2,8 @@
 
 ### Added
 
+- Added basic startup banner to the minhash service.
+- Added support for storing sourmash index in RocksDB format.
 - Added tags that warns the user if a sample might be contaminated. Thresholds are read from `thresholds.toml`file.
 - Added button for showing only selected rows in the sample table
 
@@ -52,6 +54,7 @@
 
 ### Changed
 
+- Minhash service tasks are now executed through a dispatch function (`minhash_service/tasks/dispatch.py`)
 - Display rejection reason and comments on mouse over in sample table
 - Updated default columns in sample table
 - Entrypoint GET `/samples` was changed to POST `/samples/summary` to mitigate URL length limitations.
