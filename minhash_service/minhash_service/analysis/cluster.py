@@ -8,8 +8,8 @@ import sourmash
 from scipy.cluster import hierarchy
 
 from minhash_service.core.config import Settings
-
-from .io import Signatures, read_signature
+from minhash_service.signatures.io import read_signatures
+from minhash_service.signatures.models import SourmashSignatures
 
 LOG = logging.getLogger(__name__)
 
@@ -44,10 +44,10 @@ def cluster_signatures(
     """Cluster multiple samples on their minhash signatures."""
 
     # load sequence signatures to memory
-    siglist: Signatures = []
+    siglist: SourmashSignatures = []
     LOG.info("Cluster %d signatures", len(signature_files))
     for sig_file in signature_files:
-        signature = read_signature(sig_file, cnf=cnf)
+        signature = read_signatures(sig_file, kmer_size=cnf.kmer_size)
         siglist.extend(signature)  # append to all signatures
 
     # create distance matrix
