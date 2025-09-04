@@ -8,6 +8,7 @@ from rq.job import Job
 from .handlers import (
     add_signature,
     add_to_index,
+    check_signature,
     cleanup_removed_files,
     cluster_samples,
     exclude_from_analysis,
@@ -15,7 +16,6 @@ from .handlers import (
     get_data_integrity_report,
     remove_from_index,
     remove_signature,
-    check_signature,
     run_data_integrity_check,
     search_similar,
 )

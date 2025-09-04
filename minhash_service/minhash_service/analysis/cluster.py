@@ -39,7 +39,10 @@ def tree_to_newick(node, newick, parentdist, leaf_names) -> str:
 
 
 def cluster_signatures(
-    signature_files: list[Path], method: ClusterMethod, kmer_size: int, ignore_abundance: bool = True
+    signature_files: list[Path],
+    method: ClusterMethod,
+    kmer_size: int,
+    ignore_abundance: bool = True,
 ):
     """Cluster multiple samples on their minhash signatures and return tree object."""
 
