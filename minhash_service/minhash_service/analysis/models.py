@@ -1,10 +1,21 @@
 """Data models and types."""
 
+from enum import StrEnum
+
 from pydantic import BaseModel
 
 Signatures = list[dict[str, int | list[int]]]
 SignatureEntry = dict[str, str | Signatures]
 SignatureFile = list[SignatureEntry]
+
+
+class AniEstimateOptions(StrEnum):
+    """What ANI should be estimated from"""
+
+    JACCARD = "jaccard_similarity"
+    CONTAINMENT = "containment"
+    MAX_CONTAINMENT = "max_containment"
+    AVG_CONTAINMENT = "avg_containment"
 
 
 class SignatureName(BaseModel):
