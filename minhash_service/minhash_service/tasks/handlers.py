@@ -7,17 +7,9 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from minhash_service.analysis.cluster import (
-    ClusterMethod,
-    cluster_signatures,
-    tree_to_newick,
-)
-from minhash_service.analysis.models import (
-    AniEstimateOptions,
-    SimilarSignature,
-    SimilarSignatures,
-)
+from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures, tree_to_newick
 from minhash_service.analysis.similarity import get_similar_signatures
+from minhash_service.analysis.models import SimilarSignatures, AniEstimateOptions, SimilarSignature
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
 from minhash_service.core.factories import (
@@ -195,7 +187,6 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
 
     # load subset of signatures with SBT index as it can append to exising index
     if cnf.index_format == IndexFormat.SBT:
-        # TODO query all signatures in one go
         for sample_id in sample_ids:
             record = repo.get_by_sample_id_or_checksum(sample_id)
             if record is None:
@@ -261,7 +252,6 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
         repo.unmark_indexed(sid)
     return result.model_dump()
 
-
 def exclude_from_analysis(sample_ids: list[str]) -> str:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -284,10 +274,8 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
 
 
 def search_similar(
-    sample_id: str,
-    estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
-    min_similarity: float = 0.5,
-    limit: int | None = None,
+    sample_id: str, estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD, 
+    min_similarity: float = 0.5, limit: int | None = None
 ) -> list[dict[str, Any]]:
     """
     Find signatures similar to reference signature.
@@ -317,11 +305,7 @@ def search_similar(
     index = create_index_store(idx_path, index_format=cnf.index_format)
 
     results = get_similar_signatures(
-        query,
-        index,
-        ani_estimate=estimate_ani,
-        min_similarity=min_similarity,
-        limit=limit,
+        query, index, ani_estimate=estimate_ani, min_similarity=min_similarity, limit=limit
     )
     # lookup sample ids from matches
     similarity_result: SimilarSignatures = []
@@ -335,13 +319,9 @@ def search_similar(
         sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
         if sample is None:
             LOG.warning("Could not find a sample with checksum: %s", match_checksum)
-            raise SampleNotFoundError(
-                f"Cant find a sample with checksum: {match_checksum}"
-            )
+            raise SampleNotFoundError(f"Cant find a sample with checksum: {match_checksum}")
         # recast result to a internally maintained data type
-        upd_res = SimilarSignature(
-            sample_id=sample.sample_id, similarity=res.similarity
-        )
+        upd_res = SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
         similarity_result.append(upd_res)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -382,9 +362,7 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
             continue
         signature_files.append(record.signature_path)
         md5_to_sample_id[record.signature_checksum] = record.sample_id
-    tree, included_checksums = cluster_signatures(
-        signature_files, method, kmer_size=cnf.kmer_size
-    )
+    tree, included_checksums = cluster_signatures(signature_files, method, kmer_size=cnf.kmer_size)
     # create tree labels
     label_text = [md5_to_sample_id[md5] for md5 in included_checksums]
     newick_tree = tree_to_newick(tree, "", tree.dist, label_text)
@@ -423,9 +401,7 @@ def find_similar_and_cluster(
         min_similarity,
         limit,
     )
-    results = search_similar(
-        sample_id=sample_id, min_similarity=min_similarity, limit=limit
-    )
+    results = search_similar(sample_id=sample_id, min_similarity=min_similarity, limit=limit)
     LOG.info("Found %d similar samples", len(results))
 
     # if 1 or 0 samples were found, return emtpy newick
@@ -433,7 +409,7 @@ def find_similar_and_cluster(
         LOG.warning("Invalid number of samples found, %d", len(results))
         return "()"
 
-    sample_ids = [res["sample_id"] for res in results]
+    sample_ids = [res['sample_id'] for res in results]
     newick = cluster_samples(sample_ids=sample_ids, cluster_method=method)
 
     return newick
@@ -490,6 +466,7 @@ def get_data_integrity_report() -> dict[str, Any] | None:
     report = repo.get_latest()
     if report is not None:
         return report.model_dump(mode="json")
+    return None
 
 
 def cleanup_removed_files() -> None:

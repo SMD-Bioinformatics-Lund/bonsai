@@ -7,7 +7,6 @@ from pathlib import Path
 import sourmash
 from scipy.cluster import hierarchy
 
-from minhash_service.core.config import Settings
 from minhash_service.signatures.io import read_signatures
 from minhash_service.signatures.models import SourmashSignatures
 
