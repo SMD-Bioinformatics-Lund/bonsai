@@ -20,6 +20,8 @@ from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.tasks import dispatch_job
 from minhash_service.tasks.dispatch import SimpleWhitelistWorker
 
+from .utils import format_startup_banner
+
 
 def _setup_logging(settings: Settings) -> logging.Logger:
     configure_logging(settings)
@@ -38,6 +40,7 @@ def main():
 def run_minhash_worker():
     """Run the RQ worker."""
     log = _setup_logging(cnf)
+    log.info("\n%s", format_startup_banner(cnf, mode="worker"))
 
     # Create mongo connection at startup
     log.info("Setup mongodb connection: %s:%s", cnf.mongodb.host, cnf.mongodb.port)
@@ -58,12 +61,14 @@ def run_minhash_worker():
 def run_cron_scheduler():
     """Run the RQ worker."""
     log = _setup_logging(cnf)
+    log.info("\n%s", format_startup_banner(cnf, mode="scheduler"))
+
     # setup redis connection
     redis = Redis(host=cnf.redis.host, port=cnf.redis.port)
     cron = CronScheduler(connection=redis, logging_level=cnf.log_level)
 
     # setup periodic tasks
-    if cnf.periodic_integrity_check.endabled:
+    if cnf.periodic_integrity_check.enabled:
         cron_string = cnf.periodic_integrity_check.cron
         cron.register(
             dispatch_job,
@@ -73,7 +78,7 @@ def run_cron_scheduler():
         )
         log.info("Scheduling periodic integrity check: %s", cron_string)
 
-    if cnf.cleanup_removed_files.endabled:
+    if cnf.cleanup_removed_files.enabled:
         cron_string = cnf.cleanup_removed_files.cron
         cron.register(
             dispatch_job,
