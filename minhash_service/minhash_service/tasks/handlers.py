@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
+from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures, tree_to_newick
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.analysis.models import SimilarSignatures, AniEstimateOptions, SimilarSignature
 from minhash_service.core.config import IntegrityReportLevel, cnf
@@ -354,15 +354,19 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
     # cluster
     repo = create_signature_repo()
     signature_files: list[Path] = []
+    md5_to_sample_id: dict[str, str] = {}
     for sample_id in sample_ids:
         record = repo.get_by_sample_id_or_checksum(sample_id)
         if record is None:
             LOG.error("No signature for sample id: %s", sample_id)
             continue
         signature_files.append(record.signature_path)
-    newick: str = cluster_signatures(signature_files, method, cnf=cnf)
-
-    return newick
+        md5_to_sample_id[record.signature_checksum] = record.sample_id
+    tree, included_checksums = cluster_signatures(signature_files, method, kmer_size=cnf.kmer_size)
+    # create tree labels
+    label_text = [md5_to_sample_id[md5] for md5 in included_checksums]
+    newick_tree = tree_to_newick(tree, "", tree.dist, label_text)
+    return newick_tree
 
 
 def find_similar_and_cluster(
@@ -405,17 +409,8 @@ def find_similar_and_cluster(
         LOG.warning("Invalid number of samples found, %d", len(results))
         return "()"
 
-    repo = create_signature_repo()
-    signature_files: list[Path] = []
-    for res in results:
-        record = repo.get_by_sample_id_or_checksum(sample_id=res["sample_id"])
-        if record is None:
-            continue
-
-        signature_files.append(record.signature_path)
-    # cluster samples
-    LOG.info("Cluster samples...")
-    newick: str = cluster_signatures(signature_files, method, cnf=cnf)
+    sample_ids = [res['sample_id'] for res in results]
+    newick = cluster_samples(sample_ids=sample_ids, cluster_method=method)
 
     return newick
 
