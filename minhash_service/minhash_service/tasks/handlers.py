@@ -21,8 +21,8 @@ from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.io import (
-    read_signature,
-    write_signature,
+    read_signatures,
+    write_signatures,
 )
 from minhash_service.signatures.models import (
     IndexFormat,
@@ -58,14 +58,14 @@ def add_signature(sample_id: str, signature: str) -> str:
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     repo = create_signature_repo()
 
-    if repo.get_by_sample_id(sample_id) is not None:
+    if repo.get_by_sample_id_or_checksum(sample_id) is not None:
         LOG.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
 
     # write signature to disk
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_file = Path(tmp_dir) / "signature.sig"
-        signature_path = write_signature(tmp_file, signature, kmer_size=cnf.kmer_size)
+        signature_path = write_signatures(tmp_file, signature, kmer_size=cnf.kmer_size)
 
         signature_path = Path(signature_path)  # Ensure it's a Path object
 
@@ -73,11 +73,15 @@ def add_signature(sample_id: str, signature: str) -> str:
         file_checksum = store.file_sha256_hex(signature_path)
         sharded_path = store.ensure_file(signature_path, file_checksum)
 
+    # store signature checksum in database
+    loaded_sig = read_signatures(sharded_path, cnf.kmer_size)[0]
+
     # store as a signature record
     record = SignatureRecord(
         sample_id=sample_id,
         signature_path=sharded_path,
-        checksum=file_checksum,
+        signature_checksum=loaded_sig.md5sum(),
+        file_checksum=file_checksum,
     )
     try:
         repo.add_signature(record)
@@ -124,7 +128,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         )
 
     # stage file for removal
-    record = repo.get_by_sample_id(sample_id)
+    record = repo.get_by_sample_id_or_checksum(sample_id)
     if record is None:
         LOG.error("No record found for sample_id %s", sample_id)
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
@@ -184,7 +188,7 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     if cnf.index_format == IndexFormat.SBT:
         # TODO query all signatures in one go
         for sample_id in sample_ids:
-            record = repo.get_by_sample_id(sample_id)
+            record = repo.get_by_sample_id_or_checksum(sample_id)
             if record is None:
                 LOG.warning("No signature stored for %s", sample_id)
                 continue
@@ -192,7 +196,7 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
             if record.exclude_from_analysis:
                 LOG.info("Skipping excluded signature %s", sample_id)
                 continue
-            sig = read_signature(record.signature_path, cnf.kmer_size)
+            sig = read_signatures(record.signature_path, cnf.kmer_size)
             # store md5 sums for sample
             md5s_for_sample: list[str] = [s.md5sum() for s in sig]
             sample_to_md5s[sample_id] = md5s_for_sample
@@ -201,7 +205,7 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     else:
         # rebuild entire index if using RocksDB index
         for record in repo.get_all_signatures():
-            sig = read_signature(record.signature_path, cnf.kmer_size)
+            sig = read_signatures(record.signature_path, cnf.kmer_size)
             md5s_for_sample: list[str] = [s.md5sum() for s in sig]
             sample_to_md5s[record.sample_id] = md5s_for_sample
             loaded_signatures.extend(sig)
@@ -401,7 +405,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     """Check if signature exist."""
 
     repo = create_signature_repo()
-    record = repo.get_by_sample_id(sample_id)
+    record = repo.get_by_sample_id_or_checksum(sample_id)
 
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
