@@ -54,7 +54,8 @@ def check_signature_integrity(
             should_be_indexed.append(record.sample_id)
         elif not record.has_been_indexed and record.sample_id in indexed_signatures:
             LOG.error(
-                "Signature file for sample_id %s is not marked as indexed but is still in the index.",
+                "Signature file for sample_id %s is not marked as indexed"
+                " but is still in the index.",
                 record.sample_id,
             )
             should_not_be_indexed.append(record.sample_id)
