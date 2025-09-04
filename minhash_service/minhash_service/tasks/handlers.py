@@ -3,7 +3,7 @@
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from .config import cnf, IntegrityReportLevel
 from .exceptions import FileRemovalError
@@ -228,7 +228,7 @@ def add_to_index(sample_ids: list[str]) -> str:
     return result.model_dump(mode="json")
 
 
-def remove_from_index(sample_ids: list[str]) -> str:
+def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Remove signatures from a sourmash index.
 
@@ -238,20 +238,16 @@ def remove_from_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     LOG.info("Removing signatures from index.")
-    res = remove_signatures_from_index(sample_ids, cnf=cnf)
+    # get index store
+    idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
+    index = create_index_store(idx_path, index_format=cnf.index_format)
+    result = index.remove_signatures(sample_ids)
 
     # unmark indexed status in db
     repo = create_signature_repo()
     for sid in sample_ids:
         repo.unmark_indexed(sid)
-
-    signatures = ", ".join(list(sample_ids))
-    if res:
-        msg = f"Removed {signatures}"
-    else:
-        msg = f"Failed to remove signatures, {signatures}"
-    return msg
-
+    return result.model_dump()
 
 def exclude_from_analysis(sample_ids: list[str]) -> str:
     """
