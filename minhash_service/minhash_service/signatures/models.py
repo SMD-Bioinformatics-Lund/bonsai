@@ -3,7 +3,7 @@
 import datetime as dt
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import (
     BaseModel,
@@ -34,7 +34,8 @@ class SignatureName(BaseModel):
     filename: str
 
 
-# Constrain `checksum` to sha256 hex; adjust if you support other algos.
+# Constrain `checksum` to md5 hex; adjust if you support other algos.
+Md5Hex = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{32}$")]
 Sha256Hex = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")]
 
 
@@ -55,7 +56,8 @@ class SignatureRecord(BaseModel):
     version: int = Field(default=1, description="Record schema version")
     sample_id: SampleIdStr
     signature_path: Path
-    checksum: Sha256Hex
+    file_checksum: Sha256Hex
+    signature_checksum: Md5Hex
 
     has_been_indexed: bool = False
     indexed_at: dt.datetime | None = None

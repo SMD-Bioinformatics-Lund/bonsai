@@ -40,7 +40,7 @@ def check_signature_integrity(
             missing_files.append(record.sample_id)
             LOG.error("Signature file for sample_id %s is missing.", record.sample_id)
             continue
-        if not store.check_file_integrity(record.signature_path, record.checksum):
+        if not store.check_file_integrity(record.signature_path, record.file_checksum):
             corrupted_files.append(record.sample_id)
             LOG.error(
                 "Signature file for sample_id %s might be corrupted.",
