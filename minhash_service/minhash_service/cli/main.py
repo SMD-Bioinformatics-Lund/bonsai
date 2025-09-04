@@ -17,8 +17,8 @@ from minhash_service.core.models import Event, EventType
 from minhash_service.db import MongoDB
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.tasks.dispatch import SimpleWhitelistWorker
 from minhash_service.tasks import dispatch_job
+from minhash_service.tasks.dispatch import SimpleWhitelistWorker
 
 
 def _setup_logging(settings: Settings) -> logging.Logger:
@@ -66,7 +66,8 @@ def run_cron_scheduler():
     if cnf.periodic_integrity_check.endabled:
         cron_string = cnf.periodic_integrity_check.cron
         cron.register(
-            dispatch_job, kwargs={"task": "get_integrity_report"},
+            dispatch_job,
+            kwargs={"task": "get_integrity_report"},
             queue_name=cnf.periodic_integrity_check.queue,
             cron=cron_string,
         )
@@ -75,7 +76,8 @@ def run_cron_scheduler():
     if cnf.cleanup_removed_files.endabled:
         cron_string = cnf.cleanup_removed_files.cron
         cron.register(
-            dispatch_job, kwargs={"task": "cleanup_removed_files"},
+            dispatch_job,
+            kwargs={"task": "cleanup_removed_files"},
             queue_name=cnf.cleanup_removed_files.queue,
             cron=cron_string,
         )

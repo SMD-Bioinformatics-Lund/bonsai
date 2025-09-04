@@ -23,7 +23,6 @@ from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.storage import SignatureStorage
 from minhash_service.signatures.models import SignatureJSON, GzippedJSON, SignatureRecord, SourmashSignatures
 from minhash_service.analysis.similarity import get_similar_signatures
-from minhash_service.analysis.models import SimilarSignatures, AniEstimateOptions, SimilarSignature
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
 from minhash_service.core.factories import (
@@ -67,7 +66,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     except json.JSONDecodeError as err:
         LOG.debug("Malformed JSON file format: %s", signature)
         raise ValueError("signature is not a valid JSON string") from err
-    
+
     # setup repositories
     at = create_audit_trail_repo()
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
@@ -254,6 +253,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
         repo.unmark_indexed(sid)
     return result.model_dump()
 
+
 def exclude_from_analysis(sample_ids: list[str]) -> str:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -275,7 +275,10 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
 
 
 def search_similar(
-    sample_id: str, estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD, min_similarity: float = 0.5, limit: int | None = None
+    sample_id: str,
+    estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
+    min_similarity: float = 0.5,
+    limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """
     Find signatures similar to reference signature.
@@ -304,7 +307,11 @@ def search_similar(
     index = create_index_store(idx_path, index_format=cnf.index_format)
 
     results = get_similar_signatures(
-        query, index, ani_estimate=estimate_ani, min_similarity=min_similarity, limit=limit
+        query,
+        index,
+        ani_estimate=estimate_ani,
+        min_similarity=min_similarity,
+        limit=limit,
     )
     # lookup sample ids from matches
     similarity_result: SimilarSignatures = []
@@ -318,9 +325,13 @@ def search_similar(
         sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
         if sample is None:
             LOG.warning("Could not find a sample with checksum: %s", match_checksum)
-            raise SampleNotFoundError(f"Cant find a sample with checksum: {match_checksum}")
+            raise SampleNotFoundError(
+                f"Cant find a sample with checksum: {match_checksum}"
+            )
         # recast result to a internally maintained data type
-        upd_res = SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
+        upd_res = SimilarSignature(
+            sample_id=sample.sample_id, similarity=res.similarity
+        )
         similarity_result.append(upd_res)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -396,7 +407,9 @@ def find_similar_and_cluster(
         min_similarity,
         limit,
     )
-    results = search_similar(sample_id=sample_id, min_similarity=min_similarity, limit=limit)
+    results = search_similar(
+        sample_id=sample_id, min_similarity=min_similarity, limit=limit
+    )
     LOG.info("Found %d similar samples", len(results))
 
     # if 1 or 0 samples were found, return emtpy newick
