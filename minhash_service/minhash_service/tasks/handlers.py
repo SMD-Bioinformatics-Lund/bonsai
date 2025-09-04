@@ -35,8 +35,8 @@ from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.io import (
-    read_signature,
-    write_signature,
+    read_signatures,
+    write_signatures,
 )
 from minhash_service.signatures.models import (
     IndexFormat,
@@ -83,11 +83,15 @@ def add_signature(sample_id: str, signature: str) -> str:
         file_checksum = store.file_sha256_hex(signature_path)
         sharded_path = store.ensure_file(signature_path, file_checksum)
 
+    # store signature checksum in database
+    loaded_sig = read_signatures(sharded_path, cnf.kmer_size)[0]
+
     # store as a signature record
     record = SignatureRecord(
         sample_id=sample_id,
         signature_path=sharded_path,
-        checksum=file_checksum,
+        signature_checksum=loaded_sig.md5sum(),
+        file_checksum=file_checksum,
     )
     try:
         repo.add_signature(record)
@@ -134,7 +138,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         )
 
     # stage file for removal
-    record = repo.get_by_sample_id(sample_id)
+    record = repo.get_by_sample_id_or_checksum(sample_id)
     if record is None:
         LOG.error("No record found for sample_id %s", sample_id)
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
@@ -397,7 +401,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     """Check if signature exist."""
 
     repo = create_signature_repo()
-    record = repo.get_by_sample_id(sample_id)
+    record = repo.get_by_sample_id_or_checksum(sample_id)
 
     if record is None:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")

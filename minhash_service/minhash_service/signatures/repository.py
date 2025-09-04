@@ -67,14 +67,29 @@ class SignatureRepository:
             raise
 
     # ---- read ---------------------------------------------------------------
-    def get_by_sample_id(self, sample_id: str) -> SignatureRecord | None:
-        """Get a signature by sample_id. Returns None if not found."""
+    def get_by_sample_id_or_checksum(self, sample_id: str | None = None, checksum: str | None = None) -> SignatureRecord | None:
+        """Get a signature by either sample_id or checksum. Returns None if not found."""
+        # input validation
+        if sample_id is None and checksum is None:
+            raise ValueError("Either sample_id or checksum must be defined.")
 
-        doc = self._col.find_one({"sample_id": sample_id}, projection={"_id": 0})
+        if sample_id is not None and checksum is not None:
+            raise ValueError("Both sample_id and checksum can't be defined.")
+        
+        # build query
+        if sample_id is not None:
+            field_name = "sample_id"
+            query = sample_id
+        else:
+            field_name = "signature_checksum"
+            query = checksum
+
+        # query the database and cast result
+        doc = self._col.find_one({field_name: query}, projection={"_id": 0})
         if not doc:
             return None
         return SignatureRecord.model_validate(doc)
-
+    
     def get_all_signatures(self) -> Iterator[SignatureRecord]:
         """Get all signatures in the database."""
         cursor = self._col.find(projection={"_id": 0})
