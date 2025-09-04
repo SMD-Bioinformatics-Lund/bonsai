@@ -63,7 +63,7 @@ def run_cron_scheduler():
     cron = CronScheduler(connection=redis, logging_level=cnf.log_level)
 
     # setup periodic tasks
-    if cnf.periodic_integrity_check.endabled:
+    if cnf.periodic_integrity_check.enabled:
         cron_string = cnf.periodic_integrity_check.cron
         cron.register(
             dispatch_job,
@@ -73,7 +73,7 @@ def run_cron_scheduler():
         )
         log.info("Scheduling periodic integrity check: %s", cron_string)
 
-    if cnf.cleanup_removed_files.endabled:
+    if cnf.cleanup_removed_files.enabled:
         cron_string = cnf.cleanup_removed_files.cron
         cron.register(
             dispatch_job,
