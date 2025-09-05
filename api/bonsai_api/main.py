@@ -1,5 +1,6 @@
 """Main entrypoint for API server."""
 
+from contextlib import contextmanager
 import logging
 import logging.config as logging_config
 
@@ -42,7 +43,19 @@ logging_config.dictConfig(
 )
 LOG = logging.getLogger(__name__)
 
-app = FastAPI(title="Bonsai")
+@contextmanager
+def lifespan(app: FastAPI):
+    """Handles startup and teardown events."""
+    # setup
+    if settings.use_ldap_auth:
+        ldap_connection.init_app()
+    yield
+    # teardown
+    if settings.use_ldap_auth:
+        ldap_connection.teardown()
+
+
+app = FastAPI(title="Bonsai", lifespan=lifespan)
 
 # configure CORS
 configure_cors(app)
@@ -50,14 +63,6 @@ configure_cors(app)
 # check if api authentication is disabled
 if not settings.api_authentication:
     LOG.warning("API authentication disabled!")
-
-# configure events
-if settings.use_ldap_auth:
-    app.add_event_handler("startup", ldap_connection.init_app)
-    app.add_event_handler("shutdown", ldap_connection.teardown)
-
-
-# add api routes
 app.include_router(root.router)
 app.include_router(users.router)
 app.include_router(samples.router)
