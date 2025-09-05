@@ -252,6 +252,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
         repo.unmark_indexed(sid)
     return result.model_dump()
 
+
 def exclude_from_analysis(sample_ids: list[str]) -> str:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -265,12 +266,37 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
     # unmark indexed status in db
     repo = create_signature_repo()
 
+    excluded: list[str] = []
     for sid in sample_ids:
-        repo.exclude_from_analysis(sid)
+        status = repo.exclude_from_analysis(sid)
+        if status:
+            excluded.append(sid)
 
-    signatures = ", ".join(list(sample_ids))
-    msg = f"Excluded {signatures} from index"
-    return msg
+    all_ok = len(excluded) == len(sample_ids)
+    return {"ok": all_ok, "excluded": excluded, "to_exclude": sample_ids}
+
+
+def include_in_analysis(sample_ids: list[str]) -> str:
+    """
+    Include signatures in downstream analysis.
+
+    :param sample_ids list[str]: Sample ids of signatures to exclude
+
+    :return: result message
+    :rtype: str
+    """
+    LOG.info("Including signatures %d in future analysis.", len(sample_ids))
+    # unmark indexed status in db
+    repo = create_signature_repo()
+
+    included: list[str] = []
+    for sid in sample_ids:
+        status = repo.include_in_analysis(sid)
+        if status:
+            included.append(sid)
+
+    all_ok = len(included) == len(sample_ids)
+    return {"ok": all_ok, "included": included, "to_include": sample_ids}
 
 
 def search_similar(

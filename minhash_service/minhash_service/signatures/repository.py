@@ -135,11 +135,15 @@ class SignatureRepository:
 
     def exclude_from_analysis(self, sample_id: str) -> bool:
         """Exclude a sample from future analysis. Returns True if a document was modified."""
+        return self._set_flag(sample_id, flag="exclude_from_analysis", status=True)
+
+    def include_in_analysis(self, sample_id: str) -> bool:
+        """Include a sample in future analysis. Returns True if a document was modified."""
         return self._set_flag(sample_id, flag="exclude_from_analysis", status=False)
 
     def marked_for_deletion(self, sample_id: str) -> bool:
         """Mark a signature for deletion. Returns True if a document was modified."""
-        return self._set_flag(sample_id, flag="mark_for_deletion", status=False)
+        return self._set_flag(sample_id, flag="mark_for_deletion", status=True)
 
     # ---- delete -------------------------------------------------------------
     def remove_by_sample_id(self, sample_id: str) -> int:
