@@ -26,6 +26,7 @@ class TaskName(StrEnum):
     ADD_INDEX = "add_to_index"
     REMOVE_INDEX = "remove_from_index"
     EXCLUDE_SAMPLE = "exclude_from_analysis"
+    INCLUDE_SAMPLE = "include_in_analysis"
     SEARCH_SIMILAR = "search_similar"
     CLUSTER_SAMPLES = "cluster_samples"
     CHECK_SIGNATURE = "check_signature"
@@ -248,5 +249,31 @@ def schedule_get_latest_report() -> SubmittedJob:
         dispatch=DISPATCH,
         task=task,
         retry=None,
+    )
+    return SubmittedJob(id=job.id, task=task)
+
+
+def exclude_from_analysis(sample_id: str) -> SubmittedJob:
+    """Update wether a sample should be excluded."""
+    task = str(TaskName.EXCLUDE_SAMPLE)
+    job = enqueue_job(
+        queue=redis.minhash,
+        dispatch=DISPATCH,
+        task=task,
+        retry=None,
+        sample_ids=[sample_id],
+    )
+    return SubmittedJob(id=job.id, task=task)
+
+
+def include_in_analysis(sample_id: str) -> SubmittedJob:
+    """Update wether a sample should be excluded."""
+    task = str(TaskName.INCLUDE_SAMPLE)
+    job = enqueue_job(
+        queue=redis.minhash,
+        dispatch=DISPATCH,
+        task=task,
+        retry=None,
+        sample_ids=[sample_id],
     )
     return SubmittedJob(id=job.id, task=task)
