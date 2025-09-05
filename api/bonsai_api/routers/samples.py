@@ -59,11 +59,13 @@ from bonsai_api.redis.minhash import (
     SubmittedJob,
     schedule_add_genome_signature,
     schedule_add_genome_signature_to_index,
+    include_in_analysis,
+    exclude_from_analysis,
     schedule_find_similar_and_cluster,
     schedule_find_similar_samples,
 )
 from bonsai_api.utils import format_error_message
-from .shared import SAMPLE_ID_PATH, RouterTags, parse_signature_json
+from .shared import SAMPLE_ID_PATH, RouterTags, action_from_qc_classification, parse_signature_json
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -466,9 +468,22 @@ async def update_qc_status(
 ) -> bool:
     """Update sample QC status."""
     try:
+        # dont update if the status dont change
+        sample = await get_sample(db, sample_id)
+        if sample.qc_status == QcClassification:
+            return True
+        
+        # update
         status_obj: bool = await update_sample_qc_classification(
             db, sample_id, classification
         )
+
+        # update if status should be excluded from indexing
+        action = action_from_qc_classification(classification)
+        if action == "include":
+            include_in_analysis(sample_id)
+        else:
+            exclude_from_analysis(sample_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
