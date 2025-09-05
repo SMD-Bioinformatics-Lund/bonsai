@@ -1,6 +1,6 @@
 """Main entrypoint for API server."""
 
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 import logging
 import logging.config as logging_config
 
@@ -43,8 +43,8 @@ logging_config.dictConfig(
 )
 LOG = logging.getLogger(__name__)
 
-@contextmanager
-def lifespan(app: FastAPI):
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Handles startup and teardown events."""
     # setup
     if settings.use_ldap_auth:
