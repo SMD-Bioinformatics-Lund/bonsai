@@ -63,6 +63,7 @@ from bonsai_api.redis.minhash import (
     exclude_from_analysis,
     schedule_find_similar_and_cluster,
     schedule_find_similar_samples,
+    schedule_remove_genome_signature_from_index,
 )
 from bonsai_api.utils import format_error_message
 from .shared import SAMPLE_ID_PATH, RouterTags, action_from_qc_classification, parse_signature_json
@@ -481,9 +482,18 @@ async def update_qc_status(
         # update if status should be excluded from indexing
         action = action_from_qc_classification(classification)
         if action == "include":
-            include_in_analysis(sample_id)
+            include_job = include_in_analysis(sample_id)
+            schedule_add_genome_signature_to_index(
+                [sample_id],
+                depends_on=[include_job.id],
+            )
         else:
-            exclude_from_analysis(sample_id)
+            # run exclude job and then remove signature from index
+            exclude_job = exclude_from_analysis(sample_id)
+            schedule_remove_genome_signature_from_index(
+                [sample_id],
+                depends_on=[exclude_job.id],
+            )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
