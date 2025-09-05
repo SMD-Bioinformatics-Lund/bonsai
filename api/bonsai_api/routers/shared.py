@@ -54,9 +54,9 @@ Action = Literal['include', 'exclude']
 
 def action_from_qc_classification(classification: QcClassification) -> Action:
     """Determine action from qc classification."""
-    accepted = [SampleQcClassification.PASSED, SampleQcClassification.UNPROCESSED]
+    accepted = [SampleQcClassification.PASSED.value, SampleQcClassification.UNPROCESSED.value]
     if classification.status in accepted:
         return "include"
-    if classification.status == SampleQcClassification.FAILED:
+    if classification.status == SampleQcClassification.FAILED.value:
         return "exclude"
     return "exclude"
