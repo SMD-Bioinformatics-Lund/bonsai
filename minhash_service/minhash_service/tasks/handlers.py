@@ -224,11 +224,6 @@ def add_to_index(sample_ids: list[str]) -> str:
         for sid, md5s in sample_to_md5s.items()
         if any(md5 in result.added_md5s for md5 in md5s)
     ]
-    if len(indexed_samples) == 0:
-        LOG.error(sample_to_md5s)
-        LOG.error("--------------------")
-        LOG.error(result)
-        LOG.error("--------------------")
     LOG.info(
         "Updating index status in the database for %d samples.", len(indexed_samples)
     )
@@ -241,7 +236,7 @@ def add_to_index(sample_ids: list[str]) -> str:
         failed_update = [name for name, status in update_status.items() if not status]
         LOG.error("Failed to mark %d samples as indexed; %s", len(failed_update), ", ".join(failed_update))
     else:
-        LOG.info("Marked %d samples as indexed", len(update_status))
+        LOG.debug("Marked %d samples as indexed", len(update_status))
 
     return result.model_dump(mode="json")
 
