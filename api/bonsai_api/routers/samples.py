@@ -210,7 +210,7 @@ async def update_sample(
 
     Take either a partial or full result as input.
     """
-    return sample
+    return sample_id
 
 
 @router.delete(
