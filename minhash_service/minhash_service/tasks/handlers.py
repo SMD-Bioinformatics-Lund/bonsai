@@ -224,8 +224,16 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     LOG.info(
         "Updating index status in the database for %d samples.", len(indexed_samples)
     )
+    update_status: dict[str, bool] = {}
     for sid in indexed_samples:
-        repo.mark_indexed(sid)
+        status = repo.mark_indexed(sid)
+        update_status[sid] = status
+    
+    if not all(list(update_status.values())):
+        failed_update = [name for name, status in update_status.items() if not status]
+        LOG.error("Failed to mark %d samples as indexed; %s", len(failed_update), ", ".join(failed_update))
+    else:
+        LOG.debug("Marked %d samples as indexed", len(update_status))
 
     return result.model_dump(mode="json")
 
@@ -243,14 +251,29 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     # get index store
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
     index = create_index_store(idx_path, index_format=cnf.index_format)
-    result = index.remove_signatures(sample_ids)
+
+    # lookup checksums for sample ids
+    repo = create_signature_repo()
+    checksums_to_remove: list[str] = []
+    md5_to_sample_id: dict[str, str] = {}
+    for sid in sample_ids:
+        sample = repo.get_by_sample_id_or_checksum(sample_id=sid)
+        md5_to_sample_id[sample.signature_checksum] = sid
+        checksums_to_remove.append(sample.signature_checksum)
+
+    result = index.remove_signatures(checksums_to_remove)
+    if not result.ok:
+        n_remaining = len(checksums_to_remove) - result.removed_count
+        LOG.error("Failed to remove %d checksum from index", n_remaining)
 
     # unmark indexed status in db
     repo = create_signature_repo()
 
-    for sid in sample_ids:
+    for checksum in result.removed:
+        sid = md5_to_sample_id[checksum]
         repo.unmark_indexed(sid)
     return result.model_dump()
+
 
 def exclude_from_analysis(sample_ids: list[str]) -> str:
     """
@@ -261,16 +284,41 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
     :return: result message
     :rtype: str
     """
-    LOG.info("Excluding signatures %d from future analysis.", len(sample_ids))
+    LOG.info("Excluding %d signatures from future analysis.", len(sample_ids))
     # unmark indexed status in db
     repo = create_signature_repo()
 
+    excluded: list[str] = []
     for sid in sample_ids:
-        repo.exclude_from_analysis(sid)
+        status = repo.exclude_from_analysis(sid)
+        if status:
+            excluded.append(sid)
 
-    signatures = ", ".join(list(sample_ids))
-    msg = f"Excluded {signatures} from index"
-    return msg
+    all_ok = len(excluded) == len(sample_ids)
+    return {"ok": all_ok, "excluded": excluded, "to_exclude": sample_ids}
+
+
+def include_in_analysis(sample_ids: list[str]) -> str:
+    """
+    Include signatures in downstream analysis.
+
+    :param sample_ids list[str]: Sample ids of signatures to exclude
+
+    :return: result message
+    :rtype: str
+    """
+    LOG.info("Including %d signatures in future analysis.", len(sample_ids))
+    # unmark indexed status in db
+    repo = create_signature_repo()
+
+    included: list[str] = []
+    for sid in sample_ids:
+        status = repo.include_in_analysis(sid)
+        if status:
+            included.append(sid)
+
+    all_ok = len(included) == len(sample_ids)
+    return {"ok": all_ok, "included": included, "to_include": sample_ids}
 
 
 def search_similar(

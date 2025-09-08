@@ -98,7 +98,7 @@ class Settings(BaseSettings):
     # read more: https://docs.mongodb.com/manual/reference/connection-string/
     database_name: str = "bonsai"
     db_host: str = "mongodb"
-    db_port: str = "27017"
+    db_port: int = 27017
     max_connections: int = 10
     min_connections: int = 10
 

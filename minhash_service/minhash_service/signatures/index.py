@@ -32,7 +32,7 @@ def create_index_store(
     index_path: Path, index_format: IndexFormat, lock_path: Path | None = None
 ) -> "BaseIndexStore":
     """Create an index store based on the specified format."""
-    LOG.debug("Reading index from: %s; format: %s", index_path, index_format)
+    LOG.info("Reading index from: %s; format: %s", index_path, index_format)
     if index_format == IndexFormat.SBT:
         idx = SBTIndexStore(index_path, lock_path)
     elif index_format == IndexFormat.ROCKSDB:
@@ -118,7 +118,7 @@ class BaseIndexStore(ABC):
         """Add one or more signatures to index."""
 
     @abstractmethod
-    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
+    def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
 
     @property
@@ -158,13 +158,12 @@ class SBTIndexStore(BaseIndexStore):
     def _atomic_save(self):
         """Index specific atomic save."""
 
-        parent = self.index_path.parent  # keep on same file system
-        with tempfile.TemporaryDirectory(
-            dir=parent, prefix=self.index_path.name
-        ) as tmp_dir:
-            tmp_dir = Path(tmp_dir)
-            tmp_idx_path = self._index.save(str(tmp_dir / "index"))
+        with tempfile.TemporaryDirectory(prefix=self.index_path.name) as tmp_dir:
+            temp_path = Path(tmp_dir) / "index" 
+            LOG.info("Temporarily save signature to: %s", temp_path)
+            tmp_idx_path = self._index.save(str(temp_path))
             tmp_idx_path = Path(tmp_idx_path)  # str -> Path
+            LOG.info("Preparing to move index from: %s; to: %s", tmp_idx_path, self.index_path)
 
             tmp_idx_path.replace(self.index_path)
 
@@ -194,6 +193,7 @@ class SBTIndexStore(BaseIndexStore):
             for sig in sigs:
                 md5 = cast(str, sig.md5sum())
                 if dedupe_by_md5 and md5 in existing_md5:
+                    LOG.warning("Signature with md5sum %s already in index, skipping...", md5)
                     continue
                 # add signature depending on the db type
                 leaf = sourmash.sbtmh.SigLeaf(md5, sig)
@@ -207,7 +207,7 @@ class SBTIndexStore(BaseIndexStore):
             ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s
         )
 
-    def remove_signatures(self, names_to_remove: list[str]) -> RemoveResult:
+    def remove_signatures(self, checksums_to_remove: list[str]) -> RemoveResult:
         """
         Remove by signature.name by reconstructing a new SBT.
         SBT does not support in-place deletion.
@@ -217,9 +217,11 @@ class SBTIndexStore(BaseIndexStore):
             old_index = self._load_index(create_if_missing=False)
             kept: SourmashSignatures = []
             removed: list[str] = []
+            LOG.info("Preparing to remove %d signatures from index", len(checksums_to_remove))
             for sig in old_index.signatures():
-                if sig.name in names_to_remove:
-                    removed.append(sig.name)
+                checksum = sig.md5sum()
+                if checksum in checksums_to_remove:
+                    removed.append(checksum)
                 else:
                     kept.append(sig)
 
@@ -229,14 +231,14 @@ class SBTIndexStore(BaseIndexStore):
 
             self._index = new_index  # replace in-memory cache
             self._atomic_save()
-            not_removed = set(names_to_remove) - set(removed)
+            not_removed = set(checksums_to_remove) - set(removed)
             if len(not_removed) > 0:
                 warn = f"could not remove {', '.join(not_removed)}"
                 return RemoveResult(
-                    ok=False, warnings=[warn], removed_count=len(removed)
+                    ok=False, warnings=[warn], removed=removed, removed_count=len(removed)
                 )
         return RemoveResult(
-            ok=False, warnings=[], removed_count=len(removed), removed=removed
+            ok=True, warnings=[], removed_count=len(removed), removed=removed
         )
 
 
@@ -298,27 +300,28 @@ class RocksDBIndexStore(BaseIndexStore):
             )
         return result
 
-    def remove_signatures(self, names_to_remove: set[str]) -> RemoveResult:
+    def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
             kept: SourmashSignatures = []
             removed: list[str] = []
             for sig in old_index.signatures():
-                if sig.name in names_to_remove:
-                    removed.append(sig.name)
+                checksum = sig.md5sum()
+                if checksum in checksums_to_remove:
+                    removed.append(checksum)
                 else:
                     kept.append(sig)
 
             # build new index
             new_idx = self._rebuild_index(kept)
             self._index = new_idx
-            not_removed = set(names_to_remove) - set(removed)
+            not_removed = set(checksums_to_remove) - set(removed)
             if len(not_removed) > 0:
                 warn = f"could not remove {', '.join(not_removed)}"
                 return RemoveResult(
-                    ok=False, warnings=[warn], removed_count=len(removed)
+                    ok=False, warnings=[warn], removed=removed, removed_count=len(removed)
                 )
         return RemoveResult(
-            ok=False, warnings=[], removed_count=len(removed), removed=removed
+            ok=True, warnings=[], removed_count=len(removed), removed=removed
         )
