@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Union
+from typing import Annotated, Any, Literal, Union, cast
 
 from fastapi import (
     APIRouter,
@@ -25,7 +25,7 @@ from prp.models.phenotype import (
     VirulenceMethodIndex,
 )
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
 from bonsai_api.crud.metadata import add_metadata_to_sample
@@ -601,16 +601,30 @@ async def update_location(
     return location_obj
 
 
-class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
+class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
     """Input parameters for finding similar samples."""
 
-    limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")
-    similarity: float = Field(default=0.5, gt=0, title="Similarity threshold")
-    cluster: bool = Field(default=False, title="Cluster the similar")
-    typing_method: TypingMethod | None = Field(
-        None, title="Cluster using a specific typing method"
+    limit: int | None = Field(default=10, ge=1, title="Limit the output to x samples")
+    similarity: float = Field(default=0.5, gt=0, le=1, title="Similarity threshold")
+    cluster: bool = Field(
+        default=False, title="Cluster the similar", 
+        description="If the samples found with similar search should be clustered.")
+    narrow_to_sample_ids: list[str] | None = Field(
+        default=None, 
+        description="Restrict the similarity search to these sample IDs. If None, search across all samples.",
+        examples=[["sample_id"]]
     )
-    cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar")
+    typing_method: TypingMethod | None = Field(
+        default=None, title="Cluster using a specific typing method"
+    )
+    cluster_method: ClusterMethod | None = Field(default=None, title="Cluster the similar")
+
+    @model_validator(mode="after")
+    def validate_cluster_settings(self):
+        """Validate that cluster settings are defined if cluster=True."""
+        if self.cluster and (self.cluster_method is None or self.typing_method is None):
+            raise ValidationError("'cluster_method' and 'typing_method' must be set if 'cluster' is True.")
+        return self
 
 
 @router.post(
@@ -619,9 +633,8 @@ class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
     tags=["minhash", RouterTags.SAMPLE],
 )
 async def find_similar_samples(
-    body: SimilarSamplesInput,
+    body: SearchSimilarInput,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -634,18 +647,22 @@ async def find_similar_samples(
     LOG.info("ref: %s, body: %s, cluster: %s", sample_id, body, body.cluster)
     try:
         if body.cluster:
+            typing_method = cast(TypingMethod, body.typing_method)
+            cluster_method = cast(ClusterMethod, body.typing_method)
             submission_info: SubmittedJob = schedule_find_similar_and_cluster(
                 sample_id,
                 min_similarity=body.similarity,
                 limit=body.limit,
-                typing_method=body.typing_method,
-                cluster_method=body.cluster_method,
+                narrow_to_sample_ids=body.narrow_to_sample_ids,
+                typing_method=typing_method,
+                cluster_method=cluster_method,
             )
         else:
             submission_info: SubmittedJob = schedule_find_similar_samples(
                 sample_id,
                 min_similarity=body.similarity,
                 limit=body.limit,
+                narrow_to_sample_ids=body.narrow_to_sample_ids,
             )
     except ConnectionError as error:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
