@@ -3,7 +3,7 @@
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, cast
 
 from .config import cnf, IntegrityReportLevel
 from .exceptions import FileRemovalError
@@ -23,7 +23,12 @@ from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.storage import SignatureStorage
 from minhash_service.signatures.models import SignatureJSON, GzippedJSON, SignatureRecord, SourmashSignatures
 from minhash_service.analysis.similarity import get_similar_signatures
-from minhash_service.analysis.models import SimilarSignatures, AniEstimateOptions, SimilarSignature
+from minhash_service.analysis.models import (
+    SimilarSignatures,
+    AniEstimateOptions,
+    SimilarSignature,
+    SimilaritySearchConfig,
+)
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
 from minhash_service.core.factories import (
@@ -34,6 +39,7 @@ from minhash_service.core.factories import (
 from minhash_service.core.models import Event, EventType
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
+from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.io import (
     read_signatures,
@@ -91,7 +97,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     record = SignatureRecord(
         sample_id=sample_id,
         signature_path=sharded_path,
-        signature_checksum=loaded_sig.md5sum(),
+        signature_checksum=cast(str, loaded_sig.md5sum()),
         file_checksum=file_checksum,
     )
     try:
@@ -148,11 +154,11 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     try:
         repo.remove_by_sample_id(sample_id)
         # remove signature file if there are not other records with the same checksum
-        if repo.count_by_checksum(record.checksum) == 0:
-            removed_path = store.move_to_trash(record.signature_path, record.checksum)
+        if repo.count_by_checksum(record.signature_checksum) == 0:
+            removed_path = store.move_to_trash(record.signature_path, record.signature_checksum)
             metadata["staged_path"] = str(removed_path)
 
-        result = index.remove_signatures([sample_id])
+        result = index.remove_signatures(set([record.signature_checksum]))
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -231,10 +237,14 @@ def add_to_index(sample_ids: list[str]) -> str:
     for sid in indexed_samples:
         status = repo.mark_indexed(sid)
         update_status[sid] = status
-    
+
     if not all(list(update_status.values())):
         failed_update = [name for name, status in update_status.items() if not status]
-        LOG.error("Failed to mark %d samples as indexed; %s", len(failed_update), ", ".join(failed_update))
+        LOG.error(
+            "Failed to mark %d samples as indexed; %s",
+            len(failed_update),
+            ", ".join(failed_update),
+        )
     else:
         LOG.debug("Marked %d samples as indexed", len(update_status))
 
@@ -261,10 +271,13 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     md5_to_sample_id: dict[str, str] = {}
     for sid in sample_ids:
         sample = repo.get_by_sample_id_or_checksum(sample_id=sid)
-        md5_to_sample_id[sample.signature_checksum] = sid
-        checksums_to_remove.append(sample.signature_checksum)
+        if sample is None:
+            continue
+        checksum = sample.signature_checksum
+        md5_to_sample_id[checksum] = sid
+        checksums_to_remove.append(checksum)
 
-    result = index.remove_signatures(checksums_to_remove)
+    result = index.remove_signatures(set(checksums_to_remove))
     if not result.ok:
         n_remaining = len(checksums_to_remove) - result.removed_count
         LOG.error("Failed to remove %d checksum from index", n_remaining)
@@ -276,7 +289,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     return result.model_dump()
 
 
-def exclude_from_analysis(sample_ids: list[str]) -> str:
+def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     """
     Exclude signatures from being included in analysis without removing them.
 
@@ -297,7 +310,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> str:
     return {"ok": all_ok, "excluded": excluded, "to_exclude": sample_ids}
 
 
-def include_in_analysis(sample_ids: list[str]) -> str:
+def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[str]]:
     """
     Include signatures in downstream analysis.
 
@@ -320,9 +333,26 @@ def include_in_analysis(sample_ids: list[str]) -> str:
     return {"ok": all_ok, "included": included, "to_include": sample_ids}
 
 
+def _lookup_checksums_from_sample_ids(
+    sample_ids: Iterable[str] | None, repo: SignatureRepository
+) -> list[str] | None:
+    """Lookup checksums for sample ids."""
+    if sample_ids is None:
+        return None
+
+    return [
+        rec.signature_checksum
+        for sid in sample_ids
+        if (rec := repo.get_by_sample_id_or_checksum(sample_id=sid))
+    ]
+
+
 def search_similar(
-    sample_id: str, estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD, 
-    min_similarity: float = 0.5, limit: int | None = None
+    sample_id: str,
+    estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
+    min_similarity: float = 0.5,
+    limit: int | None = None,
+    subset_sample_ids: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Find signatures similar to reference signature.
@@ -350,24 +380,35 @@ def search_similar(
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
     index = create_index_store(idx_path, index_format=cnf.index_format)
 
-    results = get_similar_signatures(
-        query, index, ani_estimate=estimate_ani, min_similarity=min_similarity, limit=limit
+    # build search config
+    subset_checksums = _lookup_checksums_from_sample_ids(subset_sample_ids, repo)
+    search_cnf = SimilaritySearchConfig(
+        min_similarity=min_similarity,
+        limit=limit,
+        ani_estimate=estimate_ani,
+        subset_checksums=subset_checksums,
     )
+
+    results = get_similar_signatures(query, index, search_cnf)
     # lookup sample ids from matches
     similarity_result: SimilarSignatures = []
     for res in results:
         # enforce limit
-        if len(similarity_result) > limit:
+        if limit is not None and len(similarity_result) > limit:
             break
 
         # use matched signature checksum to lookup the sample
-        match_checksum = res.match.md5sum()
+        match_checksum = cast(str, res.match.md5sum())
         sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
         if sample is None:
             LOG.warning("Could not find a sample with checksum: %s", match_checksum)
-            raise SampleNotFoundError(f"Cant find a sample with checksum: {match_checksum}")
+            raise SampleNotFoundError(
+                f"Cant find a sample with checksum: {match_checksum}"
+            )
         # recast result to a internally maintained data type
-        upd_res = SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
+        upd_res = SimilarSignature(
+            sample_id=sample.sample_id, similarity=res.similarity
+        )
         similarity_result.append(upd_res)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
@@ -415,6 +456,7 @@ def find_similar_and_cluster(
     sample_id: str,
     min_similarity: float = 0.5,
     limit: int | None = None,
+    subset_sample_ids: list[str] | None = None,
     cluster_method: str = "single",
 ) -> str:
     """
@@ -443,7 +485,12 @@ def find_similar_and_cluster(
         min_similarity,
         limit,
     )
-    results = search_similar(sample_id=sample_id, min_similarity=min_similarity, limit=limit)
+    results = search_similar(
+        sample_id=sample_id,
+        min_similarity=min_similarity,
+        limit=limit,
+        subset_sample_ids=subset_sample_ids,
+    )
     LOG.info("Found %d similar samples", len(results))
 
     # if 1 or 0 samples were found, return emtpy newick
@@ -476,7 +523,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     return {
         "sample_id": sample_id,
         "exists": record.signature_path.exists(),
-        "checksum": record.checksum,
+        "checksum": record.signature_checksum,
         "indexed": record.has_been_indexed,
     }
 
