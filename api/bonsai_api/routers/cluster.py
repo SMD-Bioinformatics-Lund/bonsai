@@ -106,7 +106,9 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
 
 
 @router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
-async def index_genome_signatures(index_input: IndexInput) -> Dict[str, str]:
+async def index_genome_signatures(
+    index_input: IndexInput, db: Database = Depends(get_db),
+    ) -> Dict[str, str]:
     """Entrypoint for scheduling indexing of sourmash signatures.
 
     :raises HTTPException: Return 500 HTTP error signature path cant be generated

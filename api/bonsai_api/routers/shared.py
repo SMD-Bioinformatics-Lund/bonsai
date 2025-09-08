@@ -7,6 +7,11 @@ from typing import Literal
 from fastapi import HTTPException, Path, File, UploadFile
 from enum import StrEnum
 
+from pydantic import BaseModel, ConfigDict, Field
+
+from bonsai_api.models.cluster import ClusterMethod, DistanceMethod
+from bonsai_api.redis.models import MsTreeMethods
+
 from ..models.sample import SAMPLE_ID_PATTERN, QcClassification, SampleQcClassification
 
 LOG = logging.getLogger(__name__)

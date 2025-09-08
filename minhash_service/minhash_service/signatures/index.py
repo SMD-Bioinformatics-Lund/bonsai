@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import shutil
 import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -259,7 +260,8 @@ class RocksDBIndexStore(BaseIndexStore):
         except SourmashError as err:
             LOG.error("Sourmash failed to load index: %s", err)
             raise
-        return index
+        self._index = index
+        return self._index
 
     def _rebuild_index(
         self, signatures: Iterable[sourmash.SourmashSignature]
@@ -276,6 +278,8 @@ class RocksDBIndexStore(BaseIndexStore):
             ) as tmp_dir:
                 tmp_path = Path(tmp_dir) / "index.tmp"
                 index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
+                if self.index_path.exists():
+                    shutil.rmtree(self.index_path)
                 tmp_path.replace(self.index_path)  # atomic save
         return index
 
@@ -286,6 +290,7 @@ class RocksDBIndexStore(BaseIndexStore):
         try:
             idx = self._rebuild_index(signatures)
         except Exception as error:
+            LOG.error("Got a error when rebuilding index: %s", error)
             result = AddResult(
                 ok=False, warnings=[str(error)], added_count=0, added_md5s=[]
             )
