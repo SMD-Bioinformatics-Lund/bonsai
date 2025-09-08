@@ -3,6 +3,7 @@
 import logging
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 import sourmash
 from scipy.cluster import hierarchy
@@ -42,7 +43,7 @@ def cluster_signatures(
     method: ClusterMethod,
     kmer_size: int,
     ignore_abundance: bool = True,
-):
+) -> tuple[Any, list[str]]:
     """Cluster multiple samples on their minhash signatures and return tree object."""
 
     # load sequence signatures to memory
@@ -59,5 +60,5 @@ def cluster_signatures(
     # cluster on similarity matrix
     linkage = hierarchy.linkage(similarity, method=method.value)
     tree = hierarchy.to_tree(linkage, False)
-    checksums = [sig.md5sum() for sig in signatures]
+    checksums: list[str] = [sig.md5sum() for sig in signatures]
     return tree, checksums
