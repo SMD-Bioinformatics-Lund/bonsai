@@ -166,6 +166,7 @@ def schedule_find_similar_samples(
     sample_id: str,
     min_similarity: float,
     limit: int | None = None,
+    narrow_to_sample_ids: list[str] | None = None,
 ) -> SubmittedJob:
     """Schedule a job to find similar samples (no retries by default)."""
     task = str(TaskName.SEARCH_SIMILAR)
@@ -177,6 +178,7 @@ def schedule_find_similar_samples(
         sample_id=sample_id,
         min_similarity=min_similarity,
         limit=limit,
+        subset_sample_ids=narrow_to_sample_ids,
     )
     return SubmittedJob(id=job.id, task=task)
 
@@ -204,6 +206,7 @@ def schedule_find_similar_and_cluster(
     typing_method: TypingMethod,
     cluster_method: ClusterMethod,
     limit: int | None = None,
+    narrow_to_sample_ids: list[str] | None = None,
 ) -> SubmittedJob:
     """
     Schedule a job to find similar samples and cluster the results.
@@ -223,6 +226,7 @@ def schedule_find_similar_and_cluster(
         sample_id=sample_id,
         min_similarity=min_similarity,
         limit=limit,
+        subset_sample_ids=narrow_to_sample_ids,
         cluster_method=cluster_method.value,
     )
     return SubmittedJob(id=job.id, task=task)

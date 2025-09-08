@@ -397,8 +397,12 @@ def search_similar(
         if limit is not None and len(similarity_result) > limit:
             break
 
-        # use matched signature checksum to lookup the sample
+        # optionally skip samples that are not in subset
         match_checksum = cast(str, res.match.md5sum())
+        if subset_checksums is not None and match_checksum not in subset_checksums:
+            continue
+
+        # use matched signature checksum to lookup the sample
         sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
         if sample is None:
             LOG.warning("Could not find a sample with checksum: %s", match_checksum)

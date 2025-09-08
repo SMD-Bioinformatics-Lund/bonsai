@@ -37,7 +37,6 @@ def get_similar_signatures(
     )
     # define query params
     best_only = config.limit == 1
-    containment = False
     max_containment = False
 
     match config.ani_estimate:
@@ -61,8 +60,8 @@ def get_similar_signatures(
             results = cast(
                 SimilaritySearchResults,
                 search_databases_with_abund_query(
-                    query_sig,
-                    [index_repo.index],
+                    query=query_sig,
+                    databases=[index_repo.index],
                     threshold=config.min_similarity,
                     do_containment=containment,
                     do_max_containment=max_containment,
@@ -77,8 +76,8 @@ def get_similar_signatures(
         results = cast(
             SimilaritySearchResults,
             search_databases_with_flat_query(
-                query_sig,
-                [index_repo.index],
+                query=query_sig,
+                databases=[index_repo.index],
                 threshold=config.min_similarity,
                 do_containment=containment,
                 do_max_containment=max_containment,
