@@ -109,8 +109,8 @@ class SignatureRepository:
             yield SignatureRecord.model_validate(doc)
 
     def count_by_checksum(self, checksum: str) -> int:
-        """Count signatures by checksum. Returns 0 if none found."""
-        return self._col.count_documents({"checksum": checksum})
+        """Count signatures by signature checksum. Returns 0 if none found."""
+        return self._col.count_documents({"signature_checksum": checksum})
 
     # ---- update -------------------------------------------------------------
     def _set_flag(self, sample_id: str, status: bool, flag: str) -> bool:
