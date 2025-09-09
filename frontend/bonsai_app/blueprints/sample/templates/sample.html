@@ -165,10 +165,11 @@
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
     const sampleId = getSampleId()
+    const groupId = "{{ group_id }}"
 
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
-        bonsai.initSampleView(apiUrl, accessToken, "", sampleId)
+        bonsai.initSampleView(apiUrl, accessToken, "", sampleId, groupId)
     });
 
     function getSampleId() {

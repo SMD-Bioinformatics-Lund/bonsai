@@ -1,6 +1,10 @@
 {% macro sample_btn_renderer(cell_info)  %}
     <td>
-        <a href="{{ url_for('samples.sample', sample_id=cell_info) }}">Open</a>
+        {% set params={"sample_id": cell_info} %}
+        {% if group_id is defined %}
+            {% do params.update({"group_id": group_id}) %}
+        {% endif %}
+        <a href="{{ url_for('samples.sample', **params) }}">Open</a>
     </td>
 {% endmacro %}
 

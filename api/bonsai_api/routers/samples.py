@@ -649,7 +649,7 @@ async def find_similar_samples(
     try:
         if body.cluster:
             typing_method = cast(TypingMethod, body.typing_method)
-            cluster_method = cast(ClusterMethod, body.typing_method)
+            cluster_method = cast(ClusterMethod, body.cluster_method)
             submission_info: SubmittedJob = schedule_find_similar_and_cluster(
                 sample_id,
                 min_similarity=body.similarity,
@@ -666,7 +666,7 @@ async def find_similar_samples(
                 narrow_to_sample_ids=body.narrow_to_sample_ids,
             )
     except ConnectionError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
     except NotImplementedError as error:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error))
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)) from error
     return submission_info

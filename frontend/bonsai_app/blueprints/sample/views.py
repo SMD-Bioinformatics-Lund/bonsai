@@ -122,14 +122,7 @@ def sample(sample_id: str) -> str:
     extended = bool(request.args.get("extended", False))
 
     # if a sample was accessed from a group it can pass the group_id as parameter
-    # group_id is used to fetch information on validated genes and resitances
-    group_id = request.args.get("group_id")
-    if group_id:
-        get_group_by_id(token, group_id=group_id)
-        # validated_genes = group.get("validatedGenes", {})
-
-    # summarize predicted antimicrobial resistance
-    # amr_summary, resistance_info = create_amr_summary(sample_info)
+    group_id: str | None = request.args.get("group_id")
 
     # sort phenotypic predictions so Tb is first
     order = {"tbprofiler": 10, "mykrobe": 1}
@@ -152,11 +145,10 @@ def sample(sample_id: str) -> str:
     
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
-    
-    #similar_samples=similar_samples,
     return render_template(
         "sample.html",
         sample=sample_info,
+        group_id=group_id,
         title=sample_id,
         is_filtered=bool(group_id),
         bad_qc_actions=bad_qc_actions,
