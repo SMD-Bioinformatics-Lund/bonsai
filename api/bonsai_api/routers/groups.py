@@ -184,12 +184,12 @@ async def add_samples_to_group(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_id,
+            detail=sample_ids,
         ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=sample_id,
+            detail=sample_ids,
         ) from error
 
 
@@ -211,12 +211,12 @@ async def remove_sample_from_group(
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_id,
+            detail=sample_ids,
         ) from error
     except UpdateDocumentError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
-            detail=sample_id,
+            detail=sample_ids,
         ) from error
 
 
