@@ -30,7 +30,7 @@ async def check_job_status(job_id: str) -> JobStatus:
     return info
 
 
-@router.get("/job/minhash/integrity-report", status_code=status.HTTP_200_OK, tags=[RouterTags.JOB, "minhash"])
+@router.get("/job/minhash/integrity-report", status_code=status.HTTP_202_ACCEPTED, tags=[RouterTags.JOB, "minhash"])
 async def get_report_from_minhash() -> SubmittedJob:
     """Get latest integrity report the minhash service.
 
