@@ -473,6 +473,7 @@ def find_similar_and_cluster(
     :param min_similarity float: Minimum similarity score
     :param limit int | None: Limit the result to x samples, default to None
     :param cluster_method int: The linkage or clustering method to use, default to single
+    :param subset_sample_ids list[str] | None: Narrow the search to the following ids
 
     :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
 
