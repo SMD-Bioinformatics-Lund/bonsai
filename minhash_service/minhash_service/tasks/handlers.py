@@ -375,7 +375,7 @@ def search_similar(
 
     record = repo.get_by_sample_id_or_checksum(sample_id)
     if record is None:
-        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
+        raise FileNotFoundError(f"No record found for sample_id: \"{sample_id}\"")
 
     # is allways one sig
     query = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)[0]

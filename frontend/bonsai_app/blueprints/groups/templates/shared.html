@@ -1,5 +1,5 @@
 {% from  'sidebar.html' import qc_classification_form_fields  %}
-{% import "cell_fmt.html" as render_funcs %}
+{% import "cell_fmt.html" as render_funcs with context %}
 
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
@@ -82,6 +82,7 @@
 
 {% macro sample_table(table_data) %}
     {# build sample table #}
+    <p>Group id inside table: {{ group_id }}</p>
     <table id="sample-table" class="display table table-striped">
         <thead>
             <tr>
@@ -102,7 +103,7 @@
         </thead>
         <tbody>
             {% for row in table_data.rows %}
-                <tr {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
+                <tr id="{{ row.sample_id }}" {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
                     {% for col_info in table_data.columns %}
                         {% set cell_data=row[col_info.id] %}
                         {{ render_funcs[col_info.renderer](cell_data) }}
