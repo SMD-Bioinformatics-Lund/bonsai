@@ -101,6 +101,7 @@ function initApi(
 
 /* Initialize interactive elements for the group view. */
 export async function initGroupView(
+  groupId: string | null,
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
@@ -151,12 +152,19 @@ export async function initGroupView(
   if (deleteSamplesBtn)
     deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
 
+  // lookup samples in group if provided a groupId
+  let narrow_search_to = null
+  if ( !(groupId === null || groupId === "") ) {
+    const group = await api.getGroup(groupId)
+    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null
+  }
+
   const selectSimilarSamplesBtn = document.getElementById(
     "select-similar-samples-btn",
   ) as HTMLButtonElement;
   if (selectSimilarSamplesBtn)
     selectSimilarSamplesBtn.onclick = () =>
-      getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api);
+      getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api, narrow_search_to);
 
   // setup add samples to group component
   const groupSelectorContainer = document.getElementById(
@@ -216,6 +224,7 @@ export async function initSampleView(
   accessToken: string,
   refreshToken: string,
   sampleId: string,
+  groupId: string | null,
 ): Promise<string> {
   // setup base functionality
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
@@ -233,8 +242,14 @@ export async function initSampleView(
       qcStatusForm
     );
   }
-
-  await findAndClusterSimilarSamples(sampleId, api);
+  // lookup samples in group if provided a groupId
+  let narrow_search_to = null
+  if ( groupId !== null) {
+    const group = await api.getGroup(groupId)
+    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null
+  }
+  const newick = await findAndClusterSimilarSamples(sampleId, narrow_search_to, api);
+  return newick
 }
 
 declare global {
