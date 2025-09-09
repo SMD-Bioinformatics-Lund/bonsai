@@ -141,7 +141,8 @@ class Settings(BaseSettings):
     def validate_report_service_config(self):
         """Ensure that API url is set when errors should be reported."""
         requires_notifier = self.notification.integrity_report_level in {
-            IntegrityReportLevel.ERROR, IntegrityReportLevel.WARNING
+            IntegrityReportLevel.ERROR,
+            IntegrityReportLevel.WARNING,
         }
         if requires_notifier and not self.is_notification_configured:
             raise ValidationError("Notification serivce URL must be configures.")
