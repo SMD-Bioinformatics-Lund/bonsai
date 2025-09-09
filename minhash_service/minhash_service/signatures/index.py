@@ -150,8 +150,6 @@ class SBTIndexStore(BaseIndexStore):
                 tmp_idx_path,
                 self.index_path,
             )
-            if self.index_path.exists():
-                shutil.rmtree(self.index_path)
             tmp_idx_path.replace(self.index_path)
 
     def add_signatures(
