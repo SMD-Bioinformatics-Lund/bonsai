@@ -30,7 +30,7 @@ def get_similar_signatures(
     min_similarity - minimum similarity score to be included
     """
     LOG.info(
-        "Finding similar: %s; similarity: %f, limit: %d",
+        "Finding similar samples - query: %s; similarity: %f, limit: %s",
         query_sig.name,
         config.min_similarity,
         config.limit,
