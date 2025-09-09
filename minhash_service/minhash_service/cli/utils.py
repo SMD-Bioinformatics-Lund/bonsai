@@ -5,7 +5,9 @@ from typing import Literal
 from minhash_service.core.config import Settings
 
 
-def format_startup_banner(settings: Settings, mode: Literal["worker", "scheduler"]) -> str:
+def format_startup_banner(
+    settings: Settings, mode: Literal["worker", "scheduler"]
+) -> str:
     """Return a startup banner describing sw configuration."""
     s = settings
 
@@ -72,7 +74,11 @@ def format_startup_banner(settings: Settings, mode: Literal["worker", "scheduler
             f"  • integrity_check: {'ENABLED' if integ_enabled else 'DISABLED'}"
             + (f" → {integ_cron} (queue='{integ_queue}')" if integ_enabled else ""),
             f"  • cleanup_removed_files: {'ENABLED' if cleanup_enabled else 'DISABLED'}"
-            + (f" → {cleanup_cron} (queue='{cleanup_queue}')" if cleanup_enabled else ""),
+            + (
+                f" → {cleanup_cron} (queue='{cleanup_queue}')"
+                if cleanup_enabled
+                else ""
+            ),
             "",
             "  • Actions:",
             "      − Register enabled cron jobs",

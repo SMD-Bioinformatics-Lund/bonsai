@@ -12,13 +12,13 @@ from minhash_service.analysis.cluster import (
     cluster_signatures,
     tree_to_newick,
 )
-from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.analysis.models import (
-    SimilarSignatures,
     AniEstimateOptions,
-    SimilarSignature,
     SimilaritySearchConfig,
+    SimilarSignature,
+    SimilarSignatures,
 )
+from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
 from minhash_service.core.factories import (
@@ -29,7 +29,6 @@ from minhash_service.core.factories import (
 from minhash_service.core.models import Event, EventType
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.index import create_index_store, get_index_path
 from minhash_service.signatures.io import (
     read_signatures,
@@ -40,6 +39,7 @@ from minhash_service.signatures.models import (
     SignatureRecord,
     SourmashSignatures,
 )
+from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.storage import SignatureStorage
 
 from .notify import EmailApiInput, dispatch_email
@@ -150,7 +150,9 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         repo.remove_by_sample_id(sample_id)
         # remove signature file if there are not other records with the same checksum
         if repo.count_by_checksum(record.signature_checksum) == 0:
-            removed_path = store.move_to_trash(record.signature_path, record.signature_checksum)
+            removed_path = store.move_to_trash(
+                record.signature_path, record.signature_checksum
+            )
             metadata["staged_path"] = str(removed_path)
 
         result = index.remove_signatures(set([record.signature_checksum]))
