@@ -630,6 +630,7 @@ class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
 @router.post(
     "/samples/{sample_id}/similar",
     response_model=SubmittedJob,
+    status_code=status.HTTP_202_ACCEPTED,
     tags=["minhash", RouterTags.SAMPLE],
 )
 async def find_similar_samples(
