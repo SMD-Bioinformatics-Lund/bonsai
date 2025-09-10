@@ -197,7 +197,7 @@ export async function findAndClusterSimilarSamples(
   try {
     const jobFunc = async () =>
       api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
-    const jobResult = await pollJob(jobFunc, 3000, 40);
+    jobResult = await pollJob(jobFunc, 3000, 40);
     console.log("Here is the find similar result:", jobResult.result);
 
     // draw dendrogam in container element
@@ -211,6 +211,11 @@ export async function findAndClusterSimilarSamples(
   finally {
     spinner?.hide()
   }
+  if (!jobResult || !jobResult.result) {
+    console.error("Job result is missing or malformed:", jobResult);
+  throw new Error("Job result is undefined");
+}
+
   return jobResult.result
 }
 
