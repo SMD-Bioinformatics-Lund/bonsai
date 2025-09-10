@@ -44,6 +44,7 @@
 
 ### Changed
 
+- Similarity searches from the groups view now only search among samples from the same group.
 - Minhash service tasks are now executed through a dispatch function (`minhash_service/tasks/dispatch.py`)
 - Display rejection reason and comments on mouse over in sample table
 - Updated default columns in sample table
