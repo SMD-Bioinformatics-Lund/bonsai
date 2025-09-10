@@ -22,20 +22,38 @@
             Loading...
         </span>
     </button>
-    <form class="dropdown-menu dropdown-menu-end p-2 needs-validation">
-        <input type="text" name="similar-samples-limit" 
-                id="similar-samples-limit" class="form-control form-control-sm" 
-                placeholder="Number of samples" value="50" required>
-        <input type="text" name="similar-samples-threshold" 
-                id="similar-samples-threshold" class="form-control form-control-sm mt-2" 
-                placeholder="Min similarity" value="0.95" required>
-        <button type="button" id="select-similar-samples-btn" class="btn btn-sm btn-outline-success mt-2" >
-            <i class="bi bi-search"></i>
-            Search
-        </button>
-    </form>
+    <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 300px;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="dropdown-header mb-0">Find Similar Samples</h6>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="left"
+                title="Enter a minimum similarity percentage (0–100). Optionally set a maximum number of results. Click 'Find Similar Samples' to search.">
+            <i class="bi bi-info-circle" style="cursor: help;"></i>
+            </span>
+        </div>
+        <form class="needs-validation">
+            <div class="mb-2">
+                <label for="similar-samples-threshold" class="form-label">Minimum similarity (%)</label>
+                <input type="number" min="0" max="1" step="0.01" name="similar-samples-threshold" 
+                        id="similar-samples-threshold" class="form-control form-control-sm" 
+                        placeholder="Min similarity" value="0.95" required>
+                <div id="similar-samples-limit-help" class="form-text">Include samples with similarity above this percentage. Example: 95 = 95%.</div>
+            </div>
+            <div class="mb-2">
+                <label for="similar-samples-limit" class="form-label">Maximum results</label>
+                <input type="number" name="similar-samples-limit" 
+                        id="similar-samples-limit" class="form-control form-control-sm" 
+                        placeholder="Number of samples" value="50" required>
+                <div id="similar-samples-limit-help" class="form-text">Limit the number of samples returned.</div>
+            </div>
+            <button type="button" id="select-similar-samples-btn" class="btn btn-sm btn-outline-success mt-2" >
+                <i class="bi bi-search"></i>
+                Find similar samples
+            </button>
+        </form>
+    </div>
 </div>
 {% endmacro %}
+
 
 {% macro qc_bulk_toggle(bad_qc_actions) %}
     {#
