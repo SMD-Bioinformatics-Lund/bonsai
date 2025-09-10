@@ -47,10 +47,10 @@ export async function getSimilarSamplesAndCheckRows(
       api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
     dt.selectedRows = result.result.map((sample) => sample.sample_id);
-    throwSmallToast(`Search complete: ${result.result.length} similar samples identified`);
+    throwSmallToast(`Search complete: ${result.result.length} similar samples identified`, "success");
   } catch (error) {
     console.error("Error while checking job status:", error);
-    throwSmallToast("Error while finding similar samples", "success");
+    throwSmallToast("Error while finding similar samples", "error");
   }
   hideSpinner(container);
 }
