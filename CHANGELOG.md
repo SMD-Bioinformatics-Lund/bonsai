@@ -29,6 +29,7 @@
 
 ### Changed
 
+- Added tooltip and helper text that describes how the find similar samples dropdown works.
 - Add "add samples to group" button to the /groups/{group_id} view.
 - Similarity searches from the groups view now only search among samples from the same group.
 - Minhash service tasks are now executed through a dispatch function (`minhash_service/tasks/dispatch.py`)
