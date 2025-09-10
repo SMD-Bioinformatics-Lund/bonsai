@@ -110,7 +110,7 @@ class Notification(BaseSettings):
 class Settings(BaseSettings):
     """Minhash service settings."""
 
-    kmer_size: PositiveInt | None = 31
+    kmer_size: PositiveInt = 31
     signature_dir: Path = Path("/data/signature_db")
     index_format: IndexFormat = IndexFormat.SBT
     trash_dir: DirectoryPath = Field(
@@ -141,7 +141,8 @@ class Settings(BaseSettings):
     def validate_report_service_config(self):
         """Ensure that API url is set when errors should be reported."""
         requires_notifier = self.notification.integrity_report_level in {
-            IntegrityReportLevel.ERROR, IntegrityReportLevel.WARNING
+            IntegrityReportLevel.ERROR,
+            IntegrityReportLevel.WARNING,
         }
         if requires_notifier and not self.is_notification_configured:
             raise ValidationError("Notification serivce URL must be configures.")

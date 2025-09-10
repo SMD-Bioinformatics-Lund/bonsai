@@ -238,7 +238,7 @@ VALID_QC_COLS = [
 ]
 
 
-DEFAULT_COLUMNS: list[str] = ['sample_btn', 'sample_name', 'tags', 'assay', 'taxonomic_name', 'qc_status', 'comments', 'cdate']
+DEFAULT_COLUMNS: list[str] = ['sample_btn', 'sample_id', 'sample_name', 'tags', 'assay', 'taxonomic_name', 'qc_status', 'comments', 'cdate']
 
 # create combination of valid columns
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]

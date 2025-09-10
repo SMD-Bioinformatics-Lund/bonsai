@@ -21,6 +21,7 @@ export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,
   dt: TableController,
   api: ApiService,
+  narrow_search_to: string[] | null, 
 ) {
   const container = btn.closest(".similar-samples-container") as HTMLDivElement;
   const limitInput = container.querySelector(
@@ -30,9 +31,12 @@ export async function getSimilarSamplesAndCheckRows(
     "#similar-samples-threshold",
   ) as HTMLInputElement;
   showSpinner(container);
-  const job = await api.findSimilarSamples(dt.getSelectedRows()[0], {
+  const sampleId = dt.getSelectedRows()[0]
+  if (sampleId === undefined || sampleId === "undefined") throw Error(`Undefined sampleId; selected rows: ${dt.getSelectedRows()}`)
+  const job = await api.findSimilarSamples(sampleId, {
     limit: parseInt(limitInput.value),
     similarity: parseFloat(similarityInput.value),
+    narrow_to_sample_ids: narrow_search_to,
     cluster: false,
     typing_method: null,
     cluster_method: null,
@@ -43,9 +47,10 @@ export async function getSimilarSamplesAndCheckRows(
       api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
     dt.selectedRows = result.result.map((sample) => sample.sample_id);
+    throwSmallToast(`Search complete: ${result.result.length} similar samples identified`);
   } catch (error) {
     console.error("Error while checking job status:", error);
-    throwSmallToast("Error while finding similar samples");
+    throwSmallToast("Error while finding similar samples", "success");
   }
   hideSpinner(container);
 }
@@ -171,6 +176,7 @@ export function initSetSampleQc(
 /* Find samples similar to the given sample id, cluster them and plot as dendrogram */
 export async function findAndClusterSimilarSamples(
   sampleId: string,
+  narrow_to_sample_ids: string[] | null,
   api: ApiService,
 ): Promise<string> {
   const container = document.getElementById("similar-samples-card");
@@ -180,6 +186,7 @@ export async function findAndClusterSimilarSamples(
     limit: 10,
     similarity: 0.9,
     cluster: true,
+    narrow_to_sample_ids: narrow_to_sample_ids,
     typing_method: TypingMethod.MINHASH,
     cluster_method: ClusterMethod.SINGLE,
   };
@@ -190,7 +197,7 @@ export async function findAndClusterSimilarSamples(
   try {
     const jobFunc = async () =>
       api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
-    const jobResult = await pollJob(jobFunc, 3000, 40);
+    jobResult = await pollJob(jobFunc, 3000, 40);
     console.log("Here is the find similar result:", jobResult.result);
 
     // draw dendrogam in container element
@@ -204,6 +211,11 @@ export async function findAndClusterSimilarSamples(
   finally {
     spinner?.hide()
   }
+  if (!jobResult || !jobResult.result) {
+    console.error("Job result is missing or malformed:", jobResult);
+  throw new Error("Job result is undefined");
+}
+
   return jobResult.result
 }
 

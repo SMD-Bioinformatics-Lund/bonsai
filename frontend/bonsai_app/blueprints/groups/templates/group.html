@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn, sample_table %}
+{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn %}
+{% from "shared.html" import sample_table with context %}
 
 {% block css %}
     {{ super() }}
@@ -55,11 +56,12 @@
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
+    const groupId = "{{ group_id }}"
     // template code for adding to basket
     // template code for searching similar samples
 
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(apiUrl, accessToken, "")
+        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
     });
 </script>
 {% endblock content %}
