@@ -1114,11 +1114,18 @@
 {% endmacro %}
 
 
-{% macro similar_samples_card() %}
+{% macro similar_samples_card(group_id=None) %}
 <div id="similar-samples-card"
      class="card col-md-auto {% if data is none %}border-warning{% endif %}" 
      style="width: 24rem;">
-    <div class="card-header">Similar samples</div>
+    <div class="card-header">
+        Similar samples - 
+        {% if group_id is none %}
+            all samples
+        {% else %}
+            in group: {{ group_id }}
+        {% endif %}
+    </div>
     <div class="card-body">
         <spinner-element></spinner-element>
         <div id="tree-body" class="tree-body"></div>
