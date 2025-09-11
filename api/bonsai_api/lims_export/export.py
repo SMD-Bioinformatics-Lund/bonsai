@@ -29,8 +29,8 @@ def load_export_config(path: Path) -> ExportConfiguration:
 
 
 def _to_str(value: LimsValue) -> str:
-    if value is None:
-        return ""
+    if value is None or value == "":
+        return "-"
     # optional serialization rules
     return str(value)
 

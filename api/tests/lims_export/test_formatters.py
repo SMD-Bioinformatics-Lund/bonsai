@@ -55,9 +55,25 @@ def test_get_qc_status(mtuberculosis_sample):
     assert species == "Unprocessed"
     assert comment == ""
 
+
 def test_get_tbprofiler_amr(mtuberculosis_sample):
     """Test that the parsing of resistance variants works."""
-    species, comment = amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options={"software": "tbprofiler"})
 
-    assert species == "Unprocessed"
+    # First see tbprofiler predicted rifampicin resistance
+    # Test sample has one "verfied" rif variant
+    opts = {"software": "tbprofiler", "antibiotic_name": "rifampicin"}
+    species, comment = amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)
+
+    assert species == "Rv1129c.c.-28T>C WHO-5"
+    assert comment == ""
+
+
+def test_get_tbprofiler_amr_no_antibiotic(mtuberculosis_sample):
+    """Test that the parsing of resistance variants works."""
+
+    # Test that absent resistance returns null
+    opts = {"software": "tbprofiler", "antibiotic_name": "not-a-valid-name"}
+    resistance, comment = amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)
+
+    assert resistance is None
     assert comment == ""

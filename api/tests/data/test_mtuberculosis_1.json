@@ -975,7 +975,8 @@
             "passed_qc": true,
             "variant_effect": "upstream_gene_variant",
             "hgvs_nt_change": "c.-28T>C",
-            "hgvs_aa_change": ""
+            "hgvs_aa_change": "",
+            "verified": "passed"
           },
           {
             "id": 20,
@@ -1086,7 +1087,8 @@
             "passed_qc": true,
             "variant_effect": "upstream_gene_variant",
             "hgvs_nt_change": "c.-129A>G",
-            "hgvs_aa_change": ""
+            "hgvs_aa_change": "",
+            "verified": "passed"
           },
           {
             "id": 62,
