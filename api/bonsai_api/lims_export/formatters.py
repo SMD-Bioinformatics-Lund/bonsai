@@ -1,12 +1,14 @@
 """Extract and format data for lims export."""
 
+from collections import defaultdict
 import logging
 from typing import Any, Callable
 
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import SampleInDatabase
-from prp.models.phenotype import PredictionSoftware
+from bonsai_api.models.sample import SampleInDatabase, ElementType, VariantInDb
+from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod, TypingResultEmm
+
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 
@@ -144,13 +146,76 @@ def amr_prediction_for_antibiotic(
     """Get lineage information for a sample.
 
     Supported options:
+        antibiotic_name: str
         software: str                (default "tbprofiler")
+        resistance_level: str        (default "all")
     """
     options = options or {}
     preferred_software = options.get("software", "tbprofiler")
+    antibiotic_name = options.get("antibiotic_name", "rifampicin")
+    include_res_lvl = options.get("resistance_level", "all")
     for pred in sample.element_type_result:
-        if pred.software == preferred_software:
-            return "", ""
+        if pred.software == preferred_software and pred.type == ElementType.AMR:
+            variants = _resistance_variants(pred.result.variants, antibiotic_name, include_res_lvl)
+            if variants is None:
+                return None, ""
+            return ", ".join(variants), ""
     raise ValueError(
         f"Sample '{sample.sample_id}' dont have AMR prediction from {preferred_software}."
     )
+
+
+def _resistance_variants(variants: list[VariantInDb], antibiotic: str, resistance_lvl: str) -> list[str] | None:
+    """Parse identified resistance variants."""
+    passed_variants = [variant for variant in variants if variant.verified == "passed"]
+    selected_variants: list[str] = []
+    for variant in passed_variants:
+        # skip variants that have not been currated or failed
+        if not variant.verified == "passed":
+            continue
+
+        # skip variants that dont yeild resistance to antibiotic
+        selected_phenotypes = [
+            phe.name for phe in variant.phenotypes
+            if (phe.resistance_level == resistance_lvl) or (resistance_lvl == "all")
+        ]
+        if antibiotic not in selected_phenotypes:
+            continue
+
+        selected_variants.append(_serialize_variant(variant))
+        # serialize variant info to string representation
+    # return none if no variants were found
+    if len(selected_variants) == 0:
+        return None
+    return selected_variants
+
+
+def _serialize_variant(variant: VariantInDb) -> str:
+    """Serialize variant model to string representation."""
+    who_classes = {
+        "Assoc w R": 1,
+        "Assoc w R - Interim": 2,
+        "Uncertain significance": 3,
+        "Not assoc w R - Interim": 4,
+        "Not assoc w R": 5,
+    }
+    var_type = variant.variant_type
+    if var_type == "SV":
+        variant_desc = (
+            f"g.{variant.start}_{variant.end}{variant.variant_subtype.lower()}"
+        )
+    else:
+        variant_name = (
+            variant.hgvs_nt_change
+            if variant.hgvs_aa_change == ""
+            else variant.hgvs_aa_change
+        )
+        variant_desc = f"{variant.reference_sequence}.{variant_name}"
+    # annotate variant frequency for minority variants
+    if variant.frequency is not None and variant.frequency < 1:
+        variant_desc = f"{variant_desc}({variant.frequency * 100:.1f}%)"
+    # annotate WHO classification
+    who_group = who_classes.get(variant.phenotypes[0].note)
+    if who_group is not None:
+        variant_desc = f"{variant_desc} WHO-{who_group}"
+    return variant_desc
