@@ -4,7 +4,7 @@ import csv
 import io
 import logging
 from pathlib import Path
-from typing import Any, Literal, TextIO
+from typing import Any, Literal
 
 from bonsai_api.models.sample import SampleInDatabase
 from yaml import safe_load
