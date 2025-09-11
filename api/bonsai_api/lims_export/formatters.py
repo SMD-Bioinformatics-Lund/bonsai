@@ -1,14 +1,13 @@
 """Extract and format data for lims export."""
 
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from typing import Any, Callable
 
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import SampleInDatabase, ElementType, VariantInDb
+from bonsai_api.models.sample import ElementType, SampleInDatabase, VariantInDb
 from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
 from prp.models.typing import TypingMethod, TypingResultEmm
-
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 
@@ -39,6 +38,14 @@ def get_formatter(name: str) -> Formatter:
         ) from err
 
 
+class AnalysisNotPresentError(Exception):
+    """Raised if requested analysis is not in sample data."""
+
+
+class AnalysisNoResultError(Exception):
+    """Raised if requested analysis did not generate a result."""
+
+
 @register_formatter("mlst")
 def mlst_typing(
     sample: SampleInDatabase, *, options: Any
@@ -48,8 +55,12 @@ def mlst_typing(
     for ty in sample.typing_result:
         if ty.type == "mlst":
             mlst_st = ty.result.sequence_type or "novel"
+            if mlst_st is None:
+                raise AnalysisNoResultError()
             return mlst_st, ""
-    raise ValueError(f"Sample '{sample.sample_id}' doesn't have MLST results.")
+    raise AnalysisNotPresentError(
+        f"Sample '{sample.sample_id}' doesn't have MLST results."
+    )
 
 
 @register_formatter("emm")
@@ -62,7 +73,7 @@ def emm_typing(
         if ty.type == "emm":
             result: TypingResultEmm = ty.result
             return result.emmtype or "novel", ""
-    raise ValueError(f"Sample '{sample.sample_id}' doesn't have EMM type.")
+    raise AnalysisNotPresentError(f"Sample '{sample.sample_id}' doesn't have EMM type.")
 
 
 @register_formatter("species")
@@ -95,13 +106,13 @@ def species_prediction(
                 LOG.warning(
                     "Sample %s did not have any bracken predicitons", sample.sample_id
                 )
-                return None, ""
+                raise AnalysisNoResultError()
             # filter and sort
             rows = sorted(
                 pred.result, key=lambda r: getattr(r, sort_by, 0.0), reverse=True
             )
             return rows[0].scientific_name, ""
-    raise ValueError(
+    raise AnalysisNotPresentError(
         f"Sample '{sample.sample_id}' dont have {preferred_software} species prediction result."
     )
 
@@ -119,7 +130,7 @@ def lineage_prediction(
         ):
             lin = pred.result.sublineage.replace("lineage", "")  # strip lineage
             return lin, ""
-    raise ValueError(
+    raise AnalysisNotPresentError(
         f"Sample '{sample.sample_id}' dont have tbprofiler prediction results."
     )
 
@@ -156,16 +167,21 @@ def amr_prediction_for_antibiotic(
     include_res_lvl = options.get("resistance_level", "all")
     for pred in sample.element_type_result:
         if pred.software == preferred_software and pred.type == ElementType.AMR:
-            variants = _resistance_variants(pred.result.variants, antibiotic_name, include_res_lvl)
+            variants = _resistance_variants(
+                pred.result.variants, antibiotic_name, include_res_lvl
+            )
+            genes = []  # TODO implement formatting of genes
             if variants is None:
-                return None, ""
-            return ", ".join(variants), ""
-    raise ValueError(
+                raise AnalysisNoResultError()
+            return ", ".join(variants + genes), ""
+    raise AnalysisNotPresentError(
         f"Sample '{sample.sample_id}' dont have AMR prediction from {preferred_software}."
     )
 
 
-def _resistance_variants(variants: list[VariantInDb], antibiotic: str, resistance_lvl: str) -> list[str] | None:
+def _resistance_variants(
+    variants: list[VariantInDb], antibiotic: str, resistance_lvl: str
+) -> list[str] | None:
     """Parse identified resistance variants."""
     passed_variants = [variant for variant in variants if variant.verified == "passed"]
     selected_variants: list[str] = []
@@ -176,7 +192,8 @@ def _resistance_variants(variants: list[VariantInDb], antibiotic: str, resistanc
 
         # skip variants that dont yeild resistance to antibiotic
         selected_phenotypes = [
-            phe.name for phe in variant.phenotypes
+            phe.name
+            for phe in variant.phenotypes
             if (phe.resistance_level == resistance_lvl) or (resistance_lvl == "all")
         ]
         if antibiotic not in selected_phenotypes:

@@ -1,8 +1,16 @@
 """Test lims export functions."""
 
 import pytest
+from bonsai_api.lims_export.formatters import (
+    AnalysisNoResultError,
+    AnalysisNotPresentError,
+    amr_prediction_for_antibiotic,
+    lineage_prediction,
+    mlst_typing,
+    qc_status,
+    species_prediction,
+)
 
-from bonsai_api.lims_export.formatters import amr_prediction_for_antibiotic, lineage_prediction, mlst_typing, qc_status, species_prediction
 
 def test_get_mlst_with_result(ecoli_sample):
     """Test that MLST format function extract correct information."""
@@ -25,14 +33,16 @@ def test_get_species_with_bracken_result(fixture_name, exp_spp, request):
 
 def test_get_species_without_mykrobe_result(ecoli_sample):
     """Test that trying to get a missing result raises error."""
-    with pytest.raises(ValueError):
+    with pytest.raises(AnalysisNotPresentError):
         species_prediction(sample=ecoli_sample, options={"software": "mykrobe"})
 
 
 def test_get_species_with_mykrobe_result(mtuberculosis_sample):
     """Test that the formatting function for mykrobe spp results."""
     # test trying to access predictions from a unused software raises an error
-    species, comment = species_prediction(sample=mtuberculosis_sample, options={"software": "mykrobe"})
+    species, comment = species_prediction(
+        sample=mtuberculosis_sample, options={"software": "mykrobe"}
+    )
 
     assert species == "Mycobacterium tuberculosis"
     assert comment == ""
@@ -56,13 +66,42 @@ def test_get_qc_status(mtuberculosis_sample):
     assert comment == ""
 
 
-def test_get_tbprofiler_amr(mtuberculosis_sample):
+def test_get_tbprofiler_amr_all(mtuberculosis_sample):
     """Test that the parsing of resistance variants works."""
 
     # First see tbprofiler predicted rifampicin resistance
     # Test sample has one "verfied" rif variant
-    opts = {"software": "tbprofiler", "antibiotic_name": "rifampicin"}
-    species, comment = amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)
+    opts = {
+        "software": "tbprofiler",
+        "antibiotic_name": "rifampicin",
+        "resistance_level": "all",
+    }
+    species, comment = amr_prediction_for_antibiotic(
+        sample=mtuberculosis_sample, options=opts
+    )
+
+    assert species == "Rv1129c.c.-28T>C WHO-5"
+    assert comment == ""
+
+    # Test that  resistance levels filter work
+    # The sample dont carry a resistance with low grade resistance
+    opts = {
+        "software": "tbprofiler",
+        "antibiotic_name": "rifampicin",
+        "resistance_level": "low",
+    }
+    with pytest.raises(AnalysisNoResultError):
+        amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)
+
+    # The sample carry a variant that confers high level resistance
+    opts = {
+        "software": "tbprofiler",
+        "antibiotic_name": "isoniazid",
+        "resistance_level": "high",
+    }
+    species, comment = amr_prediction_for_antibiotic(
+        sample=mtuberculosis_sample, options=opts
+    )
 
     assert species == "Rv1129c.c.-28T>C WHO-5"
     assert comment == ""
@@ -73,7 +112,5 @@ def test_get_tbprofiler_amr_no_antibiotic(mtuberculosis_sample):
 
     # Test that absent resistance returns null
     opts = {"software": "tbprofiler", "antibiotic_name": "not-a-valid-name"}
-    resistance, comment = amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)
-
-    assert resistance is None
-    assert comment == ""
+    with pytest.raises(AnalysisNoResultError):
+        amr_prediction_for_antibiotic(sample=mtuberculosis_sample, options=opts)

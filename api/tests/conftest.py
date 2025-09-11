@@ -56,11 +56,7 @@ def ecoli_sample(ecoli_sample_path):
 @pytest.fixture(scope="function")
 def lims_rs_export_cnf():
     """Sample db object."""
-    return {
-        "streptococcus": {"fields": [
-
-        ]}
-    }
+    return {"streptococcus": {"fields": []}}
 
 
 @pytest.fixture(scope="function")

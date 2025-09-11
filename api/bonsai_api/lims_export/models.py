@@ -4,7 +4,7 @@ from enum import StrEnum
 from typing import Any, Literal, Mapping, Protocol
 
 from bonsai_api.models.sample import SampleInDatabase
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 LimsAtomic = str | int | float | Literal["novel"]
 LimsValue = LimsAtomic | None  # None = missing/unavailable
@@ -15,12 +15,17 @@ class DataType(StrEnum):
     """Valid data types."""
 
     SPECIES = "species"
+    QC = "qc"
     MLST = "mlst"
     EMM = "emm"
+    LINEAGE = "lineage"
+    AMR = "amr"
 
 
 class FieldDefinition(BaseModel):
     """A data field."""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     parameter_name: str = Field(
         ...,
@@ -29,6 +34,10 @@ class FieldDefinition(BaseModel):
     )
     data_type: DataType = Field(
         ..., description="Name of the function used to extract the info"
+    )
+    required: bool = Field(..., description="If True, Will consider missing as errors.")
+    options: dict[str, Any] = Field(
+        default={}, description="Optional arguments to be passed to formatter function."
     )
 
 
@@ -49,10 +58,6 @@ class LimsRsResult(BaseModel):
     parameter_name: str
     parameter_value: LimsValue
     comment: str = ""
-    required: bool = Field(..., description="If True, Will consider missing as errors.")
-    options: dict[str, Any] = Field(
-        default={}, description="Optional arguments to be passed to formatter function."
-    )
 
 
 class Formatter(Protocol):

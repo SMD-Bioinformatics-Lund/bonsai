@@ -924,7 +924,7 @@
                 "name": "isoniazid",
                 "group": null,
                 "type": "AMR",
-                "resistance_level": null,
+                "resistance_level": "high",
                 "annotation_type": "tool",
                 "annotation_author": "tbprofiler",
                 "reference": [
