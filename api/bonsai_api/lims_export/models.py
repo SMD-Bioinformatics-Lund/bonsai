@@ -1,8 +1,14 @@
 """Lims export models"""
 
 from enum import StrEnum
+from typing import Any, Literal, Mapping, Protocol
 from pydantic import BaseModel, Field
 
+from bonsai_api.models.sample import SampleInDatabase
+
+
+LimsAtomic = str | int | float | Literal["novel"]
+LimsValue = LimsAtomic | None  # None = missing/unavailable
 
 class DataType(StrEnum):
     """Valid data types."""
@@ -34,5 +40,13 @@ class LimsRsResult(BaseModel):
 
     sample_id: str
     parameter_name: str
-    parameter_value: str
+    parameter_value: LimsValue
     comment: str = ""
+    required: bool = Field(..., description="If True, Will consider missing as errors.")
+    options: dict[str, Any] = Field(default={}, description="Optional arguments to be passed to formatter function.")
+
+
+class Formatter(Protocol):
+    def __call__(self, sample: SampleInDatabase, *, options: Mapping[str, Any] | None = None) -> tuple[LimsValue, str]:
+        ...
+

@@ -1,16 +1,39 @@
 """Extract and format data for lims export."""
 
 import logging
-from typing import Literal
-from bonsai_api.models.sample import SampleInDatabase
-from typing import Literal, cast
+from typing import Any, Callable, Literal, cast
 
+from bonsai_api.models.sample import SampleInDatabase
 from prp.models.species import BrackenSpeciesPrediction
+from prp.models.typing import TypingResultEmm
+
+from .models import Formatter
 
 LOG = logging.getLogger(__name__)
 
+_FORMATTERS: dict[str, Formatter] = {}
 
-def get_mlst_typing(sample: SampleInDatabase) -> tuple[int | Literal['novel'], str]:
+
+def register_formatter(name: str) -> Callable[[Formatter], Formatter]:
+    """Decorator to register format functions by its data type."""
+    def _decorator(fn: Formatter) -> Formatter:
+        if name in _FORMATTERS:
+            raise RuntimeError(f"Formatter '{name}' already registered.")
+        _FORMATTERS[name] = fn
+        return fn
+    return _decorator
+
+
+def get_formatter(name: str) -> Formatter:
+    """Get format function with name."""
+    try:
+        return _FORMATTERS[name]
+    except KeyError as err:
+        raise NotImplementedError(f"No formatter registered for data type: {name}") from err
+
+
+@register_formatter('mlst')
+def mlst_typing(sample: SampleInDatabase, *, options: Any) -> tuple[int | Literal['novel'], str]:
     """Extract and format MLST (Multi-Locus Sequence Typing) result from a sample."""
     for ty in sample.typing_result:
         if ty.type == 'mlst':
@@ -19,15 +42,38 @@ def get_mlst_typing(sample: SampleInDatabase) -> tuple[int | Literal['novel'], s
     raise ValueError(f"Sample '{sample.sample_id}' doesn't have MLST results.")
 
 
-def get_species_prediction(sample: SampleInDatabase) -> tuple[str, str]:
-    """Extract and format species prediction result using Bracken."""
+@register_formatter('emm')
+def emm_typing(sample: SampleInDatabase, *, options: Any) -> tuple[int | Literal['novel'], str]:
+    """Extract and format EMM result from a sample."""
+    for ty in sample.typing_result:
+        if ty.type == 'emm':
+            result: TypingResultEmm = ty.result
+            return result.emmtype or "novel", ""
+    raise ValueError(f"Sample '{sample.sample_id}' doesn't have EMM type.")
+
+
+@register_formatter('species')
+def species_prediction(sample: SampleInDatabase, *, options: Any) -> tuple[str, str]:
+    """Extract and format species prediction result using Bracken.
+    
+    Supported options:
+        software: str                (default "bracken")
+        sort_by: str                 (default for bracken "fraction_total_reads", 
+                                                  mykrobe "species_coverage")
+    """
+    options = options or {}
+    preferred_software = options.get("software", "bracken")
+    default_sort_by = ("fraction_total_reads" if preferred_software == "bracken" else "species_coverage")
+    sort_by = options.get("sort_by", default_sort_by)
+    LOG.debug("Get species prediction; software: %s, sort_by: %s", preferred_software, sort_by)
+
     for pred in sample.species_prediction:
-        if pred.software == 'bracken':
-            spp_pred = cast(list[BrackenSpeciesPrediction], pred.result)  # improve type hinting
+        if pred.software == preferred_software:
             # ensure that best hit is first
-            if len(spp_pred) == 0:
+            if len(pred.result) == 0:
                 LOG.warning("Sample %s did not have any bracken predicitons", sample.sample_id)
                 return "", ""
-            top_hit: BrackenSpeciesPrediction = sorted(spp_pred, key=lambda s: s.fraction_total_reads, reverse=True)[0]
-            return top_hit.scientific_name, ""
+            # filter and sort
+            rows = sorted(pred.result, key=lambda r: getattr(r, sort_by, 0.0), reverse=True)
+            return rows[0].scientific_name, ""
     raise ValueError(f"Sample '{sample.sample_id}' dont have bracken species prediction result.")
