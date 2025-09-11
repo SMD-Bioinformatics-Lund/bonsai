@@ -3,6 +3,7 @@
 import ssl
 from typing import List
 
+from fastapi import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -92,6 +93,8 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
     )
+
+    export_config: Path = "lims_export/default_config.yml"
 
     @property
     def use_ldap_auth(self) -> bool:

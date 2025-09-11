@@ -19,7 +19,7 @@ from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
-from bonsai_api.io import sample_to_kmlims
+from bonsai_api.lims_export.export import lims_rs_formatter, load_export_config, serialize_lims_results
 from bonsai_api.models.group import GroupInCreate, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
@@ -154,25 +154,29 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
 @cli.command()
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
+@click.option("-f", "--export-cnf", type=click.Path(), required=True, default="",help="Format config")
 @click.argument("output", type=click.File("w"), default="-")
 def export(
-    _ctx: click.Context, sample_id: str, output: TextIOWrapper
+    _ctx: click.Context, sample_id: str, output: TextIOWrapper,
+    export_cnf
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
+    cnf = load_export_config(export_cnf)
     loop = asyncio.get_event_loop()
     with get_db_connection() as db:
         func = get_sample(db, sample_id)
         sample = loop.run_until_complete(func)
 
     try:
-        lims_data = sample_to_kmlims(sample)
+        lims_data = lims_rs_formatter(sample, cnf)
     except NotImplementedError as error:
         click.secho(error, fg="yellow")
         raise click.Abort(error) from error
 
     # write lims formatted data
-    lims_data.to_csv(output, sep="\t", index=False)
+    tabular = serialize_lims_results(lims_data)
+    output.write(tabular)
     click.secho(f"Exported {sample_id}", fg="green", err=True)
 
 

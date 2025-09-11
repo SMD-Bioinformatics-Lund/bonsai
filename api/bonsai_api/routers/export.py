@@ -1,13 +1,13 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
+from bonsai_api.lims_export.export import load_export_config, lims_rs_formatter, serialize_lims_results
+from bonsai_api.config import settings
 from ..crud.sample import EntryNotFound, get_sample
 from ..crud.user import get_current_active_user
 from ..db import Database, get_db
-from ..io import sample_to_kmlims
-from ..models.sample import SAMPLE_ID_PATTERN
 from ..models.user import UserOutputDatabase
 from .shared import SAMPLE_ID_PATH
 
@@ -44,7 +44,10 @@ async def export_to_lims(
 
     # convert sample data to LIMS format
     try:
-        lims_data = sample_to_kmlims(sample_obj)
+        # load export config using file in settings
+        cnf = load_export_config(settings.export_config)
+        lims_data = lims_rs_formatter(sample_obj, cnf)
+        tabular = serialize_lims_results(lims_data, delimiter="tsv")
     except NotImplementedError as error:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -52,4 +55,4 @@ async def export_to_lims(
         ) from error
 
     # return data as file
-    return lims_data.to_csv(sep="\t", index=False)
+    return tabular

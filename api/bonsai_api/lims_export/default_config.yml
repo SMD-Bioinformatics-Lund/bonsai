@@ -1,0 +1,19 @@
+- assay: mtuberculosis
+  fields:
+    - parameter_name: MTBC_ART
+      data_type: species
+      required: true
+    - parameter_name: MTBC_QC
+      data_type: qc
+      required: true
+- assay: spyogenes
+  fields:
+    - parameter_name: STREP ART
+      data_type: species
+      required: true
+    - parameter_name: STREP MLST
+      data_type: mlst
+      required: true
+    - parameter_name: STREP EMM
+      data_type: emm
+      required: true
