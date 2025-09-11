@@ -1,44 +1,36 @@
 {
   "sample_id": "test_ecoli_1",
-  "run_metadata": {
-    "run": {
-      "pipeline": "main.nf",
-      "version": "0.5.0",
-      "commit": "null",
-      "analysis_profile": ["escherichia_coli"],
-      "configuration_files": [
-        "/fs1/pipelines/jasen/nextflow.config"
-      ],
-      "workflow_name": "furious_sammet",
-      "sample_name": "test_ecoli_1",
-      "lims_id": "ecoli_lims_1",
-      "sequencing_run": "RUN0002",
-      "sequencing_platform": "illumina",
-      "sequencing_type": "PE",
-      "assay": "ecoli",
-      "release_life_cycle": "test",
-      "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile escherichia_coli --csv /fs1/ryan/pipelines/jasen/test-csvs/prp_test_samples_ecoli.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.report.html -with-trace /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.trace.txt -with-timeline /fs1/nextflow//reports/test_ecoli_1.jasen-ecoli-dev.timeline.html -work-dir /fs1/nextflow//test_ecoli_1.jasen-ecoli-dev -resume",
-      "date": "2024-03-15T10:11:30.330339+01:00"
-    },
-    "databases": [
+  "sample_name": "test_ecoli_1",
+  "lims_id": "test123",
+  "sequencing": {
+    "run_id": "RUN0001",
+    "platform": "illumina",
+    "instrument": "",
+    "sequencing_type": "PE",
+    "date": "2024-05-20T13:36:09.671742+02:00"
+  },
+  "pipeline": {
+    "pipeline": "main.nf",
+    "version": "0.6.0",
+    "commit": "null",
+    "analysis_profile": ["mycobacterium_tuberculosis"],
+    "configuration_files": [
+      "/fs1/pipelines/jasen/configs/nextflow.dev.config"
+    ],
+    "workflow_name": "insane_gautier",
+    "assay": "mtuberculosis",
+    "release_life_cycle": "test",
+    "command": "nextflow run /fs1/pipelines/jasen/main.nf -profile mycobacterium_tuberculosis -c /fs1/pipelines/jasen/configs/nextflow.dev.config --csv /home/markjo/prp_test_samples_mtuberculosis.csv --queue high -with-singularity /fs1/pipelines/jasen/container/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev",
+    "date": "2024-05-20T13:36:09.671742+02:00",
+    "softwares": [
       {
-        "name": "resfinder",
-        "version": "2.1.1",
+        "name": "mykrobe-predictor",
+        "version": "v0.12.2",
         "type": "database"
       },
       {
-        "name": "pointfinder",
-        "version": "4.0.0",
-        "type": "database"
-      },
-      {
-        "name": "serotypefinder",
-        "version": "ada62c62a7fa74032448bb2273d1f7045c59fdda",
-        "type": "database"
-      },
-      {
-        "name": "virulencefinder",
-        "version": "041b8b30ede055f92cbd8eaf3679ca7554857514",
+        "name": "converged_who_fohm_tbdb",
+        "version": "converged_who_fohm_tbdb_2024-05-08",
         "type": "database"
       }
     ]

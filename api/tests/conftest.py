@@ -46,6 +46,24 @@ def mtuberculosis_sample(mtuberculosis_sample_path):
 
 
 @pytest.fixture(scope="function")
+def ecoli_sample(ecoli_sample_path):
+    """Sample db object."""
+    with open(ecoli_sample_path) as inpt:
+        sample_obj = SampleInDatabase(**json.load(inpt))
+    return sample_obj
+
+
+@pytest.fixture(scope="function")
+def lims_rs_export_cnf():
+    """Sample db object."""
+    return {
+        "streptococcus": {"fields": [
+
+        ]}
+    }
+
+
+@pytest.fixture(scope="function")
 async def sample_database(mongo_database, mtuberculosis_sample_path):
     """Returns a database client with loaded test data."""
 
