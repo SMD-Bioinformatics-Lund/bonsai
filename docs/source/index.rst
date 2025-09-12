@@ -16,6 +16,7 @@ Check out the :doc:`installation` section for installation instructions.
    /container_configuration
    /administration
    /deployment
+   /lims_export
    /faq
 
 .. toctree::
