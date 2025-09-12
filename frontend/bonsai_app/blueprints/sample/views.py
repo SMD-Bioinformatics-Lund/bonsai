@@ -3,7 +3,6 @@
 import json
 import logging
 from datetime import date
-from io import BytesIO
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
@@ -25,20 +24,17 @@ from ...bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
     delete_samples,
-    find_and_cluster_similar_samples,
     find_samples_similar_to_reference,
     get_antibiotics,
     get_group_by_id,
-    get_lims_export_file,
+    get_lims_export_response,
     get_sample_by_id,
     get_variant_rejection_reasons,
     post_comment_to_sample,
     remove_comment_from_sample,
     update_sample_qc_classification,
     update_variant_info,
-    SubmittedJob,
 )
-from ...config import settings
 from ...models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
     filter_variants,
@@ -252,21 +248,29 @@ def download_lims(sample_id: str):
     token = TokenObject(**current_user.get_id())
 
     # default file name
+    fmt = request.args.get("fmt", "tsv")
     today = date.today()
-    fname = request.args.get(
+    fallback_fname = request.args.get(
         "filename", f"bonsai-lims-export_{sample_id}_{today.isoformat()}"
     )
 
-    # get data in tsv format and setup error handling
+    # Fetch from API
     try:
-        data = get_lims_export_file(token, sample_id=sample_id)
+        api_resp = get_lims_export_response(token, sample_id=sample_id, fmt=fmt)
     except HTTPError as error:
         # log errors
-        if error.response.status_code == 401:
+        status = error.response.status_code == 401
+        if status:
             current_app.logger.warning(
                 "LIMS export error - no permissoin %s", current_user.username
             )
             flash("You dont have permission to export the result to LIMS", "warning")
+        elif status == 404:
+            flash("Sample not found", "warning")
+        elif status == 422:
+            flash("Export is not supported for this assay", "warning")
+        elif status == 501:
+            flash("Export not implemented for this assay", "warning")
         else:
             current_app.logger.error(
                 "LIMS export error - generic error: %s", error.response
@@ -274,13 +278,27 @@ def download_lims(sample_id: str):
             flash("Error when generating export file", "warning")
         return redirect(request.referrer)
 
-    # convert string to IO buffer
-    buffer = BytesIO(data.encode("UTF-8"))
-    response = make_response(buffer.getvalue())
-    # define headers and mimetype for a file
-    response.headers["Content-Disposition"] = f"attachment; filename={fname}.txt"
-    response.mimetype = "text/csv"
-    # return response object
+    # build Flask response using the API headers and bytes
+    content = api_resp.content # bytes
+    response = make_response(content)
+
+    # Forward content type if provided
+    content_type = api_resp.headers.get("Content-Type")
+    if content_type:
+        response.headers["Content-Type"] = content_type
+    else:
+        # fallback based on format
+        response.headers["Content-Type"] = (
+            "text/tab-separated-values; charset=utf-8" if fmt == "tsv" else "text/csv; charset=utf-8"
+        )
+    # Forward filename if provided; else build default one
+    dispo = api_resp.headers.get("Content-Disposition")
+    if not dispo:
+        response.headers["Content-Disposition"] = f"attachment; filename={fallback_fname}.txt"
+    else:
+        response.headers["Content-Disposition"] = dispo
+    # Saftey
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
     return response
 
 

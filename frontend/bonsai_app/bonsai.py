@@ -478,12 +478,12 @@ def find_and_cluster_similar_samples(
 
 
 @api_authentication
-def get_lims_export_file(headers: CaseInsensitiveDict[str], sample_id: str) -> str:
-    """Query the API for a lims export file."""
+def get_lims_export_response(headers: CaseInsensitiveDict[str], sample_id: str, fmt: str = "tsv") -> requests.Response:
+    """Query the API for a LIMS export file; return the raw response."""
     url = f"{settings.api_internal_url}/export/{sample_id}/lims"
-    resp = requests_get(url, headers=headers)
+    resp = requests_get(url, headers=headers, params={"fmt": fmt})
     resp.raise_for_status()
-    return resp.text
+    return resp
 
 
 @api_authentication
