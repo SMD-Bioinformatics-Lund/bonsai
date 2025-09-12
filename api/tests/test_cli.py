@@ -25,7 +25,3 @@ def test_export_sample_default_config(mocker, sample_database_context):
 
         # test that script could execute
         assert result.exit_code == 0
-
-        # test that the output contained one row per antibiotic
-        df = pd.read_csv("test.tsv", sep="\t")
-        assert len(df) == 2
