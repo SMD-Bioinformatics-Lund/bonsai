@@ -19,7 +19,7 @@ from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
-from bonsai_api.lims_export.export import lims_rs_formatter, load_export_config, serialize_lims_results
+from bonsai_api.lims_export.export import InvalidFormatError, lims_rs_formatter, load_export_config, serialize_lims_results
 from bonsai_api.models.group import GroupInCreate, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
@@ -161,17 +161,25 @@ def export(
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database
-    cnf = load_export_config(export_cnf)
     loop = asyncio.get_event_loop()
     with get_db_connection() as db:
         func = get_sample(db, sample_id)
         sample = loop.run_until_complete(func)
 
     try:
-        lims_data = lims_rs_formatter(sample, cnf)
-    except NotImplementedError as error:
+        # load config and cast as pydantic model
+        lims_data = None
+        conf_obj = load_export_config(export_cnf)
+        for cnf in conf_obj:
+            if cnf.assay == sample.pipeline.assay:
+                lims_data = lims_rs_formatter(sample, cnf)
+    except (InvalidFormatError, FileNotFoundError, ValueError) as error:
         click.secho(error, fg="yellow")
         raise click.Abort(error) from error
+
+    if lims_data is None:
+        click.secho(f"No configuration for assay {sample.pipeline.assay}", fg="red")
+        raise click.Abort()
 
     # write lims formatted data
     tabular = serialize_lims_results(lims_data)
