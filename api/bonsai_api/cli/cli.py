@@ -154,11 +154,10 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
 @cli.command()
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
-@click.option("-f", "--export-cnf", type=click.Path(), required=True, default="",help="Format config")
+@click.option("-e", "--export-cnf", type=click.Path(), help="Optional LIMS export configuration.")
 @click.argument("output", type=click.File("w"), default="-")
 def export(
-    _ctx: click.Context, sample_id: str, output: TextIOWrapper,
-    export_cnf
+    _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output: TextIOWrapper,
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     # get sample from database

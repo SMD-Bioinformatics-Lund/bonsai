@@ -1,13 +1,31 @@
 """Mimer api default configuration"""
 
+import os
 import ssl
-from typing import List
+from typing import Annotated
+from pathlib import Path
 
-from fastapi import Path
-from pydantic import Field
+from pydantic import AfterValidator, Field, FilePath
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
+
+
+def _validate_yaml_file(path: Path | None) -> Path | None:
+    """Ensure that file is readable and looks like a YAML."""
+    if path is None:
+         return None
+    if not os.access(path, os.R_OK):
+        raise ValueError(f"LIMS export config file is not readable: {path}")
+    if path.suffix.lower() not in {'.yaml', '.yml'}:
+        raise ValueError(f"LIMS export config must be a .yaml or .yml file: {path}")
+    return path.resolve()
+
+
+LimsConfigPath = Annotated[
+    FilePath | None,
+    AfterValidator(_validate_yaml_file)
+]
 
 
 class SmtpConfig(BaseSettings):
@@ -32,7 +50,7 @@ class Settings(BaseSettings):
 
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
-    allowed_origins: List[str] = []
+    allowed_origins: list[str] = []
 
     # Database connection
     # standard URI has the form:
@@ -94,7 +112,14 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
     )
 
-    export_config: Path = "lims_export/default_config.yml"
+    lims_export_config: LimsConfigPath = Field(
+        default=None, 
+        description=(
+            "Path to custom LIMS exporter YAML configuration."
+            "If omitted, the application will fall back the packaged default."
+        ),
+        examples=["/etc/bonsai/lims.yaml"]
+        )
 
     @property
     def use_ldap_auth(self) -> bool:
