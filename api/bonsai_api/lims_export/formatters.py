@@ -1,12 +1,11 @@
 """Extract and format data for lims export."""
 
 import logging
-from collections import defaultdict
 from typing import Any, Callable
 
 from bonsai_api.models.qc import SampleQcClassification
 from bonsai_api.models.sample import ElementType, SampleInDatabase, VariantInDb
-from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
+from prp.models.phenotype import PredictionSoftware
 from prp.models.typing import TypingMethod, TypingResultEmm
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue

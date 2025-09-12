@@ -5,7 +5,7 @@ from bson import json_util
 import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import click
 from bonsai_api.__version__ import VERSION as version
@@ -156,9 +156,10 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
 @click.option("-e", "--export-cnf", type=click.Path(), help="Optional LIMS export configuration.")
+@click.option("-f", "--format", "output_format", type=click.Choice(["csv", "tsv"]), help="Optional LIMS export configuration.")
 @click.argument("output", type=click.File("w"), default="-")
 def export(
-    _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output: TextIOWrapper,
+    _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output_format: Literal["tsv", "csv"], output: TextIOWrapper,
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
     if export_cnf and not export_cnf.exists():
@@ -186,7 +187,7 @@ def export(
         raise click.Abort()
 
     # write lims formatted data
-    tabular = serialize_lims_results(lims_data)
+    tabular = serialize_lims_results(lims_data, delimiter=output_format)
     output.write(tabular)
     click.secho(f"Exported {sample_id}", fg="green", err=True)
 
