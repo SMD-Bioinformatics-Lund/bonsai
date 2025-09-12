@@ -19,7 +19,8 @@ from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
-from bonsai_api.lims_export.export import InvalidFormatError, lims_rs_formatter, load_export_config, serialize_lims_results
+from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
+from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
 from bonsai_api.models.group import GroupInCreate, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
@@ -160,6 +161,9 @@ def export(
     _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output: TextIOWrapper,
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
+    if export_cnf and not export_cnf.exists():
+        raise click.ClickException(f"Configuration file not found: {export_cnf}")
+
     # get sample from database
     loop = asyncio.get_event_loop()
     with get_db_connection() as db:
