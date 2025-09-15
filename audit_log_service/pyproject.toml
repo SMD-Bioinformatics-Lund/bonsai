@@ -1,5 +1,5 @@
 [project]
-name = "audit log service"
+name = "audit_log_service"
 dynamic = ["version"]
 description = "A service that sends email notifications."
 readme = "README.md"
@@ -30,6 +30,8 @@ dev = [
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.setuptools.dynamic]
-version = {attr = "audit_log.__version__"}
+version = {attr = "audit_log_service.__version__"}
