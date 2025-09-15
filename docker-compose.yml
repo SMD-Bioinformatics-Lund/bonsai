@@ -71,6 +71,15 @@ services:
       - bonsai-net
     command: "uvicorn notification_service.main:create_api_app --reload --log-level info --host 0.0.0.0"
 
+  audit_log_service:
+    build: 
+      context: audit_log_service
+      network: host
+    scale: 1
+    networks:
+      - bonsai-net
+    command: "uvicorn audit_log_service.app:app --reload --log-level info --host 0.0.0.0 --port 8080"
+
   minhash_service:
     build: 
       context: minhash_service
