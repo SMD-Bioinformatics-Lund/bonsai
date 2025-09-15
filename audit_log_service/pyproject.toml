@@ -1,0 +1,35 @@
+[project]
+name = "audit log service"
+dynamic = ["version"]
+description = "A service that sends email notifications."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+dependencies = [
+    "setuptools",
+    "wheel",
+    "pydantic-settings",
+    "pymongo",
+    "fastapi[all]==0.115.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "mypy"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.dynamic]
+version = {attr = "audit_log.__version__"}
