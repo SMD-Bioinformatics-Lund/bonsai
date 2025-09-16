@@ -25,6 +25,11 @@ dev = [
     "pytest",
     "mypy"
 ]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "mongomock"
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

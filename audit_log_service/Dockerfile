@@ -8,10 +8,11 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 FROM base AS builder
-COPY pyproject.toml audit_log_service/ /app/
-RUN pip install --upgrade pip && pip wheel --wheel-dir /wheels .
+COPY pyproject.toml /app
+COPY audit_log_service /app/audit_log_service
+RUN pip install --upgrade pip && pip wheel --wheel-dir /wheels /app
 
-FROM base
+FROM base AS runner
 
 COPY --from=builder /wheels /wheels
 
@@ -19,7 +20,11 @@ COPY --from=builder /wheels /wheels
 RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
-COPY /audit_log_service /app/src/
+COPY audit_log_service /app/src/
 ENV PYTHONPATH=/app/src
 EXPOSE 8080
+
+# run app as non-root user
+USER worker
+
 CMD ["uvicorn", "audit_log_service.app:app", "--host", "0.0.0.0", "--port", "8080"]
