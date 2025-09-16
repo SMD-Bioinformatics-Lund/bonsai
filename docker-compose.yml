@@ -76,8 +76,19 @@ services:
       context: audit_log_service
       network: host
     scale: 1
+    depends_on:
+      - mongodb
+    ports: 
+      - "8004:8080"
     networks:
       - bonsai-net
+    develop:
+      watch:
+        - action: sync
+          path: ./audit_log_service
+          target: /app/src/audit_log_service
+        - action: rebuild
+          path: ./pyproject.toml
     command: "uvicorn audit_log_service.app:app --reload --log-level info --host 0.0.0.0 --port 8080"
 
   minhash_service:
