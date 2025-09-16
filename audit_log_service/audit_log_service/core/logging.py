@@ -42,7 +42,7 @@ class JSONFormatter(logging.Formatter):
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
-            "service": getattr(record, "service", None)
+            "service": getattr(record, "service", None),
             "version": version,
         }
 
