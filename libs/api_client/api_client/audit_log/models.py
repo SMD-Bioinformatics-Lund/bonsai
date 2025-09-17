@@ -1,10 +1,8 @@
-"""Definition of events that are logged."""
-
-import datetime as dt
 from enum import StrEnum
 from typing import Any
+import datatime as dt
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class EventSeverity(StrEnum):
@@ -35,7 +33,7 @@ class Subject(BaseModel):
     id: str = Field(..., description="Unique identifier of the subject.", examples=["sample_456", "group_789"])
 
 
-class Event(BaseModel):
+class EventCreate(BaseModel):
     """
     Represents an audit trail event for tracking significant actions across services.
 
@@ -81,42 +79,18 @@ class Event(BaseModel):
         populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occured_at`
     )
 
+class EventResponse(BaseModel):
+    """Response shape for POST /events (202 Accepted)."""
+    id: str = Field(..., description="Server-assigned identifier for the event.")
 
-class EventOut(Event):
+
+class EventOut(EventCreate):
     """Event as stored + MongoDB '_id' made available as string 'id'."""
 
     id: str
 
 
-class EventFilter(BaseModel):
-    """Filters for listing events. 
-    
-    All fields are optional; only provided filters are applied.
-    """
-    severities: list[str] | None = Field(default=None, examples=["info", "errors"])         # e.g. ["info","error"]
-    event_types: list[str] | None = Field(default=None, examples=["CREATE_USER"])         # e.g. ["CREATE_USER"]
-    source_services: list[str] | None = Field(default=None, examples=["bonsai_api", "minhash_service"])
-    actor_type: SourceType | None = None
-    actor_id: str | None = None
-    subject_type: SourceType | None = None
-    subject_id: str | None = None
-    occured_after: dt.datetime | None = Field(default=None, description="Include samples that occured after")
-    occured_before: dt.datetime | None = Field(default=None, description="Include samples that occured before")
-
-    model_config = ConfigDict(extra="ignore")
-
-
-    @field_serializer("occured_after", "occured_before")
-    def _ser_utc(cls, val: dt.datetime | None) -> str | None:
-        """Ensure that occured before and after are in UTC format."""
-        if val is None:
-            return None
-        # emit RFC3339 with trailing Z
-        iso = val.astimezone(dt.timezone.utc).isoformat()
-        return iso.replace("+00:00", "Z")
-
-
-class PaginatedEvents(BaseModel):
+class PaginatedEventsOut(BaseModel):
     """Paginated response model for events."""
 
     items: list[EventOut]

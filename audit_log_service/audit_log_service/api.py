@@ -77,6 +77,7 @@ def get_events(
         None, description="Return events with occured_at <= this UTC ISO8601"
     ),
     repo: AuditTrailRepository = Depends(get_repo)):
+    """Get multiple events from the database and return a paginated event."""
 
 
     filters = EventFilter(
