@@ -1,0 +1,37 @@
+[project]
+name = "api_client"
+dynamic = ["version"]
+description = "Package for querying the API of Bonsai services."
+requires-python = ">=3.11"
+authors = [
+    { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3"
+]
+dependencies = [
+    "setuptools",
+    "wheel",
+    "pydantic",
+    "requests",
+]
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest",
+    "mypy"
+]
+tests = [
+    "pytest",
+    "pytest-cov",
+]
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.dynamic]
+version = {attr = "api_client.__version__"}
