@@ -28,15 +28,39 @@ services:
       - mailhog
 
   minhash_service:
-    volumes: 
-      - "./minhash_service/minhash_service:/home/worker/app/minhash_service"
+    build: 
+      target: dev
+    develop:
+      watch: 
+        - path: ./minhash_service/pyproject.toml
+          action: rebuild
+        - path: ./minhash_service/minhash_service
+          target: /app/minhash_service/minhash_service
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
 
   minhash_cron_service:
     environment:
       - INTEGRITY_TASK_CRON=* * * * *
       - PURGE_FILES_TASK_CRON=* * * * *
-    volumes: 
-      - "./minhash_service/minhash_service:/home/worker/app/minhash_service"
+    build: 
+      target: dev
+    develop:
+      watch: 
+        - path: ./minhash_service/pyproject.toml
+          action: rebuild
+        - path: ./minhash_service/minhash_service
+          target: /app/minhash_service/minhash_service
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
 
   notification_service:
     environment:

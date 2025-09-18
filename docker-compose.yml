@@ -93,9 +93,11 @@ services:
 
   minhash_service:
     build: 
-      context: minhash_service
+      context: .
+      dockerfile: minhash_service/Dockerfile.dev
       network: host
     depends_on:
+      - mongodb
       - redis
       - minhash_cron_service
       - notification_service
@@ -105,7 +107,8 @@ services:
 
   minhash_cron_service:
     build: 
-      context: minhash_service
+      context: .
+      dockerfile: minhash_service/Dockerfile.dev
       network: host
     depends_on:
       - redis
