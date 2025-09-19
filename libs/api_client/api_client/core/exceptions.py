@@ -24,6 +24,9 @@ class TooManyRequestsError(HTTPException):
 class ServerError(HTTPException):
     """For 5xx errors."""
 
+class ApiRequestError(Exception):
+    """Something went wrong requesting the data."""
+
 
 _STATUS_TO_ERROR = {
     400: BadRequestError, 401: UnauthorizedError, 403: ForbiddenError, 404: NotFoundError,
