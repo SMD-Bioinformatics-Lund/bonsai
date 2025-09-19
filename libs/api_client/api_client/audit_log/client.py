@@ -1,9 +1,13 @@
 """Audit log client."""
 
+import logging
 from http import HTTPStatus
 import datetime as dt
 from api_client.core.base import BaseClient
 from .models import EventCreate, EventResponse, PaginatedEventsOut
+
+LOG = logging.getLogger(__name__)
+
 
 class AuditLogClient(BaseClient):
     """Log and retrieve events from the Audit Log service."""
@@ -11,7 +15,7 @@ class AuditLogClient(BaseClient):
     def post_event(self, event: EventCreate) -> EventResponse:
         """Record a new event to the event log."""
         payload = event.model_dump(mode="json", by_alias=True, exclude_none=True)
-        resp = self.post("/events", json=payload, expected_status=HTTPStatus.ACCEPTED)
+        resp = self.post("events", json=payload, expected_status=(HTTPStatus.ACCEPTED, ))
         return EventResponse.model_validate(resp)
 
     def get_events(self, limit: int = 50, skip: int = 0, source_service: list[str] | None = None,
@@ -25,5 +29,5 @@ class AuditLogClient(BaseClient):
         if occured_before:
             params["occured_before"] = occured_before
 
-        resp = self.get("/events", params=params, expected_status=HTTPStatus.OK)
+        resp = self.get("events", params=params, expected_status=(HTTPStatus.OK, ))
         return PaginatedEventsOut.model_validate(resp)
