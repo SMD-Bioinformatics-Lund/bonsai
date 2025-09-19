@@ -6,30 +6,26 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
-  frontend:
-    environment:
-      - TESTING=True
-      - API_INTERNAL_URL=http://api:8000
-      - API_EXTERNAL_URL=http://localhost:8001
-    volumes: 
-      - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
 
   api:
-    environment:
-      - SMTP__HOST=mailhog
-      - SMTP__PORT=1025
-    volumes: 
-      - "./api/bonsai_api:/home/worker/app/bonsai_api"
-    depends_on:
-      - mongodb
-      - minhash_service
-      - ska_service
-      - allele_cluster_service
-      - mailhog
+    build: 
+      target: development
+    develop:
+      watch: 
+        - path: ./api/setup.cfg
+          action: rebuild
+        - path: ./api/bonsai_api
+          target: /app/bonsai_api/bonsai_api
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
 
   minhash_service:
     build: 
-      target: dev
+      target: development
     develop:
       watch: 
         - path: ./minhash_service/pyproject.toml
@@ -48,7 +44,7 @@ services:
       - INTEGRITY_TASK_CRON=* * * * *
       - PURGE_FILES_TASK_CRON=* * * * *
     build: 
-      target: dev
+      target: development
     develop:
       watch: 
         - path: ./minhash_service/pyproject.toml
@@ -61,27 +57,3 @@ services:
         - path: ./libs/api_client/api_client
           target: /app/api_client/api_client
           action: sync
-
-  notification_service:
-    environment:
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
-      - sender_name="Bonsai team"
-    ports: 
-      - "8002:8000"
-    volumes: 
-      - "./notification_service/notification_service:/home/worker/app/notification_service"
-
-  e2e-tests:
-    volumes:
-     - ./e2e_tests:/app/
-
-  mailhog:
-    image: mailhog/mailhog
-    logging:
-      driver: 'none'  # disable saving logs
-    ports:
-      - 1025:1025 # smtp server
-      - 8025:8025 # web ui
-    networks:
-      - bonsai-net
