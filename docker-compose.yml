@@ -21,7 +21,8 @@ services:
   api:
     container_name: api
     build: 
-      context: api
+      context: .
+      dockerfile: api/Dockerfile
       network: host
     depends_on:
       - mongodb
@@ -41,7 +42,6 @@ services:
       - DB_HOST=mongodb
     networks:
       - bonsai-net
-    command: "uvicorn bonsai_api.main:app --reload --log-level debug --host 0.0.0.0"
 
   frontend:
     container_name: frontend
@@ -94,7 +94,7 @@ services:
   minhash_service:
     build: 
       context: .
-      dockerfile: minhash_service/Dockerfile.dev
+      dockerfile: minhash_service/Dockerfile
       network: host
     depends_on:
       - mongodb
@@ -108,7 +108,7 @@ services:
   minhash_cron_service:
     build: 
       context: .
-      dockerfile: minhash_service/Dockerfile.dev
+      dockerfile: minhash_service/Dockerfile
       network: host
     depends_on:
       - redis
