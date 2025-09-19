@@ -11,11 +11,11 @@ LOG = logging.getLogger(__name__)
 class NotificationClient(BaseClient):
     """Send emails to notify users of evets."""
 
-    def send_email(self, email: EmailCreate) -> bool:
+    def send_email(self, email: EmailCreate):
         """Send an email."""
 
         payload = email.model_dump(mode="json")
         try:
-            self.post("/send-email", payload=payload, expected_status=HTTPStatus.OK)
+            self.post("/send-email", json=payload, expected_status=(HTTPStatus.OK,))
         except HTTPException as exc:
             LOG.error("Something went wrong when sending an email; %s", exc, extra={"payload": payload})

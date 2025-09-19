@@ -2,7 +2,7 @@
 
 from abc import ABC
 from collections.abc import Iterable
-from datetime import time
+import time
 import random
 from typing import Any, Literal
 import logging
@@ -30,7 +30,7 @@ class BaseClient(ABC):
         retries: int = 2,
         backoff: float = 0.2,
         max_backoff: float = 0.5,
-        default_headers: dict[str, str] = None,
+        default_headers: dict[str, str] | None = None,
         session: requests.Session | None = None,
     ):
         self.base_url = base_url.rstrip("/")
@@ -67,7 +67,7 @@ class BaseClient(ABC):
                 content_type = resp.headers.get("Content-Type", "")
                 if "application/json" in content_type:
                     return resp.json()
-                return resp.text()  # resturn as string
+                return resp.text  # resturn as string
             except (requests.ConnectionError, requests.Timeout):
                 LOG.debug("Request attempt %d failed retrying %d times", attempt, attempts, extra={"url": api_url})
                 self._sleep_with_jitter(attempt)
@@ -83,18 +83,18 @@ class BaseClient(ABC):
 
 
     # helper methods
-    def get(self, path, **kwargs):
+    def get(self, path: str, **kwargs: Any):
         """Get request to entrypoint."""
         return self._request("GET", path, **kwargs)
 
-    def post(self, path, **kwargs):
+    def post(self, path: str, **kwargs: Any):
         """POST request to entrypoint."""
         return self._request("POST", path, **kwargs)
 
-    def put(self, path, **kwargs):
+    def put(self, path: str, **kwargs: Any):
         """PUT request to entrypoint."""
         return self._request("PUT", path, **kwargs)
 
-    def delete(self, path, **kwargs):
+    def delete(self, path: str, **kwargs: Any):
         """DELETE request to entrypoint."""
         return self._request("DELETE", path, **kwargs)
