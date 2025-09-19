@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
+
 ### Changed
 
 ## [v2.0.0]
