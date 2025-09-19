@@ -8,6 +8,8 @@
 services: 
 
   api:
+    environment: 
+      - notification_service_api=http://notification_service:8000/
     build: 
       target: development
     develop:
@@ -57,3 +59,20 @@ services:
         - path: ./libs/api_client/api_client
           target: /app/api_client/api_client
           action: sync
+
+  notification_service:
+    environment:
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      - mailhog
+
+  mailhog:
+    image: mailhog/mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - bonsai-net
