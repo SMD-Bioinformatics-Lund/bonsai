@@ -29,6 +29,7 @@ services:
       - minhash_service
       - ska_service
       - allele_cluster_service
+      - audit_log_service
     ports: 
       - "8001:8000"
     healthcheck:
@@ -40,6 +41,7 @@ services:
     environment:
       - ALLOWED_ORIGINS=["*"]
       - DB_HOST=mongodb
+      - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
     networks:
       - bonsai-net
 
@@ -79,7 +81,7 @@ services:
     depends_on:
       - mongodb
     ports: 
-      - "8004:8080"
+      - "8004:8000"
     networks:
       - bonsai-net
     develop:
@@ -89,7 +91,7 @@ services:
           target: /app/src/
         - action: rebuild
           path: ./pyproject.toml
-    command: "uvicorn audit_log_service.app:app --reload --log-level info --host 0.0.0.0 --port 8080"
+    command: "uvicorn audit_log_service.app:app --reload --log-level info --host 0.0.0.0"
 
   minhash_service:
     build: 
