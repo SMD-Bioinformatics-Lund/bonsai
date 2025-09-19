@@ -1,3 +1,4 @@
+### Base layer ###
 FROM python:3.11.3-slim AS base
 
 # Set build variables
@@ -6,7 +7,8 @@ ENV PYTHONUNBUFFERED=1
 
 RUN pip install --upgrade pip
 
-FROM base AS dev
+### Development layer ###
+FROM base AS development
 
 WORKDIR /app
 
@@ -15,9 +17,10 @@ COPY minhash_service/ ./minhash_service
 
 RUN pip install -e ./api_client -e ./minhash_service
 
-# create default signature directory
+# Dev-only: create default signature directory (owned by root in dev; bind mount in practice)
 RUN mkdir -p /data/signature_db
 
+### Build wheels ###
 FROM base AS python-builder
 
 WORKDIR /app
@@ -26,13 +29,22 @@ COPY minhash_service/ ./minhash_service
 
 RUN pip wheel --wheel-dir /wheels ./api_client ./minhash_service
 
-FROM base AS prod
+### Production layer ###
+FROM base AS production
+
+RUN addgroup --system --gid 1000 worker && \
+    adduser --system --uid 1000 --ingroup worker --home /home/worker \
+    --shell /usr/sbin/nologin worker
+
+WORKDIR /app
 
 COPY --from=python-builder /wheels /wheels
 
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
 # create default signature directory
-RUN mkdir -p /data/signature_db
+RUN mkdir -p /data/signature_db && chown -R 1000:1000 /data/signature_db
+
+USER 1000:1000
 
 CMD ["minhash-service", "--version"]
