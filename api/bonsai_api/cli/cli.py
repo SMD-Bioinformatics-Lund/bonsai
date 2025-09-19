@@ -5,8 +5,10 @@ import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
 from typing import Callable
-
 import click
+
+from api_client.notification import NotificationClient, EmailCreate
+
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES
@@ -23,7 +25,6 @@ from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleI
 from bonsai_api.models.user import UserInputCreate
 from bonsai_api.migrate import migrate_sample_collection, migrate_group_collection, MigrationError
 from bonsai_api.config import settings
-from bonsai_api.notify import EmailApiInput, dispatch_email
 from pymongo.errors import DuplicateKeyError
 
 from .utils import EmailType, create_missing_file_report
@@ -269,13 +270,11 @@ def check_paths(
         if settings.notification_service_api is None:
             LOG.error("URL to notification service has not been configured, cant send report...")
         else:
-            report = EmailApiInput(
-                recipient=email_addr,
-                subject="SKA Integrity report",
-                message=output_ch.getvalue(),
-                content_type='plain'
+            notify = NotificationClient(base_url=str(settings.notification_service_api))
+            report = EmailCreate(
+                recipient=email_addr, subject="SKA Integrity report", message=output_ch.getvalue()
             )
-            dispatch_email(api_url=settings.notification_service_api, message=report)
+            notify.send_email(report)
     else:
         output.write(output_ch.getvalue())
     click.secho("Finished validating file paths", fg='green')
