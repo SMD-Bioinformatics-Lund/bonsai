@@ -9,7 +9,7 @@ import logging
 import requests
 from http import HTTPStatus
 
-from .exceptions import raise_for_status
+from .exceptions import ApiRequestError, raise_for_status
 
 LOG = logging.getLogger(__name__)
 
@@ -53,6 +53,7 @@ class BaseClient(ABC):
 
         attempts = self.retries + 1
         for attempt in range(1, attempts):
+            LOG.info("Request: %s %s - attempt %d", method, api_url, attempt)
             try:
                 resp = self.session.request(
                     method, api_url, headers=combined_headers, 
@@ -71,6 +72,7 @@ class BaseClient(ABC):
             except (requests.ConnectionError, requests.Timeout):
                 LOG.debug("Request attempt %d failed retrying %d times", attempt, attempts, extra={"url": api_url})
                 self._sleep_with_jitter(attempt)
+        raise ApiRequestError(f"Request {method} {api_url} failed")
 
 
     def _sleep_with_jitter(self, attempt: int) -> None:
@@ -85,16 +87,20 @@ class BaseClient(ABC):
     # helper methods
     def get(self, path: str, **kwargs: Any):
         """Get request to entrypoint."""
+        LOG.debug("Request: GET %s; params: %s", path, kwargs)
         return self._request("GET", path, **kwargs)
 
     def post(self, path: str, **kwargs: Any):
         """POST request to entrypoint."""
+        LOG.debug("Request: POST %s; params: %s", path, kwargs)
         return self._request("POST", path, **kwargs)
 
     def put(self, path: str, **kwargs: Any):
         """PUT request to entrypoint."""
+        LOG.debug("Request: PUT %s; params: %s", path, kwargs)
         return self._request("PUT", path, **kwargs)
 
     def delete(self, path: str, **kwargs: Any):
         """DELETE request to entrypoint."""
+        LOG.debug("Request: DELETE %s; params: %s", path, kwargs)
         return self._request("DELETE", path, **kwargs)

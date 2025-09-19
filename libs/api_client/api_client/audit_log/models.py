@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import Any
-import datatime as dt
+import datetime as dt
 
 from pydantic import BaseModel, ConfigDict, Field
 

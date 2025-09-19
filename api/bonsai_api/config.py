@@ -151,6 +151,7 @@ class Settings(BaseSettings):
 
     # notification api for sending emails
     notification_service_api: HttpUrl | None = None
+    audit_log_service_api: HttpUrl | None = None
 
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
