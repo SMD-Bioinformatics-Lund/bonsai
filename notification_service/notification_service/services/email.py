@@ -10,7 +10,8 @@ from .templates import TemplateRepository
 
 def get_smtp_connection(cnf: SmtpConfig) -> smtplib.SMTP:
     """Wrapper to connect to SMTP server using info from config."""
-
+    if cnf.host is None:
+        raise ValueError("No host specified for email connection.")
     return smtplib.SMTP(host=cnf.host, port=cnf.port, timeout=cnf.timeout)
 
 
@@ -22,7 +23,9 @@ def send_email(
     smtp_conn: smtplib.SMTP | None = None,
 ) -> None:
     """Send a email."""
-    with smtp_conn:
+    if smtp_conn is None:
+        raise RuntimeError("No SMTP connection passed to function.")
+    with smtp_conn as conn:
         # create new mail
         mail = EmailMessage()
         mail["From"] = sender_name
@@ -43,4 +46,4 @@ def send_email(
                 )
             )
             mail.set_content(html_content, subtype="html")
-        smtp_conn.send_message(mail)
+        conn.send_message(mail)
