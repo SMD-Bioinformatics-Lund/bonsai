@@ -13,7 +13,7 @@
     "pipeline": "main.nf",
     "version": "0.6.0",
     "commit": "null",
-    "analysis_profile": ["mycobacterium_tuberculosis"],
+    "analysis_profile": ["escherichia_coli"],
     "configuration_files": [
       "/fs1/pipelines/jasen/configs/nextflow.dev.config"
     ],
