@@ -19,15 +19,15 @@ class AuditLogClient(BaseClient):
         return EventResponse.model_validate(resp)
 
     def get_events(self, limit: int = 50, skip: int = 0, source_service: list[str] | None = None,
-                   occured_after: dt.datetime | None = None, occured_before: dt.datetime | None = None):
+                   occurred_after: dt.datetime | None = None, occurred_before: dt.datetime | None = None):
         """Get multiple events."""
         params: dict[str, int | dt.datetime | list[str]] = {"limit": limit, "skip": skip}
         if source_service:
             params["source_service"] = source_service
-        if occured_after:
-            params["occured_after"] = occured_after
-        if occured_before:
-            params["occured_before"] = occured_before
+        if occurred_after:
+            params["occurred_after"] = occurred_after
+        if occurred_before:
+            params["occurred_before"] = occurred_before
 
         resp = self.get("events", params=params, expected_status=(HTTPStatus.OK, ))
         return PaginatedEventsOut.model_validate(resp)
