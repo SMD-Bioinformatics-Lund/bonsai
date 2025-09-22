@@ -86,9 +86,9 @@ async function clusterSamplesInBasket(element) {
             clusterMethod: body.typing_method  // which cluster method to display
         })
     } catch (error) {
-        throwSmallToast('A problem occured during clustering', 'error')
+        throwSmallToast('A problem occurred during clustering', 'error')
         hideSpinner(btn)
-        console.log(`A problem occured during clustering, ${error}`)
+        console.log(`A problem occurred during clustering, ${error}`)
     }
 }
 

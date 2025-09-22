@@ -43,7 +43,7 @@ class AuditTrailRepository:
                    sort: Sequence[tuple[str, int]] | None = None) -> PaginatedEvents:
         """Get events from the database.
 
-        - Default sort: newest first by occured_at, then _id
+        - Default sort: newest first by occurred_at, then _id
         - Default limit: 50 (clamped to 1..500)
         """
         # Clamp pagination inputs
@@ -77,23 +77,23 @@ class AuditTrailRepository:
         if event_filter.subject_id:
             query["subject.id"] = event_filter.subject_id
 
-        # occured_at range
-        if event_filter.occured_after or event_filter.occured_before:
+        # occurred_at range
+        if event_filter.occurred_after or event_filter.occurred_before:
             dt_query: dict[str, Any] = {}
-            if event_filter.occured_after:
+            if event_filter.occurred_after:
                 # Ensure timezone-aware UTC
-                dt_from = event_filter.occured_after
+                dt_from = event_filter.occurred_after
                 if dt_from.tzinfo is None:
                     dt_from = dt_from.replace(tzinfo=dt.timezone.utc)
                 dt_query["$gte"] = dt_from
-            if event_filter.occured_before:
-                dt_to = event_filter.occured_before
+            if event_filter.occurred_before:
+                dt_to = event_filter.occurred_before
                 if dt_to.tzinfo is None:
                     dt_to = dt_to.replace(tzinfo=dt.timezone.utc)
                 dt_query["$lte"] = dt_to
-            query["occured_at"] = dt_query
+            query["occurred_at"] = dt_query
 
-        sort_spec = list(sort or [("occured_at", DESCENDING), ("_id", DESCENDING)])
+        sort_spec = list(sort or [("occurred_at", DESCENDING), ("_id", DESCENDING)])
         try:
             total = self._col.count_documents(query)
             cursor = (

@@ -101,7 +101,7 @@ def edit_groups(group_id: str | None = None):
                 delete_group(token, group_id=request.form.get("input-remove-group"))
                 flash("Group updated", "success")
             except HTTPError as err:
-                flash(f"An error occured when updating group, {err}", "danger")
+                flash(f"An error occurred when updating group, {err}", "danger")
             return redirect(url_for("groups.edit_groups"))
         elif "input-update-group" in request.form:
             updated_data = json.loads(request.form.get("input-update-group"))
@@ -110,7 +110,7 @@ def edit_groups(group_id: str | None = None):
                 flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
-                flash(f"An error occured when updating group, {err}", "danger")
+                flash(f"An error occurred when updating group, {err}", "danger")
         elif "input-create-group" in request.form:
             input_data = json.loads(request.form.get("input-create-group", {}))
             try:
@@ -119,7 +119,7 @@ def edit_groups(group_id: str | None = None):
                 flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
-                flash(f"An error occured when updating group, {err}", "danger")
+                flash(f"An error occurred when updating group, {err}", "danger")
 
     # get valid phenotypes
     valid_phenotypes = {
