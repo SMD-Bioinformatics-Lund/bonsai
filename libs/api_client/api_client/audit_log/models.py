@@ -59,7 +59,7 @@ class EventCreate(BaseModel):
     )
     occurred_at: dt.datetime = Field(
         default_factory=lambda: dt.datetime.now(dt.timezone.utc),
-        alias="occured_at",
+        alias="occurred_at",
         description="UTC timestamp when the event occurred."
     )
     severity: EventSeverity = Field(
@@ -76,7 +76,7 @@ class EventCreate(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occured_at`
+        populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occurred_at`
     )
 
 class EventResponse(BaseModel):
