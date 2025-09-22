@@ -61,7 +61,7 @@ class Event(BaseModel):
     )
     occurred_at: dt.datetime = Field(
         default_factory=lambda: dt.datetime.now(dt.timezone.utc),
-        alias="occured_at",
+        alias="occurred_at",
         description="UTC timestamp when the event occurred."
     )
     severity: EventSeverity = Field(
@@ -78,7 +78,7 @@ class Event(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occured_at`
+        populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occurred_at`
     )
 
 
@@ -100,15 +100,15 @@ class EventFilter(BaseModel):
     actor_id: str | None = None
     subject_type: SourceType | None = None
     subject_id: str | None = None
-    occured_after: dt.datetime | None = Field(default=None, description="Include samples that occured after")
-    occured_before: dt.datetime | None = Field(default=None, description="Include samples that occured before")
+    occurred_after: dt.datetime | None = Field(default=None, description="Include samples that occurred after")
+    occurred_before: dt.datetime | None = Field(default=None, description="Include samples that occurred before")
 
     model_config = ConfigDict(extra="ignore")
 
 
-    @field_serializer("occured_after", "occured_before")
+    @field_serializer("occurred_after", "occurred_before")
     def _ser_utc(cls, val: dt.datetime | None) -> str | None:
-        """Ensure that occured before and after are in UTC format."""
+        """Ensure that occurred before and after are in UTC format."""
         if val is None:
             return None
         # emit RFC3339 with trailing Z
