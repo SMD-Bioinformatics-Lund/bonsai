@@ -70,11 +70,11 @@ def get_events(
         description="Filter by source service(s). Repeat to match any.",
         examples=[["bonsai_api", "minhash_service"]],
     ),
-    occured_after: dt.datetime | None = Query(
-        None, description="Return events with occured_at >= this UTC ISO8601"
+    occurred_after: dt.datetime | None = Query(
+        None, description="Return events with occurred_at >= this UTC ISO8601"
     ),
-    occured_before: dt.datetime | None = Query(
-        None, description="Return events with occured_at <= this UTC ISO8601"
+    occurred_before: dt.datetime | None = Query(
+        None, description="Return events with occurred_at <= this UTC ISO8601"
     ),
     repo: AuditTrailRepository = Depends(get_repo)):
     """Get multiple events from the database and return a paginated event."""
@@ -83,8 +83,8 @@ def get_events(
     filters = EventFilter(
         severities=severity,
         source_services=source_service,
-        occured_after=occured_after,
-        occured_before=occured_before,
+        occurred_after=occurred_after,
+        occurred_before=occurred_before,
     )
 
     events = repo.get_events(limit=limit, skip=skip, filters=filters)

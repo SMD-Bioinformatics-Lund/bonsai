@@ -60,7 +60,7 @@ async def get_genome_resources(
     except PermissionError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error occured reading {file}.",
+            detail=f"Error occurred reading {file}.",
         )
 
     # send file if byte range is not set
