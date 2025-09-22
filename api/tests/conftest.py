@@ -1,7 +1,9 @@
 import json
 from contextlib import contextmanager
+from typing import Generator
 
 import pytest
+from bonsai_api.db.db import MongoDatabase
 from bonsai_api.crud.sample import create_sample
 from bonsai_api.crud.user import oauth2_scheme
 from bonsai_api.db import Database, get_db
@@ -16,7 +18,7 @@ DATABASE = "testdb"
 
 
 @pytest.fixture()
-async def mongo_database():
+async def mongo_database() -> MongoDatabase:
     """Setup Bonsai database instance."""
     db = Database()
     db.client = AsyncMongoMockClient()
@@ -46,7 +48,21 @@ def mtuberculosis_sample(mtuberculosis_sample_path):
 
 
 @pytest.fixture(scope="function")
-async def sample_database(mongo_database, mtuberculosis_sample_path):
+def ecoli_sample(ecoli_sample_path):
+    """Sample db object."""
+    with open(ecoli_sample_path) as inpt:
+        sample_obj = SampleInDatabase(**json.load(inpt))
+    return sample_obj
+
+
+@pytest.fixture(scope="function")
+def lims_rs_export_cnf():
+    """Sample db object."""
+    return {"streptococcus": {"fields": []}}
+
+
+@pytest.fixture(scope="function")
+async def sample_database(mongo_database: MongoDatabase, mtuberculosis_sample_path: Path) -> MongoDatabase:
     """Returns a database client with loaded test data."""
 
     # read fixture and add to database
@@ -59,7 +75,7 @@ async def sample_database(mongo_database, mtuberculosis_sample_path):
 
 @pytest.fixture(scope="function")
 @contextmanager
-def sample_database_context(sample_database):
+def sample_database_context(sample_database: MongoDatabase) -> Generator[MongoDatabase, None, None]:
     """Returns a database client with loaded test data."""
     yield sample_database
 
