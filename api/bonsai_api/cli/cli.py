@@ -5,7 +5,7 @@ from bson import json_util
 import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import click
 from bonsai_api.__version__ import VERSION as version
@@ -19,7 +19,8 @@ from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
-from bonsai_api.io import sample_to_kmlims
+from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
+from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
 from bonsai_api.models.group import GroupInCreate, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
@@ -154,11 +155,16 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
 @cli.command()
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
+@click.option("-e", "--export-cnf", type=click.Path(), help="Optional LIMS export configuration.")
+@click.option("-f", "--format", "output_format", type=click.Choice(["csv", "tsv"]), help="Optional LIMS export configuration.")
 @click.argument("output", type=click.File("w"), default="-")
 def export(
-    _ctx: click.Context, sample_id: str, output: TextIOWrapper
+    _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output_format: Literal["tsv", "csv"], output: TextIOWrapper,
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
+    if export_cnf and not export_cnf.exists():
+        raise click.ClickException(f"Configuration file not found: {export_cnf}")
+
     # get sample from database
     loop = asyncio.get_event_loop()
     with get_db_connection() as db:
@@ -166,13 +172,23 @@ def export(
         sample = loop.run_until_complete(func)
 
     try:
-        lims_data = sample_to_kmlims(sample)
-    except NotImplementedError as error:
+        # load config and cast as pydantic model
+        lims_data = None
+        conf_obj = load_export_config(export_cnf)
+        for cnf in conf_obj:
+            if cnf.assay == sample.pipeline.assay:
+                lims_data = lims_rs_formatter(sample, cnf)
+    except (InvalidFormatError, FileNotFoundError, ValueError) as error:
         click.secho(error, fg="yellow")
         raise click.Abort(error) from error
 
+    if lims_data is None:
+        click.secho(f"No configuration for assay {sample.pipeline.assay}", fg="red")
+        raise click.Abort()
+
     # write lims formatted data
-    lims_data.to_csv(output, sep="\t", index=False)
+    tabular = serialize_lims_results(lims_data, delimiter=output_format)
+    output.write(tabular)
     click.secho(f"Exported {sample_id}", fg="green", err=True)
 
 

@@ -1,0 +1,59 @@
+- assay: mtuberculosis
+  fields:
+    - parameter_name: MTBC_ART
+      data_type: species
+      required: true
+    - parameter_name: MTBC_QC
+      data_type: qc
+      required: true
+    - parameter_name: MTBC_LINEAGE
+      data_type: lineage
+      required: true
+    - parameter_name: RIF NGS
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: rifampicin
+    - parameter_name: INH NGSH
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: isoniazid
+        resistance_level: high
+    - parameter_name: INL NGSH
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: isoniazid
+        resistance_level: low
+    - parameter_name: PYR NGS
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: pyrazinamide
+    - parameter_name: ETB NGS
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: ethambutol
+    - parameter_name: AMI NGS
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: amikacin
+    - parameter_name: LEV NGS
+      data_type: amr
+      required: true
+      options:
+        antibiotic_name: levofloxacin
+- assay: spyogenes
+  fields:
+    - parameter_name: STREP ART
+      data_type: species
+      required: true
+    - parameter_name: STREP MLST
+      data_type: mlst
+      required: true
+    - parameter_name: STREP EMM
+      data_type: emm
+      required: true
