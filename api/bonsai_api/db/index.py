@@ -1,9 +1,11 @@
 """Functions for creating and maintaining indexes."""
 
+from typing import Dict, Any
 from pymongo import ASCENDING, GEOSPHERE
 
 # Create indexes for collections
-INDEXES = {
+IndexDefinition = Dict[str, Any]
+INDEXES: dict[str, list[IndexDefinition]] = {
     "sample_group": [
         {
             "definition": [("group_id", ASCENDING)],
@@ -33,13 +35,6 @@ INDEXES = {
         },
     ],
     "location": [
-        {
-            "definition": [("_id", ASCENDING)],
-            "options": {
-                "name": "location_unique_id",
-                "unique": True,
-            },
-        },
         {
             "definition": [("location", GEOSPHERE)],
             "options": {
