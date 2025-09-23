@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Path, Security, status
 from fastapi.responses import PlainTextResponse
 
+from bonsai_api.dependencies import get_current_active_user
 from ..crud.sample import EntryNotFound, get_sample
-from ..crud.user import get_current_active_user
 from ..db import Database, get_db
 from ..io import sample_to_kmlims
 from ..models.sample import SAMPLE_ID_PATTERN

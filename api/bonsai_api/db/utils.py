@@ -16,14 +16,14 @@ db = MongoDatabase()
 
 def get_db() -> Generator[MongoDatabase, None, None]:
     """Set up database connection."""
-    db.client = AsyncIOMotorClient(
+    client = AsyncIOMotorClient(
         settings.mongodb_uri,
         maxPoolSize=settings.max_connections,
         minPoolSize=settings.min_connections,
     )
     try:
         LOG.debug("Setup connection to mongo database")
-        db.setup()  # initiate collections
+        db.setup(client, settings.database_name)  # initiate collections
         yield db
     finally:
         # teardown database connection
@@ -34,16 +34,17 @@ def get_db() -> Generator[MongoDatabase, None, None]:
 @contextmanager
 def get_db_connection() -> Generator[MongoDatabase, None, None]:
     """Set up database connection."""
-    db.client = AsyncIOMotorClient(
+    client = AsyncIOMotorClient(
         settings.mongodb_uri,
         maxPoolSize=settings.max_connections,
         minPoolSize=settings.min_connections,
     )
+    db_conn = MongoDatabase()
     try:
         LOG.debug("Setup connection to mongo database")
-        db.setup()  # initiate collections
-        yield db
+        db_conn.setup(client, settings.database_name)  # initiate collections
+        yield db_conn
     finally:
         # teardown database connection
-        db.close()
+        db_conn.close()
         LOG.debug("Initiate teardown of database connection")
