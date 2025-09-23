@@ -55,21 +55,27 @@ async def lifespan(app: FastAPI):
         ldap_connection.teardown()
 
 
-app = FastAPI(title="Bonsai", lifespan=lifespan)
 
-# configure CORS
-configure_cors(app)
+def create_app(settings: Settings) -> FastAPI:
+    """Create Bonsai API"""
 
-# check if api authentication is disabled
-if not settings.api_authentication:
-    LOG.warning("API authentication disabled!")
-app.include_router(root.router)
-app.include_router(users.router)
-app.include_router(samples.router)
-app.include_router(groups.router)
-app.include_router(locations.router)
-app.include_router(cluster.router)
-app.include_router(export.router)
-app.include_router(resources.router)
-app.include_router(auth.router)
-app.include_router(jobs.router)
+    app = FastAPI(title="Bonsai", lifespan=lifespan)
+    # configure CORS
+    configure_cors(app)
+    # check if api authentication is disabled
+    if not settings.api_authentication:
+        LOG.warning("API authentication disabled!")
+    app.include_router(root.router)
+    app.include_router(users.router)
+    app.include_router(samples.router)
+    app.include_router(groups.router)
+    app.include_router(locations.router)
+    app.include_router(cluster.router)
+    app.include_router(export.router)
+    app.include_router(resources.router)
+    app.include_router(auth.router)
+    app.include_router(jobs.router)
+
+    return app
+
+app = create_app(settings)
