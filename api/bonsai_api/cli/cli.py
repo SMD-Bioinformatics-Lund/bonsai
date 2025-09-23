@@ -148,7 +148,9 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
             collection = getattr(db, f"{collection_name}_collection")
             click.secho(f"Creating index for: {collection.name}")
             for idx in indexes:
-                collection.create_index(idx["definition"], **idx["options"])
+                loop = asyncio.get_event_loop()
+                func = collection.create_index(idx["definition"], **idx["options"])
+                loop.run_until_complete(func)
 
 
 @cli.command()
@@ -279,6 +281,34 @@ def check_paths(
         output.write(output_ch.getvalue())
     click.secho("Finished validating file paths", fg='green')
 
+
+@cli.command()
+@click.option('-t', '--type', 'event_type', type=str)
+def log_event(event_type: str):
+    """Log a event"""
+    if settings.audit_log_service_api:
+        from api_client.audit_log import AuditLogClient, EventCreate
+        client = AuditLogClient(base_url=str(settings.audit_log_service_api))
+        event = EventCreate.model_validate({
+            "event_type": event_type, "source_service": "bonsai_api", 
+            "actor": {"type": "system", "id": __name__}, "subject": {"type": "system", "id": "foobar!"},
+
+        })
+        resp = client.post_event(event)
+        click.secho(f"posted event {resp}", fg="green")
+    else:
+        raise ValueError(settings.audit_log_service_api)
+
+@cli.command()
+def get_event():
+    """Get a events"""
+    if settings.audit_log_service_api:
+        from api_client.audit_log import AuditLogClient
+        client = AuditLogClient(base_url=str(settings.audit_log_service_api))
+        events = client.get_events()
+        click.secho(events)
+    else:
+        raise ValueError(settings.audit_log_service_api)
 
 @cli.command()
 @click.option('-b', '--backup', 'backup_path', type=click.Path(path_type=pathlib.Path), help="Backup samples that will be modified to PATH.")
