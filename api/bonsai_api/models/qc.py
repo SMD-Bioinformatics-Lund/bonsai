@@ -1,6 +1,6 @@
 """QC data models."""
 
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import List
 
 from pydantic import BaseModel
@@ -24,7 +24,7 @@ VARIANT_REJECTION_REASONS = [
 ]
 
 
-class SampleQcClassification(Enum):
+class SampleQcClassification(StrEnum):
     """QC statuses."""
 
     # phenotype

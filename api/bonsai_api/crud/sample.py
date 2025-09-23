@@ -14,6 +14,11 @@ from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.models.tags import TagList
 from prp.parse.typing import replace_cgmlst_errors
 
+import bonsai_api
+from api_client.audit_log import AuditLogClient, EventCreate
+from api_client.audit_log.models import SourceType, Subject, EventSeverity
+from bonsai_api.dependencies import ApiRequestContext
+
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
 from ..db import Database
@@ -27,7 +32,6 @@ from ..models.sample import (
     MultipleSampleRecordsResponseModel,
     SampleInCreate,
     SampleInDatabase,
-    SampleSummary,
 )
 from ..redis.minhash import (
     schedule_remove_genome_signature,
@@ -361,7 +365,7 @@ async def get_samples(
     return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
 
 
-async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
+async def create_sample(db: Database, sample: PipelineResult, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
     try:
@@ -385,6 +389,14 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
         id=str(inserted_id),
         **sample_db_fmt.model_dump(),
     )
+    if isinstance(audit, AuditLogClient):
+        # prepare event metadata and submit event
+        event_subject = Subject(id=sample.sample_id, type=SourceType.SYS)
+        event = EventCreate(
+            source_service=bonsai_api.__name__, event_type="create_sample", 
+            actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
+        audit.post_event(event)
+
     return db_obj
 
 
@@ -411,10 +423,10 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
+async def delete_samples(db: Database, sample_ids: List[str], ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> dict[str, Any]:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
 
-    result = {
+    result: dict[str, Any] = {
         "sample_ids": sample_ids,
         "n_deleted": 0,
         "removed_from_n_groups": 0,
@@ -448,9 +460,10 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
     )
 
     # remove signature from database and reindex database
-    if result["n_deleted"] > 0:
+    samples_was_removed = result["n_deleted"] > 0
+    if samples_was_removed:
         # remove signatures
-        job_ids = []
+        job_ids: list[str] = []
         for sample_id in sample_ids:
             submitted_job = schedule_remove_genome_signature(sample_id)
             job_ids.append(submitted_job.id)
@@ -460,6 +473,16 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
             sample_ids, depends_on=job_ids
         )
         result["update_index_job"] = index_job.id
+
+    if isinstance(audit, AuditLogClient) and samples_was_removed:
+        for sample_id in sample_ids:
+            # prepare event metadata and submit event
+            event_subject = Subject(id=sample_id, type=SourceType.USR)
+            event = EventCreate(
+                source_service=bonsai_api.__name__, event_type="delete_sample", 
+                actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
+            audit.post_event(event)
+    
     return result
 
 
@@ -480,7 +503,8 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
 
 
 async def add_comment(
-    db: Database, sample_id: str, comment: Comment
+    db: Database, sample_id: str, comment: Comment, 
+    ctx: ApiRequestContext, audit: AuditLogClient | None = None
 ) -> List[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
@@ -502,15 +526,36 @@ async def add_comment(
         },
     )
 
+    exc: Exception | None = None
     if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
+        exc = EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+        exc = UpdateDocumentError(sample_id)
+    # log
+    if isinstance(audit, AuditLogClient):
+        # Build event object and dispatch event to log
+        event_subject = Subject(id=sample_id, type=SourceType.USR)
+        meta: dict[str, Any] = ctx.metadata
+        severity = EventSeverity.INFO
+
+        if exc is not None:
+            meta['exception'] = exc
+            severity = EventSeverity.ERROR
+        event = EventCreate(
+            source_service=bonsai_api.__name__, event_type="create_comment", 
+            severity=severity, actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
+        audit.post_event(event)
+
+    # Raise error
+    if exc is not None:
+        raise exc
+
     LOG.info("Added comment to %s", sample_id)
     return [comment_obj.model_dump()] + sample.comments
 
 
-async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
+async def hide_comment(db: Database, sample_id: str, comment_id: int, 
+                       ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> bool:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     update_obj = await db.sample_collection.update_one(
@@ -522,17 +567,37 @@ async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
             },
         },
     )
+    exc: Exception | None = None
     if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
+        exc = EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+        exc = UpdateDocumentError(sample_id)
+
+    if isinstance(audit, AuditLogClient):
+        # prepare event metadata and submit event
+        event_subject = Subject(id=sample_id, type=SourceType.USR)
+        meta: dict[str, Any] = ctx.metadata
+        severity = EventSeverity.INFO
+        if exc is not None:
+            meta['exception'] = exc
+            severity = EventSeverity.ERROR
+        event = EventCreate(
+            source_service=bonsai_api.__name__, event_type="delete_comment", 
+            severity=severity, actor=ctx.actor, subject=event_subject, metadata=meta)
+        audit.post_event(event)
+
+    # Raise error
+    if exc is not None:
+        raise exc
+
     LOG.info("Hide comment %s for %s", comment_id, sample_id)
     # update comments in return object
     return True
 
 
 async def update_sample_qc_classification(
-    db: Database, sample_id: str, classification: QcClassification
+    db: Database, sample_id: str, classification: QcClassification,
+    ctx: ApiRequestContext, audit: AuditLogClient | None = None
 ) -> bool:
     """Update the quality control classification of a sample"""
 
@@ -548,11 +613,30 @@ async def update_sample_qc_classification(
     )
     # verify successful update
     # if sample is not fund
+    exc: Exception | None = None
     if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
+        exc = EntryNotFound(sample_id)
     # if not modifed
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+        exc = UpdateDocumentError(sample_id)
+
+    if isinstance(audit, AuditLogClient):
+        # prepare event metadata and submit event
+        event_subject = Subject(id=sample_id, type=SourceType.USR)
+        meta: dict[str, Any] = ctx.metadata
+        severity = EventSeverity.INFO
+        if exc is not None:
+            meta['exception'] = exc
+            severity = EventSeverity.ERROR
+        event = EventCreate(
+            source_service=bonsai_api.__name__, event_type="update_qc", 
+            severity=severity, actor=ctx.actor, subject=event_subject, metadata=meta)
+        audit.post_event(event)
+
+    # Raise error
+    if exc is not None:
+        raise exc
+
     return classification
 
 

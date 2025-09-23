@@ -11,7 +11,7 @@ import bonsai_api.crud.group as crud_group
 from bonsai_api.crud.group import create_group as create_group_record
 from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
 from bonsai_api.crud.sample import get_samples_summary
-from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.dependencies import get_current_active_user
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
 from bonsai_api.db import Database, get_db
 from bonsai_api.models.base import MultipleRecordsResponseModel
