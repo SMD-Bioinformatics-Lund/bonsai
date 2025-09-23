@@ -10,7 +10,6 @@ from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_resu
 from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
 from bonsai_api.config import settings
 from ..crud.sample import EntryNotFound, get_sample
-from ..crud.user import get_current_active_user
 from ..db import Database, get_db
 from ..models.user import UserOutputDatabase
 from .shared import SAMPLE_ID_PATH

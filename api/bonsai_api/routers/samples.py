@@ -28,6 +28,8 @@ from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
+from api_client.audit_log.client import AuditLogClient
+from bonsai_api.dependencies import get_audit_log, get_request_context, ApiRequestContext
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -39,7 +41,7 @@ from bonsai_api.crud.sample import (
     update_sample_qc_classification,
     update_variant_annotation_for_sample,
 )
-from bonsai_api.crud.user import get_current_active_user
+from bonsai_api.dependencies import get_current_active_user
 from bonsai_api.db import Database, get_db
 from bonsai_api.io import (
     InvalidRangeError,
@@ -136,17 +138,20 @@ async def samples_summary(
 async def create_sample(
     sample: PipelineResult,
     db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> dict[str, str]:
     """Entrypoint for creating a new sample."""
     try:
-        db_obj = await create_sample_record(db, sample)
+        db_obj = await create_sample_record(db, sample, req_ctx, audit=audit_log)
     except DuplicateKeyError as error:
+        details = getattr(error, "details", {})
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=error.details["errmsg"],
+            detail=details.get("errmsg", ""),
         ) from error
     return {"type": "success", "sample_id": db_obj.sample_id}
 
@@ -155,13 +160,15 @@ async def create_sample(
 async def delete_many_samples(
     sample_ids: list[str],
     db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ):
     """Delete multiple samples from the database."""
     try:
-        result = await delete_samples_from_db(db, sample_ids)
+        result = await delete_samples_from_db(db, sample_ids, ctx=req_ctx, audit=audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -203,6 +210,8 @@ async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
     db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -220,13 +229,15 @@ async def update_sample(
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
     db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ):
     """Delete the specific sample."""
     try:
-        result = await delete_samples_from_db(db, sample_id)
+        result = await delete_samples_from_db(db, [sample_id], req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

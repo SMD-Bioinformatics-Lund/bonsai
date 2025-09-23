@@ -9,7 +9,7 @@ from ..crud.location import create_location as create_location_from_db
 from ..crud.location import get_location as get_location_from_db
 from ..crud.location import get_locations as get_locations_from_db
 from ..crud.location import get_locations_within_bbox
-from ..crud.user import get_current_active_user
+from bonsai_api.dependencies import get_current_active_user
 from ..db import Database, get_db
 from ..models.location import (
     GeoJSONPolygon,
