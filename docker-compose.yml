@@ -52,11 +52,9 @@ services:
       - "8000:5000"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
-      - FLASK_ENV=development 
       - TZ=Europe/Stockholm
     networks:
       - bonsai-net
-    command: "flask run --reload --debug --host 0.0.0.0"
 
   notification_service:
     build: 
