@@ -5,7 +5,7 @@ FROM python:3.11.3-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install --upgrade pip
+RUN pip install --no-cache --upgrade pip
 
 ### Development layer ###
 FROM base AS development
@@ -41,6 +41,13 @@ WORKDIR /app
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
+  CMD python -c "import sys, urllib.request; \
+                 import urllib.error; \
+                 url='http://localhost:8000/'; \
+                 try: urllib.request.urlopen(url, timeout=5); sys.exit(0) \
+                 except Exception: sys.exit(1)"
 
 USER 1000:1000
 
