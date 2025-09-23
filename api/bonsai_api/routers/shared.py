@@ -3,14 +3,15 @@
 import gzip
 import json
 import logging
-from typing import Literal
-from fastapi import HTTPException, Path, File, UploadFile
+from typing import Literal, Any
+from fastapi import Depends, HTTPException, Path, File, Request, UploadFile
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-from bonsai_api.models.cluster import ClusterMethod, DistanceMethod
-from bonsai_api.redis.models import MsTreeMethods
+from api_client.audit_log.models import Actor, SourceType
+from bonsai_api.models.user import UserOutputDatabase
+from bonsai_api.dependencies import get_current_active_user
 
 from ..models.sample import SAMPLE_ID_PATTERN, QcClassification, SampleQcClassification
 
