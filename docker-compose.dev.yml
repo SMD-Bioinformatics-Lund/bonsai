@@ -7,6 +7,16 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
+  frontend:
+    environment:
+      - FLASK_ENV=development 
+      - API_INTERNAL_URL=http://api:8000
+      - API_EXTERNAL_URL=http://localhost:8001
+    depends_on:
+      - api
+    command: "flask run --reload --debug --host 0.0.0.0"
+
+
   api:
     environment: 
       - notification_service_api=http://notification_service:8000/
@@ -24,6 +34,7 @@ services:
         - path: ./libs/api_client/api_client
           target: /app/api_client/api_client
           action: sync
+    command: "uvicorn bonsai_api.main:app --reload --log-level info --host 0.0.0.0"
 
   minhash_service:
     build: 
