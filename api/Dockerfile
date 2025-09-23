@@ -5,6 +5,11 @@ FROM python:3.11.3-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# install healthcheck dependencies
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache --upgrade pip
 
 ### Development layer ###
@@ -16,6 +21,9 @@ COPY libs/api_client/ ./api_client
 COPY api/ ./bonsai_api
 
 RUN pip install -e ./api_client -e ./bonsai_api
+
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl --fail http://localhost:8000/
 
 CMD ["uvicorn", "bonsai_api.main:app", "--reload", "--log-level", "info", "--host", "0.0.0.0"]
 
@@ -43,11 +51,7 @@ COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
-  CMD python -c "import sys, urllib.request; \
-                 import urllib.error; \
-                 url='http://localhost:8000/'; \
-                 try: urllib.request.urlopen(url, timeout=5); sys.exit(0) \
-                 except Exception: sys.exit(1)"
+  CMD curl --fail http://localhost:8000/
 
 USER 1000:1000
 
