@@ -3,12 +3,13 @@
 import logging
 from typing import Any
 
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject, EventSeverity
-from bonsai_api.dependencies import ApiRequestContext
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import settings
 from bonsai_api.db import Database
@@ -19,9 +20,60 @@ from bonsai_api.models.user import (
     UserInputDatabase,
     UserOutputDatabase,
 )
+from bonsai_api.models.context import ApiRequestContext
 from .errors import EntryNotFound, UpdateDocumentError
+from jose import JWTError, jwt
+from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 
 LOG = logging.getLogger(__name__)
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
+
+
+async def get_user_by_token(
+    security_scopes: SecurityScopes,
+    token: str,
+    db: Database,
+) -> UserOutputDatabase | None:
+    """Get current user."""
+    # check if API authentication is disabled
+    if not settings.api_authentication:
+        return None
+
+    if security_scopes.scopes:
+        authenticate_value = f"Bearer scope={security_scopes.scope_str}"
+    else:
+        authenticate_value = "Bearer"
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Credentials could not be validated",
+        headers={"WWW-Authenticate": authenticate_value},
+    )
+
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        username: str | None = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError as error:
+        raise credentials_exception from error
+
+    try:
+        user = await get_user(db, username=username)
+    except EntryNotFound as error:
+        raise credentials_exception from error
+    for scope in security_scopes.scopes:
+        users_all_permissions = {
+            perm for user_role in user.roles for perm in USER_ROLES.get(user_role, [])
+        }
+        if not scope in users_all_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credentials could not be validated",
+                headers={"WWW-Authenticate": authenticate_value},
+            )
+    return user
 
 
 async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
