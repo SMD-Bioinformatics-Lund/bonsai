@@ -2,6 +2,8 @@
 
 ### Added
 
+- Actions that upload, remove or modify groups, users and samples are now logged in the audit log
+- Added audit log service where other parts of Bonsai can record important events
 - Added basic startup banner to the minhash service.
 - Added support for storing sourmash index in RocksDB format.
 - Added tags that warns the user if a sample might be contaminated. Thresholds are read from `thresholds.toml`file.
