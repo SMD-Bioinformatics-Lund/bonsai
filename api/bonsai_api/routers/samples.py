@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Literal, Union, cast
+from typing import Annotated, Any, Union, cast
 
 from fastapi import (
     APIRouter,
@@ -29,7 +29,8 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.dependencies import get_audit_log, get_request_context, ApiRequestContext
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.dependencies import get_audit_log, get_request_context
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -41,8 +42,8 @@ from bonsai_api.crud.sample import (
     update_sample_qc_classification,
     update_variant_annotation_for_sample,
 )
-from bonsai_api.dependencies import get_current_active_user
-from bonsai_api.db import Database, get_db
+from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.db import Database
 from bonsai_api.io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
@@ -117,7 +118,7 @@ class ApiGetSamplesDetailsInput(BaseModel):
 )
 async def samples_summary(
     query: ApiGetSamplesDetailsInput,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -137,7 +138,7 @@ async def samples_summary(
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])
 async def create_sample(
     sample: PipelineResult,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -159,7 +160,7 @@ async def create_sample(
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
 async def delete_many_samples(
     sample_ids: list[str],
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -180,7 +181,7 @@ async def delete_many_samples(
 @router.get("/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE])
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -209,7 +210,7 @@ class UpdateSampleInputModel(BaseModel):
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -228,7 +229,7 @@ async def update_sample(
 )
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -248,7 +249,7 @@ async def delete_sample(
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
 async def add_sample_metadata(
-    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_db)) -> bool:
+    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_database)) -> bool:
     """Add metadata to an existing sample."""
     try:
         resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
@@ -263,7 +264,7 @@ async def add_sample_metadata(
 async def create_genome_signatures_sample(
     sample_id: str,
     signature: str = Depends(parse_signature_json),
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
@@ -304,7 +305,7 @@ async def create_genome_signatures_sample(
 async def add_ska_index_to_sample(
     sample_id: str,
     index: str,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
@@ -336,7 +337,7 @@ async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
     range: Annotated[str | None, Header()] = None,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> str:
     """Get read mapping results for a sample."""
     try:
@@ -388,7 +389,7 @@ async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
     range: Annotated[str | None, Header()] = None,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
@@ -445,7 +446,7 @@ async def get_vcf_files_for_sample(
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
@@ -473,7 +474,9 @@ async def add_vcf_to_sample(
 async def update_qc_status(
     classification: QcClassification,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database), 
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -482,12 +485,12 @@ async def update_qc_status(
     try:
         # dont update if the status dont change
         sample = await get_sample(db, sample_id)
-        if sample.qc_status == QcClassification:
+        if sample.qc_status == classification:
             return True
         
         # update
         status_obj: bool = await update_sample_qc_classification(
-            db, sample_id, classification
+            db, sample_id, classification, ctx=req_ctx, audit=audit_log
         )
 
         # update if status should be excluded from indexing
@@ -521,7 +524,7 @@ async def update_qc_status(
 async def update_variant_annotation(
     classification: VariantAnnotation,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -547,14 +550,16 @@ async def update_variant_annotation(
 async def post_comment(
     comment: Comment,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> CommentsObj:
     """Add a commet to a sample."""
     try:
-        comment_obj: CommentsObj = await add_comment(db, sample_id, comment)
+        comment_obj: CommentsObj = await add_comment(db, sample_id, comment, req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -570,14 +575,16 @@ async def post_comment(
 async def hide_comment(
     sample_id: str = SAMPLE_ID_PATH,
     comment_id: int = Path(..., title="ID of the comment to delete"),
-    db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> bool:
     """Hide a comment in a sample from users."""
     try:
-        resp: bool = await hide_comment_for_sample(db, sample_id, comment_id)
+        resp: bool = await hide_comment_for_sample(db, sample_id, comment_id, req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -594,7 +601,7 @@ async def hide_comment(
 async def update_location(
     location_id: str = Body(...),
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
