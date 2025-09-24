@@ -14,7 +14,8 @@ from ..crud.sample import (
     get_ska_index_path_for_samples,
     get_typing_profiles,
 )
-from ..db import Database, get_db
+from bonsai_api.db import Database
+from bonsai_api.dependencies import get_database
 from ..models.base import RWModel
 from ..models.cluster import DistanceMethod, TypingMethod
 from ..redis import ClusterMethod, MsTreeMethods, SubmittedJob
@@ -58,7 +59,7 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
 async def cluster_samples(
     typing_method: TypingMethod,
     cluster_input: ClusterInput,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> SubmittedJob:
     """Cluster samples on their cgmlst profile.
 
@@ -107,7 +108,7 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
 
 @router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
 async def index_genome_signatures(
-    index_input: IndexInput, db: Database = Depends(get_db),
+    index_input: IndexInput, db: Database = Depends(get_database),
     ) -> Dict[str, str]:
     """Entrypoint for scheduling indexing of sourmash signatures.
 
