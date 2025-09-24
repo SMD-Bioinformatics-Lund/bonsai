@@ -13,7 +13,8 @@ from bonsai_api.crud.group import delete_group, get_group, get_groups, update_gr
 from bonsai_api.crud.sample import get_samples_summary
 from bonsai_api.dependencies import get_current_active_user
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.db import Database, get_db
+from bonsai_api.db import Database
+from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase, SampleTableColumnInput, pred_res_cols, qc_cols, DEFAULT_COLUMNS
 from bonsai_api.models.user import UserOutputDatabase
@@ -72,7 +73,7 @@ async def get_valid_columns(qc: bool = False):
 
 @router.get("/groups/", response_model=list[GroupInfoDatabase], tags=[RouterTags.GROUP])
 async def get_groups_in_db(
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -90,7 +91,7 @@ async def get_groups_in_db(
 )
 async def create_group(
     group_info: GroupInCreate,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -114,7 +115,7 @@ async def create_group(
 async def get_group_in_db(
     group_id: str,
     lookup_samples: bool = False,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -131,7 +132,7 @@ async def get_group_in_db(
 )
 async def delete_group_from_db(
     group_id: str,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -150,7 +151,7 @@ async def delete_group_from_db(
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -172,7 +173,7 @@ async def update_group_info(
 async def add_samples_to_group(
     group_id: str = Path(..., title="The id of the group to get"),
     sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -199,7 +200,7 @@ async def add_samples_to_group(
 async def remove_sample_from_group(
     group_id: str = Path(..., title="The id of the group to get"),
     sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
@@ -225,7 +226,7 @@ async def remove_sample_from_group(
     tags=[RouterTags.GROUP],
 )
 async def get_columns_for_group(
-    group_id: str, db: Database = Depends(get_db),
+    group_id: str, db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -248,7 +249,7 @@ async def get_samples_in_group(
     skip: int = 0,
     limit: int = 0,
     group_id: str = Path(..., tilte="The id of the group to get"),
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
