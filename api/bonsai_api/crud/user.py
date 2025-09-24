@@ -24,6 +24,7 @@ from bonsai_api.models.context import ApiRequestContext
 from .errors import EntryNotFound, UpdateDocumentError
 from jose import JWTError, jwt
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
+from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
 
@@ -87,89 +88,53 @@ async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
 
 async def delete_user(db_obj: Database, username: str, ctx: ApiRequestContext, audit: AuditLogClient | None = None):
     """Delete user from the database"""
-    resp = await db_obj.user_collection.delete_one({"username": username})
-    exc: Exception | None = None
-    if resp.deleted_count == 0:
-        exc = EntryNotFound(username)
-
-    if isinstance(audit, AuditLogClient):
-        # prepare event metadata and submit event
-        event_subject = Subject(id=username, type=SourceType.SYS)
-
-        meta: dict[str, Any] = ctx.metadata
-        severity = EventSeverity.INFO
-        if exc is not None:
-            meta['exception'] = exc
-            severity = EventSeverity.ERROR
-
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="delete_user", 
-            severity=severity, actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
-        audit.post_event(event)
-    
-    if exc is not None:
-        raise exc
+    event_subject = Subject(id=username, type=SourceType.SYS)
+    with audit_event_context(audit, "delete_user", ctx, event_subject):
+        resp = await db_obj.user_collection.delete_one({"username": username})
+        if resp.deleted_count == 0:
+            raise EntryNotFound(username)
     return username
 
 
 async def update_user(db_obj: Database, username: str, user: UserInputCreate, 
                       ctx: ApiRequestContext, audit: AuditLogClient | None = None):
     """Delete user from the database"""
-    # get old user object
-    new_user_info = user.model_dump()
-    if len(user.password) > 0:
-        # create hash for new password
-        LOG.info("Changed password for %s", username)
-        new_user_info["hashed_password"] = get_password_hash(user.password)
+    event_subject = Subject(id=username, type=SourceType.SYS)
+    with audit_event_context(audit, "update_user", ctx, event_subject):
+        new_user_info = user.model_dump()
+        if len(user.password) > 0:
+            # create hash for new password
+            LOG.info("Changed password for %s", username)
+            new_user_info["hashed_password"] = get_password_hash(user.password)
 
-    user_in_db = await get_user(db_obj, username=username)
-    # update changed fields in created user object
-    upd_user_info = user_in_db.model_copy(update=new_user_info)
-    resp = await db_obj.user_collection.replace_one(
-        {"username": username}, upd_user_info.model_dump()
-    )
-    exc: Exception | None = None
-    if resp.matched_count == 0:
-        exc = EntryNotFound(username)
-    if resp.modified_count == 0:
-        exc = UpdateDocumentError(username)
-
-    if isinstance(audit, AuditLogClient):
-        # prepare event metadata and submit event
-        event_subject = Subject(id=username, type=SourceType.SYS)
-
-        meta: dict[str, Any] = ctx.metadata
-        severity = EventSeverity.INFO
-        if exc is not None:
-            meta['exception'] = exc
-            severity = EventSeverity.ERROR
-
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="update_user", 
-            severity=severity, actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
-        audit.post_event(event)
+        user_in_db = await get_user(db_obj, username=username)
+        # update changed fields in created user object
+        upd_user_info = user_in_db.model_copy(update=new_user_info)
+        resp = await db_obj.user_collection.replace_one(
+            {"username": username}, upd_user_info.model_dump()
+        )
+        if resp.matched_count == 0:
+            raise EntryNotFound(username)
+        if resp.modified_count == 0:
+            raise UpdateDocumentError(username)
 
 
 async def create_user(db_obj: Database, user: UserInputCreate, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> UserOutputDatabase:
     """Create new user in the database."""
-    # create hash for password
-    hashed_password = get_password_hash(user.password)
-    user_db_fmt: UserInputDatabase = UserInputDatabase(
-        hashed_password=hashed_password, **user.model_dump()
-    )
-    # store data in database
-    resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
-    inserted_id = resp_obj.inserted_id
-    user_obj = UserInputDatabase(
-        id=str(inserted_id),
-        **user_db_fmt.model_dump(),
-    )
-    if isinstance(audit, AuditLogClient):
-        event_subject = Subject(id=user_obj.username, type=SourceType.USR)
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="create_user", 
-            actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
-        audit.post_event(event)
+    event_subject = Subject(id=user.username, type=SourceType.SYS)
+    with audit_event_context(audit, "create_user", ctx, event_subject):
+        # create hash for password
+        hashed_password = get_password_hash(user.password)
+        user_db_fmt: UserInputDatabase = UserInputDatabase(
+            hashed_password=hashed_password, **user.model_dump()
+        )
+        # store data in database
+        resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        inserted_id = resp_obj.inserted_id
+        user_obj = UserInputDatabase(
+            id=str(inserted_id),
+            **user_db_fmt.model_dump(),
+        )
     return user_obj
 
 
