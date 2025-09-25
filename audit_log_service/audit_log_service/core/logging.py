@@ -1,15 +1,17 @@
 """For configuring logging"""
 
+import datetime as dt
 import json
 import logging
-import datetime as dt
 import sys
 import traceback
 from typing import Any
+
 from bson import ObjectId
 
-from .config import Settings
 from audit_log_service.version import __version__ as version
+
+from .config import Settings
 
 
 class _SafeJSONEncoder(json.JSONEncoder):
@@ -31,7 +33,7 @@ class JSONFormatter(logging.Formatter):
     def __init__(self, *, include_debug_fields: bool = False):
         super().__init__()
         self.include_debug_fields = include_debug_fields
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format a log record in JSON format."""
         timestamp = dt.datetime.now(dt.timezone.utc).isoformat()
@@ -92,20 +94,23 @@ class JSONFormatter(logging.Formatter):
             payload["exception"] = {
                 "type": getattr(exc_type, "__name__", str(exc_type)),
                 "message": str(exc_value),
-                "stacktrace": "".join(traceback.format_exception(exc_type, exc_value, exc_tb)),
+                "stacktrace": "".join(
+                    traceback.format_exception(exc_type, exc_value, exc_tb)
+                ),
             }
 
         return json.dumps(payload, cls=_SafeJSONEncoder, ensure_ascii=False)
+
 
 class ConsoleFormatter(logging.Formatter):
     """Human friendly formatter for local development."""
 
     COLORS: dict[str, str] = {
-        "DEBUG": "\033[36m",   # Cyan
-        "INFO": "\033[32m",    # Green
-        "WARNING": "\033[33m", # Yellow
-        "ERROR": "\033[31m",   # Red
-        "CRITICAL": "\033[35m" # Magenta
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
     }
     RESET = "\033[0m"
 
@@ -133,14 +138,16 @@ class ConsoleFormatter(logging.Formatter):
         return out
 
 
-def configure_logging(settings: Settings, service_name: str | None = None, json_logs: bool | None = None):
+def configure_logging(
+    settings: Settings, service_name: str | None = None, json_logs: bool | None = None
+):
     """Initialize root and uvicorn loggers with consistent formatting.
-    
+
     Parameters can be provided via:
       - `settings` object with attributes: LOG_LEVEL, APP_ENV, SERVICE_NAME, SERVICE_VERSION, LOG_FORMAT
       - explicit kwargs (override settings)
     """
-    service_name = (service_name or settings.service_name)
+    service_name = service_name or settings.service_name
     log_level = settings.log_level
 
     # build handler with formatters and filter

@@ -25,8 +25,12 @@ class MongodbConfig(BaseSettings):
     uri: str = Field(
         default="mongodb://mongodb:27017/", description="MongoDb connection URI."
     )
-    database: str = Field(default="bonsai", description="The database where logs are stored.")
-    collection: str = Field(default="events", description="The collection for storing events.")
+    database: str = Field(
+        default="bonsai", description="The database where logs are stored."
+    )
+    collection: str = Field(
+        default="events", description="The collection for storing events."
+    )
 
 
 class Settings(BaseSettings):

@@ -31,25 +31,18 @@ from minhash_service.analysis.models import (
 )
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
-from minhash_service.core.exceptions import FileRemovalError, SampleNotFoundError
-from minhash_service.core.factories import (
-    create_audit_trail_repo,
-    create_report_repo,
-    create_signature_repo,
-)
+from minhash_service.core.exceptions import (FileRemovalError,
+                                             SampleNotFoundError)
+from minhash_service.core.factories import (create_audit_trail_repo,
+                                            create_report_repo,
+                                            create_signature_repo)
 from minhash_service.core.models import Event, EventType
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.signatures.index import create_index_store, get_index_path
-from minhash_service.signatures.io import (
-    read_signatures,
-    write_signatures,
-)
-from minhash_service.signatures.models import (
-    IndexFormat,
-    SignatureRecord,
-    SourmashSignatures,
-)
+from minhash_service.signatures.io import read_signatures, write_signatures
+from minhash_service.signatures.models import (IndexFormat, SignatureRecord,
+                                               SourmashSignatures)
 from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.storage import SignatureStorage
 
@@ -370,7 +363,7 @@ def search_similar(
     repo = create_signature_repo()
     record = repo.get_by_sample_id(sample_id)
     if record is None:
-        raise FileNotFoundError(f"No record found for sample_id: \"{sample_id}\"")
+        raise FileNotFoundError(f'No record found for sample_id: "{sample_id}"')
 
     # is allways one sig
     query = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)[0]

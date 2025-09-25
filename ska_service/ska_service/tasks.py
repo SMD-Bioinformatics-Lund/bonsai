@@ -46,7 +46,7 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
 
         # calculate distance between samples from alignment and cluster
         with open(aln_file) as inpt:
-            aln = AlignIO.read(inpt, 'fasta')
+            aln = AlignIO.read(inpt, "fasta")
         dm = calc_snv_distance(aln)
         nwk = ska.cluster_distances(dm, method)
     return nwk

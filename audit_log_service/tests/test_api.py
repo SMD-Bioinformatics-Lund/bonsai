@@ -1,6 +1,5 @@
 """Test api entrypoints."""
 
-
 from http import HTTPStatus
 
 
@@ -20,7 +19,7 @@ def test_add_event(client, repo):
         "actor": {"type": "system", "id": "test-actor-1"},
         "subject": {"type": "system", "id": "test-subject-1"},
         "severity": "info",
-        "metadata": {}
+        "metadata": {},
     }
     # TEST that job was accepted
     resp = client.post("/events", json=payload)
@@ -35,18 +34,22 @@ def test_add_events(client, repo):
     """Test that entrypoint for adding a event accepts the expected data."""
     n_records_before: int = len(list(repo._col.find()))
     payload = [
-        {"source_service": "Test",
-        "event_type": "TEST_ACTION",
-        "actor": {"type": "system", "id": "test-actor-1"},
-        "subject": {"type": "system", "id": "test-subject-1"},
-        "severity": "info",
-        "metadata": {}},
-        {"source_service": "Test 2",
-        "event_type": "TEST_ACTION",
-        "actor": {"type": "system", "id": "test-actor-2"},
-        "subject": {"type": "system", "id": "test-subject-2"},
-        "severity": "info",
-        "metadata": {}}
+        {
+            "source_service": "Test",
+            "event_type": "TEST_ACTION",
+            "actor": {"type": "system", "id": "test-actor-1"},
+            "subject": {"type": "system", "id": "test-subject-1"},
+            "severity": "info",
+            "metadata": {},
+        },
+        {
+            "source_service": "Test 2",
+            "event_type": "TEST_ACTION",
+            "actor": {"type": "system", "id": "test-actor-2"},
+            "subject": {"type": "system", "id": "test-subject-2"},
+            "severity": "info",
+            "metadata": {},
+        },
     ]
     # TEST that job was accepted
     resp = client.post("/events:batch", json=payload)
@@ -57,7 +60,7 @@ def test_add_events(client, repo):
     assert "ids" in body and isinstance(body["ids"], list)
 
     # TEST that each event got a inserted id
-    n_ids = len(body.get('ids', []))
+    n_ids = len(body.get("ids", []))
     assert n_ids == len(payload)
 
     # TEST that a record was inserted

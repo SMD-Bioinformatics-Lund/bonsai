@@ -1,8 +1,8 @@
 """Utility functions."""
 
+from importlib import resources
 from logging import config as logging_config
 from pathlib import Path
-from importlib import resources
 
 from .config import Settings
 

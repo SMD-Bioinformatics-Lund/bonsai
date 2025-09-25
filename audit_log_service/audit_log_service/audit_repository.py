@@ -1,15 +1,17 @@
 """Audit log repository."""
 
+import datetime as dt
 import logging
 from typing import Any, Sequence
-import datetime as dt
+
 from bson import ObjectId
 from pymongo import DESCENDING
 from pymongo.collection import Collection
 from pymongo.errors import PyMongoError
 
-from .models import EventFilter, EventOut, PaginatedEvents
 from audit_log_service.models import Event
+
+from .models import EventFilter, EventOut, PaginatedEvents
 
 LOG = logging.getLogger(__name__)
 
@@ -21,6 +23,7 @@ class AuditTrailRepository:
     Connection lifetime is managed outside of this class.
     Pass in a ready Collection (with auth, TLS, timeouts, etc. configured).
     """
+
     def __init__(self, collection: Collection[Any]):
         self._col = collection
 
@@ -32,15 +35,20 @@ class AuditTrailRepository:
         except PyMongoError as err:
             LOG.exception("Error logging audit event", extra={"error": err})
             raise
-    
+
     def check_connection(self) -> bool:
         """Check database connection."""
 
         return bool(self._col.find_one())
 
-    def get_events(self, *, limit: int = 50, skip: int = 0,
-                   filters: EventFilter | None = None,
-                   sort: Sequence[tuple[str, int]] | None = None) -> PaginatedEvents:
+    def get_events(
+        self,
+        *,
+        limit: int = 50,
+        skip: int = 0,
+        filters: EventFilter | None = None,
+        sort: Sequence[tuple[str, int]] | None = None
+    ) -> PaginatedEvents:
         """Get events from the database.
 
         - Default sort: newest first by occurred_at, then _id
@@ -53,7 +61,7 @@ class AuditTrailRepository:
             limit = 500
         if skip < 0:
             skip = 0
-        
+
         query: dict[str, Any] = {}
 
         # build mongodb query
@@ -96,12 +104,7 @@ class AuditTrailRepository:
         sort_spec = list(sort or [("occurred_at", DESCENDING), ("_id", DESCENDING)])
         try:
             total = self._col.count_documents(query)
-            cursor = (
-                self._col.find(query)
-                .sort(sort_spec)
-                .skip(skip)
-                .limit(limit)
-            )
+            cursor = self._col.find(query).sort(sort_spec).skip(skip).limit(limit)
 
             items: list[EventOut] = []
             for doc in cursor:
@@ -119,5 +122,7 @@ class AuditTrailRepository:
                 has_more=(skip + len(items) < total),
             )
         except PyMongoError as err:
-            LOG.exception("Error listing audit events", extra={"error": err, "query": query})
+            LOG.exception(
+                "Error listing audit events", extra={"error": err, "query": query}
+            )
             raise

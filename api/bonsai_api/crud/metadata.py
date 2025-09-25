@@ -1,16 +1,17 @@
 """Metadata related CRUD operations."""
 
 from typing import Any
+
+from bonsai_api.db import Database
+from bonsai_api.io import parse_metadata_table
+from bonsai_api.models.group import SampleTableColumnInput
+from bonsai_api.models.metadata import (InputMetaEntry, MetaEntriesInDb,
+                                        MetaEntryInDb)
 from pydantic import TypeAdapter
 from pymongo.results import UpdateResult
 
-from bonsai_api.models.group import SampleTableColumnInput
-from bonsai_api.db import Database
-from bonsai_api.models.metadata import InputMetaEntry, MetaEntriesInDb, MetaEntryInDb
-from bonsai_api.io import parse_metadata_table
-
-from .sample import get_sample
 from .errors import EntryNotFound
+from .sample import get_sample
 
 
 async def add_metadata_to_sample(
@@ -72,7 +73,7 @@ async def get_metadata_fields_for_samples(
             id=entry.fieldname.lower().replace(" ", "-"),
             label=entry.fieldname,
             path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
-            type=entry.type
+            type=entry.type,
         )
         for entry in uniq_obj.values()
     ]
