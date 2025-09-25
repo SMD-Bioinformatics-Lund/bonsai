@@ -25,14 +25,28 @@ class SourceType(StrEnum):
 
 class Actor(BaseModel):
     """Entity that triggered or logged the event."""
-    type: SourceType = Field(..., description="Type of actor (user or system).", examples=["user"])
-    id: str = Field(..., description="Unique identifier of the actor.", examples=["user_123", "system_daemon"])
+
+    type: SourceType = Field(
+        ..., description="Type of actor (user or system).", examples=["user"]
+    )
+    id: str = Field(
+        ...,
+        description="Unique identifier of the actor.",
+        examples=["user_123", "system_daemon"],
+    )
 
 
 class Subject(BaseModel):
     """Entity that the event is about (target)."""
-    type: SourceType = Field(..., description="Type of subject (user or system).", examples=["system"])
-    id: str = Field(..., description="Unique identifier of the subject.", examples=["sample_456", "group_789"])
+
+    type: SourceType = Field(
+        ..., description="Type of subject (user or system).", examples=["system"]
+    )
+    id: str = Field(
+        ...,
+        description="Unique identifier of the subject.",
+        examples=["sample_456", "group_789"],
+    )
 
 
 class Event(BaseModel):
@@ -52,33 +66,32 @@ class Event(BaseModel):
     source_service: str = Field(
         ...,
         description="Name of the service that emitted the event.",
-        examples=["minhash_service", "bonsai_api"]
+        examples=["minhash_service", "bonsai_api"],
     )
     event_type: str = Field(
         ...,
         description="Type or category of the event.",
-        examples=["CREATE_USER", "DELETE_GROUP"]
+        examples=["CREATE_USER", "DELETE_GROUP"],
     )
     occurred_at: dt.datetime = Field(
         default_factory=lambda: dt.datetime.now(dt.timezone.utc),
         alias="occurred_at",
-        description="UTC timestamp when the event occurred."
+        description="UTC timestamp when the event occurred.",
     )
     severity: EventSeverity = Field(
-        default=EventSeverity.INFO,
-        description="Severity level of the event."
+        default=EventSeverity.INFO, description="Severity level of the event."
     )
     actor: Actor = Field(..., description="Entity that triggered or logged the event.")
     subject: Subject = Field(..., description="Entity that the event is about.")
     metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Optional key-value metadata for additional context.",
-        examples=[{"ip": "192.168.1.10", "session_id": "abc123"}]
+        examples=[{"ip": "192.168.1.10", "session_id": "abc123"}],
     )
 
     model_config = ConfigDict(
         use_enum_values=True,
-        populate_by_name=True  # allows using `occurred_at` in Python while serializing as `occurred_at`
+        populate_by_name=True,  # allows using `occurred_at` in Python while serializing as `occurred_at`
     )
 
 
@@ -89,22 +102,32 @@ class EventOut(Event):
 
 
 class EventFilter(BaseModel):
-    """Filters for listing events. 
-    
+    """Filters for listing events.
+
     All fields are optional; only provided filters are applied.
     """
-    severities: list[str] | None = Field(default=None, examples=["info", "errors"])         # e.g. ["info","error"]
-    event_types: list[str] | None = Field(default=None, examples=["CREATE_USER"])         # e.g. ["CREATE_USER"]
-    source_services: list[str] | None = Field(default=None, examples=["bonsai_api", "minhash_service"])
+
+    severities: list[str] | None = Field(
+        default=None, examples=["info", "errors"]
+    )  # e.g. ["info","error"]
+    event_types: list[str] | None = Field(
+        default=None, examples=["CREATE_USER"]
+    )  # e.g. ["CREATE_USER"]
+    source_services: list[str] | None = Field(
+        default=None, examples=["bonsai_api", "minhash_service"]
+    )
     actor_type: SourceType | None = None
     actor_id: str | None = None
     subject_type: SourceType | None = None
     subject_id: str | None = None
-    occurred_after: dt.datetime | None = Field(default=None, description="Include samples that occurred after")
-    occurred_before: dt.datetime | None = Field(default=None, description="Include samples that occurred before")
+    occurred_after: dt.datetime | None = Field(
+        default=None, description="Include samples that occurred after"
+    )
+    occurred_before: dt.datetime | None = Field(
+        default=None, description="Include samples that occurred before"
+    )
 
     model_config = ConfigDict(extra="ignore")
-
 
     @field_serializer("occurred_after", "occurred_before")
     def _ser_utc(cls, val: dt.datetime | None) -> str | None:
@@ -124,4 +147,3 @@ class PaginatedEvents(BaseModel):
     limit: int
     skip: int
     has_more: bool
- 

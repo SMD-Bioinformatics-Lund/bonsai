@@ -4,31 +4,17 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from flask import (
-    Blueprint,
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from bonsai_app.bonsai import (TokenObject, create_group, delete_group,
+                               get_group_by_id, get_groups, get_samples,
+                               get_samples_in_group, get_valid_group_columns,
+                               update_group, update_sample_qc_classification)
+from bonsai_app.models import (BadSampleQualityAction, PhenotypeType,
+                               QualityControlResult)
+from flask import (Blueprint, abort, flash, redirect, render_template, request,
+                   url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
-from bonsai_app.bonsai import (
-    TokenObject,
-    create_group,
-    delete_group,
-    get_group_by_id,
-    get_groups,
-    get_samples,
-    get_samples_in_group,
-    update_group,
-    update_sample_qc_classification,
-    get_valid_group_columns,
-)
-from bonsai_app.models import BadSampleQualityAction, PhenotypeType, QualityControlResult
 from .controller import format_tablular_data
 
 LOG = logging.getLogger(__name__)
@@ -137,7 +123,9 @@ def edit_groups(group_id: str | None = None):
         cols_in_group = []
 
     # annotate if column previously have been selected
-    valid_cols_idx = {col["id"]: col for col in get_valid_group_columns(token_obj=token)}
+    valid_cols_idx = {
+        col["id"]: col for col in get_valid_group_columns(token_obj=token)
+    }
     for col in cols_in_group:
         col_id = col["id"]
         valid_cols_idx[col_id]["selected"] = True
@@ -190,10 +178,10 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    columns = group_info.get('table_columns', [])
-    if len(columns) > 0: 
+    columns = group_info.get("table_columns", [])
+    if len(columns) > 0:
         columns = get_valid_group_columns(token, group_id=group_id)
-    else: # get default columns
+    else:  # get default columns
         columns = get_valid_group_columns(token)
     table_data = format_tablular_data(samples_info["data"], columns)
 

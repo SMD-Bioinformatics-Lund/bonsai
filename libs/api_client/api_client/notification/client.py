@@ -2,11 +2,14 @@
 
 import logging
 from http import HTTPStatus
+
 from api_client.core.base import BaseClient
 from api_client.core.exceptions import HTTPException
+
 from .models import EmailCreate
 
 LOG = logging.getLogger(__name__)
+
 
 class NotificationClient(BaseClient):
     """Send emails to notify users of evets."""
@@ -18,4 +21,8 @@ class NotificationClient(BaseClient):
         try:
             self.post("/send-email", json=payload, expected_status=(HTTPStatus.OK,))
         except HTTPException as exc:
-            LOG.error("Something went wrong when sending an email; %s", exc, extra={"payload": payload})
+            LOG.error(
+                "Something went wrong when sending an email; %s",
+                exc,
+                extra={"payload": payload},
+            )

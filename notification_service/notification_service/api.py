@@ -30,8 +30,11 @@ def root() -> dict[str, str]:
 
 
 @router.post("/send-email")
-def send_email(request: EmailApiInput, settings: Settings = Depends(get_settings),
-               repo: TemplateRepository=Depends(get_template_repo)):
+def send_email(
+    request: EmailApiInput,
+    settings: Settings = Depends(get_settings),
+    repo: TemplateRepository = Depends(get_template_repo),
+):
     """Send email."""
 
     if settings.use_redis:

@@ -3,23 +3,19 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Security, status
-from pymongo.errors import DuplicateKeyError
-
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
-from bonsai_api.crud.user import (
-    add_samples_to_user_basket,
-    create_user,
-    delete_user,
-    get_user,
-    get_users,
-    remove_samples_from_user_basket,
-    update_user,
-)
-from bonsai_api.dependencies import ApiRequestContext, get_audit_log, get_current_active_user, get_request_context, get_database
+from bonsai_api.crud.user import (add_samples_to_user_basket, create_user,
+                                  delete_user, get_user, get_users,
+                                  remove_samples_from_user_basket, update_user)
 from bonsai_api.db import Database
-from bonsai_api.models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
+from bonsai_api.dependencies import (ApiRequestContext, get_audit_log,
+                                     get_current_active_user, get_database,
+                                     get_request_context)
+from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
+                                    UserOutputDatabase)
+from fastapi import APIRouter, Depends, HTTPException, Security, status
+from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
 
@@ -46,7 +42,7 @@ async def get_users_me(
 async def get_samples_in_basket(
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
-    ]
+    ],
 ) -> list[SampleBasketObject]:
     """Get samples stored in the users sample basket."""
     return current_user.basket
@@ -162,7 +158,9 @@ async def update_user_info(
 ):
     """Delete user with username from the database."""
     try:
-        user = await update_user(db, username=username, user=user, ctx=ctx, audit=audit_log)
+        user = await update_user(
+            db, username=username, user=user, ctx=ctx, audit=audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

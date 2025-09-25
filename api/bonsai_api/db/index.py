@@ -1,6 +1,7 @@
 """Functions for creating and maintaining indexes."""
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pymongo import ASCENDING, GEOSPHERE
 
 # Create indexes for collections

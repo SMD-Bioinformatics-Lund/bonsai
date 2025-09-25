@@ -3,27 +3,22 @@
 import logging
 from typing import Any
 
+import bonsai_api
+from api_client.audit_log import AuditLogClient, EventCreate
+from api_client.audit_log.models import EventSeverity, SourceType, Subject
+from bonsai_api.auth import get_password_hash, verify_password
+from bonsai_api.config import ALGORITHM, USER_ROLES, settings
+from bonsai_api.db import Database
+from bonsai_api.extensions.ldap_extension import ldap_connection
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
+                                    UserInputDatabase, UserOutputDatabase)
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-
-import bonsai_api
-from api_client.audit_log import AuditLogClient, EventCreate
-from api_client.audit_log.models import SourceType, Subject, EventSeverity
-from bonsai_api.auth import get_password_hash, verify_password
-from bonsai_api.config import settings
-from bonsai_api.db import Database
-from bonsai_api.extensions.ldap_extension import ldap_connection
-from bonsai_api.models.user import (
-    SampleBasketObject,
-    UserInputCreate,
-    UserInputDatabase,
-    UserOutputDatabase,
-)
-from bonsai_api.models.context import ApiRequestContext
-from .errors import EntryNotFound, UpdateDocumentError
 from jose import JWTError, jwt
-from bonsai_api.config import ALGORITHM, USER_ROLES, settings
+
+from .errors import EntryNotFound, UpdateDocumentError
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
@@ -86,7 +81,12 @@ async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
     return users[0]
 
 
-async def delete_user(db_obj: Database, username: str, ctx: ApiRequestContext, audit: AuditLogClient | None = None):
+async def delete_user(
+    db_obj: Database,
+    username: str,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+):
     """Delete user from the database"""
     event_subject = Subject(id=username, type=SourceType.SYS)
     with audit_event_context(audit, "delete_user", ctx, event_subject):
@@ -96,8 +96,13 @@ async def delete_user(db_obj: Database, username: str, ctx: ApiRequestContext, a
     return username
 
 
-async def update_user(db_obj: Database, username: str, user: UserInputCreate, 
-                      ctx: ApiRequestContext, audit: AuditLogClient | None = None):
+async def update_user(
+    db_obj: Database,
+    username: str,
+    user: UserInputCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+):
     """Delete user from the database"""
     event_subject = Subject(id=username, type=SourceType.SYS)
     with audit_event_context(audit, "update_user", ctx, event_subject):
@@ -119,7 +124,12 @@ async def update_user(db_obj: Database, username: str, user: UserInputCreate,
             raise UpdateDocumentError(username)
 
 
-async def create_user(db_obj: Database, user: UserInputCreate, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> UserOutputDatabase:
+async def create_user(
+    db_obj: Database,
+    user: UserInputCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> UserOutputDatabase:
     """Create new user in the database."""
     event_subject = Subject(id=user.username, type=SourceType.SYS)
     with audit_event_context(audit, "create_user", ctx, event_subject):

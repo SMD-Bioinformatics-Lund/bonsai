@@ -8,11 +8,9 @@ from rq import Queue
 from rq.cron import CronScheduler
 
 from minhash_service.core.config import Settings, cnf, configure_logging
-from minhash_service.core.factories import (
-    create_audit_trail_repo,
-    create_report_repo,
-    initialize_indexes,
-)
+from minhash_service.core.factories import (create_audit_trail_repo,
+                                            create_report_repo,
+                                            initialize_indexes)
 from minhash_service.core.models import Event, EventType
 from minhash_service.db import MongoDB
 from minhash_service.integrity.checker import check_signature_integrity
