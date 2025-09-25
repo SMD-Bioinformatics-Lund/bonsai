@@ -4,27 +4,24 @@ import logging
 from pathlib import Path
 from typing import Dict
 
+from bonsai_api.db import Database
+from bonsai_api.dependencies import get_database
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ConfigDict, Field
 
 from ..crud.errors import EntryNotFound
-from ..crud.sample import (
-    TypingProfileOutput,
-    get_signature_path_for_samples,
-    get_ska_index_path_for_samples,
-    get_typing_profiles,
-)
-from bonsai_api.db import Database
-from bonsai_api.dependencies import get_database
+from ..crud.sample import (TypingProfileOutput, get_signature_path_for_samples,
+                           get_ska_index_path_for_samples, get_typing_profiles)
 from ..models.base import RWModel
 from ..models.cluster import DistanceMethod, TypingMethod
 from ..redis import ClusterMethod, MsTreeMethods, SubmittedJob
-from ..redis.allele_cluster import (
-    schedule_cluster_samples as schedule_allele_cluster_samples,
-)
+from ..redis.allele_cluster import \
+    schedule_cluster_samples as schedule_allele_cluster_samples
 from ..redis.minhash import schedule_add_genome_signature_to_index
-from ..redis.minhash import schedule_cluster_samples as schedule_minhash_cluster_samples
-from ..redis.ska import schedule_cluster_samples as schedule_ska_cluster_samples
+from ..redis.minhash import \
+    schedule_cluster_samples as schedule_minhash_cluster_samples
+from ..redis.ska import \
+    schedule_cluster_samples as schedule_ska_cluster_samples
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -108,8 +105,9 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
 
 @router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
 async def index_genome_signatures(
-    index_input: IndexInput, db: Database = Depends(get_database),
-    ) -> Dict[str, str]:
+    index_input: IndexInput,
+    db: Database = Depends(get_database),
+) -> Dict[str, str]:
     """Entrypoint for scheduling indexing of sourmash signatures.
 
     :raises HTTPException: Return 500 HTTP error signature path cant be generated

@@ -1,13 +1,14 @@
 """The base API client that can be extended to use for different services."""
 
+import logging
+import random
+import time
 from abc import ABC
 from collections.abc import Iterable
-import time
-import random
-from typing import Any, Literal
-import logging
-import requests
 from http import HTTPStatus
+from typing import Any, Literal
+
+import requests
 
 from .exceptions import ApiRequestError, raise_for_status
 
@@ -41,12 +42,16 @@ class BaseClient(ABC):
         self.session = session or requests.Session()
         self.default_headers = dict(default_headers or {})
 
-    def _request(self, method: RequestMethods, path: str, *,
-                 expected_status: Iterable[int] = (200,),
-                 timeout: float | None = None,
-                 headers: dict[str, str] | None = None,
-                 **kwargs: Any
-                 ) -> JSONData | str | None:
+    def _request(
+        self,
+        method: RequestMethods,
+        path: str,
+        *,
+        expected_status: Iterable[int] = (200,),
+        timeout: float | None = None,
+        headers: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> JSONData | str | None:
         """Base request class"""
         api_url = f"{self.base_url}/{path}"
         combined_headers = {**self.default_headers, **(headers or {})}
@@ -56,12 +61,16 @@ class BaseClient(ABC):
             LOG.info("Request: %s %s - attempt %d", method, api_url, attempt)
             try:
                 resp = self.session.request(
-                    method, api_url, headers=combined_headers, 
-                    timeout=timeout or self.timeout, **kwargs)
+                    method,
+                    api_url,
+                    headers=combined_headers,
+                    timeout=timeout or self.timeout,
+                    **kwargs,
+                )
 
                 if resp.status_code not in expected_status:
                     raise_for_status(resp.status_code, resp.text)
-                
+
                 # parse response
                 if resp.status_code == HTTPStatus.NO_CONTENT or resp.content is None:
                     return None
@@ -70,19 +79,22 @@ class BaseClient(ABC):
                     return resp.json()
                 return resp.text  # resturn as string
             except (requests.ConnectionError, requests.Timeout):
-                LOG.debug("Request attempt %d failed retrying %d times", attempt, attempts, extra={"url": api_url})
+                LOG.debug(
+                    "Request attempt %d failed retrying %d times",
+                    attempt,
+                    attempts,
+                    extra={"url": api_url},
+                )
                 self._sleep_with_jitter(attempt)
         raise ApiRequestError(f"Request {method} {api_url} failed")
 
-
     def _sleep_with_jitter(self, attempt: int) -> None:
         """Sleep time with a small jitter.
-        
+
         Spaces out multiple request."""
         base = self.backoff * (2 ** (attempt - 1))
         sleep = random.uniform(0, min(self.max_backoff, base))
         time.sleep(sleep)
-
 
     # helper methods
     def get(self, path: str, **kwargs: Any):

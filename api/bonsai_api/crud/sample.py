@@ -3,21 +3,20 @@
 import logging
 from itertools import groupby
 from typing import Any, Dict, Sequence
-from pymongo.results import UpdateResult
 
-from pydantic import ValidationError
+import bonsai_api
+from api_client.audit_log import AuditLogClient, EventCreate
+from api_client.audit_log.models import EventSeverity, SourceType, Subject
+from bonsai_api.crud.utils import audit_event_context
+from bonsai_api.dependencies import ApiRequestContext
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.parse.typing import replace_cgmlst_errors
-
-import bonsai_api
-from api_client.audit_log import AuditLogClient, EventCreate
-from api_client.audit_log.models import SourceType, Subject, EventSeverity
-from bonsai_api.crud.utils import audit_event_context
-from bonsai_api.dependencies import ApiRequestContext
+from pydantic import ValidationError
+from pymongo.results import UpdateResult
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -26,17 +25,11 @@ from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import MultipleRecordsResponseModel, RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    MultipleSampleRecordsResponseModel,
-    SampleInCreate,
-    SampleInDatabase,
-)
-from ..redis.minhash import (
-    schedule_remove_genome_signature,
-    schedule_remove_genome_signature_from_index,
-)
+from ..models.sample import (Comment, CommentInDatabase,
+                             MultipleSampleRecordsResponseModel,
+                             SampleInCreate, SampleInDatabase)
+from ..redis.minhash import (schedule_remove_genome_signature,
+                             schedule_remove_genome_signature_from_index)
 from ..utils import format_error_message, get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -354,7 +347,9 @@ async def get_samples(
                     "This can be caused if the data format has been updated. "
                     "If that is the case the database needs to be migrated. "
                     "See the documentation for more information."
-                ), samp.get("sample_id", "unknown id"))
+                ),
+                samp.get("sample_id", "unknown id"),
+            )
             raise err
         # Compute tags
         tags = compute_phenotype_tags(sample)
@@ -365,7 +360,12 @@ async def get_samples(
     return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
 
 
-async def create_sample(db: Database, sample: PipelineResult, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> SampleInDatabase:
+async def create_sample(
+    db: Database,
+    sample: PipelineResult,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
     try:
@@ -418,7 +418,12 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_samples(db: Database, sample_ids: list[str], ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> dict[str, Any]:
+async def delete_samples(
+    db: Database,
+    sample_ids: list[str],
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> dict[str, Any]:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
     result: dict[str, Any] = {
         "sample_ids": sample_ids,
@@ -473,10 +478,14 @@ async def delete_samples(db: Database, sample_ids: list[str], ctx: ApiRequestCon
             # prepare event metadata and submit event
             event_subject = Subject(id=sample_id, type=SourceType.USR)
             event = EventCreate(
-                source_service=bonsai_api.__name__, event_type="delete_sample", 
-                actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
+                source_service=bonsai_api.__name__,
+                event_type="delete_sample",
+                actor=ctx.actor,
+                subject=event_subject,
+                metadata=ctx.metadata,
+            )
             audit.post_event(event)
-    
+
     return result
 
 
@@ -497,8 +506,11 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
 
 
 async def add_comment(
-    db: Database, sample_id: str, comment: Comment, 
-    ctx: ApiRequestContext, audit: AuditLogClient | None = None
+    db: Database,
+    sample_id: str,
+    comment: Comment,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
 ) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
@@ -534,8 +546,13 @@ async def add_comment(
     return comments
 
 
-async def hide_comment(db: Database, sample_id: str, comment_id: int, 
-                       ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> bool:
+async def hide_comment(
+    db: Database,
+    sample_id: str,
+    comment_id: int,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> bool:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     event_subject = Subject(id=sample_id, type=SourceType.USR)
@@ -560,8 +577,11 @@ async def hide_comment(db: Database, sample_id: str, comment_id: int,
 
 
 async def update_sample_qc_classification(
-    db: Database, sample_id: str, classification: QcClassification,
-    ctx: ApiRequestContext, audit: AuditLogClient | None = None
+    db: Database,
+    sample_id: str,
+    classification: QcClassification,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
 ) -> QcClassification:
     """Update the quality control classification of a sample"""
 

@@ -2,22 +2,17 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Iterable, Protocol, runtime_checkable, Callable
+from typing import Any, Callable, Iterable, Protocol, runtime_checkable
 
-from prp.models.phenotype import ElementType, ElementTypeResult
-from prp.models.typing import TypingMethod
-from prp.models.species import BrackenSpeciesPrediction, MykrobeSpeciesPrediction
-
-from bonsai_api.config import BrackenThresholds, MykrobeThresholds, normalize_species_key, thresholds_cfg
+from bonsai_api.config import (BrackenThresholds, MykrobeThresholds,
+                               normalize_species_key, thresholds_cfg)
 from bonsai_api.models.sample import SampleInDatabase
-from bonsai_api.models.tags import (
-    ResistanceTag,
-    Tag,
-    TagList,
-    TagSeverity,
-    TagType,
-    VirulenceTag,
-)
+from bonsai_api.models.tags import (ResistanceTag, Tag, TagList, TagSeverity,
+                                    TagType, VirulenceTag)
+from prp.models.phenotype import ElementType, ElementTypeResult
+from prp.models.species import (BrackenSpeciesPrediction,
+                                MykrobeSpeciesPrediction)
+from prp.models.typing import TypingMethod
 
 LOG = logging.getLogger(__name__)
 
@@ -146,7 +141,9 @@ def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> None:
                 tags.append(tag)
 
 
-def _pick_main_bracken(preds: Iterable[BrackenSpeciesPrediction]) -> BrackenSpeciesPrediction:
+def _pick_main_bracken(
+    preds: Iterable[BrackenSpeciesPrediction],
+) -> BrackenSpeciesPrediction:
     # Robust even if caller doesn't pre-sort
     try:
         return max(preds, key=lambda p: p.fraction_total_reads)
@@ -154,7 +151,9 @@ def _pick_main_bracken(preds: Iterable[BrackenSpeciesPrediction]) -> BrackenSpec
         raise ValueError("Empty Bracken predictions list.")
 
 
-def _pick_main_mykrobe(preds: Iterable[MykrobeSpeciesPrediction]) -> MykrobeSpeciesPrediction:
+def _pick_main_mykrobe(
+    preds: Iterable[MykrobeSpeciesPrediction],
+) -> MykrobeSpeciesPrediction:
     # Species coverage tends to be the meaningful ranking for mykrobe
     try:
         return max(preds, key=lambda p: p.species_coverage)
@@ -169,6 +168,7 @@ class BrackenSpecies(Protocol):
     fraction_total_reads: float
     kraken_assigned_reads: int
     added_reads: int
+
 
 @runtime_checkable
 class MykrobeSpecies(Protocol):
@@ -188,21 +188,32 @@ class EvalResult:
 def evaluate_bracken(preds: list[BrackenSpeciesPrediction]) -> EvalResult:
     main = _pick_main_bracken(preds)
     cfg = thresholds_cfg.species
-    thr: BrackenThresholds = cfg.get_bracken(main.scientific_name)  # guaranteed non-None by validator
+    thr: BrackenThresholds = cfg.get_bracken(
+        main.scientific_name
+    )  # guaranteed non-None by validator
     # Decide on > or >= per your QC policy — here we use >= (inclusive)
     frac_ok = main.fraction_total_reads >= thr.min_fraction
     reads = (main.kraken_assigned_reads or 0) + (main.added_reads or 0)
     reads_ok = reads >= thr.min_reads
 
     if frac_ok and reads_ok:
-        return EvalResult(True, "", "bracken", normalize_species_key(main.scientific_name))
+        return EvalResult(
+            True, "", "bracken", normalize_species_key(main.scientific_name)
+        )
 
     reasons: list[str] = []
     if not frac_ok:
-        reasons.append(f"fraction_total_reads {main.fraction_total_reads:.3f} < min {thr.min_fraction:.3f}")
+        reasons.append(
+            f"fraction_total_reads {main.fraction_total_reads:.3f} < min {thr.min_fraction:.3f}"
+        )
     if not reads_ok:
         reasons.append(f"reads {reads} < min {thr.min_reads}")
-    return EvalResult(False, "; ".join(reasons), "bracken", normalize_species_key(main.scientific_name))
+    return EvalResult(
+        False,
+        "; ".join(reasons),
+        "bracken",
+        normalize_species_key(main.scientific_name),
+    )
 
 
 def evaluate_mykrobe(preds: list[MykrobeSpecies]) -> EvalResult:
@@ -211,11 +222,17 @@ def evaluate_mykrobe(preds: list[MykrobeSpecies]) -> EvalResult:
     cfg = thresholds_cfg.species
     thr: MykrobeThresholds = cfg.get_mykrobe(main.scientific_name)
 
-    sp_ok = main.species_coverage >= (thr.min_species_coverage * 100)  # transpose 0-1 to 100
-    pg_ok = main.phylogenetic_group_coverage >= (thr.min_phylogenetic_group_coverage * 100)
+    sp_ok = main.species_coverage >= (
+        thr.min_species_coverage * 100
+    )  # transpose 0-1 to 100
+    pg_ok = main.phylogenetic_group_coverage >= (
+        thr.min_phylogenetic_group_coverage * 100
+    )
 
     if sp_ok and pg_ok:
-        return EvalResult(True, "", "mykrobe", normalize_species_key(main.scientific_name))
+        return EvalResult(
+            True, "", "mykrobe", normalize_species_key(main.scientific_name)
+        )
 
     reasons: list[str] = []
     if not sp_ok:
@@ -226,7 +243,12 @@ def evaluate_mykrobe(preds: list[MykrobeSpecies]) -> EvalResult:
         reasons.append(
             f"phylogenetic_group_coverage {main.phylogenetic_group_coverage:.3f} < min {thr.min_phylogenetic_group_coverage:.3f}"
         )
-    return EvalResult(False, "; ".join(reasons), "mykrobe", normalize_species_key(main.scientific_name))
+    return EvalResult(
+        False,
+        "; ".join(reasons),
+        "mykrobe",
+        normalize_species_key(main.scientific_name),
+    )
 
 
 # Registry for routing (easy to extend)
@@ -234,6 +256,7 @@ SPP_EVALUATORS: dict[str, Callable[[list[Any]], EvalResult]] = {
     "bracken": evaluate_bracken,
     "mykrobe": evaluate_mykrobe,
 }
+
 
 def flag_uncertain_spp_prediction(tags: TagList, sample: SampleInDatabase) -> None:
     """Flag samples with uncertain species id predictions."""
@@ -301,10 +324,6 @@ def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
             ) from error
         major_spp = spp_res.result[0].scientific_name
         LOG.debug("Major spp %s in %s", major_spp, str(tag_func["species"]))
-        if major_spp in tag_func["species"] or tag_func['species'] == "all":
+        if major_spp in tag_func["species"] or tag_func["species"] == "all":
             tag_func["func"](tags, sample)
     return tags
-
-
-
-

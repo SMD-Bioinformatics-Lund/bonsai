@@ -7,16 +7,9 @@ from logging import config as logging_config
 from pathlib import Path
 from typing import Any
 
-from pydantic import (
-    DirectoryPath,
-    Field,
-    HttpUrl,
-    PositiveInt,
-    ValidationError,
-    computed_field,
-    field_validator,
-    model_validator,
-)
+from pydantic import (DirectoryPath, Field, HttpUrl, PositiveInt,
+                      ValidationError, computed_field, field_validator,
+                      model_validator)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from minhash_service.signatures.models import IndexFormat

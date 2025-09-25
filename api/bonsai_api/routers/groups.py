@@ -1,26 +1,28 @@
 """Entrypoints for getting group data."""
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
+import bonsai_api.crud.group as crud_group
+from api_client.audit_log import AuditLogClient
+from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.group import create_group as create_group_record
+from bonsai_api.crud.group import (delete_group, get_group, get_groups,
+                                   update_group)
+from bonsai_api.crud.metadata import get_metadata_fields_for_samples
+from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.db import Database
+from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
+                                     get_database, get_request_context)
+from bonsai_api.models.base import MultipleRecordsResponseModel
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.group import (DEFAULT_COLUMNS, GroupInCreate,
+                                     GroupInfoDatabase, SampleTableColumnInput,
+                                     pred_res_cols, qc_cols)
+from bonsai_api.models.user import UserOutputDatabase
+from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
+                     status)
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
-
-from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
-import bonsai_api.crud.group as crud_group
-from bonsai_api.crud.group import create_group as create_group_record
-from bonsai_api.crud.group import delete_group, get_group, get_groups, update_group
-from bonsai_api.crud.sample import get_samples_summary
-from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.db import Database
-from bonsai_api.dependencies import get_database
-from bonsai_api.models.base import MultipleRecordsResponseModel
-from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase, SampleTableColumnInput, pred_res_cols, qc_cols, DEFAULT_COLUMNS
-from bonsai_api.models.user import UserOutputDatabase
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.dependencies import get_audit_log, get_request_context, get_current_active_user
-
-from api_client.audit_log import AuditLogClient
 
 router = APIRouter()
 
@@ -32,7 +34,7 @@ async def build_column_definitions(
     group_obj: GroupInfoDatabase | None = None,
     include_qc: bool = False,
     include_metadata: bool = False,
-    db: Database | None = None
+    db: Database | None = None,
 ) -> list[SampleTableColumnInput]:
     """
     Build column definitions for sample table display.
@@ -60,7 +62,9 @@ async def build_column_definitions(
         columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
 
     if include_metadata and db and group_obj:
-        meta_entries = await get_metadata_fields_for_samples(db, sample_ids=group_obj.included_samples)
+        meta_entries = await get_metadata_fields_for_samples(
+            db, sample_ids=group_obj.included_samples
+        )
         columns += meta_entries
 
     return columns
@@ -154,7 +158,9 @@ async def delete_group_from_db(
     return result
 
 
-@router.put("/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP])
+@router.put(
+    "/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+)
 async def update_group_info(
     group_id: str,
     group_info: GroupInCreate,
@@ -177,11 +183,15 @@ async def update_group_info(
 
 
 @router.put(
-    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}/samples",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
 )
 async def add_samples_to_group(
     group_id: str = Path(..., title="The id of the group to get"),
-    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
+    sample_ids: list[str] = Query(
+        ..., alias="s", title="The ids of the samples to add to the group"
+    ),
     db: Database = Depends(get_database),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     audit_log: AuditLogClient = Depends(get_audit_log),
@@ -192,7 +202,9 @@ async def add_samples_to_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        await crud_group.add_samples_to_group(db, group_id, sample_ids, req_ctx, audit_log)
+        await crud_group.add_samples_to_group(
+            db, group_id, sample_ids, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -206,11 +218,15 @@ async def add_samples_to_group(
 
 
 @router.delete(
-    "/groups/{group_id}/samples", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}/samples",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
 )
 async def remove_sample_from_group(
     group_id: str = Path(..., title="The id of the group to get"),
-    sample_ids: list[str] = Query(..., alias="s", title="The ids of the samples to add to the group"),
+    sample_ids: list[str] = Query(
+        ..., alias="s", title="The ids of the samples to add to the group"
+    ),
     db: Database = Depends(get_database),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     audit_log: AuditLogClient = Depends(get_audit_log),
@@ -221,7 +237,9 @@ async def remove_sample_from_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        await crud_group.remove_samples_from_group(db, group_id, sample_ids, req_ctx, audit_log)
+        await crud_group.remove_samples_from_group(
+            db, group_id, sample_ids, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -239,14 +257,19 @@ async def remove_sample_from_group(
     tags=[RouterTags.GROUP],
 )
 async def get_columns_for_group(
-    group_id: str, db: Database = Depends(get_database),
+    group_id: str,
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoDatabase.model_validate(await get_group(db, group_id, lookup_samples=False))
-    columns = await build_column_definitions(group_obj=group_obj, include_metadata=True, db=db)
+    group_obj = GroupInfoDatabase.model_validate(
+        await get_group(db, group_id, lookup_samples=False)
+    )
+    columns = await build_column_definitions(
+        group_obj=group_obj, include_metadata=True, db=db
+    )
     return columns
 
 
