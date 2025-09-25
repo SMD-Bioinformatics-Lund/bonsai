@@ -1,6 +1,13 @@
-##############
-# Build SKA2 #
-##############
+### Base layer ###
+FROM python:3.11.3-slim AS base
+
+# Set build variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --no-cache --upgrade pip
+
+### Build SKA2 ###
 FROM rust:1.82-bullseye AS builder
 
 ARG SKA2_VERSION=v0.3.11
@@ -15,30 +22,45 @@ RUN \
     && cargo install --path .
 
 
-FROM python:3.11.3
+### Development layer ###
+FROM base AS development
 
-# Create non-root user to run commands
-RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
+WORKDIR /app
 
-# ska2
+COPY ska_service/ ./ska_service
+
+RUN pip install --editable ./ska_service
+
+# copy ska2 binaries
 COPY --from=builder /usr/local/cargo/bin/ska /usr/local/bin/ska
 
 # create default data directory
 RUN mkdir -p /data/index_files
 
-# Set build variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+CMD ["ska_service"]
 
-# copy project dir
-WORKDIR /home/worker/app
-COPY --chown=worker:worker ska_service ska_service/
-COPY --chown=worker:worker README.md pyproject.toml setup.py setup.cfg ./
+### Production layer ###
+FROM base AS production
 
-# install dependancies
-RUN pip install --no-cache-dir --editable .
+# Create non-root user to run commands
+RUN addgroup --system --gid 1000 worker && \
+    adduser --system --uid 1000 --ingroup worker --home /home/worker \
+    --shell /usr/sbin/nologin worker
+
+# copy ska2 binaries
+COPY --from=builder /usr/local/cargo/bin/ska /usr/local/bin/ska
+
+# Set working directory
+WORKDIR /app
+
+# Install pre-built python wheels
+COPY --from=python-builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# create default data directory
+RUN mkdir -p /data/index_files && chown -R 1000:1000 /data/index_files
 
 # run app as non-root user
-USER worker
+USER 1000:1000
 
 CMD ["ska_service"]
