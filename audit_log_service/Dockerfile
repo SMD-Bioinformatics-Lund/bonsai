@@ -1,30 +1,54 @@
+### Base layer ###
 FROM python:3.11.3-slim AS base
-
-WORKDIR /app
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-FROM base AS builder
-COPY pyproject.toml /app
-COPY audit_log_service /app/audit_log_service
-RUN pip install --upgrade pip && pip wheel --wheel-dir /wheels /app
+# install healthcheck dependencies
+RUN apt-get update && \
+    apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
 
-FROM base AS runner
+RUN pip install --no-cache --upgrade pip
 
-COPY --from=builder /wheels /wheels
+### Development layer ###
+FROM base AS development
 
-# Create non-root user to run commands
-RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
+WORKDIR /app
+
+COPY audit_log_service/ ./audit_log_service
+
+RUN pip install --editable ./audit_log_service
+
+CMD ["uvicorn", "audit_log_service.app:app", "--reload", "--log-level", "debug", "--host", "0.0.0.0"]
+
+### Build python deps ###
+FROM base AS python-builder
+
+COPY audit_log_service/ ./audit_log_service
+
+RUN pip wheel --wheel-dir /wheels ./audit_log_service
+
+### Production layer ###
+FROM base AS production
+
+# Create non-root user
+RUN addgroup --system --gid 1000 worker && \
+    adduser --system --uid 1000 --ingroup worker --home /home/worker \
+    --shell /usr/sbin/nologin worker
+
+# Set working directory
+WORKDIR /app
+
+# Install pre-built python wheels
+COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
-COPY audit_log_service /app/src/
-ENV PYTHONPATH=/app/src
-EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl --fail http://localhost:8000/
 
 # run app as non-root user
-USER worker
+USER 1000:1000
 
-CMD ["uvicorn", "audit_log_service.app:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "audit_log_service.app:app", "--host", "0.0.0.0"]

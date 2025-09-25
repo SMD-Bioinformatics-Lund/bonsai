@@ -42,14 +42,15 @@ services:
   frontend:
     container_name: frontend
     build: 
-      context: frontend
+      context: .
+      dockerfile: frontend/Dockerfile
       network: host
     depends_on:
       api:
         condition: service_healthy
         restart: true
     ports: 
-      - "8000:5000"
+      - "8000:8000"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
       - TZ=Europe/Stockholm
@@ -58,32 +59,23 @@ services:
 
   notification_service:
     build: 
-      context: notification_service
+      context: .
+      dockerfile: notification_service/Dockerfile
       network: host
     scale: 1
     networks:
       - bonsai-net
-    command: "uvicorn notification_service.main:create_api_app --reload --log-level info --host 0.0.0.0"
 
   audit_log_service:
     build: 
-      context: audit_log_service
+      context: .
+      dockerfile: audit_log_service/Dockerfile
       network: host
     scale: 1
     depends_on:
       - mongodb
-    ports: 
-      - "8004:8000"
     networks:
       - bonsai-net
-    develop:
-      watch:
-        - action: sync
-          path: ./audit_log_service
-          target: /app/src/
-        - action: rebuild
-          path: ./pyproject.toml
-    command: "uvicorn audit_log_service.app:app --reload --log-level info --host 0.0.0.0"
 
   minhash_service:
     build: 
@@ -95,6 +87,7 @@ services:
       - redis
       - minhash_cron_service
       - notification_service
+    scale: 1
     networks:
       - bonsai-net
     command: minhash-service run-minhash-worker
@@ -114,10 +107,9 @@ services:
   ska_service:
     container_name: ska_service
     build: 
-      context: ska_service
+      context: .
+      dockerfile: ska_service/Dockerfile
       network: host
-    environment:
-      - log_level=debug
     depends_on:
       - redis
     networks:

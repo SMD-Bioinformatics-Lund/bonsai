@@ -1,43 +1,62 @@
-################
-# BUILDER NODE #
-################
-
-FROM node:lts-alpine AS node-builder
-WORKDIR /usr/src/app
-COPY package.json package-lock.json webpack.config.cjs tsconfig.json ./
-COPY web web
-RUN npm install && npm run build
-
-#############
-# BUILD APP #
-#############
-
-FROM python:3.11.3
+### Base layer ###
+FROM python:3.11.3-slim AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+RUN pip install --no-cache --upgrade pip
+
+### Build javascript ###
+FROM node:lts-alpine AS node-builder
+
+WORKDIR /usr/src/app
+
+COPY package.json package-lock.json webpack.config.cjs tsconfig.json ./
+COPY web web
+
+RUN npm install && npm run build
+
+### Development layer ###
+FROM base AS development
+
+WORKDIR /app
+
+COPY frontend/  ./frontend
+
+RUN pip install --editable ./frontend
+
 EXPOSE 8000
 
-# Create non-root user to run commands
-RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
+CMD ["flask", "run", "--reload", "--debug", "--host", "0.0.0.0", "--port", "8000"]
 
-# copy project dir
-WORKDIR /home/worker/app
-COPY bonsai_app bonsai_app/
-COPY pyproject.toml setup.py setup.cfg ./
+### Build python deps ###
+FROM base AS python-builder
 
-# Copy compiled web assets
+COPY frontend/  ./frontend
+
+RUN pip wheel --wheel-dir /wheels ./frontend
+
+### Production layer ###
+FROM base AS production
+
+# Create non-root user
+RUN addgroup --system --gid 1000 worker && \
+    adduser --system --uid 1000 --ingroup worker --home /home/worker \
+    --shell /usr/sbin/nologin worker
+
+# Set working directory
+WORKDIR /app
+
+# Install pre-built python wheels
+COPY --from=python-builder /wheels /wheels
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# Copy built JavaScript
 COPY --from=node-builder /usr/src/app/build/*/bonsai.min.* bonsai_app/blueprints/public/static/
 
-# Change ownership
-RUN chown -R worker:worker .
+USER 1000:1000
 
-# install dependancies
-RUN pip install --no-cache-dir .
-
-# run app as non-root user
-USER worker
+EXPOSE 8000
 
 CMD ["gunicorn", "--log-level", "WARNING", "--bind", "0.0.0.0:8000", "bonsai_app.wsgi:app"]

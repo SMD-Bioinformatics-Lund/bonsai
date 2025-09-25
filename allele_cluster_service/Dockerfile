@@ -41,6 +41,6 @@ COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
 
 # run app as non-root user
-USER worker
+USER 1000:1000
 
 CMD ["cluster_service"]
