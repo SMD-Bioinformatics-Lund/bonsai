@@ -31,6 +31,8 @@
 
 ### Changed
 
+- `docker-compose.dev.yml` can automatically rebuild or refresh images when developing using the `--watch` flag.
+- Dockerfiles now have multi-stage builds with dedicated development and production targets
 - Added tooltip and helper text that describes how the find similar samples dropdown works.
 - Add "add samples to group" button to the /groups/{group_id} view.
 - Similarity searches from the groups view now only search among samples from the same group.
