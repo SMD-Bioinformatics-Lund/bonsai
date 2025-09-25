@@ -8,20 +8,27 @@
 services: 
 
   frontend:
+    build: 
+      target: development
     environment:
       - FLASK_ENV=development 
       - API_INTERNAL_URL=http://api:8000
       - API_EXTERNAL_URL=http://localhost:8001
     depends_on:
       - api
-    command: "flask run --reload --debug --host 0.0.0.0"
-
+    develop:
+      watch: 
+        - path: ./frontend/setup.cfg
+          action: rebuild
+        - path: ./frontend/bonsai_app
+          target: /app/frontend/bonsai_api
+          action: sync
 
   api:
-    environment: 
-      - notification_service_api=http://notification_service:8000/
     build: 
       target: development
+    environment: 
+      - notification_service_api=http://notification_service:8000/
     develop:
       watch: 
         - path: ./api/setup.cfg
@@ -34,7 +41,6 @@ services:
         - path: ./libs/api_client/api_client
           target: /app/api_client/api_client
           action: sync
-    command: "uvicorn bonsai_api.main:app --reload --log-level info --host 0.0.0.0"
 
   minhash_service:
     build: 
@@ -81,13 +87,50 @@ services:
         - path: ./allele_cluster_service/allele_cluster_service
           target: /app/allele_cluster_service/allele_cluster_service
           action: sync
+  
+  ska_service:
+    build:
+      target: development
+    environment:
+      - log_level=debug
+    develop:
+      watch: 
+        - path: ./ska_service/setup.cfg
+          action: rebuild
+        - path: ./ska_service/ska_service
+          target: /app/ska_service/ska_service
+          action: sync
 
   notification_service:
+    build: 
+      target: development
     environment:
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
+    ports: 
+      - "8005:8000"
+    develop:
+      watch: 
+        - path: ./notification_service/pyproject.toml
+          action: rebuild
+        - path: ./notification_service/notification_service
+          target: /app/notification_service/notification_service
+          action: sync
     depends_on:
       - mailhog
+
+  audit_log_service:
+    build: 
+      target: development
+    ports: 
+      - "8004:8000"
+    develop:
+      watch:
+        - action: sync
+          path: ./audit_log_service
+          target: /app/src/
+        - action: rebuild
+          path: ./pyproject.toml
 
   mailhog:
     image: mailhog/mailhog
