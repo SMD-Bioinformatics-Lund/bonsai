@@ -2,14 +2,8 @@
 
 import logging
 
-from flask import (
-    Blueprint,
-    Response,
-    copy_current_request_context,
-    render_template,
-    request,
-    session,
-)
+from flask import (Blueprint, Response, copy_current_request_context,
+                   render_template, request, session)
 from flask_login import current_user, login_required
 
 from ...bonsai import TokenObject, get_sample_by_id

@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from uuid import uuid4
-import pytest
+
 import mongomock
+import pytest
 from fastapi.testclient import TestClient
 
-from audit_log_service.app import create_app
 from audit_log_service.api import get_repo
+from audit_log_service.app import create_app
 from audit_log_service.audit_repository import AuditTrailRepository
 from audit_log_service.core.config import Settings
 

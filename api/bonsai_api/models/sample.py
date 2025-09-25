@@ -3,15 +3,9 @@
 from typing import Optional, Union
 
 from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AmrFinderGene,
-    AmrFinderResistanceGene,
-    ElementType,
-    PredictionSoftware,
-    ResfinderGene,
-    VariantBase,
-    VirulenceGene,
-)
+from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
+                                  ElementType, PredictionSoftware,
+                                  ResfinderGene, VariantBase, VirulenceGene)
 from prp.models.species import SpeciesPrediction
 from prp.models.typing import (
     ResultLineageBase,
@@ -27,18 +21,13 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (
-    DateTimeModelMixin,
-    DBModelMixin,
-    ModifiedAtRWModel,
-    MultipleRecordsResponseModel,
-)
+from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
+                   MultipleRecordsResponseModel)
+from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
-from .metadata import MetaEntryInDb, InputMetaEntry
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
-
 
 
 class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods

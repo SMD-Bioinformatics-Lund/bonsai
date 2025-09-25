@@ -13,6 +13,7 @@ LOG = logging.getLogger(__name__)
 
 db = MongoDatabase()
 
+
 @contextmanager
 def get_db_connection() -> Generator[MongoDatabase, None, None]:
     """Set up database connection."""

@@ -1,29 +1,19 @@
 """Main entrypoint for API server."""
 
-from contextlib import asynccontextmanager
 import logging
 import logging.config as logging_config
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from bonsai_api.db.db import MongoDatabase, setup_db_connection
 from api_client.audit_log import AuditLogClient
 from api_client.notification import NotificationClient
+from bonsai_api.db.db import MongoDatabase, setup_db_connection
+from fastapi import FastAPI
 
 from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (
-    auth,
-    cluster,
-    export,
-    groups,
-    jobs,
-    locations,
-    resources,
-    root,
-    samples,
-    users,
-)
+from .routers import (auth, cluster, export, groups, jobs, locations,
+                      resources, root, samples, users)
 
 logging_config.dictConfig(
     {
@@ -46,6 +36,7 @@ logging_config.dictConfig(
 )
 LOG = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and teardown events."""
@@ -59,9 +50,13 @@ async def lifespan(app: FastAPI):
         ldap_connection.init_app()
     # setup connection to accessory services
     if settings.audit_log_service_api is not None:
-        app.state.audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+        app.state.audit_log = AuditLogClient(
+            base_url=str(settings.audit_log_service_api)
+        )
     if settings.notification_service_api is not None:
-        app.state.notification = NotificationClient(base_url=str(settings.audit_log_service_api))
+        app.state.notification = NotificationClient(
+            base_url=str(settings.audit_log_service_api)
+        )
 
     yield
     # teardown
@@ -69,7 +64,6 @@ async def lifespan(app: FastAPI):
     app.state.db = None
     if settings.use_ldap_auth:
         ldap_connection.teardown()
-
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -93,5 +87,6 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(jobs.router)
 
     return app
+
 
 app = create_app(settings)

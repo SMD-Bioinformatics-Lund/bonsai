@@ -1,5 +1,6 @@
 """Mimer api default configuration"""
 
+import os
 import re
 import os
 import ssl
@@ -58,18 +59,19 @@ class EmailConfig(BaseSettings):
 
 
 class BrackenThresholds(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
     min_fraction: float = Field(ge=0.0, le=1.0)
     min_reads: int = Field(ge=0)
 
 
 class MykrobeThresholds(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
     min_species_coverage: float = Field(ge=0.0, le=1.0)
     min_phylogenetic_group_coverage: float = Field(ge=0.0, le=1.0)
 
 
 _species_key_pattern = re.compile(r"^[a-z0-9_]+$")
+
 
 def _validate_species_keys(d: dict[str, object], method_name: str) -> None:
     for key in d.keys():
@@ -81,6 +83,7 @@ def _validate_species_keys(d: dict[str, object], method_name: str) -> None:
                 f"Use lowercase snake_case (a-z0-9_)."
             )
 
+
 def normalize_species_key(name: str) -> str:
     # Same normalization used by lookup helpers:
     # lower, spaces/hyphens to underscores; strip stray chars
@@ -90,11 +93,11 @@ def normalize_species_key(name: str) -> str:
 
 
 class SpeciesCategory(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
     bracken: dict[str, BrackenThresholds] = Field(default_factory=dict)
     mykrobe: dict[str, MykrobeThresholds] = Field(default_factory=dict)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def _validate_species_keys(self) -> "SpeciesCategory":
         _validate_species_keys(self.bracken, "bracken")
         _validate_species_keys(self.mykrobe, "mykrobe")
@@ -116,7 +119,7 @@ class SpeciesCategory(BaseModel):
 
 
 class QCConfig(BaseModel):
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
     species: SpeciesCategory
 
 
@@ -244,14 +247,17 @@ USER_ROLES = {
 }
 
 # load raw thresholds
-thresholds_file = Path(__file__).parent.joinpath("thresholds.toml")  # built in config file
-with thresholds_file.open('rb') as inpt:
+thresholds_file = Path(__file__).parent.joinpath(
+    "thresholds.toml"
+)  # built in config file
+with thresholds_file.open("rb") as inpt:
     try:
         thresholds = tomllib.load(inpt)
         thresholds_cfg = QCConfig.model_validate(thresholds)
     except ValidationError as error:
-        raise RuntimeError(f"Invalid QC thresholds in {thresholds_file}:\n{error}") from error
+        raise RuntimeError(
+            f"Invalid QC thresholds in {thresholds_file}:\n{error}"
+        ) from error
 
 
 settings = Settings()
-

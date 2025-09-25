@@ -38,7 +38,9 @@ class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-metho
     label: str = Field(..., description="Display name")
     path: str = Field(..., description="JSONpath describing how to access the data")
     type: Literal["string", "number", "date", "boolean", "list", "custom"] = "string"
-    source: Literal["static", "metadata"] = "static"  # where the columns are predefined or relate to metadata
+    source: Literal["static", "metadata"] = (
+        "static"  # where the columns are predefined or relate to metadata
+    )
     renderer: str | None = None
     visible: bool = True
     sortable: bool = True
@@ -238,7 +240,17 @@ VALID_QC_COLS = [
 ]
 
 
-DEFAULT_COLUMNS: list[str] = ['sample_btn', 'sample_id', 'sample_name', 'tags', 'assay', 'taxonomic_name', 'qc_status', 'comments', 'cdate']
+DEFAULT_COLUMNS: list[str] = [
+    "sample_btn",
+    "sample_id",
+    "sample_name",
+    "tags",
+    "assay",
+    "taxonomic_name",
+    "qc_status",
+    "comments",
+    "cdate",
+]
 
 # create combination of valid columns
 pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
@@ -247,13 +259,16 @@ qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 SCHEMA_VERSION: str = "1"
 
 
-
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
-    schema_version: str = Field(default=SCHEMA_VERSION, description="Version of the group schema.")
-    table_columns: list[SampleTableColumnDB] = Field(default=[], description="IDs of columns to display.")
-    #table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
+    schema_version: str = Field(
+        default=SCHEMA_VERSION, description="Version of the group schema."
+    )
+    table_columns: list[SampleTableColumnDB] = Field(
+        default=[], description="IDs of columns to display."
+    )
+    # table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
     validated_genes: dict[ElementType, list[str]] | None = {}
 
 
@@ -266,4 +281,6 @@ class GroupInfoDatabase(
 class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
-    table_columns: list[str] = Field(default=[], description="IDs of columns to display.")
+    table_columns: list[str] = Field(
+        default=[], description="IDs of columns to display."
+    )

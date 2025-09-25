@@ -41,9 +41,7 @@ def send_email(
             # pass context to template
             html_content = template.render(
                 sender_name=sender_name,
-                **message_obj.model_dump(
-                    exclude=["teplate_name", "content_type"]
-                )
+                **message_obj.model_dump(exclude=["teplate_name", "content_type"])
             )
             mail.set_content(html_content, subtype="html")
         conn.send_message(mail)
