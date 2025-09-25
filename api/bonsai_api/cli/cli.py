@@ -5,8 +5,12 @@ import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
 from typing import Callable
-
 import click
+
+from api_client.notification import NotificationClient, EmailCreate
+from api_client.audit_log.models import Actor, SourceType
+from api_client.audit_log import AuditLogClient
+
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES
@@ -21,9 +25,9 @@ from bonsai_api.io import sample_to_kmlims
 from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.migrate import migrate_sample_collection, migrate_group_collection, MigrationError
 from bonsai_api.config import settings
-from bonsai_api.notify import EmailApiInput, dispatch_email
 from pymongo.errors import DuplicateKeyError
 
 from .utils import EmailType, create_missing_file_report
@@ -100,9 +104,17 @@ def create_user(
         roles=[role],
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(actor=Actor(id=username, type=SourceType.USR), metadata={})
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
+        # run cli command
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_user_in_db(db, user)
+            func = create_user_in_db(db, user, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Username "{username}" is already taken') from error
@@ -128,9 +140,16 @@ def create_group(
         validated_genes=None
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(actor=Actor(id=group_id, type=SourceType.USR), metadata={})
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_group_in_db(db, group_obj)
+            func = create_group_in_db(db, group_obj, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Group with "{group_id}" exists already') from error
@@ -147,7 +166,9 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
             collection = getattr(db, f"{collection_name}_collection")
             click.secho(f"Creating index for: {collection.name}")
             for idx in indexes:
-                collection.create_index(idx["definition"], **idx["options"])
+                loop = asyncio.get_event_loop()
+                func = collection.create_index(idx["definition"], **idx["options"])
+                loop.run_until_complete(func)
 
 
 @cli.command()
@@ -269,16 +290,25 @@ def check_paths(
         if settings.notification_service_api is None:
             LOG.error("URL to notification service has not been configured, cant send report...")
         else:
-            report = EmailApiInput(
-                recipient=email_addr,
-                subject="SKA Integrity report",
-                message=output_ch.getvalue(),
-                content_type='plain'
+            notify = NotificationClient(base_url=str(settings.notification_service_api))
+            report = EmailCreate(
+                recipient=email_addr, subject="SKA Integrity report", message=output_ch.getvalue()
             )
-            dispatch_email(api_url=settings.notification_service_api, message=report)
+            notify.send_email(report)
     else:
         output.write(output_ch.getvalue())
     click.secho("Finished validating file paths", fg='green')
+
+
+@cli.command()
+def get_event():
+    """Get a events"""
+    if settings.audit_log_service_api:
+        client = AuditLogClient(base_url=str(settings.audit_log_service_api))
+        events = client.get_events()
+        click.secho(events)
+    else:
+        raise ValueError(settings.audit_log_service_api)
 
 
 @cli.command()

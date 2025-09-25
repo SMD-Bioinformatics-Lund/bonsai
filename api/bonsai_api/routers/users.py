@@ -6,18 +6,19 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
+from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
 from bonsai_api.crud.user import (
     add_samples_to_user_basket,
     create_user,
     delete_user,
-    get_current_active_user,
     get_user,
     get_users,
     remove_samples_from_user_basket,
     update_user,
 )
-from bonsai_api.db import Database, get_db
+from bonsai_api.dependencies import ApiRequestContext, get_audit_log, get_current_active_user, get_request_context, get_database
+from bonsai_api.db import Database
 from bonsai_api.models.user import SampleBasketObject, UserInputCreate, UserOutputDatabase
 
 from .shared import RouterTags
@@ -54,7 +55,7 @@ async def get_samples_in_basket(
 @router.put("/users/basket", tags=[RouterTags.USR])
 async def add_samples_to_basket(
     samples: list[SampleBasketObject],
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
     ],
@@ -80,7 +81,7 @@ async def add_samples_to_basket(
 @router.delete("/users/basket", tags=[RouterTags.USR])
 async def remove_samples_from_basket(
     sample_ids: list[str],
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
     ],
@@ -106,7 +107,7 @@ async def remove_samples_from_basket(
 @router.get("/users/{username}", tags=[RouterTags.USR])
 async def get_user_in_db(
     username: str,
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[READ_PERMISSION])
     ],
@@ -125,14 +126,16 @@ async def get_user_in_db(
 @router.delete("/users/{username}", tags=[RouterTags.USR])
 async def delete_user_from_db(
     username: str,
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
     ],
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    ctx: ApiRequestContext = Depends(get_request_context),
 ):
     """Delete user with username from the database."""
     try:
-        user = await delete_user(db, username=username)
+        user = await delete_user(db, username=username, ctx=ctx, audit=audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -150,14 +153,16 @@ async def delete_user_from_db(
 async def update_user_info(
     username: str,
     user: UserInputCreate,
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
     ],
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    ctx: ApiRequestContext = Depends(get_request_context),
 ):
     """Delete user with username from the database."""
     try:
-        user = await update_user(db, username=username, user=user)
+        user = await update_user(db, username=username, user=user, ctx=ctx, audit=audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -174,7 +179,7 @@ async def update_user_info(
 
 @router.get("/users/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.USR])
 async def get_users_in_db(
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[READ_PERMISSION])
     ],
@@ -187,14 +192,16 @@ async def get_users_in_db(
 @router.post("/users/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.USR])
 async def create_user_in_db(
     user: UserInputCreate,
-    db: Annotated[Database, Depends(get_db)],
+    db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[WRITE_PERMISSION])
     ],
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    ctx: ApiRequestContext = Depends(get_request_context),
 ) -> UserOutputDatabase:
     """Create a new user."""
     try:
-        db_obj = await create_user(db, user)
+        db_obj = await create_user(db, user, ctx=ctx, audit=audit_log)
     except DuplicateKeyError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -1,24 +1,50 @@
-FROM python:3.11.3-slim
+### Base layer ###
+FROM python:3.11.3-slim AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Create non-root user to run commands
-RUN groupadd --gid 1000 worker && useradd -g worker --uid 1000 --shell /user/sbin/nologin --create-home worker
+RUN pip install --upgrade pip
 
-# create default data directory
-RUN mkdir -p /data/signature_db && chown worker:worker /data/signature_db
+### Development layer ###
+FROM base AS development
 
-# copy project dir
-WORKDIR /home/worker/app
-COPY --chown=worker:worker minhash_service minhash_service/
-COPY --chown=worker:worker README.md pyproject.toml setup.py setup.cfg ./
+WORKDIR /app
 
-# install dependancies
-RUN pip install --no-cache-dir --editable .
+COPY libs/api_client/ ./api_client
+COPY minhash_service/ ./minhash_service
 
-# run app as non-root user
-USER worker
+RUN pip install -e ./api_client -e ./minhash_service
+
+# Dev-only: create default signature directory (owned by root in dev; bind mount in practice)
+RUN mkdir -p /data/signature_db
+
+### Build wheels ###
+FROM base AS python-builder
+
+WORKDIR /app
+COPY libs/api_client/ ./api_client
+COPY minhash_service/ ./minhash_service
+
+RUN pip wheel --wheel-dir /wheels ./api_client ./minhash_service
+
+### Production layer ###
+FROM base AS production
+
+RUN addgroup --system --gid 1000 worker && \
+    adduser --system --uid 1000 --ingroup worker --home /home/worker \
+    --shell /usr/sbin/nologin worker
+
+WORKDIR /app
+
+COPY --from=python-builder /wheels /wheels
+
+RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+
+# create default signature directory
+RUN mkdir -p /data/signature_db && chown -R 1000:1000 /data/signature_db
+
+USER 1000:1000
 
 CMD ["minhash-service", "--version"]

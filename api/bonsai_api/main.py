@@ -5,8 +5,11 @@ import logging
 import logging.config as logging_config
 
 from fastapi import FastAPI
+from bonsai_api.db.db import MongoDatabase, setup_db_connection
+from api_client.audit_log import AuditLogClient
+from api_client.notification import NotificationClient
 
-from .config import settings
+from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
 from .routers import (
@@ -46,30 +49,49 @@ LOG = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and teardown events."""
-    # setup
+    # setup database connection
+    if not settings.mongodb_uri:
+        raise RuntimeError("Database connection has not been configured")
+    db = setup_db_connection(settings.mongodb_uri, db_name=settings.database_name)
+    app.state.db = db
+    # setup ldap conneciton
     if settings.use_ldap_auth:
         ldap_connection.init_app()
+    # setup connection to accessory services
+    if settings.audit_log_service_api is not None:
+        app.state.audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+    if settings.notification_service_api is not None:
+        app.state.notification = NotificationClient(base_url=str(settings.audit_log_service_api))
+
     yield
     # teardown
+    db.close()
+    app.state.db = None
     if settings.use_ldap_auth:
         ldap_connection.teardown()
 
 
-app = FastAPI(title="Bonsai", lifespan=lifespan)
 
-# configure CORS
-configure_cors(app)
+def create_app(settings: Settings) -> FastAPI:
+    """Create Bonsai API"""
 
-# check if api authentication is disabled
-if not settings.api_authentication:
-    LOG.warning("API authentication disabled!")
-app.include_router(root.router)
-app.include_router(users.router)
-app.include_router(samples.router)
-app.include_router(groups.router)
-app.include_router(locations.router)
-app.include_router(cluster.router)
-app.include_router(export.router)
-app.include_router(resources.router)
-app.include_router(auth.router)
-app.include_router(jobs.router)
+    app = FastAPI(title="Bonsai", lifespan=lifespan)
+    # configure CORS
+    configure_cors(app)
+    # check if api authentication is disabled
+    if not settings.api_authentication:
+        LOG.warning("API authentication disabled!")
+    app.include_router(root.router)
+    app.include_router(users.router)
+    app.include_router(samples.router)
+    app.include_router(groups.router)
+    app.include_router(locations.router)
+    app.include_router(cluster.router)
+    app.include_router(export.router)
+    app.include_router(resources.router)
+    app.include_router(auth.router)
+    app.include_router(jobs.router)
+
+    return app
+
+app = create_app(settings)
