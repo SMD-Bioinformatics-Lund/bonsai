@@ -9,7 +9,7 @@ from .version import __version__
 @click.group()
 @click.version_option(version=__version__)
 def main():
-    """MinHash Service command line interface."""
+    """Notification service command line interface."""
 
 
 @main.command()
