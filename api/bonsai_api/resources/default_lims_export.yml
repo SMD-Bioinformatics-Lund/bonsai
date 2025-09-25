@@ -57,3 +57,14 @@
     - parameter_name: STREP EMM
       data_type: emm
       required: true
+- assay: streptococcus
+  fields:
+    - parameter_name: STREP ART
+      data_type: species
+      required: true
+    - parameter_name: STREP MLST
+      data_type: mlst
+      required: true
+    - parameter_name: STREP EMM
+      data_type: emm
+      required: true

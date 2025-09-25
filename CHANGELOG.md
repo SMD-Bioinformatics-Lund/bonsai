@@ -2,11 +2,22 @@
 
 ### Added
 
+
+### Fixed
+
+
+### Changed
+
+
+## [v2.1.0]
+
+### Added
+
+- Improved LIMS export function that can be customised using a export configd
+
 ### Fixed
 
 - Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
-
-### Changed
 
 ## [v2.0.0]
 
