@@ -70,6 +70,17 @@ services:
         - path: ./libs/api_client/api_client
           target: /app/api_client/api_client
           action: sync
+  
+  allele_cluster_service:
+    build: 
+      target: development
+    develop:
+      watch: 
+        - path: ./allele_cluster_service/setup.cfg
+          action: rebuild
+        - path: ./allele_cluster_service/allele_cluster_service
+          target: /app/allele_cluster_service/allele_cluster_service
+          action: sync
 
   notification_service:
     environment:

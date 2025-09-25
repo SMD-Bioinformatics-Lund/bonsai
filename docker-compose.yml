@@ -126,7 +126,8 @@ services:
   allele_cluster_service:
     container_name: allele_cluster_service
     build: 
-      context: allele_cluster_service
+      context: .
+      dockerfile: allele_cluster_service/Dockerfile
       network: host
     depends_on:
       - redis
