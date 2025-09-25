@@ -9,6 +9,8 @@ from typing import Any, Callable, Literal
 import click
 
 from api_client.notification import NotificationClient, EmailCreate
+from api_client.audit_log.models import Actor, SourceType
+from api_client.audit_log import AuditLogClient
 
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
@@ -25,6 +27,7 @@ from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
 from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.migrate import migrate_sample_collection, migrate_group_collection, MigrationError
 from bonsai_api.config import settings
 from pymongo.errors import DuplicateKeyError
@@ -103,9 +106,17 @@ def create_user(
         roles=[role],
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(actor=Actor(id=username, type=SourceType.USR), metadata={})
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
+        # run cli command
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_user_in_db(db, user)
+            func = create_user_in_db(db, user, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Username "{username}" is already taken') from error
@@ -131,9 +142,16 @@ def create_group(
         validated_genes=None
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(actor=Actor(id=group_id, type=SourceType.USR), metadata={})
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_group_in_db(db, group_obj)
+            func = create_group_in_db(db, group_obj, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Group with "{group_id}" exists already') from error
@@ -300,32 +318,15 @@ def check_paths(
 
 
 @cli.command()
-@click.option('-t', '--type', 'event_type', type=str)
-def log_event(event_type: str):
-    """Log a event"""
-    if settings.audit_log_service_api:
-        from api_client.audit_log import AuditLogClient, EventCreate
-        client = AuditLogClient(base_url=str(settings.audit_log_service_api))
-        event = EventCreate.model_validate({
-            "event_type": event_type, "source_service": "bonsai_api", 
-            "actor": {"type": "system", "id": __name__}, "subject": {"type": "system", "id": "foobar!"},
-
-        })
-        resp = client.post_event(event)
-        click.secho(f"posted event {resp}", fg="green")
-    else:
-        raise ValueError(settings.audit_log_service_api)
-
-@cli.command()
 def get_event():
     """Get a events"""
     if settings.audit_log_service_api:
-        from api_client.audit_log import AuditLogClient
         client = AuditLogClient(base_url=str(settings.audit_log_service_api))
         events = client.get_events()
         click.secho(events)
     else:
         raise ValueError(settings.audit_log_service_api)
+
 
 @cli.command()
 @click.option('-b', '--backup', 'backup_path', type=click.Path(path_type=pathlib.Path), help="Backup samples that will be modified to PATH.")

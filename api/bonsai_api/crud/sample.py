@@ -2,7 +2,7 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Sequence
 from pymongo.results import UpdateResult
 
 from pydantic import ValidationError
@@ -11,12 +11,12 @@ from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from prp.models.tags import TagList
 from prp.parse.typing import replace_cgmlst_errors
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject, EventSeverity
+from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.dependencies import ApiRequestContext
 
 from ..crud.location import get_location
@@ -207,7 +207,7 @@ async def get_samples_summary(
     db: Database,
     limit: int | None = None,
     skip: int | None = None,
-    include_samples: List[str] | None = None,
+    include_samples: list[str] | None = None,
     prediction_result: bool = True,
     qc_metrics: bool = False,
 ) -> MultipleRecordsResponseModel:
@@ -328,7 +328,7 @@ async def get_samples(
     db: Database,
     limit: int = 0,
     skip: int = 0,
-    include: List[str] | None = None,
+    include: list[str] | None = None,
 ) -> MultipleSampleRecordsResponseModel:
     """Get samples from database."""
 
@@ -373,30 +373,25 @@ async def create_sample(db: Database, sample: PipelineResult, ctx: ApiRequestCon
     except ValueError as error:
         LOG.warning("Error when creating tags... skipping. %s", error)
         tags = []
-    sample_db_fmt = SampleInCreate(
-        in_collections=[],
-        tags=tags,
-        **sample.model_dump(),
-    )
-    # store data in database
-    doc = await db.sample_collection.insert_one(
-        jsonable_encoder(sample_db_fmt, by_alias=False)
-    )
 
-    # create object representing the dataformat in database
-    inserted_id = doc.inserted_id
-    db_obj = SampleInDatabase(
-        id=str(inserted_id),
-        **sample_db_fmt.model_dump(),
-    )
-    if isinstance(audit, AuditLogClient):
-        # prepare event metadata and submit event
-        event_subject = Subject(id=sample.sample_id, type=SourceType.SYS)
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="create_sample", 
-            actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
-        audit.post_event(event)
+    event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
+    with audit_event_context(audit, "create_sample", ctx, event_subject):
+        sample_db_fmt = SampleInCreate(
+            in_collections=[],
+            tags=tags,
+            **sample.model_dump(),
+        )
+        # store data in database
+        doc = await db.sample_collection.insert_one(
+            jsonable_encoder(sample_db_fmt, by_alias=False)
+        )
 
+        # create object representing the dataformat in database
+        inserted_id = doc.inserted_id
+        db_obj = SampleInDatabase(
+            id=str(inserted_id),
+            **sample_db_fmt.model_dump(),
+        )
     return db_obj
 
 
@@ -423,9 +418,8 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_samples(db: Database, sample_ids: List[str], ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> dict[str, Any]:
+async def delete_samples(db: Database, sample_ids: list[str], ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> dict[str, Any]:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
-
     result: dict[str, Any] = {
         "sample_ids": sample_ids,
         "n_deleted": 0,
@@ -505,138 +499,91 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
 async def add_comment(
     db: Database, sample_id: str, comment: Comment, 
     ctx: ApiRequestContext, audit: AuditLogClient | None = None
-) -> List[CommentInDatabase]:
+) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
+    comments: list[CommentInDatabase] = sample.comments
     comment_id = (
         max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
     )
-    comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
-    update_obj: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {
-            "$set": {"modified_at": get_timestamp()},
-            "$push": {
-                "comments": {
-                    "$each": [comment_obj.model_dump(by_alias=False)],
-                    "$position": 0,
-                }
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    meta = {"sample_id": sample_id, "comment_id": comment_id}
+    with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
+        comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
+        update_obj: UpdateResult = await db.sample_collection.update_one(
+            {"sample_id": sample_id},
+            {
+                "$set": {"modified_at": get_timestamp()},
+                "$push": {
+                    "comments": {
+                        "$each": [comment_obj.model_dump(by_alias=False)],
+                        "$position": 0,
+                    }
+                },
             },
-        },
-    )
+        )
 
-    exc: Exception | None = None
-    if not update_obj.matched_count == 1:
-        exc = EntryNotFound(sample_id)
-    if not update_obj.modified_count == 1:
-        exc = UpdateDocumentError(sample_id)
-    # log
-    if isinstance(audit, AuditLogClient):
-        # Build event object and dispatch event to log
-        event_subject = Subject(id=sample_id, type=SourceType.USR)
-        meta: dict[str, Any] = ctx.metadata
-        severity = EventSeverity.INFO
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
 
-        if exc is not None:
-            meta['exception'] = exc
-            severity = EventSeverity.ERROR
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="create_comment", 
-            severity=severity, actor=ctx.actor, subject=event_subject, metadata=ctx.metadata)
-        audit.post_event(event)
-
-    # Raise error
-    if exc is not None:
-        raise exc
-
-    LOG.info("Added comment to %s", sample_id)
-    return [comment_obj.model_dump()] + sample.comments
+        LOG.info("Added comment to %s", sample_id)
+        comments.insert(0, comment_obj)
+    return comments
 
 
 async def hide_comment(db: Database, sample_id: str, comment_id: int, 
                        ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> bool:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
-    update_obj = await db.sample_collection.update_one(
-        {"sample_id": sample_id, "comments.id": comment_id},
-        {
-            "$set": {
-                "modified_at": get_timestamp(),
-                "comments.$.displayed": False,
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    meta: dict[str, str | int] = {"sample_id": sample_id, "comment_id": comment_id}
+    with audit_event_context(audit, "delete_comment", ctx, event_subject, meta):
+        update_obj = await db.sample_collection.update_one(
+            {"sample_id": sample_id, "comments.id": comment_id},
+            {
+                "$set": {
+                    "modified_at": get_timestamp(),
+                    "comments.$.displayed": False,
+                },
             },
-        },
-    )
-    exc: Exception | None = None
-    if not update_obj.matched_count == 1:
-        exc = EntryNotFound(sample_id)
-    if not update_obj.modified_count == 1:
-        exc = UpdateDocumentError(sample_id)
+        )
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
 
-    if isinstance(audit, AuditLogClient):
-        # prepare event metadata and submit event
-        event_subject = Subject(id=sample_id, type=SourceType.USR)
-        meta: dict[str, Any] = ctx.metadata
-        severity = EventSeverity.INFO
-        if exc is not None:
-            meta['exception'] = exc
-            severity = EventSeverity.ERROR
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="delete_comment", 
-            severity=severity, actor=ctx.actor, subject=event_subject, metadata=meta)
-        audit.post_event(event)
-
-    # Raise error
-    if exc is not None:
-        raise exc
-
-    LOG.info("Hide comment %s for %s", comment_id, sample_id)
-    # update comments in return object
+        LOG.info("Hide comment %s for %s", comment_id, sample_id)
     return True
 
 
 async def update_sample_qc_classification(
     db: Database, sample_id: str, classification: QcClassification,
     ctx: ApiRequestContext, audit: AuditLogClient | None = None
-) -> bool:
+) -> QcClassification:
     """Update the quality control classification of a sample"""
 
     query = {"sample_id": sample_id}
-    update_obj: UpdateResult = await db.sample_collection.update_one(
-        query,
-        {
-            "$set": {
-                "modified_at": get_timestamp(),
-                "qc_status": jsonable_encoder(classification, by_alias=False),
-            }
-        },
-    )
-    # verify successful update
-    # if sample is not fund
-    exc: Exception | None = None
-    if not update_obj.matched_count == 1:
-        exc = EntryNotFound(sample_id)
-    # if not modifed
-    if not update_obj.modified_count == 1:
-        exc = UpdateDocumentError(sample_id)
-
-    if isinstance(audit, AuditLogClient):
-        # prepare event metadata and submit event
-        event_subject = Subject(id=sample_id, type=SourceType.USR)
-        meta: dict[str, Any] = ctx.metadata
-        severity = EventSeverity.INFO
-        if exc is not None:
-            meta['exception'] = exc
-            severity = EventSeverity.ERROR
-        event = EventCreate(
-            source_service=bonsai_api.__name__, event_type="update_qc", 
-            severity=severity, actor=ctx.actor, subject=event_subject, metadata=meta)
-        audit.post_event(event)
-
-    # Raise error
-    if exc is not None:
-        raise exc
-
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    with audit_event_context(audit, "update_qc", ctx, event_subject):
+        update_obj: UpdateResult = await db.sample_collection.update_one(
+            query,
+            {
+                "$set": {
+                    "modified_at": get_timestamp(),
+                    "qc_status": jsonable_encoder(classification, by_alias=False),
+                }
+            },
+        )
+        # verify successful update
+        # if sample is not fund
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        # if not modifed
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
     return classification
 
 
