@@ -4,33 +4,7 @@ import logging
 import pathlib
 from typing import Annotated, Any, Union, cast
 
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    Header,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-)
-from fastapi.responses import FileResponse
-from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantType,
-    VirulenceMethodIndex,
-)
-from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
-from pydantic import BaseModel, Field, ValidationError, model_validator
-from pymongo.errors import DuplicateKeyError
-
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.dependencies import get_audit_log, get_request_context
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -38,38 +12,41 @@ from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import get_sample, get_samples_summary
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
-from bonsai_api.crud.sample import (
-    update_sample_qc_classification,
-    update_variant_annotation_for_sample,
-)
-from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.crud.sample import (update_sample_qc_classification,
+                                    update_variant_annotation_for_sample)
 from bonsai_api.db import Database
-from bonsai_api.io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
+from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
+                                     get_database, get_request_context)
+from bonsai_api.io import (InvalidRangeError, RangeOutOfBoundsError,
+                           is_file_readable, send_partial_file)
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.cluster import TypingMethod
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.location import LocationOutputDatabase
-from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
 from bonsai_api.models.metadata import InputMetaEntry
+from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.sample import (Comment, CommentInDatabase,
+                                      SampleInCreate, SampleInDatabase)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    include_in_analysis,
-    exclude_from_analysis,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-    schedule_remove_genome_signature_from_index,
-)
+    SubmittedJob, exclude_from_analysis, include_in_analysis,
+    schedule_add_genome_signature, schedule_add_genome_signature_to_index,
+    schedule_find_similar_and_cluster, schedule_find_similar_samples,
+    schedule_remove_genome_signature_from_index)
 from bonsai_api.utils import format_error_message
-from .shared import SAMPLE_ID_PATH, RouterTags, action_from_qc_classification, parse_signature_json
+from fastapi import (APIRouter, Body, Depends, File, Header, HTTPException,
+                     Path, Query, Security, status)
+from fastapi.responses import FileResponse
+from prp.models import PipelineResult
+from prp.models.phenotype import (AMRMethodIndex, StressMethodIndex,
+                                  VariantType, VirulenceMethodIndex)
+from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
+from pydantic import BaseModel, Field, ValidationError, model_validator
+from pymongo.errors import DuplicateKeyError
+
+from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
+                     parse_signature_json)
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -99,11 +76,11 @@ UPDATE_PERMISSION = "samples:update"
 class ApiGetSamplesDetailsInput(BaseModel):
     """Input parameters for getting sample details."""
 
-    limit: int | None = Field(default=None, gt=-1, title="Limit the output to x samples")
-    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
-    prediction_result: bool = Field(
-        default=True, title="Include prediction results"
+    limit: int | None = Field(
+        default=None, gt=-1, title="Limit the output to x samples"
     )
+    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
+    prediction_result: bool = Field(default=True, title="Include prediction results")
     qc_metrics: bool = Field(default=False, title="Include QC metrics")
     sid: list[str] | None = Field(
         None, description="Optional limit query to samples ids"
@@ -169,7 +146,9 @@ async def delete_many_samples(
 ):
     """Delete multiple samples from the database."""
     try:
-        result = await delete_samples_from_db(db, sample_ids, ctx=req_ctx, audit=audit_log)
+        result = await delete_samples_from_db(
+            db, sample_ids, ctx=req_ctx, audit=audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -178,7 +157,9 @@ async def delete_many_samples(
     return result
 
 
-@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE])
+@router.get(
+    "/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE]
+)
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
     db: Database = Depends(get_database),
@@ -206,7 +187,9 @@ class UpdateSampleInputModel(BaseModel):
     ]
 
 
-@router.put("/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase)
+@router.put(
+    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase
+)
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
@@ -249,12 +232,17 @@ async def delete_sample(
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
 async def add_sample_metadata(
-    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_database)) -> bool:
+    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_database)
+) -> bool:
     """Add metadata to an existing sample."""
     try:
-        resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
+        resp = await add_metadata_to_sample(
+            sample_id=sample_id, metadata=metadata, db=db
+        )
     except ValueError as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err)
+        )
     except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
     return resp
@@ -274,7 +262,7 @@ async def create_genome_signatures_sample(
         raise HTTPException(
             status_code=404, detail=format_error_message(error)
         ) from error
-    
+
     # abort if signature has already been added
     sig_exist_err = HTTPException(
         status_code=409, detail="Signature is already added to sample"
@@ -290,7 +278,10 @@ async def create_genome_signatures_sample(
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
-    sample_obj: dict[str, Any] = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
+    sample_obj: dict[str, Any] = {
+        **sample.model_dump(),
+        **{"genome_signature": add_sig_job.id},
+    }
     upd_sample_data = SampleInCreate.model_validate(sample_obj)
     await crud_update_sample(db, upd_sample_data)
 
@@ -474,7 +465,7 @@ async def add_vcf_to_sample(
 async def update_qc_status(
     classification: QcClassification,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_database), 
+    db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -487,7 +478,7 @@ async def update_qc_status(
         sample = await get_sample(db, sample_id)
         if sample.qc_status == classification:
             return True
-        
+
         # update
         status_obj: bool = await update_sample_qc_classification(
             db, sample_id, classification, ctx=req_ctx, audit=audit_log
@@ -559,7 +550,9 @@ async def post_comment(
 ) -> CommentsObj:
     """Add a commet to a sample."""
     try:
-        comment_obj: CommentsObj = await add_comment(db, sample_id, comment, req_ctx, audit_log)
+        comment_obj: CommentsObj = await add_comment(
+            db, sample_id, comment, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -584,7 +577,9 @@ async def hide_comment(
 ) -> bool:
     """Hide a comment in a sample from users."""
     try:
-        resp: bool = await hide_comment_for_sample(db, sample_id, comment_id, req_ctx, audit_log)
+        resp: bool = await hide_comment_for_sample(
+            db, sample_id, comment_id, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -625,23 +620,29 @@ class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
     limit: int | None = Field(default=10, ge=1, title="Limit the output to x samples")
     similarity: float = Field(default=0.5, gt=0, le=1, title="Similarity threshold")
     cluster: bool = Field(
-        default=False, title="Cluster the similar", 
-        description="If the samples found with similar search should be clustered.")
+        default=False,
+        title="Cluster the similar",
+        description="If the samples found with similar search should be clustered.",
+    )
     narrow_to_sample_ids: list[str] | None = Field(
-        default=None, 
+        default=None,
         description="Restrict the similarity search to these sample IDs. If None, search across all samples.",
-        examples=[["sample_id"]]
+        examples=[["sample_id"]],
     )
     typing_method: TypingMethod | None = Field(
         default=None, title="Cluster using a specific typing method"
     )
-    cluster_method: ClusterMethod | None = Field(default=None, title="Cluster the similar")
+    cluster_method: ClusterMethod | None = Field(
+        default=None, title="Cluster the similar"
+    )
 
     @model_validator(mode="after")
     def validate_cluster_settings(self):
         """Validate that cluster settings are defined if cluster=True."""
         if self.cluster and (self.cluster_method is None or self.typing_method is None):
-            raise ValidationError("'cluster_method' and 'typing_method' must be set if 'cluster' is True.")
+            raise ValidationError(
+                "'cluster_method' and 'typing_method' must be set if 'cluster' is True."
+            )
         return self
 
 
@@ -684,7 +685,11 @@ async def find_similar_samples(
                 narrow_to_sample_ids=body.narrow_to_sample_ids,
             )
     except ConnectionError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
     except NotImplementedError as error:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)
+        ) from error
     return submission_info

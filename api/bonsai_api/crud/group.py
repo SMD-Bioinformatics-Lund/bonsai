@@ -3,16 +3,16 @@
 import logging
 from typing import Any
 
-from prp.models.typing import TypingMethod
-from pymongo import ASCENDING
-
 from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import Subject, SourceType
-from bonsai_api.models.context import ApiRequestContext
+from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase
 from bonsai_api.models.sample import SampleSummary
 from bonsai_api.utils import get_timestamp
+from prp.models.typing import TypingMethod
+from pymongo import ASCENDING
+
 from .errors import EntryNotFound, UpdateDocumentError
 from .tags import compute_phenotype_tags
 from .utils import audit_event_context
@@ -92,7 +92,12 @@ async def get_group(
     raise EntryNotFound(group_id)
 
 
-async def create_group(db: Database, group_record: GroupInCreate, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> GroupInfoDatabase:
+async def create_group(
+    db: Database,
+    group_record: GroupInCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> GroupInfoDatabase:
     """Create a new group document."""
     # add to db
     event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
@@ -106,7 +111,12 @@ async def create_group(db: Database, group_record: GroupInCreate, ctx: ApiReques
     return db_obj
 
 
-async def delete_group(db: Database, group_id: str, ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> int:
+async def delete_group(
+    db: Database,
+    group_id: str,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> int:
     """Delete group with group_id from database."""
     event_subject = Subject(id=group_id, type=SourceType.USR)
     with audit_event_context(audit, "delete_group", ctx, event_subject):
@@ -117,7 +127,11 @@ async def delete_group(db: Database, group_id: str, ctx: ApiRequestContext, audi
 
 
 async def update_group(
-    db: Database, group_id: str, group_record: GroupInCreate, ctx: ApiRequestContext, audit: AuditLogClient | None = None
+    db: Database,
+    group_id: str,
+    group_record: GroupInCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
 ) -> GroupInfoDatabase:
     """Update information of group."""
     # update info in database
@@ -145,7 +159,13 @@ async def update_image(db: Database, image: GroupInCreate) -> GroupInfoDatabase:
     return db_obj
 
 
-async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str],  ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> None:
+async def add_samples_to_group(
+    db: Database,
+    group_id: str,
+    sample_ids: list[str],
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> None:
     """Create a new collection document."""
     event_subject = Subject(id=group_id, type=SourceType.USR)
     meta = {"sample_ids": sample_ids}
@@ -155,7 +175,7 @@ async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str
             {
                 "$set": {"modified_at": get_timestamp()},
                 "$addToSet": {
-                    "included_samples": { "$each": sample_ids },
+                    "included_samples": {"$each": sample_ids},
                 },
             },
         )
@@ -165,7 +185,13 @@ async def add_samples_to_group(db: Database, group_id: str, sample_ids: list[str
             raise UpdateDocumentError(group_id)
 
 
-async def remove_samples_from_group(db: Database, group_id: str, sample_ids: list[str],  ctx: ApiRequestContext, audit: AuditLogClient | None = None) -> None:
+async def remove_samples_from_group(
+    db: Database,
+    group_id: str,
+    sample_ids: list[str],
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> None:
     """Create a new collection document."""
     event_subject = Subject(id=group_id, type=SourceType.USR)
     meta = {"sample_ids": sample_ids}
@@ -175,7 +201,7 @@ async def remove_samples_from_group(db: Database, group_id: str, sample_ids: lis
             {
                 "$set": {"modified_at": get_timestamp()},
                 "$pull": {
-                    "included_samples": {"$in" :sample_ids},
+                    "included_samples": {"$in": sample_ids},
                 },
             },
         )

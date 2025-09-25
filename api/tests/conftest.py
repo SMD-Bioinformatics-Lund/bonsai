@@ -2,6 +2,7 @@ import json
 from contextlib import contextmanager
 import stat
 import textwrap
+from contextlib import contextmanager
 from typing import Generator
 
 import pytest
@@ -13,7 +14,8 @@ from bonsai_api.main import app
 from bonsai_api.models.sample import PipelineResult, SampleInDatabase
 from fastapi.testclient import TestClient
 from mongomock_motor import AsyncMongoMockClient
-from prp.models.species import BrackenSpeciesPrediction, MykrobeSpeciesPrediction
+from prp.models.species import (BrackenSpeciesPrediction,
+                                MykrobeSpeciesPrediction)
 
 from .data import *
 
@@ -99,7 +101,8 @@ def fastapi_client(sample_database):
 
 @pytest.fixture
 def valid_qc_threshold_toml() -> str:
-    return textwrap.dedent("""
+    return textwrap.dedent(
+        """
         [species.bracken.staphylococcus_aureus]
         min_fraction = 0.6
         min_reads = 10000
@@ -115,7 +118,8 @@ def valid_qc_threshold_toml() -> str:
         [species.mykrobe.default]
         min_species_coverage = 0.8
         min_phylogenetic_group_coverage = 0.8
-    """)
+    """
+    )
 
 
 @pytest.fixture

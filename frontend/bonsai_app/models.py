@@ -40,6 +40,7 @@ class TableColumn(BaseModel):
 
 TableCell = dict[str, Any]
 
+
 class TableData(BaseModel):
     """Data structure for tabular data."""
 

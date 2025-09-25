@@ -8,12 +8,8 @@ from fastapi import APIRouter, Header, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
 from ..config import settings
-from ..io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
+from ..io import (InvalidRangeError, RangeOutOfBoundsError, is_file_readable,
+                  send_partial_file)
 from ..models.antibiotics import ANTIBIOTICS
 from ..models.qc import VARIANT_REJECTION_REASONS
 

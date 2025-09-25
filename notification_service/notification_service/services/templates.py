@@ -4,8 +4,8 @@ import logging
 from pathlib import Path
 from typing import Sequence
 
-from jinja2 import ChoiceLoader, Environment, FileSystemLoader, PackageLoader, Template, TemplateNotFound, select_autoescape
-
+from jinja2 import (ChoiceLoader, Environment, FileSystemLoader, PackageLoader,
+                    Template, TemplateNotFound, select_autoescape)
 
 LOG = logging.getLogger(__name__)
 
@@ -19,7 +19,9 @@ def _make_loader(custom_template_dir: Path | None = None) -> ChoiceLoader:
 
     if custom_template_dir is not None:
         if not custom_template_dir.exists():
-            LOG.error("Custom template directory does not exist: %s", custom_template_dir)
+            LOG.error(
+                "Custom template directory does not exist: %s", custom_template_dir
+            )
         loaders.append(FileSystemLoader(str(custom_template_dir)))
 
     # add default directory
@@ -31,11 +33,16 @@ class TemplateRepository:
     """Load jinja template with precedence order:
         1. custom templates (if provided)
         2. built in templates (notificatoin_service/templates)
-    
+
     If a requested template is not found it will fallback to default_template.
     """
 
-    def __init__(self, custom_template_dir: Path, auto_reload: bool = True, default_template: str = "default.html") -> None:
+    def __init__(
+        self,
+        custom_template_dir: Path,
+        auto_reload: bool = True,
+        default_template: str = "default.html",
+    ) -> None:
         """Setup jinja2 template environment."""
 
         self._template_dir: Path = custom_template_dir
@@ -55,7 +62,7 @@ class TemplateRepository:
             auto_reload=auto_reload,
             enable_async=False,  # flip to True if you plan to use async rendering
         )
-    
+
     @property
     def search_paths(self) -> Sequence[str]:
         """Return the paths that are searched for templates."""
@@ -68,21 +75,25 @@ class TemplateRepository:
 
     def get_template(self, name: str | None = None) -> Template:
         """Get template named `name`. If name is None use the `default_template`.
-        
+
         If the template `name` does not exist fallback to `default_template`.
         """
         requested: str = self._default_template if name is None else name
         try:
             return self._env.get_template(requested)
         except TemplateNotFound as first_exec:
-            LOG.warning("Template '%s' not found. Will try default '%s'.", requested, self._default_template)
+            LOG.warning(
+                "Template '%s' not found. Will try default '%s'.",
+                requested,
+                self._default_template,
+            )
 
             # dont try if the default template already have been requested
             if requested != self._default_template:
                 try:
                     return self._env.get_template(self._default_template)
                 except TemplateNotFound:
-                    pass # fall through to final error
+                    pass  # fall through to final error
 
             all_templates = sorted(self.list_templates())
 
@@ -92,7 +103,7 @@ class TemplateRepository:
                 f"Searched in: {', '.join(self.search_paths)}. "
                 f"Available: {', '.join(all_templates) if all_templates else 'none'}."
             ) from first_exec
-    
+
     def list_templates(self) -> list[str]:
         """List all templates in environment."""
         return self._env.list_templates()

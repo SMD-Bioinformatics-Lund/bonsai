@@ -2,19 +2,17 @@
 
 import logging
 from typing import Annotated, Generator
-from fastapi import Depends, Request, Security, HTTPException
-from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-from fastapi.security import SecurityScopes
-from bonsai_api.crud.user import get_user_by_token
-from bonsai_api.config import settings
-
-from bonsai_api.db.db import MongoDatabase
-from bonsai_api.models.user import UserOutputDatabase
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.db import Database
 
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
+from bonsai_api.config import settings
+from bonsai_api.crud.user import get_user_by_token
+from bonsai_api.db import Database
+from bonsai_api.db.db import MongoDatabase
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.user import UserOutputDatabase
+from fastapi import Depends, HTTPException, Request, Security
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 
 LOG = logging.getLogger(__name__)
 
@@ -23,7 +21,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
 
 def get_audit_log(request: Request) -> AuditLogClient | None:
     """Get audit log instance from API state.
-    
+
     Return None if audit log has not been setup"""
     if hasattr(request.app.state, "audit_log"):
         return request.app.state.audit_log
@@ -35,13 +33,13 @@ def get_database(request: Request) -> Generator[MongoDatabase, None, None]:
     if not hasattr(request.app.state, "db"):
         raise RuntimeError("The database was not found in application state.")
     return request.app.state.db
-    
+
 
 async def get_current_user(
-        security_scopes: SecurityScopes,
-        token: Annotated[str, Depends(oauth2_scheme)],
-        db: Database = Depends(get_database),
-        ):
+    security_scopes: SecurityScopes,
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Database = Depends(get_database),
+):
     """Look up logged in user from token."""
 
     return await get_user_by_token(security_scopes, token, db)
@@ -60,7 +58,9 @@ async def get_current_active_user(
     return current_user
 
 
-async def get_request_context(request: Request, user: UserOutputDatabase | None = Depends(get_current_active_user)):
+async def get_request_context(
+    request: Request, user: UserOutputDatabase | None = Depends(get_current_active_user)
+):
     """Get the context of a request."""
     req_id = request.headers.get("X-Request-ID")
     client_ip = request.client.host if request.client else None
@@ -73,6 +73,5 @@ async def get_request_context(request: Request, user: UserOutputDatabase | None 
         meta["client_ip"] = client_ip
 
     return ApiRequestContext(
-        actor = Actor(type=SourceType.USR, id=actor_id),
-        metadata = meta
+        actor=Actor(type=SourceType.USR, id=actor_id), metadata=meta
     )

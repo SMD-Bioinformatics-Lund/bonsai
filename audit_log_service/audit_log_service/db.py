@@ -3,11 +3,11 @@
 import logging
 from typing import Any
 
+from fastapi import Request
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.errors import PyMongoError
-from fastapi import Request
 
 from .core.config import Settings
 
@@ -16,9 +16,11 @@ LOG = logging.getLogger(__name__)
 
 def get_mongo_connection(settings: Settings) -> MongoClient[Any]:
     """Get mongodb client."""
-    
+
     LOG.info("Creating MongoClient", extra={"appname": settings.service_name})
-    client: MongoClient[Any] = MongoClient(settings.mongo.uri, appname=settings.service_name)
+    client: MongoClient[Any] = MongoClient(
+        settings.mongo.uri, appname=settings.service_name
+    )
 
     # test if client is reachable
     try:

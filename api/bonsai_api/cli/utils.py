@@ -5,9 +5,9 @@ from csv import DictWriter
 from io import StringIO, TextIOWrapper
 
 import click
+from bonsai_api.db.verify import MissingFile
 from email_validator import EmailNotValidError
 from pydantic import validate_email
-from bonsai_api.db.verify import MissingFile
 
 LOG = logging.getLogger(__name__)
 

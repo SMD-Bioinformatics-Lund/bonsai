@@ -3,7 +3,8 @@
 from minhash_service.audit import AuditTrailRepository
 from minhash_service.core.config import cnf
 from minhash_service.db import MongoDB
-from minhash_service.integrity.report_repository import IntegrityReportRepository
+from minhash_service.integrity.report_repository import \
+    IntegrityReportRepository
 from minhash_service.signatures.repository import SignatureRepository
 
 
