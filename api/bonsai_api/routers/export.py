@@ -1,14 +1,13 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
-from bonsai_api.dependencies import get_current_active_user
-from ..crud.sample import EntryNotFound, get_sample
-from ..db import Database, get_db
-from ..io import sample_to_kmlims
-from ..models.sample import SAMPLE_ID_PATTERN
-from ..models.user import UserOutputDatabase
+from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.crud.sample import EntryNotFound, get_sample
+from bonsai_api.db import Database
+from bonsai_api.io import sample_to_kmlims
+from bonsai_api.models.user import UserOutputDatabase
 from .shared import SAMPLE_ID_PATH
 
 LOG = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ UPDATE_PERMISSION = "samples:update"
 )
 async def export_to_lims(
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
