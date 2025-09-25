@@ -16,6 +16,9 @@ COPY notification_service/ ./notification_service
 
 RUN pip install --editable ./notification_service
 
+# create directory for custom templates
+RUN mkdir -p /data/templates
+
 CMD ["uvicorn", "notification_service.main:create_api_app", "--reload", "--log-level", "debug", "--host", "0.0.0.0"]
 
 ### Build python deps ###
