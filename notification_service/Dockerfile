@@ -41,7 +41,7 @@ WORKDIR /app
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels notification_service && rm -rf /wheels
 
 # create custom template directory
 RUN mkdir -p /data/templates && chown 1000:1000 /data/templates
