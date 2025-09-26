@@ -12,12 +12,11 @@ WORKDIR /app
 ### Build javascript ###
 FROM node:lts-alpine AS node-builder
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package.json package-lock.json webpack.config.cjs tsconfig.json ./
-COPY web web
+COPY frontend/ ./frontend
 
-RUN npm install && npm run build
+RUN cd frontend && npm install && npm run build
 
 ### Development layer ###
 FROM base AS development
@@ -47,10 +46,10 @@ RUN addgroup --system --gid 1000 worker && \
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels bonsai_app && rm -rf /wheels
 
 # Copy built JavaScript
-COPY --from=node-builder /usr/src/app/build/*/bonsai.min.* bonsai_app/blueprints/public/static/
+COPY --from=node-builder /app/frontend/build/*/bonsai.min.* bonsai_app/blueprints/public/static/
 
 USER 1000:1000
 
