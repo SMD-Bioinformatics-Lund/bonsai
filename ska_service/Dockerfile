@@ -39,6 +39,13 @@ RUN mkdir -p /data/index_files
 
 CMD ["ska_service"]
 
+### Build python deps ###
+FROM base AS python-builder
+
+COPY ska_service/ ./ska_service
+
+RUN pip wheel --wheel-dir /wheels ./ska_service
+
 ### Production layer ###
 FROM base AS production
 
@@ -52,7 +59,7 @@ COPY --from=builder /usr/local/cargo/bin/ska /usr/local/bin/ska
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels ska_service && rm -rf /wheels
 
 # create default data directory
 RUN mkdir -p /data/index_files && chown -R 1000:1000 /data/index_files

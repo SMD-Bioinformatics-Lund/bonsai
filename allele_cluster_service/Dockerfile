@@ -9,6 +9,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+### Build python deps ###
+FROM base AS python-builder
+
+COPY allele_cluster_service/ ./allele_cluster_service
+
+RUN pip wheel --wheel-dir /wheels ./allele_cluster_service
+
 ### Development layer ###
 FROM base AS development
 
@@ -17,13 +24,6 @@ COPY allele_cluster_service/ ./allele_cluster_service
 RUN pip install --editable ./allele_cluster_service
 
 CMD ["cluster_service"]
-
-### Build python deps ###
-FROM base AS python-builder
-
-COPY allele_cluster_service/ ./allele_cluster_service
-
-RUN pip wheel --wheel-dir /wheels ./allele_cluster_service
 
 ### Production layer ###
 FROM base AS production
@@ -35,7 +35,7 @@ RUN addgroup --system --gid 1000 worker && \
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels allele_cluster_service && rm -rf /wheels
 
 # run app as non-root user
 USER 1000:1000
