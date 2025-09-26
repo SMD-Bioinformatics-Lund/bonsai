@@ -2,15 +2,15 @@
 FROM python:3.11.3-slim AS base
 
 # Set build variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
-RUN pip install --upgrade pip
+WORKDIR /app
 
 ### Development layer ###
 FROM base AS development
-
-WORKDIR /app
 
 COPY libs/api_client/ ./api_client
 COPY minhash_service/ ./minhash_service
@@ -23,7 +23,6 @@ RUN mkdir -p /data/signature_db
 ### Build wheels ###
 FROM base AS python-builder
 
-WORKDIR /app
 COPY libs/api_client/ ./api_client
 COPY minhash_service/ ./minhash_service
 
@@ -35,8 +34,6 @@ FROM base AS production
 RUN addgroup --system --gid 1000 worker && \
     adduser --system --uid 1000 --ingroup worker --home /home/worker \
     --shell /usr/sbin/nologin worker
-
-WORKDIR /app
 
 COPY --from=python-builder /wheels /wheels
 
