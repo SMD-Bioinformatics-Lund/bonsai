@@ -40,7 +40,7 @@ RUN addgroup --system --gid 1000 worker && \
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels audit_log_service && rm -rf /wheels
 
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
   CMD curl --fail http://localhost:8000/
