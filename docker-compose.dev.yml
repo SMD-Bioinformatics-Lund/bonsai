@@ -34,7 +34,7 @@ services:
         - path: ./api/setup.cfg
           action: rebuild
         - path: ./api/bonsai_api
-          target: /app/bonsai_api/bonsai_api
+          target: /app/api/bonsai_api
           action: sync
         - path: ./libs/api_client/pyproject.toml
           action: rebuild
@@ -133,11 +133,41 @@ services:
           path: ./pyproject.toml
 
   mailhog:
-    image: mailhog/mailhog
+    image: mailhog/mailhog:latest
     logging:
       driver: 'none'  # disable saving logs
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
+    networks:
+      - bonsai-net
+
+  seed:
+    build: 
+      context: .
+      dockerfile: api/Dockerfile
+      network: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    volumes:
+      - ./scripts/seed_db.sh:/seed_db.sh:ro
+    command: "bash /seed_db.sh"
+    restart: no
+    networks:
+      - bonsai-net
+  
+  db_upload:
+    container_name: e2e-tests
+    build: 
+      context: e2e_tests
+      network: host
+    volumes:
+     - ./scripts/upload_sample.py:/app/upload_sample.py:ro
+     - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
+    command: bash /app/upload_test_samples.sh
+    restart: no
     networks:
       - bonsai-net
