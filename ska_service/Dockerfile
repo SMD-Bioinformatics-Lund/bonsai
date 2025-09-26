@@ -5,7 +5,7 @@ FROM python:3.11.3-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-RUN pip install --no-cache --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 
 ### Build SKA2 ###
 FROM rust:1.82-bullseye AS builder
