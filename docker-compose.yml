@@ -13,7 +13,7 @@ services:
       start_period: 30s
     networks:
       - bonsai-net
-    restart: allways
+    restart: always
 
   redis:
     container_name: redis
@@ -26,7 +26,7 @@ services:
       start_period: 30s
     networks:
       - bonsai-net
-    restart: allways
+    restart: always
 
   frontend:
     container_name: frontend
