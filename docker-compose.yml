@@ -13,6 +13,7 @@ services:
       start_period: 30s
     networks:
       - bonsai-net
+    restart: allways
 
   redis:
     container_name: redis
@@ -23,6 +24,25 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    networks:
+      - bonsai-net
+    restart: allways
+
+  frontend:
+    container_name: frontend
+    build: 
+      context: .
+      dockerfile: frontend/Dockerfile
+      network: host
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: 
+      - "8000:8000"
+    environment:
+      - FLASK_APP=bonsai_app.app:create_app
+      - TZ=Europe/Stockholm
+    restart: unless-stopped
     networks:
       - bonsai-net
 
@@ -44,24 +64,7 @@ services:
       - ALLOWED_ORIGINS=["*"]
       - DB_HOST=mongodb
       - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
-    networks:
-      - bonsai-net
-
-  frontend:
-    container_name: frontend
-    build: 
-      context: .
-      dockerfile: frontend/Dockerfile
-      network: host
-    depends_on:
-      api:
-        condition: service_healthy
-        restart: true
-    ports: 
-      - "8000:8000"
-    environment:
-      - FLASK_APP=bonsai_app.app:create_app
-      - TZ=Europe/Stockholm
+    restart: unless-stopped
     networks:
       - bonsai-net
 
@@ -71,6 +74,7 @@ services:
       dockerfile: notification_service/Dockerfile
       network: host
     scale: 1
+    restart: unless-stopped
     networks:
       - bonsai-net
 
@@ -82,6 +86,7 @@ services:
     scale: 1
     depends_on:
       - mongodb
+    restart: unless-stopped
     networks:
       - bonsai-net
 
@@ -96,6 +101,7 @@ services:
       - minhash_cron_service
       - notification_service
     scale: 1
+    restart: unless-stopped
     networks:
       - bonsai-net
     command: minhash-service run-minhash-worker
@@ -108,6 +114,7 @@ services:
     depends_on:
       - redis
     scale: 1
+    restart: unless-stopped
     networks:
       - bonsai-net
     command: minhash-service run-cron-scheduler
@@ -120,6 +127,7 @@ services:
       network: host
     depends_on:
       - redis
+    restart: unless-stopped
     networks:
       - bonsai-net
 
@@ -131,6 +139,7 @@ services:
       network: host
     depends_on:
       - redis
+    restart: unless-stopped
     networks:
       - bonsai-net
 
