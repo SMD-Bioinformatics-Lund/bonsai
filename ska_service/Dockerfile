@@ -2,10 +2,12 @@
 FROM python:3.11.3-slim AS base
 
 # Set build variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
-RUN pip install --no-cache-dir --upgrade pip
+WORKDIR /app
 
 ### Build SKA2 ###
 FROM rust:1.82-bullseye AS builder
@@ -24,8 +26,6 @@ RUN \
 
 ### Development layer ###
 FROM base AS development
-
-WORKDIR /app
 
 COPY ska_service/ ./ska_service
 
@@ -49,9 +49,6 @@ RUN addgroup --system --gid 1000 worker && \
 
 # copy ska2 binaries
 COPY --from=builder /usr/local/cargo/bin/ska /usr/local/bin/ska
-
-# Set working directory
-WORKDIR /app
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
