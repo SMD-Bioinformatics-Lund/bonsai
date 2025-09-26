@@ -37,7 +37,7 @@ RUN addgroup --system --gid 1000 worker && \
 
 COPY --from=python-builder /wheels /wheels
 
-RUN pip install --no-cache-dir /wheels/* && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels minhash_service && rm -rf /wheels
 
 # create default signature directory
 RUN mkdir -p /data/signature_db && chown -R 1000:1000 /data/signature_db
