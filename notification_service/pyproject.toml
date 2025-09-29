@@ -11,8 +11,6 @@ classifiers = [
     "Programming Language :: Python :: 3"
 ]
 dependencies = [
-    "setuptools",
-    "wheel",
     "redis",
     "pydantic-settings",
     "fastapi[all]==0.115.0",
@@ -30,12 +28,23 @@ dev = [
 ]
 
 [project.scripts]
-notification-service = "email_notification_service.cli:main"
+notification-service = "bonsai_notification.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bonsai_notification"]
+
+[tool.setuptools.package-data]
+bonsai_notification = [
+    "templates/*.html"
+]
 
 [tool.setuptools.dynamic]
-version = {attr = "notification_service.__version__"}
+version = {attr = "bonsai_notification.version.__version__"}
