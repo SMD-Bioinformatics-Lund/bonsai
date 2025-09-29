@@ -164,6 +164,11 @@ services:
     build: 
       context: e2e_tests
       network: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     volumes:
      - ./scripts/upload_sample.py:/app/upload_sample.py:ro
      - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
