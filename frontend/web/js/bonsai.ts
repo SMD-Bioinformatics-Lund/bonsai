@@ -216,8 +216,7 @@ export async function initSampleView(
     );
   }
 
-  const newick = await findAndClusterSimilarSamples(sampleId, api);
-  return newick
+  await findAndClusterSimilarSamples(sampleId, api);
 }
 
 declare global {
