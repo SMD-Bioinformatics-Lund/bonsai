@@ -48,23 +48,23 @@
         antibiotic_name: levofloxacin
 - assay: spyogenes
   fields:
-    - parameter_name: STREP ART
+    - parameter_name: art
       data_type: species
       required: true
-    - parameter_name: STREP MLST
+    - parameter_name: mlst
       data_type: mlst
       required: true
-    - parameter_name: STREP EMM
+    - parameter_name: emm
       data_type: emm
       required: true
 - assay: streptococcus
   fields:
-    - parameter_name: STREP ART
+    - parameter_name: art
       data_type: species
       required: true
-    - parameter_name: STREP MLST
+    - parameter_name: mlst
       data_type: mlst
       required: true
-    - parameter_name: STREP EMM
+    - parameter_name: emm
       data_type: emm
       required: true
