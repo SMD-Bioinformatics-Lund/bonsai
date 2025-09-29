@@ -20,6 +20,8 @@ services:
       watch: 
         - path: ./frontend/setup.cfg
           action: rebuild
+        - path: ./frontend/Dockerfile
+          action: rebuild
         - path: ./frontend/bonsai_app
           target: /app/frontend/bonsai_api
           action: sync
@@ -31,6 +33,8 @@ services:
       - notification_service_api=http://notification_service:8000/
     develop:
       watch: 
+        - path: ./api/Dockerfile
+          action: rebuild
         - path: ./api/setup.cfg
           action: rebuild
         - path: ./api/bonsai_api
@@ -48,6 +52,8 @@ services:
     develop:
       watch: 
         - path: ./minhash_service/pyproject.toml
+          action: rebuild
+        - path: ./minhash_service/Dockerfile
           action: rebuild
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
@@ -68,6 +74,8 @@ services:
       watch: 
         - path: ./minhash_service/pyproject.toml
           action: rebuild
+        - path: ./minhash_service/Dockerfile
+          action: rebuild
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
           action: sync
@@ -84,6 +92,8 @@ services:
       watch: 
         - path: ./allele_cluster_service/setup.cfg
           action: rebuild
+        - path: ./allele_cluster_service/Dockerfile
+          action: rebuild
         - path: ./allele_cluster_service/allele_cluster_service
           target: /app/allele_cluster_service/allele_cluster_service
           action: sync
@@ -96,6 +106,8 @@ services:
     develop:
       watch: 
         - path: ./ska_service/setup.cfg
+          action: rebuild
+        - path: ./ska_service/Dockerfile
           action: rebuild
         - path: ./ska_service/ska_service
           target: /app/ska_service/ska_service
@@ -128,11 +140,13 @@ services:
       - "8004:8000"
     develop:
       watch:
-        - action: sync
-          path: ./audit_log_service
+        - path: ./audit_log_service/pyproject.toml
+          action: rebuild
+        - path: ./audit_log_service/Dockerfile
+          action: rebuild
+        - path: ./audit_log_service
+          action: sync
           target: /app/src/
-        - action: rebuild
-          path: ./pyproject.toml
 
   mailhog:
     image: mailhog/mailhog:latest
