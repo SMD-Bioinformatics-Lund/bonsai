@@ -4,7 +4,7 @@ import logging
 from logging.config import dictConfig
 
 from redis import Redis
-from rq import Connection, Queue, Worker
+from rq import Queue, Worker
 
 from .config import settings
 
@@ -46,7 +46,6 @@ def create_app():
 
     # start worker with json serializer
     LOG.info("Starting worker...")
-    with Connection(redis):
-        queue = Queue(settings.redis_queue)
-        worker = Worker([queue], connection=redis)
-        worker.work()
+    queue = Queue(connection=redis)
+    worker = Worker([queue], connection=redis)
+    worker.work()
