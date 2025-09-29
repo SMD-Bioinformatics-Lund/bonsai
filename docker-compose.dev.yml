@@ -113,8 +113,10 @@ services:
       watch: 
         - path: ./notification_service/pyproject.toml
           action: rebuild
-        - path: ./notification_service/notification_service
-          target: /app/notification_service/notification_service
+        - path: ./notification_service/Dockerfile
+          action: rebuild
+        - path: ./notification_service/bonsai_notification
+          target: /app/notification_service/bonsai_notification
           action: sync
     depends_on:
       - mailhog

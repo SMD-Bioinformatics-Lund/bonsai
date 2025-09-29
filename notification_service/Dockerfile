@@ -19,7 +19,7 @@ RUN pip install --editable ./notification_service
 # create directory for custom templates
 RUN mkdir -p /data/templates
 
-CMD ["uvicorn", "notification_service.main:create_api_app", "--reload", "--log-level", "debug", "--host", "0.0.0.0"]
+CMD ["uvicorn", "bonsai_notification.main:create_api_app", "--reload", "--log-level", "debug", "--host", "0.0.0.0"]
 
 ### Build python deps ###
 FROM base AS python-builder
@@ -49,4 +49,4 @@ RUN mkdir -p /data/templates && chown 1000:1000 /data/templates
 # run app as non-root user
 USER 1000:1000
 
-CMD ["uvicorn", "notification_service.main:create_api_app", "--host", "0.0.0.0"]
+CMD ["uvicorn", "bonsai_notification.main:create_api_app", "--host", "0.0.0.0"]

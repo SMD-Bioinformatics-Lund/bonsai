@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from typing import Sequence
 
+import bonsai_notification
 from jinja2 import (ChoiceLoader, Environment, FileSystemLoader, PackageLoader,
                     Template, TemplateNotFound, select_autoescape)
 
@@ -25,7 +26,7 @@ def _make_loader(custom_template_dir: Path | None = None) -> ChoiceLoader:
         loaders.append(FileSystemLoader(str(custom_template_dir)))
 
     # add default directory
-    loaders.append(PackageLoader("notification_service", "templates"))
+    loaders.append(PackageLoader(bonsai_notification.__name__, "templates"))
     return ChoiceLoader(loaders)
 
 
