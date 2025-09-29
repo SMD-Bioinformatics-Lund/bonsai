@@ -1095,6 +1095,19 @@
                     </th>
                     <td>{{ emm.cluster_count | default('-', true) }}</tr>
                 </tr>
+                <tr>
+                    <th>
+                        EMM-like alleles
+                        <span data-bs-toggle="tooltip" data-bs-title="M-typing is complicated by the presence of emm-like genes (enn, mrp), which may or may not be present. Matches are clustered on contigs, and the best hit from each cluster is parsed to distinguish emm from emm-like genes where possible.">
+                            <i class="bi bi-question-circle"></i>
+                        </span>
+                    </th>
+                    {% if emm.emm_like_alleles | length == 0 %}
+                        <td>-</td>
+                    {% else %}
+                        <td>{{ emm.emm_like_alleles | join(", ") }}</td>
+                    {% endif %}
+                </tr>
             </tbody>
         </table>
     </div>
