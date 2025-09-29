@@ -31,6 +31,7 @@
 
 ### Changed
 
+- renamed the `notification_service` package to `bonsai_notification` to resolve namespace package issues.
 - `docker-compose.dev.yml` can automatically rebuild or refresh images when developing using the `--watch` flag.
 - Dockerfiles now have multi-stage builds with dedicated development and production targets
 - Added tooltip and helper text that describes how the find similar samples dropdown works.
