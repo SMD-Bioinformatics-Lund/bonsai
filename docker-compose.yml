@@ -6,7 +6,7 @@ services:
     image: mongo:4.4.22
     container_name: bonsai_mongodb
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 30s
       timeout: 5s
       retries: 5
