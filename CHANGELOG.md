@@ -2,11 +2,6 @@
 
 ### Added
 
-- Actions that upload, remove or modify groups, users and samples are now logged in the audit log
-- Added audit log service where other parts of Bonsai can record important events
-- Added basic startup banner to the minhash service.
-- Added support for storing sourmash index in RocksDB format.
-- Added tags that warns the user if a sample might be contaminated. Thresholds are read from `thresholds.toml`file.
 - Added button for showing only selected rows in the sample table
 
 ### Fixed
@@ -15,6 +10,9 @@
 - Ska trying to find missing index files now properly walks results directory.
 
 ### Changed
+
+- TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
+- Added start position to detailed variants view
 
 ## [v2.1.0]
 
@@ -26,7 +24,6 @@
 
 - Fixed issue in lineage card that could crash javascript
 - Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
-- TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 
 ## [v2.0.0]
 
@@ -56,13 +53,6 @@
 
 ### Changed
 
-- renamed the `notification_service` package to `bonsai_notification` to resolve namespace package issues.
-- `docker-compose.dev.yml` can automatically rebuild or refresh images when developing using the `--watch` flag.
-- Dockerfiles now have multi-stage builds with dedicated development and production targets
-- Added tooltip and helper text that describes how the find similar samples dropdown works.
-- Add "add samples to group" button to the /groups/{group_id} view.
-- Similarity searches from the groups view now only search among samples from the same group.
-- Minhash service tasks are now executed through a dispatch function (`minhash_service/tasks/dispatch.py`)
 - Display rejection reason and comments on mouse over in sample table
 - Updated default columns in sample table
 - Entrypoint GET `/samples` was changed to POST `/samples/summary` to mitigate URL length limitations.
