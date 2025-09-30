@@ -1,8 +1,0 @@
--e ./libs/api_client
--e ./frontend[dev]
--e ./api[dev]
--e ./allele_cluster_service[dev]
--e ./minhash_service[dev]
--e ./ska_service[dev]
--e ./audit_log_service[dev]
--e ./notification_service[dev]

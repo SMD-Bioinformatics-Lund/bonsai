@@ -20,12 +20,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "black",
-    "isort",
-    "pytest",
-    "mypy"
-]
+test = [ ]
 
 [project.scripts]
 notification-service = "bonsai_notification.cli:main"

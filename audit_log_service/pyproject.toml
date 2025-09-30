@@ -19,15 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "black",
-    "isort",
-    "pytest",
-    "mypy"
-]
-tests = [
-    "pytest",
-    "pytest-cov",
+test = [
     "mongomock"
 ]
 
