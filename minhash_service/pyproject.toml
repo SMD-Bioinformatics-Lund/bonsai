@@ -1,7 +1,46 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "minhash_service"
+dynamic = ["version"]
+authors = [
+  { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+# NOTE: Removed build tools from runtime deps
+dependencies = [
+  "redis",
+  "pydantic-settings",
+  "requests",
+  "click==8.1.7",
+  "rq==2.5.0",
+  "sourmash==4.9.4",
+  "fasteners==0.19",
+  "pymongo==4.14.1",
+]
+
+[project.scripts]
+"minhash-service" = "minhash_service.cli.main:main"
+
+[project.optional-dependencies]
+test = [ ]
 
 [tool.isort]
 profile = "black"
 src_paths = ["minhash_service"]
+
+[tool.setuptools.dynamic]
+version = { attr = "minhash_service.__version__" }
+
+[tool.setuptools]
+include-package-data = false
+zip-safe = true
