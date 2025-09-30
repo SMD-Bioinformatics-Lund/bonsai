@@ -1,6 +1,56 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "allele_cluster_service"
+dynamic = ["version"]
+authors = [
+  { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3", 
+  "Programming Language :: Python :: 3 :: Only",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "redis",
+  "rq==2.5.0",
+  "scipy",
+  "pydantic",
+  "numba",
+  "numpy",
+  "ete3",
+  "networkx",
+  "psutil",
+  "six",
+]
+
+[project.scripts]
+cluster_service = "allele_cluster_service.worker:create_app"
+
+[project.optional-dependencies]
+test = [
+  "pandas",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "allele_cluster_service.__version__" }
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true
+
+# ensures that data under allele_cluster_service/bin is included in built distributions.
+[tool.setuptools.package-data]
+"allele_cluster_service" = ["bin/*"]
+
+[tool.setuptools.packages.find]
+include = ["allele_cluster_service*"]
+exclude = ["tests*"]
 
 [tool.isort]
 profile = "black"
