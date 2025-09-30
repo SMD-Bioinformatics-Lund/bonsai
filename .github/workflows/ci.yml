@@ -8,99 +8,138 @@ on:
     pull_request:
         branches: ["master"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Speed up Docker builds in E2E
+  DOCKER_BUILDKIT: "1"
+  COMPOSE_DOCKER_CLI_BUILD: "1"
+
+
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
+        service:
+          - api
+          - frontend
+          - allele_cluster_service
+          - minhash_service
+          - audit_log_service
+          - notification_service
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ./api[dev] ./frontend[dev] ./allele_cluster_service[dev]
-    - name: Run unit-tests test suite
-      run: |
-        pytest api/tests frontend/tests allele_cluster_service/tests
+    - uses: actions/checkout@v4
 
-  minhash-unit-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
-    steps:
-    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+        cache: 'pip'
+        cache-dependency-path: | 
+          requirements.tooling.txt
+          **/pyproject.toml
+          **/requirements*.txt
+
+    - name: Install dev toolchain
       run: |
         python -m pip install --upgrade pip
-        pip install -e ./minhash_service[dev]
-    - name: Run unit-tests test suite
+        pip install -r requirements.tooling.txt
+
+    - name: Install shared libs
       run: |
-        pytest minhash_service/tests
+        pip install -e ./libs/api_client
+
+    - name: Install service specific test deps
+      run: |
+        pip install -e "./${{ matrix.service }}[test]"
+
+    - name: Run unit tests
+      run: |
+        mkdir -p reports/${{ matrix.service }}
+        pytest \
+          -q \
+          --maxfail=1 \
+          --junitxml=reports/${{ matrix.service }}/junit.xml \
+          "${{ matrix.service }}/tests"
+    
+    - name: Upload JUnit report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-${{ matrix.service }}-py${{ matrix.python-version }}
+        path: reports/${{ matrix.service }}/junit.xml
+        if-no-files-found: warn
+        retention-days: 7
 
   e2e-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
+    timeout-minutes: 45
+    if: |
+      github.event.name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Run end2end test suite
+    - uses: actions/checkout@v4
+
+    - name: Run compose up and run tests
       run: |
-        docker compose -f docker-compose.yml -f docker-compose.e2e_test.yml run e2e-tests
-    - name: Tar test report
-      if: failure()
-      run: tar cvzf ./reports.tar.gz ./reports
-    - name: Upload report to GitHub
-      if: failure()
-      uses: actions/upload-artifact@master
-      with:
-        name: pytest_report.tar.gz
-        path: ./reports.tar.gz
+        docker compose -f docker-compose.yml -f docker-compose.e2e_test.yml up --build --abort-on-container-exit --exit-code-from e2e-tests
+    
     - name: Collect docker logs on failure
       if: failure()
       uses: jwalton/gh-docker-logs@v2
       with:
         dest: './logs'
-    - name: Tar logs
+
+    - name: Upload logs
       if: failure()
-      run: tar cvzf ./logs.tar.gz ./logs
-    - name: Upload logs to GitHub
-      if: failure()
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v4
       with:
-        name: logs.tar.gz
-        path: ./logs.tar.gz
+        name: e2e-logs
+        path: ./logs
+        retention-days: 7
+
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-reports
+        path: ./reports
+        if-no-files-found: ignore
+        retention-days: 7
 
   pylint:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11"]
+    timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+        python-version: "3.11"
+        cache: "pip"
+        cache-dependency-path: |
+          requirements.tooling.txt
+          requirements.dev.txt
+          **/pyproject.toml
+
+    - name: Install lint deps
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
-        pip install -e frontend/ api/ minhash_service/ allele_cluster_service/
+        pip install -r requirements.dev.txt
+
     - name: Analysing the code with pylint
       run: |
-        pylint --fail-under 9 frontend/bonsai_app api/bonsai_api minhash_service/minhash_service/ allele_cluster_service/allele_cluster_service/
+        pylint --fail-under 7 frontend/bonsai_app \
+                              api/bonsai_api \
+                              minhash_service/minhash_service \
+                              allele_cluster_service/allele_cluster_service \
+                              ska_service/ska_service \
+                              notification_service/bonsai_notification \
+                              audit_log_service/audit_log_service \

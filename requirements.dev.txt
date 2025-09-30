@@ -1,0 +1,9 @@
+-r ./requirements.tooling.txt
+-e ./libs/api_client
+-e ./frontend[test]
+-e ./api[test]
+-e ./allele_cluster_service[test]
+-e ./minhash_service[test]
+-e ./ska_service[test]
+-e ./audit_log_service[test]
+-e ./notification_service[test]
