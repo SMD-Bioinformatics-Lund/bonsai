@@ -1,20 +1,18 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-
-from notification_service.models import (ContentType, EmailApiInput,
+from bonsai_notification.models import (ContentType, EmailApiInput,
                                          EmailTemplateContext)
-from notification_service.services.email import send_email
+from bonsai_notification.services.email import send_email
 
 
 class DummyTemplate:
-    def render(self, **kwargs):
+    def render(self, **kwargs: str):
         return "<html><body>{}</body></html>".format(kwargs.get("message", ""))
 
 
 class DummyTemplateRepo:
     @classmethod
-    def get_template(cls, name=None):
+    def get_template(cls, name: str | None = None):
         return DummyTemplate()
 
 
@@ -33,8 +31,14 @@ def test_send_email_plain():
         smtp_conn=smtp_mock,
         template_repo=DummyTemplateRepo,
     )
+
+    conn = smtp_mock.__enter__.return_value
+
+    # Make sure a single message was sent
+    conn.send_message.assert_called_once()
+
     # Check that set_content was called with plain text
-    sent_msg = smtp_mock.send_message.call_args[0][0]
+    sent_msg = conn.send_message.call_args[0][0]
     assert sent_msg.get_content_type() == "text/plain"
     assert "Hello world" in sent_msg.get_content()
 
@@ -57,7 +61,9 @@ def test_send_email_html():
         smtp_conn=smtp_mock,
         template_repo=DummyTemplateRepo,
     )
-    sent_msg = smtp_mock.send_message.call_args[0][0]
+    conn = smtp_mock.__enter__.return_value
+
+    sent_msg = conn.send_message.call_args[0][0]
     assert sent_msg.get_content_type() == "text/html"
     assert "<html>" in sent_msg.get_content()
     assert "Hello HTML" in sent_msg.get_content()

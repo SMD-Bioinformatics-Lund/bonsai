@@ -3,8 +3,8 @@
 import smtplib
 from email.message import EmailMessage
 
-from ..config import SmtpConfig
-from ..models import ContentType, EmailApiInput
+from bonsai_notification.config import SmtpConfig
+from bonsai_notification.models import ContentType, EmailApiInput
 from .templates import TemplateRepository
 
 

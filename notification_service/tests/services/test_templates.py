@@ -1,9 +1,8 @@
-import pytest
+from pathlib import Path
+from bonsai_notification.services.templates import TemplateRepository
 
-from notification_service.services.templates import TemplateRepository
 
-
-def test_jinja_template_repo_setup(tmp_path):
+def test_jinja_template_repo_setup(tmp_path: Path):
     """Test that template is being read and templated."""
 
     # Create a dummy template file
