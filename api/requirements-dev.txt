@@ -1,2 +1,0 @@
--e ../libs/api_client  # install shared libs
--e .[dev]  # install dev/tests tools
