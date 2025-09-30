@@ -6,10 +6,12 @@ from contextlib import contextmanager
 from typing import Generator
 
 import pytest
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.db.db import MongoDatabase
 from bonsai_api.crud.sample import create_sample
 from bonsai_api.crud.user import oauth2_scheme
-from bonsai_api.db import Database, get_db
+from bonsai_api.db import Database
+from bonsai_api.dependencies import get_database
 from bonsai_api.main import app
 from bonsai_api.models.sample import PipelineResult, SampleInDatabase
 from fastapi.testclient import TestClient
@@ -26,9 +28,9 @@ DATABASE = "testdb"
 async def mongo_database() -> MongoDatabase:
     """Setup Bonsai database instance."""
     db = Database()
-    db.client = AsyncMongoMockClient()
+    client = AsyncMongoMockClient()
     # setup mock database
-    db.setup()
+    db.setup(client)
 
     # load basic fixtures
     await db.user_collection.insert_one(
@@ -73,8 +75,9 @@ async def sample_database(mongo_database: MongoDatabase, mtuberculosis_sample_pa
     # read fixture and add to database
     with open(mtuberculosis_sample_path) as inpt:
         data = PipelineResult(**json.load(inpt))
+        ctx = ApiRequestContext.model_validate({"actor": {"id": "test", "type": "system"}, "metadata": {}})
         # create sample in database
-        await create_sample(db=mongo_database, sample=data)
+        await create_sample(db=mongo_database, sample=data, ctx=ctx)
         return mongo_database
 
 
@@ -92,7 +95,7 @@ def fastapi_client(sample_database):
     app.dependency_overrides[oauth2_scheme] = lambda: ""
 
     # use mocked mongo database
-    app.dependency_overrides[get_db] = lambda: sample_database
+    app.dependency_overrides[get_database] = lambda: sample_database
 
     client = TestClient(app)
 

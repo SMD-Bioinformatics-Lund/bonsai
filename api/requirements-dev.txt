@@ -1,7 +1,2 @@
-isort
-black
-mypy
-pylint
-
-# typing stubs
-motor-types[motor]
+-e ../libs/api_client  # install shared libs
+-e .[dev]  # install dev/tests tools
