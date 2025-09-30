@@ -1,4 +1,4 @@
-from notification_service.config import Settings
+from bonsai_notification.config import Settings
 
 
 def test_default_settings():

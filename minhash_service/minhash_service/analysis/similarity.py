@@ -83,4 +83,7 @@ def get_similar_signatures(
                 estimate_ani_ci=False,
             ),
         )
+    if config.limit is not None:
+        n_hits_to_include = min([len(results), config.limit])
+        results = results[:n_hits_to_include]
     return results

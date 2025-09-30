@@ -26,3 +26,9 @@ def settings_tmp_index(tmpdir: py.path.LocalPath):
         shutil.copy(sig, temp_dir)
 
     return Settings(signature_dir=temp_dir)
+
+
+@pytest.fixture(scope="session")
+def data_dir() -> Path:
+    """Fixture for the test data directory."""
+    return Path(__file__).parent / "data"
