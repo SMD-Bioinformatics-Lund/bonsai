@@ -1,6 +1,54 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "bonsai_app"
+dynamic = ["version"]
+authors = [
+  { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Framework :: Flask",
+  "Programming Language :: Python :: 3 :: Only",
+  "Intended Audience :: Science/Research",
+  "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = [
+  "Flask<=2.3.3",
+  "werkzeug<=2.3.7",
+  "wtforms[email]",
+  "gunicorn",
+  "flask-login",
+  "requests",
+  "pydantic",
+  "python-dateutil",
+  "pydantic-factories",
+  "jsonpath2",
+  "tzdata",
+  "pandas",
+  "pydantic-settings",
+  "pydantic-extra-types",
+]
+
+[project.optional-dependencies]
+test = [
+  "beautifulsoup4",
+]
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bonsai_app*"]
+
+[tool.setuptools.package-data]
+"bonsai_app" = ["templates/**/*.html", "static/**/*", "*.toml"]
 
 [tool.isort]
 profile = "black"
