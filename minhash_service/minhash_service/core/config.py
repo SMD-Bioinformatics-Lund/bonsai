@@ -41,7 +41,7 @@ class LogLevel(StrEnum):
 class MongodbConfig(BaseSettings):
     """MongoDB configuration for minhash service."""
 
-    model_config = ConfigDict(env_prefix="mongodb_")
+    model_config = SettingsConfigDict(env_prefix="mongodb_")
     host: str = "mongodb"
     port: PositiveInt = 27017
     database: str = "minhash_db"

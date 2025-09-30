@@ -1,6 +1,6 @@
 import pytest
 
-from notification_service.models import ContentType, EmailApiInput
+from bonsai_notification.models import ContentType, EmailApiInput
 
 
 def test_plain_email_requires_message():
