@@ -2,7 +2,7 @@
 name = "notification_service"
 dynamic = ["version"]
 description = "A service that sends email notifications."
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
 authors = [
     { name = "Markus Johansson", email = "markus.h.johansson@skane.se" }
@@ -26,7 +26,7 @@ test = [ ]
 notification-service = "bonsai_notification.cli:main"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
