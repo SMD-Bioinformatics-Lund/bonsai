@@ -15,6 +15,7 @@
 
 ### Changed
 
+- All services now use pyproject.toml to manage installation and dev tools settings.
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 
