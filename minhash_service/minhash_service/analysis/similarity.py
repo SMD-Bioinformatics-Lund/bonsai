@@ -3,8 +3,11 @@
 import logging
 from typing import cast
 
-from sourmash.search import (SearchResult, search_databases_with_abund_query,
-                             search_databases_with_flat_query)
+from sourmash.search import (
+    SearchResult,
+    search_databases_with_abund_query,
+    search_databases_with_flat_query,
+)
 from sourmash.signature import SourmashSignature
 
 from minhash_service.signatures.index import BaseIndexStore

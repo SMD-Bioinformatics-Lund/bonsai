@@ -7,9 +7,16 @@ from logging import config as logging_config
 from pathlib import Path
 from typing import Any
 
-from pydantic import (DirectoryPath, Field, HttpUrl, PositiveInt,
-                      ValidationError, computed_field, field_validator,
-                      model_validator)
+from pydantic import (
+    DirectoryPath,
+    Field,
+    HttpUrl,
+    PositiveInt,
+    ValidationError,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from minhash_service.signatures.models import IndexFormat
@@ -153,14 +160,6 @@ class Settings(BaseSettings):
         log_config["handlers"]["default"]["level"] = self.log_level.value
         log_config["loggers"]["root"]["level"] = self.log_level.value
         return log_config
-
-
-    @field_validator("trash_dir", mode="before")
-    @classmethod
-    def ensure_trash_dir_exists(cls, v):
-        """Ensure that the trash directory exists."""
-        v.mkdir(parents=True, exist_ok=True)
-        return v
 
 
 # Logging configuration

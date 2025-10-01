@@ -1,25 +1,16 @@
 """Functions for clustering on minhashes"""
 
 import logging
-from enum import Enum
-from pathlib import Path
 from typing import Any
 
 import sourmash
 from scipy.cluster import hierarchy
 
-from minhash_service.signatures.io import read_signatures
 from minhash_service.signatures.models import SourmashSignatures
 
+from .models import ClusterMethod
+
 LOG = logging.getLogger(__name__)
-
-
-class ClusterMethod(str, Enum):
-    """Index of methods for hierarchical clustering of samples."""
-
-    SINGLE = "single"
-    COMPLETE = "complete"
-    AVERAGE = "average"
 
 
 def tree_to_newick(node, newick, parentdist, leaf_names) -> str:
@@ -39,19 +30,11 @@ def tree_to_newick(node, newick, parentdist, leaf_names) -> str:
 
 
 def cluster_signatures(
-    signature_files: list[Path],
+    signatures: list[SourmashSignatures],
     method: ClusterMethod,
-    kmer_size: int,
     ignore_abundance: bool = True,
 ) -> tuple[Any, list[str]]:
     """Cluster multiple samples on their minhash signatures and return tree object."""
-
-    # load sequence signatures to memory
-    signatures: SourmashSignatures = []
-    LOG.info("Cluster %d signatures", len(signature_files))
-    for sig_file in signature_files:
-        signature = read_signatures(sig_file, kmer_size=kmer_size)
-        signatures.extend(signature)  # append to all signatures
 
     # create distance matrix
     similarity = sourmash.compare.compare_all_pairs(

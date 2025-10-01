@@ -5,8 +5,14 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import (BaseModel, ConfigDict, Field, StringConstraints,
-                      field_serializer, field_validator)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_serializer,
+    field_validator,
+)
 from sourmash.signature import FrozenSourmashSignature, SourmashSignature
 
 from minhash_service.core.models import SampleIdStr
