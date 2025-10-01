@@ -9,6 +9,14 @@ SignatureEntry = dict[str, str | Signatures]
 SignatureFile = list[SignatureEntry]
 
 
+class ClusterMethod(StrEnum):
+    """Index of methods for hierarchical clustering of samples."""
+
+    SINGLE = "single"
+    COMPLETE = "complete"
+    AVERAGE = "average"
+
+
 class AniEstimateOptions(StrEnum):
     """What ANI should be estimated from"""
 
