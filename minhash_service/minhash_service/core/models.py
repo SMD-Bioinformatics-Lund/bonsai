@@ -4,8 +4,7 @@ import datetime as dt
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import (BaseModel, ConfigDict, Field, StringConstraints,
-                      field_validator)
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 SampleIdStr = Annotated[
     str, StringConstraints(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._-]+$")
