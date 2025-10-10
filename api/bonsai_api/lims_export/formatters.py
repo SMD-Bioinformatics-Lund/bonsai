@@ -53,12 +53,12 @@ def mlst_typing(
     options = options or {}
     for ty in sample.typing_result:
         if ty.type == "mlst":
-            mlst_st = ty.result.sequence_type or "novel"
+            mlst_st = ty.result.sequence_type or "NA"
             if mlst_st is None:
                 raise AnalysisNoResultError()
             return mlst_st, ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_id}' doesn't have MLST results."
+        f"Sample '{sample.sample_name}' doesn't have MLST results."
     )
 
 
@@ -71,8 +71,8 @@ def emm_typing(
     for ty in sample.typing_result:
         if ty.type == "emmtype":
             result: TypingResultEmm = ty.result
-            return result.emmtype or "novel", ""
-    raise AnalysisNotPresentError(f"Sample '{sample.sample_id}' doesn't have EMM type.")
+            return result.emmtype or "NA", ""
+    raise AnalysisNotPresentError(f"Sample '{sample.sample_name}' doesn't have EMM type.")
 
 
 @register_formatter("species")
@@ -103,7 +103,7 @@ def species_prediction(
             # ensure that best hit is first
             if len(pred.result) == 0:
                 LOG.warning(
-                    "Sample %s did not have any bracken predicitons", sample.sample_id
+                    "Sample %s did not have any bracken predicitons", sample.sample_name
                 )
                 raise AnalysisNoResultError()
             # filter and sort
@@ -112,7 +112,7 @@ def species_prediction(
             )
             return rows[0].scientific_name, ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_id}' dont have {preferred_software} species prediction result."
+        f"Sample '{sample.sample_name}' dont have {preferred_software} species prediction result."
     )
 
 
@@ -130,7 +130,7 @@ def lineage_prediction(
             lin = pred.result.sublineage.replace("lineage", "")  # strip lineage
             return lin, ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_id}' dont have tbprofiler prediction results."
+        f"Sample '{sample.sample_name}' dont have tbprofiler prediction results."
     )
 
 
@@ -174,7 +174,7 @@ def amr_prediction_for_antibiotic(
                 raise AnalysisNoResultError()
             return ", ".join(variants + genes), ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_id}' dont have AMR prediction from {preferred_software}."
+        f"Sample '{sample.sample_name}' dont have AMR prediction from {preferred_software}."
     )
 
 

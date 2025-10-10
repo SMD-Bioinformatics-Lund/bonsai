@@ -54,7 +54,7 @@ ExportConfiguration = list[AssayConfig]
 class LimsRsResult(BaseModel):
     """A LIMS-RS result which represent a row in a csv file."""
 
-    sample_id: str
+    sample_name: str
     parameter_name: str
     parameter_value: LimsValue
     comment: str = ""

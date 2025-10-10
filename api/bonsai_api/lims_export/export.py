@@ -30,7 +30,7 @@ def lims_rs_formatter(
       - analysis present but no result ⇒ include a row with value=None (empty after _to_str)
       - analysis not present and required ⇒ raise ValueError
     """
-    LOG.debug("Preparing to format %s using assay %s", sample.sample_id, config.assay)
+    LOG.debug("Preparing to format %s using assay %s", sample.sample_name, config.assay)
     result: list[LimsRsResult] = []
     for field in config.fields:
         formatter = get_formatter(field.data_type)
@@ -50,7 +50,7 @@ def lims_rs_formatter(
         except Exception as err:
             LOG.error(
                 "Unexpected error formatting sample=%s field=%s (%s): %s",
-                sample.sample_id,
+                sample.sample_name,
                 field.parameter_name,
                 field.data_type,
                 err,
@@ -62,10 +62,10 @@ def lims_rs_formatter(
         if field.required and not analysis_present:
             raise ValueError(
                 f"Required analysis for field '{field.parameter_name}' "
-                f"({field.data_type}) is not present on sample '{sample.sample_id}'."
+                f"({field.data_type}) is not present on sample '{sample.sample_name}'."
             )
         entry = LimsRsResult(
-            sample_id=sample.sample_id,
+            sample_name=sample.sample_name,
             parameter_name=field.parameter_name,
             parameter_value=_to_str(value),  # None -> "", int/str -> str
             comment=comment or "",
@@ -90,7 +90,7 @@ def serialize_lims_results(
     for result in results:
         writer.writerow(
             [
-                result.sample_id,
+                result.sample_name,
                 result.parameter_name,
                 result.parameter_value,
                 result.comment,
