@@ -1102,10 +1102,10 @@
                             <i class="bi bi-question-circle"></i>
                         </span>
                     </th>
-                    {% if emm.emm_like_alleles | length == 0 %}
-                        <td>-</td>
-                    {% else %}
+                    {% if emm.emm_like_alleles and emm.emm_like_alleles | length > 0 %}
                         <td>{{ emm.emm_like_alleles | join(", ") }}</td>
+                    {% else %}
+                        <td>-</td>
                     {% endif %}
                 </tr>
             </tbody>
