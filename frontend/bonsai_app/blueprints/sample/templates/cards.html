@@ -871,25 +871,12 @@
             <tbody>
                 <tr>
                     <th scope="row">Lineage</th>
-                    <td>
-                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
-                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
-                        {{ pred.result.main_lineage | replace('lineage', '') }}
-                        </u>
-                    </td>
-                    {% if pred.result.lineages is defined and pred.result.lineages is not none %}
-                        <td>{{ pred.result.lineages[0].family }}</td>
-                    {% endif %}
+                    <td>{{ pred.result.main_lineage | replace('lineage', '') }}</td>
                 </tr>
                 <tr>
                     <th scope="row">Sublineage</th>
                     {% set sublin=pred.result.sublineage %}
-                    <td>
-                        <u data-bs-toggle="tooltip" data-bs-placement="top" 
-                        data-bs-title="{{ pred.rd | replace(';', ', ') }}">
-                        {{ sublin | replace('lineage', '') }}
-                        </u>
-                    </td>
+                    <td>{{ sublin | replace('lineage', '') }}</td>
                     {# Lookup sublineage if lineages is defined #}
                     {% if pred.result.lineages is defined %}
                         {% for lin in pred.result.lineages %}
