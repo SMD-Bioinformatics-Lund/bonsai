@@ -39,6 +39,8 @@ class FieldDefinition(BaseModel):
     options: dict[str, Any] = Field(
         default={}, description="Optional arguments to be passed to formatter function."
     )
+    no_result_value: str = Field(default="NA", description="Analysis present, no result")
+    missing_analysis_value: str = Field(default="MA", description="Analysis missing, but expected")
 
 
 class AssayConfig(BaseModel):

@@ -38,14 +38,14 @@ def lims_rs_formatter(
 
         try:
             value, comment = formatter(sample, options=field.options)
-        except AnalysisNotPresentError as e:
+        except AnalysisNotPresentError:
             # Analysis has not been done on this sample
             analysis_present = False
-            value, comment = None, "not_present"
+            value, comment = field.missing_analysis_value, None
 
-        except AnalysisNoResultError as e:
+        except AnalysisNoResultError:
             # Analysis is present but no failed to generate a result
-            value, comment = None, "no_result"
+            value, comment = field.no_result_value, None
 
         except Exception as err:
             LOG.error(
@@ -68,7 +68,7 @@ def lims_rs_formatter(
             sample_name=sample.sample_name,
             parameter_name=field.parameter_name,
             parameter_value=_to_str(value),  # None -> "", int/str -> str
-            comment=comment or "",
+            comment=comment or "-",
         )
         result.append(entry)
     return result
