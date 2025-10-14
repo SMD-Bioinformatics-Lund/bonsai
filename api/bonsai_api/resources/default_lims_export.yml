@@ -9,39 +9,39 @@
     - parameter_name: MTBC_LINEAGE
       data_type: lineage
       required: true
-    - parameter_name: RIF NGS
+    - parameter_name: RIF_NGS
       data_type: amr
       required: true
       options:
         antibiotic_name: rifampicin
-    - parameter_name: INH NGSH
+    - parameter_name: INH_NGSH
       data_type: amr
       required: true
       options:
         antibiotic_name: isoniazid
         resistance_level: high
-    - parameter_name: INL NGSH
+    - parameter_name: INH_NGSL
       data_type: amr
       required: true
       options:
         antibiotic_name: isoniazid
         resistance_level: low
-    - parameter_name: PYR NGS
+    - parameter_name: PYR_NGS
       data_type: amr
       required: true
       options:
         antibiotic_name: pyrazinamide
-    - parameter_name: ETB NGS
+    - parameter_name: ETB_NGS
       data_type: amr
       required: true
       options:
         antibiotic_name: ethambutol
-    - parameter_name: AMI NGS
+    - parameter_name: AMI_NGS
       data_type: amr
       required: true
       options:
         antibiotic_name: amikacin
-    - parameter_name: LEV NGS
+    - parameter_name: LEV_NGS
       data_type: amr
       required: true
       options:
