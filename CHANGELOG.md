@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- Fixed issue in lineage card that could crash javascript
 - Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
 
 ## [v2.0.0]
