@@ -24,28 +24,6 @@ from .data import *
 DATABASE = "testdb"
 
 
-@pytest.fixture()
-async def mongo_database() -> MongoDatabase:
-    """Setup Bonsai database instance."""
-    db = Database()
-    client = AsyncMongoMockClient()
-    # setup mock database
-    db.setup(client)
-
-    # load basic fixtures
-    await db.user_collection.insert_one(
-        {
-            "username": "admin",
-            "password": "admin",
-            "first_name": "Nollan",
-            "last_name": "Nollsson",
-            "email": "palceholder@email.com",
-            "roles": ["admin"],
-        }
-    )
-    return db
-
-
 @pytest.fixture(scope="function")
 def mtuberculosis_sample(mtuberculosis_sample_path):
     """Sample db object."""
@@ -66,26 +44,6 @@ def ecoli_sample(ecoli_sample_path):
 def lims_rs_export_cnf():
     """Sample db object."""
     return {"streptococcus": {"fields": []}}
-
-
-@pytest.fixture(scope="function")
-async def sample_database(mongo_database: MongoDatabase, mtuberculosis_sample_path: Path) -> MongoDatabase:
-    """Returns a database client with loaded test data."""
-
-    # read fixture and add to database
-    with open(mtuberculosis_sample_path) as inpt:
-        data = PipelineResult(**json.load(inpt))
-        ctx = ApiRequestContext.model_validate({"actor": {"id": "test", "type": "system"}, "metadata": {}})
-        # create sample in database
-        await create_sample(db=mongo_database, sample=data, ctx=ctx)
-        return mongo_database
-
-
-@pytest.fixture(scope="function")
-@contextmanager
-def sample_database_context(sample_database: MongoDatabase) -> Generator[MongoDatabase, None, None]:
-    """Returns a database client with loaded test data."""
-    yield sample_database
 
 
 @pytest.fixture()

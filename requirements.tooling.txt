@@ -4,6 +4,7 @@ pytest-xdist
 pytest-cov
 pytest-mock
 pytest-env
+pytest-asyncio
 coverage
 
 # Lint/format
