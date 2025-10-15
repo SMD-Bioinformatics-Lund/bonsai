@@ -42,6 +42,7 @@ export interface ApiClusterInput {
 
 export interface ApiFindSimilarInput {
   limit: number | null; // number of samples to return
+  narrow_to_sample_ids: string[] | null // search only among provided sample ids
   similarity: number; // min similarity
   cluster: boolean; // cluster similar samples
   typing_method: TypingMethod | null; // use typing method if cluster is true

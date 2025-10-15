@@ -49,7 +49,7 @@
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="epi-typing-heading" class="row justify-content-md-center">
                 <div class="col-md-auto">
-                    {{ similar_samples_card() }}
+                    {{ similar_samples_card(group_id) }}
                 </div>
                 {% for res in sample.typing_result %}
                     {% if res.type == "mlst" %}
@@ -165,10 +165,12 @@
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
     const sampleId = getSampleId()
+    const rawGroupId = "{{ group_id|tojson }}"
+    const groupId = "null" ? null : rawGroupId 
 
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
-        bonsai.initSampleView(apiUrl, accessToken, "", sampleId)
+        bonsai.initSampleView(apiUrl, accessToken, "", sampleId, groupId)
     });
 
     function getSampleId() {

@@ -87,8 +87,8 @@ export async function clusterSamples(
     // open dendrogram
     openGrapeTree(result.result, sampleIds, typingMethodEnum);
   } catch (error) {
-    throwSmallToast("A problem occured during clustering", "error");
+    throwSmallToast("A problem occurred during clustering", "error");
     hideSpinner(btn);
-    console.log(`A problem occured during clustering, ${error}`);
+    console.log(`A problem occurred during clustering, ${error}`);
   }
 }

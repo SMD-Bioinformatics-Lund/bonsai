@@ -2,16 +2,8 @@
 
 import logging
 
-from flask import (
-    Blueprint,
-    Response,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import (Blueprint, Response, flash, redirect, render_template,
+                   request, session, url_for)
 from flask_login import UserMixin, login_required, login_user, logout_user
 from requests.exceptions import HTTPError
 

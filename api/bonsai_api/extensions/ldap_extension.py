@@ -5,22 +5,10 @@ Implementation is inspired from, https://github.com/ContinuumIO/flask-ldap-login
 
 import logging
 
-from ldap3 import (
-    ALL,
-    ANONYMOUS,
-    AUTO_BIND_NO_TLS,
-    AUTO_BIND_TLS_BEFORE_BIND,
-    SIMPLE,
-    SUBTREE,
-    Connection,
-    Server,
-    Tls,
-)
-from ldap3.core.exceptions import (
-    LDAPBindError,
-    LDAPInvalidDnError,
-    LDAPInvalidFilterError,
-)
+from ldap3 import (ALL, ANONYMOUS, AUTO_BIND_NO_TLS, AUTO_BIND_TLS_BEFORE_BIND,
+                   SIMPLE, SUBTREE, Connection, Server, Tls)
+from ldap3.core.exceptions import (LDAPBindError, LDAPInvalidDnError,
+                                   LDAPInvalidFilterError)
 from ldap3.utils.dn import parse_dn
 
 from ..config import settings

@@ -5,9 +5,9 @@ import pytest
 import yaml
 from pages.login_page import LoginPage
 from selenium import webdriver
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.remote.webdriver import WebDriver
 
 LOG = logging.getLogger(__name__)
 

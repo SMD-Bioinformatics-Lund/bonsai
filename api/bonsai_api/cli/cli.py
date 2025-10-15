@@ -1,34 +1,39 @@
 """Commmand line interface to server component."""
 
 import asyncio
-from bson import json_util
 import pathlib
 from io import StringIO, TextIOWrapper
 from logging import getLogger
 from typing import Any, Callable, Literal
 
 import click
+from api_client.audit_log import AuditLogClient
+from api_client.audit_log.models import Actor, SourceType
+from api_client.notification import EmailCreate, NotificationClient
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
-from bonsai_api.config import USER_ROLES
+from bonsai_api.config import USER_ROLES, settings
 from bonsai_api.crud.group import create_group as create_group_in_db
 from bonsai_api.crud.sample import get_sample, get_samples, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.user import create_user as create_user_in_db
-from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
 from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
-from bonsai_api.models.group import GroupInCreate, pred_res_cols
+from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
 from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
-from prp.models.sample import SCHEMA_VERSION
-from prp.migration.convert import migrate_result
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.group import (GroupInCreate, SampleTableColumnDB,
+                                     pred_res_cols)
+from bonsai_api.models.sample import (MultipleSampleRecordsResponseModel,
+                                      SampleInCreate)
+from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
-from .utils import EmailType, create_missing_file_report, send_email_report
+from .utils import EmailType, create_missing_file_report
 
 LOG = getLogger(__name__)
 
@@ -102,9 +107,19 @@ def create_user(
         roles=[role],
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(
+            actor=Actor(id=username, type=SourceType.USR), metadata={}
+        )
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
+        # run cli command
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_user_in_db(db, user)
+            func = create_user_in_db(db, user, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
         raise click.UsageError(f'Username "{username}" is already taken') from error
@@ -126,18 +141,27 @@ def create_group(
         group_id=group_id,
         display_name=name,
         description=description,
-        table_columns=pred_res_cols,
-        validated_genes=None
+        table_columns=[SampleTableColumnDB(id=col.id) for col in pred_res_cols],
+        validated_genes=None,
     )
     try:
+        # build request context
+        ctx = ApiRequestContext(
+            actor=Actor(id=group_id, type=SourceType.USR), metadata={}
+        )
+        # get audit connnection
+        audit_log: AuditLogClient | None = None
+        if settings.audit_log_service_api is not None:
+            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
+
         loop = asyncio.get_event_loop()
         with get_db_connection() as db:
-            func = create_group_in_db(db, group_obj)
+            func = create_group_in_db(db, group_obj, ctx, audit_log)
             loop.run_until_complete(func)
     except DuplicateKeyError as error:
-        raise click.UsageError(f'Group with "{id}" exists already') from error
+        raise click.UsageError(f'Group with "{group_id}" exists already') from error
     finally:
-        click.secho(f'Successfully created a group with id: "{id}"', fg="green")
+        click.secho(f'Successfully created a group with id: "{group_id}"', fg="green")
 
 
 @cli.command()
@@ -149,7 +173,9 @@ def index(_ctx: click.Context):  # pylint: disable=unused-argument
             collection = getattr(db, f"{collection_name}_collection")
             click.secho(f"Creating index for: {collection.name}")
             for idx in indexes:
-                collection.create_index(idx["definition"], **idx["options"])
+                loop = asyncio.get_event_loop()
+                func = collection.create_index(idx["definition"], **idx["options"])
+                loop.run_until_complete(func)
 
 
 @cli.command()
@@ -201,16 +227,16 @@ def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     with get_db_connection() as db:
         func = get_samples(db)
         samples = loop.run_until_complete(func)
-    with click.progressbar(
-        samples.data, length=samples.records_filtered, label="Updating tags"
-    ) as prog_bar:
-        for sample in prog_bar:
-            upd_tags = compute_phenotype_tags(sample)
-            upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
-            # update sample as sync function
-            loop = asyncio.get_event_loop()
-            func = update_sample(db, upd_sample)
-            samples = loop.run_until_complete(func)
+        with click.progressbar(
+            samples.data, length=samples.records_filtered, label="Updating tags"
+        ) as prog_bar:
+            for sample in prog_bar:
+                upd_tags = compute_phenotype_tags(sample)
+                upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
+                # update sample as sync function
+                loop = asyncio.get_event_loop()
+                func = update_sample(db, upd_sample)
+                samples = loop.run_until_complete(func)
     click.secho("Updated tags for all samples", fg="green")
 
 
@@ -283,56 +309,55 @@ def check_paths(
 
     if len(email_addr) > 0:
         # send report as email instead of writing to output
-        try:
-            send_email_report(output_ch.getvalue(), email_address=email_addr)
-        except ValueError as err:
-            LOG.error(str(err))
+        if settings.notification_service_api is None:
+            LOG.error(
+                "URL to notification service has not been configured, cant send report..."
+            )
+        else:
+            notify = NotificationClient(base_url=str(settings.notification_service_api))
+            report = EmailCreate(
+                recipient=email_addr,
+                subject="SKA Integrity report",
+                message=output_ch.getvalue(),
+            )
+            notify.send_email(report)
     else:
         output.write(output_ch.getvalue())
-    click.secho("Finished validating file paths", fg='green')
+    click.secho("Finished validating file paths", fg="green")
 
 
 @cli.command()
-@click.option('-b', '--backup', 'backup_path', type=click.Path(path_type=pathlib.Path), help="Backup samples that will be modified to PATH.")
+def get_event():
+    """Get a events"""
+    if settings.audit_log_service_api:
+        client = AuditLogClient(base_url=str(settings.audit_log_service_api))
+        events = client.get_events()
+        click.secho(events)
+    else:
+        raise ValueError(settings.audit_log_service_api)
+
+
+@cli.command()
+@click.option(
+    "-b",
+    "--backup",
+    "backup_path",
+    type=click.Path(path_type=pathlib.Path),
+    help="Backup samples that will be modified to PATH.",
+)
 def migrate_database(backup_path: pathlib.Path | None):
     """Migrate the data to a newer version of the schema."""
-    click.secho(f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database...")
+    click.secho(
+        f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database..."
+    )
     # 1 query the database for all samples that does not have the current schema version
     loop = asyncio.get_event_loop()
     with get_db_connection() as db:
-        if db.sample_collection is None:
-            raise ValueError
-        func = get_deprecated_records(db.sample_collection, SCHEMA_VERSION)
-        samples: list[dict[str, Any]] = loop.run_until_complete(func)
-
-        # 2 summarize operation
-        if len(samples) == 0:
-            click.secho("Your database is up to date!", fg="green")
-            raise click.Abort()
-
-        click.secho(f"Found {click.style(len(samples), fg='cyan', bold=True)} entry to migrate.")
-
-        # Confirm migration
-        click.confirm('Do you what to continue?', abort=True)
-
-        # 3 migrate data and validate using the current schema
-        migrated_samples: list[SampleInCreate] = [
-            SampleInCreate.model_validate(
-                migrate_result(sample, validate=False)
-            ) for sample in samples
-        ]
-        # 4 backup old records as json array
-        if backup_path is not None:
-            click.secho(f"Backing up old entries to: {backup_path}")
-            with open(backup_path, 'w', encoding='utf-8') as outf:
-                outf.write(json_util.dumps(samples, indent=3))
-        # 5 update samples
-        click.secho(f"Updating samples in the database")
         try:
-            for upd_sample in migrated_samples:
-                func = update_sample(db, upd_sample)
-                was_updated = loop.run_until_complete(func)
-                if not was_updated:
-                    raise ValueError(f"Sample '{upd_sample.sample_id}' was not updated.")
+            for mig_func in [migrate_sample_collection, migrate_group_collection]:
+                loop.run_until_complete(mig_func(db, backup_path))
+        except MigrationError as err:
+            LOG.error(str(err))
+            click.Abort()
         finally:
             click.secho("Finished migrating the database", fg="green")

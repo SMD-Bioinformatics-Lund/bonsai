@@ -11,6 +11,7 @@ services:
     ports:
      - "4444:4444"
      - "7900:7900"
+    restart: allways
     networks:
      - bonsai-net
 
@@ -29,7 +30,7 @@ services:
         condition: service_started
       api:
         condition: service_healthy
-        restart: true
+    restart: no
     networks:
      - bonsai-net
 

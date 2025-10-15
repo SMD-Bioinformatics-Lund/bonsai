@@ -1,10 +1,29 @@
-.git
+# Venvs and caches
+.venv/
+**/__pycache__/
+.pytest_cache/
+.tox/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+wheelhouse/
+
+# VCS & editors
+.git/
+.gitignore
+.gitattributes
+*.swp
+*.swo
 .DS_Store
 
-node_modules
-npm-debug.log
-build
-.dockerignore
+# Node or other unrelated
+node_modules/
 
 # volumes and other mounted files
 volumes

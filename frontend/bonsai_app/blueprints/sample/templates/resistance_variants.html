@@ -22,7 +22,7 @@
 <div class="card col-md-auto">
     <div class="card-header">Structural variants</div>
     <div class="card-body">
-        <table class="table">
+        <table id="sv-variant-tbl" class="table">
             <thead>
                 <tr>
                     <th>
@@ -83,6 +83,11 @@
         </table>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbl = bonsai.initVariantsTable('#sv-variant-tbl', false)
+    });
+</script>
 {% endmacro %}
 
 <form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}">

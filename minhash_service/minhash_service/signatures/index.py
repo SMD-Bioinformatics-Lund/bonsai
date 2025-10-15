@@ -1,0 +1,302 @@
+"""Sourmash index operations."""
+
+import contextlib
+import logging
+import shutil
+import tempfile
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any, Iterable, cast
+
+import fasteners
+import sourmash
+from pydantic import BaseModel
+from sourmash.exceptions import SourmashError
+from sourmash.index.revindex import DiskRevIndex
+
+from .models import IndexFormat, SignatureName, SourmashSignatures
+
+LOG = logging.getLogger(__name__)
+
+SBTIndex = sourmash.sbtmh.SBT
+RocksDBIndex = DiskRevIndex
+
+
+def get_index_path(signature_dir: Path, fmt: IndexFormat) -> Path:
+    """Build a path to index file or directory."""
+    idx_dir = signature_dir / "indexes"
+    idx_dir.mkdir(exist_ok=True)
+    return idx_dir / f"genomes_{fmt.value.lower()}_index"
+
+
+def create_index_store(
+    index_path: Path, index_format: IndexFormat, lock_path: Path | None = None
+) -> "BaseIndexStore":
+    """Create an index store based on the specified format."""
+    LOG.info("Reading index from: %s; format: %s", index_path, index_format)
+    match index_format:
+        case IndexFormat.SBT:
+            return SBTIndexStore(index_path, lock_path)
+        case IndexFormat.ROCKSDB:
+            return RocksDBIndexStore(index_path, lock_path)
+        case _:
+            raise NotImplementedError(f"Unknown index format: {index_format}")
+
+
+class AddResult(BaseModel):
+    """Result of adding new signatures to index."""
+
+    ok: bool
+    warnings: list[str]
+    added_count: int
+    added_md5s: list[str]
+
+
+class RemoveResult(BaseModel):
+    """Result of adding new signatures to index."""
+
+    ok: bool
+    warnings: list[str]
+    removed_count: int
+    removed: list[str] = []
+
+
+class BaseIndexStore(ABC):
+    """Base class for index stores."""
+
+    def __init__(self, index_path: Path, lock_path: Path | None = None):
+        """Initialize the index store with the given path and optional lock path."""
+        self.index_path: Path = Path(index_path)
+        self.lock_path = lock_path or self.index_path.with_suffix(
+            f"{self.index_path.suffix}.lock"
+        )
+        self._lock = fasteners.InterProcessLock(str(self.lock_path))
+        self._index: Any = None  # lazy load index
+        LOG.debug("Index path: %s; lock path: %s", self.index_path, self.lock_path)
+
+    @contextlib.contextmanager
+    def aquire_lock(self, timeout: float | None = None):
+        """Acquire an interprocess lock for the duration of the block."""
+        LOG.debug("Acquiring lock: %s", self.lock_path)
+        acquired = self._lock.acquire(blocking=True, timeout=timeout)
+        if not acquired:
+            raise TimeoutError(f"Could not acquire lock: {self.lock_path}")
+        try:
+            yield
+        finally:
+            self._lock.release()
+            LOG.debug("Released lock: %s", self.lock_path)
+
+    @abstractmethod
+    def _load_index(self, create_if_missing: bool) -> SBTIndex | RocksDBIndex:
+        """Index specific load function."""
+
+    def list_signatures(self) -> list[SignatureName]:
+        """List signatures in index."""
+        index = self._load_index(create_if_missing=False)
+        return [
+            SignatureName(name=sig.name, filename=getattr(sig, "filename", ""))
+            for sig in index.signatures()
+        ]
+
+    @abstractmethod
+    def add_signatures(
+        self,
+        signatures: Iterable[sourmash.SourmashSignature],
+        dedupe_by_md5: bool = True,
+    ) -> AddResult:
+        """Add one or more signatures to index."""
+
+    @abstractmethod
+    def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
+        """Remove signatures by name."""
+
+    @property
+    def index(self) -> SBTIndex | RocksDBIndex:
+        """Return memory representation of index."""
+        if self._index is None:
+            self._load_index(create_if_missing=True)
+        return self._index
+
+
+class SBTIndexStore(BaseIndexStore):
+    """Handles sourmash SBT index on disk."""
+
+    def _load_index(self, create_if_missing: bool = True) -> SBTIndex:
+        """Load index to memory."""
+        if self._index is not None:
+            return self._index
+
+        try:
+            index = cast(SBTIndex, sourmash.load_file_as_index(str(self.index_path)))
+        except (FileNotFoundError, ValueError):
+            if not create_if_missing:
+                raise
+            LOG.warning("Invalid index: %s, creating new index", self.index_path)
+            index = sourmash.create_sbt_index()
+        self._index = index
+        return self._index
+
+    def _atomic_save(self):
+        """Atomically save index to disk."""
+
+        with tempfile.TemporaryDirectory(prefix=self.index_path.name) as tmp_dir:
+            temp_path = Path(tmp_dir) / "index"
+            LOG.info("Temporarily save the signature to: %s", temp_path)
+            tmp_idx_path = self._index.save(str(temp_path))
+            tmp_idx_path = Path(tmp_idx_path)  # str -> Path
+            LOG.info(
+                "Preparing to move index from: %s; to: %s",
+                tmp_idx_path,
+                self.index_path,
+            )
+            tmp_idx_path.replace(self.index_path)
+
+    def add_signatures(
+        self,
+        signatures: Iterable[sourmash.SourmashSignature],
+        dedupe_by_md5: bool = True,
+    ) -> AddResult:
+        """Add one or more signatures to index."""
+
+        warnings, added_md5s = [], []
+        sigs = list(signatures)
+        if not sigs:
+            return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
+
+        with self.aquire_lock():
+            index = self._load_index(create_if_missing=True)
+            existing_md5: set[str] = set()
+            if dedupe_by_md5:
+                for sig in index.signatures():
+                    existing_md5.add(sig.md5sum())
+
+            added: int = 0
+            for sig in sigs:
+                md5 = cast(str, sig.md5sum())
+                if dedupe_by_md5 and md5 in existing_md5:
+                    LOG.warning(
+                        "Signature with md5sum %s already in index, skipping...", md5
+                    )
+                    continue
+                leaf = sourmash.sbtmh.SigLeaf(md5, sig)
+                self._index.add_node(leaf)
+                added_md5s.append(md5)
+                added += 1
+                existing_md5.add(md5)
+            self._atomic_save()
+        return AddResult(
+            ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s
+        )
+
+    def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
+        """Remove by signature.name by reconstructing a new index..
+
+        SBT does not support in-place deletion.
+        """
+        with self.aquire_lock():
+            old_index = self._load_index(create_if_missing=False)
+            kept: SourmashSignatures = []
+            removed: list[str] = []
+            for sig in old_index.signatures():
+                checksum = sig.md5sum()
+                (removed if checksum in checksums_to_remove else kept).append(sig)
+            new_index = sourmash.sbtmh.create_sbt_index()
+            for sig in kept:
+                new_index.add_node(sourmash.sbtmh.SigLeaf(sig.md5sum(), sig))
+
+            self._index = new_index  # replace in-memory cache
+            self._atomic_save()
+            not_removed = checksums_to_remove - set(removed)
+            if not_removed:
+                return RemoveResult(
+                    ok=False,
+                    warnings=[f"could not remove {', '.join(not_removed)}"],
+                    removed=removed,
+                    removed_count=len(removed),
+                )
+            return RemoveResult(
+                ok=True, warnings=[], removed_count=len(removed), removed=removed
+            )
+
+
+class RocksDBIndexStore(BaseIndexStore):
+    """Handles RocksDB index on disk."""
+
+    def _load_index(self, create_if_missing: bool = True) -> DiskRevIndex:
+        try:
+            self._index = DiskRevIndex(str(self.index_path))
+        except (FileNotFoundError, ValueError):
+            if not create_if_missing:
+                raise
+            LOG.warning("Invalid index: %s, creating new index", self.index_path)
+            self._index = DiskRevIndex.create_from_sigs([], str(self.index_path))
+        except SourmashError as err:
+            LOG.error("Sourmash failed to load index: %s", err)
+            raise
+        return self._index
+
+    def _rebuild_index(
+        self, signatures: Iterable[sourmash.SourmashSignature]
+    ) -> DiskRevIndex:
+        """Rebuild the entire index using all samples that should be indexed.
+
+        DiskRevIndex or RocksDB doesnt have an API for appending or removing signatures
+        from the index.
+        """
+        with self.aquire_lock():
+            parent = self.index_path.parent  # keep on same file system
+            with tempfile.TemporaryDirectory(
+                dir=parent, prefix=self.index_path.name
+            ) as tmp_dir:
+                tmp_path = Path(tmp_dir) / "index.tmp"
+                index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
+                if self.index_path.exists():
+                    shutil.rmtree(self.index_path)
+                tmp_path.replace(self.index_path)  # atomic save
+        return index
+
+    def add_signatures(
+        self,
+        signatures: Iterable[sourmash.SourmashSignature],
+        dedupe_by_md5: bool = True,
+    ) -> AddResult:
+        """Add one or more signatures to index."""
+        try:
+            self._index = self._rebuild_index(signatures)
+        except Exception as error:
+            LOG.error("Got a error when rebuilding index: %s", error)
+            return AddResult(
+                ok=False, warnings=[str(error)], added_count=0, added_md5s=[]
+            )
+        added_md5s: list[str] = [sig.md5sum() for sig in signatures]
+        return AddResult(
+            ok=True,
+            warnings=[],
+            added_count=len(self.list_signatures()),
+            added_md5s=added_md5s,
+        )
+
+    def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
+        """Remove signatures by name."""
+        with self.aquire_lock():
+            old_index = self._load_index(create_if_missing=False)
+            kept: SourmashSignatures = []
+            removed: list[str] = []
+            for sig in old_index.signatures():
+                checksum = sig.md5sum()
+                (removed if checksum in checksums_to_remove else kept).append(sig)
+
+            # build new index
+            self._index = self._rebuild_index(kept)
+            not_removed = checksums_to_remove - set(removed)
+            if not_removed:
+                return RemoveResult(
+                    ok=False,
+                    warnings=[f"could not remove {', '.join(not_removed)}"],
+                    removed=removed,
+                    removed_count=len(removed),
+                )
+            return RemoveResult(
+                ok=True, warnings=[], removed_count=len(removed), removed=removed
+            )

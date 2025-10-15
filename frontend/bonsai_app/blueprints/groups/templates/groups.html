@@ -41,11 +41,12 @@
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
+    const groupId = null
     // template code for adding to basket
     // template code for searching similar samples
 
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(apiUrl, accessToken, "")
+        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
     });
 </script>
 {% endblock content %}

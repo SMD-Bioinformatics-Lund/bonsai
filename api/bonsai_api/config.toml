@@ -1,0 +1,6 @@
+database_name = "bonsai"
+
+[email]
+subject_prefix = "[ Bonsai ]"
+sender = 'do-not-reply@bonsai.app'
+sender_name = "Bonsai"

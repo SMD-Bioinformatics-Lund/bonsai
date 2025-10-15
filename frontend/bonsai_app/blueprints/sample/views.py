@@ -6,17 +6,8 @@ from datetime import date
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
-from flask import (
-    Blueprint,
-    abort,
-    current_app,
-    flash,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, abort, current_app, flash, make_response,
+                   redirect, render_template, request, url_for)
 from flask_login import current_user, login_required
 from requests import HTTPError
 
@@ -36,16 +27,10 @@ from ...bonsai import (
     update_variant_info,
 )
 from ...models import BadSampleQualityAction, QualityControlResult
-from .controllers import (
-    filter_variants,
-    filter_variants_if_processed,
-    get_all_variant_types,
-    get_all_who_classifications,
-    get_variant_genes,
-    kw_metadata_to_table,
-    sort_variants,
-    split_metadata,
-)
+from .controllers import (filter_variants, filter_variants_if_processed,
+                          get_all_variant_types, get_all_who_classifications,
+                          get_variant_genes, kw_metadata_to_table,
+                          sort_variants, split_metadata)
 
 LOG = logging.getLogger(__name__)
 
@@ -122,14 +107,7 @@ def sample(sample_id: str) -> str:
     extended = bool(request.args.get("extended", False))
 
     # if a sample was accessed from a group it can pass the group_id as parameter
-    # group_id is used to fetch information on validated genes and resitances
-    group_id = request.args.get("group_id")
-    if group_id:
-        get_group_by_id(token, group_id=group_id)
-        # validated_genes = group.get("validatedGenes", {})
-
-    # summarize predicted antimicrobial resistance
-    # amr_summary, resistance_info = create_amr_summary(sample_info)
+    group_id: str | None = request.args.get("group_id")
 
     # sort phenotypic predictions so Tb is first
     order = {"tbprofiler": 10, "mykrobe": 1}
@@ -149,21 +127,19 @@ def sample(sample_id: str) -> str:
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
-    
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
-    
-    #similar_samples=similar_samples,
     return render_template(
         "sample.html",
         sample=sample_info,
+        group_id=group_id,
         title=sample_id,
         is_filtered=bool(group_id),
         bad_qc_actions=bad_qc_actions,
         extended=extended,
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
-        token=token.token
+        token=token.token,
     )
 
 
@@ -372,7 +348,7 @@ def resistance_variants(sample_id: str) -> str:
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
-        metadata_tbls=meta_tbls
+        metadata_tbls=meta_tbls,
     )
 
 
@@ -388,10 +364,13 @@ def metadata(sample_id: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    
+
     kw_metadata, metadata_tbls = split_metadata(sample_info)
     kw_tbl = kw_metadata_to_table(kw_metadata)
-    grouped_meta_tbl = {name: list(gr) for name, gr in groupby(metadata_tbls, key=lambda x: x['category'])}
+    grouped_meta_tbl = {
+        name: list(gr)
+        for name, gr in groupby(metadata_tbls, key=lambda x: x["category"])
+    }
 
     return render_template(
         "metadata.html",
@@ -415,9 +394,9 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
-    
+
     _, metadata_tbls = split_metadata(sample_info)
-    indexed_tbls = {tbl['fieldname']: tbl for tbl in metadata_tbls}
+    indexed_tbls = {tbl["fieldname"]: tbl for tbl in metadata_tbls}
     table = indexed_tbls.get(fieldname, None)
 
     return render_template(
