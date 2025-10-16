@@ -1,12 +1,15 @@
 #! /usr/bin/env python
 """Upload sample to Bonsai."""
+from enum import StrEnum
 import json
 from functools import wraps
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable, Literal
+import datetime as dt
 
 import click
+from click import Context
 import requests
 import yaml
 from pydantic import BaseModel, Field, FilePath, ValidationError
@@ -15,6 +18,12 @@ from requests.structures import CaseInsensitiveDict
 USER_ENV = "BONSAI_USER"
 PASSWD_ENV = "BONSAI_PASSWD"
 TIMEOUT = 10
+
+
+class MetadataTypes(StrEnum):
+    STR = 'string'
+    INT = 'integer'
+    DT = 'datetime'
 
 
 class SampleConfig(BaseModel):
@@ -46,6 +55,15 @@ class ExecutionContext(BaseModel):
     password: str
     api_url: str
     token: TokenObject | None = None
+
+
+class MetadataPoint(BaseModel):
+    """Describe how metadata is handled."""
+
+    fieldname: str
+    value: str | int | float | dt.datetime
+    category: str
+    type: MetadataTypes
 
 
 def _rel_to_abs_path(path: Path | str, base_path: Path) -> Path:
@@ -134,7 +152,7 @@ def upload_sample_result(
 
     resp.raise_for_status()
     resp_data = resp.json()
-    return resp_data["sample_id"]
+    return str(resp_data["sample_id"])
 
 
 @api_authentication
@@ -209,7 +227,19 @@ def _process_generic_status_codes(error, sample_id):
     return msg, is_major_error
 
 
-def upload_sample(ctx: ExecutionContext, cnf: SampleConfig) -> str:
+def authenticate_user(ctx: ExecutionContext) -> ExecutionContext:
+    """Authenticate user and add auth token to context."""
+    # add token if
+    try:
+        token = get_auth_token(ctx)
+    except ValueError as error:
+        raise click.UsageError(str(error)) from error
+
+    # add token to ctx
+    return ctx.model_copy(update={"token": token})
+
+
+def upload_sample_to_bonsai(ctx: ExecutionContext, cnf: SampleConfig) -> str:
     """Upload a sample with files for clustring."""
     try:
         sample_id = upload_sample_result(  # pylint: disable=no-value-for-parameter
@@ -253,20 +283,29 @@ def upload_sample(ctx: ExecutionContext, cnf: SampleConfig) -> str:
     return sample_id
 
 
-@click.command()
+@api_authentication
+def add_metadata_to_sample(
+    headers: CaseInsensitiveDict[Any],
+    ctx: ExecutionContext, sample_id: str, metadata: list[MetadataPoint]):
+    """Add metadata point to sample."""
+    payload = [dta.model_dump(mode="json") for dta in metadata]
+    resp = requests.post(
+        f"{ctx.api_url}/samples/{sample_id}/metadata",
+        headers=headers,
+        json=payload,
+        timeout=TIMEOUT,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+@click.group()
 @click.option("-a", "--api", required=True, type=str, help="Upload configuration")
 @click.option("-u", "--user", envvar=USER_ENV, type=str, help="Username")
 @click.option("-p", "--password", envvar=PASSWD_ENV, type=str, help="Password")
-@click.option(
-    "-i",
-    "--input",
-    "sample_conf",
-    required=True,
-    type=click.File(),
-    help="Upload configuration",
-)
-def cli(api, user, password, sample_conf):
-    """Upload a sample to Bonsai"""
+@click.pass_context
+def cli(ctx: Context, api: str, user: str | None, password: str | None):
+    """Base cli command."""
     if user is None:
         raise click.BadOptionUsage(
             "user",
@@ -277,6 +316,24 @@ def cli(api, user, password, sample_conf):
             "password",
             f"No username set. Use either the --password option or env variable {PASSWD_ENV}",
         )
+    ctx.obj = ExecutionContext(username=user, password=password, api_url=api)
+
+
+@cli.command()
+@click.option(
+    "-i",
+    "--input",
+    "sample_conf",
+    required=True,
+    type=click.File(),
+    help="Upload configuration",
+)
+@click.pass_context
+def upload_sample(ctx: Context, sample_conf: TextIOWrapper):
+    """Upload a sample to Bonsai"""
+    # login
+    ctx.ensure_object(ExecutionContext)
+    ctx.obj = authenticate_user(ctx.obj)
 
     # read upload config and verify content
     try:
@@ -288,23 +345,13 @@ def cli(api, user, password, sample_conf):
         )
         raise click.BadArgumentUsage(err_msg)
 
-    # login
-    ctx = ExecutionContext(username=user, password=password, api_url=api)
-    # add token if
-    try:
-        token = get_auth_token(ctx)
-    except ValueError as error:
-        raise click.UsageError(str(error)) from error
-
-    # add token to ctx
-    ctx = ctx.model_copy(update={"token": token})
     # upload sample
-    sample_id = upload_sample(ctx=ctx, cnf=cnf)
+    sample_id = upload_sample_to_bonsai(ctx.obj, cnf)
     # add sample to group if it was assigned one.
     if cnf.assinged_to_group():
         try:
             add_sample_to_group(  # pylint: disable=no-value-for-parameter
-                token_obj=ctx.token, ctx=ctx, cnf=cnf, sample_id=sample_id
+                token_obj=ctx.obj.token, ctx=ctx.obj, cnf=cnf, sample_id=sample_id
             )
         except requests.exceptions.HTTPError as error:
             match error.response.status_code:
@@ -319,6 +366,52 @@ def cli(api, user, password, sample_conf):
 
     # exit script
     click.secho("Sample uploaded", fg="green")
+
+
+@cli.command()
+@click.option(
+    "-s",
+    "--sample",
+    "sample_id",
+    required=True,
+    help="Sample id",
+)
+@click.option(
+    "-n",
+    "--name",
+    "param_name",
+    required=True,
+    help="Name of the metadata point",
+)
+@click.option(
+    "-v",
+    "--value",
+    "param_value",
+    required=True,
+    help="Value of the metadata point",
+)
+@click.option(
+    "-c",
+    "--category",
+    required=True,
+    help="Value of the metadata point",
+)
+@click.option(
+    "-d",
+    "--data-type",
+    "data_type",
+    type=click.Choice([ty.value for ty in MetadataTypes]),
+    required=True,
+    help="Value of the metadata point",
+)
+@click.pass_context
+def add_metadata(ctx: Context, sample_id: str, param_name: str, param_value: str, category: str, data_type: str):
+    """Add metadata to sample"""
+    ctx.ensure_object(ExecutionContext)
+    ctx.obj = authenticate_user(ctx.obj)
+
+    meta = [MetadataPoint(fieldname=param_name, value=param_value, category=category, type=MetadataTypes(data_type))]
+    add_metadata_to_sample(ctx=ctx.obj, sample_id=sample_id, metadata=meta, token_obj=ctx.obj.token)
 
 
 if __name__ == "__main__":
