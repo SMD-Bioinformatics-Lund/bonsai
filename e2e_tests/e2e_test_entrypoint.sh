@@ -9,6 +9,7 @@ for file in /app/fixtures/samples/*.yaml; do
     --user     admin \
     --password admin \
     --api      http://api:8000/ \
+    upload-sample \
     --input    "$file"
 done
 
