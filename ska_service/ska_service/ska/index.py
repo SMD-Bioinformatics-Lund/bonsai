@@ -2,6 +2,7 @@
 
 import logging
 import tempfile
+import os
 from pathlib import Path
 from typing import Sequence
 
@@ -28,7 +29,7 @@ def resolve_index_path(
     # else try to find the file
     if find_missing:
         LOG.info("Trying to find file %s by recursive search", file_name)
-        for root, _, files in Path(cnf.index_dir).walk():
+        for root, _, files in os.walk(cnf.index_dir):
             if index_path.name in files:
                 return Path(root) / index_path.name
 
