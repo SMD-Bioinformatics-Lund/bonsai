@@ -203,6 +203,7 @@ export async function initSampleView(
   // setup base functionality
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
   initToast();
+  initTooltip();
 
   const qcStatusForm = document.getElementById(
     "qc-classification-form",
@@ -216,8 +217,7 @@ export async function initSampleView(
     );
   }
 
-  const newick = await findAndClusterSimilarSamples(sampleId, api);
-  return newick
+  await findAndClusterSimilarSamples(sampleId, api);
 }
 
 declare global {
