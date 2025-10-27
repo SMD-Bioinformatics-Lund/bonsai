@@ -135,6 +135,6 @@ async def export_to_lims(
         ext = "csv"
     body = serialize_lims_results(lims_data, delimiter=fmt)
 
-    filename = f"{sample_obj.sample_id}_lims.{ext}"
+    filename = f"{sample_obj.sample_id}_lims.txt"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return PlainTextResponse(content=body, media_type=media_type, headers=headers)
