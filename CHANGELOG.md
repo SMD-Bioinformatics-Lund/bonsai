@@ -2,12 +2,24 @@
 
 ### Added
 
+
 ### Fixed
 
 - Ska trying to find missing index files now properly walks results directory.
-- Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
 
 ### Changed
+
+
+## [v2.1.0]
+
+### Added
+
+- Improved LIMS export function that can be customised using a export configd
+
+### Fixed
+
+- Fixed issue in lineage card that could crash javascript
+- Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
 
 ## [v2.0.0]
 

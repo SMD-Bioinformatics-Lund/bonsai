@@ -8,10 +8,9 @@ from bonsai_api.lims_export.export import (
 )
 from bonsai_api.lims_export.models import (
     AssayConfig,
-    DataType,
     FieldDefinition,
     LimsRsResult,
-    LimsValue,
+    DataType
 )
 
 
@@ -35,19 +34,19 @@ def test_lims_rs_formatter(mtuberculosis_sample):
     assay_config = AssayConfig(
         assay="tb-test",
         fields=[
-            FieldDefinition(parameter_name="MTBC_QC", data_type="qc", required=True),
+            FieldDefinition(parameter_name="MTBC_QC", data_type=DataType.QC, required=True),
             FieldDefinition(
-                parameter_name="MTBC_SPP", data_type="species", required=True
+                parameter_name="MTBC_SPP", data_type=DataType.SPECIES, required=True
             ),
             FieldDefinition(
                 parameter_name="MTBC_RIF",
-                data_type="amr",
+                data_type=DataType.AMR,
                 required=True,
                 options={"antibiotic_name": "rifampicin"},
             ),
             FieldDefinition(
                 parameter_name="MTBC_ETB",
-                data_type="amr",
+                data_type=DataType.AMR,
                 required=True,
                 options={"antibiotic_name": "ethambutol"},
             ),
@@ -69,7 +68,7 @@ def test_lims_rs_formatter_failures(mtuberculosis_sample):
         assay="tb-test",
         fields=[
             FieldDefinition(
-                parameter_name="MTBC_MLST", data_type="mlst", required=False
+                parameter_name="MTBC_MLST", data_type=DataType.MLST, required=False
             ),
         ],
     )
@@ -77,13 +76,17 @@ def test_lims_rs_formatter_failures(mtuberculosis_sample):
 
     # test that a missing result is properly reported
     assert len(result) == 1
-    assert result[0].comment == "not_present"
+    assert result[0].comment == "-"
+
+    # get expected value of a missing value
+    exp_missing_value = assay_config.fields[0].missing_analysis_value
+    assert result[0].parameter_value == exp_missing_value
 
     assay_config = AssayConfig(
         assay="tb-test",
         fields=[
             FieldDefinition(
-                parameter_name="MTBC_MLST", data_type="mlst", required=True
+                parameter_name="MTBC_MLST", data_type=DataType.MLST, required=True
             ),
         ],
     )
@@ -96,7 +99,7 @@ def test_serialize_lims_result():
     """Test the serialization of LIMS result"""
     results = [
         LimsRsResult(
-            sample_id="S1",
+            sample_name="S1",
             parameter_name="MTBC_QC",
             parameter_value="140,0",
             comment='Needs "review", urgent',

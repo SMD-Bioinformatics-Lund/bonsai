@@ -30,7 +30,7 @@ def lims_rs_formatter(
       - analysis present but no result ⇒ include a row with value=None (empty after _to_str)
       - analysis not present and required ⇒ raise ValueError
     """
-    LOG.debug("Preparing to format %s using assay %s", sample.sample_id, config.assay)
+    LOG.debug("Preparing to format %s using assay %s", sample.sample_name, config.assay)
     result: list[LimsRsResult] = []
     for field in config.fields:
         formatter = get_formatter(field.data_type)
@@ -38,19 +38,19 @@ def lims_rs_formatter(
 
         try:
             value, comment = formatter(sample, options=field.options)
-        except AnalysisNotPresentError as e:
+        except AnalysisNotPresentError:
             # Analysis has not been done on this sample
             analysis_present = False
-            value, comment = None, "not_present"
+            value, comment = field.missing_analysis_value, None
 
-        except AnalysisNoResultError as e:
+        except AnalysisNoResultError:
             # Analysis is present but no failed to generate a result
-            value, comment = None, "no_result"
+            value, comment = field.no_result_value, None
 
         except Exception as err:
             LOG.error(
                 "Unexpected error formatting sample=%s field=%s (%s): %s",
-                sample.sample_id,
+                sample.sample_name,
                 field.parameter_name,
                 field.data_type,
                 err,
@@ -62,13 +62,13 @@ def lims_rs_formatter(
         if field.required and not analysis_present:
             raise ValueError(
                 f"Required analysis for field '{field.parameter_name}' "
-                f"({field.data_type}) is not present on sample '{sample.sample_id}'."
+                f"({field.data_type}) is not present on sample '{sample.sample_name}'."
             )
         entry = LimsRsResult(
-            sample_id=sample.sample_id,
+            sample_name=sample.sample_name,
             parameter_name=field.parameter_name,
             parameter_value=_to_str(value),  # None -> "", int/str -> str
-            comment=comment or "",
+            comment=comment or "-",
         )
         result.append(entry)
     return result
@@ -90,7 +90,7 @@ def serialize_lims_results(
     for result in results:
         writer.writerow(
             [
-                result.sample_id,
+                result.sample_name,
                 result.parameter_name,
                 result.parameter_value,
                 result.comment,

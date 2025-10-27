@@ -172,7 +172,7 @@ export function initSetSampleQc(
 export async function findAndClusterSimilarSamples(
   sampleId: string,
   api: ApiService,
-): Promise<string> {
+) {
   const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
   spinner?.show()
@@ -184,7 +184,6 @@ export async function findAndClusterSimilarSamples(
     cluster_method: ClusterMethod.SINGLE,
   };
   // queue similar samples job
-  let jobResult: ApiJobStatusNewick;
   const job = await api.findSimilarSamples(sampleId, searchParams);
   console.log("Waiting for the following job ID:", job.id);
   try {
@@ -204,7 +203,6 @@ export async function findAndClusterSimilarSamples(
   finally {
     spinner?.hide()
   }
-  return jobResult.result
 }
 
 /* Draw dendrogram from Newick string */

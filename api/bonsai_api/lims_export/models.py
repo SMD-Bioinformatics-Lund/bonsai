@@ -39,6 +39,8 @@ class FieldDefinition(BaseModel):
     options: dict[str, Any] = Field(
         default={}, description="Optional arguments to be passed to formatter function."
     )
+    no_result_value: str = Field(default="NA", description="Analysis present, no result")
+    missing_analysis_value: str = Field(default="MA", description="Analysis missing, but expected")
 
 
 class AssayConfig(BaseModel):
@@ -54,7 +56,7 @@ ExportConfiguration = list[AssayConfig]
 class LimsRsResult(BaseModel):
     """A LIMS-RS result which represent a row in a csv file."""
 
-    sample_id: str
+    sample_name: str
     parameter_name: str
     parameter_value: LimsValue
     comment: str = ""
