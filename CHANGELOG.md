@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Ska trying to find missing index files now properly walks results directory.
 - Fixed regression in GrapeTree that prevented multiple node labels to be displayed.
 
 ### Changed
