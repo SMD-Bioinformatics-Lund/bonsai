@@ -35,8 +35,8 @@ from bonsai_api.redis.minhash import (
     schedule_find_similar_and_cluster, schedule_find_similar_samples,
     schedule_remove_genome_signature_from_index)
 from bonsai_api.utils import format_error_message
-from fastapi import (APIRouter, Body, Depends, File, Header, HTTPException,
-                     Path, Query, Security, status)
+from fastapi import (APIRouter, Body, Depends, File, Form, Header, HTTPException,
+                     Path, Query, Security, UploadFile, status)
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import (AMRMethodIndex, StressMethodIndex,
@@ -47,6 +47,7 @@ from pymongo.errors import DuplicateKeyError
 
 from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
                      parse_signature_json)
+from crud.analysis import add_analysis_to_sample
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -693,3 +694,18 @@ async def find_similar_samples(
             status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)
         ) from error
     return submission_info
+
+
+@router.post("/sample/upload/{sample_id}", status_code=status.HTTP_201_CREATED)
+async def upload_result_to_sample(
+    sample_id: str,
+    software: str,
+    version: str,
+    file: UploadFile,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    )):
+    """Upload results files from JASEN to an existing sample."""
+
+    await add_analysis_to_sample(db, sample_id, software, version, file)
