@@ -5,6 +5,7 @@
 
 ### Fixed
 
+- Remove sample from group now uses the correct group id in the API call.
 
 ### Changed
 
