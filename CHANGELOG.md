@@ -5,6 +5,7 @@
 
 ### Fixed
 
+- Ska trying to find missing index files now properly walks results directory.
 
 ### Changed
 
