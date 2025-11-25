@@ -22,6 +22,7 @@ from prp.models.typing import (
     TypingResultMlst,
     TypingSoftware,
 )
+from prp.models.kleborate import KleborateScoreIndex, KleborateEtIndex
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
@@ -125,7 +126,7 @@ class SampleInCreate(
     """Sample data model used when creating new db entries."""
 
     metadata: list[InputMetaEntry] = []
-    element_type_result: list[MethodIndex]
+    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
@@ -136,7 +137,7 @@ class SampleInDatabase(
     """Sample database model outputed from the database."""
 
     metadata: list[MetaEntryInDb] = []
-    element_type_result: list[MethodIndex]
+    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
