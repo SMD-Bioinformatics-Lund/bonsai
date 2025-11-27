@@ -31,7 +31,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
-    "buildcp": "webpack && cp --verbose build/js/bonsai.min.js bonsai_app/blueprints/public/static/",
+    "buildcp": "webpack && cp -v build/js/bonsai.min.js bonsai_app/blueprints/public/static/",
     "lint": "eslint frontend/web",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "npx prettier frontend/web",
