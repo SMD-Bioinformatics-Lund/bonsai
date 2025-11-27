@@ -41,12 +41,22 @@
                 {% if display_qc %}
                     {{ qc_bulk_toggle(bad_qc_actions)}}
                 {% endif %}
-                {# toggle display qc values #}
-                <a class="btn btn-sm btn-outline-primary {% if display_qc %}active{% endif %} ms-2" 
-                   data-test-id="open-qc-view-btn"
-                   href="{{ url_for('groups.group', group_id=group_id, qc=not display_qc) }}">
-                   Show QC
-                </a>
+                <div class="btn-group ms-2" role="group" aria-label="Three button group">
+                    <a type="button"
+                            class="btn btn-outline btn-dark btn-sm {% if not display_qc %}active{% endif %}"
+                            data-test-id="open-qc-view-btn"
+                            data-bs-toggle="tooltip" data-bs-title="Show prediction summary"
+                            href="{{ url_for('groups.group', group_id=group_id, qc=False) }}">
+                        <i class="bi bi-search"></i>
+                    </a>
+                    <a type="button" 
+                            class="btn btn-outline btn-dark btn-sm {% if display_qc %}active{% endif %}"
+                            data-test-id="open-qc-view-btn"
+                            data-bs-toggle="tooltip" data-bs-title="Show QC metrics"
+                            href="{{ url_for('groups.group', group_id=group_id, qc=True) }}">
+                        <i class="bi bi-bar-chart-line"></i>
+                    </a>
+                </div>
             </div>
         </nav>
         {{ sample_table(table_data) }}
