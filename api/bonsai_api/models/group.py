@@ -252,6 +252,13 @@ VALID_QC_COLS = [
         path="$.missing_cgmlst_loci",
         sortable=True,
     ),
+    OverviewTableColumn(
+        id="cdate",
+        label="Date",
+        type="date",
+        path="$.created_at",
+        sortable=True,
+    ),
 ]
 
 # create combination of valid columns
