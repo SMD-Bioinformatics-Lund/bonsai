@@ -173,11 +173,37 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     OverviewTableColumn(
+        id="assay",
+        label="Assay",
+        path="$.assay",
+        sortable=True,
+    ),
+    OverviewTableColumn(
         id="qc",
         label="QC",
         type="qc",
         path="$.qc_status.status",
         sortable=True,
+    ),
+    OverviewTableColumn(
+        id="taxonomic_name",
+        label="Major species",
+        type="taxonomic_name",
+        path="$.species_prediction.scientific_name",
+        sortable=True,
+    ),
+    OverviewTableColumn(
+        id="tags",
+        label="Tags",
+        type="tags",
+        path="$.tags",
+    ),
+    OverviewTableColumn(
+        id="mlst",
+        label="MLST ST",
+        path="$.mlst",
+        sortable=True,
+        filterable=True,
     ),
     OverviewTableColumn(
         id="n50",

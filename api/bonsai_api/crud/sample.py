@@ -158,6 +158,13 @@ PREDICTION_SUMMARY_QUERY: list[dict[str, Any]] = [
 QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
     {
         "$addFields": {
+            "mlst": {
+                "$cond": {
+                    "if": {"$in": ["mlst", "$typing_result.type"]},
+                    "then": {"$arrayElemAt": ["$typing_result", 0]},
+                    "else": None,
+                }
+            },
             "quast": {
                 "$arrayElemAt": [
                     {
@@ -253,20 +260,20 @@ async def get_samples_summary(
         "release_life_cycle": "$pipeline.release_life_cycle",
         "classification": "$pipeline.assay",
         "n_records": 1,
+        "tags": 1,
+        "comments": 1,
     }
 
     # define container for opitional projections
-    optional_projecton = {}
+    optional_projecton: dict[str, int | str]  = {}
 
     # build query for prediction result
     if prediction_result:
         pipeline.extend(PREDICTION_SUMMARY_QUERY)
-        optional_projecton: dict[str, int | str] = {
-            "tags": 1,
-            "comments": 1,
-            "mlst": "$mlst.result.sequence_type",
+        optional_projecton = {
             "stx": 1,
             "oh_type": 1,
+            "mlst": "$mlst.result.sequence_type",
             **optional_projecton,
         }
 
@@ -277,12 +284,14 @@ async def get_samples_summary(
             "platform": "$sequencing.platform",
             "quast": "$quast.result",
             "postalignqc": "$postalignqc.result",
+            "mlst": "$mlst.result.sequence_type",
             "missing_cgmlst_loci": "$cgmlst.result.n_missing",
             **optional_projecton,
         }
 
     # add projections to pipeline
     pipeline.append({"$project": {**base_projection, **optional_projecton}})
+    LOG.warning("Pipeline for sample summary: %s", pipeline)
 
     # add limit, skip and count total records in db
     facet_pipe: list[dict[str, int]] = []
@@ -317,6 +326,7 @@ async def get_samples_summary(
                 else query_results[0]["records_total"][0]["count"]
             ),
         )
+    LOG.warning("Response: %s", [col.keys() for col in query_response.data])
     return query_response
 
 
