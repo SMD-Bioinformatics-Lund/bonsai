@@ -216,6 +216,19 @@ async def get_samples_summary(
     pipeline: list[dict[str, Any]] = []
     if isinstance(include_samples, list) and len(include_samples) > 0:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
+
+    # Lookup group membership
+    pipeline.append(
+        {
+            "$lookup": {
+                "from": db.sample_group_membership_collection.name,
+                "localField": "sample_id",
+                "foreignField": "sample_id",
+                "as": "membership",
+            }
+        }
+    )
+
     # species prediction projection
     # get the first entry of the bracken result
     spp_cmd: dict[str, Any] = {
@@ -250,6 +263,7 @@ async def get_samples_summary(
         "sequencing_run": "$sequencing.run_id",
         "qc_status": 1,
         "metadata": 1,
+        "in_groups": "$membership.groups",
         "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",
