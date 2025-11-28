@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+from pymongo import UpdateOne
 
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
@@ -209,3 +210,41 @@ async def remove_samples_from_group(
             raise EntryNotFound(group_id)
         if not update_obj.modified_count == 1:
             raise UpdateDocumentError(group_id)
+
+
+async def _add_group_to_membership(
+    db: Database,
+    group_record: GroupInfoDatabase,
+    sample_ids: list[str],
+) -> None:
+    """Add a group to multiple sample membership ducuments."""
+    ops: list[UpdateOne] = []
+    group_entry: dict[str, str | list[str]] = {"group_id": group_record.group_id, "display_name": group_record.display_name}
+    for sid in sample_ids:
+        ops.append(
+            UpdateOne(
+                {"sample_id": sid},
+                {"$addToSet": {"groups": group_entry}},
+                upsert=True,
+            )
+        )
+    if ops:
+        await db.sample_group_membership_collection.bulk_write(ops)
+
+
+async def _remove_group_from_membership(
+    db: Database,
+    group_id: str,
+    sample_ids: list[str],
+) -> None:
+    """Remove a group from multiple sample membership ducuments."""
+    ops: list[UpdateOne] = []
+    for sid in sample_ids:
+        ops.append(
+            UpdateOne(
+                {"sample_id": sid},
+                {"$pull": {"groups": {"group_id": group_id}}},
+            )
+        )
+    if ops:
+        await db.sample_group_membership_collection.bulk_write(ops)
