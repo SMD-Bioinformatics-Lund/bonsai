@@ -3,15 +3,9 @@
 from typing import Optional, Union
 
 from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AmrFinderGene,
-    AmrFinderResistanceGene,
-    ElementType,
-    PredictionSoftware,
-    ResfinderGene,
-    VariantBase,
-    VirulenceGene,
-)
+from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
+                                  ElementType, PredictionSoftware,
+                                  ResfinderGene, VariantBase, VirulenceGene)
 from prp.models.species import SpeciesPrediction
 from prp.models.typing import (
     ResultLineageBase,
@@ -22,22 +16,18 @@ from prp.models.typing import (
     TypingResultMlst,
     TypingSoftware,
 )
+from prp.models.kleborate import KleborateScoreIndex, KleborateEtIndex
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (
-    DateTimeModelMixin,
-    DBModelMixin,
-    ModifiedAtRWModel,
-    MultipleRecordsResponseModel,
-)
+from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
+                   MultipleRecordsResponseModel)
+from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
-from .metadata import MetaEntryInDb, InputMetaEntry
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
-
 
 
 class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
@@ -125,7 +115,7 @@ class SampleInCreate(
     """Sample data model used when creating new db entries."""
 
     metadata: list[InputMetaEntry] = []
-    element_type_result: list[MethodIndex]
+    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
@@ -136,7 +126,7 @@ class SampleInDatabase(
     """Sample database model outputed from the database."""
 
     metadata: list[MetaEntryInDb] = []
-    element_type_result: list[MethodIndex]
+    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 

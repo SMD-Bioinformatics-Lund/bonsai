@@ -1,51 +1,88 @@
-{% macro render_sampleId(sample_id, label)  %}
-    <a href={{url_for('samples.sample', sample_id=sample_id)}}>{{label}}</a>
+{% macro sample_btn_renderer(cell_info)  %}
+    <td>
+        {% set params={"sample_id": cell_info} %}
+        {% if group_id is defined %}
+            {% do params.update({"group_id": group_id}) %}
+        {% endif %}
+        <a href="{{ url_for('samples.sample', **params) }}">Open</a>
+    </td>
 {% endmacro %}
 
-{% macro render_taxonomic_name(text)  %}
-    <span class="fw-light fst-italic">{{text}}</span>
+{% macro taxonomic_name_renderer(cell_info) %}
+    <td>
+        <span class="fw-light fst-italic">{{ cell_info }}</span>
+    </td>
 {% endmacro %}
 
-{% macro render_qc(text)  %}
-    {% if text == 'passed' %}
+{% macro qc_status_renderer(cell_info) %}
+    {% set status = cell_info.status %}
+    {% if status == 'passed' %}
         {% set text_colour = 'text-success' %}
-    {% elif text == 'failed' %} 
+    {% elif status == 'failed' %}
         {% set text_colour = 'text-danger' %}
     {% else %}
         {% set text_colour = '' %}
     {% endif %}
-    <span class="fw-light {{ text_colour }}">{{ text }}</span>
-{% endmacro %}
 
-{% macro render_mlst(st)  %}
-    {% if st == None %}
-        {% set st="-" %}
+
+    {% if cell_info.action and cell_info.comment %}
+        {% set action = 'Action: ' + cell_info.action %}
+        {% set tooltip_info = action + ' - ' + cell_info.comment %}
+    {% elif cell_info.action %}
+        {% set tooltip_info = cell_info.action %}
+    {% elif cell_info.comment %}
+        {% set tooltip_info = cell_info.comment %}
+    {% else %}
+        {% set tooltip_info = None %}
     {% endif %}
-    <span class="fw-normal fs-6">{{st}}</span>
-{% endmacro %}
-
-{% macro render_pvl(pvl)  %}
-    {% set pvl_tag = pvl | get_pvl_tag %}
-    <span class="badge bg-{{pvl_tag.severity}} fw-normal">{{pvl_tag.label}}</span>
-{% endmacro %}
-
-{% macro render_mrsa(amr)  %}
-    {% set has_meca = amr | has_arg("mecA") %}
-    {% if has_meca %}
-        <span class="bade bg-danger fw-normal text-light fs-6">MRSA</span>
-    {% endif %}
-{% endmacro %}
-
-{% macro render_tags(tag_info)  %}
-    <td data-search="{% for tag in tag_info %}{{tag.label}} {% endfor %}">
-    {% for tag in tag_info %}
-        <span class="badge text-bg-{{tag.severity}} p-1 me-1">
-            {{tag.label}}
+    <td>
+        <span class="fw-light {{ text_colour }}">
+            {{ status }}
         </span>
-    {% endfor %}
+        {% if tooltip_info %}
+            <i class="bi bi-info-circle"
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="{{ tooltip_info }}"></i>
+        {% endif %}
     </td>
 {% endmacro %}
 
+{% macro mrsa_renderer(amr)  %}
+    {% set has_meca = amr | has_arg("mecA") %}
+    <td>
+    {% if has_meca %}
+        <span class="bade bg-danger fw-normal text-light fs-6">MRSA</span>
+    {% endif %}
+    </td>
+{% endmacro %}
+
+{% macro mlst_renderer(cell_info) %}
+    {% if cell_info.data == None %}
+        {% set mlst_st="-" %}
+    {% else %}
+        {% set mlst_st=cell_info.data %}
+    {% endif %}
+    <td>
+        <span class="fw-normal fs-6">{{mlst_st}}</span>
+    </td>
+{% endmacro %}
+
+{% macro pvl_renderer(pvl) %}
+    {% set pvl_tag = pvl | get_pvl_tag %}
+    <td>
+        <span class="badge bg-{{pvl_tag.severity}} fw-normal">{{pvl_tag.label}}</span>
+    </td>
+{% endmacro %}
+
+{% macro tags_renderer(tag_info) %}
+    <td data-search="{% for tag in tag_info %}{{tag.label}} {% endfor %}">
+    {% for tag in tag_info %}
+        <span class="badge text-bg-{{tag.severity}} p-1 me-1"
+              data-bs-toggle="tooltip" data-bs-placement="top" 
+              data-bs-title="{{ tag.description }}">{{tag.label}}</span>
+    {% endfor %}
+    </td>
+{% endmacro %}
 
 {% macro comment_tooltip(comment) %}
 <p class='mb-1'>{{ comment.comment }}</p>
@@ -53,7 +90,8 @@
 <hr>
 {% endmacro %}
 
-{% macro render_comments(comments_obj) %}
+{% macro comments_renderer(cell_info) %}
+    {% set comments_obj = cell_info %}
     <td>
         {% if comments_obj | length %}
             <span class="badge text-bg-primary" data-bs-toggle="tooltip" 
@@ -72,30 +110,28 @@
     </td>
 {% endmacro %}
 
-{% macro render_text(text)  %}
-    <span>{{text}}</span>
+{% macro text_renderer(cell_info) %}
+    <td>{{ cell_info }}</td>
 {% endmacro %}
 
-{% macro format_table_cell(cell_info) %}
-    {% if cell_info.type == 'sample_btn' %}
-        <td>{{ render_sampleId(cell_info.data, "Open") }}</td>
-    {% elif cell_info.type == 'tags' %}
-        {{ render_tags(cell_info.data) }}
-    {% elif cell_info.type == 'list' %}
-        <td>{{ cell_info.data | join(', ') }}</td>
-    {% elif cell_info.type == 'taxonomic_name' %}
-        <td>{{ render_taxonomic_name(cell_info.data) }} </td>
-    {% elif cell_info.type in ['date', 'datetime'] %}
-        <td>{{ cell_info.data | strftime }} </td>
-    {% elif cell_info.type == 'qc' %}
-        <td>{{ render_qc(cell_info.data) }}</td>
-    {% elif cell_info.type == 'comments' %}
-        {{ render_comments(cell_info.data) }}
-    {% elif cell_info.type == 'mlst' %}
-        {{ render_mlst(cell_info.data) }}
-    {% elif cell_info.type in ['number', 'integer', 'float'] %}
-        <td data-search="{{ cell_info.data }}" data-sort="{{ cell_info.data }}">{{ cell_info.data | fmt_to_human_readable }}</td>
-    {% else %}
-        <td>{{ cell_info.data }}</td>
-    {% endif %}
+{% macro number_renderer(cell_info) %}
+    <td>{{ cell_info | fmt_number }}</td>
+{% endmacro %}
+
+{% macro date_renderer(cell_info) %}
+    <td>{{ cell_info | strftime }}</td>
+{% endmacro %}
+
+{% macro boolean_renderer(cell_info) %}
+    <td>
+        {% if cell_info %}
+            <i class="bi bi-check-lg"></i>
+        {% else %}
+            <i class="bi bi-x"></i>
+        {% endif %}
+    </td>
+{% endmacro %}
+
+{% macro list_renderer(cell_info) %}
+    <td>{{ cell_info | join(', ') }}</td>
 {% endmacro %}

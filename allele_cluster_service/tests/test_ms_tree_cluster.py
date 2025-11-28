@@ -1,6 +1,7 @@
 """Test cluster samples using ms_tree."""
 
 import pytest
+
 from allele_cluster_service.tasks import cluster
 
 

@@ -54,7 +54,10 @@ def ska_distance(
 
 
 def ska_align(
-    index_file: Path, threads: int = 1, filter_ambig: bool = False, filter_constant: bool = True
+    index_file: Path,
+    threads: int = 1,
+    filter_ambig: bool = False,
+    filter_constant: bool = True,
 ) -> pd.DataFrame:
     """
     Calculate distances between all samples within an .skf file.
@@ -79,6 +82,8 @@ def ska_align(
 
     # run command
     ska_base(
-        "align", arguments=[index_file, "--no-gap-only-sites", "--filter-ambig-as-missing"], options={"o": output, "threads": threads, "filter": filter_opt}
+        "align",
+        arguments=[index_file, "--no-gap-only-sites", "--filter-ambig-as-missing"],
+        options={"o": output, "threads": threads, "filter": filter_opt},
     )
     return output

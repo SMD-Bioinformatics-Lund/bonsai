@@ -221,7 +221,7 @@ def _process_generic_status_codes(error, sample_id):
             msg = f"Sample with {sample_id} is not in Bonsai"
             is_major_error = False
         case 500:
-            msg = "An unexpected error occured in Bonsai, check bonsai api logs"
+            msg = "An unexpected error occurred in Bonsai, check bonsai api logs"
         case _:
             msg = f"An unknown error occurred; {str(error)}"
     return msg, is_major_error
@@ -358,7 +358,9 @@ def upload_sample(ctx: Context, sample_conf: TextIOWrapper):
                 case 404:
                     msg = f"Group with id {cnf.group_id} is not in Bonsai"
                 case 500:
-                    msg = "An unexpected error occured in Bonsai, check bonsai api logs"
+                    msg = (
+                        "An unexpected error occurred in Bonsai, check bonsai api logs"
+                    )
                 case _:
                     msg = f"An unknown error occurred; {str(error)}"
             # raise error and abort execution

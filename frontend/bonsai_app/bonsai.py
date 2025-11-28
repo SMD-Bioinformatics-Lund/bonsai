@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
-from .models import SampleBasketObject, SubmittedJob
+from .models import ApiGetSamplesDetailsInput, SampleBasketObject, SubmittedJob
 
 LOG = logging.getLogger(__name__)
 
@@ -240,21 +240,25 @@ def remove_samples_from_basket(
 @api_authentication
 def get_samples(
     headers: CaseInsensitiveDict[str],
-    limit: int = 20,
-    skip: int = 0,
+    limit: int | None = None,
+    skip: int | None = None,
     sample_ids: list[str] | None = None,
 ):
-    """Get multipe samples from database."""
+    """Get multipe samples from database.
+
+    If sample_ids is provided it will return only those samples.
+    """
     # conduct query
-    url = f"{settings.api_internal_url}/samples/"
+    url = f"{settings.api_internal_url}/samples/summary"
     # get limit, offeset and skip values
-    params: dict[str, int | list[str]] = {"limit": limit, "skip": skip}
     if sample_ids is not None:
         # sanity check list
         if len(sample_ids) == 0:
             raise ValueError("sample_ids list cant be empty!")
-        params["sid"] = sample_ids
-    resp = requests_get(url, headers=headers, params=params)
+    data = ApiGetSamplesDetailsInput.model_validate(
+        {"limit": limit, "skip": skip, "sid": sample_ids}
+    )
+    resp = requests_post(url, headers=headers, json=data.model_dump())
 
     try:
         resp.raise_for_status()
@@ -487,13 +491,16 @@ def get_lims_export_response(headers: CaseInsensitiveDict[str], sample_id: str, 
 
 
 @api_authentication
-def get_valid_group_columns(headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False):
+def get_valid_group_columns(
+    headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False
+):
     """Query API for valid group columns."""
     partial_url: str = (
-        "groups/default/columns" if group_id is None 
-        else f"groups/{group_id}/columns"
+        "groups/default/columns" if group_id is None else f"groups/{group_id}/columns"
     )
-    resp = requests_get(f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers)
+    resp = requests_get(
+        f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers
+    )
     resp.raise_for_status()
     return resp.json()
 

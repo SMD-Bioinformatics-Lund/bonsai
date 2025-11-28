@@ -1,11 +1,11 @@
 import logging
 import time
 
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support.ui import WebDriverWait
 
 LOG = logging.getLogger(__name__)
 
@@ -51,7 +51,9 @@ def get_bootstrap_alert(driver: WebDriver, severity: str = "all") -> WebElement 
     return element
 
 
-def reload_page_with_retries(driver: WebDriver, url: str, n_tries: int = 5) -> None | bool:
+def reload_page_with_retries(
+    driver: WebDriver, url: str, n_tries: int = 5
+) -> None | bool:
     """
     Attempts to reload the given URL up to `n_tries` times if the page fails to load (i.e., the URL does not change).
 
@@ -70,10 +72,8 @@ def reload_page_with_retries(driver: WebDriver, url: str, n_tries: int = 5) -> N
     for i in range(n_tries):
         LOG.info("Attempt %d: Navigating to %s from %s", i + 1, url, previous_url)
         driver.get(url)
-        try: 
-            WebDriverWait(driver, 10).until(
-                lambda d: d.current_url != previous_url
-            )
+        try:
+            WebDriverWait(driver, 10).until(lambda d: d.current_url != previous_url)
             LOG.info("URL changed to %s", driver.current_url)
             return True
         except TimeoutException:

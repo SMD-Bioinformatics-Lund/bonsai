@@ -1,7 +1,11 @@
-Container configuration
-=======================
+Configuring Bonsai
+==================
 
-The services that constitutes Bonsai requires probably need to be configured to function properly or to enable/ disable some features. Docker containers are configured using parameters passed at runtime (such as those above). These parameters are separated by a colon and indicate ``<external>:<internal>`` respectively. For example, ``-p 8080:80`` would expose port ``80`` from inside the container to be accessible from the host's IP on port ``8080`` outside the container.
+Bonsai is primarily configured through environment variables. The configuration can be set in a ``.env`` file in the same directory as the ``docker-compose.yml`` file or passed directly to the Docker container. See the `docker compose reference <https://docs.docker.com/reference/compose-file/>`_ for information on how to set environment varialbes.
+
+Some services have additional configuration files if environment variables are not enough. These are described in the relevant sections below.
+
+In addition to environment varialbles some services have directories that should be mounted to the host file system to make data persistant accros container updates. See :ref:`Volume mappings<Volume mappings>` for more information.
 
 Ports
 -----
@@ -150,3 +154,12 @@ The genome signatures sent to the minhash service container and written to disk.
    +====================+==================================+
    | /data/signature_db | Directory for genome signatures. |
    +--------------------+----------------------------------+
+
+
+Specific configuration files
+----------------------------
+
+API service
+^^^^^^^^^^^
+
+The API service automatically tags uploaded samples to highlight important features, such as antibiotic resistance genes or virulence genes. Some tags uses a set of thresholds defined in a toml file. The default configuration file is located in the container at ``/app/bonsai_api/thresholds.toml``. To customize the thresholds, you can create your own `thresholds.toml` file and mount it to the container.

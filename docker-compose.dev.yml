@@ -6,35 +6,189 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
+
   frontend:
+    build: 
+      target: development
     environment:
-      - TESTING=True
-    volumes: 
-      - "./frontend/bonsai_app:/home/worker/app/bonsai_app"
+      - FLASK_ENV=development 
+      - API_INTERNAL_URL=http://api:8000
+      - API_EXTERNAL_URL=http://localhost:8001
+    depends_on:
+      - api
+    develop:
+      watch: 
+        - path: ./frontend/setup.cfg
+          action: rebuild
+        - path: ./frontend/Dockerfile
+          action: rebuild
+        - path: ./frontend/bonsai_app
+          target: /app/frontend/bonsai_api
+          action: sync
 
   api:
+    build: 
+      target: development
+    environment: 
+      - notification_service_api=http://notification_service:8000/
+    develop:
+      watch: 
+        - path: ./api/Dockerfile
+          action: rebuild
+        - path: ./api/setup.cfg
+          action: rebuild
+        - path: ./api/bonsai_api
+          target: /app/api/bonsai_api
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
+
+  minhash_service:
+    build: 
+      target: development
+    develop:
+      watch: 
+        - path: ./minhash_service/pyproject.toml
+          action: rebuild
+        - path: ./minhash_service/Dockerfile
+          action: rebuild
+        - path: ./minhash_service/minhash_service
+          target: /app/minhash_service/minhash_service
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
+
+  minhash_cron_service:
     environment:
-      - SMTP__HOST=mailhog
-      - SMTP__PORT=1025
-    volumes: 
-      - "./api/bonsai_api:/home/worker/app/bonsai_api"
+      - INTEGRITY_TASK_CRON=* * * * *
+      - PURGE_FILES_TASK_CRON=* * * * *
+    build: 
+      target: development
+    develop:
+      watch: 
+        - path: ./minhash_service/pyproject.toml
+          action: rebuild
+        - path: ./minhash_service/Dockerfile
+          action: rebuild
+        - path: ./minhash_service/minhash_service
+          target: /app/minhash_service/minhash_service
+          action: sync
+        - path: ./libs/api_client/pyproject.toml
+          action: rebuild
+        - path: ./libs/api_client/api_client
+          target: /app/api_client/api_client
+          action: sync
+  
+  allele_cluster_service:
+    build: 
+      target: development
+    develop:
+      watch: 
+        - path: ./allele_cluster_service/setup.cfg
+          action: rebuild
+        - path: ./allele_cluster_service/Dockerfile
+          action: rebuild
+        - path: ./allele_cluster_service/allele_cluster_service
+          target: /app/allele_cluster_service/allele_cluster_service
+          action: sync
+  
+  ska_service:
+    build:
+      target: development
+    environment:
+      - log_level=debug
+    develop:
+      watch: 
+        - path: ./ska_service/setup.cfg
+          action: rebuild
+        - path: ./ska_service/Dockerfile
+          action: rebuild
+        - path: ./ska_service/ska_service
+          target: /app/ska_service/ska_service
+          action: sync
+
+  notification_service:
+    build: 
+      target: development
+    environment:
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    ports: 
+      - "8005:8000"
+    develop:
+      watch: 
+        - path: ./notification_service/pyproject.toml
+          action: rebuild
+        - path: ./notification_service/Dockerfile
+          action: rebuild
+        - path: ./notification_service/bonsai_notification
+          target: /app/notification_service/bonsai_notification
+          action: sync
     depends_on:
-      - mongodb
-      - minhash_service
-      - ska_service
-      - allele_cluster_service
       - mailhog
 
-  e2e-tests:
-    volumes:
-     - ./e2e_tests:/app/
+  audit_log_service:
+    build: 
+      target: development
+    ports: 
+      - "8004:8000"
+    develop:
+      watch:
+        - path: ./audit_log_service/pyproject.toml
+          action: rebuild
+        - path: ./audit_log_service/Dockerfile
+          action: rebuild
+        - path: ./audit_log_service
+          action: sync
+          target: /app/src/
 
   mailhog:
-    image: mailhog/mailhog
+    image: mailhog/mailhog:latest
     logging:
       driver: 'none'  # disable saving logs
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
+    networks:
+      - bonsai-net
+
+  seed:
+    build: 
+      context: .
+      dockerfile: api/Dockerfile
+      network: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    volumes:
+      - ./scripts/seed_db.sh:/seed_db.sh:ro
+    command: "bash /seed_db.sh"
+    restart: no
+    networks:
+      - bonsai-net
+  
+  db_upload:
+    container_name: e2e-tests
+    build: 
+      context: e2e_tests
+      network: host
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    volumes:
+     - ./scripts/upload_sample.py:/app/upload_sample.py:ro
+     - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
+    command: bash /app/upload_test_samples.sh
+    restart: no
     networks:
       - bonsai-net

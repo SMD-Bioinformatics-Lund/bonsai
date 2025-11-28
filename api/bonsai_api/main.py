@@ -2,24 +2,18 @@
 
 import logging
 import logging.config as logging_config
+from contextlib import asynccontextmanager
 
+from api_client.audit_log import AuditLogClient
+from api_client.notification import NotificationClient
+from bonsai_api.db.db import MongoDatabase, setup_db_connection
 from fastapi import FastAPI
 
-from .config import settings
+from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (
-    auth,
-    cluster,
-    export,
-    groups,
-    jobs,
-    locations,
-    resources,
-    root,
-    samples,
-    users,
-)
+from .routers import (auth, cluster, export, groups, jobs, locations,
+                      resources, root, samples, users)
 
 logging_config.dictConfig(
     {
@@ -42,29 +36,57 @@ logging_config.dictConfig(
 )
 LOG = logging.getLogger(__name__)
 
-app = FastAPI(title="Bonsai")
 
-# configure CORS
-configure_cors(app)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handles startup and teardown events."""
+    # setup database connection
+    if not settings.mongodb_uri:
+        raise RuntimeError("Database connection has not been configured")
+    db = setup_db_connection(settings.mongodb_uri, db_name=settings.database_name)
+    app.state.db = db
+    # setup ldap conneciton
+    if settings.use_ldap_auth:
+        ldap_connection.init_app()
+    # setup connection to accessory services
+    if settings.audit_log_service_api is not None:
+        app.state.audit_log = AuditLogClient(
+            base_url=str(settings.audit_log_service_api)
+        )
+    if settings.notification_service_api is not None:
+        app.state.notification = NotificationClient(
+            base_url=str(settings.audit_log_service_api)
+        )
 
-# check if api authentication is disabled
-if not settings.api_authentication:
-    LOG.warning("API authentication disabled!")
-
-# configure events
-if settings.use_ldap_auth:
-    app.add_event_handler("startup", ldap_connection.init_app)
-    app.add_event_handler("shutdown", ldap_connection.teardown)
+    yield
+    # teardown
+    db.close()
+    app.state.db = None
+    if settings.use_ldap_auth:
+        ldap_connection.teardown()
 
 
-# add api routes
-app.include_router(root.router)
-app.include_router(users.router)
-app.include_router(samples.router)
-app.include_router(groups.router)
-app.include_router(locations.router)
-app.include_router(cluster.router)
-app.include_router(export.router)
-app.include_router(resources.router)
-app.include_router(auth.router)
-app.include_router(jobs.router)
+def create_app(settings: Settings) -> FastAPI:
+    """Create Bonsai API"""
+
+    app = FastAPI(title="Bonsai", lifespan=lifespan)
+    # configure CORS
+    configure_cors(app)
+    # check if api authentication is disabled
+    if not settings.api_authentication:
+        LOG.warning("API authentication disabled!")
+    app.include_router(root.router)
+    app.include_router(users.router)
+    app.include_router(samples.router)
+    app.include_router(groups.router)
+    app.include_router(locations.router)
+    app.include_router(cluster.router)
+    app.include_router(export.router)
+    app.include_router(resources.router)
+    app.include_router(auth.router)
+    app.include_router(jobs.router)
+
+    return app
+
+
+app = create_app(settings)

@@ -1,0 +1,17 @@
+# Core testing
+pytest
+pytest-xdist
+pytest-cov
+pytest-mock
+pytest-env
+pytest-asyncio
+coverage
+
+# Lint/format
+black
+isort
+pylint
+
+# Type checking
+mypy
+types-requests

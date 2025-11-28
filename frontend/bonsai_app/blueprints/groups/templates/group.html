@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
-{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn, sample_table %}
+{% from "shared.html" import search_similar_btn, add_to_basket_btn, qc_bulk_toggle, delete_samples_btn %}
+{% from "shared.html" import sample_table with context %}
 
 {% block css %}
     {{ super() }}
@@ -22,7 +23,7 @@
             <thead><tr><th>Samples</th><th>Updated</th></tr></thead>
             <tbody>
                 <tr>
-                    <td id="samples-counter">{{ table_data | length }}</td>
+                    <td id="samples-counter">{{ table_data.rows | length }}</td>
                     <td id="group-modified-timestamp">{{ modified | strftime }}</td></tr>
             </tbody>
         </table>
@@ -36,6 +37,9 @@
                     <button id="remove-from-group-btn" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ group_id }}">
                         <i class="bi bi-folder-minus"></i>
                     </button>
+
+                    {# Dropdown for adding samples to group #}
+                    <div id="add-samples-to-group-container"></div>
                 {% endif %}
                 {{ search_similar_btn() }}
                 {% if display_qc %}
@@ -65,11 +69,12 @@
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
+    const groupId = "{{ group_id }}"
     // template code for adding to basket
     // template code for searching similar samples
 
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(apiUrl, accessToken, "")
+        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
     });
 </script>
 {% endblock content %}
