@@ -1,4 +1,0 @@
-pytest
-mypy
-black
-isort

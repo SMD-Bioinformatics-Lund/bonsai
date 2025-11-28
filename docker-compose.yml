@@ -5,92 +5,141 @@ services:
   mongodb:
     image: mongo:4.4.22
     container_name: bonsai_mongodb
-    ports:
-      - "27017:27017"
-    expose:
-      - "27017"
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - bonsai-net
+    restart: always
 
   redis:
     container_name: redis
     image: redis:7.0.10
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - bonsai-net
+    restart: always
+
+  frontend:
+    container_name: frontend
+    build: 
+      context: .
+      dockerfile: frontend/Dockerfile
+      network: host
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: 
+      - "8000:8000"
+    environment:
+      - FLASK_APP=bonsai_app.app:create_app
+      - TZ=Europe/Stockholm
+    restart: unless-stopped
     networks:
       - bonsai-net
 
   api:
     container_name: api
     build: 
-      context: api
+      context: .
+      dockerfile: api/Dockerfile
       network: host
     depends_on:
       - mongodb
       - minhash_service
       - ska_service
       - allele_cluster_service
+      - audit_log_service
     ports: 
       - "8001:8000"
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8000/"]
-      interval: 10s
-      retries: 3
-      start_period: 30s
-      timeout: 10s
     environment:
       - ALLOWED_ORIGINS=["*"]
       - DB_HOST=mongodb
+      - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
+    restart: unless-stopped
     networks:
       - bonsai-net
-    command: "uvicorn bonsai_api.main:app --reload --log-level debug --host 0.0.0.0"
 
-  frontend:
-    container_name: frontend
+  notification_service:
     build: 
-      context: frontend
+      context: .
+      dockerfile: notification_service/Dockerfile
       network: host
-    depends_on:
-      api:
-        condition: service_healthy
-        restart: true
-    ports: 
-      - "8000:5000"
-    environment:
-      - FLASK_APP=bonsai_app.app:create_app
-      - FLASK_ENV=development 
-      - TZ=Europe/Stockholm
+    scale: 1
+    restart: unless-stopped
     networks:
       - bonsai-net
-    command: "flask run --reload --debug --host 0.0.0.0"
+
+  audit_log_service:
+    build: 
+      context: .
+      dockerfile: audit_log_service/Dockerfile
+      network: host
+    scale: 1
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - bonsai-net
 
   minhash_service:
-    container_name: minhash_service
     build: 
-      context: minhash_service
+      context: .
+      dockerfile: minhash_service/Dockerfile
+      network: host
+    depends_on:
+      - mongodb
+      - redis
+      - minhash_cron_service
+      - notification_service
+    scale: 1
+    restart: unless-stopped
+    networks:
+      - bonsai-net
+    command: minhash-service run-minhash-worker
+
+  minhash_cron_service:
+    build: 
+      context: .
+      dockerfile: minhash_service/Dockerfile
       network: host
     depends_on:
       - redis
+    scale: 1
+    restart: unless-stopped
     networks:
       - bonsai-net
+    command: minhash-service run-cron-scheduler
 
   ska_service:
     container_name: ska_service
     build: 
-      context: ska_service
+      context: .
+      dockerfile: ska_service/Dockerfile
       network: host
-    environment:
-      - log_level=debug
     depends_on:
       - redis
+    restart: unless-stopped
     networks:
       - bonsai-net
 
   allele_cluster_service:
     container_name: allele_cluster_service
     build: 
-      context: allele_cluster_service
+      context: .
+      dockerfile: allele_cluster_service/Dockerfile
       network: host
     depends_on:
       - redis
+    restart: unless-stopped
     networks:
       - bonsai-net
 

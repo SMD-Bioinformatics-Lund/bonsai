@@ -1,28 +1,73 @@
 """User CRUD operations."""
 
 import logging
-from typing import Annotated, List
 
-from fastapi import Depends, HTTPException, Security, status
+from api_client.audit_log import AuditLogClient
+from api_client.audit_log.models import SourceType, Subject
+from bonsai_api.auth import get_password_hash, verify_password
+from bonsai_api.config import ALGORITHM, USER_ROLES, settings
+from bonsai_api.db import Database
+from bonsai_api.extensions.ldap_extension import ldap_connection
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
+                                    UserInputDatabase, UserOutputDatabase)
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from ..auth import get_password_hash, verify_password
-from ..config import ALGORITHM, USER_ROLES, settings
-from ..db import Database, get_db
-from ..extensions.ldap_extension import ldap_connection
-from ..models.auth import TokenData
-from ..models.user import (
-    SampleBasketObject,
-    UserInputCreate,
-    UserInputDatabase,
-    UserOutputDatabase,
-)
 from .errors import EntryNotFound, UpdateDocumentError
+from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scopes={})
+
+
+async def get_user_by_token(
+    security_scopes: SecurityScopes,
+    token: str,
+    db: Database,
+) -> UserOutputDatabase | None:
+    """Get current user."""
+    # check if API authentication is disabled
+    if not settings.api_authentication:
+        return None
+
+    if security_scopes.scopes:
+        authenticate_value = f"Bearer scope={security_scopes.scope_str}"
+    else:
+        authenticate_value = "Bearer"
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Credentials could not be validated",
+        headers={"WWW-Authenticate": authenticate_value},
+    )
+
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        username: str | None = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError as error:
+        raise credentials_exception from error
+
+    try:
+        user = await get_user(db, username=username)
+    except EntryNotFound as error:
+        raise credentials_exception from error
+    for scope in security_scopes.scopes:
+        users_all_permissions = {
+            perm for user_role in user.roles for perm in USER_ROLES.get(user_role, [])
+        }
+        if not scope in users_all_permissions:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credentials could not be validated",
+                headers={"WWW-Authenticate": authenticate_value},
+            )
+    return user
 
 
 async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
@@ -34,55 +79,76 @@ async def get_user(db_obj: Database, username: str) -> UserInputDatabase:
     return users[0]
 
 
-async def delete_user(db_obj: Database, username: str):
+async def delete_user(
+    db_obj: Database,
+    username: str,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+):
     """Delete user from the database"""
-    resp = await db_obj.user_collection.delete_one({"username": username})
-    if resp.deleted_count == 0:
-        raise EntryNotFound(username)
+    event_subject = Subject(id=username, type=SourceType.SYS)
+    with audit_event_context(audit, "delete_user", ctx, event_subject):
+        resp = await db_obj.user_collection.delete_one({"username": username})
+        if resp.deleted_count == 0:
+            raise EntryNotFound(username)
     return username
 
 
-async def update_user(db_obj: Database, username: str, user: UserInputCreate):
+async def update_user(
+    db_obj: Database,
+    username: str,
+    user: UserInputCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+):
     """Delete user from the database"""
-    # get old user object
-    new_user_info = user.model_dump()
-    if len(user.password) > 0:
-        # create hash for new password
-        LOG.info("Changed password for %s", username)
-        new_user_info["hashed_password"] = get_password_hash(user.password)
+    event_subject = Subject(id=username, type=SourceType.SYS)
+    with audit_event_context(audit, "update_user", ctx, event_subject):
+        new_user_info = user.model_dump()
+        if len(user.password) > 0:
+            # create hash for new password
+            LOG.info("Changed password for %s", username)
+            new_user_info["hashed_password"] = get_password_hash(user.password)
 
-    user_in_db = await get_user(db_obj, username=username)
-    # update changed fields in created user object
-    upd_user_info = user_in_db.model_copy(update=new_user_info)
-    resp = await db_obj.user_collection.replace_one(
-        {"username": username}, upd_user_info.model_dump()
-    )
-    if resp.matched_count == 0:
-        raise EntryNotFound(username)
-    if resp.modified_count == 0:
-        raise UpdateDocumentError(username)
+        user_in_db = await get_user(db_obj, username=username)
+        # update changed fields in created user object
+        upd_user_info = user_in_db.model_copy(update=new_user_info)
+        resp = await db_obj.user_collection.replace_one(
+            {"username": username}, upd_user_info.model_dump()
+        )
+        if resp.matched_count == 0:
+            raise EntryNotFound(username)
+        if resp.modified_count == 0:
+            raise UpdateDocumentError(username)
 
 
-async def create_user(db_obj: Database, user: UserInputCreate) -> UserOutputDatabase:
+async def create_user(
+    db_obj: Database,
+    user: UserInputCreate,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> UserOutputDatabase:
     """Create new user in the database."""
-    # create hash for password
-    hashed_password = get_password_hash(user.password)
-    user_db_fmt: UserInputDatabase = UserInputDatabase(
-        hashed_password=hashed_password, **user.model_dump()
-    )
-    # store data in database
-    resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
-    inserted_id = resp_obj.inserted_id
-    user_obj = UserInputDatabase(
-        id=str(inserted_id),
-        **user_db_fmt.model_dump(),
-    )
+    event_subject = Subject(id=user.username, type=SourceType.SYS)
+    with audit_event_context(audit, "create_user", ctx, event_subject):
+        # create hash for password
+        hashed_password = get_password_hash(user.password)
+        user_db_fmt: UserInputDatabase = UserInputDatabase(
+            hashed_password=hashed_password, **user.model_dump()
+        )
+        # store data in database
+        resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        inserted_id = resp_obj.inserted_id
+        user_obj = UserInputDatabase(
+            id=str(inserted_id),
+            **user_db_fmt.model_dump(),
+        )
     return user_obj
 
 
 async def get_users(
-    db_obj: Database, usernames: List[str] | None = None
-) -> List[UserInputDatabase]:
+    db_obj: Database, usernames: list[str] | None = None
+) -> list[UserInputDatabase]:
     """Get multiple users by username from database."""
     query = {}
     if usernames is not None:
@@ -111,71 +177,10 @@ async def authenticate_user(db_obj: Database, username: str, password: str) -> b
     return is_authenticated
 
 
-async def get_current_user(
-    security_scopes: SecurityScopes,
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Database = Depends(get_db),
-) -> UserOutputDatabase | None:
-    """Get current user."""
-    # check if API authentication is disabled
-    if not settings.api_authentication:
-        return None
-
-    if security_scopes.scopes:
-        authenticate_value = f"Bearer scope={security_scopes.scope_str}"
-    else:
-        authenticate_value = "Bearer"
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Credentials could not be validated",
-        headers={"WWW-Authenticate": authenticate_value},
-    )
-
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except JWTError as error:
-        raise credentials_exception from error
-
-    try:
-        user: UserOutputDatabase = await get_user(db, username=token_data.username)
-    except EntryNotFound as error:
-        raise credentials_exception from error
-    for scope in security_scopes.scopes:
-        users_all_permissions = {
-            perm for user_role in user.roles for perm in USER_ROLES.get(user_role, [])
-        }
-        if not scope in users_all_permissions:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Credentials could not be validated",
-                headers={"WWW-Authenticate": authenticate_value},
-            )
-    return user
-
-
-async def get_current_active_user(
-    db: Database = Depends(get_db),
-    current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
-) -> UserOutputDatabase | None:
-    """Get current active user."""
-    # disable API authentication
-    if not settings.api_authentication:
-        return None
-
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
-
 async def get_samples_in_user_basket(
     db: Database,
     current_user: UserOutputDatabase,
-) -> List[SampleBasketObject]:
+) -> list[SampleBasketObject]:
     """Get samples in the current user basket."""
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
     return user.basket
@@ -183,7 +188,7 @@ async def get_samples_in_user_basket(
 
 async def add_samples_to_user_basket(
     current_user: UserOutputDatabase,
-    sample_ids: List[SampleBasketObject],
+    sample_ids: list[SampleBasketObject],
     db: Database,
 ) -> SampleBasketObject:
     """Add samples to the basket of the current user."""
@@ -211,7 +216,7 @@ async def add_samples_to_user_basket(
 
 
 async def remove_samples_from_user_basket(
-    sample_ids: List[SampleBasketObject],
+    sample_ids: list[SampleBasketObject],
     db: Database,
     current_user: UserOutputDatabase,
 ) -> SampleBasketObject:

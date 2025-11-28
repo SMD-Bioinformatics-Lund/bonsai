@@ -5,14 +5,14 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
+from bonsai_api.crud.sample import EntryNotFound, get_sample
+from bonsai_api.db import Database
+from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.lims_export.models import AssayConfig
 from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
 from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
 from bonsai_api.config import settings
-from ..crud.sample import EntryNotFound, get_sample
-from ..crud.user import get_current_active_user
-from ..db import Database, get_db
-from ..models.user import UserOutputDatabase
 from .shared import SAMPLE_ID_PATH
 
 LOG = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ def _load_lims_config_map() -> dict[str, AssayConfig]:
 async def export_to_lims(
     sample_id: str = SAMPLE_ID_PATH,
     fmt: Literal["tsv", "csv"] = "tsv",
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),

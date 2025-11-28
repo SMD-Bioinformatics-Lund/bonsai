@@ -1,9 +1,9 @@
 """Groups page object for the e2e tests."""
 
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.support import expected_conditions as EC
 
 from .basket_offcanvas import BasketOffcanvas
@@ -91,7 +91,7 @@ class GroupPage(BaseGroupPage):
     def load(self):
         """Load the groups page."""
         url = f"{self.base_url}/groups/{self.group_path}"
-        #self.driver.get(url)
+        # self.driver.get(url)
         reload_page_with_retries(self.driver, url)
         self.wait.until(EC.title_contains(f"Group - {self.group_path}"))
 

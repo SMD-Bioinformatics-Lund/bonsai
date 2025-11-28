@@ -2,32 +2,9 @@
 
 import logging
 import pathlib
-from typing import Annotated, Union
+from typing import Annotated, Any, Union, cast
 
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    Header,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-)
-from fastapi.responses import FileResponse
-from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantType,
-    VirulenceMethodIndex,
-)
-from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
-from pydantic import BaseModel, Field
-from pymongo.errors import DuplicateKeyError
-
+from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -35,35 +12,41 @@ from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import get_sample, get_samples_summary
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
-from bonsai_api.crud.sample import (
-    update_sample_qc_classification,
-    update_variant_annotation_for_sample,
-)
-from bonsai_api.crud.user import get_current_active_user
-from bonsai_api.db import Database, get_db
-from bonsai_api.io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
+from bonsai_api.crud.sample import (update_sample_qc_classification,
+                                    update_variant_annotation_for_sample)
+from bonsai_api.db import Database
+from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
+                                     get_database, get_request_context)
+from bonsai_api.io import (InvalidRangeError, RangeOutOfBoundsError,
+                           is_file_readable, send_partial_file)
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.cluster import TypingMethod
+from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.location import LocationOutputDatabase
-from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import Comment, CommentInDatabase, SampleInCreate, SampleInDatabase
 from bonsai_api.models.metadata import InputMetaEntry
+from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.sample import (Comment, CommentInDatabase,
+                                      SampleInCreate, SampleInDatabase)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
-    SubmittedJob,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-)
+    SubmittedJob, exclude_from_analysis, include_in_analysis,
+    schedule_add_genome_signature, schedule_add_genome_signature_to_index,
+    schedule_find_similar_and_cluster, schedule_find_similar_samples,
+    schedule_remove_genome_signature_from_index)
 from bonsai_api.utils import format_error_message
-from .shared import SAMPLE_ID_PATH, RouterTags
+from fastapi import (APIRouter, Body, Depends, File, Header, HTTPException,
+                     Path, Query, Security, status)
+from fastapi.responses import FileResponse
+from prp.models import PipelineResult
+from prp.models.phenotype import (AMRMethodIndex, StressMethodIndex,
+                                  VariantType, VirulenceMethodIndex)
+from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
+from pydantic import BaseModel, Field, ValidationError, model_validator
+from pymongo.errors import DuplicateKeyError
+
+from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
+                     parse_signature_json)
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -90,34 +73,41 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-@router.get(
-    "/samples/",
+class ApiGetSamplesDetailsInput(BaseModel):
+    """Input parameters for getting sample details."""
+
+    limit: int | None = Field(
+        default=None, gt=-1, title="Limit the output to x samples"
+    )
+    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
+    prediction_result: bool = Field(default=True, title="Include prediction results")
+    qc_metrics: bool = Field(default=False, title="Include QC metrics")
+    sid: list[str] | None = Field(
+        None, description="Optional limit query to samples ids"
+    )
+
+
+@router.post(
+    "/samples/summary",
     response_model_by_alias=False,
     response_model=MultipleRecordsResponseModel,
     tags=[RouterTags.SAMPLE],
 )
 async def samples_summary(
-    limit: int = Query(10, gt=-1),
-    skip: int = Query(0, gt=-1),
-    prediction_result: bool = Query(True, description="Include prediction results"),
-    qc_metrics: bool = Query(False, description="Include QC metrics"),
-    sid: list[str] | None = Query(
-        None, description="Optional limit query to samples ids"
-    ),
-    db: Database = Depends(get_db),
+    query: ApiGetSamplesDetailsInput,
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Entrypoint for getting a summary for multiple samples."""
-    # query samples
     db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
-        limit=limit,
-        skip=skip,
-        prediction_result=prediction_result,
-        include_samples=sid,
-        qc_metrics=qc_metrics,
+        limit=query.limit,
+        skip=query.skip,
+        prediction_result=query.prediction_result,
+        include_samples=query.sid,
+        qc_metrics=query.qc_metrics,
     )
     return db_obj
 
@@ -125,18 +115,21 @@ async def samples_summary(
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])
 async def create_sample(
     sample: PipelineResult,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> dict[str, str]:
     """Entrypoint for creating a new sample."""
     try:
-        db_obj = await create_sample_record(db, sample)
+        db_obj = await create_sample_record(db, sample, req_ctx, audit=audit_log)
     except DuplicateKeyError as error:
+        details = getattr(error, "details", {})
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=error.details["errmsg"],
+            detail=details.get("errmsg", ""),
         ) from error
     return {"type": "success", "sample_id": db_obj.sample_id}
 
@@ -144,14 +137,18 @@ async def create_sample(
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
 async def delete_many_samples(
     sample_ids: list[str],
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ):
     """Delete multiple samples from the database."""
     try:
-        result = await delete_samples_from_db(db, sample_ids)
+        result = await delete_samples_from_db(
+            db, sample_ids, ctx=req_ctx, audit=audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -160,10 +157,12 @@ async def delete_many_samples(
     return result
 
 
-@router.get("/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE])
+@router.get(
+    "/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE]
+)
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -188,11 +187,15 @@ class UpdateSampleInputModel(BaseModel):
     ]
 
 
-@router.put("/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase)
+@router.put(
+    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase
+)
 async def update_sample(
     update_data: UpdateSampleInputModel,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -201,7 +204,7 @@ async def update_sample(
 
     Take either a partial or full result as input.
     """
-    return sample
+    return sample_id
 
 
 @router.delete(
@@ -209,14 +212,16 @@ async def update_sample(
 )
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ):
     """Delete the specific sample."""
     try:
-        result = await delete_samples_from_db(db, sample_id)
+        result = await delete_samples_from_db(db, [sample_id], req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -227,12 +232,17 @@ async def delete_sample(
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
 async def add_sample_metadata(
-    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_db)) -> bool:
+    sample_id: str, metadata: list[InputMetaEntry], db: Database = Depends(get_database)
+) -> bool:
     """Add metadata to an existing sample."""
     try:
-        resp = await add_metadata_to_sample(sample_id=sample_id, metadata=metadata, db=db)
+        resp = await add_metadata_to_sample(
+            sample_id=sample_id, metadata=metadata, db=db
+        )
     except ValueError as err:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err)
+        )
     except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
     return resp
@@ -241,8 +251,8 @@ async def add_sample_metadata(
 @router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])
 async def create_genome_signatures_sample(
     sample_id: str,
-    signature: Annotated[bytes, File()],
-    db: Database = Depends(get_db),
+    signature: str = Depends(parse_signature_json),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
@@ -268,8 +278,11 @@ async def create_genome_signatures_sample(
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
-    sample_obj = {**sample.model_dump(), **{"genome_signature": add_sig_job.id}}
-    upd_sample_data = SampleInCreate(**sample_obj)
+    sample_obj: dict[str, Any] = {
+        **sample.model_dump(),
+        **{"genome_signature": add_sig_job.id},
+    }
+    upd_sample_data = SampleInCreate.model_validate(sample_obj)
     await crud_update_sample(db, upd_sample_data)
 
     return {
@@ -283,7 +296,7 @@ async def create_genome_signatures_sample(
 async def add_ska_index_to_sample(
     sample_id: str,
     index: str,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
@@ -315,7 +328,7 @@ async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
     range: Annotated[str | None, Header()] = None,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> str:
     """Get read mapping results for a sample."""
     try:
@@ -367,7 +380,7 @@ async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
     range: Annotated[str | None, Header()] = None,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
@@ -424,7 +437,7 @@ async def get_vcf_files_for_sample(
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
@@ -452,16 +465,40 @@ async def add_vcf_to_sample(
 async def update_qc_status(
     classification: QcClassification,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> bool:
     """Update sample QC status."""
     try:
+        # dont update if the status dont change
+        sample = await get_sample(db, sample_id)
+        if sample.qc_status == classification:
+            return True
+
+        # update
         status_obj: bool = await update_sample_qc_classification(
-            db, sample_id, classification
+            db, sample_id, classification, ctx=req_ctx, audit=audit_log
         )
+
+        # update if status should be excluded from indexing
+        action = action_from_qc_classification(classification)
+        if action == "include":
+            include_job = include_in_analysis(sample_id)
+            schedule_add_genome_signature_to_index(
+                [sample_id],
+                depends_on=[include_job.id],
+            )
+        else:
+            # run exclude job and then remove signature from index
+            exclude_job = exclude_from_analysis(sample_id)
+            schedule_remove_genome_signature_from_index(
+                [sample_id],
+                depends_on=[exclude_job.id],
+            )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -478,7 +515,7 @@ async def update_qc_status(
 async def update_variant_annotation(
     classification: VariantAnnotation,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -504,14 +541,18 @@ async def update_variant_annotation(
 async def post_comment(
     comment: Comment,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ) -> CommentsObj:
     """Add a commet to a sample."""
     try:
-        comment_obj: CommentsObj = await add_comment(db, sample_id, comment)
+        comment_obj: CommentsObj = await add_comment(
+            db, sample_id, comment, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -527,14 +568,18 @@ async def post_comment(
 async def hide_comment(
     sample_id: str = SAMPLE_ID_PATH,
     comment_id: int = Path(..., title="ID of the comment to delete"),
-    db: Database = Depends(get_db),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ) -> bool:
     """Hide a comment in a sample from users."""
     try:
-        resp: bool = await hide_comment_for_sample(db, sample_id, comment_id)
+        resp: bool = await hide_comment_for_sample(
+            db, sample_id, comment_id, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -551,7 +596,7 @@ async def hide_comment(
 async def update_location(
     location_id: str = Body(...),
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
+    db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
@@ -569,27 +614,47 @@ async def update_location(
     return location_obj
 
 
-class SimilarSamplesInput(BaseModel):  # pylint: disable=too-few-public-methods
+class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
     """Input parameters for finding similar samples."""
 
-    limit: int | None = Field(default=10, gt=-1, title="Limit the output to x samples")
-    similarity: float = Field(default=0.5, gt=0, title="Similarity threshold")
-    cluster: bool = Field(default=False, title="Cluster the similar")
-    typing_method: TypingMethod | None = Field(
-        None, title="Cluster using a specific typing method"
+    limit: int | None = Field(default=10, ge=1, title="Limit the output to x samples")
+    similarity: float = Field(default=0.5, gt=0, le=1, title="Similarity threshold")
+    cluster: bool = Field(
+        default=False,
+        title="Cluster the similar",
+        description="If the samples found with similar search should be clustered.",
     )
-    cluster_method: ClusterMethod | None = Field(None, title="Cluster the similar")
+    narrow_to_sample_ids: list[str] | None = Field(
+        default=None,
+        description="Restrict the similarity search to these sample IDs. If None, search across all samples.",
+        examples=[["sample_id"]],
+    )
+    typing_method: TypingMethod | None = Field(
+        default=None, title="Cluster using a specific typing method"
+    )
+    cluster_method: ClusterMethod | None = Field(
+        default=None, title="Cluster the similar"
+    )
+
+    @model_validator(mode="after")
+    def validate_cluster_settings(self):
+        """Validate that cluster settings are defined if cluster=True."""
+        if self.cluster and (self.cluster_method is None or self.typing_method is None):
+            raise ValidationError(
+                "'cluster_method' and 'typing_method' must be set if 'cluster' is True."
+            )
+        return self
 
 
 @router.post(
     "/samples/{sample_id}/similar",
     response_model=SubmittedJob,
+    status_code=status.HTTP_202_ACCEPTED,
     tags=["minhash", RouterTags.SAMPLE],
 )
 async def find_similar_samples(
-    body: SimilarSamplesInput,
+    body: SearchSimilarInput,
     sample_id: str = SAMPLE_ID_PATH,
-    db: Database = Depends(get_db),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
@@ -602,21 +667,29 @@ async def find_similar_samples(
     LOG.info("ref: %s, body: %s, cluster: %s", sample_id, body, body.cluster)
     try:
         if body.cluster:
+            typing_method = cast(TypingMethod, body.typing_method)
+            cluster_method = cast(ClusterMethod, body.cluster_method)
             submission_info: SubmittedJob = schedule_find_similar_and_cluster(
                 sample_id,
                 min_similarity=body.similarity,
                 limit=body.limit,
-                typing_method=body.typing_method,
-                cluster_method=body.cluster_method,
+                narrow_to_sample_ids=body.narrow_to_sample_ids,
+                typing_method=typing_method,
+                cluster_method=cluster_method,
             )
         else:
             submission_info: SubmittedJob = schedule_find_similar_samples(
                 sample_id,
                 min_similarity=body.similarity,
                 limit=body.limit,
+                narrow_to_sample_ids=body.narrow_to_sample_ids,
             )
     except ConnectionError as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
+        ) from error
     except NotImplementedError as error:
-        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error))
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)
+        ) from error
     return submission_info

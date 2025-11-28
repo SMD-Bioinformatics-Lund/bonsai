@@ -1,25 +1,11 @@
 """Declaration of flask admin views"""
 
-from flask import (
-    Blueprint,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-)
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
-from wtforms import (
-    Form,
-    PasswordField,
-    SelectMultipleField,
-    StringField,
-    ValidationError,
-    validators,
-    widgets,
-)
+from wtforms import (Form, PasswordField, SelectMultipleField, StringField,
+                     ValidationError, validators, widgets)
 
 from ...bonsai import TokenObject
 from ...bonsai import create_user as create_new_user
