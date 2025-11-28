@@ -2,17 +2,21 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Dict, List, Sequence
-from pymongo.results import UpdateResult
+from typing import Any, Dict, Sequence
 
-from pydantic import ValidationError
+import bonsai_api
+from api_client.audit_log import AuditLogClient, EventCreate
+from api_client.audit_log.models import EventSeverity, SourceType, Subject
+from bonsai_api.crud.utils import audit_event_context
+from bonsai_api.dependencies import ApiRequestContext
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from motor.motor_asyncio import AsyncIOMotorCommandCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from prp.models.tags import TagList
 from prp.parse.typing import replace_cgmlst_errors
+from pydantic import ValidationError
+from pymongo.results import UpdateResult
 
 from ..crud.location import get_location
 from ..crud.tags import compute_phenotype_tags
@@ -21,18 +25,11 @@ from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import MultipleRecordsResponseModel, RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
-    Comment,
-    CommentInDatabase,
-    MultipleSampleRecordsResponseModel,
-    SampleInCreate,
-    SampleInDatabase,
-    SampleSummary,
-)
-from ..redis.minhash import (
-    schedule_remove_genome_signature,
-    schedule_remove_genome_signature_from_index,
-)
+from ..models.sample import (Comment, CommentInDatabase,
+                             MultipleSampleRecordsResponseModel,
+                             SampleInCreate, SampleInDatabase)
+from ..redis.minhash import (schedule_remove_genome_signature,
+                             schedule_remove_genome_signature_from_index)
 from ..utils import format_error_message, get_timestamp
 from .errors import EntryNotFound, UpdateDocumentError
 
@@ -208,9 +205,9 @@ QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
 
 async def get_samples_summary(
     db: Database,
-    limit: int = 0,
-    skip: int = 0,
-    include_samples: List[str] | None = None,
+    limit: int | None = None,
+    skip: int | None = None,
+    include_samples: list[str] | None = None,
     prediction_result: bool = True,
     qc_metrics: bool = False,
 ) -> MultipleRecordsResponseModel:
@@ -295,9 +292,9 @@ async def get_samples_summary(
 
     # add limit, skip and count total records in db
     facet_pipe: list[dict[str, int]] = []
-    if limit > 0:
+    if isinstance(limit, int) and limit > 0:
         facet_pipe.append({"$limit": limit})
-    if skip > 0:
+    if isinstance(skip, int) and skip > 0:
         facet_pipe.append({"$skip": skip})
 
     pipeline.append(
@@ -334,7 +331,7 @@ async def get_samples(
     db: Database,
     limit: int = 0,
     skip: int = 0,
-    include: List[str] | None = None,
+    include: list[str] | None = None,
 ) -> MultipleSampleRecordsResponseModel:
     """Get samples from database."""
 
@@ -360,7 +357,9 @@ async def get_samples(
                     "This can be caused if the data format has been updated. "
                     "If that is the case the database needs to be migrated. "
                     "See the documentation for more information."
-                ), samp.get("sample_id", "unknown id"))
+                ),
+                samp.get("sample_id", "unknown id"),
+            )
             raise err
         # Compute tags
         tags = compute_phenotype_tags(sample)
@@ -371,7 +370,12 @@ async def get_samples(
     return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
 
 
-async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabase:
+async def create_sample(
+    db: Database,
+    sample: PipelineResult,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> SampleInDatabase:
     """Create a new sample document in database from structured input."""
     # validate data format
     try:
@@ -379,22 +383,25 @@ async def create_sample(db: Database, sample: PipelineResult) -> SampleInDatabas
     except ValueError as error:
         LOG.warning("Error when creating tags... skipping. %s", error)
         tags = []
-    sample_db_fmt = SampleInCreate(
-        in_collections=[],
-        tags=tags,
-        **sample.model_dump(),
-    )
-    # store data in database
-    doc = await db.sample_collection.insert_one(
-        jsonable_encoder(sample_db_fmt, by_alias=False)
-    )
 
-    # create object representing the dataformat in database
-    inserted_id = doc.inserted_id
-    db_obj = SampleInDatabase(
-        id=str(inserted_id),
-        **sample_db_fmt.model_dump(),
-    )
+    event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
+    with audit_event_context(audit, "create_sample", ctx, event_subject):
+        sample_db_fmt = SampleInCreate(
+            in_collections=[],
+            tags=tags,
+            **sample.model_dump(),
+        )
+        # store data in database
+        doc = await db.sample_collection.insert_one(
+            jsonable_encoder(sample_db_fmt, by_alias=False)
+        )
+
+        # create object representing the dataformat in database
+        inserted_id = doc.inserted_id
+        db_obj = SampleInDatabase(
+            id=str(inserted_id),
+            **sample_db_fmt.model_dump(),
+        )
     return db_obj
 
 
@@ -421,10 +428,14 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
+async def delete_samples(
+    db: Database,
+    sample_ids: list[str],
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> dict[str, Any]:
     """Delete a sample from the database, remove it from groups, and remove its signature."""
-
-    result = {
+    result: dict[str, Any] = {
         "sample_ids": sample_ids,
         "n_deleted": 0,
         "removed_from_n_groups": 0,
@@ -458,9 +469,10 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
     )
 
     # remove signature from database and reindex database
-    if result["n_deleted"] > 0:
+    samples_was_removed = result["n_deleted"] > 0
+    if samples_was_removed:
         # remove signatures
-        job_ids = []
+        job_ids: list[str] = []
         for sample_id in sample_ids:
             submitted_job = schedule_remove_genome_signature(sample_id)
             job_ids.append(submitted_job.id)
@@ -470,6 +482,20 @@ async def delete_samples(db: Database, sample_ids: List[str]) -> bool:
             sample_ids, depends_on=job_ids
         )
         result["update_index_job"] = index_job.id
+
+    if isinstance(audit, AuditLogClient) and samples_was_removed:
+        for sample_id in sample_ids:
+            # prepare event metadata and submit event
+            event_subject = Subject(id=sample_id, type=SourceType.USR)
+            event = EventCreate(
+                source_service=bonsai_api.__name__,
+                event_type="delete_sample",
+                actor=ctx.actor,
+                subject=event_subject,
+                metadata=ctx.metadata,
+            )
+            audit.post_event(event)
+
     return result
 
 
@@ -490,79 +516,104 @@ async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
 
 
 async def add_comment(
-    db: Database, sample_id: str, comment: Comment
-) -> List[CommentInDatabase]:
+    db: Database,
+    sample_id: str,
+    comment: Comment,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     sample = await get_sample(db, sample_id)
+    comments: list[CommentInDatabase] = sample.comments
     comment_id = (
         max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
     )
-    comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
-    update_obj: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {
-            "$set": {"modified_at": get_timestamp()},
-            "$push": {
-                "comments": {
-                    "$each": [comment_obj.model_dump(by_alias=False)],
-                    "$position": 0,
-                }
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    meta = {"sample_id": sample_id, "comment_id": comment_id}
+    with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
+        comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
+        update_obj: UpdateResult = await db.sample_collection.update_one(
+            {"sample_id": sample_id},
+            {
+                "$set": {"modified_at": get_timestamp()},
+                "$push": {
+                    "comments": {
+                        "$each": [comment_obj.model_dump(by_alias=False)],
+                        "$position": 0,
+                    }
+                },
             },
-        },
-    )
+        )
 
-    if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
-    if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
-    LOG.info("Added comment to %s", sample_id)
-    return [comment_obj.model_dump()] + sample.comments
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
+
+        LOG.info("Added comment to %s", sample_id)
+        comments.insert(0, comment_obj)
+    return comments
 
 
-async def hide_comment(db: Database, sample_id: str, comment_id: int) -> bool:
+async def hide_comment(
+    db: Database,
+    sample_id: str,
+    comment_id: int,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> bool:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
-    update_obj = await db.sample_collection.update_one(
-        {"sample_id": sample_id, "comments.id": comment_id},
-        {
-            "$set": {
-                "modified_at": get_timestamp(),
-                "comments.$.displayed": False,
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    meta: dict[str, str | int] = {"sample_id": sample_id, "comment_id": comment_id}
+    with audit_event_context(audit, "delete_comment", ctx, event_subject, meta):
+        update_obj = await db.sample_collection.update_one(
+            {"sample_id": sample_id, "comments.id": comment_id},
+            {
+                "$set": {
+                    "modified_at": get_timestamp(),
+                    "comments.$.displayed": False,
+                },
             },
-        },
-    )
-    if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
-    if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
-    LOG.info("Hide comment %s for %s", comment_id, sample_id)
-    # update comments in return object
+        )
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
+
+        LOG.info("Hide comment %s for %s", comment_id, sample_id)
     return True
 
 
 async def update_sample_qc_classification(
-    db: Database, sample_id: str, classification: QcClassification
-) -> bool:
+    db: Database,
+    sample_id: str,
+    classification: QcClassification,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> QcClassification:
     """Update the quality control classification of a sample"""
 
     query = {"sample_id": sample_id}
-    update_obj: UpdateResult = await db.sample_collection.update_one(
-        query,
-        {
-            "$set": {
-                "modified_at": get_timestamp(),
-                "qc_status": jsonable_encoder(classification, by_alias=False),
-            }
-        },
-    )
-    # verify successful update
-    # if sample is not fund
-    if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
-    # if not modifed
-    if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+    event_subject = Subject(id=sample_id, type=SourceType.USR)
+    with audit_event_context(audit, "update_qc", ctx, event_subject):
+        update_obj: UpdateResult = await db.sample_collection.update_one(
+            query,
+            {
+                "$set": {
+                    "modified_at": get_timestamp(),
+                    "qc_status": jsonable_encoder(classification, by_alias=False),
+                }
+            },
+        )
+        # verify successful update
+        # if sample is not fund
+        if not update_obj.matched_count == 1:
+            raise EntryNotFound(sample_id)
+        # if not modifed
+        if not update_obj.modified_count == 1:
+            raise UpdateDocumentError(sample_id)
     return classification
 
 

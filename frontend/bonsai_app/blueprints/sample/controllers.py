@@ -386,7 +386,7 @@ def split_metadata(sample_obj: dict[str, Any]):
     kw_meta: list[dict[str, Any]] = []
     tbl_meta: list[dict[str, Any]] = []
     for meta in sample_obj["metadata"]:
-        if meta['type'] == "table":
+        if meta["type"] == "table":
             tbl_meta.append(meta)
         else:
             kw_meta.append(meta)
@@ -396,12 +396,12 @@ def split_metadata(sample_obj: dict[str, Any]):
 def kw_metadata_to_table(metadata: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Format key-value metadata to a dataframe like table object."""
     grouped_kw_meta: dict[str, dict[str, Any]] = {}
-    for name, records_itr in groupby(metadata, key=lambda x: x['category']):
+    for name, records_itr in groupby(metadata, key=lambda x: x["category"]):
         records = list(records_itr)
         raw_series = pd.Series(
-            [rec['value'] for rec in records],
-            index=[rec['fieldname'] for rec in records], 
-            name="Metadata"
+            [rec["value"] for rec in records],
+            index=[rec["fieldname"] for rec in records],
+            name="Metadata",
         )
-        grouped_kw_meta[name] = raw_series.to_frame().to_dict('split')
+        grouped_kw_meta[name] = raw_series.to_frame().to_dict("split")
     return grouped_kw_meta

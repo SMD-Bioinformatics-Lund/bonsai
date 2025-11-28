@@ -1,14 +1,27 @@
 """Mimer api default configuration"""
 
 import os
+import re
+import os
 import ssl
+import tomllib
 from typing import Annotated
 from pathlib import Path
 
-from pydantic import AfterValidator, Field, FilePath
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, model_validator, FilePath, AfterValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ssl_defaults = ssl.get_default_verify_paths()
+
+# read default config and user defined config
+config_file = [Path(__file__).parent.joinpath("config.toml")]  # built in config file
+
+CUSTOM_CONFIG_ENV_NAME = "CONFIG_FILE"
+custom_config = os.getenv(CUSTOM_CONFIG_ENV_NAME)
+if custom_config is not None:
+    user_cnf = Path(custom_config)
+    if user_cnf.exists():
+        config_file.append(user_cnf)
 
 
 def _validate_yaml_file(path: Path | None) -> Path | None:
@@ -45,6 +58,71 @@ class EmailConfig(BaseSettings):
     sender_name: str = "Bonsai"
 
 
+class BrackenThresholds(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    min_fraction: float = Field(ge=0.0, le=1.0)
+    min_reads: int = Field(ge=0)
+
+
+class MykrobeThresholds(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    min_species_coverage: float = Field(ge=0.0, le=1.0)
+    min_phylogenetic_group_coverage: float = Field(ge=0.0, le=1.0)
+
+
+_species_key_pattern = re.compile(r"^[a-z0-9_]+$")
+
+
+def _validate_species_keys(d: dict[str, object], method_name: str) -> None:
+    for key in d.keys():
+        if key == "default":
+            continue
+        if not _species_key_pattern.fullmatch(key):
+            raise ValueError(
+                f"[species.{method_name}.{key}] is not valid. "
+                f"Use lowercase snake_case (a-z0-9_)."
+            )
+
+
+def normalize_species_key(name: str) -> str:
+    # Same normalization used by lookup helpers:
+    # lower, spaces/hyphens to underscores; strip stray chars
+    key = name.strip().lower().replace(" ", "_").replace("-", "_")
+    key = re.sub(r"[^a-z0-9_]", "", key)
+    return key
+
+
+class SpeciesCategory(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    bracken: dict[str, BrackenThresholds] = Field(default_factory=dict)
+    mykrobe: dict[str, MykrobeThresholds] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _validate_species_keys(self) -> "SpeciesCategory":
+        _validate_species_keys(self.bracken, "bracken")
+        _validate_species_keys(self.mykrobe, "mykrobe")
+
+        # Ensure defaults exist if your code relies on them
+        if "default" not in self.bracken:
+            raise ValueError("[species.bracken.default] must be defined.")
+        if "default" not in self.mykrobe:
+            raise ValueError("[species.mykrobe.default] must be defined.")
+        return self
+
+    def get_bracken(self, species: str) -> BrackenThresholds:
+        key = normalize_species_key(species)
+        return self.bracken.get(key) or self.bracken.get("default")
+
+    def get_mykrobe(self, species: str) -> MykrobeThresholds:
+        key = normalize_species_key(species)
+        return self.mykrobe.get(key) or self.mykrobe.get("default")
+
+
+class QCConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    species: SpeciesCategory
+
+
 class Settings(BaseSettings):
     """API configuration."""
 
@@ -58,7 +136,7 @@ class Settings(BaseSettings):
     # read more: https://docs.mongodb.com/manual/reference/connection-string/
     database_name: str = "bonsai"
     db_host: str = "mongodb"
-    db_port: str = "27017"
+    db_port: int = 27017
     max_connections: int = 10
     min_connections: int = 10
 
@@ -74,9 +152,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 180  # expiration time for accesst token
     api_authentication: bool = True
 
-    # email server
-    smtp: SmtpConfig | None = None
-    email: EmailConfig = EmailConfig()
+    # notification api for sending emails
+    notification_service_api: HttpUrl | None = None
+    audit_log_service_api: HttpUrl | None = None
 
     # LDAP login Settings
     # If LDAP is not configured it will fallback on local authentication
@@ -109,7 +187,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
-        env_nested_delimiter="__",
+        toml_file=config_file,
     )
 
     lims_export_config: LimsConfigPath = Field(
@@ -167,5 +245,19 @@ USER_ROLES = {
         "groups:write" "samples:write",
     ],
 }
+
+# load raw thresholds
+thresholds_file = Path(__file__).parent.joinpath(
+    "thresholds.toml"
+)  # built in config file
+with thresholds_file.open("rb") as inpt:
+    try:
+        thresholds = tomllib.load(inpt)
+        thresholds_cfg = QCConfig.model_validate(thresholds)
+    except ValidationError as error:
+        raise RuntimeError(
+            f"Invalid QC thresholds in {thresholds_file}:\n{error}"
+        ) from error
+
 
 settings = Settings()
