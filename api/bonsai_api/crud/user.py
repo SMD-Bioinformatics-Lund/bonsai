@@ -1,11 +1,9 @@
 """User CRUD operations."""
 
 import logging
-from typing import Any
 
-import bonsai_api
-from api_client.audit_log import AuditLogClient, EventCreate
-from api_client.audit_log.models import EventSeverity, SourceType, Subject
+from api_client.audit_log import AuditLogClient
+from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database
