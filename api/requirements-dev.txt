@@ -1,7 +1,0 @@
-isort
-black
-mypy
-pylint
-
-# typing stubs
-motor-types[motor]

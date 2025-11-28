@@ -137,8 +137,11 @@ export class ApiService {
   };
 
   getSamplesDetails = async (query: ApiGetSamplesDetailsInput) => {
-    const url = `/samples/?${objectToQueryParams(query)}`;
-    return this.http.request<ApiSampleDetailsResponse>(url);
+    return this.http.request<ApiSampleDetailsResponse>(`/samples/summary`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(query),
+    });
   };
 
   deleteSamples = async (sampleIds: string[]) => {

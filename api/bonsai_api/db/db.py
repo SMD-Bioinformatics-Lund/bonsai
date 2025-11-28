@@ -2,9 +2,8 @@
 
 import logging
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection, AsyncIOMotorDatabase
-
-from ..config import settings
+from motor.motor_asyncio import (AsyncIOMotorClient, AsyncIOMotorCollection,
+                                 AsyncIOMotorDatabase)
 
 LOG = logging.getLogger(__name__)
 
@@ -21,12 +20,11 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.location_collection: AsyncIOMotorCollection | None = None
         self.user_collection: AsyncIOMotorCollection | None = None
 
-    def setup(self):
-        """setupt collection handler."""
-        if self.client is None:
-            raise ValueError("Database connection not initialized.")
+    def setup(self, client: AsyncIOMotorClient, db_name: str = "bonsai"):
+        """Setup collection handler."""
+        self.client = client
         # define collection shorthands
-        self.db = self.client.get_database(settings.database_name)
+        self.db = self.client.get_database(db_name)
         self.sample_group_collection = self.db.get_collection("sample_group")
         self.sample_collection = self.db.get_collection("sample")
         self.location_collection = self.db.get_collection("location")
@@ -37,4 +35,12 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         if isinstance(self.client, AsyncIOMotorClient):
             self.client.close()
         else:
-            raise ValueError("Trying to close an uninstantiated database")
+            raise RuntimeError("Trying to close an uninstantiated database")
+
+
+def setup_db_connection(uri: str, db_name: str) -> MongoDatabase:
+    """Setup connection"""
+    mongo_conn = AsyncIOMotorClient(uri)
+    db = MongoDatabase()
+    db.setup(mongo_conn, db_name=db_name)
+    return db
