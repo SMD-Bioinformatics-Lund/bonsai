@@ -184,6 +184,12 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     SampleTableColumnInput(
+        id="assay",
+        label="Assay",
+        path="$.assay",
+        sortable=True,
+    ),
+    SampleTableColumnInput(
         id="qc_status",
         label="QC",
         type="custom",
@@ -191,6 +197,26 @@ VALID_QC_COLS = [
         sortable=True,
     ),
     SampleTableColumnInput(
+        id="taxonomic_name",
+        label="Major species",
+        type="taxonomic_name",
+        path="$.species_prediction.scientific_name",
+        sortable=True,
+    ),
+    SampleTableColumnInput(
+        id="tags",
+        label="Tags",
+        type="tags",
+        path="$.tags",
+    ),
+    OverviewTableColumn(
+        id="mlst",
+        label="MLST ST",
+        path="$.mlst",
+        sortable=True,
+        filterable=True,
+    ),
+    SampleTableColumnInput
         id="n50",
         label="N50",
         type="number",
@@ -235,6 +261,13 @@ VALID_QC_COLS = [
         label="# Missing loci",
         type="number",
         path="$.missing_cgmlst_loci",
+        sortable=True,
+    ),
+    SampleTableColumnInput(
+        id="cdate",
+        label="Date",
+        type="date",
+        path="$.created_at",
         sortable=True,
     ),
 ]
