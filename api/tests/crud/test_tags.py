@@ -4,8 +4,12 @@ import pytest
 from bonsai_api.crud.tags import flag_uncertain_spp_prediction
 from bonsai_api.models.tags import Tag
 from prp.models.species import (BrackenSpeciesPrediction,
-                                MykrobeSpeciesPrediction, SppMethodIndex,
-                                SppPredictionSoftware)
+                                MykrobeSpeciesPrediction,
+                                SppPredictionSoftware,
+                                BrackenSppIndex,
+                                MykrobeSppIndex,
+                                SppMethodIndex
+                                )
 from pydantic import BaseModel
 
 
@@ -33,8 +37,8 @@ def test_add_contamination_tag_when_failed():
         species_coverage=0.8,
     )
     spp = [
-        SppMethodIndex(software=SppPredictionSoftware.BRACKEN, result=[bracken_spp]),
-        SppMethodIndex(software=SppPredictionSoftware.MYKROBE, result=[mykrobe_spp]),
+        BrackenSppIndex(result=[bracken_spp]),
+        MykrobeSppIndex(result=[mykrobe_spp]),
     ]
     sample = SampleInDatabase(species_prediction=list(spp))
 
@@ -64,8 +68,8 @@ def test_no_tags_when_all_contamination_checks_pass():
         species_coverage=99,
     )
     spp = [
-        SppMethodIndex(software=SppPredictionSoftware.BRACKEN, result=[bracken_spp]),
-        SppMethodIndex(software=SppPredictionSoftware.MYKROBE, result=[mykrobe_spp]),
+        BrackenSppIndex(result=[bracken_spp]),
+        MykrobeSppIndex(result=[mykrobe_spp]),
     ]
     sample = SampleInDatabase(species_prediction=list(spp))
 
@@ -84,11 +88,11 @@ def test_unknown_software_raises_exeption():
         phylogenetic_group_coverage=99,
         species_coverage=99,
     )
-    spp = [
-        SppMethodIndex(software=SppPredictionSoftware.TBPROFILER, result=[mykrobe_spp]),
-    ]
-    sample = SampleInDatabase(species_prediction=list(spp))
+    with pytest.raises(ValueError):
+        spp = [
+            MykrobeSppIndex(software=SppPredictionSoftware.TBPROFILER, result=[mykrobe_spp]),
+        ]
+        sample = SampleInDatabase(species_prediction=list(spp))
 
-    tags: list[Tag] = []
-    with pytest.raises(NotImplementedError):
+        tags: list[Tag] = []
         flag_uncertain_spp_prediction(tags, sample)
