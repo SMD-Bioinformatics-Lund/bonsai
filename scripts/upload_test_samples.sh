@@ -11,6 +11,7 @@ for file in /app/fixtures/samples/*.yaml; do
     --user     "$ADMIN_USER" \
     --password "$ADMIN_PASS" \
     --api      "$API_URL" \
+    upload-sample \
     --input    "$file"
 done
 
