@@ -7,11 +7,11 @@ import bonsai_api
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import EventCreate, EventSeverity, Subject
 from bonsai_api.models.context import ApiRequestContext
-from motor.motor_asyncio import AsyncIOMotorCollection
+from pymongo.collection import Collection
 
 
 async def get_deprecated_records(
-    collection: AsyncIOMotorCollection, schema_version: int
+    collection: Collection, schema_version: int
 ) -> list[dict[str, Any]]:
     """Get documents from the collection that have a schema version."""
     cursor = collection.find(

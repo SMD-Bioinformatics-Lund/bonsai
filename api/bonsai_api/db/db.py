@@ -2,8 +2,9 @@
 
 import logging
 
-from motor.motor_asyncio import (AsyncIOMotorClient, AsyncIOMotorCollection,
-                                 AsyncIOMotorDatabase)
+from pymongo import AsyncMongoClient
+from pymongo.asynchronous.database import AsyncDatabase
+from pymongo.asynchronous.collection import AsyncCollection
 
 LOG = logging.getLogger(__name__)
 
@@ -13,14 +14,14 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
 
     def __init__(self) -> None:
         """Constructor function."""
-        self.client: AsyncIOMotorClient | None = None
-        self.db: AsyncIOMotorDatabase | None = None
-        self.sample_group_collection: AsyncIOMotorCollection | None = None
-        self.sample_collection: AsyncIOMotorCollection | None = None
-        self.location_collection: AsyncIOMotorCollection | None = None
-        self.user_collection: AsyncIOMotorCollection | None = None
+        self.client: AsyncMongoClient | None = None
+        self.db: AsyncDatabase | None = None
+        self.sample_group_collection: AsyncCollection | None = None
+        self.sample_collection: AsyncCollection | None = None
+        self.location_collection: AsyncCollection | None = None
+        self.user_collection: AsyncCollection | None = None
 
-    def setup(self, client: AsyncIOMotorClient, db_name: str = "bonsai"):
+    def setup(self, client: AsyncMongoClient, db_name: str = "bonsai"):
         """Setup collection handler."""
         self.client = client
         # define collection shorthands
@@ -32,7 +33,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
 
     def close(self) -> None:
         """Close database connection."""
-        if isinstance(self.client, AsyncIOMotorClient):
+        if isinstance(self.client, AsyncMongoClient):
             self.client.close()
         else:
             raise RuntimeError("Trying to close an uninstantiated database")
@@ -40,7 +41,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
 
 def setup_db_connection(uri: str, db_name: str) -> MongoDatabase:
     """Setup connection"""
-    mongo_conn = AsyncIOMotorClient(uri)
+    mongo_conn = AsyncMongoClient(uri)
     db = MongoDatabase()
     db.setup(mongo_conn, db_name=db_name)
     return db
