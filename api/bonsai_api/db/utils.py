@@ -4,7 +4,7 @@ import logging
 from contextlib import contextmanager
 from typing import Generator
 
-from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo import AsyncMongoClient
 
 from ..config import settings
 from .db import MongoDatabase
@@ -17,7 +17,7 @@ db = MongoDatabase()
 @contextmanager
 def get_db_connection() -> Generator[MongoDatabase, None, None]:
     """Set up database connection."""
-    client = AsyncIOMotorClient(
+    client = AsyncMongoClient(
         settings.mongodb_uri,
         maxPoolSize=settings.max_connections,
         minPoolSize=settings.min_connections,

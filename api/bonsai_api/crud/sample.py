@@ -11,7 +11,7 @@ from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.dependencies import ApiRequestContext
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from motor.motor_asyncio import AsyncIOMotorCommandCursor
+from pymongo.asynchronous.cursor import AsyncCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.parse.typing import replace_cgmlst_errors
@@ -311,7 +311,7 @@ async def get_samples_summary(
         query_response = MultipleRecordsResponseModel(data=[], records_total=0)
     else:
         # query database for the number of samples
-        cursor: AsyncIOMotorCommandCursor = db.sample_collection.aggregate(pipeline)
+        cursor = await db.sample_collection.aggregate(pipeline)
 
         # get query results from the database
         query_results: list[dict[str, Any]] = await cursor.to_list(None)
