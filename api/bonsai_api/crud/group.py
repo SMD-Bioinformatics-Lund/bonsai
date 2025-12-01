@@ -2,7 +2,8 @@
 
 import logging
 from typing import Any
-from pymongo import UpdateOne
+from pymongo import UpdateOne, ASCENDING
+from pymongo.errors import BulkWriteError, PyMongoError
 
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
@@ -12,7 +13,6 @@ from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase
 from bonsai_api.models.sample import SampleSummary
 from bonsai_api.utils import get_timestamp
 from prp.models.typing import TypingMethod
-from pymongo import ASCENDING
 
 from .errors import EntryNotFound, UpdateDocumentError
 from .tags import compute_phenotype_tags
@@ -168,22 +168,45 @@ async def add_samples_to_group(
     audit: AuditLogClient | None = None,
 ) -> None:
     """Create a new collection document."""
+    if not sample_ids:
+        return
+
+    group_record = await get_group(db, group_id)
+    if not group_record:
+        raise EntryNotFound(group_id)
+
+    # Prepare audit log context
     event_subject = Subject(id=group_id, type=SourceType.USR)
     meta = {"sample_ids": sample_ids}
     with audit_event_context(audit, "add_samples_to_group", ctx, event_subject, meta):
-        update_obj = await db.sample_group_collection.update_one(
-            {"group_id": group_id},
-            {
-                "$set": {"modified_at": get_timestamp()},
-                "$addToSet": {
-                    "included_samples": {"$each": sample_ids},
-                },
-            },
-        )
-        if not update_obj.matched_count == 1:
-            raise EntryNotFound(group_id)
-        if not update_obj.modified_count == 1:
-            raise UpdateDocumentError(group_id)
+        async with db.client.start_session() as session:
+            try:
+                async with session.start_transaction():
+                    # Update group document
+                    await db.sample_group_collection.update_one(
+                        {"group_id": group_id},
+                        {
+                            "$set": {"modified_at": get_timestamp()},
+                            "$addToSet": {
+                                "included_samples": {"$each": sample_ids},
+                            },
+                        },
+                        session=session,
+                    )
+                    # prepare bulk operations to add group membership to samples
+                    ops = []
+                    group_entry = {"group_id": group_record.group_id, "display_name": group_record.display_name}
+                    for sid in sample_ids:
+                        ops.append(UpdateOne({"sample_id": sid}, {"$addToSet": {"groups": group_entry}}, upsert=True))
+
+                    if ops:
+                        await db.sample_group_membership_collection.bulk_write(ops, ordered=False, session=session)
+            except BulkWriteError as bwe:
+                LOG.error("Bulk write error while adding samples to group membership: %s", bwe.details)
+                raise UpdateDocumentError(f"Errors occurred while adding samples to group membership: {bwe.details}") from bwe
+            except PyMongoError as pme:
+                LOG.error("MongoDB error while adding samples to group: %s", str(pme))
+                raise UpdateDocumentError(f"Database error occurred while adding samples to group: {str(pme)}") from pme
 
 
 async def remove_samples_from_group(
@@ -194,57 +217,43 @@ async def remove_samples_from_group(
     audit: AuditLogClient | None = None,
 ) -> None:
     """Create a new collection document."""
+    if not sample_ids:
+        return
+
+    group_record = await get_group(db, group_id)
+    if not group_record:
+        raise EntryNotFound(group_id)
+
     event_subject = Subject(id=group_id, type=SourceType.USR)
     meta = {"sample_ids": sample_ids}
     with audit_event_context(audit, "add_samples_to_group", ctx, event_subject, meta):
-        update_obj = await db.sample_group_collection.update_one(
-            {"group_id": group_id},
-            {
-                "$set": {"modified_at": get_timestamp()},
-                "$pull": {
-                    "included_samples": {"$in": sample_ids},
-                },
-            },
-        )
-        if not update_obj.matched_count == 1:
-            raise EntryNotFound(group_id)
-        if not update_obj.modified_count == 1:
-            raise UpdateDocumentError(group_id)
-
-
-async def _add_group_to_membership(
-    db: Database,
-    group_record: GroupInfoDatabase,
-    sample_ids: list[str],
-) -> None:
-    """Add a group to multiple sample membership ducuments."""
-    ops: list[UpdateOne] = []
-    group_entry: dict[str, str | list[str]] = {"group_id": group_record.group_id, "display_name": group_record.display_name}
-    for sid in sample_ids:
-        ops.append(
-            UpdateOne(
-                {"sample_id": sid},
-                {"$addToSet": {"groups": group_entry}},
-                upsert=True,
-            )
-        )
-    if ops:
-        await db.sample_group_membership_collection.bulk_write(ops)
-
-
-async def _remove_group_from_membership(
-    db: Database,
-    group_id: str,
-    sample_ids: list[str],
-) -> None:
-    """Remove a group from multiple sample membership ducuments."""
-    ops: list[UpdateOne] = []
-    for sid in sample_ids:
-        ops.append(
-            UpdateOne(
-                {"sample_id": sid},
-                {"$pull": {"groups": {"group_id": group_id}}},
-            )
-        )
-    if ops:
-        await db.sample_group_membership_collection.bulk_write(ops)
+        async with db.client.start_session() as session:
+            try:
+                async with session.start_transaction():
+                    await db.sample_group_collection.update_one(
+                        {"group_id": group_id},
+                        {
+                            "$set": {"modified_at": get_timestamp()},
+                            "$pull": {
+                                "included_samples": {"$in": sample_ids},
+                            },
+                        },
+                        session=session,
+                    )
+                # prepare to remove group from sample membership collection
+                ops = []
+                for sid in sample_ids:
+                    ops.append(
+                        UpdateOne(
+                            {"sample_id": sid},
+                            {"$pull": {"groups": {"group_id": group_id}}},
+                        )
+                    )
+                if ops:
+                    await db.sample_group_membership_collection.bulk_write(ops)
+            except BulkWriteError as bwe:
+                LOG.error("Bulk write error while removing samples from group membership: %s", bwe.details)
+                raise UpdateDocumentError(f"Errors occurred while removing samples from group membership: {bwe.details}") from bwe
+            except PyMongoError as pme:
+                LOG.error("MongoDB error while removing samples from group: %s", str(pme))
+                raise UpdateDocumentError(f"Database error occurred while removing samples from group: {str(pme)}") from pme
