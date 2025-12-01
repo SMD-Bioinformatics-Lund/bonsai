@@ -4,7 +4,7 @@ import logging
 from typing import Annotated
 
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.errors import EntryNotFound, DatabaseOperationError
 from bonsai_api.crud.user import (add_samples_to_user_basket, create_user,
                                   delete_user, get_user, get_users,
                                   remove_samples_from_user_basket, update_user)
@@ -66,7 +66,7 @@ async def add_samples_to_basket(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=error,
         ) from error
-    except UpdateDocumentError as error:
+    except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
             detail=error,
@@ -92,7 +92,7 @@ async def remove_samples_from_basket(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
         ) from error
-    except UpdateDocumentError as error:
+    except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),

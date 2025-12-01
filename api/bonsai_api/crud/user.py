@@ -16,7 +16,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from .errors import EntryNotFound, UpdateDocumentError
+from .errors import EntryNotFound, DatabaseOperationError
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
@@ -119,7 +119,7 @@ async def update_user(
         if resp.matched_count == 0:
             raise EntryNotFound(username)
         if resp.modified_count == 0:
-            raise UpdateDocumentError(username)
+            raise DatabaseOperationError(username)
 
 
 async def create_user(
@@ -208,7 +208,7 @@ async def add_samples_to_user_basket(
         raise EntryNotFound(current_user.username)
 
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(current_user.username)
+        raise DatabaseOperationError(current_user.username)
 
     # get updated object
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
@@ -243,7 +243,7 @@ async def remove_samples_from_user_basket(
             sample_ids,
             sample_ids_in_basket,
         )
-        raise UpdateDocumentError(
+        raise DatabaseOperationError(
             f"Error when updating the basket of {current_user.username}"
         )
     # get updated basket

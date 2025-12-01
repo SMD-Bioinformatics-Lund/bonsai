@@ -2,7 +2,7 @@
 
 import bonsai_api.crud.group as crud_group
 from api_client.audit_log import AuditLogClient
-from bonsai_api.crud.errors import EntryNotFound, UpdateDocumentError
+from bonsai_api.crud.errors import EntryNotFound, DatabaseOperationError
 from bonsai_api.crud.group import create_group as create_group_record
 from bonsai_api.crud.group import (delete_group, get_group, get_groups,
                                    update_group)
@@ -210,7 +210,7 @@ async def add_samples_to_group(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=sample_ids,
         ) from error
-    except UpdateDocumentError as error:
+    except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
             detail=sample_ids,
@@ -245,7 +245,7 @@ async def remove_sample_from_group(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=sample_ids,
         ) from error
-    except UpdateDocumentError as error:
+    except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
             detail=sample_ids,
