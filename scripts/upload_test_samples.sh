@@ -7,11 +7,12 @@ ADMIN_PASS="${ADMIN_PASS:-admin}"
 
 for file in /app/fixtures/samples/*.yaml; do
   echo "Uploading sample $file"
-  echo /app/upload_sample.py       \
+  /app/upload_sample.py       \
     --user     "$ADMIN_USER"  \
     --password "$ADMIN_PASS"  \
     --api      "$API_URL"     \
     upload-sample             \
     --input    "$file"
+done;
 
 echo "Upload completed."
