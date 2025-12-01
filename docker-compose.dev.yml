@@ -185,6 +185,8 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     volumes:
      - ./scripts/upload_sample.py:/app/upload_sample.py:ro
      - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
