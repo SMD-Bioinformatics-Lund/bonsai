@@ -6,7 +6,7 @@ from typing import Any, Dict, Sequence
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
-from api_client.audit_log.models import EventSeverity, SourceType, Subject
+from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.dependencies import ApiRequestContext
 from bson.objectid import ObjectId
@@ -31,7 +31,7 @@ from ..models.sample import (Comment, CommentInDatabase,
 from ..redis.minhash import (schedule_remove_genome_signature,
                              schedule_remove_genome_signature_from_index)
 from ..utils import format_error_message, get_timestamp
-from .errors import EntryNotFound, UpdateDocumentError
+from .errors import EntryNotFound, DatabaseOperationError
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -563,7 +563,7 @@ async def add_comment(
         if not update_obj.matched_count == 1:
             raise EntryNotFound(sample_id)
         if not update_obj.modified_count == 1:
-            raise UpdateDocumentError(sample_id)
+            raise DatabaseOperationError(sample_id)
 
         LOG.info("Added comment to %s", sample_id)
         comments.insert(0, comment_obj)
@@ -594,7 +594,7 @@ async def hide_comment(
         if not update_obj.matched_count == 1:
             raise EntryNotFound(sample_id)
         if not update_obj.modified_count == 1:
-            raise UpdateDocumentError(sample_id)
+            raise DatabaseOperationError(sample_id)
 
         LOG.info("Hide comment %s for %s", comment_id, sample_id)
     return True
@@ -627,7 +627,7 @@ async def update_sample_qc_classification(
             raise EntryNotFound(sample_id)
         # if not modifed
         if not update_obj.modified_count == 1:
-            raise UpdateDocumentError(sample_id)
+            raise DatabaseOperationError(sample_id)
     return classification
 
 
@@ -765,7 +765,7 @@ async def update_variant_annotation_for_sample(
         raise EntryNotFound(sample_id)
     # if not modifed
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+        raise DatabaseOperationError(sample_id)
     # make a copy of updated result and return it
     upd_sample_info = sample_info.model_copy(update=updated_data)
     return upd_sample_info
@@ -799,7 +799,7 @@ async def add_location(
     if not update_obj.matched_count == 1:
         raise EntryNotFound(sample_id)
     if not update_obj.modified_count == 1:
-        raise UpdateDocumentError(sample_id)
+        raise DatabaseOperationError(sample_id)
     LOG.info("Added location %s to %s", location_obj.display_name, sample_id)
     return location_obj
 
