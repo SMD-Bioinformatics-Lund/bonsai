@@ -1,39 +1,35 @@
 """Commmand line interface to server component."""
 
-import asyncio
 import pathlib
-from io import StringIO, TextIOWrapper
+from io import TextIOWrapper
 from logging import getLogger
-from typing import Any, Callable, Literal
+from typing import Literal
 
 import click
 from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import Actor, SourceType
 from api_client.notification import EmailCreate, NotificationClient
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES, settings
-from bonsai_api.crud.group import create_group as create_group_in_db
-from bonsai_api.crud.sample import get_sample, get_samples, update_sample
-from bonsai_api.crud.tags import compute_phenotype_tags
-from bonsai_api.crud.user import create_user as create_user_in_db
-from bonsai_api.db import verify
+from bonsai_api.crud.errors import EntryNotFound
 from bonsai_api.db.index import INDEXES
-from bonsai_api.db.utils import get_db_connection
-from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
-from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
+from bonsai_api.lims_export.config import InvalidFormatError
+from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
-from bonsai_api.models.sample import MultipleSampleRecordsResponseModel, SampleInCreate
 from bonsai_api.models.user import UserInputCreate
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (GroupInCreate, SampleTableColumnDB,
-                                     pred_res_cols)
-from bonsai_api.models.sample import (MultipleSampleRecordsResponseModel,
-                                      SampleInCreate)
-from bonsai_api.models.user import UserInputCreate
-from pymongo.errors import DuplicateKeyError
+from mongomock import DuplicateKeyError
 
-from .utils import EmailType, create_missing_file_report
+from .cli_tasks import (
+    run_check_paths,
+    run_create_group,
+    run_create_index,
+    run_create_user,
+    run_get_samples,
+    run_lims_export,
+    run_migrate_database,
+    run_update_tag,
+)
+from .utils import EmailType, run_async
 
 LOG = getLogger(__name__)
 
@@ -97,7 +93,6 @@ def create_user(
     lname: str,
 ):  # pylint: disable=too-many-arguments,too-many-positional-arguments
     """Create a user account"""
-    # create collections
     user = UserInputCreate(
         username=username,
         first_name=fname,
@@ -107,24 +102,12 @@ def create_user(
         roles=[role],
     )
     try:
-        # build request context
-        ctx = ApiRequestContext(
-            actor=Actor(id=username, type=SourceType.USR), metadata={}
-        )
-        # get audit connnection
-        audit_log: AuditLogClient | None = None
-        if settings.audit_log_service_api is not None:
-            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
-
-        # run cli command
-        loop = asyncio.get_event_loop()
-        with get_db_connection() as db:
-            func = create_user_in_db(db, user, ctx, audit_log)
-            loop.run_until_complete(func)
+        run_async(run_create_user(user))
     except DuplicateKeyError as error:
-        raise click.UsageError(f'Username "{username}" is already taken') from error
-    finally:
-        click.secho(f'Successfully created the user "{user.username}"', fg="green")
+        raise click.UsageError(
+            f'Username "{user.username}" is already taken'
+        ) from error
+    click.secho(f'Successfully created the user "{user.username}"', fg="green")
 
 
 @cli.command()
@@ -145,75 +128,58 @@ def create_group(
         validated_genes=None,
     )
     try:
-        # build request context
-        ctx = ApiRequestContext(
-            actor=Actor(id=group_id, type=SourceType.USR), metadata={}
-        )
-        # get audit connnection
-        audit_log: AuditLogClient | None = None
-        if settings.audit_log_service_api is not None:
-            audit_log = AuditLogClient(base_url=str(settings.audit_log_service_api))
-
-        loop = asyncio.get_event_loop()
-        with get_db_connection() as db:
-            func = create_group_in_db(db, group_obj, ctx, audit_log)
-            loop.run_until_complete(func)
+        run_async(run_create_group(group_obj))
     except DuplicateKeyError as error:
-        raise click.UsageError(f'Group with "{group_id}" exists already') from error
-    finally:
-        click.secho(f'Successfully created a group with id: "{group_id}"', fg="green")
+        raise click.UsageError(
+            f'Group with ID "{group_obj.group_id}" already exists'
+        ) from error
+    click.secho(f'Successfully created the group "{group_obj.group_id}"', fg="green")
 
 
 @cli.command()
 @click.pass_obj
 def index(_ctx: click.Context):  # pylint: disable=unused-argument
     """Create and update indexes used by the mongo database."""
-    with get_db_connection() as db:
-        for collection_name, indexes in INDEXES.items():
-            collection = getattr(db, f"{collection_name}_collection")
-            click.secho(f"Creating index for: {collection.name}")
-            for idx in indexes:
-                loop = asyncio.get_event_loop()
-                func = collection.create_index(idx["definition"], **idx["options"])
-                loop.run_until_complete(func)
+    for collection_name, indexes in INDEXES.items():
+        click.secho(f"Creating index for: {collection_name}")
+        run_async(run_create_index(collection_name, indexes))
+    click.secho("Database indexes created successfully", fg="green")
 
 
 @cli.command()
 @click.pass_obj
 @click.option("-i", "--sample-id", required=True, help="Sample id")
-@click.option("-e", "--export-cnf", type=click.Path(), help="Optional LIMS export configuration.")
-@click.option("-f", "--format", "output_format", type=click.Choice(["csv", "tsv"]), help="Optional LIMS export configuration.")
+@click.option(
+    "-e", "--export-cnf", type=click.Path(), help="Optional LIMS export configuration."
+)
+@click.option(
+    "-f",
+    "--format",
+    "output_format",
+    type=click.Choice(["csv", "tsv"]),
+    help="Optional LIMS export configuration.",
+)
 @click.argument("output", type=click.File("w"), default="-")
 def export(
-    _ctx: click.Context, sample_id: str, export_cnf: pathlib.Path | None, output_format: Literal["tsv", "csv"], output: TextIOWrapper,
+    _ctx: click.Context,
+    sample_id: str,
+    export_cnf: pathlib.Path | None,
+    output_format: Literal["tsv", "csv"],
+    output: TextIOWrapper,
 ) -> None:  # pylint: disable=unused-argument
     """Export resistance results in TSV format."""
-    if export_cnf and not export_cnf.exists():
+    export_path = pathlib.Path(export_cnf) if export_cnf else None
+    if export_path and not export_path.exists():
         raise click.ClickException(f"Configuration file not found: {export_cnf}")
 
-    # get sample from database
-    loop = asyncio.get_event_loop()
-    with get_db_connection() as db:
-        func = get_sample(db, sample_id)
-        sample = loop.run_until_complete(func)
-
     try:
-        # load config and cast as pydantic model
-        lims_data = None
-        conf_obj = load_export_config(export_cnf)
-        for cnf in conf_obj:
-            if cnf.assay == sample.pipeline.assay:
-                lims_data = lims_rs_formatter(sample, cnf)
+        tabular = run_async(run_lims_export(sample_id, export_path, output_format))
     except (InvalidFormatError, FileNotFoundError, ValueError) as error:
         click.secho(error, fg="yellow")
-        raise click.Abort(error) from error
+        raise click.Abort(error)
+    except EntryNotFound as error:
+        raise click.ClickException(f"Sample not found: {sample_id}") from error
 
-    if lims_data is None:
-        click.secho(f"No configuration for assay {sample.pipeline.assay}", fg="red")
-        raise click.Abort()
-
-    # write lims formatted data
-    tabular = serialize_lims_results(lims_data, delimiter=output_format)
     output.write(tabular)
     click.secho(f"Exported {sample_id}", fg="green", err=True)
 
@@ -222,21 +188,12 @@ def export(
 @click.pass_obj
 def update_tags(_ctx: click.Context):  # pylint: disable=unused-argument
     """Update the tags for samples in the database."""
-    LOG.info("Updating tags...")
-    loop = asyncio.get_event_loop()
-    with get_db_connection() as db:
-        func = get_samples(db)
-        samples = loop.run_until_complete(func)
-        with click.progressbar(
-            samples.data, length=samples.records_filtered, label="Updating tags"
-        ) as prog_bar:
-            for sample in prog_bar:
-                upd_tags = compute_phenotype_tags(sample)
-                upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
-                # update sample as sync function
-                loop = asyncio.get_event_loop()
-                func = update_sample(db, upd_sample)
-                samples = loop.run_until_complete(func)
+    samples = run_async(run_get_samples())
+    with click.progressbar(
+        samples.data, length=samples.records_filtered, label="Updating tags"
+    ) as prog_bar:
+        for sample in prog_bar:
+            run_async(run_update_tag(sample))
     click.secho("Updated tags for all samples", fg="green")
 
 
@@ -268,61 +225,34 @@ def check_paths(
     output: TextIOWrapper,
 ) -> None:
     """Check that paths to files are valid."""
-    loop = asyncio.get_event_loop()
-    # get all samples in the database
-    with get_db_connection() as db:
-        func = get_samples(db)
-        samples: MultipleSampleRecordsResponseModel = loop.run_until_complete(func)
+    result = run_async(run_check_paths(redis_timeout))
 
-    # loop over samples and check if paths are valid
-    click.secho(f"Checking {samples.records_filtered} samples for invalid paths.")
-    with click.progressbar(
-        samples.data,
-        length=samples.records_filtered,
-        label="Checking file paths",
-    ) as pbar:
-        missing_files: list[verify.MissingFile] = []
-        for sample in pbar:
-            status: verify.MISSING_FILES = verify.verify_reference_genome(sample)
-            if len(status) > 0:
-                missing_files.extend(status)
+    report = result.get("report", "")
+    records = result.get("records_filtered", 0)
 
-            missing: verify.MissingFile | None = verify.verify_read_mapping(sample)
-            if missing is not None:
-                missing_files.append(missing)
-
-            # query redis
-            redis_funcs: list[Callable[..., verify.MissingFile | None]] = [
-                verify.verify_ska_index,
-                verify.verify_sourmash_files,
-            ]
-            for func in redis_funcs:
-                missing: verify.MissingFile | None = func(sample, redis_timeout)
-                if missing is not None:
-                    missing_files.append(missing)
-
-    output_ch = StringIO()
-    if len(missing_files) == 0:
-        print("No samples with invalid paths were identified", file=output_ch)
+    click.secho(f"Checking {records} samples for invalid paths.")
+    if len(result.get("missing_files", [])) == 0:
+        output.write(report)
     else:
-        create_missing_file_report(missing_files, file=output_ch)
-
-    if len(email_addr) > 0:
-        # send report as email instead of writing to output
-        if settings.notification_service_api is None:
-            LOG.error(
-                "URL to notification service has not been configured, cant send report..."
-            )
+        if len(email_addr) > 0:
+            # send report as email instead of writing to output
+            if settings.notification_service_api is None:
+                LOG.error(
+                    "URL to notification service has not been configured, cant send report..."
+                )
+            else:
+                notify = NotificationClient(
+                    base_url=str(settings.notification_service_api)
+                )
+                email = EmailCreate(
+                    recipient=email_addr,
+                    subject="SKA Integrity report",
+                    message=report,
+                )
+                notify.send_email(email)
         else:
-            notify = NotificationClient(base_url=str(settings.notification_service_api))
-            report = EmailCreate(
-                recipient=email_addr,
-                subject="SKA Integrity report",
-                message=output_ch.getvalue(),
-            )
-            notify.send_email(report)
-    else:
-        output.write(output_ch.getvalue())
+            output.write(report)
+
     click.secho("Finished validating file paths", fg="green")
 
 
@@ -350,14 +280,10 @@ def migrate_database(backup_path: pathlib.Path | None):
     click.secho(
         f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database..."
     )
-    # 1 query the database for all samples that does not have the current schema version
-    loop = asyncio.get_event_loop()
-    with get_db_connection() as db:
-        try:
-            for mig_func in [migrate_sample_collection, migrate_group_collection]:
-                loop.run_until_complete(mig_func(db, backup_path))
-        except MigrationError as err:
-            LOG.error(str(err))
-            click.Abort()
-        finally:
-            click.secho("Finished migrating the database", fg="green")
+    try:
+        run_async(run_migrate_database(backup_path))
+    except MigrationError as err:
+        LOG.error(str(err))
+        raise click.Abort()
+    finally:
+        click.secho("Finished migrating the database", fg="green")
