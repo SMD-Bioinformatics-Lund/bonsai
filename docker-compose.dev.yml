@@ -7,6 +7,10 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
+  mongodb:
+    ports:
+      - "27017:27017"
+
   frontend:
     build: 
       target: development
@@ -23,7 +27,7 @@ services:
         - path: ./frontend/Dockerfile
           action: rebuild
         - path: ./frontend/bonsai_app
-          target: /app/frontend/bonsai_api
+          target: /app/frontend/bonsai_app
           action: sync
 
   api:
@@ -178,7 +182,7 @@ services:
       - bonsai-net
   
   db_upload:
-    container_name: e2e-tests
+    container_name: db-upload
     build: 
       context: e2e_tests
       network: host
