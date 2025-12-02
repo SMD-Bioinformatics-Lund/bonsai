@@ -190,9 +190,8 @@ async def get_group(
     try:
         pipeline = _build_group_aggregation_pipeline(group_id, lookup_samples)
 
-        async for group in db.sample_group_collection.aggregate(
-            pipeline, session=session
-        ):
+        cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
+        async for group in cursor:
             if lookup_samples and group.get("included_samples"):
                 try:
                     _enrich_group_samples(group)
@@ -203,9 +202,6 @@ async def get_group(
             return group_document_to_db_object(group)
         # Raise error if no group was found
         raise EntryNotFound(group_id)
-
-    except EntryNotFound:
-        raise
     except PyMongoError as pme:
         LOG.error("MongoDB error while retrieving group: %s", str(pme))
         raise DatabaseOperationError(
@@ -233,7 +229,7 @@ async def create_group(
             )
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
-            raise DocuementExistsError(
+            raise DatabaseOperationError(
                 f"Group with id {group_record.group_id} already exists."
             ) from dke
         except PyMongoError as pme:
@@ -264,7 +260,8 @@ async def delete_group(
     with audit_event_context(audit, "delete_group", ctx, event_subject):
         async with db.client.start_session() as session:
             try:
-                async with session.start_transaction():
+                txn = await session.start_transaction()
+                async with txn:
                     existing = await check_group_exists(db, group_id, session=session)
                     if not existing:
                         raise EntryNotFound(group_id)
@@ -359,7 +356,8 @@ async def add_samples_to_group(
     with audit_event_context(audit, "add_samples_to_group", ctx, event_subject, meta):
         async with db.client.start_session() as session:
             try:
-                async with session.start_transaction():
+                txn = await session.start_transaction()
+                async with txn:
                     # Update group document
                     await db.sample_group_collection.update_one(
                         {"group_id": group_id},
@@ -425,7 +423,8 @@ async def remove_samples_from_group(
     with audit_event_context(audit, "add_samples_to_group", ctx, event_subject, meta):
         async with db.client.start_session() as session:
             try:
-                async with session.start_transaction():
+                txn = await session.start_transaction()
+                async with txn:
                     await db.sample_group_collection.update_one(
                         {"group_id": group_id},
                         {
