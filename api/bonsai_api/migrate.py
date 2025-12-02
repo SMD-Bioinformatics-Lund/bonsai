@@ -154,3 +154,8 @@ async def migrate_group_collection(db: Database, backup_path: pathlib.Path | Non
         was_updated = await update_group(db, upd_group.group_id, upd_group)
         if not was_updated:
             raise MigrationError(f"Sample '{upd_group.group_id}' was not updated.")
+
+
+migration_functions: list[Callable[..., Any]] = [
+    migrate_sample_collection,  migrate_group_collection
+]
