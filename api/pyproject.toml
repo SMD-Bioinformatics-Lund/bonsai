@@ -18,8 +18,8 @@ classifiers = [
   "Framework :: FastAPI",
 ]
 dependencies = [
-  "redis",
-  "uvicorn[standard]==0.25.0",
+  "bcrypt==4.1.1",
+  "bonsai-prp==1.5.0",
   "click==8.1.7",
   "fastapi[all]==0.115.0",
   "python-jose[cryptography]==3.3.0",
@@ -30,7 +30,8 @@ dependencies = [
   "redis",
   "rq==2.5.0",
   "pymongo==4.15.4",
-  "bonsai-prp==1.5.0"
+  "bonsai-prp==1.5.0",
+  "uvicorn[standard]==0.25.0",
 ]
 
 [project.optional-dependencies]
