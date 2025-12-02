@@ -15,7 +15,7 @@ db = MongoDatabase()
 
 
 @asynccontextmanager
-async def get_db_connection() -> AsyncGenerator[MongoDatabase, None, None]:
+async def get_db_connection() -> AsyncGenerator[MongoDatabase, None]:
     """Set up database connection."""
     client = AsyncMongoClient(
         settings.mongodb_uri,
