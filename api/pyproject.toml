@@ -43,7 +43,7 @@ test = [
 ]
 
 [project.scripts]
-bonsai-api = "bonsai_api.cli:cli"
+bonsai-api = "bonsai_api.cli.cli:cli"
 
 [tool.setuptools.dynamic]
 version = { attr = "bonsai_api.__version__" }
