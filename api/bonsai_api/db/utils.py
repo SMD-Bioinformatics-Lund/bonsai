@@ -1,12 +1,12 @@
 """Helper functions for setup and teardown of database connections."""
 
 import logging
-from contextlib import contextmanager
-from typing import Generator
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from pymongo import AsyncMongoClient
 
-from ..config import settings
+from bonsai_api.config import settings
 from .db import MongoDatabase
 
 LOG = logging.getLogger(__name__)
@@ -14,8 +14,8 @@ LOG = logging.getLogger(__name__)
 db = MongoDatabase()
 
 
-@contextmanager
-def get_db_connection() -> Generator[MongoDatabase, None, None]:
+@asynccontextmanager
+async def get_db_connection() -> AsyncGenerator[MongoDatabase, None]:
     """Set up database connection."""
     client = AsyncMongoClient(
         settings.mongodb_uri,
@@ -29,5 +29,5 @@ def get_db_connection() -> Generator[MongoDatabase, None, None]:
         yield db_conn
     finally:
         # teardown database connection
-        db_conn.close()
+        await db_conn.close()
         LOG.debug("Initiate teardown of database connection")
