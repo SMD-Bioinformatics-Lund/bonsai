@@ -17,7 +17,7 @@ from bonsai_api.lims_export.config import InvalidFormatError
 from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
 from bonsai_api.models.user import UserInputCreate
-from mongomock import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError
 
 from .cli_tasks import (
     run_check_paths,
