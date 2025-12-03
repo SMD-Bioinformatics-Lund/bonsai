@@ -31,10 +31,10 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.location_collection = self.db.get_collection("location")
         self.user_collection = self.db.get_collection("user")
 
-    def close(self) -> None:
+    async def close(self) -> None:
         """Close database connection."""
         if isinstance(self.client, AsyncMongoClient):
-            self.client.close()
+            await self.client.close()
         else:
             raise RuntimeError("Trying to close an uninstantiated database")
 

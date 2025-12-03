@@ -168,9 +168,11 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
     volumes:
-      - ./scripts/seed_db.sh:/seed_db.sh:ro
-    command: "bash /seed_db.sh"
+      - ./scripts/seed_db.py:/seed_db.py:ro
+    command: "python /seed_db.py"
     restart: no
     networks:
       - bonsai-net
