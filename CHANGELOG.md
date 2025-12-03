@@ -11,6 +11,7 @@
 
 ### Changed
 
+- Improved seeding of a development Bonsai database with a new `seed_db.py` script.
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 
