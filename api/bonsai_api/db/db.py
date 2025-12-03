@@ -27,6 +27,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         # define collection shorthands
         self.db = self.client.get_database(db_name)
         self.sample_group_collection = self.db.get_collection("sample_group")
+        self.sample_group_membership_collection = self.db.get_collection("sample_group_membership")
         self.sample_collection = self.db.get_collection("sample")
         self.location_collection = self.db.get_collection("location")
         self.user_collection = self.db.get_collection("user")

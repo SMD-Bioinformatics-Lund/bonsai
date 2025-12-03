@@ -2,7 +2,7 @@
 
 from typing import Optional, Union
 
-from prp.models import PipelineResult
+from prp.models.sample import PipelineResult
 from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
                                   ElementType, PredictionSoftware,
                                   ResfinderGene, VariantBase, VirulenceGene)
