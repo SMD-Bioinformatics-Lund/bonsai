@@ -2,14 +2,13 @@
 
 import os
 import re
-import os
 import ssl
 import tomllib
 from typing import Annotated
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, model_validator, FilePath, AfterValidator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 
 ssl_defaults = ssl.get_default_verify_paths()
 
@@ -51,20 +50,15 @@ class SmtpConfig(BaseSettings):
     use_ssl: bool = False
 
 
-class EmailConfig(BaseSettings):
-
-    subject_prefix: str = "[ Bonsai ]"
-    sender: str = 'do-not-reply@bonsai.app'
-    sender_name: str = "Bonsai"
-
-
 class BrackenThresholds(BaseModel):
+    """Thresholds for Bracken species detection."""
     model_config = ConfigDict(extra="forbid")
     min_fraction: float = Field(ge=0.0, le=1.0)
     min_reads: int = Field(ge=0)
 
 
 class MykrobeThresholds(BaseModel):
+    """Thresholds for Mykrobe species detection."""
     model_config = ConfigDict(extra="forbid")
     min_species_coverage: float = Field(ge=0.0, le=1.0)
     min_phylogenetic_group_coverage: float = Field(ge=0.0, le=1.0)
@@ -85,27 +79,33 @@ def _validate_species_keys(d: dict[str, object], method_name: str) -> None:
 
 
 def normalize_species_key(name: str) -> str:
-    # Same normalization used by lookup helpers:
-    # lower, spaces/hyphens to underscores; strip stray chars
+    """Normalize species name to lookup key.
+
+    Lower, spaces/hyphens to underscores; strip stray chars.
+    """
     key = name.strip().lower().replace(" ", "_").replace("-", "_")
     key = re.sub(r"[^a-z0-9_]", "", key)
     return key
 
 
 class SpeciesCategory(BaseModel):
+    """Species-specific threshold configuration."""
+
     model_config = ConfigDict(extra="forbid")
     bracken: dict[str, BrackenThresholds] = Field(default_factory=dict)
     mykrobe: dict[str, MykrobeThresholds] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def _validate_species_keys(self) -> "SpeciesCategory":
+    def _validate_species_cnf(self) -> "SpeciesCategory":
+        """Validate threshold for species."""
+
         _validate_species_keys(self.bracken, "bracken")
         _validate_species_keys(self.mykrobe, "mykrobe")
 
         # Ensure defaults exist if your code relies on them
-        if "default" not in self.bracken:
+        if not isinstance(self.bracken, dict) or "default" not in self.bracken:
             raise ValueError("[species.bracken.default] must be defined.")
-        if "default" not in self.mykrobe:
+        if not isinstance(self.mykrobe, dict) or "default" not in self.mykrobe:
             raise ValueError("[species.mykrobe.default] must be defined.")
         return self
 
@@ -187,7 +187,6 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
-        toml_file=config_file,
     )
 
     lims_export_config: LimsConfigPath = Field(
@@ -197,6 +196,23 @@ class Settings(BaseSettings):
             "If omitted, the application will fall back the packaged default."
         ),
         examples=["/etc/bonsai/lims.yaml"]
+        )
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        """Configure settings sources to include TOML files."""
+        return (
+            init_settings,
+            env_settings,
+            TomlConfigSettingsSource(settings_cls, toml_file=config_file),
+            dotenv_settings,
         )
 
     @property
