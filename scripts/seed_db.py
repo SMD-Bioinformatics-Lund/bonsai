@@ -1,4 +1,5 @@
 """Seed a fresh database with initial dev data."""
+#! /usr/bin/env python3
 
 import asyncio
 import logging
