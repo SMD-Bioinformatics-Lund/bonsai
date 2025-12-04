@@ -172,8 +172,10 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+      mongo-init-replica:
+        condition: service_completed_successfully
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_URI=mongodb://mongodb:27017?replicaSet=rs0
     volumes:
       - ./scripts/seed_db.py:/seed_db.py:ro
     command: "python /seed_db.py"
