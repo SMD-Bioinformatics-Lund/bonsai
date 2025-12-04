@@ -72,6 +72,14 @@ VALID_BASE_COLS: list[SampleTableColumnInput] = [
         path="$.sample_id",
         sortable=True,
     ),
+    SampleTableColumnInput(
+        id="in_groups",
+        label="In groups",
+        path="$.in_groups",
+        sortable=False,
+        type="custom",
+        renderer="in_groups_renderer",
+    ),
 ]
 
 # Prediction result columns
@@ -272,6 +280,7 @@ DEFAULT_COLUMNS: list[str] = [
     "sample_btn",
     "sample_id",
     "sample_name",
+    "in_groups",
     "tags",
     "assay",
     "taxonomic_name",

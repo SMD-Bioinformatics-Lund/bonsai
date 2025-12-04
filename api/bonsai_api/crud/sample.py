@@ -217,14 +217,18 @@ async def get_samples_summary(
     if isinstance(include_samples, list) and len(include_samples) > 0:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
 
-    # Lookup group membership
+    # Lookup group membership and return a flat array of groups as `in_groups`.
     pipeline.append(
         {
             "$lookup": {
                 "from": db.sample_group_membership_collection.name,
-                "localField": "sample_id",
-                "foreignField": "sample_id",
-                "as": "membership",
+                "let": {"sample_id": "$sample_id"},
+                "pipeline": [
+                    {"$match": {"$expr": {"$eq": ["$sample_id", "$$sample_id"]}}},
+                    {"$unwind": "$groups"},
+                    {"$replaceRoot": {"newRoot": "$groups"}},
+                ],
+                "as": "in_groups",
             }
         }
     )
@@ -263,7 +267,7 @@ async def get_samples_summary(
         "sequencing_run": "$sequencing.run_id",
         "qc_status": 1,
         "metadata": 1,
-        "in_groups": "$membership.groups",
+        "in_groups": "$in_groups",
         "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",
