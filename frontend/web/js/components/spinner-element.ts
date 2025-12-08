@@ -1,4 +1,4 @@
-const template = document.createElement('template');
+const template = document.createElement("template");
 template.innerHTML = String.raw`
   <style>
     .d-flex {
@@ -45,20 +45,20 @@ template.innerHTML = String.raw`
 class SpinnerElement extends HTMLElement {
   constructor() {
     super();
-    this.attachShadow({ mode: 'open' });
+    this.attachShadow({ mode: "open" });
     this.shadowRoot!.appendChild(template.content.cloneNode(true));
   }
 
   show(): void {
-    this.style.display = '';
+    this.style.display = "";
   }
 
   hide(): void {
-    this.style.display = 'none';
+    this.style.display = "none";
   }
 
   connectedCallback(): void {
-    if (!this.hasAttribute('visible') || this.getAttribute('visible') === 'true') {
+    if (!this.hasAttribute("visible") || this.getAttribute("visible") === "true") {
       this.show();
     } else {
       this.hide();
@@ -66,5 +66,5 @@ class SpinnerElement extends HTMLElement {
   }
 }
 
-customElements.define('spinner-element', SpinnerElement);
+customElements.define("spinner-element", SpinnerElement);
 export default SpinnerElement;

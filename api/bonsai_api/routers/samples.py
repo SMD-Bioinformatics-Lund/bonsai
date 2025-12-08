@@ -5,6 +5,7 @@ import pathlib
 from typing import Annotated, Any, Union, cast
 
 from api_client.audit_log.client import AuditLogClient
+from bonsai_api.crud.group import get_samples_group_membership
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -22,10 +23,12 @@ from bonsai_api.io import (InvalidRangeError, RangeOutOfBoundsError,
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.cluster import TypingMethod
 from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.group import SampleSampleGroupMemberships
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.qc import QcClassification, VariantAnnotation
 from bonsai_api.models.sample import (Comment, CommentInDatabase,
+                                      SampleGroupMembershipInput,
                                       SampleInCreate, SampleInDatabase)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
@@ -110,6 +113,49 @@ async def samples_summary(
         qc_metrics=query.qc_metrics,
     )
     return db_obj
+
+
+@router.api_route(
+    "/samples/group-memberships",
+    response_model=SampleSampleGroupMemberships,
+    methods=["GET", "POST"],
+    tags=[RouterTags.SAMPLE],
+)
+async def get_group_membership(
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+    ids: list[str] = Query(
+        None, description="Sample IDs to check group membership (GET)"
+    ),
+    body: SampleGroupMembershipInput | None = Body(
+        None, description="Sample IDs to check group membership (POST)"
+    ),
+):
+    """Get group membership for multiple samples."""
+    if ids:
+        sample_ids = ids
+    elif body and body.sample_ids:
+        sample_ids = body.sample_ids
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No sample IDs provided, either via query or body.",
+        )
+
+    # Enforce a maximum number of sample IDs to prevent abuse
+    max_samples_ids = 100
+    max_samples_post = 1000
+    max_allowed = max_samples_post if body else max_samples_ids
+    if len(sample_ids) > max_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Too many sample IDs provided ({len(sample_ids)}). Maximum allowed is {max_allowed}.",
+        )
+
+    memberships = await get_samples_group_membership(db, sample_ids)
+    return memberships
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])

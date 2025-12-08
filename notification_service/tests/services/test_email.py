@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from bonsai_notification.models import (ContentType, EmailApiInput,
-                                         EmailTemplateContext)
+                                        EmailTemplateContext)
 from bonsai_notification.services.email import send_email
 
 

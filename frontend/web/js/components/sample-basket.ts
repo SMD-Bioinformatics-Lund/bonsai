@@ -3,9 +3,14 @@ import { BasketState } from "../state/basket-state";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
-  private getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>;
+  private getSamplesDetails: (
+    query: ApiGetSamplesDetailsInput,
+  ) => Promise<ApiSampleDetailsResponse>;
 
-  constructor(state: BasketState, getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>) {
+  constructor(
+    state: BasketState,
+    getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
+  ) {
     super();
     this.state = state;
     this.getSamplesDetails = getSamplesDetails;
@@ -23,7 +28,7 @@ export class BasketComponent extends HTMLElement {
 
   private handleStateChange() {
     this.render();
-  };
+  }
 
   async render() {
     this.innerHTML = "";

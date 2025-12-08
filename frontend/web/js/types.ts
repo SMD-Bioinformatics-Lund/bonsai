@@ -1,9 +1,4 @@
-import {
-  DistanceMethod,
-  ClusterMethod,
-  TypingMethod,
-  JobStatusEnum,
-} from "./constants";
+import { DistanceMethod, ClusterMethod, TypingMethod, JobStatusEnum } from "./constants";
 
 interface ApiSampleSimilarity {
   sample_id: string;
@@ -42,7 +37,7 @@ export interface ApiClusterInput {
 
 export interface ApiFindSimilarInput {
   limit: number | null; // number of samples to return
-  narrow_to_sample_ids: string[] | null // search only among provided sample ids
+  narrow_to_sample_ids: string[] | null; // search only among provided sample ids
   similarity: number; // min similarity
   cluster: boolean; // cluster similar samples
   typing_method: TypingMethod | null; // use typing method if cluster is true
@@ -112,3 +107,4 @@ export interface ApiUserInfo {
 
 export type CallbackFunc = (ids: string[]) => void;
 export type TblStateCallbackFunc = (selectedRows: string[]) => void;
+export type SampleGroupMembership = Record<string, string[]>;

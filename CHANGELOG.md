@@ -2,6 +2,7 @@
 
 ### Added
 
+- Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
 
 ### Fixed
@@ -11,6 +12,7 @@
 
 ### Changed
 
+- An user can now add samples to multiple groups at the same time.
 - Improved seeding of a development Bonsai database with a new `seed_db.py` script.
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view

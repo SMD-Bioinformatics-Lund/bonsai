@@ -1,5 +1,4 @@
 import pytest
-
 from bonsai_notification.models import ContentType, EmailApiInput
 
 

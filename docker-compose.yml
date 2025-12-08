@@ -4,7 +4,8 @@
 services: 
   mongodb:
     image: mongo:4.4.22
-    container_name: bonsai_mongodb
+    container_name: mongodb
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
       test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 30s
@@ -14,6 +15,28 @@ services:
     networks:
       - bonsai-net
     restart: always
+  
+  mongo-init-replica:
+    image: mongo:4.4.22
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: |
+      mongo mongodb:27017 --eval "
+        try {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
+          print('Replica set initialized');
+        } catch (e) {
+          if (e.code === 23) {
+            print('Replica set already initialized');
+          } else {
+            throw e;
+          }
+        }
+      "
+    networks:
+      - bonsai-net
+    restart: on-failure
 
   redis:
     container_name: redis

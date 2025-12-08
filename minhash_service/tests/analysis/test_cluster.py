@@ -1,10 +1,12 @@
 """Test functions for clustering."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
 from minhash_service.signatures.io import read_signatures
+
 from ..utils import get_data_path
 
 
@@ -19,7 +21,9 @@ from ..utils import get_data_path
         (["DRR237260.sig", "DRR237261.sig", "DRR237262.sig"], ClusterMethod.AVERAGE),
     ],
 )
-def test_cluster_signatures(data_dir: Path, sample_ids: list[str], cluster_method: ClusterMethod):
+def test_cluster_signatures(
+    data_dir: Path, sample_ids: list[str], cluster_method: ClusterMethod
+):
     """Test function for clustering signatures."""
     sample_files: list[Path] = [get_data_path(data_dir, sid) for sid in sample_ids]
 

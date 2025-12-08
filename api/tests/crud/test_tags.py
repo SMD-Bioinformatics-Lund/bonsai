@@ -3,13 +3,9 @@
 import pytest
 from bonsai_api.crud.tags import flag_uncertain_spp_prediction
 from bonsai_api.models.tags import Tag
-from prp.models.species import (BrackenSpeciesPrediction,
-                                MykrobeSpeciesPrediction,
-                                SppPredictionSoftware,
-                                BrackenSppIndex,
-                                MykrobeSppIndex,
-                                SppMethodIndex
-                                )
+from prp.models.species import (BrackenSpeciesPrediction, BrackenSppIndex,
+                                MykrobeSpeciesPrediction, MykrobeSppIndex,
+                                SppMethodIndex, SppPredictionSoftware)
 from pydantic import BaseModel
 
 
@@ -90,7 +86,9 @@ def test_unknown_software_raises_exeption():
     )
     with pytest.raises(ValueError):
         spp = [
-            MykrobeSppIndex(software=SppPredictionSoftware.TBPROFILER, result=[mykrobe_spp]),
+            MykrobeSppIndex(
+                software=SppPredictionSoftware.TBPROFILER, result=[mykrobe_spp]
+            ),
         ]
         sample = SampleInDatabase(species_prediction=list(spp))
 

@@ -52,24 +52,17 @@ function manageAnnotateQcBtn(selectedRows: string[]): void {
 
 function manageRemoveSamplesBtn(selectedRows: string[]): void {
   /* Enable or disable bulk edit qc status button */
-  const btn = document.getElementById(
-    "remove-samples-btn",
-  ) as HTMLButtonElement;
+  const btn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
   if (btn !== null) btn.disabled = 0 > selectedRows.length;
 }
 
 function manageSelectSimilarBtn(selectedRows: string[]): void {
   /* Enable or disable search for similar samples button */
-  const btn = document.getElementById(
-    "similar-samples-dropdown-btn",
-  ) as HTMLButtonElement;
+  const btn = document.getElementById("similar-samples-dropdown-btn") as HTMLButtonElement;
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(
-  tableId: string,
-  tableConfig: any,
-): TableController {
+export function initSamplesTable(tableId: string, tableConfig: any): TableController {
   const controller = new TableController(tableId, tableConfig);
 
   // add callback functions

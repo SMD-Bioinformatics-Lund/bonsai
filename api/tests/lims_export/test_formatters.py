@@ -1,15 +1,11 @@
 """Test lims export functions."""
 
 import pytest
-from bonsai_api.lims_export.formatters import (
-    AnalysisNoResultError,
-    AnalysisNotPresentError,
-    amr_prediction_for_antibiotic,
-    lineage_prediction,
-    mlst_typing,
-    qc_status,
-    species_prediction,
-)
+from bonsai_api.lims_export.formatters import (AnalysisNoResultError,
+                                               AnalysisNotPresentError,
+                                               amr_prediction_for_antibiotic,
+                                               lineage_prediction, mlst_typing,
+                                               qc_status, species_prediction)
 
 
 def test_get_mlst_with_result(ecoli_sample):

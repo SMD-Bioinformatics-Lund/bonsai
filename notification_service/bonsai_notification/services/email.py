@@ -5,6 +5,7 @@ from email.message import EmailMessage
 
 from bonsai_notification.config import SmtpConfig
 from bonsai_notification.models import ContentType, EmailApiInput
+
 from .templates import TemplateRepository
 
 

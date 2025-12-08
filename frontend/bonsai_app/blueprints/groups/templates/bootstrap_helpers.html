@@ -1,0 +1,8 @@
+{# General helper macros for bootstrap elements #}
+
+
+{% macro pill_with_tooltip(text, tooltip, bg_color="primary") %}
+    <span class="badge rounded-pill bg-{{ bg_color }}" data-bs-toggle="tooltip" title="{{ tooltip }}">
+        {{ text }}
+    </span>
+{% endmacro %}

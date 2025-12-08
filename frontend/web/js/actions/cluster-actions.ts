@@ -35,9 +35,7 @@ export async function clusterSamples(
   sampleIds: string[],
   api: ApiService,
 ) {
-  const typingMethodEnum = element.getAttribute(
-    "data-bi-typing-method",
-  ) as TypingMethod;
+  const typingMethodEnum = element.getAttribute("data-bi-typing-method") as TypingMethod;
   // base dropdown element
   const baseElement = document.querySelector("#basket-cluster-samples");
   const btn = baseElement.querySelector(".btn") as HTMLButtonElement;

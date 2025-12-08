@@ -16,23 +16,19 @@ import { ApiJobTimeout } from "../constants";
 import SpinnerElement from "../components/spinner-element";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
-
 export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,
   dt: TableController,
   api: ApiService,
-  narrow_search_to: string[] | null, 
+  narrow_search_to: string[] | null,
 ) {
   const container = btn.closest(".similar-samples-container") as HTMLDivElement;
-  const limitInput = container.querySelector(
-    "#similar-samples-limit",
-  ) as HTMLInputElement;
-  const similarityInput = container.querySelector(
-    "#similar-samples-threshold",
-  ) as HTMLInputElement;
+  const limitInput = container.querySelector("#similar-samples-limit") as HTMLInputElement;
+  const similarityInput = container.querySelector("#similar-samples-threshold") as HTMLInputElement;
   showSpinner(container);
-  const sampleId = dt.getSelectedRows()[0]
-  if (sampleId === undefined || sampleId === "undefined") throw Error(`Undefined sampleId; selected rows: ${dt.getSelectedRows()}`)
+  const sampleId = dt.getSelectedRows()[0];
+  if (sampleId === undefined || sampleId === "undefined")
+    throw Error(`Undefined sampleId; selected rows: ${dt.getSelectedRows()}`);
   const job = await api.findSimilarSamples(sampleId, {
     limit: parseInt(limitInput.value),
     similarity: parseFloat(similarityInput.value),
@@ -43,11 +39,13 @@ export async function getSimilarSamplesAndCheckRows(
   });
   // start polling for job status
   try {
-    const jobFunc = async () =>
-      api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
+    const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
     dt.selectedRows = result.result.map((sample) => sample.sample_id);
-    throwSmallToast(`Search complete: ${result.result.length} similar samples identified`, "success");
+    throwSmallToast(
+      `Search complete: ${result.result.length} similar samples identified`,
+      "success",
+    );
   } catch (error) {
     console.error("Error while checking job status:", error);
     throwSmallToast("Error while finding similar samples", "error");
@@ -71,27 +69,15 @@ export function removeSamplesFromGroup(
       emitEvent("samples:removed-from-group", {}); // Notify other components or update UI as needed
       table.removeSamples(selectedSamples);
       table.selectedRows = []; // clear selection after deletion
-      throwSmallToast(
-        `Removed ${selectedSamples.length} samples from group`,
-        "success",
-      );
+      throwSmallToast(`Removed ${selectedSamples.length} samples from group`, "success");
     })
     .catch((error) => {
-      console.error(
-        `Error removing ${selectedSamples.length} from group:`,
-        error,
-      );
-      throwSmallToast(
-        `Error removing ${selectedSamples.length} from group`,
-        "error",
-      );
+      console.error(`Error removing ${selectedSamples.length} from group:`, error);
+      throwSmallToast(`Error removing ${selectedSamples.length} from group`, "error");
     });
 }
 
-export function deleteSelectedSamples(
-  table: TableController,
-  api: ApiService,
-): void {
+export function deleteSelectedSamples(table: TableController, api: ApiService): void {
   const selectedSamples = table.getSelectedRows();
   api
     .deleteSamples(selectedSamples)
@@ -117,12 +103,8 @@ export function initSetSampleQc(
 ) {
   const passedQcBtn = form.querySelector("#passed-qc-btn") as HTMLButtonElement;
   const failedQcBtn = form.querySelector("#failed-qc-btn") as HTMLButtonElement;
-  const failedQcAction = form.querySelector(
-    "#failed-qc-action",
-  ) as HTMLSelectElement;
-  const failedQcComment = form.querySelector(
-    "#failed-qc-comment-container",
-  ) as HTMLTextAreaElement;
+  const failedQcAction = form.querySelector("#failed-qc-action") as HTMLSelectElement;
+  const failedQcComment = form.querySelector("#failed-qc-comment-container") as HTMLTextAreaElement;
   const submitBtn = form.querySelector("#qc-submit-btn") as HTMLButtonElement;
 
   const hideQcRejection = () => {
@@ -141,20 +123,15 @@ export function initSetSampleQc(
   passedQcBtn.onclick = hideQcRejection;
   failedQcBtn.onclick = showQcRejection;
   form.onchange = () => {
-    const qcStatus = form.querySelector(
-      "input[name='qc-validation']:checked",
-    ) as HTMLInputElement;
-    submitBtn.disabled =
-      failedQcAction.value === "" && qcStatus.value === "failed";
+    const qcStatus = form.querySelector("input[name='qc-validation']:checked") as HTMLInputElement;
+    submitBtn.disabled = failedQcAction.value === "" && qcStatus.value === "failed";
   };
 
   // add submit function
   submitBtn.onclick = (e: Event) => {
     e.preventDefault();
     const sampleIds = getSampleIds();
-    const status = form.querySelector(
-      "input[name='qc-validation']:checked",
-    ) as HTMLInputElement;
+    const status = form.querySelector("input[name='qc-validation']:checked") as HTMLInputElement;
     const isFailed: boolean = status.value === "failed";
     const qcStatus: ApiSampleQcStatus = {
       status: status.value,
@@ -168,7 +145,7 @@ export function initSetSampleQc(
       });
       wait(100);
     });
-    onStatusChange(qcStatus);  // update displayed content function
+    onStatusChange(qcStatus); // update displayed content function
     throwSmallToast(`Updated Qc of ${sampleIds.length} sample`, "success");
   };
 }
@@ -181,7 +158,7 @@ export async function findAndClusterSimilarSamples(
 ) {
   const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
-  spinner?.show()
+  spinner?.show();
   const searchParams: ApiFindSimilarInput = {
     limit: 10,
     similarity: 0.9,
@@ -194,8 +171,7 @@ export async function findAndClusterSimilarSamples(
   const job = await api.findSimilarSamples(sampleId, searchParams);
   console.log("Waiting for the following job ID:", job.id);
   try {
-    const jobFunc = async () =>
-      api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
+    const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
     jobResult = await pollJob(jobFunc, 3000, 40);
     console.log("Here is the find similar result:", jobResult.result);
 
@@ -206,31 +182,26 @@ export async function findAndClusterSimilarSamples(
     throwSmallToast("Error while finding similar samples");
     console.error("Error while checking job status:", error);
     throw error;
-  }
-  finally {
-    spinner?.hide()
+  } finally {
+    spinner?.hide();
   }
   if (!jobResult || !jobResult.result) {
     console.error("Job result is missing or malformed:", jobResult);
     throw new Error("Job result is undefined");
   }
 
-  return jobResult.result
+  return jobResult.result;
 }
 
 /* Draw dendrogram from Newick string */
-export function drawDendrogram(
-  containerSelector: string,
-  newick: string,
-  sampleId: string,
-): void {
+export function drawDendrogram(containerSelector: string, newick: string, sampleId: string): void {
   const container = document.querySelector(containerSelector);
   if (!container) {
     console.error(`Container element not found: ${containerSelector}`);
     return;
   }
   if (!(window as any).TidyTree) {
-    console.error('TidyTree library is not loaded');
+    console.error("TidyTree library is not loaded");
     return;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,16 +229,13 @@ export function drawDendrogram(
 
 function openSamplePage(id: string): void {
   const groupNamePos = window.location.pathname.split("/").indexOf("sample");
-  const baseUrl = window.location.pathname
-    .split("/")
-    .slice(0, groupNamePos)
-    .join("/");
+  const baseUrl = window.location.pathname.split("/").slice(0, groupNamePos).join("/");
   window.open(`${baseUrl}/sample/${id}`);
 }
 
 /* update qc status in header section of sample view */
 export function updateQcStatus(status: ApiSampleQcStatus): void {
-  const header = document.getElementById('sample-header')
+  const header = document.getElementById("sample-header");
   if (!header) return;
 
   const statusField = header.querySelector("span[name='qc-status']") as HTMLSpanElement;
@@ -276,29 +244,34 @@ export function updateQcStatus(status: ApiSampleQcStatus): void {
   const commentField = header.querySelector("span[name='comment']") as HTMLSpanElement;
 
   if (!statusField || !actionContainer || !actionField || !commentField) {
-    console.error('DOM elements used by QC status update function were not found');
+    console.error("DOM elements used by QC status update function were not found");
     return;
   }
 
   // Set status text and formatting
-  statusField.innerText = status.status ? status.status.charAt(0).toUpperCase() + status.status.slice(1) : '';
-  if (status.status === 'passed') {
-    statusField.className = 'text-success';
-  } else if (status.status === 'failed') {
-    statusField.className = 'text-danger';
+  statusField.innerText = status.status
+    ? status.status.charAt(0).toUpperCase() + status.status.slice(1)
+    : "";
+  if (status.status === "passed") {
+    statusField.className = "text-success";
+  } else if (status.status === "failed") {
+    statusField.className = "text-danger";
   } else {
-    statusField.className = '';
+    statusField.className = "";
   }
 
   // Show/hide action/comment container
-  if (status.status === 'failed' && status.action) {
+  if (status.status === "failed" && status.action) {
     actionContainer.hidden = false;
-    actionField.innerText = status.action ? status.action.charAt(0).toUpperCase() + status.action.slice(1) : '';
-    commentField.innerText = status.comment ? status.comment.charAt(0).toUpperCase() + status.comment.slice(1) : '';
+    actionField.innerText = status.action
+      ? status.action.charAt(0).toUpperCase() + status.action.slice(1)
+      : "";
+    commentField.innerText = status.comment
+      ? status.comment.charAt(0).toUpperCase() + status.comment.slice(1)
+      : "";
   } else {
     actionContainer.hidden = true;
-    actionField.innerText = '';
-    commentField.innerText = '';
+    actionField.innerText = "";
+    commentField.innerText = "";
   }
 }
-
