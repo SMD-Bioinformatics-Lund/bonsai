@@ -5,21 +5,12 @@ from typing import Any, Callable
 from rq import Queue, SimpleWorker
 from rq.job import Job
 
-from .handlers import (
-    add_signature,
-    add_to_index,
-    check_signature,
-    cleanup_removed_files,
-    cluster_samples,
-    exclude_from_analysis,
-    find_similar_and_cluster,
-    get_data_integrity_report,
-    include_in_analysis,
-    remove_from_index,
-    remove_signature,
-    run_data_integrity_check,
-    search_similar,
-)
+from .handlers import (add_signature, add_to_index, check_signature,
+                       cleanup_removed_files, cluster_samples,
+                       exclude_from_analysis, find_similar_and_cluster,
+                       get_data_integrity_report, include_in_analysis,
+                       remove_from_index, remove_signature,
+                       run_data_integrity_check, search_similar)
 
 REGISTRY: dict[str, Callable[..., Any]] = {
     "add_signature": add_signature,

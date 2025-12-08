@@ -23,9 +23,8 @@ import { BasketComponent } from "./components/sample-basket";
 import "./components/group-list";
 import "./components/group-selector";
 import "./components/spinner-element";
-import './utils/choice-select';
+import "./utils/choice-select";
 import DataTable from "datatables.net-bs5";
-
 
 const sampleTableConfig = {
   select: true,
@@ -34,11 +33,11 @@ const sampleTableConfig = {
       buttons: ["selectAll", "selectNone", "showSelected"],
     },
     top1End: {
-      buttons: ["copy", "csv", "excel"]
+      buttons: ["copy", "csv", "excel"],
     },
     top2Start: "searchBuilder",
   },
-  lengthMenu: [10, 25, 50, 100, { label: 'All', value: -1 }],
+  lengthMenu: [10, 25, 50, 100, { label: "All", value: -1 }],
   scrollX: true,
   pageLength: 50,
 };
@@ -47,7 +46,7 @@ function initBasket(api: ApiService): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
   const counterElement = document.querySelector("#basket-counter-container") as HTMLElement;
   if (!basketElement && !counterElement) {
-    console.error('No DOM element for the basket found!');
+    console.error("No DOM element for the basket found!");
     return;
   }
 
@@ -69,9 +68,7 @@ function initBasket(api: ApiService): BasketState | void {
     element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
   });
 
-  const clearBasketBtn = document.getElementById(
-    "clear-basket-btn",
-  ) as HTMLButtonElement;
+  const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
   if (clearBasketBtn) {
     clearBasketBtn.onclick = () => {
       basketState.clear();
@@ -88,11 +85,7 @@ function initBasket(api: ApiService): BasketState | void {
   return basketState;
 }
 
-function initApi(
-  bonsaiApiUrl: string,
-  accessToken: string,
-  refreshToken: string,
-) {
+function initApi(bonsaiApiUrl: string, accessToken: string, refreshToken: string) {
   const auth = new AuthService(bonsaiApiUrl);
   auth.setTokens(accessToken, refreshToken);
   const http = new HttpClient(bonsaiApiUrl, auth);
@@ -111,12 +104,10 @@ export async function initGroupView(
   const api = initApi(bonsaiApiUrl, accessToken, refreshToken);
   const basket = initBasket(api);
   if (!basket) {
-    console.error("Something went wrong when initialize the basket")
-    return
+    console.error("Something went wrong when initialize the basket");
+    return;
   }
-  const headers = document.querySelectorAll<HTMLTableCellElement>(
-    "#sample-table thead td",
-  );
+  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead td");
   const tableConfig = { ...sampleTableConfig };
   headers.forEach((cell, idx) => {
     if (cell.textContent?.trim() === "Date") {
@@ -135,29 +126,21 @@ export async function initGroupView(
   groupList.getGroupInfo = api.getGroups;
   groupList.isAdmin = user.isAdmin;
 
-  const groupContainer = document.getElementById(
-    "group-container",
-  ) as HTMLElement;
+  const groupContainer = document.getElementById("group-container") as HTMLElement;
   if (groupContainer) groupContainer.appendChild(groupList);
 
   // attach function to DOM element
-  const addToBasketBtn = document.getElementById(
-    "add-to-basket-btn",
-  ) as HTMLButtonElement;
-  if (addToBasketBtn)
-    addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
+  const addToBasketBtn = document.getElementById("add-to-basket-btn") as HTMLButtonElement;
+  if (addToBasketBtn) addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
 
-  const deleteSamplesBtn = document.getElementById(
-    "remove-samples-btn",
-  ) as HTMLButtonElement;
-  if (deleteSamplesBtn)
-    deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
+  const deleteSamplesBtn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
+  if (deleteSamplesBtn) deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
 
   // lookup samples in group if provided a groupId
-  let narrow_search_to = null
-  if ( !(groupId === null || groupId === "") ) {
-    const group = await api.getGroup(groupId)
-    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null
+  let narrow_search_to = null;
+  if (!(groupId === null || groupId === "")) {
+    const group = await api.getGroup(groupId);
+    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null;
   }
 
   const selectSimilarSamplesBtn = document.getElementById(
@@ -172,9 +155,7 @@ export async function initGroupView(
     "add-samples-to-group-container",
   ) as HTMLElement;
   if (groupSelectorContainer) {
-    const addToGroupSelector = document.createElement(
-      "group-selector",
-    ) as GroupSelector;
+    const addToGroupSelector = document.createElement("group-selector") as GroupSelector;
     addToGroupSelector.getGroupInfo = api.getGroups;
     addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
     addToGroupSelector.getGroupMembership = api.getSampleGroupMemberships;
@@ -183,68 +164,67 @@ export async function initGroupView(
     // set up listners for updates and failurs
     addToGroupSelector.addEventListener("apply:success", (ev: Event) => {
       const { groupIds, sampleIds } = (ev as CustomEvent).detail;
-      throwSmallToast(`Added ${sampleIds.length} samples to ${groupIds.length} groups`, 'success');
+      throwSmallToast(`Added ${sampleIds.length} samples to ${groupIds.length} groups`, "success");
     });
-    addToGroupSelector.addEventListener('apply:error', (ev: Event) => {
+    addToGroupSelector.addEventListener("apply:error", (ev: Event) => {
       const { error } = (ev as CustomEvent).detail;
-      console.error('Apply error:', error);
-      throwSmallToast(`An error occured: ${ev.detail}`, 'error');
+      console.error("Apply error:", error);
+      throwSmallToast(`An error occured: ${ev.detail}`, "error");
     });
 
-    addToGroupSelector.addEventListener('apply:skipped', (ev: Event) => {
+    addToGroupSelector.addEventListener("apply:skipped", (ev: Event) => {
       const { reason } = (ev as CustomEvent).detail;
       const msg =
-        reason === 'empty' ? 'No groups or samples selected'
-        : reason === 'no-samples' ? 'No samples selected'
-        : reason === 'no-groups' ? 'No groups selected'
-        : 'Nothing to do';
-      throwSmallToast(msg, 'warning');
+        reason === "empty"
+          ? "No groups or samples selected"
+          : reason === "no-samples"
+            ? "No samples selected"
+            : reason === "no-groups"
+              ? "No groups selected"
+              : "Nothing to do";
+      throwSmallToast(msg, "warning");
     });
 
     groupSelectorContainer.appendChild(addToGroupSelector);
     // preselect groups when selecting samples in sample table
-    table && table.getTable().on("select deselect", (e, dt, type, indexes) => {
-      const selected: string[] = dt.rows(".selected").ids().toArray();
-      addToGroupSelector.preselectGroupsForSamples(selected);
-    })
+    table &&
+      table.getTable().on("select deselect", (e, dt, type, indexes) => {
+        const selected: string[] = dt.rows(".selected").ids().toArray();
+        addToGroupSelector.preselectGroupsForSamples(selected);
+      });
   }
 
   // setup qc classification
-  const qcStatusForm = document.getElementById(
-    "qc-form-control",
-  ) as HTMLButtonElement;
+  const qcStatusForm = document.getElementById("qc-form-control") as HTMLButtonElement;
   if (qcStatusForm)
     initSetSampleQc(
       table.getSelectedRows.bind(table),
       api.setSampleQc.bind(api),
-      () => console.log('table needs to be redrawn'),
+      () => console.log("table needs to be redrawn"),
       qcStatusForm,
     );
-    // FIXME updating individual cells did not work for some reason
-    // the entire table might need to be redrawn.
+  // FIXME updating individual cells did not work for some reason
+  // the entire table might need to be redrawn.
 
-  const removeFromGroupBtn = document.getElementById(
-    "remove-from-group-btn",
-  ) as HTMLButtonElement;
+  const removeFromGroupBtn = document.getElementById("remove-from-group-btn") as HTMLButtonElement;
   if (removeFromGroupBtn)
     removeFromGroupBtn.onclick = () => {
-      const groupId: string =
-        removeFromGroupBtn.getAttribute("data-bi-group-id");
+      const groupId: string = removeFromGroupBtn.getAttribute("data-bi-group-id");
       removeSamplesFromGroup(groupId, table, api);
     };
 }
 
 export async function initVariantsTable(tableId: string, search: boolean = true): Promise<Any> {
   if (document.getElementById(tableId) === null) {
-    console.error(`No table with id: ${tableId} found, cant create datatable`)
+    console.error(`No table with id: ${tableId} found, cant create datatable`);
   }
-  console.log(tableId)
+  console.log(tableId);
   const tbl = new DataTable(tableId, {
     paging: false,
     select: false,
     searching: search,
-  })
-  return tbl
+  });
+  return tbl;
 }
 
 /* Initialize interactive elements for the sample view. */
@@ -260,25 +240,18 @@ export async function initSampleView(
   initToast();
   initTooltip();
 
-  const qcStatusForm = document.getElementById(
-    "qc-classification-form",
-  ) as HTMLButtonElement;
+  const qcStatusForm = document.getElementById("qc-classification-form") as HTMLButtonElement;
   if (qcStatusForm) {
-    initSetSampleQc(
-      () => [sampleId], 
-      api.setSampleQc.bind(api), 
-      updateQcStatus,
-      qcStatusForm
-    );
+    initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), updateQcStatus, qcStatusForm);
   }
   // lookup samples in group if provided a groupId
-  let narrow_search_to = null
-  if ( groupId !== null) {
-    const group = await api.getGroup(groupId)
-    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null
+  let narrow_search_to = null;
+  if (groupId !== null) {
+    const group = await api.getGroup(groupId);
+    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null;
   }
   const newick = await findAndClusterSimilarSamples(sampleId, narrow_search_to, api);
-  return newick
+  return newick;
 }
 
 declare global {

@@ -4,11 +4,13 @@ import os
 import re
 import ssl
 import tomllib
-from typing import Annotated
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError, model_validator, FilePath, AfterValidator
-from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
+from pydantic import (AfterValidator, BaseModel, ConfigDict, Field, FilePath,
+                      HttpUrl, ValidationError, model_validator)
+from pydantic_settings import (BaseSettings, SettingsConfigDict,
+                               TomlConfigSettingsSource)
 
 ssl_defaults = ssl.get_default_verify_paths()
 
@@ -26,18 +28,15 @@ if custom_config is not None:
 def _validate_yaml_file(path: Path | None) -> Path | None:
     """Ensure that file is readable and looks like a YAML."""
     if path is None:
-         return None
+        return None
     if not os.access(path, os.R_OK):
         raise ValueError(f"LIMS export config file is not readable: {path}")
-    if path.suffix.lower() not in {'.yaml', '.yml'}:
+    if path.suffix.lower() not in {".yaml", ".yml"}:
         raise ValueError(f"LIMS export config must be a .yaml or .yml file: {path}")
     return path.resolve()
 
 
-LimsConfigPath = Annotated[
-    FilePath | None,
-    AfterValidator(_validate_yaml_file)
-]
+LimsConfigPath = Annotated[FilePath | None, AfterValidator(_validate_yaml_file)]
 
 
 class SmtpConfig(BaseSettings):
@@ -52,6 +51,7 @@ class SmtpConfig(BaseSettings):
 
 class BrackenThresholds(BaseModel):
     """Thresholds for Bracken species detection."""
+
     model_config = ConfigDict(extra="forbid")
     min_fraction: float = Field(ge=0.0, le=1.0)
     min_reads: int = Field(ge=0)
@@ -59,6 +59,7 @@ class BrackenThresholds(BaseModel):
 
 class MykrobeThresholds(BaseModel):
     """Thresholds for Mykrobe species detection."""
+
     model_config = ConfigDict(extra="forbid")
     min_species_coverage: float = Field(ge=0.0, le=1.0)
     min_phylogenetic_group_coverage: float = Field(ge=0.0, le=1.0)
@@ -190,13 +191,13 @@ class Settings(BaseSettings):
     )
 
     lims_export_config: LimsConfigPath = Field(
-        default=None, 
+        default=None,
         description=(
             "Path to custom LIMS exporter YAML configuration."
             "If omitted, the application will fall back the packaged default."
         ),
-        examples=["/etc/bonsai/lims.yaml"]
-        )
+        examples=["/etc/bonsai/lims.yaml"],
+    )
 
     @classmethod
     def settings_customise_sources(

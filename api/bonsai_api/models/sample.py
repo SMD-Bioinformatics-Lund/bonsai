@@ -2,21 +2,16 @@
 
 from typing import Optional, Union
 
-from prp.models.sample import PipelineResult
+from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
 from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
                                   ElementType, PredictionSoftware,
                                   ResfinderGene, VariantBase, VirulenceGene)
+from prp.models.sample import PipelineResult
 from prp.models.species import SpeciesPrediction
-from prp.models.typing import (
-    ResultLineageBase,
-    TbProfilerLineage,
-    TypingMethod,
-    TypingResultCgMlst,
-    TypingResultGeneAllele,
-    TypingResultMlst,
-    TypingSoftware,
-)
-from prp.models.kleborate import KleborateScoreIndex, KleborateEtIndex
+from prp.models.typing import (ResultLineageBase, TbProfilerLineage,
+                               TypingMethod, TypingResultCgMlst,
+                               TypingResultGeneAllele, TypingResultMlst,
+                               TypingSoftware)
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason

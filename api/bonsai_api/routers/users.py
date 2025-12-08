@@ -4,7 +4,7 @@ import logging
 from typing import Annotated
 
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.crud.errors import EntryNotFound, DatabaseOperationError
+from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.user import (add_samples_to_user_basket, create_user,
                                   delete_user, get_user, get_users,
                                   remove_samples_from_user_basket, update_user)

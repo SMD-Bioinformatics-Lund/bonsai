@@ -11,11 +11,11 @@ from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.dependencies import ApiRequestContext
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from pymongo.asynchronous.cursor import AsyncCursor
 from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.parse.typing import replace_cgmlst_errors
 from pydantic import ValidationError
+from pymongo.asynchronous.cursor import AsyncCursor
 from pymongo.results import UpdateResult
 
 from ..crud.location import get_location
@@ -31,7 +31,7 @@ from ..models.sample import (Comment, CommentInDatabase,
 from ..redis.minhash import (schedule_remove_genome_signature,
                              schedule_remove_genome_signature_from_index)
 from ..utils import format_error_message, get_timestamp
-from .errors import EntryNotFound, DatabaseOperationError
+from .errors import DatabaseOperationError, EntryNotFound
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -280,7 +280,7 @@ async def get_samples_summary(
     }
 
     # define container for opitional projections
-    optional_projecton: dict[str, int | str]  = {}
+    optional_projecton: dict[str, int | str] = {}
 
     # build query for prediction result
     if prediction_result:

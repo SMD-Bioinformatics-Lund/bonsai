@@ -7,7 +7,8 @@ from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase, SampleSampleGroupMemberships
+from bonsai_api.models.group import (GroupInCreate, GroupInfoDatabase,
+                                     SampleSampleGroupMemberships)
 from bonsai_api.models.sample import SampleSummary
 from bonsai_api.utils import get_timestamp
 from prp.models.typing import TypingMethod
@@ -463,18 +464,25 @@ async def remove_samples_from_group(
                 ) from pme
 
 
-async def get_samples_group_membership(db: Database, sample_ids: list[str]) -> SampleSampleGroupMemberships:
+async def get_samples_group_membership(
+    db: Database, sample_ids: list[str]
+) -> SampleSampleGroupMemberships:
     """Get group membership for a list of sample IDs.
 
     Returns a mapping of sample_id to list of group_ids the sample belongs to.
     """
     if not sample_ids:
         return {}
-    
+
     pipeline = [
         {"$match": {"sample_id": {"$in": sample_ids}}},
         {"$unwind": {"path": "$groups", "preserveNullAndEmptyArrays": True}},
-        {"$group": {"_id": "$sample_id", "group_ids": {"$addToSet": "$groups.group_id"}}},
+        {
+            "$group": {
+                "_id": "$sample_id",
+                "group_ids": {"$addToSet": "$groups.group_id"},
+            }
+        },
         {"$project": {"_id": 0, "sample_id": "$_id", "group_ids": 1}},
     ]
 

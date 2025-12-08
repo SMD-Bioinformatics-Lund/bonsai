@@ -2,7 +2,7 @@
 
 import bonsai_api.crud.group as crud_group
 from api_client.audit_log import AuditLogClient
-from bonsai_api.crud.errors import EntryNotFound, DatabaseOperationError
+from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.group import create_group as create_group_record
 from bonsai_api.crud.group import (delete_group, get_group, get_groups,
                                    update_group)

@@ -4,8 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, Union, cast
 
-from bonsai_api.crud.group import get_samples_group_membership
 from api_client.audit_log.client import AuditLogClient
+from bonsai_api.crud.group import get_samples_group_membership
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
@@ -28,7 +28,8 @@ from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.qc import QcClassification, VariantAnnotation
 from bonsai_api.models.sample import (Comment, CommentInDatabase,
-                                      SampleInCreate, SampleInDatabase, SampleGroupMembershipInput)
+                                      SampleGroupMembershipInput,
+                                      SampleInCreate, SampleInDatabase)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
@@ -125,8 +126,12 @@ async def get_group_membership(
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-    ids: list[str] = Query(None, description="Sample IDs to check group membership (GET)"),
-    body: SampleGroupMembershipInput | None = Body(None, description="Sample IDs to check group membership (POST)"),
+    ids: list[str] = Query(
+        None, description="Sample IDs to check group membership (GET)"
+    ),
+    body: SampleGroupMembershipInput | None = Body(
+        None, description="Sample IDs to check group membership (POST)"
+    ),
 ):
     """Get group membership for multiple samples."""
     if ids:
@@ -148,7 +153,7 @@ async def get_group_membership(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Too many sample IDs provided ({len(sample_ids)}). Maximum allowed is {max_allowed}.",
         )
-    
+
     memberships = await get_samples_group_membership(db, sample_ids)
     return memberships
 

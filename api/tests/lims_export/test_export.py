@@ -1,17 +1,10 @@
 """Test base lims export module."""
 
 import pytest
-from bonsai_api.lims_export.export import (
-    _to_str,
-    lims_rs_formatter,
-    serialize_lims_results,
-)
-from bonsai_api.lims_export.models import (
-    AssayConfig,
-    FieldDefinition,
-    LimsRsResult,
-    DataType
-)
+from bonsai_api.lims_export.export import (_to_str, lims_rs_formatter,
+                                           serialize_lims_results)
+from bonsai_api.lims_export.models import (AssayConfig, DataType,
+                                           FieldDefinition, LimsRsResult)
 
 
 def test_to_str():
@@ -34,7 +27,9 @@ def test_lims_rs_formatter(mtuberculosis_sample):
     assay_config = AssayConfig(
         assay="tb-test",
         fields=[
-            FieldDefinition(parameter_name="MTBC_QC", data_type=DataType.QC, required=True),
+            FieldDefinition(
+                parameter_name="MTBC_QC", data_type=DataType.QC, required=True
+            ),
             FieldDefinition(
                 parameter_name="MTBC_SPP", data_type=DataType.SPECIES, required=True
             ),
