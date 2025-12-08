@@ -1,6 +1,6 @@
 """Routes related to collections of samples."""
 
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, TypeAlias
 
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
@@ -321,3 +321,6 @@ class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     table_columns: list[str] = Field(
         default=[], description="IDs of columns to display."
     )
+
+
+SampleSampleGroupMemberships: TypeAlias = dict[str, list[str]]

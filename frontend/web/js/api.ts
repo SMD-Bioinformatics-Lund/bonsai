@@ -6,6 +6,7 @@ import {
   ApiJobSubmission,
   ApiFindSimilarInput,
   GroupInfo,
+  SampleGroupMembership,
   ApiUserInfo,
   ApiSampleQcStatus,
 } from "./types";
@@ -97,6 +98,7 @@ export class HttpClient {
     const response = await fetch(`${this.apiUrl}${endpoint}`, {
       ...options,
       headers,
+      signal: options.signal
     });
 
     if (response.status === 401 && retry) {
@@ -215,6 +217,15 @@ export class ApiService {
       `/groups/${groupId}/samples?${objectToQueryParams({ s: sampleIds })}`,
       {
         method: "DELETE",
+      },
+    );
+  };
+
+  getSampleGroupMemberships = async (sampleIds: string[], signal?: AbortSignal) => {
+    return this.http.request<SampleGroupMembership>(
+      `/samples/group-memberships?${objectToQueryParams({ ids: sampleIds })}`,
+      {
+        method: "GET", signal
       },
     );
   };

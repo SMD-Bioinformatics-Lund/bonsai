@@ -1,69 +1,127 @@
 import { emitEvent } from "../utils/event-bus";
-import { throwSmallToast } from "../utils/notification";
-import { GroupInfo } from "../types";
+import { GroupInfo, SampleGroupMembership } from "../types";
+import { ChoiceSelect } from "../utils/choice-select";
+
+const template = document.createElement("template");
+template.innerHTML = String.raw`
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+  <style>
+    :host { display: inline-block; }
+    .actions { display: flex; gap: .5rem; margin-top: .5rem; }
+  </style>
+      <div class="mb-3"><choice-select id="groups" multiple placeholder="Groups"></choice-select></div>
+      <div class="mb-3 actions">
+        <button id="apply" class="btn btn-sm btn-success">Apply</button>
+        <button id="clear" class="btn btn-sm btn-outline-secondary">Clear</button>
+      </div>
+    </div>
+  </div>
+`
 
 export class GroupSelector extends HTMLElement {
+  // dependancy injections set from outside function
   getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
   getSelectedSamples: (() => string[]) | null = null;
-  AddToGroupFunc: ((groupId: string, sampleIds: string[]) => Promise<void>) | null = null;
-  groups: GroupInfo[] = [];
+  getGroupMembership: (( sampleIds: string[], signal?: AbortSignal) => Promise<SampleGroupMembership[]>) | null = null;
+  addToGroup: ((groupId: string, sampleIds: string[]) => Promise<void>) | null = null;
+
+  private shadow!: ShadowRoot;
+  private selector: ChoiceSelect;
+  private applyBtn: HTMLButtonElement;
+  private clearBtn: HTMLButtonElement;
+
+  private membershipAbort?: AbortController;
 
   constructor() {
     super();
+    this.attachShadow({ mode: "open" })
+    this.shadow = this.shadowRoot!;
+    this.shadow.appendChild(template.content.cloneNode(true));
+    this.selector = this.shadow.getElementById("groups");
+    this.applyBtn = this.shadow.getElementById("apply") as HTMLButtonElement;
+    this.clearBtn = this.shadow.getElementById("clear") as HTMLButtonElement;
   }
 
-  connectedCallback() {
-    this.loadGroups();
+  connectedCallback(): void {
+    this.applyBtn.addEventListener('click', this.onApply);
+    this.clearBtn.addEventListener('click', this.onClear);
+    // wait for choice-select to be fully initialized
+    customElements.whenDefined("choice-select").then(() => {
+      this.loadGroups()
+    })
+  }
+
+  disconnectedCallback(): void {
+    this.applyBtn.removeEventListener('click', this.onApply);
+    this.clearBtn.removeEventListener('click', this.onClear);
+  }
+
+  private onApply = async () => {
+    if (!this.getSelectedSamples || !this.addToGroup) return;
+
+    const sampleIds = this.getSelectedSamples();
+    const groupIds: string[] = this.selector.getSelected();
+
+    if (!sampleIds.length || !groupIds.length) {
+      this.dispatchEvent(new CustomEvent("apply:skipped", { detail: { reason: "empty"}, bubbles: true }))
+    }
+
+    try {
+      for (const gid of groupIds) {
+        await this.addToGroup(gid, sampleIds)
+      }
+      this.dispatchEvent(new CustomEvent("apply:success", { detail: { groupIds, sampleIds }, bubbles: true }))
+    } catch (err) {
+      console.error("Adding samples to group failed", err)
+      this.dispatchEvent(new CustomEvent("apply:error", { detail: { error: err }, bubbles: true }))
+    }
+  }
+
+  private onClear = () => {
+    this.selector.clearSelected();
   }
 
   async loadGroups() {
-    if (this.getGroupInfo) {
-      try {
-        this.groups = await this.getGroupInfo();
-        this.render();
-      } catch (err) {
+    if (!this.getGroupInfo) {
+      console.warn("No function for querying group info provided!", this)
+      return;
+    } 
+
+    try {
+      const groups = await this.getGroupInfo();
+      const options = groups.map( g => ({ value: g.group_id, label: g.display_name }));
+      this.selector.setChoices(options);
+    } catch (err) {
         console.error("Failed to load groups:", err);
-      }
     }
   }
 
-  addSamplesToGroup = (e: Event) => {
-    const target = e.target as HTMLElement;
-    const groupId = target.getAttribute("data-group-id");
-    if (!groupId || !this.getSelectedSamples || !this.AddToGroupFunc) return;
-    const selectedSamples = this.getSelectedSamples();
-    if (selectedSamples.length === 0) {
-      throwSmallToast("No samples selected", "warning");
+  /* Preselect the groups based on the selected samples */
+  private async preselectGroupsForSamples(sampleIds: string[]) {
+    if (this.membershipAbort) this.membershipAbort.abort();
+    this.membershipAbort = new AbortController();
+
+    if (!sampleIds?.length || !this.getGroupMembership) {
+      this.selector.clearSelected();
       return;
     }
-    this.AddToGroupFunc(groupId, selectedSamples)
-      .then(() => {
-        emitEvent("samples:added-to-group", {});
-        throwSmallToast(`Added ${selectedSamples.length} samples to group`, "success");
-      })
-      .catch((error) => {
-        console.error(`Error adding ${selectedSamples.length} samples to group:`, error);
-        throwSmallToast(`Error adding ${selectedSamples.length} samples to group`, "error");
-      });
-  };
 
-  render() {
-    let html = String.raw`
-      <div class="dropdown ps-2 add-to-group-btn">
-        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Add to group <i class="bi bi-folder-plus"></i>
-        </button>
-        <ul class="dropdown-menu">`;
-    for (const group of this.groups) {
-      html += `<li><a class="dropdown-item" data-group-id="${group.group_id}">${group.display_name}</a></li>`;
+    try {
+      const memberships = await this.getGroupMembership(sampleIds, this.membershipAbort.signal)
+      const counts = new Map<string, number>();
+      for (const sid of sampleIds) {
+        for (const gid of (memberships[sid] ?? [])) {
+          counts.set(gid, (counts.get(gid) ?? 0) + 1);
+        }
+      }
+      // calculate the number of groups in total and 
+      const nSamples = sampleIds.length;
+      const groupNameIntersect = [...counts.entries()].filter(([_, cnt]) => cnt === nSamples).map(([gid]) => gid);
+      this.selector.setSelected(groupNameIntersect)
+    } catch(err) {
+      console.warn("Failed to preselect samples", err)
     }
-    html += `</ul></div>`;
-    this.innerHTML = html;
-    // Attach click listeners
-    this.querySelectorAll(".dropdown-item").forEach((el) => {
-      el.addEventListener("click", this.addSamplesToGroup);
-    });
-  }
+  } 
 }
 
 customElements.define("group-selector", GroupSelector);
