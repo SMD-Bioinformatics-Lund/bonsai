@@ -157,5 +157,6 @@ async def migrate_group_collection(db: Database, backup_path: pathlib.Path | Non
 
 
 migration_functions: list[Callable[..., Any]] = [
-    migrate_sample_collection,  migrate_group_collection
+    migrate_sample_collection,
+    migrate_group_collection,
 ]

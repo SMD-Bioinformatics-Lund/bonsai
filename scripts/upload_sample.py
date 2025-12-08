@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 """Upload sample to Bonsai."""
-from enum import StrEnum
+import datetime as dt
 import json
+from enum import StrEnum
 from functools import wraps
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Any, Callable, Literal
-import datetime as dt
 
 import click
-from click import Context
 import requests
 import yaml
+from click import Context
 from pydantic import BaseModel, Field, FilePath, ValidationError
 from requests.structures import CaseInsensitiveDict
 
@@ -21,9 +21,9 @@ TIMEOUT = 10
 
 
 class MetadataTypes(StrEnum):
-    STR = 'string'
-    INT = 'integer'
-    DT = 'datetime'
+    STR = "string"
+    INT = "integer"
+    DT = "datetime"
 
 
 class SampleConfig(BaseModel):
@@ -286,7 +286,10 @@ def upload_sample_to_bonsai(ctx: ExecutionContext, cnf: SampleConfig) -> str:
 @api_authentication
 def add_metadata_to_sample(
     headers: CaseInsensitiveDict[Any],
-    ctx: ExecutionContext, sample_id: str, metadata: list[MetadataPoint]):
+    ctx: ExecutionContext,
+    sample_id: str,
+    metadata: list[MetadataPoint],
+):
     """Add metadata point to sample."""
     payload = [dta.model_dump(mode="json") for dta in metadata]
     resp = requests.post(
@@ -407,13 +410,29 @@ def upload_sample(ctx: Context, sample_conf: TextIOWrapper):
     help="Value of the metadata point",
 )
 @click.pass_context
-def add_metadata(ctx: Context, sample_id: str, param_name: str, param_value: str, category: str, data_type: str):
+def add_metadata(
+    ctx: Context,
+    sample_id: str,
+    param_name: str,
+    param_value: str,
+    category: str,
+    data_type: str,
+):
     """Add metadata to sample"""
     ctx.ensure_object(ExecutionContext)
     ctx.obj = authenticate_user(ctx.obj)
 
-    meta = [MetadataPoint(fieldname=param_name, value=param_value, category=category, type=MetadataTypes(data_type))]
-    add_metadata_to_sample(ctx=ctx.obj, sample_id=sample_id, metadata=meta, token_obj=ctx.obj.token)
+    meta = [
+        MetadataPoint(
+            fieldname=param_name,
+            value=param_value,
+            category=category,
+            type=MetadataTypes(data_type),
+        )
+    ]
+    add_metadata_to_sample(
+        ctx=ctx.obj, sample_id=sample_id, metadata=meta, token_obj=ctx.obj.token
+    )
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
 """Test functions in similarity file."""
 
-import pytest
 from pathlib import Path
 
-from minhash_service.analysis.similarity import get_similar_signatures
+import pytest
+
 from minhash_service.analysis.models import SimilaritySearchConfig
+from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.signatures.index import SBTIndexStore
 from minhash_service.signatures.io import read_signatures
 

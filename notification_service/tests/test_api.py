@@ -1,8 +1,7 @@
 """Test api entrypoints."""
 
-from fastapi.testclient import TestClient
-
 from bonsai_notification.main import create_api_app
+from fastapi.testclient import TestClient
 
 client = TestClient(create_api_app())
 

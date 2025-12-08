@@ -72,7 +72,9 @@ def emm_typing(
         if ty.type == "emmtype":
             result: TypingResultEmm = ty.result
             return result.emmtype or "NA", ""
-    raise AnalysisNotPresentError(f"Sample '{sample.sample_name}' doesn't have EMM type.")
+    raise AnalysisNotPresentError(
+        f"Sample '{sample.sample_name}' doesn't have EMM type."
+    )
 
 
 @register_formatter("species")

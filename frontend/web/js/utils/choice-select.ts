@@ -5,13 +5,13 @@ template.innerHTML = String.raw`
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/base.min.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
 <select id="select"></select>
-`
+`;
 
 export type SelectOption = {
   value: string;
   label: string;
   disabled?: boolean;
-}
+};
 
 export class ChoiceSelect extends HTMLElement {
   private shadow!: ShadowRoot;
@@ -43,7 +43,7 @@ export class ChoiceSelect extends HTMLElement {
         renderChoiceLimit: 20,
         searchResultLimit: 50,
         shadowRoot: this.shadow,
-      })
+      });
     }
 
     this.selectElement.addEventListener("change", this.emitChange);
@@ -53,17 +53,17 @@ export class ChoiceSelect extends HTMLElement {
     this.selectElement.removeEventListener("change", this.emitChange);
   }
 
-   /*
+  /*
    * Replace all choices (options) in the dropdown.
    * Optionally set preselected values (single or multi).
    */
   setChoices(options: SelectOption[], preselected?: string | string[]) {
     // Clear existing choices and selection safely
-    this.choiceElement.clearStore();   // clear all internal stores (choices & items)
+    this.choiceElement.clearStore(); // clear all internal stores (choices & items)
     this.choiceElement.clearChoices(); // clear <option> list
 
     // Map to InputChoice format
-    const data: InputChoice[] = options.map(o => ({
+    const data: InputChoice[] = options.map((o) => ({
       value: o.value,
       label: o.label,
       disabled: !!o.disabled,
@@ -90,7 +90,7 @@ export class ChoiceSelect extends HTMLElement {
   getSelected(): string[] {
     const val = this.choiceElement.getValue(true);
     // getValue(true) returns string for single and array for multiple; normalize to array
-    return Array.isArray(val) ? val : (val ? [val] : []);
+    return Array.isArray(val) ? val : val ? [val] : [];
   }
 
   /* Clear selection but keeps choicese */
@@ -101,12 +101,13 @@ export class ChoiceSelect extends HTMLElement {
   private emitChange = () => {
     const values = this.getSelected();
     this.dispatchEvent(
-    new CustomEvent("change", {
+      new CustomEvent("change", {
         detail: { values },
         bubbles: true,
         composed: true,
-    }))
+      }),
+    );
   };
 }
 
-customElements.define("choice-select", ChoiceSelect)
+customElements.define("choice-select", ChoiceSelect);

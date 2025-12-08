@@ -1,10 +1,11 @@
 """Test CLI commands."""
 
 from types import SimpleNamespace
+
+from bonsai_api.cli.cli import cli
 from click.testing import CliRunner
 from mongomock import DuplicateKeyError
 
-from bonsai_api.cli.cli import cli
 
 def test_create_user_success(monkeypatch):
     """Test creating a user successfully."""
@@ -30,7 +31,7 @@ def test_create_user_success(monkeypatch):
             "test@mail.com",
             "--role",
             "user",
-        ]
+        ],
     )
 
     assert result.exit_code == 0
@@ -61,7 +62,7 @@ def test_create_user_duplicate(monkeypatch):
             "test@mail.com",
             "--role",
             "user",
-        ]
+        ],
     )
 
     assert result.exit_code != 0
@@ -90,7 +91,7 @@ def test_create_group_success(monkeypatch):
             "testgroup",
             "--description",
             "Test group",
-        ]
+        ],
     )
 
     assert result.exit_code == 0
@@ -119,7 +120,7 @@ def test_create_group_duplicate(monkeypatch):
             "testgroup",
             "--description",
             "Test group",
-        ]
+        ],
     )
 
     assert result.exit_code != 0

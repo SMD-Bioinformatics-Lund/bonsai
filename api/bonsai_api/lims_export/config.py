@@ -1,6 +1,5 @@
 """Functions for loading configuration."""
 
-
 import logging
 from importlib import resources
 from pathlib import Path
@@ -20,7 +19,7 @@ class InvalidFormatError(Exception):
 
 def load_export_config(path: Path | None) -> ExportConfiguration:
     """Load a export configuration yaml file and return a config object.
-    
+
     If `path` is not provided, loads the default configuration packaged with Bonsai
     at `bonsai_api.resources/default_lims_export.yml`.
 
@@ -37,15 +36,17 @@ def load_export_config(path: Path | None) -> ExportConfiguration:
         resource = resources.files("bonsai_api.resources") / "default_lims_export.yml"
         source_for_msgs = str(resource)
         LOG.debug("Loading default packaged config: %s", source_for_msgs)
-        stream_ctx = resource.open('r', encoding="utf-8")
+        stream_ctx = resource.open("r", encoding="utf-8")
     else:
         source_for_msgs = str(path)
         LOG.debug("Loading config file: %s", path)
         if not path.is_file():
             raise FileNotFoundError(f"Configuration file not found: {path}")
         if path.suffix.lower() not in {".yaml", ".yml"}:
-            LOG.warning("Configuration file does not have a .yaml/.yml extension: %s", path)
-        stream_ctx = path.open('r', encoding="utf-8")
+            LOG.warning(
+                "Configuration file does not have a .yaml/.yml extension: %s", path
+            )
+        stream_ctx = path.open("r", encoding="utf-8")
 
     # 2. Parse YAML and convert to data model
     with stream_ctx as fh:
@@ -62,7 +63,7 @@ def load_export_config(path: Path | None) -> ExportConfiguration:
             f"Invalid configuration in {source_for_msgs}: empty file. "
             "Expected a YAML list of assay configuration entries"
         )
-    
+
     # 3. Validate shape of data
     if not isinstance(data, list):
         raise InvalidFormatError(
@@ -79,20 +80,21 @@ def load_export_config(path: Path | None) -> ExportConfiguration:
     # 4. Validate configuration
     for idx, entry in enumerate(data):
         if not isinstance(entry, dict):
-            errors.append(f"item {idx}: expected a mapping (dict), got {type(entry).__name__}")
+            errors.append(
+                f"item {idx}: expected a mapping (dict), got {type(entry).__name__}"
+            )
             continue
         try:
             cnf = AssayConfig.model_validate(entry)
             results.append(cnf)
         except ValidationError as err:
             errors.append(f"item: {idx}: {err}")
-    
+
     if errors:
         joined = "\n".join(f"- {err}" for err in errors)
         raise InvalidFormatError(
             f"Configuration validation failed for {source_for_msgs}:\n{joined}\n"
             "Fix the above item(s) to proceed."
-
         )
     return results
 

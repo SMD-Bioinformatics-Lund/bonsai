@@ -11,21 +11,12 @@ from flask import (Blueprint, abort, current_app, flash, make_response,
 from flask_login import current_user, login_required
 from requests import HTTPError
 
-from ...bonsai import (
-    TokenObject,
-    cgmlst_cluster_samples,
-    delete_samples,
-    find_samples_similar_to_reference,
-    get_antibiotics,
-    get_group_by_id,
-    get_lims_export_response,
-    get_sample_by_id,
-    get_variant_rejection_reasons,
-    post_comment_to_sample,
-    remove_comment_from_sample,
-    update_sample_qc_classification,
-    update_variant_info,
-)
+from ...bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
+                       find_samples_similar_to_reference, get_antibiotics,
+                       get_group_by_id, get_lims_export_response,
+                       get_sample_by_id, get_variant_rejection_reasons,
+                       post_comment_to_sample, remove_comment_from_sample,
+                       update_sample_qc_classification, update_variant_info)
 from ...models import BadSampleQualityAction, QualityControlResult
 from .controllers import (filter_variants, filter_variants_if_processed,
                           get_all_variant_types, get_all_who_classifications,
@@ -255,7 +246,7 @@ def download_lims(sample_id: str):
         return redirect(request.referrer)
 
     # build Flask response using the API headers and bytes
-    content = api_resp.content # bytes
+    content = api_resp.content  # bytes
     response = make_response(content)
 
     # Forward content type if provided
@@ -265,12 +256,16 @@ def download_lims(sample_id: str):
     else:
         # fallback based on format
         response.headers["Content-Type"] = (
-            "text/tab-separated-values; charset=utf-8" if fmt == "tsv" else "text/csv; charset=utf-8"
+            "text/tab-separated-values; charset=utf-8"
+            if fmt == "tsv"
+            else "text/csv; charset=utf-8"
         )
     # Forward filename if provided; else build default one
     dispo = api_resp.headers.get("Content-Disposition")
     if not dispo:
-        response.headers["Content-Disposition"] = f"attachment; filename={fallback_fname}.txt"
+        response.headers["Content-Disposition"] = (
+            f"attachment; filename={fallback_fname}.txt"
+        )
     else:
         response.headers["Content-Disposition"] = dispo
     # Saftey

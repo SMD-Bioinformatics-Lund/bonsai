@@ -4,9 +4,9 @@ import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from bonsai_api.config import settings
 from pymongo import AsyncMongoClient
 
-from bonsai_api.config import settings
 from .db import MongoDatabase
 
 LOG = logging.getLogger(__name__)

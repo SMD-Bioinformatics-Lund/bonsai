@@ -16,13 +16,15 @@ template.innerHTML = String.raw`
       </div>
     </div>
   </div>
-`
+`;
 
 export class GroupSelector extends HTMLElement {
   // dependancy injections set from outside function
   getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
   getSelectedSamples: (() => string[]) | null = null;
-  getGroupMembership: (( sampleIds: string[], signal?: AbortSignal) => Promise<SampleGroupMembership[]>) | null = null;
+  getGroupMembership:
+    | ((sampleIds: string[], signal?: AbortSignal) => Promise<SampleGroupMembership[]>)
+    | null = null;
   addToGroup: ((groupId: string, sampleIds: string[]) => Promise<void>) | null = null;
 
   private shadow!: ShadowRoot;
@@ -34,7 +36,7 @@ export class GroupSelector extends HTMLElement {
 
   constructor() {
     super();
-    this.attachShadow({ mode: "open" })
+    this.attachShadow({ mode: "open" });
     this.shadow = this.shadowRoot!;
     this.shadow.appendChild(template.content.cloneNode(true));
     this.selector = this.shadow.getElementById("groups");
@@ -43,17 +45,17 @@ export class GroupSelector extends HTMLElement {
   }
 
   connectedCallback(): void {
-    this.applyBtn.addEventListener('click', this.onApply);
-    this.clearBtn.addEventListener('click', this.onClear);
+    this.applyBtn.addEventListener("click", this.onApply);
+    this.clearBtn.addEventListener("click", this.onClear);
     // wait for choice-select to be fully initialized
     customElements.whenDefined("choice-select").then(() => {
-      this.loadGroups()
-    })
+      this.loadGroups();
+    });
   }
 
   disconnectedCallback(): void {
-    this.applyBtn.removeEventListener('click', this.onApply);
-    this.clearBtn.removeEventListener('click', this.onClear);
+    this.applyBtn.removeEventListener("click", this.onApply);
+    this.clearBtn.removeEventListener("click", this.onClear);
   }
 
   private onApply = async () => {
@@ -63,36 +65,40 @@ export class GroupSelector extends HTMLElement {
     const groupIds: string[] = this.selector.getSelected();
 
     if (!sampleIds.length || !groupIds.length) {
-      this.dispatchEvent(new CustomEvent("apply:skipped", { detail: { reason: "empty"}, bubbles: true }))
+      this.dispatchEvent(
+        new CustomEvent("apply:skipped", { detail: { reason: "empty" }, bubbles: true }),
+      );
     }
 
     try {
       for (const gid of groupIds) {
-        await this.addToGroup(gid, sampleIds)
+        await this.addToGroup(gid, sampleIds);
       }
-      this.dispatchEvent(new CustomEvent("apply:success", { detail: { groupIds, sampleIds }, bubbles: true }))
+      this.dispatchEvent(
+        new CustomEvent("apply:success", { detail: { groupIds, sampleIds }, bubbles: true }),
+      );
     } catch (err) {
-      console.error("Adding samples to group failed", err)
-      this.dispatchEvent(new CustomEvent("apply:error", { detail: { error: err }, bubbles: true }))
+      console.error("Adding samples to group failed", err);
+      this.dispatchEvent(new CustomEvent("apply:error", { detail: { error: err }, bubbles: true }));
     }
-  }
+  };
 
   private onClear = () => {
     this.selector.clearSelected();
-  }
+  };
 
   async loadGroups() {
     if (!this.getGroupInfo) {
-      console.warn("No function for querying group info provided!", this)
+      console.warn("No function for querying group info provided!", this);
       return;
-    } 
+    }
 
     try {
       const groups = await this.getGroupInfo();
-      const options = groups.map( g => ({ value: g.group_id, label: g.display_name }));
+      const options = groups.map((g) => ({ value: g.group_id, label: g.display_name }));
       this.selector.setChoices(options);
     } catch (err) {
-        console.error("Failed to load groups:", err);
+      console.error("Failed to load groups:", err);
     }
   }
 
@@ -107,21 +113,23 @@ export class GroupSelector extends HTMLElement {
     }
 
     try {
-      const memberships = await this.getGroupMembership(sampleIds, this.membershipAbort.signal)
+      const memberships = await this.getGroupMembership(sampleIds, this.membershipAbort.signal);
       const counts = new Map<string, number>();
       for (const sid of sampleIds) {
-        for (const gid of (memberships[sid] ?? [])) {
+        for (const gid of memberships[sid] ?? []) {
           counts.set(gid, (counts.get(gid) ?? 0) + 1);
         }
       }
-      // calculate the number of groups in total and 
+      // calculate the number of groups in total and
       const nSamples = sampleIds.length;
-      const groupNameIntersect = [...counts.entries()].filter(([_, cnt]) => cnt === nSamples).map(([gid]) => gid);
-      this.selector.setSelected(groupNameIntersect)
-    } catch(err) {
-      console.warn("Failed to preselect samples", err)
+      const groupNameIntersect = [...counts.entries()]
+        .filter(([_, cnt]) => cnt === nSamples)
+        .map(([gid]) => gid);
+      this.selector.setSelected(groupNameIntersect);
+    } catch (err) {
+      console.warn("Failed to preselect samples", err);
     }
-  } 
+  }
 }
 
 customElements.define("group-selector", GroupSelector);
