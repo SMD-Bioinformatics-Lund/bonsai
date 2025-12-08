@@ -112,3 +112,4 @@ export interface ApiUserInfo {
 
 export type CallbackFunc = (ids: string[]) => void;
 export type TblStateCallbackFunc = (selectedRows: string[]) => void;
+export type SampleGroupMembership = Record<string, string[]>;

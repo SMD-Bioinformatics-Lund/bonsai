@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
 from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
-                   MultipleRecordsResponseModel)
+                   MultipleRecordsResponseModel, RWModel)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
 
@@ -143,3 +143,9 @@ class MultipleSampleRecordsResponseModel(
     MultipleRecordsResponseModel
 ):  # pylint: disable=too-few-public-methods
     data: list[SampleInDatabase] = []
+
+
+class SampleGroupMembershipInput(RWModel):  # pylint: disable=too-few-public-methods
+    """Input model for sample group membership."""
+
+    sample_id: list[str] = Field(..., description="Sample id")

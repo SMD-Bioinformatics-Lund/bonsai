@@ -23,6 +23,7 @@ import { BasketComponent } from "./components/sample-basket";
 import "./components/group-list";
 import "./components/group-selector";
 import "./components/spinner-element";
+import './utils/choice-select';
 import DataTable from "datatables.net-bs5";
 
 
@@ -176,8 +177,36 @@ export async function initGroupView(
     ) as GroupSelector;
     addToGroupSelector.getGroupInfo = api.getGroups;
     addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
-    addToGroupSelector.AddToGroupFunc = api.addSamplesToGroup.bind(api);
+    addToGroupSelector.getGroupMembership = api.getSampleGroupMemberships;
+    addToGroupSelector.addToGroup = api.addSamplesToGroup;
+
+    // set up listners for updates and failurs
+    addToGroupSelector.addEventListener("apply:success", (ev: Event) => {
+      const { groupIds, sampleIds } = (ev as CustomEvent).detail;
+      throwSmallToast(`Added ${sampleIds.length} samples to ${groupIds.length} groups`, 'success');
+    });
+    addToGroupSelector.addEventListener('apply:error', (ev: Event) => {
+      const { error } = (ev as CustomEvent).detail;
+      console.error('Apply error:', error);
+      throwSmallToast(`An error occured: ${ev.detail}`, 'error');
+    });
+
+    addToGroupSelector.addEventListener('apply:skipped', (ev: Event) => {
+      const { reason } = (ev as CustomEvent).detail;
+      const msg =
+        reason === 'empty' ? 'No groups or samples selected'
+        : reason === 'no-samples' ? 'No samples selected'
+        : reason === 'no-groups' ? 'No groups selected'
+        : 'Nothing to do';
+      throwSmallToast(msg, 'warning');
+    });
+
     groupSelectorContainer.appendChild(addToGroupSelector);
+    // preselect groups when selecting samples in sample table
+    table && table.getTable().on("select deselect", (e, dt, type, indexes) => {
+      const selected: string[] = dt.rows(".selected").ids().toArray();
+      addToGroupSelector.preselectGroupsForSamples(selected);
+    })
   }
 
   // setup qc classification
@@ -261,6 +290,8 @@ declare global {
   }
   interface HTMLElementTagNameMap {
     "groups-list": GroupList;
+    "choice-select": ChoiceSelect;
+    "group-selector": GroupSelector;
   }
 }
 
