@@ -6,6 +6,7 @@ import {
   ApiJobSubmission,
   ApiFindSimilarInput,
   GroupInfo,
+  SampleGroupMembership,
   ApiUserInfo,
   ApiSampleQcStatus,
 } from "./types";
@@ -83,11 +84,7 @@ export class HttpClient {
     private authService: AuthService,
   ) {}
 
-  request = async <T>(
-    endpoint: string,
-    options: RequestInit = {},
-    retry = true,
-  ): Promise<T> => {
+  request = async <T>(endpoint: string, options: RequestInit = {}, retry = true): Promise<T> => {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
       ...this.authService.getAuthHeader(),
@@ -97,6 +94,7 @@ export class HttpClient {
     const response = await fetch(`${this.apiUrl}${endpoint}`, {
       ...options,
       headers,
+      signal: options.signal,
     });
 
     if (response.status === 401 && retry) {
@@ -106,10 +104,7 @@ export class HttpClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new ApiError(
-        response.status,
-        errorText || `Http error: ${response.status}`,
-      );
+      throw new ApiError(response.status, errorText || `Http error: ${response.status}`);
     }
 
     return await response.json();
@@ -183,10 +178,7 @@ export class ApiService {
     });
   };
 
-  findSimilarSamples = async (
-    sampleId: string,
-    params: ApiFindSimilarInput,
-  ) => {
+  findSimilarSamples = async (sampleId: string, params: ApiFindSimilarInput) => {
     return this.http.request<ApiJobSubmission>(`/samples/${sampleId}/similar`, {
       method: "POST",
       body: JSON.stringify(params),
@@ -219,6 +211,16 @@ export class ApiService {
     );
   };
 
+  getSampleGroupMemberships = async (sampleIds: string[], signal?: AbortSignal) => {
+    return this.http.request<SampleGroupMembership>(
+      `/samples/group-memberships?${objectToQueryParams({ ids: sampleIds })}`,
+      {
+        method: "GET",
+        signal,
+      },
+    );
+  };
+
   private handleError = (error: unknown) => {
     if (error instanceof ApiError) {
       console.error(`API Error [${error.status}]: ${error.message}`);
@@ -231,7 +233,7 @@ export class ApiService {
 export async function pollJob<T extends ApiJobStatus>(
   checkJobFn: () => Promise<T>,
   waitTime: number,
-  maxRetries: number = 100
+  maxRetries: number = 100,
 ): Promise<T> {
   let retries = 0;
   let result = await checkJobFn();
@@ -253,11 +255,11 @@ export async function pollJob<T extends ApiJobStatus>(
 
 /**
  * Pauses execution for a specified duration.
- * 
+ *
  * This function is primarily used in the polling mechanism to introduce
  * a delay between successive API calls. It ensures that the polling
  * does not overwhelm the server with rapid requests.
- * 
+ *
  * @param ms - The duration to wait in milliseconds. Defaults to 2000ms.
  * @returns A promise that resolves after the specified duration.
  */

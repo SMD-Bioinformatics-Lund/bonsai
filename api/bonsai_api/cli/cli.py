@@ -15,20 +15,14 @@ from bonsai_api.crud.errors import EntryNotFound
 from bonsai_api.db.index import INDEXES
 from bonsai_api.lims_export.config import InvalidFormatError
 from bonsai_api.migrate import MigrationError
-from bonsai_api.models.group import GroupInCreate, SampleTableColumnDB, pred_res_cols
+from bonsai_api.models.group import (GroupInCreate, SampleTableColumnDB,
+                                     pred_res_cols)
 from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
-from .cli_tasks import (
-    run_check_paths,
-    run_create_group,
-    run_create_index,
-    run_create_user,
-    run_get_samples,
-    run_lims_export,
-    run_migrate_database,
-    run_update_tag,
-)
+from .cli_tasks import (run_check_paths, run_create_group, run_create_index,
+                        run_create_user, run_get_samples, run_lims_export,
+                        run_migrate_database, run_update_tag)
 from .utils import EmailType, run_async
 
 LOG = getLogger(__name__)

@@ -27,7 +27,14 @@
                     {{ delete_samples_btn() }}
 
                     {# Target for dropdown for adding samples to group #}
-                    <div id="add-samples-to-group-container"></div>
+                    <div class="dropdown ps-2 add-to-group-btn">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        Add to group <i class="bi bi-folder-plus"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div id="add-samples-to-group-container" class="px-4 py-2"></div>
+                        </div>
+                    </div>
                 {% endif %}
 
                 {{ search_similar_btn() }}

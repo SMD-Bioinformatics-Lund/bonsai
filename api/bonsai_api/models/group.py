@@ -1,6 +1,6 @@
 """Routes related to collections of samples."""
 
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, TypeAlias
 
 from prp.models.phenotype import ElementType
 from pydantic import BaseModel, ConfigDict, Field
@@ -71,6 +71,14 @@ VALID_BASE_COLS: list[SampleTableColumnInput] = [
         label="Sample Id",
         path="$.sample_id",
         sortable=True,
+    ),
+    SampleTableColumnInput(
+        id="in_groups",
+        label="In groups",
+        path="$.in_groups",
+        sortable=False,
+        type="custom",
+        renderer="in_groups_renderer",
     ),
 ]
 
@@ -272,6 +280,7 @@ DEFAULT_COLUMNS: list[str] = [
     "sample_btn",
     "sample_id",
     "sample_name",
+    "in_groups",
     "tags",
     "assay",
     "taxonomic_name",
@@ -312,3 +321,6 @@ class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     table_columns: list[str] = Field(
         default=[], description="IDs of columns to display."
     )
+
+
+SampleSampleGroupMemberships: TypeAlias = dict[str, list[str]]

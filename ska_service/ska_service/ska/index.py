@@ -1,8 +1,8 @@
 """Functions for building and merging indexes."""
 
 import logging
-import tempfile
 import os
+import tempfile
 from pathlib import Path
 from typing import Sequence
 

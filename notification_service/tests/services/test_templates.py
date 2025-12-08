@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from bonsai_notification.services.templates import TemplateRepository
 
 
