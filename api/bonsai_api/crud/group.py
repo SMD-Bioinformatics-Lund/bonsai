@@ -18,7 +18,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from .errors import DatabaseOperationError, EntryNotFound
 from .tags import compute_phenotype_tags
-from .utils import audit_event_context, check_groups_exists
+from .utils import audit_event_context, check_groups_exists, managed_transaction
 from .memberships import remove_memberships
 
 LOG = logging.getLogger(__name__)
@@ -250,26 +250,24 @@ async def delete_group(
     event_subject = Subject(id=group_id, type=SourceType.USR)
     meta = {"group_id": group_id}
     with audit_event_context(audit, "delete_group", ctx, event_subject, metadata=meta):
-        async with db.client.start_session() as session:
+        async with managed_transaction(db.client) as session:
             try:
-                txn = await session.start_transaction()
-                async with txn:
-                    missing = await check_groups_exists(db, [group_id], session=session)
-                    if missing:
-                        raise EntryNotFound(group_id)
+                missing = await check_groups_exists(db, [group_id], session=session)
+                if missing:
+                    raise EntryNotFound(group_id)
 
-                    # Remove group from stored memberships
-                    links = [SampleGroupLink(group_ids=[group_id])]
-                    await remove_memberships(db, links=links, session=session)
+                # Remove group from stored memberships
+                links = [SampleGroupLink(group_ids=[group_id])]
+                await remove_memberships(db, links=links, session=session)
 
-                    # Remove group document
-                    group_res = await db.sample_group_collection.delete_one(
-                        {"group_id": group_id}, session=session
-                    )
-                    if group_res.deleted_count == 0:
-                        raise EntryNotFound(group_id)
+                # Remove group document
+                group_res = await db.sample_group_collection.delete_one(
+                    {"group_id": group_id}, session=session
+                )
+                if group_res.deleted_count == 0:
+                    raise EntryNotFound(group_id)
 
-                    return group_res.deleted_count
+                return group_res.deleted_count
             except PyMongoError as pme:
                 LOG.error("MongoDB error while deleting group: %s", str(pme))
                 raise DatabaseOperationError(
