@@ -41,6 +41,7 @@ def audit_event_context(
     subject: Subject,
     metadata: dict[str, Any] | None = None,
 ):
+    """Logg an event to the audit log."""
     exc = None
     try:
         yield
@@ -94,5 +95,6 @@ async def managed_transaction(client: AsyncMongoClient, session: ClientSession |
         return
     
     async with client.start_session() as sess:
-        async with sess.start_transaction():
+        txn = await sess.start_transaction()
+        async with txn:
             yield sess
