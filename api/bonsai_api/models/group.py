@@ -321,6 +321,3 @@ class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     table_columns: list[str] = Field(
         default=[], description="IDs of columns to display."
     )
-
-
-SampleSampleGroupMemberships: TypeAlias = dict[str, list[str]]
