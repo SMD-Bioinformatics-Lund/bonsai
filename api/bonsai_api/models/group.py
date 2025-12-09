@@ -1,34 +1,13 @@
 """Routes related to collections of samples."""
 
-from typing import Dict, List, Literal, TypeAlias
+from typing import Literal
 
 from prp.models.phenotype import ElementType
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, RWModel
-from .sample import SampleSummary
+from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
-FilterParams = List[Dict[str, str | int | float],]
-
-
-class IncludedSamples(RWModel):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-    included_samples: List[str | SampleSummary] = []
-
-    model_config = ConfigDict(json_encoders={ObjectId: str})
-
-
-class UpdateIncludedSamples(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-
-class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Basic specie information."""
-
-    group_id: str = Field(..., min_length=5)
-    display_name: str = Field(..., min_length=1, max_length=45)
-    description: str | None = None
+FilterParams = list[dict[str, str | int | float],]
 
 
 class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -296,16 +275,23 @@ qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 SCHEMA_VERSION: str = "1"
 
 
+class GroupBase(RWModel):  # pylint: disable=too-few-public-methods
+    """Basic specie information."""
+
+    group_id: str = Field(..., min_length=5)
+    display_name: str = Field(..., min_length=1, max_length=45)
+    description: str | None = None
+    table_columns: list[SampleTableColumnDB] = Field(
+        default=[], description="IDs of columns to display."
+    )
+
+
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
     schema_version: str = Field(
         default=SCHEMA_VERSION, description="Version of the group schema."
     )
-    table_columns: list[SampleTableColumnDB] = Field(
-        default=[], description="IDs of columns to display."
-    )
-    # table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
     validated_genes: dict[ElementType, list[str]] | None = {}
 
 
