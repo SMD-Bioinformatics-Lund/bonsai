@@ -284,6 +284,7 @@ class GroupBase(RWModel):  # pylint: disable=too-few-public-methods
     table_columns: list[SampleTableColumnDB] = Field(
         default=[], description="IDs of columns to display."
     )
+    sample_count: int = Field(default=0, ge=0, description="Total number of samples in this group")
 
 
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
