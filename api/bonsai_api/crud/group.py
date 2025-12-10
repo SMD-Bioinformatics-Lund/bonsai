@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from api.bonsai_api.models.memberships import SampleGroupLink
+from bonsai_api.models.memberships import SampleGroupLink
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
