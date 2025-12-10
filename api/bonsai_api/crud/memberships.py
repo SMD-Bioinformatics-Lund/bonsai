@@ -187,7 +187,7 @@ async def get_samples_by_group_ids(
     pipeline = [
         {"$match": {"groups": {"$in": group_ids}}},
         {"$project": {"_id": 0, "sample_id": 1, "groups": 1}},
-        {"$unwind": "groups"},
+        {"$unwind": "$groups"},
         {"$match": {"groups": {"$in": group_ids}}},
         {"$group": {"_id": "$groups", "sample_ids": {"$addToSet": "$sample_id"}}},
         {"$project": {"_id": 0, "group_id": "$_id", "sample_ids": 1}},

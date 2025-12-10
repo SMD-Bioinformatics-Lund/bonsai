@@ -8,9 +8,6 @@ from pydantic import BaseModel, Field
 from .base import RWModel
 
 
-MembershipsQueryResponse: TypeAlias = dict[str, list[str]]
-
-
 class SampleGroupLink(BaseModel):
     """Keep track of a sample-group relationship."""
 

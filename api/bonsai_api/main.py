@@ -6,13 +6,13 @@ from contextlib import asynccontextmanager
 
 from api_client.audit_log import AuditLogClient
 from api_client.notification import NotificationClient
-from bonsai_api.db.db import MongoDatabase, setup_db_connection
+from bonsai_api.db.db import setup_db_connection
 from fastapi import FastAPI
 
 from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (auth, cluster, export, groups, jobs, locations,
+from .routers import (auth, cluster, export, groups, jobs, locations, memberships,
                       resources, root, samples, users)
 
 logging_config.dictConfig(
@@ -80,6 +80,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(samples.router)
     app.include_router(groups.router)
     app.include_router(locations.router)
+    app.include_router(memberships.router)
     app.include_router(cluster.router)
     app.include_router(export.router)
     app.include_router(resources.router)
