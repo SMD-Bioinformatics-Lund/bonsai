@@ -2,10 +2,10 @@
 
 import logging
 
-from bonsai_api.crud.memberships import get_samples_group_membership
+from bonsai_api.crud.memberships import get_groups_by_sample_ids, get_samples_by_group_ids
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
-from bonsai_api.models.memberships import MembershipsQueryResponse
+from bonsai_api.models.memberships import GroupSampleLink, SampleGroupLink
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.routers.shared import RouterTags
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
@@ -22,8 +22,8 @@ UPDATE_PERMISSION = "groups:update"
 
 @router.get(
     "/memberships",
-    response_model=MembershipsQueryResponse,
-    tags=[RouterTags.SAMPLE, RouterTags.GROUP],
+    response_model=list[GroupSampleLink] | list[SampleGroupLink],
+    tags=[RouterTags.MEM, RouterTags.SAMPLE, RouterTags.GROUP],
 )
 async def get_group_membership(
     db: Database = Depends(get_database),
@@ -51,11 +51,14 @@ async def get_group_membership(
         )
 
     max_ids = 100
-    if len(sample_ids) > max_ids:
+    ids = sample_ids or group_ids
+    if len(ids) > max_ids:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=f"Too many IDs provided ({len(sample_ids)}). Maximum allowed is {max_ids}.",
         )
-
-    memberships = await get_samples_group_membership(db, sample_ids)
-    return memberships
+    
+    if sample_ids:
+        return await get_groups_by_sample_ids(db, sample_ids)
+    return await get_samples_by_group_ids(db, group_ids)
+    
