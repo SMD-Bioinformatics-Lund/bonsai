@@ -10,7 +10,7 @@ function groupCardHTML(group: GroupInfo, isAdmin: boolean): string {
         <a href="${baseUrl}/groups/${group.group_id}" class="text-decoration-none text-dark">
           <div class="card-body">
             <h5 class="card-title">${group.display_name}</h5>
-            <span class="text-muted text-uppercase fw-semibold n-samples">Samples: ${group.included_samples.length}</span>
+            <span class="text-muted text-uppercase fw-semibold n-samples">Samples: ${group.sample_count}</span>
             ${group.description ? `<p class="card-text text-wrap">${group.description}</p>` : ""}
           </div>
           <div class="card-footer text-body-secondary text-muted py-1 text-uppercase fw-semibold">
