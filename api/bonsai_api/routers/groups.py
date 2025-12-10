@@ -6,6 +6,7 @@ from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
 from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.crud.memberships import get_samples_by_group_ids
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
@@ -23,7 +24,7 @@ from bonsai_api.models.group import (
     pred_res_cols,
     qc_cols,
 )
-from bonsai_api.models.memberships import SampleGroupLink
+from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
 from fastapi.encoders import jsonable_encoder
@@ -69,8 +70,10 @@ async def build_column_definitions(
         columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
 
     if include_metadata and db and group_obj:
+        # TODO remove additional db query
+        links = await get_samples_by_group_ids(group_ids=[group_obj.group_id], db=db)
         meta_entries = await get_metadata_fields_for_samples(
-            db, sample_ids=group_obj.included_samples
+            db, sample_ids=links[0].sample_ids
         )
         columns += meta_entries
 
@@ -130,14 +133,13 @@ async def create_group(
 )
 async def get_group_in_db(
     group_id: str,
-    lookup_samples: bool = False,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await crud_gr.get_group(db, group_id, lookup_samples=lookup_samples)
+    group = await crud_gr.get_group(db, group_id)
     return group
 
 
@@ -210,10 +212,11 @@ async def add_samples_to_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        links = [
-            SampleGroupLink(sample_id=sid, group_ids=[group_id]) for sid in sample_ids
+        # reformat the request to edges and perofrm mutation
+        edges = [
+            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
         ]
-        await crud_mem.add_memberships(db, links)
+        await crud_mem.add_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -246,10 +249,11 @@ async def remove_sample_from_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        links = [
-            SampleGroupLink(sample_id=sid, group_ids=[group_id]) for sid in sample_ids
+        # build edges of the groups to remove
+        edges = [
+            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
         ]
-        await crud_mem.remove_memberships(db, links)
+        await crud_mem.remove_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -303,7 +307,7 @@ async def get_samples_in_group(
     """Get basic prediction results of all samples in a group."""
     # get group info
     try:
-        memberships = await crud_mem.get_samples_by_group_ids(db, [group_id])
+        memberships = await crud_mem.get_samples_by_group_ids([group_id], db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

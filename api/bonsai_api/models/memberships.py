@@ -1,6 +1,5 @@
 """Models related to sample memberships."""
 
-
 from typing import TypeAlias
 
 from pydantic import BaseModel, Field
@@ -8,18 +7,14 @@ from pydantic import BaseModel, Field
 from .base import RWModel
 
 
-class SampleGroupLink(BaseModel):
-    """Keep track of a sample-group relationship."""
+class MembershipEdge(BaseModel):
+    """Describe a relationship between a sample and group."""
 
     sample_id: str
-    group_ids: list[str]
-
-
-class GroupSampleLink(BaseModel):
-    """Keep track of a sample-group relationship."""
-
     group_id: str
-    sample_ids: list[str]
+
+
+MembershipEdges: TypeAlias = list[MembershipEdge]
 
 
 class SampleMembershipInput(RWModel):  # pylint: disable=too-few-public-methods
