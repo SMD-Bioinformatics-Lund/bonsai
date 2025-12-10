@@ -1,5 +1,6 @@
 """Manage relationships between samples and groups."""
 
+from collections import defaultdict
 import logging
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError, PyMongoError
@@ -17,6 +18,23 @@ from .errors import DatabaseOperationError, EntryNotFound
 LOG = logging.getLogger(__name__)
 
 
+def _transpose_samples_per_group(links: list[SampleGroupLink]) -> list[GroupSampleLink]:
+    """Transpose SampleGroupLinks to GroupSampleLink.
+    
+    Efficiently transpose {sid: list[gid]} to {gid: list[sid]}."""
+    bucket = defaultdict(set)
+    for link in links:
+        sid = link.sample_id
+        for gid in link.group_ids:
+            bucket[gid].add(sid)
+
+    # cast as determenistic GroupSampleLinks
+    upd_links = []
+    for gid, sids in sorted(bucket.items(), key=lambda x: x[0]):
+        upd_links.append(GroupSampleLink(group_id=gid, sample_ids=sorted(sids)))
+    return upd_links
+
+
 async def add_memberships(
     db: Database, links: list[SampleGroupLink],
     *, session: ClientSession | None = None
@@ -27,28 +45,33 @@ async def add_memberships(
 
     async def _do_work(db: Database, links: list[SampleGroupLink], session: ClientSession) -> None:
         # verify that group exists
-        gids = {gid for lnk in links for gid in lnk.group_ids}
-        missing_gids = check_groups_exists(db, gids, session)
+        gids = list({gid for lnk in links for gid in lnk.group_ids})
+        missing_gids = await check_groups_exists(db, gids, session)
         if missing_gids:
             # Abort the transaction if non-existant group was provided
             raise EntryNotFound(f"Unkown group_id(s): {sorted(missing_gids)}")
 
         # update modified timestamp in document
-        await db.sample_group_collection.update_many(
-            {"group_id": {"$in": list(gids)}},
-            {"$set": {"modified_at": get_timestamp()}},
-            session=session,
-        )
+        gs_links = _transpose_samples_per_group(links)
+        gr_ops = []
+        for lnk in gs_links:
+            gr_ops.append(UpdateOne(
+                {"group_id": lnk.group_id},
+                {"$set": {"modified_at": get_timestamp()}, "$inc": { "sample_count": len(lnk.sample_ids) }},
+            ))
+        if gr_ops:
+            await db.sample_group_collection.bulk_write(gr_ops, ordered=False, session=session)
+
         # prepare bulk operations to add group membership to samples
-        ops = []
+        smp_ops = []
         for lnk in links:
-            ops.append(UpdateOne(
+            smp_ops.append(UpdateOne(
                 {"sample_id": lnk.sample_id},
                 {"$addToSet": {"groups": {"$each": lnk.group_ids}}},
                 upsert=False
             ))
-        if ops:
-            await db.sample_collection.bulk_write(ops, ordered=False, session=session)
+        if smp_ops:
+            await db.sample_collection.bulk_write(smp_ops, ordered=False, session=session)
 
     try:
         async with managed_transaction(db.client, session) as sess:
@@ -81,17 +104,21 @@ async def remove_memberships(
     async def _do_work(db: Database, links: list[SampleGroupLink], session: ClientSession) -> None:
         # verify that group exists
         gids = {gid for lnk in links for gid in lnk.group_ids}
-        missing_gids = check_groups_exists(db, gids, session)
+        missing_gids = await check_groups_exists(db, gids, session)
         if missing_gids:
             # Abort the transaction if non-existant group was provided
             raise EntryNotFound(f"Unkown group_id(s): {sorted(missing_gids)}")
         
-        # Update modified timestamp in group object
-        await db.sample_group_collection.update_many(
-            {"group_id": {"$in": list(gids)}},
-            {"$set": {"modified_at": get_timestamp()}},
-            session=session,
-        )
+        # update modified timestamp in document
+        gs_links = _transpose_samples_per_group(links)
+        gr_ops = []
+        for lnk in gs_links:
+            gr_ops.append(UpdateOne(
+                {"group_id": lnk.group_id}, 
+                {"$set": {"modified_at": get_timestamp()}, "$dec": { "sample_count": -len(lnk.sample_ids) }},
+            ))
+        if gr_ops:
+            await db.sample_group_collection.bulk_write(gr_ops, ordered=False, session=session)
 
         # Prepare bulk operations to add group membership to samples
         ops = []
@@ -152,7 +179,7 @@ async def get_samples_by_group_ids(
     if not group_ids:
         return []
 
-    missing_gids = check_groups_exists(db, group_ids)
+    missing_gids = await check_groups_exists(db, group_ids)
     if missing_gids:
         # Abort the transaction if non-existant group was provided
         raise EntryNotFound(f"Unkown group_id(s): {sorted(missing_gids)}")

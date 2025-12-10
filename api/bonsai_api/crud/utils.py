@@ -71,7 +71,10 @@ async def check_groups_exists(db: Database, group_ids: list[str], session: Any =
     Return missing group ids.
     """
     if not group_ids:
-        return False
+        return []
+
+    if not isinstance(group_ids, list):
+        raise RuntimeError(f"Invalid input data, expect list[str] but got: {group_ids}")
 
     existing = await db.sample_group_collection.find(
         {"group_id": {"$in": group_ids}}, {"group_id": 1, "_id": 0}, session=session
@@ -81,7 +84,7 @@ async def check_groups_exists(db: Database, group_ids: list[str], session: Any =
     missing = set(group_ids) - existing_ids
     if missing:
         LOG.warning("Did not find groups: %s", missing)
-    return len(missing) == 0
+    return missing
 
 
 @asynccontextmanager
