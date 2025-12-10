@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from bonsai_api.models.memberships import SampleGroupLink
+from bonsai_api.models.memberships import MembershipEdge
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
@@ -19,7 +19,7 @@ from pymongo.errors import DuplicateKeyError, PyMongoError
 from .errors import DatabaseOperationError, EntryNotFound
 from .tags import compute_phenotype_tags
 from .utils import audit_event_context, check_groups_exists, managed_transaction
-from .memberships import remove_memberships
+from .memberships import remove_memberships, get_samples_by_group_ids
 
 LOG = logging.getLogger(__name__)
 
@@ -184,13 +184,6 @@ async def get_group(
 
         cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
         async for group in cursor:
-            if lookup_samples and group.get("included_samples"):
-                try:
-                    _enrich_group_samples(group)
-                except (ValidationError, ValueError) as exc:
-                    LOG.warning(
-                        "Failed to enrich samples for %s: %s. Skipping.", group_id, exc
-                    )
             return group_document_to_db_object(group)
         # Raise error if no group was found
         raise EntryNotFound(group_id)
@@ -257,8 +250,8 @@ async def delete_group(
                     raise EntryNotFound(group_id)
 
                 # Remove group from stored memberships
-                links = [SampleGroupLink(group_ids=[group_id])]
-                await remove_memberships(db, links=links, session=session)
+                edges = await get_samples_by_group_ids([group_id], db=db, session=session)
+                await remove_memberships(edges, db=db, session=session)
 
                 # Remove group document
                 group_res = await db.sample_group_collection.delete_one(

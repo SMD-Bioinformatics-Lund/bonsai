@@ -1,5 +1,6 @@
 """Entrypoints for getting group data."""
 
+from itertools import groupby
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
@@ -71,9 +72,9 @@ async def build_column_definitions(
 
     if include_metadata and db and group_obj:
         # TODO remove additional db query
-        links = await get_samples_by_group_ids(group_ids=[group_obj.group_id], db=db)
+        edges = await get_samples_by_group_ids([group_obj.group_id], db=db)
         meta_entries = await get_metadata_fields_for_samples(
-            db, sample_ids=links[0].sample_ids
+            db, sample_ids=[e.sample_id for e in edges]
         )
         columns += meta_entries
 
@@ -307,16 +308,17 @@ async def get_samples_in_group(
     """Get basic prediction results of all samples in a group."""
     # get group info
     try:
-        memberships = await crud_mem.get_samples_by_group_ids([group_id], db=db)
+        memberships_edges = await crud_mem.get_samples_by_group_ids([group_id], db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=group_id,
         ) from error
     # query samples
+    samples_in_group = [edge.sample_id for edge in memberships_edges]
     db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
-        include_samples=memberships[0].sample_ids,
+        include_samples=samples_in_group,
         limit=limit,
         skip=skip,
         prediction_result=prediction_result,
