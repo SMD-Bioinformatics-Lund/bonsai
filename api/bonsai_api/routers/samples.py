@@ -5,51 +5,92 @@ import pathlib
 from typing import Annotated, Any, Union, cast
 
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.crud.group import get_samples_group_membership
 from bonsai_api.crud.metadata import add_metadata_to_sample
-from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
+from bonsai_api.crud.sample import (
+    EntryNotFound,
+    add_comment,
+    add_location,
+)
 from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
-from bonsai_api.crud.sample import get_sample, get_samples_summary
+from bonsai_api.crud.sample import (
+    get_sample,
+    get_samples_summary,
+)
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
-from bonsai_api.crud.sample import (update_sample_qc_classification,
-                                    update_variant_annotation_for_sample)
+from bonsai_api.crud.sample import (
+    update_sample_qc_classification,
+    update_variant_annotation_for_sample,
+)
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
-                                     get_database, get_request_context)
-from bonsai_api.io import (InvalidRangeError, RangeOutOfBoundsError,
-                           is_file_readable, send_partial_file)
+from bonsai_api.dependencies import (
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
+from bonsai_api.io import (
+    InvalidRangeError,
+    RangeOutOfBoundsError,
+    is_file_readable,
+    send_partial_file,
+)
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.cluster import TypingMethod
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import SampleSampleGroupMemberships
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import (Comment, CommentInDatabase,
-                                      SampleGroupMembershipInput,
-                                      SampleInCreate, SampleInDatabase)
+from bonsai_api.models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
-    SubmittedJob, exclude_from_analysis, include_in_analysis,
-    schedule_add_genome_signature, schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster, schedule_find_similar_samples,
-    schedule_remove_genome_signature_from_index)
+    SubmittedJob,
+    exclude_from_analysis,
+    include_in_analysis,
+    schedule_add_genome_signature,
+    schedule_add_genome_signature_to_index,
+    schedule_find_similar_and_cluster,
+    schedule_find_similar_samples,
+    schedule_remove_genome_signature_from_index,
+)
 from bonsai_api.utils import format_error_message
-from fastapi import (APIRouter, Body, Depends, File, Header, HTTPException,
-                     Path, Query, Security, status)
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Header,
+    HTTPException,
+    Path,
+    Query,
+    Security,
+    status,
+)
 from fastapi.responses import FileResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import (AMRMethodIndex, StressMethodIndex,
-                                  VariantType, VirulenceMethodIndex)
+from prp.models.phenotype import (
+    AMRMethodIndex,
+    StressMethodIndex,
+    VariantType,
+    VirulenceMethodIndex,
+)
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
-from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
-                     parse_signature_json)
+from .shared import (
+    SAMPLE_ID_PATH,
+    RouterTags,
+    action_from_qc_classification,
+    parse_signature_json,
+)
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -113,49 +154,6 @@ async def samples_summary(
         qc_metrics=query.qc_metrics,
     )
     return db_obj
-
-
-@router.api_route(
-    "/samples/group-memberships",
-    response_model=SampleSampleGroupMemberships,
-    methods=["GET", "POST"],
-    tags=[RouterTags.SAMPLE],
-)
-async def get_group_membership(
-    db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[READ_PERMISSION]
-    ),
-    ids: list[str] = Query(
-        None, description="Sample IDs to check group membership (GET)"
-    ),
-    body: SampleGroupMembershipInput | None = Body(
-        None, description="Sample IDs to check group membership (POST)"
-    ),
-):
-    """Get group membership for multiple samples."""
-    if ids:
-        sample_ids = ids
-    elif body and body.sample_ids:
-        sample_ids = body.sample_ids
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No sample IDs provided, either via query or body.",
-        )
-
-    # Enforce a maximum number of sample IDs to prevent abuse
-    max_samples_ids = 100
-    max_samples_post = 1000
-    max_allowed = max_samples_post if body else max_samples_ids
-    if len(sample_ids) > max_allowed:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Too many sample IDs provided ({len(sample_ids)}). Maximum allowed is {max_allowed}.",
-        )
-
-    memberships = await get_samples_group_membership(db, sample_ids)
-    return memberships
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])

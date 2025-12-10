@@ -1,24 +1,31 @@
 """Entrypoints for getting group data."""
 
-import bonsai_api.crud.group as crud_group
+import bonsai_api.crud.group as crud_gr
+import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
-from bonsai_api.crud.group import create_group as create_group_record
-from bonsai_api.crud.group import (delete_group, get_group, get_groups,
-                                   update_group)
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
 from bonsai_api.crud.sample import get_samples_summary
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
-                                     get_database, get_request_context)
+from bonsai_api.dependencies import (
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (DEFAULT_COLUMNS, GroupInCreate,
-                                     GroupInfoDatabase, SampleTableColumnInput,
-                                     pred_res_cols, qc_cols)
+from bonsai_api.models.group import (
+    DEFAULT_COLUMNS,
+    GroupInCreate,
+    GroupInfoDatabase,
+    SampleTableColumnInput,
+    pred_res_cols,
+    qc_cols,
+)
+from bonsai_api.models.memberships import SampleGroupLink
 from bonsai_api.models.user import UserOutputDatabase
-from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
-                     status)
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
 from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
@@ -86,7 +93,7 @@ async def get_groups_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    groups = await get_groups(db)
+    groups = await crud_gr.get_groups(db)
     return groups
 
 
@@ -107,7 +114,7 @@ async def create_group(
 ):
     """Create a new group document in the database"""
     try:
-        result = await create_group_record(db, group_info, req_ctx, audit_log)
+        result = await crud_gr.create_group(db, group_info, req_ctx, audit_log)
     except DuplicateKeyError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -130,7 +137,7 @@ async def get_group_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await get_group(db, group_id, lookup_samples=lookup_samples)
+    group = await crud_gr.get_group(db, group_id, lookup_samples=lookup_samples)
     return group
 
 
@@ -150,7 +157,7 @@ async def delete_group_from_db(
 ):
     """Delete a group from the database."""
     try:
-        result = await delete_group(db, group_id, req_ctx, audit_log)
+        result = await crud_gr.delete_group(db, group_id, req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -173,8 +180,9 @@ async def update_group_info(
 ):
     """Update information of an group in the database."""
     # cast input information as group db object
+    # TODO define which parameters that are allowed to change
     try:
-        await update_group(db, group_id, group_info, req_ctx, audit_log)
+        await crud_gr.update_group(db, group_id, group_info, req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -202,9 +210,10 @@ async def add_samples_to_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        await crud_group.add_samples_to_group(
-            db, group_id, sample_ids, req_ctx, audit_log
-        )
+        links = [
+            SampleGroupLink(sample_id=sid, group_ids=[group_id]) for sid in sample_ids
+        ]
+        await crud_mem.add_memberships(db, links)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -237,9 +246,10 @@ async def remove_sample_from_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        await crud_group.remove_samples_from_group(
-            db, group_id, sample_ids, req_ctx, audit_log
-        )
+        links = [
+            SampleGroupLink(sample_id=sid, group_ids=[group_id]) for sid in sample_ids
+        ]
+        await crud_mem.remove_memberships(db, links)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -265,7 +275,7 @@ async def get_columns_for_group(
 ):
     """Get information of the number of samples per group loaded into the database."""
     group_obj = GroupInfoDatabase.model_validate(
-        await get_group(db, group_id, lookup_samples=False)
+        await crud_gr.get_group(db, group_id, lookup_samples=False)
     )
     columns = await build_column_definitions(
         group_obj=group_obj, include_metadata=True, db=db
@@ -293,7 +303,7 @@ async def get_samples_in_group(
     """Get basic prediction results of all samples in a group."""
     # get group info
     try:
-        group = await get_group(db, group_id, lookup_samples=False)
+        memberships = await crud_mem.get_samples_by_group_ids(db, [group_id])
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -302,7 +312,7 @@ async def get_samples_in_group(
     # query samples
     db_obj: MultipleRecordsResponseModel = await get_samples_summary(
         db,
-        include_samples=group.included_samples,
+        include_samples=memberships[0].sample_ids,
         limit=limit,
         skip=skip,
         prediction_result=prediction_result,
