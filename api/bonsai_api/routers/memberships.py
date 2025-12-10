@@ -2,14 +2,13 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
-
+from bonsai_api.crud.memberships import get_samples_group_membership
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
-from bonsai_api.routers.shared import RouterTags
-from bonsai_api.crud.memberships import get_samples_group_membership
 from bonsai_api.models.memberships import MembershipsQueryResponse
 from bonsai_api.models.user import UserOutputDatabase
+from bonsai_api.routers.shared import RouterTags
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
 LOG = logging.getLogger(__name__)
 
@@ -31,32 +30,32 @@ async def get_group_membership(
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-    sids: list[str] = Query(
-        None, description="Sample IDs to check group membership"
+    sample_ids: list[str] = Query(
+        None, alias="s", description="Sample IDs to check group membership"
     ),
-    gids: list[str] = Query(
-        None, description="Check samples that are members of groups with IDs"
+    group_ids: list[str] = Query(
+        None, alias="g", description="Check samples that are members of groups with IDs"
     ),
 ):
     """Get group membership for multiple samples."""
-    if sids and gids:
+    if sample_ids and group_ids:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail="You must provide either sample IDs or group IDs."
+            detail="You must provide either sample IDs or group IDs.",
         )
 
-    if not sids and not gids:
+    if not sample_ids and not group_ids:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
-            detail="Neither sample IDs nor group IDs provided."
+            detail="Neither sample IDs nor group IDs provided.",
         )
 
     max_ids = 100
-    if len(sids) > max_ids:
+    if len(sample_ids) > max_ids:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Too many IDs provided ({len(sids)}). Maximum allowed is {max_ids}.",
+            detail=f"Too many IDs provided ({len(sample_ids)}). Maximum allowed is {max_ids}.",
         )
 
-    memberships = await get_samples_group_membership(db, sids)
+    memberships = await get_samples_group_membership(db, sample_ids)
     return memberships
