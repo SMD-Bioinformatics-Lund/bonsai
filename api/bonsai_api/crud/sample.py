@@ -217,21 +217,27 @@ async def get_samples_summary(
     if isinstance(include_samples, list) and len(include_samples) > 0:
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
 
-    # Lookup group membership and return a flat array of groups as `in_groups`.
-    pipeline.append(
+    # Lookup group information and return group display name
+    pipeline.extend([
         {
             "$lookup": {
-                "from": db.sample_group_membership_collection.name,
-                "let": {"sample_id": "$sample_id"},
-                "pipeline": [
-                    {"$match": {"$expr": {"$eq": ["$sample_id", "$$sample_id"]}}},
-                    {"$unwind": "$groups"},
-                    {"$replaceRoot": {"newRoot": "$groups"}},
-                ],
-                "as": "in_groups",
+                "from": db.sample_group_collection.name,
+                "localField": "groups",
+                "foreignField": "group_id",
+                "as": "groups_meta",
             }
-        }
-    )
+        },
+        {"$addFields": {
+            "groups_info": {
+                "$map": {
+                    "input": "$groups_meta",
+                    "as": "g",
+                    "in": {"id": "$$g.group_id", "display_name": "$$g.display_name"},
+                }
+            }
+        }},
+        {"$project": {"groups_meta": 0}}
+    ])
 
     # species prediction projection
     # get the first entry of the bracken result
@@ -267,7 +273,7 @@ async def get_samples_summary(
         "sequencing_run": "$sequencing.run_id",
         "qc_status": 1,
         "metadata": 1,
-        "in_groups": "$in_groups",
+        "groups_info": 1,
         "species_prediction": spp_cmd,
         "created_at": 1,
         "profile": "$pipeline.analysis_profile",

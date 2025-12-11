@@ -52,12 +52,12 @@ VALID_BASE_COLS: list[SampleTableColumnInput] = [
         sortable=True,
     ),
     SampleTableColumnInput(
-        id="in_groups",
-        label="In groups",
-        path="$.in_groups",
+        id="groups_info",
+        label="Groups",
+        path="$.groups_info",
         sortable=False,
         type="custom",
-        renderer="in_groups_renderer",
+        renderer="groups_info_renderer",
     ),
 ]
 
@@ -259,7 +259,7 @@ DEFAULT_COLUMNS: list[str] = [
     "sample_btn",
     "sample_id",
     "sample_name",
-    "in_groups",
+    "groups_info",
     "tags",
     "assay",
     "taxonomic_name",

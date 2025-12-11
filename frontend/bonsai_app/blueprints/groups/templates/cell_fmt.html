@@ -138,11 +138,11 @@
     <td>{{ cell_info | join(', ') }}</td>
 {% endmacro %}
 
-{% macro in_groups_renderer(cell_info) %}
+{% macro groups_info_renderer(cell_info) %}
     <td>
     {% for gr in cell_info %}
         <span class="me-1">
-            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.group_id, bg_color="info") }}
+            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.id, bg_color="info") }}
         </span>
     {% endfor %}
     </td>
