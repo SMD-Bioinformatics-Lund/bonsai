@@ -1,5 +1,5 @@
 import { emitEvent } from "../utils/event-bus";
-import { GroupInfo, SampleGroupMembership } from "../types";
+import { GroupInfo, MembershipInfo } from "../types";
 import { ChoiceSelect } from "../utils/choice-select";
 
 const template = document.createElement("template");
@@ -23,7 +23,7 @@ export class GroupSelector extends HTMLElement {
   getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
   getSelectedSamples: (() => string[]) | null = null;
   getGroupMembership:
-    | ((sampleIds: string[], signal?: AbortSignal) => Promise<SampleGroupMembership[]>)
+    | ((sampleIds: string[], signal?: AbortSignal) => Promise<MembershipInfo[]>)
     | null = null;
   addToGroup: ((groupId: string, sampleIds: string[]) => Promise<void>) | null = null;
 
@@ -39,7 +39,7 @@ export class GroupSelector extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadow = this.shadowRoot!;
     this.shadow.appendChild(template.content.cloneNode(true));
-    this.selector = this.shadow.getElementById("groups");
+    this.selector = this.shadow.getElementById("groups") as ChoiceSelect;
     this.applyBtn = this.shadow.getElementById("apply") as HTMLButtonElement;
     this.clearBtn = this.shadow.getElementById("clear") as HTMLButtonElement;
   }
