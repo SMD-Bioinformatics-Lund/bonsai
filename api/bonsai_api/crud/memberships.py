@@ -226,7 +226,7 @@ async def get_groups_by_sample_ids(
     if not sample_ids:
         return []
 
-    cursor = await db.sample_collection.find(
+    cursor = db.sample_collection.find(
         {"sample_id": {"$in": sample_ids}},
         {"_id": 0, "sample_id": 1, "groups": 1},
         session=session,
