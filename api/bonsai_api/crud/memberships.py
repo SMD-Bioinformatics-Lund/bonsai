@@ -148,9 +148,9 @@ async def _mutate_memberships(
     await _check_exists(db, sample_ids, group_ids, session=session)
 
     # 2. Fetch existing memberships for the samples implicated
-    sid_edges = await get_groups_by_sample_ids(db, sample_ids, session=session)
+    sid_edges = await get_groups_by_sample_ids(sample_ids, db=db, session=session)
     present: dict[str, set[str]] = {
-        sid: set(gids) for sid, gids in groupby(sid_edges, lambda e: e.sample_id)
+        sid: {e.group_id for e in edges} for sid, edges in groupby(sid_edges, lambda e: e.sample_id)
     }
 
     # 3. Compute new edges that shall to be added
