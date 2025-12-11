@@ -6,9 +6,10 @@ import {
   ApiJobSubmission,
   ApiFindSimilarInput,
   GroupInfo,
-  SampleGroupMembership,
+  MembershipInfo,
   ApiUserInfo,
   ApiSampleQcStatus,
+  MembershipEdges,
 } from "./types";
 import { JobStatusEnum, TypingMethod } from "./constants";
 
@@ -211,9 +212,19 @@ export class ApiService {
     );
   };
 
-  getSampleGroupMemberships = async (sampleIds: string[], signal?: AbortSignal) => {
-    return this.http.request<SampleGroupMembership>(
-      `/samples/group-memberships?${objectToQueryParams({ ids: sampleIds })}`,
+  getMembershipByGroups = async (groupIds: string[], signal?: AbortSignal) => {
+    return this.http.request<MembershipEdges>(
+      `/memberships?${objectToQueryParams({ g: groupIds})}`,
+      {
+        method: "GET",
+        signal,
+      },
+    );
+  };
+
+  getMembershipsBySamples = async (sampleIds: string[], signal?: AbortSignal) => {
+    return this.http.request<MembershipEdges>(
+      `/memberships?${objectToQueryParams({ s: sampleIds })}`,
       {
         method: "GET",
         signal,

@@ -105,6 +105,8 @@ export interface ApiUserInfo {
   authentication_method: string;
 }
 
+export type MembershipEdge = {sample_id: string, group_id: string};
+export type MembershipEdges = MembershipEdge[];
+
 export type CallbackFunc = (ids: string[]) => void;
 export type TblStateCallbackFunc = (selectedRows: string[]) => void;
-export type SampleGroupMembership = Record<string, string[]>;
