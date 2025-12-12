@@ -197,6 +197,7 @@ async def update_group_info(
     "/groups/{group_id}/samples",
     status_code=status.HTTP_200_OK,
     tags=[RouterTags.GROUP],
+    deprecated=True,
 )
 async def add_samples_to_group(
     group_id: str = Path(..., title="The id of the group to get"),
