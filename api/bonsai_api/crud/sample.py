@@ -203,7 +203,7 @@ QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
 ]
 
 
-async def get_samples_summary(
+async def get_samples_summary_v1(
     db: Database,
     limit: int | None = None,
     skip: int | None = None,
