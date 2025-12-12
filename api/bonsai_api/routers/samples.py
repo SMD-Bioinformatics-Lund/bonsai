@@ -15,7 +15,7 @@ from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
     get_sample,
-    get_samples_summary,
+    get_samples_summary_v1,
 )
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
@@ -138,7 +138,7 @@ class ApiGetSamplesDetailsInput(BaseModel):
     tags=[RouterTags.SAMPLE],
     deprecated=True
 )
-async def samples_summary(
+async def samples_summary_v1(
     query: ApiGetSamplesDetailsInput,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -146,7 +146,7 @@ async def samples_summary(
     ),
 ):
     """Entrypoint for getting a summary for multiple samples."""
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
+    db_obj: MultipleRecordsResponseModel = await get_samples_summary_v1(
         db,
         limit=query.limit,
         skip=query.skip,
