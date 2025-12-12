@@ -2,7 +2,7 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Literal, Sequence
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
@@ -16,6 +16,7 @@ from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from prp.parse.typing import replace_cgmlst_errors
 from pydantic import ValidationError
 from pymongo.asynchronous.cursor import AsyncCursor
+from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
 
 from ..crud.location import get_location
@@ -25,11 +26,17 @@ from ..models.antibiotics import ANTIBIOTICS
 from ..models.base import MultipleRecordsResponseModel, RWModel
 from ..models.location import LocationOutputDatabase
 from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (Comment, CommentInDatabase,
-                             MultipleSampleRecordsResponseModel,
-                             SampleInCreate, SampleInDatabase)
-from ..redis.minhash import (schedule_remove_genome_signature,
-                             schedule_remove_genome_signature_from_index)
+from ..models.sample import (
+    Comment,
+    CommentInDatabase,
+    MultipleSampleRecordsResponseModel,
+    SampleInCreate,
+    SampleInDatabase,
+)
+from ..redis.minhash import (
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
+)
 from ..utils import format_error_message, get_timestamp
 from .errors import DatabaseOperationError, EntryNotFound
 
@@ -59,6 +66,51 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 
 TypingProfileOutput = list[TypingProfileAggregate]
+
+
+def _build_group_info_lookup(db: Database) -> list[dict[str, Any]]:
+    """Build query for looking up groups."""
+    return [
+        {
+            "$lookup": {
+                "from": db.sample_group_collection.name,
+                "localField": "groups",
+                "foreignField": "group_id",
+                "as": "groups_meta",
+            }
+        },
+        {
+            "$addFields": {
+                "groups_info": {
+                    "$map": {
+                        "input": "$groups_meta",
+                        "as": "g",
+                        "in": {
+                            "id": "$$g.group_id",
+                            "display_name": "$$g.display_name",
+                        },
+                    }
+                }
+            }
+        },
+        {"$project": {"groups_meta": 0}},
+    ]
+
+
+SUMMARIZE_SPP_PRED = [
+    {
+        "$addFields": {
+            "bracken": {
+                "$cond": {
+                    "if": {"$in": ["bracken", "$species_prediction.software"]},
+                    "then": {"$arrayElemAt": ["$species_prediction", 0]},
+                    "else": None,
+                }
+            },
+        },
+    },
+]
+
 
 PREDICTION_SUMMARY_QUERY: list[dict[str, Any]] = [
     {
@@ -218,26 +270,33 @@ async def get_samples_summary_v1(
         pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
 
     # Lookup group information and return group display name
-    pipeline.extend([
-        {
-            "$lookup": {
-                "from": db.sample_group_collection.name,
-                "localField": "groups",
-                "foreignField": "group_id",
-                "as": "groups_meta",
-            }
-        },
-        {"$addFields": {
-            "groups_info": {
-                "$map": {
-                    "input": "$groups_meta",
-                    "as": "g",
-                    "in": {"id": "$$g.group_id", "display_name": "$$g.display_name"},
+    pipeline.extend(
+        [
+            {
+                "$lookup": {
+                    "from": db.sample_group_collection.name,
+                    "localField": "groups",
+                    "foreignField": "group_id",
+                    "as": "groups_meta",
                 }
-            }
-        }},
-        {"$project": {"groups_meta": 0}}
-    ])
+            },
+            {
+                "$addFields": {
+                    "groups_info": {
+                        "$map": {
+                            "input": "$groups_meta",
+                            "as": "g",
+                            "in": {
+                                "id": "$$g.group_id",
+                                "display_name": "$$g.display_name",
+                            },
+                        }
+                    }
+                }
+            },
+            {"$project": {"groups_meta": 0}},
+        ]
+    )
 
     # species prediction projection
     # get the first entry of the bracken result
@@ -349,6 +408,204 @@ async def get_samples_summary_v1(
         )
     LOG.warning("Response: %s", [col.keys() for col in query_response.data])
     return query_response
+
+
+async def list_samples_service(
+    db: Database,
+    *,
+    group_id: str | None = None,
+    sids: list[str] | None = None,
+    view: Literal["summary", "full"],
+    fields: list[str] | None,
+    sort: str,
+    limit: int,
+    offset: int | None = None,
+    cursor: str | None = None,
+    expand: set[str] | None = None,
+) -> MultipleRecordsResponseModel:
+    """Determine CRUD function to use for querying for sample info."""
+    match = {}
+    if group_id:
+        match["group_id"] = group_id
+    if sids:
+        match["sample_id"] = {"$in": sids}
+
+    use_aggregation = (
+        view == "summary"
+        or (expand and len(expand) > 0)  # if heavy fields should be included
+        or ("id" in fields)
+        or cursor is not None
+    )
+
+    if use_aggregation:
+        return await get_samples_summary_v2(
+            db=db,
+            match=match,
+            fields=fields,
+            sort=sort,
+            limit=limit,
+            offset=offset,
+            cursor=cursor,
+            expand=expand or set(),
+        )
+    else:
+        return await get_samples_full(
+            db=db, match=match, fields=fields, sort=sort, limit=limit, offset=offset
+        )
+
+
+async def get_samples_summary_v2(
+    db: Database,
+    *,
+    match: dict[str, Any],
+    fields: list[str] | None,
+    sort: str,
+    limit: int,
+    offset: int | None = None,
+    cursor: str | None = None,
+    expand: set[str],
+):
+    """Get summarized sample information."""
+    pipeline: list[dict[str, Any]] = []
+    if match:
+        pipeline.append({"$match": match})
+
+    # add stable sorting to facilitate offset
+    sort_fields = "-created_at" if not sort else sort
+    sort_dir = DESCENDING if sort_fields.startswith("-") else ASCENDING
+    key = sort_fields[1:] if sort_fields.startswith("-") else sort_fields
+    allowed_sort_fields = {
+        "created_at": "created_at",
+        "modified_at": "modified_at",
+        "id": "_id",
+        "sample_id": "sample_id",
+    }
+    if key not in allowed_sort_fields:
+        raise ValueError(f"Unsupported sort: {key}")
+    pipeline.append({"$sort": {allowed_sort_fields[key]: sort_dir}})
+
+    # Lookup group information and return group display name
+    pipeline.extend(_build_group_info_lookup(db))
+    pipeline.extend(QC_METRICS_SUMMARY_QUERY)
+    pipeline.extend(PREDICTION_SUMMARY_QUERY)
+    pipeline.extend(SUMMARIZE_SPP_PRED)
+
+    # Compute projection, default return all fields
+    projection = {
+        "_id": 0,
+        "assay": "$pipeline.assay",
+        "classification": "$pipeline.assay",
+        "comments": 1,
+        "created_at": 1,
+        "groups_info": 1,
+        "id": {"$toString": "$_id"},
+        "lims_id": 1,
+        "metadata": 1,
+        "missing_cgmlst_loci": "$cgmlst.result.n_missing",
+        "mlst": "$mlst.result.sequence_type",
+        "n_records": 1,
+        "oh_type": 1,
+        "platform": "$sequencing.platform",
+        "postalignqc": "$postalignqc.result",
+        "profile": "$pipeline.analysis_profile",
+        "qc_status": 1,
+        "quast": "$quast.result",
+        "release_life_cycle": "$pipeline.release_life_cycle",
+        "sample_id": 1,
+        "sample_name": 1,
+        "sequencing_run": "$sequencing.run_id",
+        "species_prediction": {"$arrayElemAt": ["$bracken.result", 0]},
+        "bracken": {"$arrayElemAt": ["$bracken.result", 0]},
+        "stx": 1,
+        "tags": 1,
+    }
+
+    # Fields whitelist fileds (after building the base projection)
+    if fields:
+        keep = set(fields) | {"id", "_id"}  # always keep id and strip _id
+        projection = {k: v for k, v in projection.items() if k in keep}
+
+    pipeline.append({"$project": projection})
+
+    # manage skip, limit and offset
+    data_pipe: list[dict[str, Any]] = []
+    if offset and offset > 0:
+        data_pipe.append({"$skip": offset})
+    if limit and limit > 0:
+        data_pipe.append({"$limit": limit})
+
+    pipeline.append(
+        {
+            "$facet": {
+                "data": data_pipe or [{"$match": match}],
+                "records_total": [{"$count": "count"}],
+            }
+        },
+    )
+
+    # query database for the number of samples
+    cursor = await db.sample_collection.aggregate(pipeline)
+    res = await cursor.to_list(None)
+    if not res:
+        return MultipleRecordsResponseModel(data=[], records_total=0)
+    facet = res[0]
+    total = (
+        0 if not facet.get("records_total") else facet["records_total"][0].get("count")
+    )
+    return MultipleRecordsResponseModel(data=facet["data"], records_total=total)
+
+
+async def get_samples_full(
+    db: Database,
+    *,
+    match: dict[str, Any],
+    fields: list[str] | None,
+    sort: str,
+    limit: int,
+    offset: int | None,
+) -> MultipleRecordsResponseModel:
+    """Get full sample info with optional projections."""
+    allowed_fields = {
+        "sample_id": 1,
+        "sample_name": 1,
+        "metadata": 1,
+        "groups": 1,
+        "species_prediction": 1,
+        "pipeline": 1,
+        "tags": 1,
+        "comments": 1,
+        "created_at": 1,
+        "lims_id": 1,
+        "sequencing": 1,
+        "qc_status": 1,
+        "typing_results": 1,
+        "element_type_results": 1,
+    }
+
+    # build an inclusion projection (1 for requested fields)
+    projection: dict[str, int] = {"_id": 0}
+    if fields:
+        additonal_fields = {f: allowed_fields[f] for f in fields if f in allowed_fields}
+        projection.update(additonal_fields)
+
+    # Sort
+    sort_dir = DESCENDING if sort.startswith("-") else ASCENDING
+    sort_key = sort[1:] if sort.startswith("-") else sort
+    allowed_sorts = {"created_at": "created_at", "_id": "_id", "sample_id": "sample_id"}
+    if sort_key not in allowed_sorts:
+        raise ValueError(f"Unsupported sort: {sort_key}")
+    sort_tuple = [(allowed_sorts[sort_key], sort_dir), ("_id", sort_dir)]
+
+    # Query
+    cursor = db.sample_collection.find(match, projection).sort(sort_tuple)
+    if offset and offset > 0:
+        cursor = cursor.skip(offset)
+    if limit and limit > 0:
+        cursor = cursor.limit(limit)
+
+    data = await cursor.to_list(None)
+    total = await db.sample_collection.count_documents(match)
+    return MultipleRecordsResponseModel(data=data, records_total=total)
 
 
 async def get_samples(

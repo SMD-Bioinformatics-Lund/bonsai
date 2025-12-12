@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Union, cast
+from typing import Annotated, Any, Literal, Union, cast
 
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
@@ -10,6 +10,7 @@ from bonsai_api.crud.sample import (
     EntryNotFound,
     add_comment,
     add_location,
+    list_samples_service,
 )
 from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
@@ -155,6 +156,66 @@ async def samples_summary_v1(
         qc_metrics=query.qc_metrics,
     )
     return db_obj
+
+
+class SamplesQueryBody(BaseModel):
+    """Input parameters for getting sample details."""
+
+    group_id: str | None = None
+    sid: list[str] | None = Field(
+        None, description="Optional limit query to samples ids"
+    )
+    view: Literal["summary", "full"] = "summary"
+    fields: list[str] | None = None
+    sort: str = "-created_at"
+    limit: int = Field(
+        default=50, ge=0, title="Limit the output to x samples"
+    )
+    offset: int = Field(0, ge=0)
+    cursor: str | None = None
+
+
+@router.post("/samples/query")
+async def query_samples(
+    body: SamplesQueryBody,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
+):
+    """Get samples."""
+    if body.cursor and body.offset:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Got both cursor and offset, provide only one.")
+    try:
+        return await list_samples_service(db, group_id=body.group_id, sids=body.sid, view=body.view, fields=body.fields, sort=body.sort, limit=body.limit, offset=body.offset, cursor=body.cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+
+@router.get("/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel)
+async def list_samples(
+    group_id: str | None = Query(None, description="Filter group by ID"),
+    sid: list[str] | None = Query(None, description="Fileter by sample ids (Use POST for large sets)"),
+    view: Literal["summary", "full"] = Query("summary", description="Return computed summary or the full document"),
+    fields: list[str] | None = Query(None, description="Fields to include in response"),
+    sort: str = Query("-created_at"),
+    limit: int = Query(50, ge=0),
+    offset: int = Query(0, ge=0),
+    cursor: str | None = Query(None),
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Get samples from the database. It can return either the full or summarized sample information."""
+    if cursor and offset:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Got both cursor and offset, provide only one.")
+    try:
+        return await list_samples_service(db, group_id=group_id, sids=sid, view=view, fields=fields, sort=sort, limit=limit, offset=offset, cursor=cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])

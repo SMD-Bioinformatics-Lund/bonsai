@@ -1,12 +1,11 @@
 """Entrypoints for getting group data."""
 
-from itertools import groupby
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.crud.sample import get_samples_summary
+from bonsai_api.crud.sample import get_samples_summary_v1
 from bonsai_api.crud.memberships import get_samples_by_group_ids
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -317,7 +316,7 @@ async def get_samples_in_group(
         ) from error
     # query samples
     samples_in_group = [edge.sample_id for edge in memberships_edges]
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
+    db_obj: MultipleRecordsResponseModel = await get_samples_summary_v1(
         db,
         include_samples=samples_in_group,
         limit=limit,
