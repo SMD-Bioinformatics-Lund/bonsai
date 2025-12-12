@@ -136,6 +136,7 @@ class ApiGetSamplesDetailsInput(BaseModel):
     response_model_by_alias=False,
     response_model=MultipleRecordsResponseModel,
     tags=[RouterTags.SAMPLE],
+    deprecated=True
 )
 async def samples_summary(
     query: ApiGetSamplesDetailsInput,
