@@ -1,6 +1,6 @@
 """Data model definition of input/ output data"""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
 from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
