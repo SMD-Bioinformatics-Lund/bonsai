@@ -2,7 +2,7 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Dict, Literal, Sequence
+from typing import Any, Dict, Literal, Sequence, TypeAlias
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
@@ -44,6 +44,10 @@ LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
 
 
+PipelineStages: TypeAlias = list[dict[str, Any]]
+PipelineProjection: TypeAlias = dict[str, int | str]
+
+
 class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
@@ -68,7 +72,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 TypingProfileOutput = list[TypingProfileAggregate]
 
 
-def _build_group_info_lookup(db: Database) -> list[dict[str, Any]]:
+def _build_group_info_lookup(db: Database) -> PipelineStages:
     """Build query for looking up groups."""
     return [
         {
@@ -95,6 +99,138 @@ def _build_group_info_lookup(db: Database) -> list[dict[str, Any]]:
         },
         {"$project": {"groups_meta": 0}},
     ]
+
+
+def _build_get_software_stage(tool: str, field_name: str) -> PipelineStages:
+    """Build a pipeline stage for getting result for software.
+    
+    Query the mongo field `field_name` for `software` and get the `idx_no` entry in the result.
+    """
+    return [
+        {
+            "$addFields": {
+                f"_{tool}_entry": {
+                    "$arrayElemAt": [
+                        {
+                            "$filter": {
+                                "input": { "$ifNull": [ f"${field_name}", [] ] },
+                                "as": "x",
+                                "cond": { "$eq": [ "$$x.software", tool ] }
+                            }
+                        },
+                        0
+                    ]
+                }
+            }
+        },
+        # Result array (if present; otherwise [])
+        {
+            "$addFields": {
+                (tool): { "$ifNull": [ f"$_{tool}_entry", { "software": tool, "result": [] } ] }
+            }
+        },
+        { "$unset": [ f"_{tool}_entry" ] }
+    ]
+
+
+def _build_flatten_results_stage(field_name: str) -> PipelineStages:
+    """Build stage that flattens results.
+    
+    {filed_name: {foo: 12, bar: 25}} -> {field_name_foo: 12, field_name_bar: 25}
+    """
+    return [
+        {
+            "$addFields": { 
+                f"{field_name}_prefixed": { 
+                    "$map": {
+                         "input": {"$objectToArray": { "$ifNull": [ f"${field_name}.result", {}] }}, 
+                         "as": "kv", 
+                         "in": { "k": { "$concat": [{ "$toLower": { "$ifNull": [ f"${field_name}.software", field_name ]}}, "_", "$$kv.k"] }, "v": "$$kv.v" }, 
+                    }
+                }
+            }
+        },
+        {
+            "$addFields": { 
+                f"{field_name}_merged": { 
+                    "$arrayToObject": { 
+                        "$ifNull": [f"${field_name}_prefixed", [] ] 
+                    }
+                }
+            }
+        },
+        {
+            "$replaceRoot": {
+                "newRoot": {
+                    "$mergeObjects": [ "$$ROOT", f"${field_name}_merged" ]
+                }
+            }
+        },
+        { "$unset": [f"{field_name}_prefixed", f"{field_name}_merged", field_name] }
+    ]
+
+
+def _build_tool_result_summary(*, tool: str, source_array: str, hit: int = 0, flatten_to_root: bool = False, keep_tool_object: bool = False) -> PipelineStages:
+    """
+    Build aggregation stages that:
+      1) Select the entry from `source_array` where `software == tool`,
+      2) Replace its `result` array with the n-th element (`hit`),
+      3) Either:
+         - Flatten the result object into top-level fields prefixed with the software name
+           (e.g., `bracken_scientific_name`) when `flatten_to_root=True`,
+         - OR put the single result object under the tool name at the top level
+           (e.g., `bracken: { ... }`) when `flatten_to_root=False`.
+    
+    Expected input shape per document:
+      {
+        "<source_array>": [
+          { "software": "<tool>", "result": [ { <field_1>: <...>, <field_2>: <...> }, ... ] },
+          ...
+        ]
+      }
+    
+    Output (examples):
+      - flatten_to_root=True  ->  { "bracken_scientific_name": "...", "bracken_taxonomy_id": 1314, ... }
+      - flatten_to_root=False ->  { "bracken": { "scientific_name": "...", "taxonomy_id": 1314, ... } }
+      - keep_tool_object=True ->  { "bracken": { "software": "bracken", "result": { ... } } }  (and optionally also flattened keys)
+    
+    Args:
+        tool:             Name of the software/tool to select (e.g., "bracken").
+        source_array:     Path to the array of entries (e.g., "species_prediction" or "qc").
+        hit:              Zero-based index into the `result` array of the selected entry.
+        flatten_to_root:  If True, flatten result fields to root with `<tool>_` prefix.
+        keep_tool_object: If True and `flatten_to_root` is True, keep the `{software, result}` object
+                          in addition to flattened fields; otherwise the tool field is unset.
+    
+    Returns:
+        A list of MongoDB aggregation pipeline stages.
+
+    """
+    stages: PipelineStages = []
+    stages.extend(_build_get_software_stage(tool=tool, field_name=source_array))
+    # get the most abundant speice in sample
+    stages.append({
+        "$addFields": {
+            f"{tool}.result": {
+                "$cond": [
+                    { "$gt": [ { "$size": { "$ifNull": [ f"${tool}.result", [] ] } }, hit ] },
+                    { "$arrayElemAt": [ f"${tool}.result", hit ] },
+                    {}  # return an empty object to make flattening safe
+                ]
+            }
+        }
+    })
+    # flatten result
+    if flatten_to_root:
+        flatten_stage = _build_flatten_results_stage(tool)
+        stages.extend(flatten_stage)
+        if not keep_tool_object:
+            stages.append({"$unset": [ tool ]})
+    else:
+        # Keep only the single result under the tool name
+        stages.append({"$addFields": {tool: { "$ifNull": [f"${tool}.result", {} ] }}})
+    
+    return stages
 
 
 SUMMARIZE_SPP_PRED = [
@@ -487,8 +623,11 @@ async def get_samples_summary_v2(
     # Lookup group information and return group display name
     pipeline.extend(_build_group_info_lookup(db))
     pipeline.extend(QC_METRICS_SUMMARY_QUERY)
-    pipeline.extend(PREDICTION_SUMMARY_QUERY)
+    #pipeline.extend(PREDICTION_SUMMARY_QUERY)
     pipeline.extend(SUMMARIZE_SPP_PRED)
+
+    spp_stages = _build_tool_result_summary(tool="bracken", source_array="species_prediction", flatten_to_root=False)
+    pipeline.extend(spp_stages)
 
     # Compute projection, default return all fields
     projection = {
@@ -514,8 +653,7 @@ async def get_samples_summary_v2(
         "sample_id": 1,
         "sample_name": 1,
         "sequencing_run": "$sequencing.run_id",
-        "species_prediction": {"$arrayElemAt": ["$bracken.result", 0]},
-        "bracken": {"$arrayElemAt": ["$bracken.result", 0]},
+        "species_prediction": "$bracken",
         "stx": 1,
         "tags": 1,
     }
@@ -524,8 +662,9 @@ async def get_samples_summary_v2(
     if fields:
         keep = set(fields) | {"id", "_id"}  # always keep id and strip _id
         projection = {k: v for k, v in projection.items() if k in keep}
+    #pipeline.append({"$project": projection})
+    pipeline.append({"$project": {"_id": 0, "typing_result": 0, "qc": 0, "element_type_result": 0, "pipeline": 0}})
 
-    pipeline.append({"$project": projection})
 
     # manage skip, limit and offset
     data_pipe: list[dict[str, Any]] = []
