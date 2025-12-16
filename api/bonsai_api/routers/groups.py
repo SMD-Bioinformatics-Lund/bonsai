@@ -213,7 +213,7 @@ async def add_samples_to_group(
     """Add one or more samples to a group"""
     # cast input information as group db object
     try:
-        # reformat the request to edges and perofrm mutation
+        # reformat the request to edges and perform mutation
         edges = [
             MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
         ]
