@@ -249,7 +249,7 @@ def get_samples(
     If sample_ids is provided it will return only those samples.
     """
     # conduct query
-    url = f"{settings.api_internal_url}/samples/summary"
+    url = f"{settings.api_internal_url}/samples/query"
     # get limit, offeset and skip values
     if sample_ids is not None:
         # sanity check list
@@ -264,6 +264,16 @@ def get_samples(
         resp.raise_for_status()
     except requests.HTTPError:
         print(resp.text)
+    return resp.json()
+
+
+@api_authentication
+def get_valid_summary_columns(headers: CaseInsensitiveDict[str]):
+    """Query API for valid group columns."""
+    resp = requests_get(
+        f"{settings.api_internal_url}/samples/query/manifest", headers=headers
+    )
+    resp.raise_for_status()
     return resp.json()
 
 

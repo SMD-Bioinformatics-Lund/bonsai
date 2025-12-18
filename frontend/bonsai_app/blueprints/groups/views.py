@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from bonsai_app.bonsai import (TokenObject, create_group, delete_group,
                                get_group_by_id, get_groups, get_samples,
-                               get_samples_in_group, get_valid_group_columns,
+                               get_samples_in_group, get_valid_group_columns, get_valid_summary_columns,
                                update_group, update_sample_qc_classification)
 from bonsai_app.models import (BadSampleQualityAction, PhenotypeType,
                                QualityControlResult)
@@ -49,8 +49,8 @@ def groups() -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    col_def = get_valid_group_columns(token)
-    table_data = format_tablular_data(samples_info["data"], col_def)
+    manifest = get_valid_summary_columns(token)
+    table_data = format_tablular_data(samples_info["data"], manifest['columns'])
 
     return render_template(
         "groups.html",
