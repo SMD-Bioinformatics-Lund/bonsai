@@ -194,7 +194,7 @@ async def query_samples(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
-@router.post("/samples/query/manifest")
+@router.get("/samples/query/manifest")
 async def get_summary_manifest():
     """Get valid fields for the sample summary."""
     public = ManifestOutput.from_internals(MANIFEST)
