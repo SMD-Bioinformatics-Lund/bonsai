@@ -133,6 +133,7 @@ class ManifestOutput(BaseModel):
                 id=col.id,
                 label=col.label,
                 source=col.source,
+                type=col.type,
                 default_visible=col.default_visible,
                 filterable=col.filterable,
                 sortable=col.sortable
