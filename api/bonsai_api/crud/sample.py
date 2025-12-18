@@ -2,8 +2,10 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Literal, Sequence, TypeAlias
+from typing import Any, Literal, Sequence
 
+from bonsai_api.crud.summary.crud import get_samples_summary
+from bonsai_api.crud.summary.spec import MANIFEST
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject
@@ -18,34 +20,29 @@ from pydantic import ValidationError
 from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
 
-from ..crud.location import get_location
-from ..crud.tags import compute_phenotype_tags
-from ..db import Database
-from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import MultipleRecordsResponseModel, RWModel
-from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (
+from bonsai_api.crud.location import get_location
+from bonsai_api.crud.tags import compute_phenotype_tags
+from bonsai_api.db import Database
+from bonsai_api.models.antibiotics import ANTIBIOTICS
+from bonsai_api.models.base import MultipleRecordsResponseModel, RWModel
+from bonsai_api.models.location import LocationOutputDatabase
+from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.sample import (
     Comment,
     CommentInDatabase,
     MultipleSampleRecordsResponseModel,
     SampleInCreate,
     SampleInDatabase,
 )
-from ..redis.minhash import (
+from bonsai_api.redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
 )
-from ..utils import format_error_message, get_timestamp
+from bonsai_api.utils import format_error_message, get_timestamp
 from .errors import DatabaseOperationError, EntryNotFound
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
-
-
-PipelineStages: TypeAlias = list[dict[str, Any]]
-PipelineProjection: TypeAlias = dict[str, int | str]
-BuildOutput = Literal['tool', 'root', 'both']
 
 
 class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
@@ -70,241 +67,6 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 
 TypingProfileOutput = list[TypingProfileAggregate]
-
-
-def _build_group_info_lookup(db: Database) -> PipelineStages:
-    """Build query for looking up groups."""
-    return [
-        {
-            "$lookup": {
-                "from": db.sample_group_collection.name,
-                "localField": "groups",
-                "foreignField": "group_id",
-                "as": "groups_meta",
-            }
-        },
-        {
-            "$addFields": {
-                "groups_info": {
-                    "$map": {
-                        "input": "$groups_meta",
-                        "as": "g",
-                        "in": {
-                            "id": "$$g.group_id",
-                            "display_name": "$$g.display_name",
-                        },
-                    }
-                }
-            }
-        },
-        {"$project": {"groups_meta": 0}},
-    ]
-
-
-def _build_get_entry_stage(source_path: str, output_field: str, selector: dict[str, Any], default_result: dict[str, Any]) -> PipelineStages:
-    """
-    Select a single entry from `source_path` (which may be an array or an object)
-    where all key/value pairs in `selector` match.
-
-    - If `source_path` is an array: find first item `x` where all `selector` fields match.
-    - If `source_path` is an object: use it iff it matches `selector`.
-    - If nothing matches: emit a default entry `{**selector, result: default_result}`.
-
-    Supports simple equality and `$in` via passing list values in `selector`.
-    """
-
-    def _cond_for_array(k: str, v: Any) -> dict[str, Any]:
-        # list -> `$in`, else `$eq`
-        return {"$in": [f"$$x.{k}", v]} if isinstance(v, list) else {"$eq": [f"$$x.{k}", v]}
-
-    def _cond_for_obj(k: str, v: Any) -> dict[str, Any]:
-        return {"$in": [f"${source_path}.{k}", v]} if isinstance(v, list) else {"$eq": [f"${source_path}.{k}", v]}
-
-    array_conds = [{"$and": [_cond_for_array(k, v) for k, v in selector.items()]}] if selector else []
-    obj_conds   = [{"$and": [_cond_for_obj(k, v)   for k, v in selector.items()]}] if selector else []
-
-    # Build AND conditions for array items: "$$x.<key> == <value>"
-    array_conds = [
-        {"$eq": [ f"$$x.{fname}", val]} for fname, val in selector.items()
-    ]
-
-    # Build AND conditions for object: "$<source_path>.<key> == <value>"
-    obj_conds = [
-        {"$eq": [ f"${source_path}.{fname}", val]} for fname, val in selector.items()
-    ]
-    default_entry = { **selector, "result": default_result }
-    return [
-        # Try to select from an array
-        {
-            "$set": {
-                f"__{output_field}_sel_array": {
-                    "$arrayElemAt": [
-                        {
-                            "$filter": {
-                                "input": { 
-                                    "$cond": [ 
-                                        { "$isArray": f"${source_path}" },
-                                        f"${source_path}",
-                                        []  # not an array -> empty
-                                    ]
-                                },
-                                "as": "x",
-                                "cond": { "$and": array_conds[0] } if array_conds else True,
-                            }
-                        },
-                        0
-                    ]
-                }
-            }
-        },
-        # I its an object and matches, use the object entry
-        {
-            "$set": {
-                f"__{output_field}_sel_obj": {
-                    "$cond": [
-                        {
-                            "$and": [
-                                {"$not": {"$isArray": f"{source_path}"}},
-                                {"$ne": [f"{source_path}", None]},
-                                obj_conds[0] if obj_conds else True,
-                            ]
-                        },
-                        f"{source_path}",
-                        None
-                    ]
-                }
-            }
-        },
-        # Choose array match, else obj match else the default object
-        {
-            "$set": {
-                output_field: {
-                    "$ifNull": [
-                        {
-                            "$ifNull": [ f"$__{output_field}_sel_array", f"$__{output_field}_sel_obj" ],
-                        },
-                        default_entry
-                    ]
-                }
-            }
-        },
-        { "$unset": [ f"__{output_field}_sel_array", f"__{output_field}_sel_obj" ] }
-    ]
-
-
-def _build_flatten_results_stage(field_name: str, *, label_field: str | None = "software", static_prefix: str | None = None) -> PipelineStages:
-    """
-    Flatten `<field_name>.result` object into `<prefix>_*` keys at root.
-    `prefix` is:
-      - `static_prefix` if provided,
-      - else `lower(<field_name>.<label_field>)` if label_field is set,
-      - else `field_name` as a fallback.
-    """
-    prefix_expr = (
-        static_prefix
-        if static_prefix is not None
-        else (
-            {"$toLower": { "$ifNull": [ f"${field_name}.{label_field}", field_name ] }}
-            if label_field else field_name
-        )
-    )
-    return [
-        {
-            "$set": { 
-                f"{field_name}_prefixed": { 
-                    "$map": {
-                        "input": { "$objectToArray": { "$ifNull": [ f"${field_name}.result", {} ] } },
-                        "as": "kv",
-                        "in": {
-                            "k": { "$concat": [ prefix_expr, "_", "$$kv.k" ] },
-                            "v": "$$kv.v"
-                        }
-                    }
-                }
-            }
-        },
-        {
-            "$set": { 
-                f"{field_name}_merged": { 
-                    "$arrayToObject": { "$ifNull": [ f"${field_name}_prefixed", [] ] }
-                }
-            }
-        },
-        {
-            "$replaceRoot": {
-                "newRoot": { "$mergeObjects": [ "$$ROOT", f"${field_name}_merged" ] }
-            }
-        },
-        { "$unset": [ f"{field_name}_prefixed", f"{field_name}_merged", field_name ] }
-    ]
-
-
-def _build_result_summary(
-        *, 
-        source_path: str, 
-        selector: dict[str, Any], 
-        output_field: str | None = None,
-        hit: int = 0,
-        output: BuildOutput = "both", 
-        exclude_fields: list[str] | None = None, 
-        label_field: str | None = "software",
-        static_prefix: str | None = None,
-        default_result: Any = []
-        ) -> PipelineStages:
-    """
-    Normalize a tool entry that may live in `source_path` as either an array of entries
-    or a single object. Each entry has the shape: { software: <str>, result: <array|object> }.
-
-    Steps:
-      1) Select the entry from `source_path` (array or object) that matches `selector`.
-      2) Normalize `<output_field>.result` to a single object:
-         - if array → take the `hit`-th element (guarded), else {}
-         - if object → use as-is (or {} if null)
-      3) Optionally remove keys from the normalized result (`exclude_fields`).
-      4) Emit:
-         - "tool": keep only the normalized result under `<output_field>`
-         - "root": flatten to `<prefix>_*` at root (and remove `<output_field>`)
-         - "both": flatten to root AND keep `<output_field>` entry
-    """
-    # If not provided, default the output field to selector[label_field] or the source name.
-    of = output_field or selector.get(label_field or "", source_path)
-
-    stages: PipelineStages = []
-    stages.extend(_build_get_entry_stage(
-        source_path=source_path, output_field=of, selector=selector, default_result=default_result
-    ))
-    # If the result is an array, pick the n-th element else use as is
-
-   # 2) Normalize `result` to one object
-    stages.append({
-        "$addFields": {
-            f"{of}.result": {
-                "$cond": [
-                    {"$isArray": f"${of}.result"},
-                    {"$cond": [
-                        { "$gt": [ { "$size": { "$ifNull": [ f"${of}.result", [] ] } }, hit ] },
-                        { "$arrayElemAt": [ f"${of}.result", hit ] },
-                        {}
-                    ]},
-                    { "$ifNull": [ f"${of}.result", {} ] },
-                ]
-            }
-        }
-    })
-
-    # 3) Exclude fields
-    if exclude_fields:
-        stages.append({ "$unset": [ f"{of}.result.{e}" for e in exclude_fields ] })
-
-    # 4) Emit
-    if output in ("root", "both"):
-        stages += _build_flatten_results_stage(of, label_field=label_field, static_prefix=static_prefix)
-        if output == "root":
-            stages.append({ "$unset": [ of ] })
-
-    if output == "tool":
-        stages.append({ "$addFields": { of: { "$ifNull": [ f"${of}.result", {} ] } } })
-    return stages
 
 
 SUMMARIZE_SPP_PRED = [
@@ -648,133 +410,20 @@ async def list_samples_service(
     )
 
     if use_aggregation:
-        return await get_samples_summary_v2(
-            db=db,
+        return await get_samples_summary(
+            db,
+            MANIFEST,
             match=match,
             fields=fields,
             sort=sort,
             limit=limit,
             offset=offset,
             cursor=cursor,
-            expand=expand or set(),
         )
     else:
         return await get_samples_full(
             db=db, match=match, fields=fields, sort=sort, limit=limit, offset=offset
         )
-
-
-async def get_samples_summary_v2(
-    db: Database,
-    *,
-    match: dict[str, Any],
-    fields: list[str] | None,
-    sort: str,
-    limit: int,
-    offset: int | None = None,
-    cursor: str | None = None,
-    expand: set[str],
-):
-    """Get summarized sample information."""
-    pipeline: list[dict[str, Any]] = []
-    if match:
-        pipeline.append({"$match": match})
-
-    # add stable sorting to facilitate offset
-    sort_fields = "-created_at" if not sort else sort
-    sort_dir = DESCENDING if sort_fields.startswith("-") else ASCENDING
-    key = sort_fields[1:] if sort_fields.startswith("-") else sort_fields
-    allowed_sort_fields = {
-        "created_at": "created_at",
-        "modified_at": "modified_at",
-        "id": "_id",
-        "sample_id": "sample_id",
-    }
-    if key not in allowed_sort_fields:
-        raise ValueError(f"Unsupported sort: {key}")
-    pipeline.append({"$sort": {allowed_sort_fields[key]: sort_dir}})
-
-    # Lookup group information and return group display name
-    pipeline.extend(_build_group_info_lookup(db))
-    #pipeline.extend(SUMMARIZE_SPP_PRED)
-
-    config = [
-        {"selector": {"software": "bracken"}, "source_path": "species_prediction", "output": "tool"},
-        {"selector": {"software" :"quast"}, "source_path": "qc", "output": "tool"},
-        {"selector": {"software": "postalignqc"}, "source_path": "qc", "output": "tool"},
-        {"selector": {"software": "mlst"}, "source_path": "typing_result", "output": "tool", "exclude_fields": ["alleles"]},
-        {"selector": {"software": "chewbbaca"}, "source_path": "typing_result", "output": "tool", "exclude_fields": ["alleles"]},
-        {"selector": {"software": "emmtyper"}, "source_path": "typing_result", "output": "tool", "exclude_fields": ["emm_like_alleles"]},
-        {"selector": {"software": "serotypefinder", "type": "O_type"}, "source_path": "typing_result", "output_field": "h_type", "output": "tool"},
-        {"selector": {"software": "serotypefinder", "type": "H_type"}, "source_path": "typing_result", "output_field": "o_type",  "output": "tool"},
-        {"selector": {"software": "virulencefinder", "type": "stx"}, "source_path": "typing_result", "output": "tool"},
-    ]
-    for cnf in config:
-        pipeline.extend(_build_result_summary(**cnf))
-
-    # Compute projection, default return all fields
-    projection = {
-        "_id": 0,
-        "assay": "$pipeline.assay",
-        "classification": "$pipeline.assay",
-        "comments": 1,
-        "created_at": 1,
-        "groups_info": 1,
-        "id": {"$toString": "$_id"},
-        "lims_id": 1,
-        "metadata": 1,
-        "missing_cgmlst_loci": "$cgmlst.result.n_missing",
-        "mlst": "$mlst.result.sequence_type",
-        "n_records": 1,
-        "oh_type": 1,
-        "platform": "$sequencing.platform",
-        "postalignqc": "$postalignqc.result",
-        "profile": "$pipeline.analysis_profile",
-        "qc_status": 1,
-        "quast": "$quast.result",
-        "release_life_cycle": "$pipeline.release_life_cycle",
-        "sample_id": 1,
-        "sample_name": 1,
-        "sequencing_run": "$sequencing.run_id",
-        "species_prediction": "$bracken",
-        "stx": 1,
-        "tags": 1,
-    }
-
-    # Fields whitelist fileds (after building the base projection)
-    if fields:
-        keep = set(fields) | {"id", "_id"}  # always keep id and strip _id
-        projection = {k: v for k, v in projection.items() if k in keep}
-    #pipeline.append({"$project": projection})
-    pipeline.append({"$project": {"_id": 0, "species_prediction": 0, "element_type_result": 0, "pipeline": 0}})
-
-
-    # manage skip, limit and offset
-    data_pipe: list[dict[str, Any]] = []
-    if offset and offset > 0:
-        data_pipe.append({"$skip": offset})
-    if limit and limit > 0:
-        data_pipe.append({"$limit": limit})
-
-    pipeline.append(
-        {
-            "$facet": {
-                "data": data_pipe or [{"$match": match}],
-                "records_total": [{"$count": "count"}],
-            }
-        },
-    )
-
-    # query database for the number of samples
-    cursor = await db.sample_collection.aggregate(pipeline)
-    res = await cursor.to_list(None)
-    if not res:
-        return MultipleRecordsResponseModel(data=[], records_total=0)
-    facet = res[0]
-    total = (
-        0 if not facet.get("records_total") else facet["records_total"][0].get("count")
-    )
-    return MultipleRecordsResponseModel(data=facet["data"], records_total=total)
 
 
 async def get_samples_full(

@@ -1,0 +1,42 @@
+"""Specifies manifest"""
+
+from bonsai_api.models.summary_manifest import Manifest, ColumnFull, BuilderArgs
+
+BUILDER_REGISTRY: dict[str, BuilderArgs] = {
+    "bracken": BuilderArgs(selector={"software": "bracken"}, source_path="species_prediction"),
+    "quast": BuilderArgs(selector={"software": "quast"}, source_path="qc"),
+    "postalignqc": BuilderArgs(selector={"software": "postalignqc"}, source_path="qc"),
+    "mlst": BuilderArgs(selector={"software": "mlst"}, source_path="typing_result", exclude_fields=['alleles']),
+    "chewbbaca": BuilderArgs(selector={"software": "chewbbaca"}, source_path="typing_result", exclude_fields=['alleles']),
+    "emm": BuilderArgs(selector={"software": "emmtyper"}, source_path="typing_result", exclude_fields=['emm_like_alleles']),
+    "stx": BuilderArgs(selector={"software": "virulencefinder"}, source_path="typing_result"),
+    "o_type": BuilderArgs(selector={"software": "serotypefinder", "type": "o_type"}, source_path="typing_result"),
+    "h_type": BuilderArgs(selector={"software": "serotypefinder", "type": "h_type"}, source_path="typing_result"),
+}
+
+MANIFEST = Manifest(
+    columns=[
+        ColumnFull(id="sample_name", label="Name", path="$sample_name"),
+        ColumnFull(id="lims_id", label="LIMS id", path="$lims_id"),
+        ColumnFull(id="assay", label="Assay", path="$assay"),
+        ColumnFull(id="release_life_cycle", label="Release life cycle", path="$release_life_cycle"),
+        ColumnFull(id="sequencing_run", label="Sequencing run", path="$sequencing.run_id"),
+        ColumnFull(id="sequencing_platform", label="Sequencing platform", path="$sequencing.platform"),
+        ColumnFull(id="pipeline_version", label="Pipeline version", path="$pipeline.version"),
+        ColumnFull(id="analysis_date", label="Analysis date", path="$pipeline.date", type="date"),
+        ColumnFull(id="bracken_scientific_name", requires=['bracken'], label="Bracken spp", path="$bracken.scientific_name"),
+        ColumnFull(id="quast_n50", requires=['quast'], label="N50", path="$quast.n50"),
+        ColumnFull(id="quast_total_length", requires=['quast'], label="Total assembly len", path="$quast.total_length"),
+        ColumnFull(id="mlst_sequence_type", requires=['mlst'], label="MLST ST", path="$mlst.sequence_type"),
+        ColumnFull(id="mlst_scheme", requires=['mlst'], label="MLST Schema", path="$mlst.scheme"),
+        ColumnFull(id="chewbacca_n_missing", requires=['chewbbaca'], label="# Missing cgMLST alleles", path="$chewbbaca.n_missing"),
+        ColumnFull(id="chewbacca_n_novel", requires=['chewbbaca'], label="# Novel cgMLST alleles", path="$chewbbaca.n_novel"),
+        ColumnFull(id="emm_type", requires=['emm'], label="EMM Type", path="$emm.emmtype"),
+        ColumnFull(id="emm_cluster", requires=['emm'], label="EMM Cluster", path="$emm.emm_cluster"),
+        ColumnFull(id="stx", requires=['stx'], label="STX", path="$stx"),
+        ColumnFull(id="postalignqc_pct_above_x", requires=['postalignqc'], label="Coverage", path="$postalignqc.prc_above_x", type="object"),
+        ColumnFull(id="postalignqc_mean_cov", requires=['postalignqc'], label="Mean coverage", path="$postalignqc.mean_cov", type="number"),
+        ColumnFull(id="postalignqc_n_reads", requires=['postalignqc'], label="# Reads", path="$postalignqc.n_reads", type="number"),
+        ColumnFull(id="postalignqc_n_mapped_reads", requires=['postalignqc'], label="# Reads", path="$postalignqc.n_mapped_reads", type="number"),
+    ],
+)

@@ -4,6 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, Literal, Union, cast
 
+from bonsai_api.crud.summary.spec import MANIFEST
+from bonsai_api.models.summary_manifest import ManifestOutput
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import (
@@ -74,7 +76,7 @@ from fastapi import (
     Security,
     status,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import (
     AMRMethodIndex,
@@ -190,6 +192,15 @@ async def query_samples(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+
+
+@router.post("/samples/query/manifest")
+async def get_summary_manifest():
+    """Get valid fields for the sample summary."""
+    public = ManifestOutput.from_internals(MANIFEST)
+    resp = JSONResponse(content=public.model_dump(exclude_none=True))
+    resp.headers['ETag'] = public.etag
+    return resp
 
 
 @router.get("/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel)
