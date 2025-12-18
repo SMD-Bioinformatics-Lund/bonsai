@@ -223,7 +223,7 @@ def compile_pipeline(manifest: Manifest, fields: list[str] | None = None) -> lis
     used_builders = []
     for col in manifest.columns:
         # Dont build stage if it is not requested
-        if fields and set(fields).isdisjoint([col.name]):
+        if fields and set(fields).isdisjoint([col.id]):
             continue
 
         for builder_name in col.requires:
@@ -245,9 +245,9 @@ def compile_pipeline(manifest: Manifest, fields: list[str] | None = None) -> lis
         project[col.id] = col.path
 
     # Drop large sub-documents when pipeline stages has been built
-    # if drop_after_build:
-    #     pipeline.append({"$unset": list(drop_after_build)})
+    if drop_after_build:
+        pipeline.append({"$unset": list(drop_after_build)})
     
-    #pipeline.append({"$project": project})
-    pipeline.append({"$project": {'_id': 0}})
+    pipeline.append({"$project": project})
+    #pipeline.append({"$project": {'_id': 0}})
     return pipeline
