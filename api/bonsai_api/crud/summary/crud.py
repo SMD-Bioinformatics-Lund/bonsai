@@ -1,6 +1,7 @@
 """Summary crud functions"""
+import logging
 from typing import Any
-from bonsai_api.models.summary_manifest import SummaryConfig
+from bonsai_api.models.summary_manifest import Manifest
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from pymongo import ASCENDING, DESCENDING
 from bonsai_api.db import Database
@@ -9,9 +10,12 @@ from bonsai_api.db import Database
 from .compile import compile_pipeline
 
 
+LOG = logging.getLogger(__name__)
+
+
 async def get_samples_summary(
     db: Database,
-    config: SummaryConfig,
+    manifest: Manifest,
     *,
     match: dict[str, Any],
     fields: list[str] | None,
@@ -21,49 +25,53 @@ async def get_samples_summary(
     cursor: str | None = None,
 ):
     """Get summarized sample information."""
+    if fields and (valid_fields := {col.id for col in manifest.columns}):
+        invalid_fields = set(fields) - valid_fields
+        if invalid_fields:
+            err_info = ", ".join(list(invalid_fields))
+            raise ValueError(f"Invalid fields: {err_info}")
+
     pipeline: list[dict[str, Any]] = []
     if match:
         pipeline.append({"$match": match})
 
+    pipeline.extend(compile_pipeline(manifest, fields))
+
     # add stable sorting to facilitate offset
     sort_fields = "-created_at" if not sort else sort
     sort_dir = DESCENDING if sort_fields.startswith("-") else ASCENDING
-    key = sort_fields[1:] if sort_fields.startswith("-") else sort_fields
-    allowed_sort_fields = {
-        "created_at": "created_at",
-        "modified_at": "modified_at",
-        "id": "_id",
-        "sample_id": "sample_id",
-    }
-    if key not in allowed_sort_fields:
-        raise ValueError(f"Unsupported sort: {key}")
-    pipeline.append({"$sort": {allowed_sort_fields[key]: sort_dir}})
+    sort_expr = sort_fields[1:] if sort_fields.startswith("-") else sort_fields
 
-    pipeline.extend(compile_pipeline(config, fields))
+    allowed_sort_fields = {col.id for col in manifest.columns if col.sortable}
+    if sort_expr not in allowed_sort_fields:
+        raise ValueError(f"Unsupported sort: {sort_expr}")
 
-    # manage skip, limit and offset
-    data_pipe: list[dict[str, Any]] = []
+    pipeline.append({"$sort": {sort_expr: sort_dir, "_id": ASCENDING}})
+
+    # Pagination
+    data_subpipeline: list[dict[str, Any]] = []
     if offset and offset > 0:
-        data_pipe.append({"$skip": offset})
+        data_subpipeline.append({"$skip": offset})
     if limit and limit > 0:
-        data_pipe.append({"$limit": limit})
+        data_subpipeline.append({"$limit": limit})
 
     pipeline.append(
         {
             "$facet": {
-                "data": data_pipe or [{"$match": match}],
+                "data": data_subpipeline or [],
                 "records_total": [{"$count": "count"}],
             }
         },
     )
 
     # query database for the number of samples
-    cursor = await db.sample_collection.aggregate(pipeline)
-    res = await cursor.to_list(None)
-    if not res:
+    agg_cursor = await db.sample_collection.aggregate(pipeline)
+    results = await agg_cursor.to_list(None)
+
+    if not results:
         return MultipleRecordsResponseModel(data=[], records_total=0)
-    facet = res[0]
-    total = (
-        0 if not facet.get("records_total") else facet["records_total"][0].get("count")
-    )
-    return MultipleRecordsResponseModel(data=facet["data"], records_total=total)
+    facet = results[0]
+    total_list = facet.get("records_total", [])
+    records_total = total_list[0]["count"] if total_list else 0
+
+    return MultipleRecordsResponseModel(data=facet.get('data', []), records_total=records_total)
