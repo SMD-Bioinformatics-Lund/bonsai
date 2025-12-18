@@ -45,19 +45,21 @@ ColumnType = Literal["string","number","integer","date","boolean","object"]
 
 
 class ColumnBase(BaseModel):
+    """User facing data."""
+
     id: str = Field(..., description="Column id")
     type: ColumnType = "string"
     label: str = Field(..., description="Display name")
     source: Literal["static", "metadata"] = (
         "static"  # where the columns are predefined or relate to metadata
     )
-    default_visible: bool | None = None
+    default_visible: bool = False
     filterable: bool = True
     sortable: bool = True
 
 
 class ColumnFull(ColumnBase):  # pylint: disable=too-few-public-methods
-    """Definition of valid columns for sample summary."""
+    """Internal data used for building pipeline queries."""
 
     path: Any = Field(..., description="Describing how to access the data in mongo object")
     requires: list[str] = []
