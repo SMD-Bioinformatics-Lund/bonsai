@@ -234,7 +234,7 @@ async def get_groups_by_sample_ids(
 
     result = []
     async for doc in cursor:
-        for gid in doc["groups"]:
+        for gid in doc.get("groups", []):
             result.append(MembershipEdge(sample_id=doc["sample_id"], group_id=gid))
     # ensure requested ids are present in ouput
     return result

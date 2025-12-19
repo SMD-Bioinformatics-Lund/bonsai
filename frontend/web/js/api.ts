@@ -6,7 +6,6 @@ import {
   ApiJobSubmission,
   ApiFindSimilarInput,
   GroupInfo,
-  MembershipInfo,
   ApiUserInfo,
   ApiSampleQcStatus,
   MembershipEdges,
