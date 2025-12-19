@@ -1,34 +1,13 @@
 """Routes related to collections of samples."""
 
-from typing import Dict, List, Literal, TypeAlias
+from typing import Literal
 
 from prp.models.phenotype import ElementType
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-from .base import DBModelMixin, ModifiedAtRWModel, ObjectId, RWModel
-from .sample import SampleSummary
+from .base import DBModelMixin, ModifiedAtRWModel, RWModel
 
-FilterParams = List[Dict[str, str | int | float],]
-
-
-class IncludedSamples(RWModel):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-    included_samples: List[str | SampleSummary] = []
-
-    model_config = ConfigDict(json_encoders={ObjectId: str})
-
-
-class UpdateIncludedSamples(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Object for keeping track of included samples in a group"""
-
-
-class GroupBase(IncludedSamples):  # pylint: disable=too-few-public-methods
-    """Basic specie information."""
-
-    group_id: str = Field(..., min_length=5)
-    display_name: str = Field(..., min_length=1, max_length=45)
-    description: str | None = None
+FilterParams = list[dict[str, str | int | float],]
 
 
 class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -73,12 +52,12 @@ VALID_BASE_COLS: list[SampleTableColumnInput] = [
         sortable=True,
     ),
     SampleTableColumnInput(
-        id="in_groups",
-        label="In groups",
-        path="$.in_groups",
+        id="groups_info",
+        label="Groups",
+        path="$.groups_info",
         sortable=False,
         type="custom",
-        renderer="in_groups_renderer",
+        renderer="groups_info_renderer",
     ),
 ]
 
@@ -280,7 +259,7 @@ DEFAULT_COLUMNS: list[str] = [
     "sample_btn",
     "sample_id",
     "sample_name",
-    "in_groups",
+    "groups_info",
     "tags",
     "assay",
     "taxonomic_name",
@@ -296,16 +275,24 @@ qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
 SCHEMA_VERSION: str = "1"
 
 
+class GroupBase(RWModel):  # pylint: disable=too-few-public-methods
+    """Basic specie information."""
+
+    group_id: str = Field(..., min_length=5)
+    display_name: str = Field(..., min_length=1, max_length=45)
+    description: str | None = None
+    table_columns: list[SampleTableColumnDB] = Field(
+        default=[], description="IDs of columns to display."
+    )
+    sample_count: int = Field(default=0, ge=0, description="Total number of samples in this group")
+
+
 class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
     """Defines expected input format for groups."""
 
     schema_version: str = Field(
         default=SCHEMA_VERSION, description="Version of the group schema."
     )
-    table_columns: list[SampleTableColumnDB] = Field(
-        default=[], description="IDs of columns to display."
-    )
-    # table_columns: list[SampleTableColumnInput] = Field(default=[], description="IDs of columns to display.")
     validated_genes: dict[ElementType, list[str]] | None = {}
 
 
@@ -321,6 +308,3 @@ class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
     table_columns: list[str] = Field(
         default=[], description="IDs of columns to display."
     )
-
-
-SampleSampleGroupMemberships: TypeAlias = dict[str, list[str]]

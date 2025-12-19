@@ -1,5 +1,5 @@
 import { emitEvent } from "../utils/event-bus";
-import { GroupInfo, SampleGroupMembership } from "../types";
+import { GroupInfo, MembershipEdges } from "../types";
 import { ChoiceSelect } from "../utils/choice-select";
 
 const template = document.createElement("template");
@@ -23,7 +23,7 @@ export class GroupSelector extends HTMLElement {
   getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
   getSelectedSamples: (() => string[]) | null = null;
   getGroupMembership:
-    | ((sampleIds: string[], signal?: AbortSignal) => Promise<SampleGroupMembership[]>)
+    | ((sampleIds: string[], signal?: AbortSignal) => Promise<MembershipEdges>)
     | null = null;
   addToGroup: ((groupId: string, sampleIds: string[]) => Promise<void>) | null = null;
 
@@ -39,7 +39,7 @@ export class GroupSelector extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadow = this.shadowRoot!;
     this.shadow.appendChild(template.content.cloneNode(true));
-    this.selector = this.shadow.getElementById("groups");
+    this.selector = this.shadow.getElementById("groups") as ChoiceSelect;
     this.applyBtn = this.shadow.getElementById("apply") as HTMLButtonElement;
     this.clearBtn = this.shadow.getElementById("clear") as HTMLButtonElement;
   }
@@ -113,23 +113,54 @@ export class GroupSelector extends HTMLElement {
     }
 
     try {
-      const memberships = await this.getGroupMembership(sampleIds, this.membershipAbort.signal);
+      const membershipsEdges = await this.getGroupMembership(sampleIds, this.membershipAbort.signal);
+      const memberships = groupMemberships(membershipsEdges)
       const counts = new Map<string, number>();
+      const nSamples = sampleIds.length;
+
       for (const sid of sampleIds) {
-        for (const gid of memberships[sid] ?? []) {
+        // Dedupe groups within a sample to avoid overcounting
+        const groupsForSample = new Set(memberships[sid] ?? []);
+        for (const gid of groupsForSample) {
           counts.set(gid, (counts.get(gid) ?? 0) + 1);
         }
       }
-      // calculate the number of groups in total and
-      const nSamples = sampleIds.length;
+
       const groupNameIntersect = [...counts.entries()]
         .filter(([_, cnt]) => cnt === nSamples)
-        .map(([gid]) => gid);
+        .map(([gid]) =>  gid);
+
+      groupNameIntersect.sort()
       this.selector.setSelected(groupNameIntersect);
     } catch (err) {
       console.warn("Failed to preselect samples", err);
     }
   }
 }
+
+
+type MembershipBySample = Record<string, string[]>;
+
+
+function groupMemberships(
+  edges: MembershipEdges,
+  { dedupe = true, sort = true } = {}
+): MembershipBySample {
+  const map = new Map<string, Set<string>>();
+
+  for (const { sample_id, group_id } of edges) {
+    const set = map.get(sample_id) ?? new Set<string>();
+    set.add(group_id);
+    map.set(sample_id, set);
+  }
+
+  const result: MembershipBySample = {};
+  for (const [sample_id, set] of map.entries()) {
+    const arr = Array.from(set);
+    result[sample_id] = sort ? arr.sort() : arr;
+  }
+  return result;
+}
+
 
 customElements.define("group-selector", GroupSelector);

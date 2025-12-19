@@ -138,9 +138,3 @@ class MultipleSampleRecordsResponseModel(
     MultipleRecordsResponseModel
 ):  # pylint: disable=too-few-public-methods
     data: list[SampleInDatabase] = []
-
-
-class SampleGroupMembershipInput(RWModel):  # pylint: disable=too-few-public-methods
-    """Input model for sample group membership."""
-
-    sample_id: list[str] = Field(..., description="Sample id")

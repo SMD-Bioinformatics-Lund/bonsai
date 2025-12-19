@@ -54,6 +54,7 @@ class RouterTags(StrEnum):
 
     SAMPLE = "sample"
     GROUP = "groups"
+    MEM = "memberships"
     META = "metadata"
     USR = "user"
     JOB = "jobs"
