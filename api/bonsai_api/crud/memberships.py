@@ -64,7 +64,7 @@ def _compute_delta(
 
     if mode == "add":
         for e in edges:
-            if e.group_id not in present[e.sample_id]:
+            if e.group_id not in present.get(e.sample_id, set()):
                 per_sample[e.sample_id].add(e.group_id)
         for _, gids in per_sample.items():
             for gid in gids:
@@ -72,7 +72,7 @@ def _compute_delta(
 
     else:  # remove
         for e in edges:
-            if e.group_id in present[e.sample_id]:
+            if e.group_id in present.get(e.sample_id, set()):
                 per_sample[e.sample_id].add(e.group_id)
         for _, gids in per_sample.items():
             for gid in gids:
