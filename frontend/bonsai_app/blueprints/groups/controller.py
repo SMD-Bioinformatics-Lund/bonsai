@@ -57,7 +57,7 @@ def format_tablular_data(
                 renderer=_get_renderer(col),
                 sortable=col["sortable"],
                 searchable=col["type"] != "object",
-                visible=col["default_visible"],
+                visible=col.get("default_visible", True),
             )
             for col in column_defs
         ],

@@ -109,6 +109,7 @@ class SampleInCreate(
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
+    groups: list[str] = []
     metadata: list[InputMetaEntry] = []
     element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None

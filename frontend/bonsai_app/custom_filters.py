@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List
 from zoneinfo import ZoneInfo
 
 from dateutil.parser import ParserError, parse
+import jinja2
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES, settings
@@ -124,7 +125,7 @@ def text_to_camelcase(text: str) -> str:
     return text.replace(" ", "_")
 
 
-def _jinja2_filter_datetime(date: str, fmt: str = r"%Y-%m-%d") -> str:
+def _jinja2_filter_datetime(date: str, fmt: str = r"%Y-%m-%d") -> str | None:
     """Format date and time string using the timezone from settings.
 
     :param date: String representation of a date or time
@@ -134,6 +135,10 @@ def _jinja2_filter_datetime(date: str, fmt: str = r"%Y-%m-%d") -> str:
     :return: reformatted datetime
     :rtype: str
     """
+    if isinstance(date, jinja2.runtime.Undefined):
+        LOG.error("`date` is undefined!")
+        return date
+
     try:
         parsed_date: datetime = parse(date)
         native = parsed_date.replace(tzinfo=ZoneInfo(settings.tz))
