@@ -182,7 +182,7 @@ def group(group_id: str) -> str:
     if len(columns) > 0:
         columns = get_valid_group_columns(token, group_id=group_id)
     else:  # get default columns
-        columns = get_valid_group_columns(token)
+        columns = get_valid_summary_columns(token)
     table_data = format_tablular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
