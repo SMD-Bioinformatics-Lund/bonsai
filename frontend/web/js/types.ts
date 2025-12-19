@@ -68,7 +68,7 @@ export interface GroupInfo {
   group_id: string;
   display_name: string;
   description: string;
-  included_samples: string[];
+  sample_count: number;
   table_columns: ColumnDefinition[];
   created_at: string;
   modified_at: string;
@@ -105,6 +105,8 @@ export interface ApiUserInfo {
   authentication_method: string;
 }
 
+export type MembershipEdge = {sample_id: string, group_id: string};
+export type MembershipEdges = MembershipEdge[];
+
 export type CallbackFunc = (ids: string[]) => void;
 export type TblStateCallbackFunc = (selectedRows: string[]) => void;
-export type SampleGroupMembership = Record<string, string[]>;

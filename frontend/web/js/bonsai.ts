@@ -137,10 +137,20 @@ export async function initGroupView(
   if (deleteSamplesBtn) deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
 
   // lookup samples in group if provided a groupId
-  let narrow_search_to = null;
+  let filterBySamples = null;
   if (!(groupId === null || groupId === "")) {
     const group = await api.getGroup(groupId);
-    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null;
+    if ( group.sample_count > 0 ) {
+      try {
+        const controller = new AbortController();
+        const edges = await api.getMembershipByGroups([groupId], controller.signal);
+        // deduplicate ids and default to null if empty
+        const ids = Array.from(new Set(edges.map( e => e.sample_id )));
+        filterBySamples = ids.length === 0 ? null : ids
+      } catch (err) {
+        console.error("Failed to load sample-group memberships", err)
+      }
+    }
   }
 
   const selectSimilarSamplesBtn = document.getElementById(
@@ -148,7 +158,7 @@ export async function initGroupView(
   ) as HTMLButtonElement;
   if (selectSimilarSamplesBtn)
     selectSimilarSamplesBtn.onclick = () =>
-      getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api, narrow_search_to);
+      getSimilarSamplesAndCheckRows(selectSimilarSamplesBtn, table, api, filterBySamples);
 
   // setup add samples to group component
   const groupSelectorContainer = document.getElementById(
@@ -158,7 +168,7 @@ export async function initGroupView(
     const addToGroupSelector = document.createElement("group-selector") as GroupSelector;
     addToGroupSelector.getGroupInfo = api.getGroups;
     addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
-    addToGroupSelector.getGroupMembership = api.getSampleGroupMemberships;
+    addToGroupSelector.getGroupMembership = api.getMembershipsBySamples;
     addToGroupSelector.addToGroup = api.addSamplesToGroup;
 
     // set up listners for updates and failurs
