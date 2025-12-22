@@ -22,6 +22,24 @@ class BuilderArgs(BaseModel):
     label_field: str = "software"
     output_field: str | None = None
     exclude_fields: list[str] = []
+    default_result: Any | None = None
+    hit: int = Field(0, description="Index of default hit to select if multiple are present")
+
+
+class LookupSpec(BaseModel):
+    """Describe how to lookup information from other collections."""
+    from_collection: str = Field(..., description="Name of the collection to join")
+    as_field: str = Field(..., description="the output array field")
+    let: dict[str, Any] | None = None
+    pipeline: list[dict[str, Any]] = Field(default_factory=list)
+
+    # Simple local/foreign equality join (works when localField is an array too)
+    local_field: str | None = None
+    foreign_field: str | None = None
+
+    # Post-processing stages often used with lookups
+    add_fields: dict[str, Any] | None = None     # e.g., {"groups_info": {"$map": ...}}
+    project: dict[str, Any] | None = None        # e.g., {"groups_meta": 0}
     
 
 class SummaryBuildEntry(BaseModel):

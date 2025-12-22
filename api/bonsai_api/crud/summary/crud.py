@@ -35,7 +35,7 @@ async def get_samples_summary(
     if match:
         pipeline.append({"$match": match})
 
-    pipeline.extend(compile_pipeline(manifest, fields))
+    pipeline.extend(compile_pipeline(db, manifest, fields))
 
     # add stable sorting to facilitate offset
     sort_fields = "-created_at" if not sort else sort

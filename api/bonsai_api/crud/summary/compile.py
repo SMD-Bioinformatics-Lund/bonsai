@@ -2,9 +2,14 @@
 
 
 from typing import Any
+import logging
 
 from .spec import BUILDER_REGISTRY
-from bonsai_api.models.summary_manifest import Manifest, BuildOutput, PipelineProjection, PipelineStages
+from bonsai_api.models.summary_manifest import BuilderArgs, Manifest, BuildOutput, PipelineProjection, PipelineStages, LookupSpec
+from bonsai_api.db import Database
+
+
+LOG = logging.getLogger(__name__)
 
 
 def _build_get_entry_stage(source_path: str, output_field: str, selector: dict[str, Any], default_result: dict[str, Any]) -> PipelineStages:
@@ -145,18 +150,7 @@ def _build_flatten_results_stage(field_name: str, *, label_field: str | None = "
     ]
 
 
-def _build_result_summary(
-        *, 
-        source_path: str, 
-        selector: dict[str, Any], 
-        output_field: str | None = None,
-        hit: int = 0,
-        output: BuildOutput = "both", 
-        exclude_fields: list[str] | None = None, 
-        label_field: str | None = "software",
-        static_prefix: str | None = None,
-        default_result: Any = []
-        ) -> PipelineStages:
+def _build_result_summary(spec: BuilderArgs) -> PipelineStages:
     """
     Normalize a tool entry that may live in `source_path` as either an array of entries
     or a single object. Each entry has the shape: { software: <str>, result: <array|object> }.
@@ -173,11 +167,12 @@ def _build_result_summary(
          - "both": flatten to root AND keep `<output_field>` entry
     """
     # If not provided, default the output field to selector[label_field] or the source name.
-    of = output_field or selector.get(label_field or "", source_path)
+    of = spec.output_field or spec.selector.get(spec.label_field or "", spec.source_path)
+    default_result = spec.default_result or []
 
     stages: PipelineStages = []
     stages.extend(_build_get_entry_stage(
-        source_path=source_path, output_field=of, selector=selector, default_result=default_result
+        source_path=spec.source_path, output_field=of, selector=spec.selector, default_result=default_result
     ))
     # If the result is an array, pick the n-th element else use as is
 
@@ -188,8 +183,8 @@ def _build_result_summary(
                 "$cond": [
                     {"$isArray": f"${of}.result"},
                     {"$cond": [
-                        { "$gt": [ { "$size": { "$ifNull": [ f"${of}.result", [] ] } }, hit ] },
-                        { "$arrayElemAt": [ f"${of}.result", hit ] },
+                        { "$gt": [ { "$size": { "$ifNull": [ f"${of}.result", [] ] } }, spec.hit ] },
+                        { "$arrayElemAt": [ f"${of}.result", spec.hit ] },
                         {}
                     ]},
                     { "$ifNull": [ f"${of}.result", {} ] },
@@ -199,21 +194,60 @@ def _build_result_summary(
     })
 
     # 3) Exclude fields
-    if exclude_fields:
-        stages.append({ "$unset": [ f"{of}.result.{e}" for e in exclude_fields ] })
+    if spec.exclude_fields:
+        stages.append({ "$unset": [ f"{of}.result.{e}" for e in spec.exclude_fields ] })
 
     # 4) Emit
-    if output in ("root", "both"):
-        stages += _build_flatten_results_stage(of, label_field=label_field, static_prefix=static_prefix)
-        if output == "root":
+    if spec.output in ("root", "both"):
+        stages += _build_flatten_results_stage(of, label_field=spec.label_field, static_prefix=spec.static_prefix)
+        if spec.output == "root":
             stages.append({ "$unset": [ of ] })
 
-    if output == "tool":
+    if spec.output == "tool":
         stages.append({ "$addFields": { of: { "$ifNull": [ f"${of}.result", {} ] } } })
     return stages
 
 
-def compile_pipeline(manifest: Manifest, fields: list[str] | None = None) -> list[dict[str, Any]]:
+
+def _build_lookup(db: Database, spec: LookupSpec) -> PipelineStages:
+    stages: PipelineStages = []
+
+    collection = getattr(db, spec.from_collection, None)
+    if collection is None:
+        raise RuntimeError(f"Cannot build lookup: unknown collection '{spec.from_collection}'")
+
+    # Prefer pipeline form if provided
+    if spec.pipeline:
+        stages.append({
+            "$lookup": {
+                "from": collection.name,
+                "let": spec.let or {},
+                "pipeline": spec.pipeline,
+                "as": spec.as_field,
+            }
+        })
+    else:
+        # Fall back to simple equality lookup
+        if spec.local_field is None or spec.foreign_field is None:
+            raise ValueError("local_field and foreign_field are required for simple $lookup")
+        stages.append({
+            "$lookup": {
+                "from": collection.name,
+                "localField": spec.local_field,
+                "foreignField": spec.foreign_field,
+                "as": spec.as_field,
+            }
+        })
+
+    if spec.add_fields:
+        stages.append({"$addFields": spec.add_fields})
+    if spec.project:
+        stages.append({"$project": spec.project})
+    
+    return stages
+
+
+def compile_pipeline(db: Database, manifest: Manifest, fields: list[str] | None = None) -> PipelineStages:
     """Compile aggregation pipeline from the manifest."""
 
     pipeline: PipelineStages = []
@@ -231,13 +265,19 @@ def compile_pipeline(manifest: Manifest, fields: list[str] | None = None) -> lis
             if builder_name in used_builders:
                 continue
 
-            if (build_args := BUILDER_REGISTRY.get(builder_name)) is None:
+            if (spec := BUILDER_REGISTRY.get(builder_name)) is None:
                 raise RuntimeError(f"Unkown build function: {builder_name}")
             
-            pipeline.extend(_build_result_summary(**build_args.model_dump()))
-
-            output_field = (build_args.output_field or build_args.source_path)
-            drop_after_build.add(output_field)
+            LOG.debug("Building summary for column '%s' using builder '%s'", col.id, builder_name)
+            if isinstance(spec, BuilderArgs):
+                pipeline.extend(_build_result_summary(spec))
+                output_field = (spec.output_field or spec.source_path)
+                drop_after_build.add(output_field)
+            elif isinstance(spec, LookupSpec):
+                # run lookup function
+                pipeline.extend(_build_lookup(spec=spec, db=db))
+            else:
+                raise RuntimeError(f"Dont know how to process: {spec}")
 
             used_builders.append(builder_name)
 
@@ -249,5 +289,5 @@ def compile_pipeline(manifest: Manifest, fields: list[str] | None = None) -> lis
         pipeline.append({"$unset": list(drop_after_build)})
     
     pipeline.append({"$project": project})
-    #pipeline.append({"$project": {'_id': 0}})
+    #pipeline.append({"$project": {"_id": 0, "sample_id": 1, "groups": 1}})
     return pipeline
