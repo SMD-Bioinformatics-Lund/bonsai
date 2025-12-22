@@ -1,10 +1,12 @@
 """Specifies manifest"""
 
-from bonsai_api.models.summary_manifest import Manifest, ColumnFull, BuilderArgs
+from typing import Any
+from bonsai_api.models.summary_manifest import Manifest, ColumnFull, BuilderArgs, LookupSpec
 
-BUILDER_REGISTRY: dict[str, BuilderArgs] = {
+BuilderSpec = BuilderArgs | dict[str, Any]
+
+BUILDER_REGISTRY: dict[str, BuilderSpec] = {
     "bracken": BuilderArgs(selector={"software": "bracken"}, source_path="species_prediction"),
-    #"bracken": BuilderArgs(selector={"software": "mykrobe"}, source_path="species_prediction"),
     "quast": BuilderArgs(selector={"software": "quast"}, source_path="qc"),
     "postalignqc": BuilderArgs(selector={"software": "postalignqc"}, source_path="qc"),
     "mlst": BuilderArgs(selector={"software": "mlst"}, source_path="typing_result", exclude_fields=['alleles']),
@@ -13,6 +15,14 @@ BUILDER_REGISTRY: dict[str, BuilderArgs] = {
     "stx": BuilderArgs(selector={"software": "virulencefinder"}, source_path="typing_result"),
     "o_type": BuilderArgs(selector={"software": "serotypefinder", "type": "o_type"}, source_path="typing_result"),
     "h_type": BuilderArgs(selector={"software": "serotypefinder", "type": "h_type"}, source_path="typing_result"),
+    "groups": LookupSpec(
+        from_collection="sample_group_collection", as_field="groups_info",
+        let={"group_ids": {"$ifNull": ["$groups", []]}},
+        pipeline=[
+            {"$match": {"$expr": {"$in": ["$group_id", "$$group_ids"]}}},
+            {"$project": {"_id": 0, "id": "$group_id", "display_name": 1}},
+        ],
+    ),
 }
 
 MANIFEST = Manifest(
@@ -23,6 +33,7 @@ MANIFEST = Manifest(
         ColumnFull(id="assay", label="Assay", path="$pipeline.assay", default_visible=True),
         ColumnFull(id="created_at", label="Uploaded", path="$created_at", default_visible=True, type="date"),
         ColumnFull(id="qc_status", label="QC", path="$qc_status", default_visible=True, type="object"),
+        ColumnFull(id="groups", label="Groups", path="$groups_info", requires=["groups"], default_visible=True, type="object"),
         ColumnFull(id="comments", label="Comments", path="$comments", default_visible=True, type="object"),
         ColumnFull(id="release_life_cycle", label="Release life cycle", path="$release_life_cycle"),
         ColumnFull(id="sequencing_run", label="Sequencing run", path="$sequencing.run_id", default_visible=True),
