@@ -1,9 +1,10 @@
 """Specifies manifest"""
 
-from typing import Any
-from bonsai_api.models.summary_manifest import Manifest, ColumnFull, BuilderArgs, LookupSpec
+from typing import Annotated
+from pydantic import Field
+from .types import Manifest, ColumnFull, BuilderArgs, LookupSpec
 
-BuilderSpec = BuilderArgs | dict[str, Any]
+BuilderSpec = Annotated[BuilderArgs | LookupSpec, Field(discriminator="kind")]
 
 BUILDER_REGISTRY: dict[str, BuilderSpec] = {
     "bracken": BuilderArgs(selector={"software": "bracken"}, source_path="species_prediction"),
@@ -42,8 +43,6 @@ MANIFEST = Manifest(
         ColumnFull(id="analysis_date", label="Analysis date", path="$pipeline.date", type="date", default_visible=True),
         ColumnFull(id="tags", label="Tags", path="$tags", type="object", default_visible=True),
         ColumnFull(id="bracken_scientific_name", requires=['bracken'], label="Bracken spp", path="$bracken.scientific_name", default_visible=True),
-        #ColumnFull(id="mykrobe_scientific_name", requires=['mykrobe'], label="Bracken spp", path="$bracken.scientific_name", default_visible=True),
-        #ColumnFull(id="mykrobe_phylogroup", requires=['bracken'], label="Bracken spp", path="$bracken.scientific_name", default_visible=True),
         ColumnFull(id="quast_n50", requires=['quast'], label="N50", path="$quast.n50"),
         ColumnFull(id="quast_total_length", requires=['quast'], label="Total assembly len", path="$quast.total_length"),
         ColumnFull(id="mlst_sequence_type", requires=['mlst'], label="MLST ST", path="$mlst.sequence_type"),

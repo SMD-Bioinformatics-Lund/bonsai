@@ -5,7 +5,7 @@ from typing import List
 from pydantic import EmailStr
 
 from ..config import settings
-from .base import DBModelMixin, ModifiedAtRWModel, RWModel
+from .base import DBModelMixin, Timestamps, RWModel
 
 
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
@@ -36,7 +36,7 @@ class UserInputCreate(UserBase):  # pylint: disable=too-few-public-methods
 
 
 class UserInputDatabase(
-    UserBase, ModifiedAtRWModel
+    UserBase, Timestamps
 ):  # pylint: disable=too-few-public-methods
     """User data to be written to database.
 

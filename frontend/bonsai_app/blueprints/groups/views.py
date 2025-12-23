@@ -5,8 +5,8 @@ import logging
 from urllib.parse import urlparse
 
 from bonsai_app.bonsai import (TokenObject, create_group, delete_group,
-                               get_group_by_id, get_groups, get_samples,
-                               get_samples_in_group, get_valid_group_columns, get_valid_summary_columns,
+                               get_group_by_id, get_groups, get_sample_summaries,
+                               get_valid_group_columns, get_valid_summary_columns,
                                update_group, update_sample_qc_classification)
 from bonsai_app.models import (BadSampleQualityAction, PhenotypeType,
                                QualityControlResult)
@@ -44,7 +44,7 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     token = TokenObject(**current_user.get_id())
-    samples_info = get_samples(token, limit=0, skip=0)
+    samples_info = get_sample_summaries(token, limit=0, offset=0)
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
@@ -160,11 +160,8 @@ def group(group_id: str) -> str:
     # query API for sample info
     token = TokenObject(**current_user.get_id())
     try:
-        samples_info = get_samples_in_group(
-            token,
-            group_id=group_id,
-            prediction_result=not display_qc,
-            qc_metrics=display_qc,
+        samples_info = get_sample_summaries(
+            token, group_id=group_id,
         )
         # get column definition to use
         group_info = get_group_by_id(token, group_id=group_id)

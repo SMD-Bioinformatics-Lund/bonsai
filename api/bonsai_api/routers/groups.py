@@ -5,7 +5,6 @@ import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.crud.sample import get_samples_summary_v1
 from bonsai_api.crud.memberships import get_samples_by_group_ids
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -286,42 +285,3 @@ async def get_columns_for_group(
         group_obj=group_obj, include_metadata=True, db=db
     )
     return columns
-
-
-@router.get(
-    "/groups/{group_id}/samples",
-    status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
-    response_model=MultipleRecordsResponseModel,
-)
-async def get_samples_in_group(
-    prediction_result: bool = Query(True, description="Include prediction results"),
-    qc_metrics: bool = Query(False, description="Include QC metrics"),
-    skip: int = 0,
-    limit: int = 0,
-    group_id: str = Path(..., tilte="The id of the group to get"),
-    db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[READ_PERMISSION]
-    ),
-):
-    """Get basic prediction results of all samples in a group."""
-    # get group info
-    try:
-        memberships_edges = await crud_mem.get_samples_by_group_ids([group_id], db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=group_id,
-        ) from error
-    # query samples
-    samples_in_group = [edge.sample_id for edge in memberships_edges]
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary_v1(
-        db,
-        include_samples=samples_in_group,
-        limit=limit,
-        skip=skip,
-        prediction_result=prediction_result,
-        qc_metrics=qc_metrics,
-    )
-    return db_obj

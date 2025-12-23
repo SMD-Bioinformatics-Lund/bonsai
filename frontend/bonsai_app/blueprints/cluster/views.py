@@ -11,7 +11,7 @@ from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
 
-from ...bonsai import (TokenObject, cluster_samples, get_samples,
+from ...bonsai import (TokenObject, cluster_samples, get_sample_summaries,
                        get_valid_group_columns)
 from ...custom_filters import get_json_path
 
@@ -175,8 +175,8 @@ def tree():
             metadata = {}
         else:
             token = TokenObject(**current_user.get_id())
-            sample_summary = get_samples(
-                token, sample_ids=samples_obj["sample_id"], limit=0
+            sample_summary = get_sample_summaries(
+                token, sample_ids=samples_obj["sample_id"], offset=0
             )
             # get column info
             if column_info is None:
