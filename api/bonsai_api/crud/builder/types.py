@@ -1,4 +1,4 @@
-"""Definitions of samples summaries"""
+"""Models used by pipeline builders."""
 
 import hashlib
 import json
@@ -7,10 +7,10 @@ from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, Field, computed_field, model_validator
 
 
-BuildOutput = Literal['tool', 'root', 'both']
+
 PipelineStages: TypeAlias = list[dict[str, Any]]
 PipelineProjection: TypeAlias = dict[str, int | str]
-
+BuildOutput = Literal['tool', 'root', 'both']
 
 
 class BuilderArgs(BaseModel):
@@ -40,23 +40,6 @@ class LookupSpec(BaseModel):
     # Post-processing stages often used with lookups
     add_fields: dict[str, Any] | None = None     # e.g., {"groups_info": {"$map": ...}}
     project: dict[str, Any] | None = None        # e.g., {"groups_meta": 0}
-    
-
-class SummaryBuildEntry(BaseModel):
-    """Describe how to summize data in the summary."""
-
-    name: str
-    args: BuilderArgs
-    projection: bool | str | int = True
-
-
-class SummaryConfig(BaseModel):
-    """Configure how to summarize sample info"""
-
-    builders: list[SummaryBuildEntry]
-    emit: list[dict[str, str | int | dict[str, str]]] = Field([], description="Whitelist fields")
-    drop_after_build: list[str] = Field([], description="Prevent these fields from being returned")
-    hide: list[str] = Field(default=["_id"], description="Allways hide these fields")
 
 
 ColumnType = Literal["string","number","integer","date","boolean","object"]
@@ -138,7 +121,6 @@ class ManifestOutput(BaseModel):
     """Output version of manifest."""
 
     columns: list[ColumnBase]
-    filters: list[str]
     etag: str
     version: str
 

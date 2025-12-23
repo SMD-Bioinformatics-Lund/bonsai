@@ -1,13 +1,11 @@
 """Summary crud functions"""
 import logging
 from typing import Any
-from bonsai_api.models.summary_manifest import Manifest
+from .builder.types import Manifest
+from .builder.summary import compile_summary_pipeline
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from pymongo import ASCENDING, DESCENDING
 from bonsai_api.db import Database
-
-
-from .compile import compile_pipeline
 
 
 LOG = logging.getLogger(__name__)
@@ -22,7 +20,6 @@ async def get_samples_summary(
     sort: str,
     limit: int,
     offset: int | None = None,
-    cursor: str | None = None,
 ):
     """Get summarized sample information."""
     if fields and (valid_fields := {col.id for col in manifest.columns}):
@@ -35,7 +32,7 @@ async def get_samples_summary(
     if match:
         pipeline.append({"$match": match})
 
-    pipeline.extend(compile_pipeline(db, manifest, fields))
+    pipeline.extend(compile_summary_pipeline(db, manifest, fields))
 
     # add stable sorting to facilitate offset
     sort_fields = "-created_at" if not sort else sort

@@ -19,11 +19,12 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
 class ApiGetSamplesDetailsInput(BaseModel):
     """Input parameters for getting sample details."""
 
-    limit: int | None = None
-    skip: int | None = None
-    prediction_result: bool = True
-    qc_metrics: bool = False
+    group_id: str | None = None
     sid: list[str] | None = None
+    fields: list[str] | None = None
+    sort: str = "-created_at"
+    limit: int | None = None
+    offset: int | None = None
 
 
 class TableColumn(BaseModel):

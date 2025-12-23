@@ -4,22 +4,20 @@ import logging
 import pathlib
 from typing import Annotated, Any, Literal, Union, cast
 
-from bonsai_api.crud.summary.spec import MANIFEST
-from bonsai_api.models.summary_manifest import ManifestOutput
+from api.bonsai_api.crud.summary import get_samples_summary
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
+from bonsai_api.crud.builder.types import ManifestOutput
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import (
     EntryNotFound,
     add_comment,
     add_location,
-    list_samples_service,
+    get_samples_full,
 )
 from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
-from bonsai_api.crud.sample import (
-    get_sample,
-    get_samples_summary_v1,
-)
+from bonsai_api.crud.sample import get_sample
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
 from bonsai_api.crud.sample import (
@@ -120,81 +118,51 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-class ApiGetSamplesDetailsInput(BaseModel):
-    """Input parameters for getting sample details."""
-
-    limit: int | None = Field(
-        default=None, gt=-1, title="Limit the output to x samples"
-    )
-    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
-    prediction_result: bool = Field(default=True, title="Include prediction results")
-    qc_metrics: bool = Field(default=False, title="Include QC metrics")
-    sid: list[str] | None = Field(
-        None, description="Optional limit query to samples ids"
-    )
-
-
-@router.post(
-    "/samples/summary",
-    response_model_by_alias=False,
-    response_model=MultipleRecordsResponseModel,
-    tags=[RouterTags.SAMPLE],
-    deprecated=True
-)
-async def samples_summary_v1(
-    query: ApiGetSamplesDetailsInput,
-    db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[READ_PERMISSION]
-    ),
-):
-    """Entrypoint for getting a summary for multiple samples."""
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary_v1(
-        db,
-        limit=query.limit,
-        skip=query.skip,
-        prediction_result=query.prediction_result,
-        include_samples=query.sid,
-        qc_metrics=query.qc_metrics,
-    )
-    return db_obj
-
-
-class SamplesQueryBody(BaseModel):
+class SamplesSummaryBody(BaseModel):
     """Input parameters for getting sample details."""
 
     group_id: str | None = None
     sid: list[str] | None = Field(
         None, description="Optional limit query to samples ids"
     )
-    view: Literal["summary", "full"] = "summary"
     fields: list[str] | None = None
     sort: str = "-created_at"
-    limit: int = Field(
-        default=50, ge=0, title="Limit the output to x samples"
+    limit: int | None = Field(
+        default=None, title="Limit the output to x samples"
     )
     offset: int = Field(0, ge=0)
-    cursor: str | None = None
 
 
-@router.post("/samples/query")
+@router.post("/samples/summary")
 async def query_samples(
-    body: SamplesQueryBody,
+    body: SamplesSummaryBody,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
 ):
     """Get samples."""
-    if body.cursor and body.offset:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Got both cursor and offset, provide only one.")
+    match = {}
+    if body.group_id:
+        match["groups"] = body.group_id
+    if body.sid:
+        match["sample_id"] = {"$in": body.sid}
+
     try:
-        return await list_samples_service(db, group_id=body.group_id, sids=body.sid, view=body.view, fields=body.fields, sort=body.sort, limit=body.limit, offset=body.offset, cursor=body.cursor)
+        return await get_samples_summary(
+            db,
+            MANIFEST,
+            match=match,
+            fields=body.fields,
+            sort=body.sort,
+            limit=body.limit,
+            offset=body.offset,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
 
 
-@router.get("/samples/query/manifest")
+@router.get("/samples/summary/manifest")
 async def get_summary_manifest():
     """Get valid fields for the sample summary."""
     public = ManifestOutput.from_internals(MANIFEST)
@@ -207,22 +175,26 @@ async def get_summary_manifest():
 async def list_samples(
     group_id: str | None = Query(None, description="Filter group by ID"),
     sid: list[str] | None = Query(None, description="Fileter by sample ids (Use POST for large sets)"),
-    view: Literal["summary", "full"] = Query("summary", description="Return computed summary or the full document"),
     fields: list[str] | None = Query(None, description="Fields to include in response"),
     sort: str = Query("-created_at"),
     limit: int = Query(50, ge=0),
     offset: int = Query(0, ge=0),
-    cursor: str | None = Query(None),
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Get samples from the database. It can return either the full or summarized sample information."""
-    if cursor and offset:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Got both cursor and offset, provide only one.")
     try:
-        return await list_samples_service(db, group_id=group_id, sids=sid, view=view, fields=fields, sort=sort, limit=limit, offset=offset, cursor=cursor)
+        match = {}
+        if group_id:
+            match["groups"] = group_id
+        if sid:
+            match["sample_id"] = {"$in": sid}
+
+        return await get_samples_full(
+            db=db, match=match, fields=fields, sort=sort, limit=limit, offset=offset
+        )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:

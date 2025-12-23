@@ -238,27 +238,28 @@ def remove_samples_from_basket(
 
 
 @api_authentication
-def get_samples(
+def get_sample_summaries(
     headers: CaseInsensitiveDict[str],
-    limit: int | None = None,
-    skip: int | None = None,
+    group_id: str | None = None,
     sample_ids: list[str] | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ):
     """Get multipe samples from database.
 
     If sample_ids is provided it will return only those samples.
     """
     # conduct query
-    url = f"{settings.api_internal_url}/samples/query"
+    url = f"{settings.api_internal_url}/samples/summary"
     # get limit, offeset and skip values
     if sample_ids is not None:
         # sanity check list
         if len(sample_ids) == 0:
             raise ValueError("sample_ids list cant be empty!")
     data = ApiGetSamplesDetailsInput.model_validate(
-        {"limit": limit, "skip": skip, "sid": sample_ids}
+        {"limit": limit, "offset": offset, "sid": sample_ids, "group_id": group_id}
     )
-    resp = requests_post(url, headers=headers, json=data.model_dump())
+    resp = requests_post(url, headers=headers, json=data.model_dump(mode="json"))
 
     try:
         resp.raise_for_status()
@@ -271,7 +272,7 @@ def get_samples(
 def get_valid_summary_columns(headers: CaseInsensitiveDict[str]):
     """Query API for valid group columns."""
     resp = requests_get(
-        f"{settings.api_internal_url}/samples/query/manifest", headers=headers
+        f"{settings.api_internal_url}/samples/summary/manifest", headers=headers
     )
     resp.raise_for_status()
     return resp.json()
@@ -283,37 +284,6 @@ def delete_samples(headers: CaseInsensitiveDict[str], sample_ids: List[str]):
     # conduct query
     url = f"{settings.api_internal_url}/samples/"
     resp = requests_delete(url, headers=headers, json=sample_ids)
-
-    resp.raise_for_status()
-    return resp.json()
-
-
-@api_authentication
-def get_samples_in_group(
-    headers: CaseInsensitiveDict[str],
-    group_id: str | None = None,
-    limit: int = 0,
-    skip_lines: int = 0,
-    prediction_result: bool = True,
-    qc_metrics: bool = False,
-):
-    """Search the database for the samples that are part of a given group."""
-    # conduct query
-    url = f"{settings.api_internal_url}/groups/{group_id}/samples"
-    if group_id is None:
-        raise ValueError("No sample id provided.")
-
-    current_app.logger.debug("Query API for samples in group: %s", group_id)
-    resp = requests_get(
-        url,
-        headers=headers,
-        params={
-            "limit": limit,
-            "skip": skip_lines,
-            "prediction_result": prediction_result,
-            "qc_metrics": qc_metrics,
-        },
-    )
 
     resp.raise_for_status()
     return resp.json()

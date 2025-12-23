@@ -47,7 +47,12 @@ class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-method
     id: str | None = Field(None)
 
 
-class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
+class ForbidExtraModelMixin(BaseModel):
+    """Mixin to forbid extra fields in pydantic model."""
+
+    model_config = ConfigDict(extra="forbid")
+
+class Timestamps(RWModel):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
     created_at: datetime.datetime = Field(default_factory=get_timestamp)

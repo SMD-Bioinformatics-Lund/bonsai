@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
+from .base import (DateTimeModelMixin, DBModelMixin, Timestamps,
                    MultipleRecordsResponseModel, RWModel)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
@@ -62,7 +62,7 @@ class TbProfilerVariant(VariantInDb):
     )
 
 
-class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
+class SampleBase(Timestamps):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     tags: list[Tag] = []
