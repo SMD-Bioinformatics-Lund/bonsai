@@ -27,11 +27,17 @@ async def add_favorite(db: Database, user_id: str, group_id: str) -> dict[str, A
     doc = {"user_id": user_id, "group_id": group_id, "created_at": get_timestamp()}
     try:
         # upsert by user+group to make operation idempotent
-        await col.update_one({"user_id": user_id, "group_id": group_id}, {"$setOnInsert": doc}, upsert=True)
+        await col.update_one(
+            {"user_id": user_id, "group_id": group_id},
+            {"$setOnInsert": doc},
+            upsert=True,
+        )
         return doc
     except PyMongoError as pme:
         LOG.error("MongoDB error while adding favorite: %s", str(pme))
-        raise DatabaseOperationError(f"Database error occurred while adding favorite: {str(pme)}") from pme
+        raise DatabaseOperationError(
+            f"Database error occurred while adding favorite: {str(pme)}"
+        ) from pme
 
 
 async def remove_favorite(db: Database, user_id: str, group_id: str) -> int:
@@ -45,7 +51,9 @@ async def remove_favorite(db: Database, user_id: str, group_id: str) -> int:
         return res.deleted_count
     except PyMongoError as pme:
         LOG.error("MongoDB error while removing favorite: %s", str(pme))
-        raise DatabaseOperationError(f"Database error occurred while removing favorite: {str(pme)}") from pme
+        raise DatabaseOperationError(
+            f"Database error occurred while removing favorite: {str(pme)}"
+        ) from pme
 
 
 async def list_user_favorites(db: Database, user_id: str) -> List[str]:
@@ -60,7 +68,9 @@ async def list_user_favorites(db: Database, user_id: str) -> List[str]:
         return [d["group_id"] for d in docs]
     except PyMongoError as pme:
         LOG.error("MongoDB error while listing favorites: %s", str(pme))
-        raise DatabaseOperationError(f"Database error occurred while listing favorites: {str(pme)}") from pme
+        raise DatabaseOperationError(
+            f"Database error occurred while listing favorites: {str(pme)}"
+        ) from pme
 
 
 async def is_favorite(db: Database, user_id: str, group_id: str) -> bool:
@@ -74,4 +84,6 @@ async def is_favorite(db: Database, user_id: str, group_id: str) -> bool:
         return doc is not None
     except PyMongoError as pme:
         LOG.error("MongoDB error while checking favorite: %s", str(pme))
-        raise DatabaseOperationError(f"Database error occurred while checking favorite: {str(pme)}") from pme
+        raise DatabaseOperationError(
+            f"Database error occurred while checking favorite: {str(pme)}"
+        ) from pme

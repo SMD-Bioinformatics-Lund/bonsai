@@ -6,12 +6,10 @@ from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
-
-
 PipelineProjection: TypeAlias = dict[str, int | str]
 PipelineStage: TypeAlias = dict[str, Any]
 PipelineStages: TypeAlias = list[PipelineStage | PipelineProjection]
-BuildOutput = Literal['tool', 'root', 'both']
+BuildOutput = Literal["tool", "root", "both"]
 
 
 class BuilderArgs(BaseModel):
@@ -24,11 +22,14 @@ class BuilderArgs(BaseModel):
     output_field: str | None = None
     exclude_fields: list[str] = []
     default_result: Any | None = None
-    hit: int = Field(0, description="Index of default hit to select if multiple are present")
+    hit: int = Field(
+        0, description="Index of default hit to select if multiple are present"
+    )
 
 
 class LookupSpec(BaseModel):
     """Describe how to lookup information from other collections."""
+
     from_collection: str = Field(..., description="Name of the collection to join")
     as_field: str = Field(..., description="the output array field")
     let: dict[str, Any] | None = None
@@ -39,11 +40,11 @@ class LookupSpec(BaseModel):
     foreign_field: str | None = None
 
     # Post-processing stages often used with lookups
-    add_fields: dict[str, Any] | None = None     # e.g., {"groups_info": {"$map": ...}}
-    project: dict[str, Any] | None = None        # e.g., {"groups_meta": 0}
+    add_fields: dict[str, Any] | None = None  # e.g., {"groups_info": {"$map": ...}}
+    project: dict[str, Any] | None = None  # e.g., {"groups_meta": 0}
 
 
-ColumnType = Literal["string","number","integer","date","boolean","object"]
+ColumnType = Literal["string", "number", "integer", "date", "boolean", "object"]
 
 
 class ColumnBase(BaseModel):
@@ -63,15 +64,17 @@ class ColumnBase(BaseModel):
 class ColumnFull(ColumnBase):  # pylint: disable=too-few-public-methods
     """Internal data used for building pipeline queries."""
 
-    path: Any = Field(..., description="Describing how to access the data in mongo object")
+    path: Any = Field(
+        ..., description="Describing how to access the data in mongo object"
+    )
     requires: list[str] = []
 
 
 class Manifest(BaseModel):
     """Internal backend manifest spec used for aggregation pipeline compilation."""
+
     columns: list[ColumnFull]
     filters: list[str] = []
-
 
     @model_validator(mode="after")
     def _unique_ids(self):
@@ -81,7 +84,6 @@ class Manifest(BaseModel):
             raise ValueError(f"Duplicate column ids: {sorted(dups)}")
         return self
 
-
     def _canonical_payload(self) -> bytes:
         """Produce a deterministic byte payload for hashing.
         Exclude computed fields and any non-deterministic values.
@@ -89,9 +91,7 @@ class Manifest(BaseModel):
         """
         # Dump without computed fields and canonicalize order
         d = self.model_dump(
-            exclude_none=True,
-            exclude_unset=True,
-            exclude={"etag", "version"}
+            exclude_none=True, exclude_unset=True, exclude={"etag", "version"}
         )
         # Sort columns by id, filters by id, groups by id
         d["columns"] = sorted(d.get("columns", []), key=lambda x: x["id"])
@@ -101,11 +101,10 @@ class Manifest(BaseModel):
         payload = json.dumps(d, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return payload
 
-
     @computed_field(return_type=str)  # included in .model_dump() and OpenAPI
     def etag(self) -> str:
         """Compute ETag.
-        
+
         Ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/ETag
         """
         raw = self._canonical_payload()
@@ -137,13 +136,10 @@ class ManifestOutput(BaseModel):
                 type=col.type,
                 default_visible=col.default_visible,
                 filterable=col.filterable,
-                sortable=col.sortable
+                sortable=col.sortable,
             )
             for col in spec.columns
         ]
         return cls(
-            columns=pub_cols,
-            filters=spec.filters,
-            etag=spec.etag,
-            version=spec.version
+            columns=pub_cols, filters=spec.filters, etag=spec.etag, version=spec.version
         )

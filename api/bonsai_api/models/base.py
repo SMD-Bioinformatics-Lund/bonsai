@@ -52,6 +52,7 @@ class ForbidExtraModelMixin(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+
 class Timestamps(RWModel):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 

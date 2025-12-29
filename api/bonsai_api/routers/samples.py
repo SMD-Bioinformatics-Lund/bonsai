@@ -4,94 +4,53 @@ import logging
 import pathlib
 from typing import Annotated, Any, Union, cast
 
-from api.bonsai_api.crud.summary import get_samples_summary
+from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
-from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
-from bonsai_api.crud.sample import (
-    EntryNotFound,
-    add_comment,
-    add_location,
-    get_samples_full,
-)
+from bonsai_api.crud.sample import EntryNotFound, add_comment, add_location
 from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
-from bonsai_api.crud.sample import get_sample
+from bonsai_api.crud.sample import get_sample, get_samples_full
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
-from bonsai_api.crud.sample import (
-    update_sample_qc_classification,
-    update_variant_annotation_for_sample,
-)
+from bonsai_api.crud.sample import (update_sample_qc_classification,
+                                    update_variant_annotation_for_sample)
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (
-    get_audit_log,
-    get_current_active_user,
-    get_database,
-    get_request_context,
-)
-from bonsai_api.io import (
-    InvalidRangeError,
-    RangeOutOfBoundsError,
-    is_file_readable,
-    send_partial_file,
-)
+from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
+                                     get_database, get_request_context)
+from bonsai_api.io import (InvalidRangeError, RangeOutOfBoundsError,
+                           is_file_readable, send_partial_file)
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.cluster import TypingMethod
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import (
-    Comment,
-    CommentInDatabase,
-    SampleInCreate,
-    SampleInDatabase,
-)
+from bonsai_api.models.sample import (Comment, CommentInDatabase,
+                                      SampleInCreate, SampleInDatabase)
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
 from bonsai_api.redis.minhash import (
-    SubmittedJob,
-    exclude_from_analysis,
-    include_in_analysis,
-    schedule_add_genome_signature,
-    schedule_add_genome_signature_to_index,
-    schedule_find_similar_and_cluster,
-    schedule_find_similar_samples,
-    schedule_remove_genome_signature_from_index,
-)
+    SubmittedJob, exclude_from_analysis, include_in_analysis,
+    schedule_add_genome_signature, schedule_add_genome_signature_to_index,
+    schedule_find_similar_and_cluster, schedule_find_similar_samples,
+    schedule_remove_genome_signature_from_index)
 from bonsai_api.utils import format_error_message
-from fastapi import (
-    APIRouter,
-    Body,
-    Depends,
-    File,
-    Header,
-    HTTPException,
-    Path,
-    Query,
-    Security,
-    status,
-)
+from fastapi import (APIRouter, Body, Depends, File, Header, HTTPException,
+                     Path, Query, Security, status)
 from fastapi.responses import FileResponse, JSONResponse
 from prp.models import PipelineResult
-from prp.models.phenotype import (
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantType,
-    VirulenceMethodIndex,
-)
+from prp.models.phenotype import (AMRMethodIndex, StressMethodIndex,
+                                  VariantType, VirulenceMethodIndex)
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
-from .shared import (
-    SAMPLE_ID_PATH,
-    RouterTags,
-    action_from_qc_classification,
-    parse_signature_json,
-)
+from api.bonsai_api.crud.summary import get_samples_summary
+
+from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
+                     parse_signature_json)
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -127,9 +86,7 @@ class SamplesSummaryBody(BaseModel):
     )
     fields: list[str] | None = None
     sort: str = "-created_at"
-    limit: int | None = Field(
-        default=None, title="Limit the output to x samples"
-    )
+    limit: int | None = Field(default=None, title="Limit the output to x samples")
     offset: int = Field(0, ge=0)
 
 
@@ -137,7 +94,9 @@ class SamplesSummaryBody(BaseModel):
 async def query_samples(
     body: SamplesSummaryBody,
     db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(get_current_active_user, scopes=[READ_PERMISSION])
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
 ):
     """Get samples."""
     match = {}
@@ -159,7 +118,9 @@ async def query_samples(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
 
 
 @router.get("/samples/summary/manifest")
@@ -167,14 +128,18 @@ async def get_summary_manifest():
     """Get valid fields for the sample summary."""
     public = ManifestOutput.from_internals(MANIFEST)
     resp = JSONResponse(content=public.model_dump(exclude_none=True))
-    resp.headers['ETag'] = public.etag
+    resp.headers["ETag"] = public.etag
     return resp
 
 
-@router.get("/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel)
+@router.get(
+    "/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel
+)
 async def list_samples(
     group_id: str | None = Query(None, description="Filter group by ID"),
-    sid: list[str] | None = Query(None, description="Fileter by sample ids (Use POST for large sets)"),
+    sid: list[str] | None = Query(
+        None, description="Fileter by sample ids (Use POST for large sets)"
+    ),
     fields: list[str] | None = Query(None, description="Fields to include in response"),
     sort: str = Query("-created_at"),
     limit: int = Query(50, ge=0),
@@ -198,7 +163,9 @@ async def list_samples(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])

@@ -1,11 +1,14 @@
 """Build queries for normalizing jasen results."""
 
 import logging
-from .types import PipelineStages, BuilderArgs, Manifest, PipelineProjection, LookupSpec
-from .summary_manifest import BUILDER_REGISTRY
-from .helpers import build_lookup_stage, build_get_entry_stage, build_flatten_results_stage
 
 from bonsai_api.db import Database
+
+from .helpers import (build_flatten_results_stage, build_get_entry_stage,
+                      build_lookup_stage)
+from .summary_manifest import BUILDER_REGISTRY
+from .types import (BuilderArgs, LookupSpec, Manifest, PipelineProjection,
+                    PipelineStages)
 
 LOG = logging.getLogger(__name__)
 
@@ -27,48 +30,68 @@ def build_summary_entry_stages(spec: BuilderArgs) -> PipelineStages:
          - "both": flatten to root AND keep `<output_field>` entry
     """
     # If not provided, default the output field to selector[label_field] or the source name.
-    of = spec.output_field or spec.selector.get(spec.label_field or "", spec.source_path)
+    of = spec.output_field or spec.selector.get(
+        spec.label_field or "", spec.source_path
+    )
     default_result = spec.default_result or []
 
     stages: PipelineStages = []
-    stages.extend(build_get_entry_stage(
-        source_path=spec.source_path, output_field=of, selector=spec.selector, default_result=default_result
-    ))
+    stages.extend(
+        build_get_entry_stage(
+            source_path=spec.source_path,
+            output_field=of,
+            selector=spec.selector,
+            default_result=default_result,
+        )
+    )
     # If the result is an array, pick the n-th element else use as is
 
-   # 2) Normalize `result` to one object
-    stages.append({
-        "$addFields": {
-            f"{of}.result": {
-                "$cond": [
-                    {"$isArray": f"${of}.result"},
-                    {"$cond": [
-                        { "$gt": [ { "$size": { "$ifNull": [ f"${of}.result", [] ] } }, spec.hit ] },
-                        { "$arrayElemAt": [ f"${of}.result", spec.hit ] },
-                        {}
-                    ]},
-                    { "$ifNull": [ f"${of}.result", {} ] },
-                ]
+    # 2) Normalize `result` to one object
+    stages.append(
+        {
+            "$addFields": {
+                f"{of}.result": {
+                    "$cond": [
+                        {"$isArray": f"${of}.result"},
+                        {
+                            "$cond": [
+                                {
+                                    "$gt": [
+                                        {"$size": {"$ifNull": [f"${of}.result", []]}},
+                                        spec.hit,
+                                    ]
+                                },
+                                {"$arrayElemAt": [f"${of}.result", spec.hit]},
+                                {},
+                            ]
+                        },
+                        {"$ifNull": [f"${of}.result", {}]},
+                    ]
+                }
             }
         }
-    })
+    )
 
     # 3) Exclude fields
     if spec.exclude_fields:
-        stages.append({ "$unset": [ f"{of}.result.{e}" for e in spec.exclude_fields ] })
+        stages.append({"$unset": [f"{of}.result.{e}" for e in spec.exclude_fields]})
 
     # 4) Emit
     if spec.output in ("root", "both"):
-        stages += build_flatten_results_stage(of, label_field=spec.label_field, static_prefix=spec.static_prefix)
+        stages += build_flatten_results_stage(
+            of, label_field=spec.label_field, static_prefix=spec.static_prefix
+        )
         if spec.output == "root":
-            stages.append({ "$unset": [ of ] })
+            stages.append({"$unset": [of]})
 
     if spec.output == "tool":
-        stages.append({ "$addFields": { of: { "$ifNull": [ f"${of}.result", {} ] } } })
+        stages.append({"$addFields": {of: {"$ifNull": [f"${of}.result", {}]}}})
     return stages
 
 
-def compile_summary_pipeline(db: Database, manifest: Manifest, fields: list[str] | None = None) -> PipelineStages:
+def compile_summary_pipeline(
+    db: Database, manifest: Manifest, fields: list[str] | None = None
+) -> PipelineStages:
     """Compile aggregation pipeline from the manifest."""
 
     pipeline: PipelineStages = []
@@ -88,11 +111,15 @@ def compile_summary_pipeline(db: Database, manifest: Manifest, fields: list[str]
 
             if (spec := BUILDER_REGISTRY.get(builder_name)) is None:
                 raise RuntimeError(f"Unkown build function: {builder_name}")
-            
-            LOG.debug("Building summary for column '%s' using builder '%s'", col.id, builder_name)
+
+            LOG.debug(
+                "Building summary for column '%s' using builder '%s'",
+                col.id,
+                builder_name,
+            )
             if isinstance(spec, BuilderArgs):
                 pipeline.extend(build_summary_entry_stages(spec))
-                output_field = (spec.output_field or spec.source_path)
+                output_field = spec.output_field or spec.source_path
                 drop_after_build.add(output_field)
             elif isinstance(spec, LookupSpec):
                 # run lookup function
@@ -108,6 +135,6 @@ def compile_summary_pipeline(db: Database, manifest: Manifest, fields: list[str]
     # Drop large sub-documents when pipeline stages has been built
     if drop_after_build:
         pipeline.append({"$unset": list(drop_after_build)})
-    
+
     pipeline.append({"$project": project})
     return pipeline

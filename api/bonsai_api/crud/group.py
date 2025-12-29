@@ -3,42 +3,39 @@
 import logging
 from typing import Any
 
-from api.bonsai_api.models.user import UserContext
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (
-    GroupAllowed,
-    GroupCore,
-    GroupInfoOut,
-    GroupListResponse,
-    GroupPresets,
-    GroupRecordDb,
-    GroupUpdate,
-    GroupAllowedUpdate,
-    GroupPresetIn,
-    GroupInfoCreate,
-    Visibility
-)
+from bonsai_api.models.group import (GroupAllowed, GroupAllowedUpdate,
+                                     GroupCore, GroupInfoCreate, GroupInfoOut,
+                                     GroupListResponse, GroupPresetIn,
+                                     GroupPresets, GroupRecordDb, GroupUpdate,
+                                     Visibility)
 from bonsai_api.models.sample import SampleSummary
 from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from .errors import DatabaseOperationError, EntryNotFound
-from .utils import audit_event_context, check_groups_exists, managed_transaction
-from .memberships import remove_memberships, get_samples_by_group_ids
-from .builder.group import build_group_visibility_match_stage, build_single_group_pipeline, group_project_stage
+from api.bonsai_api.models.user import UserContext
+
+from .builder.group import (build_group_visibility_match_stage,
+                            build_single_group_pipeline, group_project_stage)
 from .builder.helpers import build_facet_pagination, build_sort_stage
-from .builder.types import PipelineStages
 from .builder.summary_manifest import MANIFEST
+from .builder.types import PipelineStages
+from .errors import DatabaseOperationError, EntryNotFound
+from .memberships import get_samples_by_group_ids, remove_memberships
+from .utils import (audit_event_context, check_groups_exists,
+                    managed_transaction)
 
 LOG = logging.getLogger(__name__)
 
 
-def _validate_presets_and_default(presets_in: list[GroupPresetIn] | None, default_pid: str | None) -> None:
+def _validate_presets_and_default(
+    presets_in: list[GroupPresetIn] | None, default_pid: str | None
+) -> None:
     """Validate preset uniqueness and that default pid is present when given."""
     presets_in = presets_in or []
     preset_ids = [p.preset_id for p in presets_in]
@@ -60,7 +57,9 @@ def _validate_allowed_columns(allowed_columns: list[str] | None) -> None:
             raise ValueError(f"Invalid column id in allowed_columns: {col}")
 
 
-def _build_group_payload(group_record: GroupInfoCreate, owner_id: str | None) -> GroupRecordDb:
+def _build_group_payload(
+    group_record: GroupInfoCreate, owner_id: str | None
+) -> GroupRecordDb:
     """Build GroupRecordDb representation from create payload."""
     core = GroupCore(
         group_id=group_record.group_id,
@@ -109,8 +108,10 @@ async def get_groups(
             data_pipeline.append(build_group_visibility_match_stage(user_id))
 
         # format the group data
-        data_pipeline.append(group_project_stage(include_allowed=True, include_presets=True))
-        
+        data_pipeline.append(
+            group_project_stage(include_allowed=True, include_presets=True)
+        )
+
         if sort:
             allowed_sort_fields = {
                 "group_id",
@@ -123,8 +124,10 @@ async def get_groups(
 
         # add pagination facet
         data_pipeline.append(build_facet_pagination(offset, limit))
-        
-        agg_cursor = await db.sample_group_collection.aggregate(data_pipeline, session=session)
+
+        agg_cursor = await db.sample_group_collection.aggregate(
+            data_pipeline, session=session
+        )
         results = await agg_cursor.to_list(None)
     except PyMongoError as pme:
         LOG.error("MongoDB error while retrieving groups: %s", str(pme))
@@ -147,16 +150,19 @@ async def get_groups(
             LOG.error("Skipping invalid group document: %s", str(ve))
             continue
     records_total = facet.get("records_total", [])
-    return GroupListResponse(data=validated, records_total=records_total[0]["count"] if records_total else len(validated))
+    return GroupListResponse(
+        data=validated,
+        records_total=records_total[0]["count"] if records_total else len(validated),
+    )
 
 
 async def get_group(
     db: Database,
     group_id: str,
     *,
-    user_id: str | None = None, 
-    user_roles: list[str] | None = None, 
-    session: Any = None
+    user_id: str | None = None,
+    user_roles: list[str] | None = None,
+    session: Any = None,
 ) -> GroupInfoOut:
     """Retrieve a single group by `group_id` with access control.
 
@@ -165,7 +171,9 @@ async def get_group(
     - Returns `GroupInfoOut` or raises `EntryNotFound` (404 semantics).
     """
     if not group_id or not isinstance(group_id, str):
-        raise ValueError(f"Invalid group_id: must be a non-empty string, got {group_id}")
+        raise ValueError(
+            f"Invalid group_id: must be a non-empty string, got {group_id}"
+        )
 
     try:
         data_pipeline: PipelineStages = [
@@ -178,7 +186,9 @@ async def get_group(
         # add data fields
         data_pipeline.append(group_project_stage(include_presets=True))
 
-        agg_cursor = await db.sample_group_collection.aggregate(data_pipeline, session=session)
+        agg_cursor = await db.sample_group_collection.aggregate(
+            data_pipeline, session=session
+        )
         docs = await agg_cursor.to_list(1)
         if not docs:
             # Either the group doesn't exist OR the caller isn't allowed to see it.
@@ -193,23 +203,36 @@ async def get_group(
     except ValidationError as ve:
         LOG.error(
             "Group %s caused validation error: %s",
-            group_id, ve,
+            group_id,
+            ve,
         )
         raise
 
 
-async def _fetch_group_minimal(db: Database, group_id: str, session: Any = None) -> dict[str, Any] | None:
+async def _fetch_group_minimal(
+    db: Database, group_id: str, session: Any = None
+) -> dict[str, Any] | None:
     """Fetch minimal fields required for access checks.
 
     Tries both top-level `group_id` and `core.group_id` to remain compatible with older documents.
     """
     q = {"$or": [{"group_id": group_id}, {"core.group_id": group_id}]}
-    proj = {"_id": 0, "core.owner_id": 1, "core.visibility": 1, "invited_users": 1, "group_id": 1}
+    proj = {
+        "_id": 0,
+        "core.owner_id": 1,
+        "core.visibility": 1,
+        "invited_users": 1,
+        "group_id": 1,
+    }
     return await db.sample_group_collection.find_one(q, proj, session=session)
 
 
 async def check_group_read_permission(
-    db: Database, group_id: str, user_id: str | None, user_roles: list[str] | None = None, session: Any = None
+    db: Database,
+    group_id: str,
+    user_id: str | None,
+    user_roles: list[str] | None = None,
+    session: Any = None,
 ) -> bool:
     """Return True if the given user can read the group, False otherwise.
 
@@ -220,7 +243,9 @@ async def check_group_read_permission(
     if not doc:
         return False
 
-    visibility = doc.get("core", {}).get("visibility") or doc.get("visibility") or "public"
+    visibility = (
+        doc.get("core", {}).get("visibility") or doc.get("visibility") or "public"
+    )
     if visibility == "public":
         return True
 
@@ -237,7 +262,11 @@ async def check_group_read_permission(
 
 
 async def check_group_manage_permission(
-    db: Database, group_id: str, user_id: str | None, user_roles: list[str] | None = None, session: Any = None
+    db: Database,
+    group_id: str,
+    user_id: str | None,
+    user_roles: list[str] | None = None,
+    session: Any = None,
 ) -> bool:
     """Return True if the given user can manage (modify) the group (owner or admin)"""
     user_roles = user_roles or []
@@ -271,7 +300,11 @@ async def create_group(
     _validate_allowed_columns(group_record.allowed_columns)
 
     # enforce visibility/invite rules: only owner or admin can create private groups
-    if group_record.visibility == Visibility.PRIVATE and not creator.user_id and not creator.is_admin():
+    if (
+        group_record.visibility == Visibility.PRIVATE
+        and not creator.user_id
+        and not creator.is_admin()
+    ):
         raise ValueError("Only owner or admin may create a private group")
 
     payload = _build_group_payload(group_record, creator.user_id)
@@ -279,8 +312,14 @@ async def create_group(
     event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
     with audit_event_context(audit, "create_group", ctx, event_subject):
         try:
-            doc = await db.sample_group_collection.insert_one(payload.model_dump(mode="json"), session=session)
-            LOG.info("Created group %s with id %s", group_record.group_id, str(doc.inserted_id))
+            doc = await db.sample_group_collection.insert_one(
+                payload.model_dump(mode="json"), session=session
+            )
+            LOG.info(
+                "Created group %s with id %s",
+                group_record.group_id,
+                str(doc.inserted_id),
+            )
             return GroupInfoOut(
                 group_id=group_record.group_id,
                 display_name=group_record.display_name,
@@ -326,7 +365,9 @@ async def delete_group(
                     raise EntryNotFound(group_id)
 
                 # Remove group from stored memberships
-                edges = await get_samples_by_group_ids([group_id], db=db, session=session)
+                edges = await get_samples_by_group_ids(
+                    [group_id], db=db, session=session
+                )
                 await remove_memberships(edges, db=db, session=session)
 
                 # Remove group document
@@ -474,7 +515,10 @@ async def upsert_preset(
     if not replaced:
         items.append(preset.model_dump())
 
-    new_presets = {"default_preset_id": preset.preset_id if set_default else default_id, "items": items}
+    new_presets = {
+        "default_preset_id": preset.preset_id if set_default else default_id,
+        "items": items,
+    }
     payload = {"presets": new_presets, "modified_at": get_timestamp()}
 
     event_subject = Subject(id=group_id, type=SourceType.USR)

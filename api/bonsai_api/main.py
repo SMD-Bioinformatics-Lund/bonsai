@@ -12,8 +12,8 @@ from fastapi import FastAPI
 from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (auth, cluster, export, groups, jobs, locations, memberships,
-                      resources, root, samples, users)
+from .routers import (auth, cluster, export, groups, jobs, locations,
+                      memberships, resources, root, samples, users)
 
 logging_config.dictConfig(
     {

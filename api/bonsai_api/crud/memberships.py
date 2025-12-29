@@ -14,7 +14,8 @@ from pymongo.client_session import ClientSession
 from pymongo.errors import BulkWriteError, PyMongoError
 
 from .errors import DatabaseOperationError, EntryNotFound
-from .utils import check_groups_exists, check_samples_exists, managed_transaction
+from .utils import (check_groups_exists, check_samples_exists,
+                    managed_transaction)
 
 LOG = logging.getLogger(__name__)
 
@@ -150,7 +151,8 @@ async def _mutate_memberships(
     # 2. Fetch existing memberships for the samples implicated
     sid_edges = await get_groups_by_sample_ids(sample_ids, db=db, session=session)
     present: dict[str, set[str]] = {
-        sid: {e.group_id for e in edges} for sid, edges in groupby(sid_edges, lambda e: e.sample_id)
+        sid: {e.group_id for e in edges}
+        for sid, edges in groupby(sid_edges, lambda e: e.sample_id)
     }
 
     # 3. Compute new edges that shall to be added

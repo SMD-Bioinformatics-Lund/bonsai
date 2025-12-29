@@ -1,12 +1,13 @@
 """Routes related to collections of samples."""
 
+from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
-from enum import StrEnum
-
 from bonsai_api.utils import get_timestamp
-from .base import ForbidExtraModelMixin, MultipleRecordsResponseModel, Timestamps, RWModel
+from pydantic import BaseModel, Field
+
+from .base import (ForbidExtraModelMixin, MultipleRecordsResponseModel,
+                   RWModel, Timestamps)
 
 FilterParams = list[dict[str, str | int | float],]
 
@@ -37,7 +38,9 @@ class ColumnOverride(BaseModel):
     sortable: bool | None = None
     searchable: bool | None = None
     order: int | None = None
-    locked: bool | None = Field(None, description="If true, user cannot change this column setting")
+    locked: bool | None = Field(
+        None, description="If true, user cannot change this column setting"
+    )
     width: int | None = None
     label: str | None = Field(None, description="Custom column label")
 
@@ -80,7 +83,7 @@ class GroupAllowed(ForbidExtraModelMixin):
 
 class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     """Database representation of a group.
-    
+
     - schema_version: version of the group schema
     - core: identity and description
     - allowed_columns: permitted data columns
@@ -140,6 +143,7 @@ class GroupUpdate(BaseModel):
     display_name: str | None = None
     description: str | None = None
 
+
 class GroupFavorite(RWModel):
     """Represents a user's favorite group link stored in a separate collection."""
 
@@ -150,7 +154,7 @@ class GroupFavorite(RWModel):
 
 class GroupListResponse(MultipleRecordsResponseModel):
     """Response model for listing groups."""
-    
+
     data: list[GroupInfoOut]
 
 

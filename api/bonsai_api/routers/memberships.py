@@ -2,10 +2,8 @@
 
 import logging
 
-from bonsai_api.crud.memberships import (
-    get_groups_by_sample_ids,
-    get_samples_by_group_ids,
-)
+from bonsai_api.crud.memberships import (get_groups_by_sample_ids,
+                                         get_samples_by_group_ids)
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
 from bonsai_api.models.memberships import MembershipEdges
