@@ -9,7 +9,7 @@ IndexDefinition = Dict[str, Any]
 INDEXES: dict[str, list[IndexDefinition]] = {
     "sample_group": [
         {
-            "definition": [("group_id", ASCENDING)],
+            "definition": [("core.group_id", ASCENDING)],
             "options": {
                 "name": "sample_group",
                 "background": True,

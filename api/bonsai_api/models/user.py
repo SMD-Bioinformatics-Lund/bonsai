@@ -5,7 +5,7 @@ from typing import List
 from pydantic import EmailStr
 
 from ..config import settings
-from .base import DBModelMixin, Timestamps, RWModel
+from .base import DBModelMixin, ForbidExtraModelMixin, Timestamps, RWModel
 
 
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
@@ -55,3 +55,14 @@ class UserOutputDatabase(
     """
 
     authentication_method: str = "ldap" if settings.use_ldap_auth else "simple"
+
+
+class UserContext(ForbidExtraModelMixin):
+    """Minimal user context information stored in request."""
+
+    user_id: str | None
+    roles: list[str] | None = None
+
+    def is_admin(self) -> bool:
+        """Check if user has admin role."""
+        return self.roles is not None and "admin" in self.roles

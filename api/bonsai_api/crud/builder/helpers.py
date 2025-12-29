@@ -1,7 +1,9 @@
 """Pipeline builder helper functions."""
 
 from typing import Any
-from .types import PipelineStages, LookupSpec
+
+from pymongo import ASCENDING, DESCENDING
+from .types import PipelineStages, LookupSpec, PipelineStage
 from bonsai_api.db import Database
 
 
@@ -180,3 +182,30 @@ def build_lookup_stage(db: Database, spec: LookupSpec) -> PipelineStages:
         stages.append({"$project": spec.project})
     
     return stages
+
+
+def build_sort_stage(sort: str, allowed_fields: set[str]) -> PipelineStage:
+    """Build a $sort stage from a sort string like '-created_at'."""
+    sort_dir = DESCENDING if sort.startswith("-") else ASCENDING
+    sort_expr = sort[1:] if sort.startswith("-") else sort
+
+    if sort_expr not in allowed_fields:
+        raise ValueError(f"Unsupported sort: {sort_expr}")
+
+    return {"$sort": {sort_expr: sort_dir, "_id": 1}}
+
+
+def build_skip_limit(offset: int = 0, limit: int | None = None) -> PipelineStages:
+    """Build skip/ limit stages."""
+    stages: PipelineStages = []
+    if offset and offset > 0:
+        stages.append({"$skip": offset})
+    if limit and limit > 0:
+        stages.append({"$limit": limit})
+    return stages
+
+
+def build_facet_pagination(offset: int = 0, limit: int | None = None) -> PipelineStage:
+    """Build a $facet stage for unified pagination."""
+    data_pipeline = build_skip_limit(offset, limit)
+    return {"$facet": {"data": data_pipeline, "records_total": [{"$count": "count"}]}}
