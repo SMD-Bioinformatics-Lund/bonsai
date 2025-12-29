@@ -9,8 +9,8 @@ from itertools import chain
 from typing import Any, Callable, Dict, List
 from zoneinfo import ZoneInfo
 
-from dateutil.parser import ParserError, parse
 import jinja2
+from dateutil.parser import ParserError, parse
 from jsonpath2.path import Path as JsonPath
 
 from .config import ANTIBIOTIC_CLASSES, settings

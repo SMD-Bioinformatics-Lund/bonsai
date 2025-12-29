@@ -24,12 +24,12 @@ DEFAULT_RENDERERS = {
 def _get_renderer(column: dict[str, Any]) -> str:
     """Get the renderer for a given column type."""
     col_type = column["type"]
-    if (renderer := DEFAULT_RENDERERS.get(col_type)):
+    if renderer := DEFAULT_RENDERERS.get(col_type):
         return renderer
-    
-    if col_type == 'object':
+
+    if col_type == "object":
         return f"{column['id']}_renderer"
-    
+
     # Fallback
     LOG.warning(
         "No default renderer for column type '%s'. Using 'text_renderer'.",

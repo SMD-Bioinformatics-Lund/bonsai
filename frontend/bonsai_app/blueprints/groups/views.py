@@ -5,9 +5,10 @@ import logging
 from urllib.parse import urlparse
 
 from bonsai_app.bonsai import (TokenObject, create_group, delete_group,
-                               get_group_by_id, get_groups, get_sample_summaries,
-                               get_valid_group_columns, get_valid_summary_columns,
-                               update_group, update_sample_qc_classification)
+                               get_group_by_id, get_groups,
+                               get_sample_summaries, get_valid_group_columns,
+                               get_valid_summary_columns, update_group,
+                               update_sample_qc_classification)
 from bonsai_app.models import (BadSampleQualityAction, PhenotypeType,
                                QualityControlResult)
 from flask import (Blueprint, abort, flash, redirect, render_template, request,
@@ -50,7 +51,7 @@ def groups() -> str:
 
     # generate table data
     manifest = get_valid_summary_columns(token)
-    table_data = format_tablular_data(samples_info["data"], manifest['columns'])
+    table_data = format_tablular_data(samples_info["data"], manifest["columns"])
 
     return render_template(
         "groups.html",
@@ -161,7 +162,8 @@ def group(group_id: str) -> str:
     token = TokenObject(**current_user.get_id())
     try:
         samples_info = get_sample_summaries(
-            token, group_id=group_id,
+            token,
+            group_id=group_id,
         )
         # get column definition to use
         group_info = get_group_by_id(token, group_id=group_id)

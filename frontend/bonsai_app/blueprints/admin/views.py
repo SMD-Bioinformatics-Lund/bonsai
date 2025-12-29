@@ -1,17 +1,16 @@
 """Declaration of flask admin views"""
 
+from bonsai_app.bonsai import TokenObject
+from bonsai_app.bonsai import create_user as create_new_user
+from bonsai_app.bonsai import delete_user as delete_user_from_db
+from bonsai_app.bonsai import get_user, get_users
+from bonsai_app.bonsai import update_user as update_user_info
 from flask import (Blueprint, current_app, flash, redirect, render_template,
                    request, url_for)
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 from wtforms import (Form, PasswordField, SelectMultipleField, StringField,
                      ValidationError, validators, widgets)
-
-from bonsai_app.bonsai import TokenObject
-from bonsai_app.bonsai import create_user as create_new_user
-from bonsai_app.bonsai import delete_user as delete_user_from_db
-from bonsai_app.bonsai import get_user, get_users
-from bonsai_app.bonsai import update_user as update_user_info
 
 admin_bp = Blueprint(
     "admin",

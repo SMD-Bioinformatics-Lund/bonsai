@@ -1,13 +1,14 @@
 """Summary crud functions"""
+
 import logging
 from typing import Any
 
-from .builder.types import Manifest
-from .builder.summary import compile_summary_pipeline
-from .builder.helpers import build_facet_pagination, build_sort_stage
-from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.db import Database
+from bonsai_api.models.base import MultipleRecordsResponseModel
 
+from .builder.helpers import build_facet_pagination, build_sort_stage
+from .builder.summary import compile_summary_pipeline
+from .builder.types import Manifest
 
 LOG = logging.getLogger(__name__)
 
@@ -38,7 +39,9 @@ async def get_samples_summary(
     # add stable sorting to facilitate offset
     sort_fields = "-created_at" if not sort else sort
     pipeline.append(
-        build_sort_stage(sort_fields, {col.id for col in manifest.columns if col.sortable})
+        build_sort_stage(
+            sort_fields, {col.id for col in manifest.columns if col.sortable}
+        )
     )
 
     # Pagination
@@ -54,4 +57,6 @@ async def get_samples_summary(
     total_list = facet.get("records_total", [])
     records_total = total_list[0]["count"] if total_list else 0
 
-    return MultipleRecordsResponseModel(data=facet.get('data', []), records_total=records_total)
+    return MultipleRecordsResponseModel(
+        data=facet.get("data", []), records_total=records_total
+    )

@@ -1,9 +1,11 @@
 """Build group related aggregation pipelines."""
 
-from .types import PipelineStage, PipelineStages, PipelineProjection
+from .types import PipelineProjection, PipelineStage, PipelineStages
 
 
-def group_project_stage(include_presets: bool = True, include_allowed: bool = True) -> PipelineProjection:
+def group_project_stage(
+    include_presets: bool = True, include_allowed: bool = True
+) -> PipelineProjection:
     """Build a projection stage for basic group info.
 
     - include_presets: whether to include column presets in the projection.
@@ -32,7 +34,9 @@ def build_group_visibility_match_stage(user_id: str) -> PipelineStage:
         "$match": {
             "$or": [
                 {"core.visibility": "public"},
-                {"core.visibility": {"$exists": False}},  # treat missing visibility as public
+                {
+                    "core.visibility": {"$exists": False}
+                },  # treat missing visibility as public
                 {"core.owner_id": user_id},
                 {"invited_users": user_id},
             ]

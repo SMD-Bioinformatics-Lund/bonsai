@@ -16,8 +16,8 @@ from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (DateTimeModelMixin, DBModelMixin, Timestamps,
-                   MultipleRecordsResponseModel, RWModel)
+from .base import (DateTimeModelMixin, DBModelMixin,
+                   MultipleRecordsResponseModel, RWModel, Timestamps)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
 

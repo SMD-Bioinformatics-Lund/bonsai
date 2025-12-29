@@ -5,24 +5,16 @@ import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (
-    get_audit_log,
-    get_current_active_user,
-    get_database,
-    get_request_context,
-)
+from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
+                                     get_database, get_request_context)
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (
-    GroupInfoOut,
-    GroupInfoCreate,
-    GroupAllowedUpdate,
-    GroupListResponse,
-    GroupPresetIn,
-    GroupUpdate,
-)
+from bonsai_api.models.group import (GroupAllowedUpdate, GroupInfoCreate,
+                                     GroupInfoOut, GroupListResponse,
+                                     GroupPresetIn, GroupUpdate)
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.user import UserContext, UserOutputDatabase
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
+from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
+                     status)
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
@@ -118,7 +110,9 @@ async def create_group(
             detail=error.details["errmsg"],
         ) from error
     except ValueError as error:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
+        ) from error
     return result
 
 
@@ -184,7 +178,9 @@ async def update_group_info(
 ):
     """Update mutable group core fields (display name, description)."""
     try:
-        result = await crud_gr.update_group_core(db, group_id, group_info, req_ctx, audit_log)
+        result = await crud_gr.update_group_core(
+            db, group_id, group_info, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -209,7 +205,9 @@ async def set_allowed_columns_for_group(
 ):
     """Set allowed table columns for a group."""
     try:
-        updated = await crud_gr.set_allowed_columns(db, group_id, payload, req_ctx, audit_log)
+        updated = await crud_gr.set_allowed_columns(
+            db, group_id, payload, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -225,7 +223,9 @@ async def set_allowed_columns_for_group(
 async def upsert_preset_for_group(
     group_id: str,
     preset: GroupPresetIn,
-    set_default: bool = Query(False, alias="default", description="Set this preset as default"),
+    set_default: bool = Query(
+        False, alias="default", description="Set this preset as default"
+    ),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -235,7 +235,9 @@ async def upsert_preset_for_group(
 ):
     """Create or update a preset for a group."""
     try:
-        updated = await crud_gr.upsert_preset(db, group_id, preset, set_default, req_ctx, audit_log)
+        updated = await crud_gr.upsert_preset(
+            db, group_id, preset, set_default, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -260,7 +262,9 @@ async def delete_preset_from_group(
 ):
     """Delete a preset from a group."""
     try:
-        updated = await crud_gr.delete_preset(db, group_id, preset_id, req_ctx, audit_log)
+        updated = await crud_gr.delete_preset(
+            db, group_id, preset_id, req_ctx, audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -290,9 +294,7 @@ async def add_samples_to_group(
     # cast input information as group db object
     try:
         # reformat the request to edges and perform mutation
-        edges = [
-            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
-        ]
+        edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
         await crud_mem.add_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
@@ -327,9 +329,7 @@ async def remove_sample_from_group(
     # cast input information as group db object
     try:
         # build edges of the groups to remove
-        edges = [
-            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
-        ]
+        edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
         await crud_mem.remove_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
@@ -355,9 +355,7 @@ async def get_columns_for_group(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoOut.model_validate(
-        await crud_gr.get_group(db, group_id)
-    )
+    group_obj = GroupInfoOut.model_validate(await crud_gr.get_group(db, group_id))
     # columns = await build_column_definitions(
     #     group_obj=group_obj, include_metadata=True, db=db
     # )
