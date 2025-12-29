@@ -30,6 +30,8 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.sample_collection = self.db.get_collection("sample")
         self.location_collection = self.db.get_collection("location")
         self.user_collection = self.db.get_collection("user")
+        # collection for per-user favorite groups
+        self.group_favorite_collection = self.db.get_collection("group_favorite")
 
     async def close(self) -> None:
         """Close database connection."""
