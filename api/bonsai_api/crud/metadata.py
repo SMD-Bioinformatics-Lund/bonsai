@@ -4,7 +4,7 @@ from typing import Any
 
 from bonsai_api.db import Database
 from bonsai_api.io import parse_metadata_table
-from bonsai_api.models.group import SampleTableColumnInput
+# from bonsai_api.models.group import SampleTableColumnInput
 from bonsai_api.models.metadata import (InputMetaEntry, MetaEntriesInDb,
                                         MetaEntryInDb)
 from pydantic import TypeAdapter
@@ -68,13 +68,14 @@ async def get_metadata_fields_for_samples(
         if meta.fieldname not in uniq_obj:
             uniq_obj[meta.fieldname] = meta
 
-    cols = [
-        SampleTableColumnInput(
-            id=entry.fieldname.lower().replace(" ", "-"),
-            label=entry.fieldname,
-            path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
-            type=entry.type,
-        )
-        for entry in uniq_obj.values()
-    ]
+    # cols = [
+    #     SampleTableColumnInput(
+    #         id=entry.fieldname.lower().replace(" ", "-"),
+    #         label=entry.fieldname,
+    #         path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
+    #         type=entry.type,
+    #     )
+    #     for entry in uniq_obj.values()
+    # ]
+    cols = []
     return cols

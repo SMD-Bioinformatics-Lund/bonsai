@@ -8,8 +8,9 @@ from pydantic import BaseModel, Field, computed_field, model_validator
 
 
 
-PipelineStages: TypeAlias = list[dict[str, Any]]
 PipelineProjection: TypeAlias = dict[str, int | str]
+PipelineStage: TypeAlias = dict[str, Any]
+PipelineStages: TypeAlias = list[PipelineStage | PipelineProjection]
 BuildOutput = Literal['tool', 'root', 'both']
 
 

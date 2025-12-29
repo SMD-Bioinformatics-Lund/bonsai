@@ -4,8 +4,6 @@ import bonsai_api.crud.group as crud_gr
 import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
-from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.crud.memberships import get_samples_by_group_ids
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
@@ -13,20 +11,18 @@ from bonsai_api.dependencies import (
     get_database,
     get_request_context,
 )
-from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import (
-    DEFAULT_COLUMNS,
-    GroupInCreate,
-    GroupInfoDatabase,
-    SampleTableColumnInput,
-    pred_res_cols,
-    qc_cols,
+    GroupInfoOut,
+    GroupInfoCreate,
+    GroupAllowedUpdate,
+    GroupListResponse,
+    GroupPresetIn,
+    GroupUpdate,
 )
 from bonsai_api.models.memberships import MembershipEdge
-from bonsai_api.models.user import UserOutputDatabase
+from bonsai_api.models.user import UserContext, UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
-from fastapi.encoders import jsonable_encoder
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
@@ -37,57 +33,49 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-async def build_column_definitions(
-    group_obj: GroupInfoDatabase | None = None,
-    include_qc: bool = False,
-    include_metadata: bool = False,
-    db: Database | None = None,
-) -> list[SampleTableColumnInput]:
-    """
-    Build column definitions for sample table display.
+# async def build_column_definitions(
+#     group_obj: GroupInfoDatabase | None = None,
+#     include_qc: bool = False,
+#     include_metadata: bool = False,
+#     db: Database | None = None,
+# ) -> list[SampleTableColumnInput]:
+#     """
+#     Build column definitions for sample table display.
 
-    Args:
-        group_obj: Optional group object containing column preferences.
-        qc: Whether to use QC columns.
-        include_metadata: Whether to include metadata fields.
-        db: Database connection, required if include_metadata is True.
+#     Args:
+#         group_obj: Optional group object containing column preferences.
+#         qc: Whether to use QC columns.
+#         include_metadata: Whether to include metadata fields.
+#         db: Database connection, required if include_metadata is True.
 
-    Returns:
-        List of SampleTableColumnInput objects.
-    """
-    base_columns = qc_cols if include_qc else pred_res_cols
-    idx_base_cols = {col.id: col for col in base_columns}
-    columns: list[SampleTableColumnInput] = []
+#     Returns:
+#         List of SampleTableColumnInput objects.
+#     """
+#     base_columns = qc_cols if include_qc else pred_res_cols
+#     idx_base_cols = {col.id: col for col in base_columns}
+#     columns: list[SampleTableColumnInput] = []
 
-    if group_obj:
-        for col in group_obj.table_columns:
-            column_def = idx_base_cols.get(col.id)
-            if column_def:
-                upd_model = column_def.model_copy(update=col.model_dump())
-                columns.append(upd_model)
-    else:
-        columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
+#     if group_obj:
+#         for col in group_obj.table_columns:
+#             column_def = idx_base_cols.get(col.id)
+#             if column_def:
+#                 upd_model = column_def.model_copy(update=col.model_dump())
+#                 columns.append(upd_model)
+#     else:
+#         columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
 
-    if include_metadata and db and group_obj:
-        # TODO remove additional db query
-        edges = await get_samples_by_group_ids([group_obj.group_id], db=db)
-        meta_entries = await get_metadata_fields_for_samples(
-            db, sample_ids=[e.sample_id for e in edges]
-        )
-        columns += meta_entries
+#     if include_metadata and db and group_obj:
+#         # TODO remove additional db query
+#         edges = await get_samples_by_group_ids([group_obj.group_id], db=db)
+#         meta_entries = await get_metadata_fields_for_samples(
+#             db, sample_ids=[e.sample_id for e in edges]
+#         )
+#         columns += meta_entries
 
-    return columns
-
-
-@router.get("/groups/default/columns", tags=[RouterTags.GROUP])
-async def get_valid_columns(qc: bool = False):
-    """Get group info schema."""
-    # get pipeline analysis related columns
-    columns = await build_column_definitions(include_qc=qc)
-    return jsonable_encoder(columns)
+#     return columns
 
 
-@router.get("/groups/", response_model=list[GroupInfoDatabase], tags=[RouterTags.GROUP])
+@router.get("/groups/", response_model=GroupListResponse, tags=[RouterTags.GROUP])
 async def get_groups_in_db(
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -101,12 +89,12 @@ async def get_groups_in_db(
 
 @router.post(
     "/groups/",
-    response_model=GroupInfoDatabase,
+    response_model=GroupInfoOut,
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.GROUP],
 )
 async def create_group(
-    group_info: GroupInCreate,
+    group_info: GroupInfoCreate,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -116,18 +104,27 @@ async def create_group(
 ):
     """Create a new group document in the database"""
     try:
-        result = await crud_gr.create_group(db, group_info, req_ctx, audit_log)
+        usr = UserContext(user_id=current_user.username, roles=current_user.roles)
+        result = await crud_gr.create_group(
+            db,
+            group_info,
+            ctx=req_ctx,
+            audit=audit_log,
+            creator=usr,
+        )
     except DuplicateKeyError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=error.details["errmsg"],
         ) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)) from error
     return result
 
 
 @router.get(
     "/groups/{group_id}",
-    response_model=GroupInfoDatabase,
+    response_model=GroupInfoOut,
     tags=[RouterTags.GROUP],
 )
 async def get_group_in_db(
@@ -138,7 +135,13 @@ async def get_group_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await crud_gr.get_group(db, group_id)
+    try:
+        group = await crud_gr.get_group(db, group_id)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=group_id,
+        ) from error
     return group
 
 
@@ -158,7 +161,7 @@ async def delete_group_from_db(
 ):
     """Delete a group from the database."""
     try:
-        result = await crud_gr.delete_group(db, group_id, req_ctx, audit_log)
+        result = await crud_gr.delete_group(db, group_id, ctx=req_ctx, audit=audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -171,7 +174,7 @@ async def delete_group_from_db(
 )
 async def update_group_info(
     group_id: str,
-    group_info: GroupInCreate,
+    group_info: GroupUpdate,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -179,16 +182,90 @@ async def update_group_info(
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
-    """Update information of an group in the database."""
-    # cast input information as group db object
-    # TODO define which parameters that are allowed to change
+    """Update mutable group core fields (display name, description)."""
     try:
-        await crud_gr.update_group(db, group_id, group_info, req_ctx, audit_log)
+        result = await crud_gr.update_group_core(db, group_id, group_info, req_ctx, audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
         ) from error
-    return {"id": group_id, "group_info": group_info}
+    return result
+
+
+@router.put(
+    "/groups/{group_id}/allowed_columns",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
+)
+async def set_allowed_columns_for_group(
+    group_id: str,
+    payload: GroupAllowedUpdate,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Set allowed table columns for a group."""
+    try:
+        updated = await crud_gr.set_allowed_columns(db, group_id, payload, req_ctx, audit_log)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=f"Group with id: {group_id} not in database"
+        ) from error
+    return updated
+
+
+@router.post(
+    "/groups/{group_id}/presets",
+    status_code=status.HTTP_201_CREATED,
+    tags=[RouterTags.GROUP],
+)
+async def upsert_preset_for_group(
+    group_id: str,
+    preset: GroupPresetIn,
+    set_default: bool = Query(False, alias="default", description="Set this preset as default"),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Create or update a preset for a group."""
+    try:
+        updated = await crud_gr.upsert_preset(db, group_id, preset, set_default, req_ctx, audit_log)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=f"Group with id: {group_id} not in database"
+        ) from error
+    return updated
+
+
+@router.delete(
+    "/groups/{group_id}/presets/{preset_id}",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
+)
+async def delete_preset_from_group(
+    group_id: str,
+    preset_id: str,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Delete a preset from a group."""
+    try:
+        updated = await crud_gr.delete_preset(db, group_id, preset_id, req_ctx, audit_log)
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=404, detail=f"Group with id: {group_id} not in database"
+        ) from error
+    return updated
 
 
 @router.put(
@@ -278,10 +355,10 @@ async def get_columns_for_group(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoDatabase.model_validate(
-        await crud_gr.get_group(db, group_id, lookup_samples=False)
+    group_obj = GroupInfoOut.model_validate(
+        await crud_gr.get_group(db, group_id)
     )
-    columns = await build_column_definitions(
-        group_obj=group_obj, include_metadata=True, db=db
-    )
-    return columns
+    # columns = await build_column_definitions(
+    #     group_obj=group_obj, include_metadata=True, db=db
+    # )
+    return []

@@ -1,10 +1,11 @@
 """Summary crud functions"""
 import logging
 from typing import Any
+
 from .builder.types import Manifest
 from .builder.summary import compile_summary_pipeline
+from .builder.helpers import build_facet_pagination, build_sort_stage
 from bonsai_api.models.base import MultipleRecordsResponseModel
-from pymongo import ASCENDING, DESCENDING
 from bonsai_api.db import Database
 
 
@@ -36,30 +37,12 @@ async def get_samples_summary(
 
     # add stable sorting to facilitate offset
     sort_fields = "-created_at" if not sort else sort
-    sort_dir = DESCENDING if sort_fields.startswith("-") else ASCENDING
-    sort_expr = sort_fields[1:] if sort_fields.startswith("-") else sort_fields
-
-    allowed_sort_fields = {col.id for col in manifest.columns if col.sortable}
-    if sort_expr not in allowed_sort_fields:
-        raise ValueError(f"Unsupported sort: {sort_expr}")
-
-    pipeline.append({"$sort": {sort_expr: sort_dir, "_id": ASCENDING}})
+    pipeline.append(
+        build_sort_stage(sort_fields, {col.id for col in manifest.columns if col.sortable})
+    )
 
     # Pagination
-    data_subpipeline: list[dict[str, Any]] = []
-    if offset and offset > 0:
-        data_subpipeline.append({"$skip": offset})
-    if limit and limit > 0:
-        data_subpipeline.append({"$limit": limit})
-
-    pipeline.append(
-        {
-            "$facet": {
-                "data": data_subpipeline or [],
-                "records_total": [{"$count": "count"}],
-            }
-        },
-    )
+    pipeline.append(build_facet_pagination(offset=offset, limit=limit))
 
     # query database for the number of samples
     agg_cursor = await db.sample_collection.aggregate(pipeline)

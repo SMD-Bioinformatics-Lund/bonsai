@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Literal, Union, cast
+from typing import Annotated, Any, Union, cast
 
 from api.bonsai_api.crud.summary import get_samples_summary
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
