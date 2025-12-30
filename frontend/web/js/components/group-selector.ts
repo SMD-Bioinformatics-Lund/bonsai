@@ -20,7 +20,7 @@ template.innerHTML = String.raw`
 
 export class GroupSelector extends HTMLElement {
   // dependancy injections set from outside function
-  getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
+  getGroupInfo: (() => Promise<ApiGroupInfoResponse>) | null = null;
   getSelectedSamples: (() => string[]) | null = null;
   getGroupMembership:
     | ((sampleIds: string[], signal?: AbortSignal) => Promise<MembershipEdges>)
@@ -95,7 +95,7 @@ export class GroupSelector extends HTMLElement {
 
     try {
       const groups = await this.getGroupInfo();
-      const options = groups.map((g) => ({ value: g.group_id, label: g.display_name }));
+      const options = groups.data.map((g) => ({ value: g.group_id, label: g.display_name }));
       this.selector.setChoices(options);
     } catch (err) {
       console.error("Failed to load groups:", err);

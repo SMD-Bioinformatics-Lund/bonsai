@@ -1,5 +1,5 @@
 import { onEvent } from "../utils/event-bus";
-import { GroupInfo } from "../types";
+import { GroupInfo, ApiGroupInfoResponse } from "../types";
 
 // Helper to create group card HTML
 function groupCardHTML(group: GroupInfo, isAdmin: boolean): string {
@@ -25,7 +25,7 @@ function groupCardHTML(group: GroupInfo, isAdmin: boolean): string {
 }
 
 export class GroupList extends HTMLElement {
-  getGroupInfo: (() => Promise<GroupInfo[]>) | null = null;
+  getGroupInfo: (() => Promise<ApiGroupInfoResponse>) | null = null;
   isAdmin: boolean = false;
   groups: GroupInfo[] = [];
 
@@ -53,7 +53,7 @@ export class GroupList extends HTMLElement {
   async loadGroups() {
     if (this.getGroupInfo) {
       try {
-        this.groups = await this.getGroupInfo();
+        this.groups = await this.getGroupInfo().then((resp) => resp.data) || [];
         this.render();
       } catch (err) {
         console.error("Failed to load groups:", err);

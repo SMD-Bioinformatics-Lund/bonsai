@@ -3,6 +3,7 @@
 from api.bonsai_api.services.group_service import build_column_overrides
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 import bonsai_api.crud.group as crud_gr
+import bonsai_api.services.group_service as service_gr
 import bonsai_api.services.membership_service as service_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
@@ -28,7 +29,10 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-@router.get("/groups/", response_model=GroupListResponse, tags=[RouterTags.GROUP])
+@router.get("/groups/", 
+            response_model=GroupListResponse, 
+            response_model_by_alias=False,
+            tags=[RouterTags.GROUP])
 async def get_groups_in_db(
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -116,7 +120,8 @@ async def delete_group_from_db(
 ):
     """Delete a group from the database."""
     try:
-        result = await crud_gr.delete_group(db, group_id, ctx=req_ctx, audit=audit_log)
+        user = UserContext(user_id=current_user.username, roles=current_user.roles)
+        result = await service_gr.delete_group_service(db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
