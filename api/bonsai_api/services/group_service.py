@@ -5,9 +5,11 @@ from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from typing import Any
-from bonsai_api.crud.group import insert_group_document
-from bonsai_api.crud.utils import audit_event_context, check_user_exists
-from bonsai_api.exceptions import ConflictError, DatabaseOperationError, UserNotFound, ForbiddenAccess
+from bonsai_api.crud.user import user_exists
+from bonsai_api.services.membership_service import remove_memberships, get_samples_by_group_ids
+from bonsai_api.crud.group import delete_group_by_group_id, insert_group_document, find_group_owner_id
+from bonsai_api.crud.utils import audit_event_context, managed_transaction
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, UserNotFound, ForbiddenAccess
 from bonsai_api.models.user import UserContext
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import GroupInfoOut
@@ -88,7 +90,7 @@ async def create_group_service(
     - Validation and payload assembly are delegated to helpers to keep this function small.
     """
     # Ensure that the specified owner exists
-    if not await check_user_exists(db, user_id=creator.user_id):
+    if not await user_exists(db, user_id=creator.user_id):
         raise UserNotFound(f"Specified group owner '{creator.user_id}' does not exist.")
 
     # Validate inputs
@@ -137,6 +139,52 @@ async def create_group_service(
         sample_count=0,
         default_preset_id=group_record.default_preset_id,
     )
+
+
+
+async def delete_group_service(
+    db: Database,
+    *,
+    group_id: str,
+    ctx: ApiRequestContext,
+    user: UserContext,
+    audit: AuditLogClient | None = None,
+    session: Any = None,
+) -> int:
+    """
+    Business-level delete group:
+    - Ensures group exists.
+    - Enforces policy: only owner or admin may delete.
+    - Orchestrates related cleanup (memberships).
+    - Deletes via repository (CRUD).
+    """
+    # Check existence + owner fetch
+    owner_id = await find_group_owner_id(db, group_id=group_id, session=session)
+    if not owner_id:
+        raise EntryNotFound(group_id)
+
+    # Check permission
+    if not (user.is_admin() or owner_id == user.user_id):
+        raise ForbiddenAccess("Only the group owner or admin can delete this group")
+
+    event_subject = Subject(id=group_id, type=SourceType.USR)
+    with audit_event_context(audit, "delete_group", ctx, event_subject, metadata={"group_id": group_id}):
+        # 3) Orchestrate related cleanup inside transaction if you use one
+        async with managed_transaction(db.client) as txn:
+            # Remove group from stored memberships (use your existing helpers)
+            edges = await get_samples_by_group_ids([group_id], db=db, session=txn)
+            await remove_memberships(edges, db=db, session=txn)
+
+            # 4) Delete the group doc
+            try:
+                deleted = await delete_group_by_group_id(db, group_id=group_id, session=txn)
+                if deleted == 0:
+                    # Race between existence check and delete
+                    raise EntryNotFound(group_id)
+                return deleted
+            except PyMongoError as pme:
+                raise DatabaseOperationError(f"Database error during delete_group: {str(pme)}") from pme
+
 
 async def build_column_overrides(group_obj: GroupInfoOut, manifest: Manifest):
     """Build list of availbale columns with group specific overrides applied."""

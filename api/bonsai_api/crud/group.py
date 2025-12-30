@@ -22,9 +22,7 @@ from .builder.group import (build_group_visibility_match_stage,
                             group_project_stage)
 from .builder.helpers import build_facet_pagination, build_sort_stage
 from .builder.types import PipelineStages
-from .memberships import get_samples_by_group_ids, remove_memberships
-from .utils import (audit_event_context, check_groups_exists, check_user_exists,
-                    managed_transaction)
+from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
 
@@ -157,6 +155,22 @@ async def get_group(
         raise
 
 
+async def find_group_owner_id(
+    db: Database, *, group_id: str, session: Any = None
+) -> str | None:
+    """Return owner_id for a group or None if not found."""
+    doc = await db.sample_group_collection.find_one(
+        {"core.group_id": group_id},
+        {"_id": 0, "core.owner_id": 1},
+        session=session,
+    )
+    if not doc:
+        return None
+    core = doc.get("core") or {}
+    owner_id = core.get("owner_id")
+    return owner_id if isinstance(owner_id, str) else None
+
+
 async def _fetch_group_minimal(
     db: Database, group_id: str, session: Any = None
 ) -> dict[str, Any] | None:
@@ -240,45 +254,48 @@ async def insert_group_document(
     return await db.sample_group_collection.insert_one(doc, session=session)
 
 
-async def delete_group(
-    db: Database,
-    group_id: str,
-    *,
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> None | int:
-    """Delete group with group_id from database."""
-    if not group_id:
-        return
+async def delete_group_by_group_id(
+    db: Database, *, group_id: str, session: Any = None
+) -> int:
+    """Delete a group by its core.group_id. Returns deleted_count."""
+    result = await db.sample_group_collection.delete_one({"core.group_id": group_id}, session=session)
+    return result.deleted_count
 
-    event_subject = Subject(id=group_id, type=SourceType.USR)
-    meta = {"group_id": group_id}
-    with audit_event_context(audit, "delete_group", ctx, event_subject, metadata=meta):
-        async with managed_transaction(db.client) as session:
-            try:
-                missing = await check_groups_exists(db, group_ids=[group_id], session=session)
-                if missing:
-                    raise EntryNotFound(group_id)
 
-                # Remove group from stored memberships
-                edges = await get_samples_by_group_ids(
-                    [group_id], db=db, session=session
-                )
-                await remove_memberships(edges, db=db, session=session)
+async def group_exists(
+    db: Database, *, group_id: str, session: Any = None
+) -> bool:
+    """Return True if a group with id exists."""
+    doc = await db.sample_group_collection.find_one(
+        {"core.group_id": group_id}, {"_id": 1}, session=session
+    )
+    return bool(doc)
 
-                # Remove group document
-                group_res = await db.sample_group_collection.delete_one(
-                    {"group_id": group_id}, session=session
-                )
-                if group_res.deleted_count == 0:
-                    raise EntryNotFound(group_id)
 
-                return group_res.deleted_count
-            except PyMongoError as pme:
-                LOG.error("MongoDB error while deleting group: %s", str(pme))
-                raise DatabaseOperationError(
-                    f"Database error occurred while deleting group: {str(pme)}"
-                ) from pme
+async def check_groups_exists(
+    db: Database, *, group_ids: list[str], session: Any = None
+) -> list[str]:
+    """Check if group with group_id exists in database.
+
+    Return missing group ids.
+    """
+    if not group_ids:
+        return []
+    
+    # Deduplicate and sort input ids for consistent behavior
+    input_ids = sorted(set(group_ids))
+
+    cursor = await db.sample_group_collection.find(
+        {"core.group_id": {"$in": input_ids}},
+        {"core.group_id": 1, "_id": 0}, session=session
+    )
+    existing_docs = cursor.to_list(None)
+    existing_ids: set[str] = {gr["core"]["group_id"] for gr in existing_docs}
+
+    missing_ids = set(group_ids) - existing_ids
+    if missing_ids:
+        LOG.warning("Did not find groups: %s", missing_ids)
+    return missing_ids
 
 
 async def update_group(

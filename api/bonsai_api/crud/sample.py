@@ -508,3 +508,28 @@ async def add_location(
         raise DatabaseOperationError(sample_id)
     LOG.info("Added location %s to %s", location_obj.display_name, sample_id)
     return location_obj
+
+
+async def check_samples_exists(
+    db: Database, *, sample_ids: list[str], session: Any = None
+) -> list[str]:
+    """Check if group with group_id exists in database.
+
+    Return missing group ids.
+    """
+    if not sample_ids:
+        return []
+
+    # Deduplicate and sort input ids for consistent behavior
+    input_ids = sorted(set(sample_ids))
+
+    cursor = await db.sample_collection.find(
+        {"sample_id": {"$in": input_ids}}, {"sample_id": 1, "_id": 0}, session=session
+    )
+    existing = await cursor.to_list(None)
+
+    existing_ids: set[str] = {gr["sample_id"] for gr in existing}
+    missing = set(input_ids) - existing_ids
+    if missing:
+        LOG.warning("Did not find samples: %s", missing)
+    return missing
