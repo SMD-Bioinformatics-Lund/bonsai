@@ -23,3 +23,7 @@ class DatabaseOperationError(DomainError):
 
 class ConflictError(DomainError):
     """Raised when a resource conflict occurs."""
+
+
+class ForbiddenAccess(DomainError):
+    """Raised when a resource access is forbidden."""
