@@ -7,7 +7,7 @@ from bonsai_api.db import Database
 from bonsai_api.utils import get_timestamp
 from pymongo.errors import PyMongoError
 
-from .errors import DatabaseOperationError
+from bonsai_api.exceptions import DatabaseOperationError
 
 LOG = logging.getLogger(__name__)
 

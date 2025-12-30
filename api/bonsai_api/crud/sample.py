@@ -30,7 +30,7 @@ from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
 
-from .errors import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -39,11 +39,11 @@ CURRENT_SCHEMA_VERSION = 1
 async def get_samples_full(
     db: Database,
     *,
-    match: dict[str, Any],
-    fields: list[str] | None,
-    sort: str,
-    limit: int,
-    offset: int | None,
+    match: dict[str, Any] | None = None,
+    fields: list[str] | None = None,
+    sort: str = "-created_at",
+    limit: int | None = None,
+    offset: int | None = None,
 ) -> MultipleRecordsResponseModel:
     """Get full sample info with optional projections."""
     allowed_fields = {
@@ -78,6 +78,7 @@ async def get_samples_full(
     sort_tuple = [(allowed_sorts[sort_key], sort_dir), ("_id", sort_dir)]
 
     # Query
+    match = match or {}
     cursor = db.sample_collection.find(match, projection).sort(sort_tuple)
     if offset and offset > 0:
         cursor = cursor.skip(offset)

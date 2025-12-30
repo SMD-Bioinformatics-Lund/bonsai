@@ -16,7 +16,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from .errors import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)

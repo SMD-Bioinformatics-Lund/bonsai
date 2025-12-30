@@ -11,6 +11,8 @@ from .base import (ForbidExtraModelMixin, MultipleRecordsResponseModel,
 
 FilterParams = list[dict[str, str | int | float],]
 
+SCHEMA_VERSION = 2
+
 
 class Visibility(StrEnum):
     """Group visibility levels."""
@@ -91,7 +93,7 @@ class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     - invited_users: optional list of user ids invited to access private group
     """
 
-    schema_version: int = 1
+    schema_version: int = SCHEMA_VERSION
     core: GroupCore
     allowed_columns: GroupAllowed = Field(default_factory=GroupAllowed)
     presets: GroupPresets | None = None
