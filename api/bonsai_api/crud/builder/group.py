@@ -42,12 +42,3 @@ def build_group_visibility_match_stage(user_id: str) -> PipelineStage:
             ]
         }
     }
-
-
-def build_single_group_pipeline(group_id: str) -> PipelineStages:
-    """Build aggregation pipeline to get a single group by id."""
-    pipeline: PipelineStages = [
-        {"$match": {"core.group_id": group_id}},
-        group_project_stage(include_presets=True),
-    ]
-    return pipeline

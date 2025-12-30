@@ -64,7 +64,7 @@ def audit_event_context(
 
 
 async def check_groups_exists(
-    db: Database, group_ids: list[str], session: Any = None
+    db: Database, *, group_ids: list[str], session: Any = None
 ) -> list[str]:
     """Check if group with group_id exists in database.
 
@@ -88,7 +88,7 @@ async def check_groups_exists(
 
 
 async def check_samples_exists(
-    db: Database, sample_ids: list[str], session: Any = None
+    db: Database, *, sample_ids: list[str], session: Any = None
 ) -> list[str]:
     """Check if group with group_id exists in database.
 
@@ -111,6 +111,14 @@ async def check_samples_exists(
     if missing:
         LOG.warning("Did not find samples: %s", missing)
     return missing
+
+
+async def check_user_exists(db: Database, *, user_id: str, session: Any = None) -> bool:
+    """Check if user with user_id exists in database."""
+    user = await db.user_collection.find_one(
+        {"username": user_id}, {"_id": 1}, session=session
+    )
+    return user is not None
 
 
 @asynccontextmanager

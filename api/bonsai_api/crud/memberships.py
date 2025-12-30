@@ -13,7 +13,7 @@ from pymongo import UpdateOne
 from pymongo.client_session import ClientSession
 from pymongo.errors import BulkWriteError, PyMongoError
 
-from .errors import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from .utils import (check_groups_exists, check_samples_exists,
                     managed_transaction)
 
@@ -43,10 +43,10 @@ async def _check_exists(
     session: ClientSession | None,
 ) -> None:
     """Convenience wrapper for checking if samples and groups exists"""
-    missing_groups = await check_groups_exists(db, group_ids, session)  # set[str]
+    missing_groups = await check_groups_exists(db, group_ids=group_ids, session=session)  # set[str]
     if missing_groups:
         raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_groups)}")
-    missing_samples = await check_samples_exists(db, sample_ids, session)  # set[str]
+    missing_samples = await check_samples_exists(db, sample_ids=sample_ids, session=session)  # set[str]
     if missing_samples:
         raise EntryNotFound(f"Unknown sample_id(s): {sorted(missing_samples)}")
 
@@ -252,7 +252,7 @@ async def get_samples_by_group_ids(
     if not group_ids:
         return []
 
-    missing_gids = await check_groups_exists(db, group_ids)
+    missing_gids = await check_groups_exists(db, group_ids=group_ids)
     if missing_gids:
         # Abort the transaction if non-existant group was provided
         raise EntryNotFound(f"Unkown group_id(s): {sorted(missing_gids)}")

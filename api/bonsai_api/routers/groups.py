@@ -1,9 +1,11 @@
 """Entrypoints for getting group data."""
 
+from api.bonsai_api.services.group_service import build_column_overrides
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.crud.memberships as crud_mem
 from api_client.audit_log import AuditLogClient
-from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
                                      get_database, get_request_context)
@@ -13,6 +15,7 @@ from bonsai_api.models.group import (GroupAllowedUpdate, GroupInfoCreate,
                                      GroupPresetIn, GroupUpdate)
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.user import UserContext, UserOutputDatabase
+from bonsai_api.services import group_service
 from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
                      status)
 from pymongo.errors import DuplicateKeyError
@@ -23,48 +26,6 @@ router = APIRouter()
 
 READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
-
-
-# async def build_column_definitions(
-#     group_obj: GroupInfoDatabase | None = None,
-#     include_qc: bool = False,
-#     include_metadata: bool = False,
-#     db: Database | None = None,
-# ) -> list[SampleTableColumnInput]:
-#     """
-#     Build column definitions for sample table display.
-
-#     Args:
-#         group_obj: Optional group object containing column preferences.
-#         qc: Whether to use QC columns.
-#         include_metadata: Whether to include metadata fields.
-#         db: Database connection, required if include_metadata is True.
-
-#     Returns:
-#         List of SampleTableColumnInput objects.
-#     """
-#     base_columns = qc_cols if include_qc else pred_res_cols
-#     idx_base_cols = {col.id: col for col in base_columns}
-#     columns: list[SampleTableColumnInput] = []
-
-#     if group_obj:
-#         for col in group_obj.table_columns:
-#             column_def = idx_base_cols.get(col.id)
-#             if column_def:
-#                 upd_model = column_def.model_copy(update=col.model_dump())
-#                 columns.append(upd_model)
-#     else:
-#         columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
-
-#     if include_metadata and db and group_obj:
-#         # TODO remove additional db query
-#         edges = await get_samples_by_group_ids([group_obj.group_id], db=db)
-#         meta_entries = await get_metadata_fields_for_samples(
-#             db, sample_ids=[e.sample_id for e in edges]
-#         )
-#         columns += meta_entries
-
-#     return columns
 
 
 @router.get("/groups/", response_model=GroupListResponse, tags=[RouterTags.GROUP])
@@ -97,9 +58,9 @@ async def create_group(
     """Create a new group document in the database"""
     try:
         usr = UserContext(user_id=current_user.username, roles=current_user.roles)
-        result = await crud_gr.create_group(
+        result = await group_service.create_group_service(
             db,
-            group_info,
+            group_record=group_info,
             ctx=req_ctx,
             audit=audit_log,
             creator=usr,
@@ -355,8 +316,8 @@ async def get_columns_for_group(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoOut.model_validate(await crud_gr.get_group(db, group_id))
-    # columns = await build_column_definitions(
-    #     group_obj=group_obj, include_metadata=True, db=db
-    # )
-    return []
+    group_obj = await crud_gr.get_group(db, group_id)
+    columns = await build_column_overrides(
+        group_obj=group_obj, manifest=MANIFEST 
+    )
+    return columns

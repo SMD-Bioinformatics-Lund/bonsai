@@ -8,7 +8,7 @@ from bonsai_api.crud.cluster import (TypingProfileOutput,
                                      get_signature_path_for_samples,
                                      get_ska_index_path_for_samples,
                                      get_typing_profiles)
-from bonsai_api.crud.errors import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel

@@ -4,10 +4,10 @@ from typing import List
 
 from bson import ObjectId
 
-from ..db import Database
-from ..models.location import (GeoJSONPolygon, LocationInputCreate,
+from bonsai_api.db import Database
+from bonsai_api.models.location import (GeoJSONPolygon, LocationInputCreate,
                                LocationInputDatabase, LocationOutputDatabase)
-from .errors import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound
 
 
 def _document_to_db_obj(document) -> LocationOutputDatabase:

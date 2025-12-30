@@ -10,7 +10,7 @@ from bonsai_api.models.metadata import (InputMetaEntry, MetaEntriesInDb,
 from pydantic import TypeAdapter
 from pymongo.results import UpdateResult
 
-from .errors import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound
 from .sample import get_sample
 
 

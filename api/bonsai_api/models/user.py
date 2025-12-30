@@ -1,10 +1,8 @@
 """Definition of User data models."""
 
-from typing import List
-
 from pydantic import EmailStr
 
-from ..config import settings
+from bonsai_api.config import settings
 from .base import DBModelMixin, ForbidExtraModelMixin, RWModel, Timestamps
 
 
@@ -23,8 +21,8 @@ class UserBase(RWModel):  # pylint: disable=too-few-public-methods
     last_name: str | None = None
     email: EmailStr
     disabled: bool = False
-    roles: List[str] = []
-    basket: List[SampleBasketObject] = []
+    roles: list[str] = []
+    basket: list[SampleBasketObject] = []
 
 
 class UserInputCreate(UserBase):  # pylint: disable=too-few-public-methods

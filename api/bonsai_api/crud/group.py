@@ -3,82 +3,30 @@
 import logging
 from typing import Any
 
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (GroupAllowed, GroupAllowedUpdate,
-                                     GroupCore, GroupInfoCreate, GroupInfoOut,
+from bonsai_api.models.group import (GroupAllowedUpdate,
+                                     GroupInfoCreate, GroupInfoOut,
                                      GroupListResponse, GroupPresetIn,
-                                     GroupPresets, GroupRecordDb, GroupUpdate,
-                                     Visibility)
-from bonsai_api.models.sample import SampleSummary
+                                     GroupUpdate)
 from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
 from pymongo import ReturnDocument
-from pymongo.errors import DuplicateKeyError, PyMongoError
+from pymongo.errors import PyMongoError
 
-from api.bonsai_api.models.user import UserContext
 
 from .builder.group import (build_group_visibility_match_stage,
-                            build_single_group_pipeline, group_project_stage)
+                            group_project_stage)
 from .builder.helpers import build_facet_pagination, build_sort_stage
-from .builder.summary_manifest import MANIFEST
 from .builder.types import PipelineStages
-from .errors import DatabaseOperationError, EntryNotFound
 from .memberships import get_samples_by_group_ids, remove_memberships
-from .utils import (audit_event_context, check_groups_exists,
+from .utils import (audit_event_context, check_groups_exists, check_user_exists,
                     managed_transaction)
 
 LOG = logging.getLogger(__name__)
-
-
-def _validate_presets_and_default(
-    presets_in: list[GroupPresetIn] | None, default_pid: str | None
-) -> None:
-    """Validate preset uniqueness and that default pid is present when given."""
-    presets_in = presets_in or []
-    preset_ids = [p.preset_id for p in presets_in]
-    if len(preset_ids) != len(set(preset_ids)):
-        raise ValueError("Duplicate preset ids provided in presets")
-    if default_pid and default_pid not in preset_ids:
-        raise ValueError("default_preset_id must match one of the provided presets")
-
-
-def _validate_allowed_columns(allowed_columns: list[str] | None) -> None:
-    """Validate allowed column IDs against the manifest."""
-    if allowed_columns is None:
-        return
-    if not all(isinstance(c, str) for c in allowed_columns):
-        raise ValueError("allowed_columns must be a list of strings")
-    manifest_column_ids = {col.id for col in MANIFEST.columns}
-    for col in allowed_columns:
-        if col not in manifest_column_ids:
-            raise ValueError(f"Invalid column id in allowed_columns: {col}")
-
-
-def _build_group_payload(
-    group_record: GroupInfoCreate, owner_id: str | None
-) -> GroupRecordDb:
-    """Build GroupRecordDb representation from create payload."""
-    core = GroupCore(
-        group_id=group_record.group_id,
-        display_name=group_record.display_name,
-        description=group_record.description,
-        visibility=group_record.visibility,
-        owner_id=owner_id,
-    )
-    presets_obj = GroupPresets(
-        default_preset_id=group_record.default_preset_id,
-        items=group_record.presets or [],
-    )
-    allowed_cols = GroupAllowed(column_ids=group_record.allowed_columns or [])
-    return GroupRecordDb(
-        core=core,
-        invited_users=group_record.invited_users or [],
-        allowed_columns=allowed_cols,
-        presets=presets_obj,
-    )
 
 
 async def get_groups(
@@ -281,67 +229,15 @@ async def check_group_manage_permission(
     return False
 
 
-async def create_group(
+async def insert_group_document(
     db: Database,
-    group_record: GroupInfoCreate,
     *,
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-    creator: UserContext | None = None,
+    doc: dict[str, Any],
     session: Any = None,
 ) -> GroupInfoOut:
-    """Create a new group document.
-
-    Notes:
-    - Prefer providing `creator: UserContext` to reduce separate args (owner_id, user_roles).
-    - Validation and payload assembly are delegated to helpers to keep this function small.
-    """
-    _validate_presets_and_default(group_record.presets, group_record.default_preset_id)
-    _validate_allowed_columns(group_record.allowed_columns)
-
-    # enforce visibility/invite rules: only owner or admin can create private groups
-    if (
-        group_record.visibility == Visibility.PRIVATE
-        and not creator.user_id
-        and not creator.is_admin()
-    ):
-        raise ValueError("Only owner or admin may create a private group")
-
-    payload = _build_group_payload(group_record, creator.user_id)
-
-    event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
-    with audit_event_context(audit, "create_group", ctx, event_subject):
-        try:
-            doc = await db.sample_group_collection.insert_one(
-                payload.model_dump(mode="json"), session=session
-            )
-            LOG.info(
-                "Created group %s with id %s",
-                group_record.group_id,
-                str(doc.inserted_id),
-            )
-            return GroupInfoOut(
-                group_id=group_record.group_id,
-                display_name=group_record.display_name,
-                description=group_record.description,
-                sample_count=0,
-                default_preset_id=group_record.default_preset_id,
-            )
-        except DuplicateKeyError as dke:
-            LOG.error("Duplicate key error while creating group: %s", str(dke))
-            raise DatabaseOperationError(
-                f"Group with id {group_record.group_id} already exists."
-            ) from dke
-        except PyMongoError as pme:
-            LOG.error("MongoDB error while creating group: %s", str(pme))
-            raise DatabaseOperationError(
-                f"Database error occurred while creating group: {str(pme)}"
-            ) from pme
-        except ValidationError as ve:
-            LOG.error("Validation error while creating group: %s", str(ve))
-            raise ValueError(
-                f"Invalid data provided for creating group: {str(ve)}"
-            ) from ve
+    """Create a new document in the group collection."""
+    LOG.debug("Creating group document", extra={"doc": doc})
+    return await db.sample_group_collection.insert_one(doc, session=session)
 
 
 async def delete_group(
@@ -360,7 +256,7 @@ async def delete_group(
     with audit_event_context(audit, "delete_group", ctx, event_subject, metadata=meta):
         async with managed_transaction(db.client) as session:
             try:
-                missing = await check_groups_exists(db, [group_id], session=session)
+                missing = await check_groups_exists(db, group_ids=[group_id], session=session)
                 if missing:
                     raise EntryNotFound(group_id)
 

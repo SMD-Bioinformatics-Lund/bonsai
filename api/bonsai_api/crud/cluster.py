@@ -5,7 +5,7 @@ from typing import Any, Sequence
 
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
-from bonsai_api.crud.errors import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.db import Database
 from bonsai_api.models.base import RWModel
 from prp.parse.typing import replace_cgmlst_errors
