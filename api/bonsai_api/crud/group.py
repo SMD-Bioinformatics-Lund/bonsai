@@ -1,7 +1,7 @@
 """Functions for conducting CURD operations on group collection"""
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from api_client.audit_log.client import AuditLogClient
@@ -18,13 +18,16 @@ from pymongo import ReturnDocument
 from pymongo.errors import PyMongoError
 
 
-from .builder.group import (build_group_visibility_match_stage,
+from .builder.group import (build_public_visibility_match_stage, build_user_visibility_match_stage,
                             group_project_stage)
 from .builder.helpers import build_facet_pagination, build_sort_stage
 from .builder.types import PipelineStages
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
+
+
+VisibilityScope = Literal["admin", "user", "public_only"]
 
 
 async def get_groups(
@@ -51,7 +54,7 @@ async def get_groups(
 
         if user_id is not None and "admin" not in (user_roles or []):
             # non-admin users only see public groups, or those they own / are invited to
-            data_pipeline.append(build_group_visibility_match_stage(user_id))
+            data_pipeline.append(build_public_visibility_match_stage(user_id))
 
         # format the group data
         data_pipeline.append(
@@ -102,6 +105,73 @@ async def get_groups(
     )
 
 
+async def fetch_group_raw(db: Database, *, group_id: str, visibility: VisibilityScope = "public_only", user_id: str | None = None, session: Any = None) -> dict[str, Any] | None:
+    """Return the full database record or None if its not found."""
+    if not group_id or not isinstance(group_id, str):
+        raise ValueError(f"Invalid group_id: must be a non-empty string, got {group_id}")
+
+    pipeline: PipelineStages = [
+        {"$match": {"core.group_id": group_id}},
+    ]
+
+    if visibility == "user":
+        if not user_id:
+            # fallback to only show public groups if user_id was not provided.
+            LOG.warning("User ID was not set with visibility==%s - only returning public groups", visibility)
+            pipeline.append(build_public_visibility_match_stage())
+        else:
+            pipeline.append(build_user_visibility_match_stage(user_id))
+    elif visibility == "public_only":
+        pipeline.append(build_public_visibility_match_stage())
+    
+    # visibility == "admin" → no extra filter
+    pipeline.extend([
+        {"$limit": 1}, 
+        {"$project": {"_id": 0}}, 
+    ])
+    cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
+    docs = await cursor.to_list(1)
+    return docs[0] if docs else None
+
+
+async def fetch_group_out_doc(
+    db: Database,
+    *,
+    group_id: str,
+    visibility: VisibilityScope = "public_only",
+    user_id: str | None = None,
+    session: Any = None) -> dict[str, Any] | None:
+    """Return the group document formatted as GroupInfoOut or None if not found."""
+
+    if not group_id or not isinstance(group_id, str):
+        raise ValueError(
+            f"Invalid group_id: must be a non-empty string, got {group_id}"
+        )
+
+    pipeline: PipelineStages = [
+        {"$match": {"core.group_id": group_id}},
+    ]
+
+    if visibility == "user":
+        if not user_id:
+            # fallback to only show public groups if user_id was not provided.
+            LOG.warning("User ID was not set with visibility==%s - only returning public groups", visibility)
+            pipeline.append(build_public_visibility_match_stage())
+        else:
+            pipeline.append(build_user_visibility_match_stage(user_id))
+    elif visibility == "public_only":
+        pipeline.append(build_public_visibility_match_stage())
+        
+    # visibility == "admin" → no extra filter
+    pipeline.extend([
+        {"$limit": 1},
+        group_project_stage(include_presets=True, include_allowed=True),
+    ])
+    cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
+    docs = await cursor.to_list(1)
+    return docs[0] if docs else None
+
+
 async def get_group(
     db: Database,
     group_id: str,
@@ -127,7 +197,7 @@ async def get_group(
         ]
         if user_id is not None and "admin" not in (user_roles or []):
             # non-admin users only see public groups, or those they own / are invited to
-            data_pipeline.append(build_group_visibility_match_stage(user_id))
+            data_pipeline.append(build_public_visibility_match_stage(user_id))
 
         # add data fields
         data_pipeline.append(group_project_stage(include_presets=True))
