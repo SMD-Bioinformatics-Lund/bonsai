@@ -11,7 +11,7 @@ from .base import (ForbidExtraModelMixin, MultipleRecordsResponseModel,
 
 FilterParams = list[dict[str, str | int | float],]
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 1
 
 
 class Visibility(StrEnum):

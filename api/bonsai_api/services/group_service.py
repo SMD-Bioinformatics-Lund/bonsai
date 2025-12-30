@@ -5,9 +5,10 @@ from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from typing import Any
+from bonsai_api.crud.builder.types import ColumnFull
 from bonsai_api.crud.user import user_exists
 from bonsai_api.services.membership_service import remove_memberships, get_samples_by_group_ids
-from bonsai_api.crud.group import delete_group_by_group_id, insert_group_document, find_group_owner_id
+from bonsai_api.crud.group import delete_group_by_group_id, fetch_group_raw, insert_group_document, find_group_owner_id
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, UserNotFound, ForbiddenAccess
 from bonsai_api.models.user import UserContext
@@ -172,7 +173,7 @@ async def delete_group_service(
         # 3) Orchestrate related cleanup inside transaction if you use one
         async with managed_transaction(db.client) as txn:
             # Remove group from stored memberships (use your existing helpers)
-            edges = await get_samples_by_group_ids([group_id], db=db, session=txn)
+            edges = await get_samples_by_group_ids(db=db, group_ids=[group_id], session=txn)
             await remove_memberships(edges, db=db, session=txn)
 
             # 4) Delete the group doc
@@ -186,6 +187,106 @@ async def delete_group_service(
                 raise DatabaseOperationError(f"Database error during delete_group: {str(pme)}") from pme
 
 
-async def build_column_overrides(group_obj: GroupInfoOut, manifest: Manifest):
+async def get_group_raw(
+    db: Database,
+    group_id: str,
+    *,
+    user: UserContext | None = None,
+    session: Any = None,
+) -> GroupRecordDb:
+    """Return the raw group document from the database."""
+    if not group_id or not isinstance(group_id, str):
+        raise ValueError(f"Invalid group_id: must be a non-empty string, got {group_id}")
+    
+    try:
+        # No visability checks for admins or if no user provided
+        kwargs = {}
+        if user is None or user.is_admin():
+            kwargs["visibility"] = "admin"
+        else:
+            kwargs["visibility"] = "user"
+            kwargs["user_id"] = user.user_id
+
+        raw = await fetch_group_raw(db, group_id=group_id, session=session, **kwargs)
+        if not raw:
+            raise EntryNotFound(group_id)
+        return GroupRecordDb.model_validate(raw)
+    except PyMongoError as pme:
+        raise DatabaseOperationError(
+            f"Database error occurred while retrieving group {group_id}: {str(pme)}"
+        ) from pme
+
+
+async def get_group(
+    db: Database,
+    group_id: str,
+    *,
+    user_id: str | None = None,
+    user_roles: list[str] | None = None,
+    session: Any = None,
+) -> GroupInfoOut:
+    """Retrieve a single group by `group_id` with access control.
+
+    - Admins: bypass visibility restrictions.
+    - Non-admins: must be public OR owner OR invited (missing visibility treated as public).
+    - Returns `GroupInfoOut` or raises `EntryNotFound` (404 semantics).
+    """
+    if not group_id or not isinstance(group_id, str):
+        raise ValueError(
+            f"Invalid group_id: must be a non-empty string, got {group_id}"
+        )
+
+    try:
+        data_pipeline: PipelineStages = [
+            {"$match": {"core.group_id": group_id}},
+        ]
+        if user_id is not None and "admin" not in (user_roles or []):
+            # non-admin users only see public groups, or those they own / are invited to
+            data_pipeline.append(build_group_visibility_match_stage(user_id))
+
+        # add data fields
+        data_pipeline.append(group_project_stage(include_presets=True))
+
+        agg_cursor = await db.sample_group_collection.aggregate(
+            data_pipeline, session=session
+        )
+        docs = await agg_cursor.to_list(1)
+        if not docs:
+            # Either the group doesn't exist OR the caller isn't allowed to see it.
+            raise EntryNotFound(group_id)
+
+        return GroupInfoOut.model_validate(docs[0])
+    except PyMongoError as pme:
+        LOG.error("MongoDB error while retrieving group: %s", str(pme))
+        raise DatabaseOperationError(
+            f"Database error occurred while retrieving group: {str(pme)}"
+        ) from pme
+    except ValidationError as ve:
+        LOG.error(
+            "Group %s caused validation error: %s",
+            group_id,
+            ve,
+        )
+        raise
+
+
+async def build_column_overrides(group_obj: GroupRecordDb, manifest: Manifest, *, preset: str | None = None) -> list[ColumnFull]:
     """Build list of availbale columns with group specific overrides applied."""
-    return
+    override_idx = {}
+    if (group_preset := group_obj.presets.get(preset)):
+        override_idx = {col.id: col for col in group_preset.overrides}
+
+    upd_columns: list[ColumnFull] = []
+    for col in manifest.columns:
+        # only include allowed columns if allowed columns have been set.
+        if len(group_obj.allowed_columns.column_ids) > 0:
+            if col.id not in group_obj.allowed_columns.column_ids:
+                continue
+
+        # Mutate with override if available
+        if (override := override_idx.get(col.id)):
+            update = override.model_dump(exclude_unset=True, exclude_none=True, exclude=["id"])
+            col = col.model_copy(update=update)
+        upd_columns.append(col)
+
+    return upd_columns
