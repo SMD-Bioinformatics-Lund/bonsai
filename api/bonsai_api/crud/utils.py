@@ -63,64 +63,6 @@ def audit_event_context(
             audit.post_event(event)
 
 
-async def check_groups_exists(
-    db: Database, *, group_ids: list[str], session: Any = None
-) -> list[str]:
-    """Check if group with group_id exists in database.
-
-    Return missing group ids.
-    """
-    if not group_ids:
-        return []
-
-    if not isinstance(group_ids, list):
-        raise RuntimeError(f"Invalid input data, expect list[str] but got: {group_ids}")
-
-    existing = await db.sample_group_collection.find(
-        {"group_id": {"$in": group_ids}}, {"group_id": 1, "_id": 0}, session=session
-    ).to_list(None)
-
-    existing_ids: set[str] = {gr["group_id"] for gr in existing}
-    missing = set(group_ids) - existing_ids
-    if missing:
-        LOG.warning("Did not find groups: %s", missing)
-    return missing
-
-
-async def check_samples_exists(
-    db: Database, *, sample_ids: list[str], session: Any = None
-) -> list[str]:
-    """Check if group with group_id exists in database.
-
-    Return missing group ids.
-    """
-    if not sample_ids:
-        return []
-
-    if not isinstance(sample_ids, list):
-        raise RuntimeError(
-            f"Invalid input data, expect list[str] but got: {sample_ids}"
-        )
-
-    existing = await db.sample_collection.find(
-        {"sample_id": {"$in": sample_ids}}, {"sample_id": 1, "_id": 0}, session=session
-    ).to_list(None)
-
-    existing_ids: set[str] = {gr["sample_id"] for gr in existing}
-    missing = set(sample_ids) - existing_ids
-    if missing:
-        LOG.warning("Did not find samples: %s", missing)
-    return missing
-
-
-async def check_user_exists(db: Database, *, user_id: str, session: Any = None) -> bool:
-    """Check if user with user_id exists in database."""
-    user = await db.user_collection.find_one(
-        {"username": user_id}, {"_id": 1}, session=session
-    )
-    return user is not None
-
-
 @asynccontextmanager
 async def managed_transaction(
     client: AsyncMongoClient, session: ClientSession | None = None

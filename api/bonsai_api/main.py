@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
         )
     if settings.notification_service_api is not None:
         app.state.notification = NotificationClient(
-            base_url=str(settings.audit_log_service_api)
+            base_url=str(settings.notification_service_api)
         )
 
     yield

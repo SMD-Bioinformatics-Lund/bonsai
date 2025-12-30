@@ -1,6 +1,7 @@
 """User CRUD operations."""
 
 import logging
+from typing import Any
 
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
@@ -249,3 +250,12 @@ async def remove_samples_from_user_basket(
     # get updated basket
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
     return user.basket
+
+
+async def user_exists(db: Database, *, user_id: str, session: Any = None) -> bool:
+    """Check if user with user_id exists in database."""
+    user = await db.user_collection.find_one(
+        {"username": user_id}, {"_id": 1}, session=session
+    )
+    return user is not None
+

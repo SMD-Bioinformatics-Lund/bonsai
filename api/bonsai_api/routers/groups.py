@@ -3,7 +3,7 @@
 from api.bonsai_api.services.group_service import build_column_overrides
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 import bonsai_api.crud.group as crud_gr
-import bonsai_api.crud.memberships as crud_mem
+import bonsai_api.services.membership_service as service_mem
 from api_client.audit_log import AuditLogClient
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.db import Database
@@ -256,7 +256,7 @@ async def add_samples_to_group(
     try:
         # reformat the request to edges and perform mutation
         edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
-        await crud_mem.add_memberships(edges, db=db)
+        await service_mem.add_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -291,7 +291,7 @@ async def remove_sample_from_group(
     try:
         # build edges of the groups to remove
         edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
-        await crud_mem.remove_memberships(edges, db=db)
+        await service_mem.remove_memberships(edges, db=db)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
