@@ -100,7 +100,7 @@ class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     invited_users: list[str] = Field(default_factory=list)
 
 
-class GroupInfoOut(BaseModel):  # pylint: disable=too-few-public-methods
+class GroupInfoOut(Timestamps):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
     group_id: str
@@ -109,10 +109,10 @@ class GroupInfoOut(BaseModel):  # pylint: disable=too-few-public-methods
     sample_count: int
 
     default_preset_id: str | None = None
-    presets: list[dict[str, Any]] = []
+    presets: list[dict[str, Any]] = Field(default_factory=list)
 
     table_columns: list[str] = Field(
-        default=[], description="IDs of columns to display."
+        default_factory=list, description="IDs of columns to display."
     )
 
 

@@ -4,7 +4,7 @@ import datetime
 from typing import Any
 
 from bson import ObjectId as BaseObjectId
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from ..utils import get_timestamp
 
@@ -53,11 +53,17 @@ class ForbidExtraModelMixin(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class Timestamps(RWModel):  # pylint: disable=too-few-public-methods
+class Timestamps(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
     modified_at: datetime.datetime = Field(default_factory=get_timestamp)
+
+    @model_validator(mode="after")
+    def _ensure_modified_after_created(self) -> "Timestamps":
+        if self.modified_at < self.created_at:
+            raise ValueError("modified_at must be >= created_at")
+        return self
 
 
 class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods

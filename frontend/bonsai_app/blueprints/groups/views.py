@@ -177,12 +177,12 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    columns = group_info.get("table_columns", [])
-    if len(columns) > 0:
-        columns = get_valid_group_columns(token, group_id=group_id)
+    
+    if (column_info := group_info.get("table_columns", [])) and len(column_info) > 0:
+        column_info = get_valid_group_columns(token, group_id=group_id)
     else:  # get default columns
-        columns = get_valid_summary_columns(token)
-    table_data = format_tablular_data(samples_info["data"], columns)
+        column_info = get_valid_summary_columns(token)
+    table_data = format_tablular_data(samples_info["data"], column_info["columns"])
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"

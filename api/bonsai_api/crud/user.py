@@ -157,8 +157,8 @@ async def get_users(
 
     upd_user_obj = []
     async for user in db_obj.user_collection.find(query):
-        inserted_id = user["_id"]
-        upd_user_obj.append(UserInputDatabase(id=str(inserted_id), **user))
+        user.pop("_id", False)
+        upd_user_obj.append(UserInputDatabase(**user))
     return upd_user_obj
 
 
