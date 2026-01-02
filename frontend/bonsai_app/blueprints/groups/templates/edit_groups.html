@@ -40,7 +40,7 @@
     <div class="card-body">
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="{{base_id}}" onclick="toggleDisabled(this)"
-                   {% if col.selected %}checked{% endif %}>
+                   {% if col.default_visible %}checked{% endif %}>
             <p class="card-title">{{ col.label }}</p>
         </div>
         <span class="display-params-input">
