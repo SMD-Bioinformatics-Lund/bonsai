@@ -48,19 +48,16 @@ def format_tablular_data(
     data: list[dict[str, Any]], column_defs: list[dict[str, Any]]
 ) -> TableData:
     """Format data for display in a table."""
-    table_data = TableData(
-        columns=[
-            TableColumn(
-                id=col["id"],
-                label=col["label"],
-                type=col["type"],
-                renderer=_get_renderer(col),
-                sortable=col["sortable"],
-                searchable=col["type"] != "object",
-                visible=col.get("default_visible", True),
-            )
-            for col in column_defs
-        ],
-        rows=data,
-    )
+    cols = [
+        TableColumn(
+            id=col["id"],
+            label=col["label"],
+            type=col["type"],
+            renderer=_get_renderer(col),
+            sortable=col["sortable"],
+            searchable=col["type"] != "object",
+            visible=col.get("default_visible", True),
+        ) for col in column_defs
+    ]
+    table_data = TableData(columns=cols, rows=data)
     return table_data

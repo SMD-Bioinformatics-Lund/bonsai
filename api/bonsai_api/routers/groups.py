@@ -322,8 +322,14 @@ async def get_columns_for_group(
 ):
     """Get information of the number of samples per group loaded into the database."""
     user = UserContext(user_id=current_user.username, roles=current_user.roles)
-    group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
-    columns = await build_column_overrides(
-        group_obj=group_obj, manifest=MANIFEST
-    )
+    try:
+        group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
+        columns = await build_column_overrides(
+            group_obj=group_obj, manifest=MANIFEST
+        )
+    except EntryNotFound as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(exc)
+        ) from exc
     return columns
