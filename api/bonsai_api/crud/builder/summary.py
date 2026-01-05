@@ -4,11 +4,13 @@ import logging
 
 from bonsai_api.db import Database
 
-from .helpers import (build_flatten_results_stage, build_get_entry_stage,
-                      build_lookup_stage)
+from .helpers import (
+    build_flatten_results_stage,
+    build_get_entry_stage,
+    build_lookup_stage,
+)
 from .summary_manifest import BUILDER_REGISTRY
-from .types import (BuilderArgs, LookupSpec, Manifest, PipelineProjection,
-                    PipelineStages)
+from .types import BuilderArgs, LookupSpec, Manifest, PipelineProjection, PipelineStages
 
 LOG = logging.getLogger(__name__)
 

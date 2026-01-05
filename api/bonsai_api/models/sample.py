@@ -3,21 +3,37 @@
 from typing import Literal, Optional, Union
 
 from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
-from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
-                                  ElementType, PredictionSoftware,
-                                  ResfinderGene, VariantBase, VirulenceGene)
+from prp.models.phenotype import (
+    AmrFinderGene,
+    AmrFinderResistanceGene,
+    ElementType,
+    PredictionSoftware,
+    ResfinderGene,
+    VariantBase,
+    VirulenceGene,
+)
 from prp.models.sample import PipelineResult
 from prp.models.species import SpeciesPrediction
-from prp.models.typing import (ResultLineageBase, TbProfilerLineage,
-                               TypingMethod, TypingResultCgMlst,
-                               TypingResultGeneAllele, TypingResultMlst,
-                               TypingSoftware)
+from prp.models.typing import (
+    ResultLineageBase,
+    TbProfilerLineage,
+    TypingMethod,
+    TypingResultCgMlst,
+    TypingResultGeneAllele,
+    TypingResultMlst,
+    TypingSoftware,
+)
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (DateTimeModelMixin, DBModelMixin,
-                   MultipleRecordsResponseModel, RWModel, Timestamps)
+from .base import (
+    DateTimeModelMixin,
+    DBModelMixin,
+    MultipleRecordsResponseModel,
+    RWModel,
+    Timestamps,
+)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
 

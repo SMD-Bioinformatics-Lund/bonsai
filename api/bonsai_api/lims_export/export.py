@@ -7,8 +7,7 @@ from typing import Literal
 
 from bonsai_api.models.sample import SampleInDatabase
 
-from .formatters import (AnalysisNoResultError, AnalysisNotPresentError,
-                         get_formatter)
+from .formatters import AnalysisNoResultError, AnalysisNotPresentError, get_formatter
 from .models import AssayConfig, LimsRsResult, LimsValue
 
 LOG = logging.getLogger(__name__)

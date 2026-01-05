@@ -6,23 +6,29 @@ from logging import getLogger
 from typing import Literal
 
 import click
-from bonsai_api.exceptions import UserNotFound, ConflictError
 from api_client.audit_log import AuditLogClient
 from api_client.notification import EmailCreate, NotificationClient
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES, settings
-from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.db.index import INDEXES
+from bonsai_api.exceptions import ConflictError, EntryNotFound, UserNotFound
 from bonsai_api.lims_export.config import InvalidFormatError
 from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInfoCreate, Visibility
 from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
-from .cli_tasks import (run_check_paths, run_create_group, run_create_index,
-                        run_create_user, run_get_samples, run_lims_export,
-                        run_migrate_database, run_update_tag)
+from .cli_tasks import (
+    run_check_paths,
+    run_create_group,
+    run_create_index,
+    run_create_user,
+    run_get_samples,
+    run_lims_export,
+    run_migrate_database,
+    run_update_tag,
+)
 from .utils import EmailType, run_async
 
 LOG = getLogger(__name__)
@@ -110,15 +116,26 @@ def create_user(
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
 @click.option("-o", "--owner", help="User id for the group owner", default="admin")
-@click.option("-v", "--visibility", type=click.Choice(Visibility), default=Visibility.PUBLIC, help="Group visibility")
+@click.option(
+    "-v",
+    "--visibility",
+    type=click.Choice(Visibility),
+    default=Visibility.PUBLIC,
+    help="Group visibility",
+)
 def create_group(
-    _ctx: click.Context, group_id: str | None, name: str, description: str | None, owner: str | None, visibility: Visibility
+    _ctx: click.Context,
+    group_id: str | None,
+    name: str,
+    description: str | None,
+    owner: str | None,
+    visibility: Visibility,
 ):  # pylint: disable=unused-argument
     """Create a user account"""
     if group_id is None:
         click.secho("Generating group id from name", fg="yellow")
         group_id = name.lower().replace(" ", "-")
-    
+
     if len(group_id) < 5:
         raise click.UsageError("Group id must be at least 5 characters long")
 
@@ -132,9 +149,7 @@ def create_group(
     try:
         run_async(run_create_group(group_obj, user_id=owner))
     except ConflictError as error:
-        raise click.UsageError(
-            f'Group with ID "{group_id}" already exists'
-        ) from error
+        raise click.UsageError(f'Group with ID "{group_id}" already exists') from error
     except UserNotFound as error:
         raise click.UsageError(str(error)) from error
     click.secho(f'Successfully created the group "{group_id}"', fg="green")

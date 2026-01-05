@@ -11,18 +11,20 @@ from datetime import datetime
 from itertools import groupby
 from typing import Literal
 
-from bonsai_api.crud.memberships import find_groups_by_sample_ids, find_samples_by_group_ids
 from bonsai_api.crud.group import check_groups_exists
-from bonsai_api.crud.utils import managed_transaction
+from bonsai_api.crud.memberships import (
+    find_groups_by_sample_ids,
+    find_samples_by_group_ids,
+)
 from bonsai_api.crud.sample import check_samples_exists
+from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.db import Database
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.memberships import MembershipEdge, MembershipEdges
 from bonsai_api.utils import get_timestamp
 from pymongo import UpdateOne
 from pymongo.client_session import ClientSession
 from pymongo.errors import BulkWriteError, PyMongoError
-
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 
 LOG = logging.getLogger(__name__)
 
@@ -52,7 +54,9 @@ async def _check_exists(
     missing_groups = await check_groups_exists(db, group_ids=group_ids, session=session)
     if missing_groups:
         raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_groups)}")
-    missing_samples = await check_samples_exists(db, sample_ids=sample_ids, session=session)
+    missing_samples = await check_samples_exists(
+        db, sample_ids=sample_ids, session=session
+    )
     if missing_samples:
         raise EntryNotFound(f"Unknown sample_id(s): {sorted(missing_samples)}")
 
@@ -156,14 +160,18 @@ async def _mutate_memberships(
 
     # 2. Fetch existing memberships for the samples implicated
     sid_edges = await db.sample_collection.find(
-        {"sample_id": {"$in": sample_ids}}, {"_id": 0, "sample_id": 1, "groups": 1}, session=session
+        {"sample_id": {"$in": sample_ids}},
+        {"_id": 0, "sample_id": 1, "groups": 1},
+        session=session,
     ).to_list(None)
 
     # convert to MembershipEdge list for grouping
     sid_edge_objs: list[MembershipEdge] = []
     for doc in sid_edges:
         for gid in doc.get("groups", []):
-            sid_edge_objs.append(MembershipEdge(sample_id=doc["sample_id"], group_id=gid))
+            sid_edge_objs.append(
+                MembershipEdge(sample_id=doc["sample_id"], group_id=gid)
+            )
 
     present: dict[str, set[str]] = {
         sid: {e.group_id for e in grp}
@@ -185,7 +193,9 @@ async def _mutate_memberships(
         await db.sample_collection.bulk_write(smp_ops, ordered=False, session=session)
 
     if grp_ops:
-        await db.sample_group_collection.bulk_write(grp_ops, ordered=False, session=session)
+        await db.sample_group_collection.bulk_write(
+            grp_ops, ordered=False, session=session
+        )
 
 
 async def add_memberships(
@@ -241,13 +251,17 @@ async def get_groups_by_sample_ids(
     if not sample_ids:
         return []
 
-    missing_sids = await check_samples_exists(db, sample_ids=sample_ids, session=session)
+    missing_sids = await check_samples_exists(
+        db, sample_ids=sample_ids, session=session
+    )
     if missing_sids:
         # Abort the operation if non-existent sample was provided
         raise EntryNotFound(f"Unknown sample_id(s): {sorted(missing_sids)}")
 
     edges: MembershipEdges = []
-    async for doc in find_groups_by_sample_ids(db, sample_ids=sample_ids, session=session):
+    async for doc in find_groups_by_sample_ids(
+        db, sample_ids=sample_ids, session=session
+    ):
         for gid in doc.get("groups", []):
             edges.append(MembershipEdge(sample_id=doc["sample_id"], group_id=gid))
     return edges
@@ -269,7 +283,9 @@ async def get_samples_by_group_ids(
         raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_gids)}")
 
     result: MembershipEdges = []
-    for doc in await find_samples_by_group_ids(db, group_ids=group_ids, session=session):
+    for doc in await find_samples_by_group_ids(
+        db, group_ids=group_ids, session=session
+    ):
         result.append(MembershipEdge.model_validate(doc))
 
     return result

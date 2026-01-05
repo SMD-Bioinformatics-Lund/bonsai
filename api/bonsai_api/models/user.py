@@ -1,8 +1,8 @@
 """Definition of User data models."""
 
+from bonsai_api.config import settings
 from pydantic import EmailStr
 
-from bonsai_api.config import settings
 from .base import DBModelMixin, ForbidExtraModelMixin, RWModel, Timestamps
 
 

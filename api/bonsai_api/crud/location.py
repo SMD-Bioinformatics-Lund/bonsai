@@ -2,12 +2,15 @@
 
 from typing import List
 
-from bson import ObjectId
-
 from bonsai_api.db import Database
-from bonsai_api.models.location import (GeoJSONPolygon, LocationInputCreate,
-                               LocationInputDatabase, LocationOutputDatabase)
 from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.models.location import (
+    GeoJSONPolygon,
+    LocationInputCreate,
+    LocationInputDatabase,
+    LocationOutputDatabase,
+)
+from bson import ObjectId
 
 
 def _document_to_db_obj(document) -> LocationOutputDatabase:

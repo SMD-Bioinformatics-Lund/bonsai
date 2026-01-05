@@ -8,16 +8,20 @@ from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.extensions.ldap_extension import ldap_connection
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
-                                    UserInputDatabase, UserOutputDatabase)
+from bonsai_api.models.user import (
+    SampleBasketObject,
+    UserInputCreate,
+    UserInputDatabase,
+    UserOutputDatabase,
+)
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
@@ -258,4 +262,3 @@ async def user_exists(db: Database, *, user_id: str, session: Any = None) -> boo
         {"username": user_id}, {"_id": 1}, session=session
     )
     return user is not None
-

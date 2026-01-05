@@ -4,14 +4,23 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Protocol, runtime_checkable
 
-from bonsai_api.config import (BrackenThresholds, MykrobeThresholds,
-                               normalize_species_key, thresholds_cfg)
+from bonsai_api.config import (
+    BrackenThresholds,
+    MykrobeThresholds,
+    normalize_species_key,
+    thresholds_cfg,
+)
 from bonsai_api.models.sample import SampleInDatabase
-from bonsai_api.models.tags import (ResistanceTag, Tag, TagList, TagSeverity,
-                                    TagType, VirulenceTag)
+from bonsai_api.models.tags import (
+    ResistanceTag,
+    Tag,
+    TagList,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+)
 from prp.models.phenotype import ElementType, ElementTypeResult
-from prp.models.species import (BrackenSpeciesPrediction,
-                                MykrobeSpeciesPrediction)
+from prp.models.species import BrackenSpeciesPrediction, MykrobeSpeciesPrediction
 from prp.models.typing import TypingMethod
 
 LOG = logging.getLogger(__name__)

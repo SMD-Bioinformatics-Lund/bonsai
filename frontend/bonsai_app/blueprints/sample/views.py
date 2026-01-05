@@ -6,22 +6,46 @@ from datetime import date
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
-from flask import (Blueprint, abort, current_app, flash, make_response,
-                   redirect, render_template, request, url_for)
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 from requests import HTTPError
 
-from ...bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
-                       find_samples_similar_to_reference, get_antibiotics,
-                       get_group_by_id, get_lims_export_response,
-                       get_sample_by_id, get_variant_rejection_reasons,
-                       post_comment_to_sample, remove_comment_from_sample,
-                       update_sample_qc_classification, update_variant_info)
+from ...bonsai import (
+    TokenObject,
+    cgmlst_cluster_samples,
+    delete_samples,
+    find_samples_similar_to_reference,
+    get_antibiotics,
+    get_group_by_id,
+    get_lims_export_response,
+    get_sample_by_id,
+    get_variant_rejection_reasons,
+    post_comment_to_sample,
+    remove_comment_from_sample,
+    update_sample_qc_classification,
+    update_variant_info,
+)
 from ...models import BadSampleQualityAction, QualityControlResult
-from .controllers import (filter_variants, filter_variants_if_processed,
-                          get_all_variant_types, get_all_who_classifications,
-                          get_variant_genes, kw_metadata_to_table,
-                          sort_variants, split_metadata)
+from .controllers import (
+    filter_variants,
+    filter_variants_if_processed,
+    get_all_variant_types,
+    get_all_who_classifications,
+    get_variant_genes,
+    kw_metadata_to_table,
+    sort_variants,
+    split_metadata,
+)
 
 LOG = logging.getLogger(__name__)
 

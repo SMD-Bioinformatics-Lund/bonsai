@@ -13,15 +13,21 @@ from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.antibiotics import ANTIBIOTICS
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.qc import QcClassification, VariantAnnotation
-from bonsai_api.models.sample import (Comment, CommentInDatabase,
-                                      SampleInCreate, SampleInDatabase)
+from bonsai_api.models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleInDatabase,
+)
 from bonsai_api.redis.minhash import (
     schedule_remove_genome_signature,
-    schedule_remove_genome_signature_from_index)
+    schedule_remove_genome_signature_from_index,
+)
 from bonsai_api.utils import format_error_message, get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
@@ -29,8 +35,6 @@ from prp.models import PipelineResult
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
-
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1

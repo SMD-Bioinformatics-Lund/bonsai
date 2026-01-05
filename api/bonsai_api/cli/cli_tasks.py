@@ -7,7 +7,6 @@ from typing import Any, Literal
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
-from bonsai_api.services.group_service import create_group_service
 from bonsai_api.crud.sample import get_sample, get_samples_full, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.user import create_user as create_user_in_db
@@ -16,14 +15,17 @@ from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.db.verify import MissingFile
 from bonsai_api.lims_export.config import load_export_config
-from bonsai_api.lims_export.export import (lims_rs_formatter,
-                                           serialize_lims_results)
+from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
 from bonsai_api.migrate import migration_functions
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import GroupInfoCreate, GroupInfoOut
-from bonsai_api.models.sample import (MultipleSampleRecordsResponseModel,
-                                      SampleInCreate, SampleInDatabase)
+from bonsai_api.models.sample import (
+    MultipleSampleRecordsResponseModel,
+    SampleInCreate,
+    SampleInDatabase,
+)
 from bonsai_api.models.user import UserContext, UserInputCreate, UserOutputDatabase
+from bonsai_api.services.group_service import create_group_service
 
 LOG = logging.getLogger(__name__)
 
@@ -74,7 +76,9 @@ async def run_create_group(group_obj: GroupInfoCreate, user_id: str) -> GroupInf
         audit_log = _get_audit_log_client()
         LOG.info("Creating group: %s", group_obj.group_id)
         group_owner = UserContext(user_id=user_id)
-        return await create_group_service(db, group_record=group_obj, ctx=ctx, creator=group_owner, audit=audit_log)
+        return await create_group_service(
+            db, group_record=group_obj, ctx=ctx, creator=group_owner, audit=audit_log
+        )
 
 
 async def run_create_index(col_name: str, indexes: list[dict[str, Any]]) -> None:
