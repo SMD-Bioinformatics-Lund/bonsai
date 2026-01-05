@@ -269,7 +269,7 @@ async def get_samples_by_group_ids(
         raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_gids)}")
 
     result: MembershipEdges = []
-    async for doc in await find_samples_by_group_ids(db, group_ids=group_ids, session=session):
+    for doc in await find_samples_by_group_ids(db, group_ids=group_ids, session=session):
         result.append(MembershipEdge.model_validate(doc))
 
     return result

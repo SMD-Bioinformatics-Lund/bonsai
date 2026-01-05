@@ -1,5 +1,6 @@
 """Models used by pipeline builders."""
 
+from enum import StrEnum
 import hashlib
 import json
 from typing import Any, Literal, TypeAlias
@@ -44,17 +45,34 @@ class LookupSpec(BaseModel):
     project: dict[str, Any] | None = None  # e.g., {"groups_meta": 0}
 
 
-ColumnType = Literal["string", "number", "integer", "date", "boolean", "object"]
+class ColumnDataType(StrEnum):
+    """Valid data types."""
+    STR = "string"
+    NUM = "number"
+    INT = "integer"
+    DATE = "date"
+    BOOL = "boolean"
+    OBJ = "object"
+
+
+class DataSource(StrEnum):
+    """If the data is predefined or user provided metadata.
+    
+    - static, analysis results
+    - metadata, user provided sample metadata
+    """
+    STATIC = "static"
+    METADATA = "metadata"
 
 
 class ColumnBase(BaseModel):
     """User facing data."""
 
     id: str = Field(..., description="Column id")
-    type: ColumnType = "string"
+    type: ColumnDataType = "string"
     label: str = Field(..., description="Display name")
-    source: Literal["static", "metadata"] = (
-        "static"  # where the columns are predefined or relate to metadata
+    source: DataSource = (
+        DataSource.STATIC
     )
     default_visible: bool = False
     filterable: bool = True

@@ -1,17 +1,20 @@
 """Routes related to collections of samples."""
 
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from bonsai_api.utils import get_timestamp
 from pydantic import BaseModel, Field
 
+from bonsai_api.crud.builder.types import ColumnDataType, DataSource
 from .base import (ForbidExtraModelMixin, MultipleRecordsResponseModel,
                    RWModel, Timestamps)
 
 FilterParams = list[dict[str, str | int | float],]
 
 SCHEMA_VERSION = 1
+
+DEFAULT_PRESET_NAME = "default"
 
 
 class Visibility(StrEnum):
@@ -35,16 +38,38 @@ class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
 class ColumnOverride(BaseModel):
     """Defines column overrides for group sample table."""
 
-    id: str = Field(..., description="Column id")
+    id: str = Field(..., description="Column id", frozen=True)
     visible: bool | None = None
     sortable: bool | None = None
     searchable: bool | None = None
     order: int | None = None
-    locked: bool | None = Field(
-        None, description="If true, user cannot change this column setting"
+    locked: bool = Field(
+        False, description="If true, user cannot change this column setting"
     )
-    width: int | None = None
     label: str | None = Field(None, description="Custom column label")
+
+
+class ColumnOut(ForbidExtraModelMixin):
+    """User-facing column after applying manifest + overrides."""
+    id: str
+    type: ColumnDataType
+    source: DataSource
+
+    # Manifest defaults (useful context for UIs)
+    default_visible: bool
+    filterable: bool
+    sortable: bool
+
+    # Effective values after overrides (required or well-defined optional)
+    visible: bool
+    searchable: bool | None = None
+    order: int
+    locked: bool = False
+    label: str
+
+    overridden_fields: list[
+        Literal["visible", "sortable", "searchable", "order", "width", "label", "locked"]
+    ] = Field(default_factory=list, description="What has changed")
 
 
 class GroupPreset(BaseModel):
@@ -52,14 +77,13 @@ class GroupPreset(BaseModel):
 
     preset_id: str
     label: str
-    manifest_version: str
     overrides: list[ColumnOverride] = Field(default_factory=list)
 
 
 class GroupPresets(ForbidExtraModelMixin):
     """Preset collection for a group and track the default preset id."""
 
-    default_preset_id: str | None = None
+    default_preset_id: str = DEFAULT_PRESET_NAME
     items: list[GroupPreset] = Field(default_factory=list)
 
     def get(self, preset_id: str | None) -> GroupPreset | None:
@@ -96,7 +120,7 @@ class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     schema_version: int = SCHEMA_VERSION
     core: GroupCore
     allowed_columns: GroupAllowed = Field(default_factory=GroupAllowed)
-    presets: GroupPresets | None = None
+    presets: GroupPresets = Field(default_factory=GroupPresets)
     invited_users: list[str] = Field(default_factory=list)
 
 
@@ -127,7 +151,6 @@ class GroupPresetIn(BaseModel):
 
     preset_id: str
     label: str
-    manifest_version: str
     overrides: list[ColumnOverride] = Field(default_factory=list)
 
 

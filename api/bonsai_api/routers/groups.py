@@ -1,6 +1,6 @@
 """Entrypoints for getting group data."""
 
-from api.bonsai_api.services.group_service import build_column_overrides
+from bonsai_api.services.group_service import build_column_overrides
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.services.group_service as service_gr
@@ -11,13 +11,13 @@ from bonsai_api.db import Database
 from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
                                      get_database, get_request_context)
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (GroupAllowedUpdate, GroupInfoCreate,
+from bonsai_api.models.group import (ColumnOut, GroupAllowedUpdate, GroupInfoCreate,
                                      GroupInfoOut, GroupListResponse,
                                      GroupPresetIn, GroupUpdate)
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.services import group_service
-from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Security,
+from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Request, Security,
                      status)
 from pymongo.errors import DuplicateKeyError
 
@@ -29,7 +29,7 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-@router.get("/groups/", 
+@router.get("/groups/",
             response_model=GroupListResponse, 
             response_model_by_alias=False,
             tags=[RouterTags.GROUP])
@@ -144,12 +144,12 @@ async def update_group_info(
 ):
     """Update mutable group core fields (display name, description)."""
     try:
-        result = await crud_gr.update_group_core(
+        result = await service_gr.update_group_core_info(
             db, group_id, group_info, req_ctx, audit_log
         )
     except EntryNotFound as error:
         raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
+            status_code=404, detail=f"Group with id '{group_id}' not in database"
         ) from error
     return result
 
@@ -195,13 +195,21 @@ async def upsert_preset_for_group(
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
+    request: Request = None,
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Create or update a preset for a group."""
     try:
-        updated = await crud_gr.upsert_preset(
+        current_etag = MANIFEST.etag
+        if_match = request.headers.get("If-Match")
+        if if_match is not None and if_match != current_etag:
+            raise HTTPException(
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+                detail={"message": "Manifest changed", "currentETag": current_etag},
+            )
+        updated = await service_gr.upsert_column_preset(
             db, group_id, preset, set_default, req_ctx, audit_log
         )
     except EntryNotFound as error:
@@ -312,9 +320,12 @@ async def remove_sample_from_group(
 @router.get(
     "/groups/{group_id}/columns",
     tags=[RouterTags.GROUP],
+    response_model=list[ColumnOut],
 )
 async def get_columns_for_group(
     group_id: str,
+    preset: str | None = None,
+    include_invisible: bool = False,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -325,7 +336,8 @@ async def get_columns_for_group(
     try:
         group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
         columns = await build_column_overrides(
-            group_obj=group_obj, manifest=MANIFEST
+            group_obj=group_obj, manifest=MANIFEST, preset=preset or "default",
+            include_invisible=include_invisible,
         )
     except EntryNotFound as exc:
         raise HTTPException(

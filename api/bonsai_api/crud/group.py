@@ -10,8 +10,7 @@ from bonsai_api.db import Database
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import (GroupAllowedUpdate,
                                      GroupInfoCreate, GroupInfoOut,
-                                     GroupListResponse, GroupPresetIn,
-                                     GroupUpdate)
+                                     GroupListResponse)
 from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
 from pymongo import ReturnDocument
@@ -355,11 +354,11 @@ async def check_groups_exists(
     # Deduplicate and sort input ids for consistent behavior
     input_ids = sorted(set(group_ids))
 
-    cursor = await db.sample_group_collection.find(
+    cursor = db.sample_group_collection.find(
         {"core.group_id": {"$in": input_ids}},
         {"core.group_id": 1, "_id": 0}, session=session
     )
-    existing_docs = cursor.to_list(None)
+    existing_docs = await cursor.to_list(None)
     existing_ids: set[str] = {gr["core"]["group_id"] for gr in existing_docs}
 
     missing_ids = set(group_ids) - existing_ids
@@ -406,37 +405,20 @@ async def update_group(
     return GroupInfoOut.model_validate(updated)
 
 
-async def update_group_core(
+async def update_group_core_doc(
     db: Database,
+    *,
     group_id: str,
-    group_update: "GroupUpdate",
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> GroupInfoOut:
-    """Update mutable group core fields (display_name, description)."""
-    payload = group_update.model_dump(exclude_none=True)
-    if not payload:
-        return GroupInfoOut.model_validate(await get_group(db, group_id))
-
-    payload["modified_at"] = get_timestamp()
-    event_subject = Subject(id=group_id, type=SourceType.USR)
-    with audit_event_context(audit, "update_group_core", ctx, event_subject):
-        try:
-            updated = await db.sample_group_collection.find_one_and_update(
-                {"group_id": group_id},
-                {"$set": {f"core.{k}": v for k, v in payload.items()}},
-                return_document=ReturnDocument.AFTER,
-            )
-        except PyMongoError as pme:
-            LOG.error("MongoDB error while updating group core: %s", str(pme))
-            raise DatabaseOperationError(
-                f"Database error occurred while updating group core: {str(pme)}"
-            ) from pme
-
-        if not updated:
-            raise EntryNotFound(group_id)
-
-    return GroupInfoOut.model_validate(updated)
+    fields: dict[str, Any],
+    session: Any = None,
+) -> dict[str, Any] | None:
+    """Update group core fields."""
+    LOG.debug("Updating group.core document", extra={"fields": fields})
+    return await db.sample_group_collection.find_one_and_update(
+        {"core.group_id": group_id},
+        {"$set": {f"core.{key}": val for key, val in fields.items()}},
+        session=session, return_document=ReturnDocument.AFTER,
+    )
 
 
 async def set_allowed_columns(
@@ -470,58 +452,20 @@ async def set_allowed_columns(
     return GroupInfoOut.model_validate(updated)
 
 
-async def upsert_preset(
+async def upsert_preset_doc(
     db: Database,
+    *,
     group_id: str,
-    preset: "GroupPresetIn",
-    set_default: bool,
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> GroupInfoOut:
-    """Create or replace a preset for a group."""
-    # get current group
-    grp = await get_group(db, group_id)
-    presets = grp.presets or {}
-    items = []
-    default_id = getattr(presets, "default_preset_id", None)
-
-    # convert to mutable structure
-    items = [p.model_dump() for p in getattr(presets, "items", [])]
-
-    # check for existing preset and replace or append
-    replaced = False
-    for idx, p in enumerate(items):
-        if p.get("preset_id") == preset.preset_id:
-            items[idx] = preset.model_dump()
-            replaced = True
-            break
-    if not replaced:
-        items.append(preset.model_dump())
-
-    new_presets = {
-        "default_preset_id": preset.preset_id if set_default else default_id,
-        "items": items,
-    }
-    payload = {"presets": new_presets, "modified_at": get_timestamp()}
-
-    event_subject = Subject(id=group_id, type=SourceType.USR)
-    with audit_event_context(audit, "upsert_preset", ctx, event_subject):
-        try:
-            updated = await db.sample_group_collection.find_one_and_update(
-                {"group_id": group_id},
-                {"$set": payload},
-                return_document=ReturnDocument.AFTER,
-            )
-        except PyMongoError as pme:
-            LOG.error("MongoDB error while upserting preset: %s", str(pme))
-            raise DatabaseOperationError(
-                f"Database error occurred while upserting preset: {str(pme)}"
-            ) from pme
-
-        if not updated:
-            raise EntryNotFound(group_id)
-
-    return GroupInfoOut.model_validate(updated)
+    payload: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Upsert group column presets and returns the updated document."""
+    LOG.debug("Updating group.presets", extra={"group_id": group_id, "preset": payload})
+    updated = await db.sample_group_collection.find_one_and_update(
+        {"core.group_id": group_id},
+        {"$set": payload},
+        return_document=ReturnDocument.AFTER,
+    )
+    return updated
 
 
 async def delete_preset(
