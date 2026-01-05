@@ -40,7 +40,7 @@
     <div class="card-body">
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" role="switch" id="{{base_id}}" onclick="toggleDisabled(this)"
-                   {% if col.default_visible %}checked{% endif %}>
+                   {% if col.visible %}checked{% endif %}>
             <p class="card-title">{{ col.label }}</p>
         </div>
         <span class="display-params-input">
@@ -89,6 +89,20 @@
     {% set table_columns = group.table_columns %}
     {% set included_samples = group.included_samples %}
 {% endif %}
+<div class="row g-3">
+    <div class="col-auto">
+        {{ inputText(id='group-id', value=group_id, label='Group id', description='Unique id') }}
+        <div class="invalid-feedback">Group id must be unique and longer than 5 characters</div>
+    </div>
+    <div class="col-auto">
+        {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
+        <div class="invalid-feedback"></div>
+    </div>
+</div>
+<div class="form-floating pt-2">
+    <textarea class="form-control" placeholder="Group description" id="input-group-description">{{ description }}</textarea>
+    <label for="input-group-description">Group description</label>
+</div>
 <div class="row g-3 my-2">
     {% if group == None %}
         <div class="col-auto">
@@ -122,20 +136,6 @@
             </form>
         </div>
     {% endif  %}
-</div>
-<div class="row g-3">
-    <div class="col-auto">
-        {{ inputText(id='group-id', value=group_id, label='Group id', description='Unique id') }}
-        <div class="invalid-feedback">Group id must be unique and longer than 5 characters</div>
-    </div>
-    <div class="col-auto">
-        {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
-        <div class="invalid-feedback"></div>
-    </div>
-</div>
-<div class="form-floating pt-2">
-    <textarea class="form-control" placeholder="Group description" id="input-group-description">{{ description }}</textarea>
-    <label for="input-group-description">Group description</label>
 </div>
 <hr>
 <div class="row g-3">
