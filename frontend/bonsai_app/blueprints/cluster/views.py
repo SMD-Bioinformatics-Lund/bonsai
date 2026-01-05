@@ -6,13 +6,12 @@ import logging
 from enum import Enum
 from typing import Any
 
+from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries
+from bonsai_app.custom_filters import get_json_path
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
-
-from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries
-from bonsai_app.custom_filters import get_json_path
 
 LOG = logging.getLogger(__name__)
 

@@ -189,7 +189,12 @@ def delete_group(headers: CaseInsensitiveDict[str], group_id: str):
 
 @api_authentication
 def update_group_core_info(
-    headers: CaseInsensitiveDict[str], *, group_id: str, name: str | None = None, description: str | None = None):
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    name: str | None = None,
+    description: str | None = None,
+):
     """Update information in database for a group with group_id."""
     # conduct query
     payload = {"display_name": name, "description": description}
@@ -202,8 +207,11 @@ def update_group_core_info(
 
 @api_authentication
 def update_group_presets(
-    headers: CaseInsensitiveDict[str], *, group_id: str,
-    preset: dict[str, Any], set_default: bool | None = None,
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    preset: dict[str, Any],
+    set_default: bool | None = None,
 ):
     """Update information in database for a group with group_id."""
     # conduct query
@@ -491,7 +499,11 @@ def get_lims_export_response(
 
 @api_authentication
 def get_valid_group_columns(
-    headers: CaseInsensitiveDict[str], *, group_id: str, preset: str | None = None, include_invisible: bool | None = None
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    preset: str | None = None,
+    include_invisible: bool | None = None,
 ):
     """Query API for valid group columns."""
     url: str = f"groups/{group_id}/columns"

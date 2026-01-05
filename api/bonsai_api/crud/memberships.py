@@ -6,9 +6,9 @@ the database.
 
 import logging
 from typing import Any
-from pymongo.client_session import ClientSession
 
 from bonsai_api.db import Database
+from pymongo.client_session import ClientSession
 
 LOG = logging.getLogger(__name__)
 

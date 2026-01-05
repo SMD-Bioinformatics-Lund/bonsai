@@ -1,5 +1,6 @@
 """Custom exceptions for the Bonsai API."""
 
+
 class DomainError(Exception):
     """Raised when there is a domain-specific error."""
 

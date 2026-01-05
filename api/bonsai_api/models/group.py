@@ -3,12 +3,16 @@
 from enum import StrEnum
 from typing import Any, Literal
 
+from bonsai_api.crud.builder.types import ColumnDataType, DataSource
 from bonsai_api.utils import get_timestamp
 from pydantic import BaseModel, Field
 
-from bonsai_api.crud.builder.types import ColumnDataType, DataSource
-from .base import (ForbidExtraModelMixin, MultipleRecordsResponseModel,
-                   RWModel, Timestamps)
+from .base import (
+    ForbidExtraModelMixin,
+    MultipleRecordsResponseModel,
+    RWModel,
+    Timestamps,
+)
 
 FilterParams = list[dict[str, str | int | float],]
 
@@ -51,6 +55,7 @@ class ColumnOverride(BaseModel):
 
 class ColumnOut(ForbidExtraModelMixin):
     """User-facing column after applying manifest + overrides."""
+
     id: str
     type: ColumnDataType
     source: DataSource
@@ -68,7 +73,9 @@ class ColumnOut(ForbidExtraModelMixin):
     label: str
 
     overridden_fields: list[
-        Literal["visible", "sortable", "searchable", "order", "width", "label", "locked"]
+        Literal[
+            "visible", "sortable", "searchable", "order", "width", "label", "locked"
+        ]
     ] = Field(default_factory=list, description="What has changed")
 
 

@@ -1,8 +1,8 @@
 """Models used by pipeline builders."""
 
-from enum import StrEnum
 import hashlib
 import json
+from enum import StrEnum
 from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -47,6 +47,7 @@ class LookupSpec(BaseModel):
 
 class ColumnDataType(StrEnum):
     """Valid data types."""
+
     STR = "string"
     NUM = "number"
     INT = "integer"
@@ -57,10 +58,11 @@ class ColumnDataType(StrEnum):
 
 class DataSource(StrEnum):
     """If the data is predefined or user provided metadata.
-    
+
     - static, analysis results
     - metadata, user provided sample metadata
     """
+
     STATIC = "static"
     METADATA = "metadata"
 
@@ -71,9 +73,7 @@ class ColumnBase(BaseModel):
     id: str = Field(..., description="Column id")
     type: ColumnDataType = "string"
     label: str = Field(..., description="Display name")
-    source: DataSource = (
-        DataSource.STATIC
-    )
+    source: DataSource = DataSource.STATIC
     default_visible: bool = False
     filterable: bool = True
     sortable: bool = True

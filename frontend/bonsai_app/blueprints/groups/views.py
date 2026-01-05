@@ -4,15 +4,25 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from bonsai_app.bonsai import (TokenObject, create_group, delete_group,
-                               get_group_by_id, get_groups,
-                               get_sample_summaries, get_valid_group_columns,
-                               get_valid_summary_columns, update_group_core_info, update_group_presets,
-                               update_sample_qc_classification)
-from bonsai_app.models import (BadSampleQualityAction, PhenotypeType,
-                               QualityControlResult)
-from flask import (Blueprint, abort, flash, redirect, render_template, request,
-                   url_for)
+from bonsai_app.bonsai import (
+    TokenObject,
+    create_group,
+    delete_group,
+    get_group_by_id,
+    get_groups,
+    get_sample_summaries,
+    get_valid_group_columns,
+    get_valid_summary_columns,
+    update_group_core_info,
+    update_group_presets,
+    update_sample_qc_classification,
+)
+from bonsai_app.models import (
+    BadSampleQualityAction,
+    PhenotypeType,
+    QualityControlResult,
+)
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
 
@@ -94,12 +104,15 @@ def edit_groups(group_id: str | None = None):
             updated_data = json.loads(request.form.get("input-update-group"))
             try:
                 update_group_core_info(
-                    token, group_id=group_id,
-                    name=updated_data.get('display_name', None),
-                    description=updated_data.get('description', None),
+                    token,
+                    group_id=group_id,
+                    name=updated_data.get("display_name", None),
+                    description=updated_data.get("description", None),
                 )
                 preset = build_updated_presets(updated_data)
-                update_group_presets(token, group_id=group_id, set_default=True, preset=preset)
+                update_group_presets(
+                    token, group_id=group_id, set_default=True, preset=preset
+                )
                 flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
@@ -122,17 +135,19 @@ def edit_groups(group_id: str | None = None):
 
     # annotate if column previously have been selected
     if group_id is not None:
-        columns = get_valid_group_columns(token, group_id=group_id, include_invisible=True)
+        columns = get_valid_group_columns(
+            token, group_id=group_id, include_invisible=True
+        )
     else:
         manifest_cols = get_valid_summary_columns(token)
-        columns = manifest_cols['columns']
+        columns = manifest_cols["columns"]
 
-    valid_cols_idx = { col["id"]: col for col in columns }
+    valid_cols_idx = {col["id"]: col for col in columns}
     return render_template(
         "edit_groups.html",
         title="Groups",
         selected_group=group_id,
-        groups=all_groups['data'],
+        groups=all_groups["data"],
         valid_columns=list(valid_cols_idx.values()),
         valid_phenotypes=valid_phenotypes,
     )
@@ -172,7 +187,7 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    
+
     if (column_info := group_info.get("table_columns", [])) and len(column_info) > 0:
         column_info = get_valid_group_columns(token, group_id=group_id)
     else:  # get default columns

@@ -3,22 +3,27 @@
 import logging
 from typing import Any, Literal
 
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (GroupAllowedUpdate,
-                                     GroupInfoCreate, GroupInfoOut,
-                                     GroupListResponse)
+from bonsai_api.models.group import (
+    GroupAllowedUpdate,
+    GroupInfoCreate,
+    GroupInfoOut,
+    GroupListResponse,
+)
 from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
 from pymongo import ReturnDocument
 from pymongo.errors import PyMongoError
 
-
-from .builder.group import (build_public_visibility_match_stage, build_user_visibility_match_stage,
-                            group_project_stage)
+from .builder.group import (
+    build_public_visibility_match_stage,
+    build_user_visibility_match_stage,
+    group_project_stage,
+)
 from .builder.helpers import build_facet_pagination, build_sort_stage
 from .builder.types import PipelineStages
 from .utils import audit_event_context
@@ -104,10 +109,19 @@ async def get_groups(
     )
 
 
-async def fetch_group_raw(db: Database, *, group_id: str, visibility: VisibilityScope = "public_only", user_id: str | None = None, session: Any = None) -> dict[str, Any] | None:
+async def fetch_group_raw(
+    db: Database,
+    *,
+    group_id: str,
+    visibility: VisibilityScope = "public_only",
+    user_id: str | None = None,
+    session: Any = None,
+) -> dict[str, Any] | None:
     """Return the full database record or None if its not found."""
     if not group_id or not isinstance(group_id, str):
-        raise ValueError(f"Invalid group_id: must be a non-empty string, got {group_id}")
+        raise ValueError(
+            f"Invalid group_id: must be a non-empty string, got {group_id}"
+        )
 
     pipeline: PipelineStages = [
         {"$match": {"core.group_id": group_id}},
@@ -116,18 +130,23 @@ async def fetch_group_raw(db: Database, *, group_id: str, visibility: Visibility
     if visibility == "user":
         if not user_id:
             # fallback to only show public groups if user_id was not provided.
-            LOG.warning("User ID was not set with visibility==%s - only returning public groups", visibility)
+            LOG.warning(
+                "User ID was not set with visibility==%s - only returning public groups",
+                visibility,
+            )
             pipeline.append(build_public_visibility_match_stage())
         else:
             pipeline.append(build_user_visibility_match_stage(user_id))
     elif visibility == "public_only":
         pipeline.append(build_public_visibility_match_stage())
-    
+
     # visibility == "admin" → no extra filter
-    pipeline.extend([
-        {"$limit": 1}, 
-        {"$project": {"_id": 0}}, 
-    ])
+    pipeline.extend(
+        [
+            {"$limit": 1},
+            {"$project": {"_id": 0}},
+        ]
+    )
     cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
     docs = await cursor.to_list(1)
     return docs[0] if docs else None
@@ -139,7 +158,8 @@ async def fetch_group_out_doc(
     group_id: str,
     visibility: VisibilityScope = "public_only",
     user_id: str | None = None,
-    session: Any = None) -> dict[str, Any] | None:
+    session: Any = None,
+) -> dict[str, Any] | None:
     """Return the group document formatted as GroupInfoOut or None if not found."""
 
     if not group_id or not isinstance(group_id, str):
@@ -154,18 +174,23 @@ async def fetch_group_out_doc(
     if visibility == "user":
         if not user_id:
             # fallback to only show public groups if user_id was not provided.
-            LOG.warning("User ID was not set with visibility==%s - only returning public groups", visibility)
+            LOG.warning(
+                "User ID was not set with visibility==%s - only returning public groups",
+                visibility,
+            )
             pipeline.append(build_public_visibility_match_stage())
         else:
             pipeline.append(build_user_visibility_match_stage(user_id))
     elif visibility == "public_only":
         pipeline.append(build_public_visibility_match_stage())
-        
+
     # visibility == "admin" → no extra filter
-    pipeline.extend([
-        {"$limit": 1},
-        group_project_stage(include_presets=True, include_allowed=True),
-    ])
+    pipeline.extend(
+        [
+            {"$limit": 1},
+            group_project_stage(include_presets=True, include_allowed=True),
+        ]
+    )
     cursor = await db.sample_group_collection.aggregate(pipeline, session=session)
     docs = await cursor.to_list(1)
     return docs[0] if docs else None
@@ -327,13 +352,13 @@ async def delete_group_by_group_id(
     db: Database, *, group_id: str, session: Any = None
 ) -> int:
     """Delete a group by its core.group_id. Returns deleted_count."""
-    result = await db.sample_group_collection.delete_one({"core.group_id": group_id}, session=session)
+    result = await db.sample_group_collection.delete_one(
+        {"core.group_id": group_id}, session=session
+    )
     return result.deleted_count
 
 
-async def group_exists(
-    db: Database, *, group_id: str, session: Any = None
-) -> bool:
+async def group_exists(db: Database, *, group_id: str, session: Any = None) -> bool:
     """Return True if a group with id exists."""
     doc = await db.sample_group_collection.find_one(
         {"core.group_id": group_id}, {"_id": 1}, session=session
@@ -350,13 +375,14 @@ async def check_groups_exists(
     """
     if not group_ids:
         return []
-    
+
     # Deduplicate and sort input ids for consistent behavior
     input_ids = sorted(set(group_ids))
 
     cursor = db.sample_group_collection.find(
         {"core.group_id": {"$in": input_ids}},
-        {"core.group_id": 1, "_id": 0}, session=session
+        {"core.group_id": 1, "_id": 0},
+        session=session,
     )
     existing_docs = await cursor.to_list(None)
     existing_ids: set[str] = {gr["core"]["group_id"] for gr in existing_docs}
@@ -417,7 +443,8 @@ async def update_group_core_doc(
     return await db.sample_group_collection.find_one_and_update(
         {"core.group_id": group_id},
         {"$set": {f"core.{key}": val for key, val in fields.items()}},
-        session=session, return_document=ReturnDocument.AFTER,
+        session=session,
+        return_document=ReturnDocument.AFTER,
     )
 
 

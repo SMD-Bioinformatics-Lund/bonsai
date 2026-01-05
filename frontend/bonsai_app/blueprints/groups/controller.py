@@ -48,18 +48,16 @@ def build_updated_presets(column_info: dict[str, Any]) -> dict[str, Any]:
     """Build a new preset from information recieved from the update request."""
     overrides = []
     for position_idx, col in enumerate(column_info.get("table_columns", []), start=1):
-        overrides.append({
-            "id": col["id"],
-            "visible": col["visible"],
-            "sortable": col["sortable"],
-            "searchable": col["searchable"],
-            "order": position_idx,
-        })
-    preset = {
-        "preset_id": "default",
-        "label": "default",
-        "overrides": overrides
-    }
+        overrides.append(
+            {
+                "id": col["id"],
+                "visible": col["visible"],
+                "sortable": col["sortable"],
+                "searchable": col["searchable"],
+                "order": position_idx,
+            }
+        )
+    preset = {"preset_id": "default", "label": "default", "overrides": overrides}
     return preset
 
 
@@ -76,7 +74,8 @@ def format_tablular_data(
             sortable=col["sortable"],
             searchable=col["type"] != "object",
             visible=col.get("default_visible", True),
-        ) for col in column_defs
+        )
+        for col in column_defs
     ]
     table_data = TableData(columns=cols, rows=data)
     return table_data

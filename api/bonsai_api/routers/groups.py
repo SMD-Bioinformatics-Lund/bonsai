@@ -1,24 +1,42 @@
 """Entrypoints for getting group data."""
 
-from bonsai_api.services.group_service import build_column_overrides
-from bonsai_api.crud.builder.summary_manifest import MANIFEST
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.services.group_service as service_gr
 import bonsai_api.services.membership_service as service_mem
 from api_client.audit_log import AuditLogClient
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (get_audit_log, get_current_active_user,
-                                     get_database, get_request_context)
+from bonsai_api.dependencies import (
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import (ColumnOut, GroupAllowedUpdate, GroupInfoCreate,
-                                     GroupInfoOut, GroupListResponse,
-                                     GroupPresetIn, GroupUpdate)
+from bonsai_api.models.group import (
+    ColumnOut,
+    GroupAllowedUpdate,
+    GroupInfoCreate,
+    GroupInfoOut,
+    GroupListResponse,
+    GroupPresetIn,
+    GroupUpdate,
+)
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.services import group_service
-from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Request, Security,
-                     status)
+from bonsai_api.services.group_service import build_column_overrides
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Security,
+    status,
+)
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
@@ -29,10 +47,12 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-@router.get("/groups/",
-            response_model=GroupListResponse, 
-            response_model_by_alias=False,
-            tags=[RouterTags.GROUP])
+@router.get(
+    "/groups/",
+    response_model=GroupListResponse,
+    response_model_by_alias=False,
+    tags=[RouterTags.GROUP],
+)
 async def get_groups_in_db(
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -121,7 +141,9 @@ async def delete_group_from_db(
     """Delete a group from the database."""
     try:
         user = UserContext(user_id=current_user.username, roles=current_user.roles)
-        result = await service_gr.delete_group_service(db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log)
+        result = await service_gr.delete_group_service(
+            db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log
+        )
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=f"Group with id: {group_id} not in database"
@@ -336,12 +358,13 @@ async def get_columns_for_group(
     try:
         group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
         columns = await build_column_overrides(
-            group_obj=group_obj, manifest=MANIFEST, preset=preset or "default",
+            group_obj=group_obj,
+            manifest=MANIFEST,
+            preset=preset or "default",
             include_invisible=include_invisible,
         )
     except EntryNotFound as exc:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc)
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
         ) from exc
     return columns

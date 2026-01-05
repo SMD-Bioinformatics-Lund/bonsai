@@ -3,14 +3,14 @@
 from typing import Any
 
 from bonsai_api.db import Database
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.io import parse_metadata_table
+
 # from bonsai_api.models.group import SampleTableColumnInput
-from bonsai_api.models.metadata import (InputMetaEntry, MetaEntriesInDb,
-                                        MetaEntryInDb)
+from bonsai_api.models.metadata import InputMetaEntry, MetaEntriesInDb, MetaEntryInDb
 from pydantic import TypeAdapter
 from pymongo.results import UpdateResult
 
-from bonsai_api.exceptions import EntryNotFound
 from .sample import get_sample
 
 

@@ -1,29 +1,51 @@
 """Group service layer."""
 
 import logging
+from typing import Any
+
+from api_client.audit_log.client import AuditLogClient
+from api_client.audit_log.models import SourceType, Subject
+from bonsai_api.crud.builder.summary_manifest import MANIFEST, Manifest
+from bonsai_api.crud.builder.types import PipelineStages
+from bonsai_api.crud.group import (
+    delete_group_by_group_id,
+    fetch_group_raw,
+    find_group_owner_id,
+    insert_group_document,
+    update_group_core_doc,
+    upsert_preset_doc,
+)
+from bonsai_api.crud.user import user_exists
+from bonsai_api.crud.utils import audit_event_context, managed_transaction
+from bonsai_api.db import Database
+from bonsai_api.exceptions import (
+    ConflictError,
+    DatabaseOperationError,
+    EntryNotFound,
+    ForbiddenAccess,
+    UserNotFound,
+)
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.group import (
+    DEFAULT_PRESET_NAME,
+    ColumnOut,
+    ColumnOverride,
+    GroupAllowed,
+    GroupCore,
+    GroupInfoCreate,
+    GroupInfoOut,
+    GroupPresetIn,
+    GroupPresets,
+    GroupRecordDb,
+    GroupUpdate,
+    Visibility,
+)
+from bonsai_api.models.user import UserContext
+from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from typing import Any
-from bonsai_api.utils import get_timestamp
-from bonsai_api.crud.builder.types import PipelineStages
-from bonsai_api.crud.user import user_exists
-from bonsai_api.crud.group import delete_group_by_group_id, fetch_group_raw, insert_group_document, find_group_owner_id, update_group_core_doc, upsert_preset_doc
-from bonsai_api.crud.utils import audit_event_context, managed_transaction
-from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, UserNotFound, ForbiddenAccess
-from bonsai_api.models.user import UserContext
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import DEFAULT_PRESET_NAME, ColumnOut, ColumnOverride, GroupInfoOut, GroupUpdate
-from bonsai_api.crud.builder.summary_manifest import Manifest, MANIFEST
-from bonsai_api.db import Database
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
-from bonsai_api.models.group import (GroupAllowed, GroupCore, GroupInfoCreate, 
-                                     GroupInfoOut, GroupPresetIn,
-                                     GroupPresets, GroupRecordDb,
-                                     Visibility)
-
-from .membership_service import remove_memberships, get_samples_by_group_ids
+from .membership_service import get_samples_by_group_ids, remove_memberships
 
 LOG = logging.getLogger(__name__)
 
@@ -40,7 +62,9 @@ def _validate_presets_and_default(
         raise ValueError("default_preset_id must match one of the provided presets")
 
 
-def _validate_allowed_columns(allowed_columns: list[str] | None, *, manifest: Manifest) -> None:
+def _validate_allowed_columns(
+    allowed_columns: list[str] | None, *, manifest: Manifest
+) -> None:
     """Validate allowed column IDs against the manifest."""
     if allowed_columns is None:
         return
@@ -84,11 +108,12 @@ def _build_group_output(group_record: dict[str, Any] | GroupRecordDb) -> GroupIn
             group_record.pop("_id", False)  # drop mongo oid
             group_record = GroupRecordDb.model_validate(group_record)
         except ValidationError as exc:
-            raise RuntimeError("Failed to cast group_record as GroupRecordDb", exc) from exc
+            raise RuntimeError(
+                "Failed to cast group_record as GroupRecordDb", exc
+            ) from exc
 
     default_preset = (
-        None if group_record.presets is None 
-        else group_record.presets.default_preset_id
+        None if group_record.presets is None else group_record.presets.default_preset_id
     )
     return GroupInfoOut(
         group_id=group_record.core.group_id,
@@ -129,7 +154,7 @@ async def create_group_service(
         and not creator.is_admin()
     ):
         raise ForbiddenAccess("Only owner or admin may create a private group")
-    
+
     if group_record.invited_users and not (creator.owner_id or creator.is_admin()):
         raise ForbiddenAccess("Only owner or admin may invited users on creation")
 
@@ -139,7 +164,9 @@ async def create_group_service(
     event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
     with audit_event_context(audit, "create_group", ctx, event_subject):
         try:
-            await insert_group_document(db, doc=payload.model_dump(exclude_none=True), session=session)
+            await insert_group_document(
+                db, doc=payload.model_dump(exclude_none=True), session=session
+            )
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
             raise ConflictError(
@@ -186,22 +213,30 @@ async def delete_group_service(
         raise ForbiddenAccess("Only the group owner or admin can delete this group")
 
     event_subject = Subject(id=group_id, type=SourceType.USR)
-    with audit_event_context(audit, "delete_group", ctx, event_subject, metadata={"group_id": group_id}):
+    with audit_event_context(
+        audit, "delete_group", ctx, event_subject, metadata={"group_id": group_id}
+    ):
         # 3) Orchestrate related cleanup inside transaction if you use one
         async with managed_transaction(db.client) as txn:
             # Remove group from stored memberships (use your existing helpers)
-            edges = await get_samples_by_group_ids(db=db, group_ids=[group_id], session=txn)
+            edges = await get_samples_by_group_ids(
+                db=db, group_ids=[group_id], session=txn
+            )
             await remove_memberships(edges, db=db, session=txn)
 
             # 4) Delete the group doc
             try:
-                deleted = await delete_group_by_group_id(db, group_id=group_id, session=txn)
+                deleted = await delete_group_by_group_id(
+                    db, group_id=group_id, session=txn
+                )
                 if deleted == 0:
                     # Race between existence check and delete
                     raise EntryNotFound(group_id)
                 return deleted
             except PyMongoError as pme:
-                raise DatabaseOperationError(f"Database error during delete_group: {str(pme)}") from pme
+                raise DatabaseOperationError(
+                    f"Database error during delete_group: {str(pme)}"
+                ) from pme
 
 
 async def get_group_raw(
@@ -213,8 +248,10 @@ async def get_group_raw(
 ) -> GroupRecordDb:
     """Return the raw group document from the database."""
     if not group_id or not isinstance(group_id, str):
-        raise ValueError(f"Invalid group_id: must be a non-empty string, got {group_id}")
-    
+        raise ValueError(
+            f"Invalid group_id: must be a non-empty string, got {group_id}"
+        )
+
     try:
         # No visability checks for admins or if no user provided
         kwargs = {}
@@ -233,7 +270,9 @@ async def get_group_raw(
             f"Database error occurred while retrieving group {group_id}: {str(pme)}"
         ) from pme
     except ValidationError as vde:
-        raise RuntimeError(f"Failed to cast group_record as GroupRecordDb: {str(vde)}") from vde
+        raise RuntimeError(
+            f"Failed to cast group_record as GroupRecordDb: {str(vde)}"
+        ) from vde
 
 
 async def get_group(
@@ -289,12 +328,18 @@ async def get_group(
         raise
 
 
-async def build_column_overrides(group_obj: GroupRecordDb, manifest: Manifest, *, preset: str | None = None, include_invisible: bool = False) -> list[ColumnOut]:
+async def build_column_overrides(
+    group_obj: GroupRecordDb,
+    manifest: Manifest,
+    *,
+    preset: str | None = None,
+    include_invisible: bool = False,
+) -> list[ColumnOut]:
     """Build list of availbale columns with group specific overrides applied."""
     override_idx: dict[str, ColumnOverride] = {}
     has_preset = group_obj.presets is not None
     if has_preset:
-        if (group_preset := group_obj.presets.get(preset)):
+        if group_preset := group_obj.presets.get(preset):
             override_idx = {col.id: col for col in group_preset.overrides}
 
     result: list[ColumnOut] = []
@@ -308,11 +353,19 @@ async def build_column_overrides(group_obj: GroupRecordDb, manifest: Manifest, *
 
         # Mutate with override if available
         label = man_col.label if not (ov and ov.label is not None) else ov.label
-        visible = man_col.default_visible if not (ov and ov.visible is not None) else ov.visible
-        sortable = man_col.sortable if not (ov and ov.sortable is not None) else ov.sortable
+        visible = (
+            man_col.default_visible
+            if not (ov and ov.visible is not None)
+            else ov.visible
+        )
+        sortable = (
+            man_col.sortable if not (ov and ov.sortable is not None) else ov.sortable
+        )
         searchable = None if not (ov and ov.searchable is not None) else ov.searchable
         locked = False if not (ov and ov.locked is not None) else ov.locked
-        eff_order = default_order if not (ov and ov.order is not None) else ov.order  # 0 is respected
+        eff_order = (
+            default_order if not (ov and ov.order is not None) else ov.order
+        )  # 0 is respected
 
         if not include_invisible and not visible:
             continue
@@ -370,8 +423,7 @@ async def update_group_core_info(
     event_subject = Subject(id=group_id, type=SourceType.USR)
     with audit_event_context(audit, "update_group_core", ctx, event_subject):
         try:
-            updated = await update_group_core_doc(
-                db, group_id=group_id, fields=payload)
+            updated = await update_group_core_doc(db, group_id=group_id, fields=payload)
         except PyMongoError as pme:
             LOG.error("MongoDB error while updating group core: %s", str(pme))
             raise DatabaseOperationError(
@@ -412,7 +464,9 @@ async def upsert_column_preset(
         items.append(preset.model_dump())
 
     new_presets = {
-        "default_preset_id": preset.preset_id if set_default else grp.presets.default_preset_id,
+        "default_preset_id": (
+            preset.preset_id if set_default else grp.presets.default_preset_id
+        ),
         "items": items,
     }
     upd_group = grp.model_copy(
@@ -422,7 +476,9 @@ async def upsert_column_preset(
     event_subject = Subject(id=group_id, type=SourceType.USR)
     with audit_event_context(audit, "upsert_preset", ctx, event_subject):
         try:
-            doc = await upsert_preset_doc(db, group_id=group_id, payload=upd_group.model_dump())
+            doc = await upsert_preset_doc(
+                db, group_id=group_id, payload=upd_group.model_dump()
+            )
         except PyMongoError as pme:
             LOG.error("MongoDB error while upserting preset: %s", str(pme))
             raise DatabaseOperationError(
@@ -431,9 +487,13 @@ async def upsert_column_preset(
 
         if not doc:
             raise EntryNotFound(group_id)
-    
+
     try:
         return _build_group_output(doc)
     except ValidationError as exc:
-        LOG.error("Failed to validate pydantic model '%s': %s", GroupInfoOut.__name__, doc)
-        raise RuntimeError(f"Failed to cast document as GroupInfoOut: {str(exc)}") from exc
+        LOG.error(
+            "Failed to validate pydantic model '%s': %s", GroupInfoOut.__name__, doc
+        )
+        raise RuntimeError(
+            f"Failed to cast document as GroupInfoOut: {str(exc)}"
+        ) from exc
