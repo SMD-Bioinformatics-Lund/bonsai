@@ -188,13 +188,30 @@ def delete_group(headers: CaseInsensitiveDict[str], group_id: str):
 
 
 @api_authentication
-def update_group(
-    headers: CaseInsensitiveDict[str], group_id: str, data: dict[str, Any]
+def update_group_core_info(
+    headers: CaseInsensitiveDict[str], *, group_id: str, name: str | None = None, description: str | None = None):
+    """Update information in database for a group with group_id."""
+    # conduct query
+    payload = {"display_name": name, "description": description}
+    url = f"{settings.api_internal_url}/groups/{group_id}"
+    resp = requests_put(url, json=payload, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def update_group_presets(
+    headers: CaseInsensitiveDict[str], *, group_id: str,
+    preset: dict[str, Any], set_default: bool | None = None,
 ):
     """Update information in database for a group with group_id."""
     # conduct query
-    url = f"{settings.api_internal_url}/groups/{group_id}"
-    resp = requests_put(url, json=data, headers=headers)
+    url = f"{settings.api_internal_url}/groups/{group_id}/presets"
+    if set_default is not None:
+        url + f"?default={set_default}"
+
+    resp = requests_post(url, json=preset, headers=headers)
 
     resp.raise_for_status()
     return resp.json()
@@ -474,14 +491,22 @@ def get_lims_export_response(
 
 @api_authentication
 def get_valid_group_columns(
-    headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False
+    headers: CaseInsensitiveDict[str], *, group_id: str, preset: str | None = None, include_invisible: bool | None = None
 ):
     """Query API for valid group columns."""
-    partial_url: str = (
-        "groups/default/columns" if group_id is None else f"groups/{group_id}/columns"
-    )
+    url: str = f"groups/{group_id}/columns"
+
+    # bulid params
+    params = {}
+    if preset is not None:
+        params["preset"] = preset
+
+    if include_invisible is not None:
+        params["include_invisible"] = include_invisible
+
+    # submit requests
     resp = requests_get(
-        f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers
+        f"{settings.api_internal_url}/{url}", params=params, headers=headers
     )
     resp.raise_for_status()
     return resp.json()

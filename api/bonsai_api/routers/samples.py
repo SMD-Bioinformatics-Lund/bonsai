@@ -47,7 +47,7 @@ from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from pymongo.errors import DuplicateKeyError
 
-from api.bonsai_api.crud.summary import get_samples_summary
+from bonsai_api.crud.summary import get_samples_summary
 
 from .shared import (SAMPLE_ID_PATH, RouterTags, action_from_qc_classification,
                      parse_signature_json)

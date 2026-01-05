@@ -5,15 +5,15 @@ from pydantic import ValidationError
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 from typing import Any
-from bonsai_api.crud.builder.types import ColumnFull
+from bonsai_api.utils import get_timestamp
+from bonsai_api.crud.builder.types import PipelineStages
 from bonsai_api.crud.user import user_exists
-from bonsai_api.services.membership_service import remove_memberships, get_samples_by_group_ids
-from bonsai_api.crud.group import delete_group_by_group_id, fetch_group_raw, insert_group_document, find_group_owner_id
+from bonsai_api.crud.group import delete_group_by_group_id, fetch_group_raw, insert_group_document, find_group_owner_id, update_group_core_doc, upsert_preset_doc
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, UserNotFound, ForbiddenAccess
 from bonsai_api.models.user import UserContext
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import GroupInfoOut
+from bonsai_api.models.group import DEFAULT_PRESET_NAME, ColumnOut, ColumnOverride, GroupInfoOut, GroupUpdate
 from bonsai_api.crud.builder.summary_manifest import Manifest, MANIFEST
 from bonsai_api.db import Database
 from api_client.audit_log.client import AuditLogClient
@@ -23,6 +23,7 @@ from bonsai_api.models.group import (GroupAllowed, GroupCore, GroupInfoCreate,
                                      GroupPresets, GroupRecordDb,
                                      Visibility)
 
+from .membership_service import remove_memberships, get_samples_by_group_ids
 
 LOG = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ def _build_group_payload(
         owner_id=owner_id,
     )
     presets_obj = GroupPresets(
-        default_preset_id=group_record.default_preset_id,
+        default_preset_id=group_record.default_preset_id or DEFAULT_PRESET_NAME,
         items=group_record.presets or [],
     )
     allowed_cols = GroupAllowed(column_ids=group_record.allowed_columns or [])
@@ -72,6 +73,29 @@ def _build_group_payload(
         invited_users=group_record.invited_users or [],
         allowed_columns=allowed_cols,
         presets=presets_obj,
+    )
+
+
+def _build_group_output(group_record: dict[str, Any] | GroupRecordDb) -> GroupInfoOut:
+    """Build group output object from a raw db record."""
+    if not isinstance(group_record, GroupRecordDb):
+        # Try to cast input data as a group_record
+        try:
+            group_record.pop("_id", False)  # drop mongo oid
+            group_record = GroupRecordDb.model_validate(group_record)
+        except ValidationError as exc:
+            raise RuntimeError("Failed to cast group_record as GroupRecordDb", exc) from exc
+
+    default_preset = (
+        None if group_record.presets is None 
+        else group_record.presets.default_preset_id
+    )
+    return GroupInfoOut(
+        group_id=group_record.core.group_id,
+        display_name=group_record.core.display_name,
+        description=group_record.core.description,
+        sample_count=0,
+        default_preset_id=default_preset,
     )
 
 
@@ -133,14 +157,7 @@ async def create_group_service(
             ) from ve
 
     # Return normalized response
-    return GroupInfoOut(
-        group_id=group_record.group_id,
-        display_name=group_record.display_name,
-        description=group_record.description,
-        sample_count=0,
-        default_preset_id=group_record.default_preset_id,
-    )
-
+    return _build_group_output(payload)
 
 
 async def delete_group_service(
@@ -215,6 +232,8 @@ async def get_group_raw(
         raise DatabaseOperationError(
             f"Database error occurred while retrieving group {group_id}: {str(pme)}"
         ) from pme
+    except ValidationError as vde:
+        raise RuntimeError(f"Failed to cast group_record as GroupRecordDb: {str(vde)}") from vde
 
 
 async def get_group(
@@ -270,23 +289,151 @@ async def get_group(
         raise
 
 
-async def build_column_overrides(group_obj: GroupRecordDb, manifest: Manifest, *, preset: str | None = None) -> list[ColumnFull]:
+async def build_column_overrides(group_obj: GroupRecordDb, manifest: Manifest, *, preset: str | None = None, include_invisible: bool = False) -> list[ColumnOut]:
     """Build list of availbale columns with group specific overrides applied."""
-    override_idx = {}
-    if (group_preset := group_obj.presets.get(preset)):
-        override_idx = {col.id: col for col in group_preset.overrides}
+    override_idx: dict[str, ColumnOverride] = {}
+    has_preset = group_obj.presets is not None
+    if has_preset:
+        if (group_preset := group_obj.presets.get(preset)):
+            override_idx = {col.id: col for col in group_preset.overrides}
 
-    upd_columns: list[ColumnFull] = []
-    for col in manifest.columns:
+    result: list[ColumnOut] = []
+    for default_order, man_col in enumerate(manifest.columns, start=1):
         # only include allowed columns if allowed columns have been set.
         if len(group_obj.allowed_columns.column_ids) > 0:
-            if col.id not in group_obj.allowed_columns.column_ids:
+            if man_col.id not in group_obj.allowed_columns.column_ids:
                 continue
 
-        # Mutate with override if available
-        if (override := override_idx.get(col.id)):
-            update = override.model_dump(exclude_unset=True, exclude_none=True, exclude=["id"])
-            col = col.model_copy(update=update)
-        upd_columns.append(col)
+        ov: ColumnOverride | None = override_idx.get(man_col.id)
 
-    return upd_columns
+        # Mutate with override if available
+        label = man_col.label if not (ov and ov.label is not None) else ov.label
+        visible = man_col.default_visible if not (ov and ov.visible is not None) else ov.visible
+        sortable = man_col.sortable if not (ov and ov.sortable is not None) else ov.sortable
+        searchable = None if not (ov and ov.searchable is not None) else ov.searchable
+        locked = False if not (ov and ov.locked is not None) else ov.locked
+        eff_order = default_order if not (ov and ov.order is not None) else ov.order  # 0 is respected
+
+        if not include_invisible and not visible:
+            continue
+
+        # compute overridden_fields that changed-from-default semantics
+        overridden_fields: list[str] = []
+        if ov:
+            if ov.label is not None and ov.label != man_col.label:
+                overridden_fields.append("label")
+            if ov.visible is not None and ov.visible != man_col.default_visible:
+                overridden_fields.append("visible")
+            if ov.sortable is not None and ov.sortable != man_col.sortable:
+                overridden_fields.append("sortable")
+            if ov.searchable is not None:
+                overridden_fields.append("searchable")
+            if ov.locked is not None and ov.locked is not False:
+                overridden_fields.append("locked")
+            if ov.order is not None:
+                overridden_fields.append("order")
+
+        result.append(
+            ColumnOut(
+                id=man_col.id,
+                type=man_col.type,
+                source=man_col.source,
+                default_visible=man_col.default_visible,
+                filterable=man_col.filterable,
+                sortable=sortable,
+                visible=visible,
+                searchable=searchable,
+                order=eff_order,
+                locked=locked,
+                label=label,
+                overridden_fields=overridden_fields,
+            )
+        )
+
+    result.sort(key=lambda col: (col.order if col.order is not None else col.id))
+    return result
+
+
+async def update_group_core_info(
+    db: Database,
+    group_id: str,
+    group_update: "GroupUpdate",
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> GroupInfoOut:
+    """Update mutable group core fields (display_name, description)."""
+    payload = group_update.model_dump(exclude_none=True)
+    if not payload:
+        return GroupInfoOut.model_validate(await get_group(db, group_id))
+
+    payload["modified_at"] = get_timestamp()
+    event_subject = Subject(id=group_id, type=SourceType.USR)
+    with audit_event_context(audit, "update_group_core", ctx, event_subject):
+        try:
+            updated = await update_group_core_doc(
+                db, group_id=group_id, fields=payload)
+        except PyMongoError as pme:
+            LOG.error("MongoDB error while updating group core: %s", str(pme))
+            raise DatabaseOperationError(
+                f"Database error occurred while updating group core: {str(pme)}"
+            ) from pme
+
+        if not updated:
+            raise EntryNotFound(group_id)
+
+        return _build_group_output(updated)
+
+
+async def upsert_column_preset(
+    db: Database,
+    group_id: str,
+    preset: GroupPresetIn,
+    set_default: bool,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> GroupInfoOut:
+    """Create or replace a preset for a group."""
+    # get current group
+    grp = await get_group_raw(db, group_id=group_id)
+
+    # convert presets from db to a mutable object
+    items = []
+    if grp.presets is not None:
+        items = [itm.model_dump() for itm in grp.presets.items]
+
+    # check for existing preset and replace or append
+    replaced = False
+    for idx, p in enumerate(items):
+        if p.get("preset_id") == preset.preset_id:
+            items[idx] = preset.model_dump()
+            replaced = True
+            break
+    if not replaced:
+        items.append(preset.model_dump())
+
+    new_presets = {
+        "default_preset_id": preset.preset_id if set_default else grp.presets.default_preset_id,
+        "items": items,
+    }
+    upd_group = grp.model_copy(
+        update={"presets": new_presets, "modified_at": get_timestamp()}
+    )
+
+    event_subject = Subject(id=group_id, type=SourceType.USR)
+    with audit_event_context(audit, "upsert_preset", ctx, event_subject):
+        try:
+            doc = await upsert_preset_doc(db, group_id=group_id, payload=upd_group.model_dump())
+        except PyMongoError as pme:
+            LOG.error("MongoDB error while upserting preset: %s", str(pme))
+            raise DatabaseOperationError(
+                f"Database error occurred while upserting preset: {str(pme)}"
+            ) from pme
+
+        if not doc:
+            raise EntryNotFound(group_id)
+    
+    try:
+        return _build_group_output(doc)
+    except ValidationError as exc:
+        LOG.error("Failed to validate pydantic model '%s': %s", GroupInfoOut.__name__, doc)
+        raise RuntimeError(f"Failed to cast document as GroupInfoOut: {str(exc)}") from exc
