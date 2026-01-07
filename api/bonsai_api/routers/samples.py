@@ -4,6 +4,7 @@ import logging
 import pathlib
 from typing import Annotated, Any, Union, cast
 
+from bonsai_api.exceptions import ConflictError
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
@@ -13,7 +14,7 @@ from bonsai_api.crud.sample import (
     add_comment,
     add_location,
 )
-from bonsai_api.crud.sample import create_sample as create_sample_record
+from bonsai_api.services.sample_service import create_sample_service
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
     get_sample,
@@ -50,6 +51,7 @@ from bonsai_api.models.sample import (
     CommentInDatabase,
     SampleInCreate,
     SampleInDatabase,
+    SampleInfoCreate,
 )
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
@@ -77,7 +79,6 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
-from prp.models import PipelineResult
 from prp.models.phenotype import (
     AMRMethodIndex,
     StressMethodIndex,
@@ -213,7 +214,7 @@ async def list_samples(
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])
 async def create_sample(
-    sample: PipelineResult,
+    sample: SampleInfoCreate,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -223,14 +224,13 @@ async def create_sample(
 ) -> dict[str, str]:
     """Entrypoint for creating a new sample."""
     try:
-        db_obj = await create_sample_record(db, sample, req_ctx, audit=audit_log)
-    except DuplicateKeyError as error:
-        details = getattr(error, "details", {})
+        await create_sample_service(db, sample=sample, ctx=req_ctx, audit=audit_log)
+    except ConflictError as error:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=details.get("errmsg", ""),
+            detail=str(error),
         ) from error
-    return {"type": "success", "sample_id": db_obj.sample_id}
+    return {"type": "success", "sample_id": sample.sample_id}
 
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
