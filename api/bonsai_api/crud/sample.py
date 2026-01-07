@@ -537,3 +537,9 @@ async def check_samples_exists(
     if missing:
         LOG.warning("Did not find samples: %s", missing)
     return missing
+
+
+async def insert_sample_document(db, *, doc: dict[str, Any], session: Any) -> str:
+    """Insert a new sample document in the database."""
+    LOG.debug("Creating sample document", extra={"doc": doc})
+    return await db.sample_collection.insert_one(doc, session=session)
