@@ -87,7 +87,6 @@ from prp.models.phenotype import (
 )
 from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
 from pydantic import BaseModel, Field, ValidationError, model_validator
-from pymongo.errors import DuplicateKeyError
 
 from .shared import (
     SAMPLE_ID_PATH,

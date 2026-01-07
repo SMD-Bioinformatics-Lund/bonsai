@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal, Optional, Union
+from typing import Union
 
 from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
 from prp.models.phenotype import (
@@ -39,7 +39,7 @@ from pydantic import BaseModel, Field
 
 from bonsai_api.utils import get_timestamp
 
-from .analysis import PipelineRun
+from .pipeline import PipelineRun
 from enum import StrEnum
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
@@ -74,7 +74,7 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
 
 class VariantInDb(VariantBase):
     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-    reason: Optional[VaraintRejectionReason] = None
+    reason: VaraintRejectionReason | None = None
 
 
 class ResfinderVariant(VariantInDb):
@@ -89,8 +89,8 @@ class TbProfilerVariant(VariantInDb):
     """Container for TbProfiler variant information"""
 
     variant_effect: str
-    hgvs_nt_change: Optional[str] = Field(..., description="DNA change in HGVS format")
-    hgvs_aa_change: Optional[str] = Field(
+    hgvs_nt_change: str | None = Field(..., description="DNA change in HGVS format")
+    hgvs_aa_change: str | None = Field(
         ..., description="Protein change in HGVS format"
     )
 

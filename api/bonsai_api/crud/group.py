@@ -342,7 +342,7 @@ async def insert_group_document(
     *,
     doc: dict[str, Any],
     session: Any = None,
-) -> GroupInfoOut:
+) -> str:
     """Create a new document in the group collection."""
     LOG.debug("Creating group document", extra={"doc": doc})
     return await db.sample_group_collection.insert_one(doc, session=session)

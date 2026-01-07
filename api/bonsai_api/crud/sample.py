@@ -13,7 +13,7 @@ from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound, ConflictError
 from bonsai_api.models.antibiotics import ANTIBIOTICS
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
@@ -32,9 +32,11 @@ from bonsai_api.utils import format_error_message, get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.models import PipelineResult
+from bonsai_api.models.pipeline import PipelineRun
 from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
 from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
+from pymongo.client_session import ClientSession
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -341,6 +343,29 @@ async def update_sample_qc_classification(
     return classification
 
 
+async def add_pipeline_run(db: Database, *, sample_id: str, doc: PipelineRun, session: ClientSession | None = None) -> UpdateResult:
+    """Attach a PipelineRun to a sample document.
+
+    Fails with ConflictError if a pipeline is already present for the sample.
+    """
+    query = {
+        "sample_id": sample_id,
+        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}],
+    }
+    update_obj = await db.sample_collection.update_one(
+        query,
+        {
+            "$set": {
+                "modified_at": get_timestamp(),
+                "pipeline": doc,
+            }
+        },
+        session=session
+    )
+    LOG.info("Added pipeline run for %s", sample_id)
+    return update_obj
+
+
 def update_variant_verificaton(variant, info):
     """Update variant with selected annotations."""
 
@@ -537,6 +562,14 @@ async def check_samples_exists(
     if missing:
         LOG.warning("Did not find samples: %s", missing)
     return missing
+
+
+async def sample_exists(db: Database, *, sample_id: str, session: ClientSession | None = None) -> bool:
+    """Return True if a sample with id exists."""
+    doc = await db.sample_group_collection.find_one(
+        {"sample_id": sample_id}, {"_id": 1}, session=session
+    )
+    return bool(doc)
 
 
 async def insert_sample_document(db, *, doc: dict[str, Any], session: Any) -> str:

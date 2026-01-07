@@ -4,9 +4,10 @@ import logging
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pydantic import ValidationError
+from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.services.membership_service import add_memberships
-from bonsai_api.crud.sample import insert_sample_document
+from bonsai_api.crud.sample import insert_sample_document, add_pipeline_run, sample_exists
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb
 from bonsai_api.models.context import ApiRequestContext
@@ -79,3 +80,32 @@ async def create_sample_service(
                 f"Invalid data provided for creating group: {str(ve)}"
             ) from ve
         return resp.inserted_id
+
+
+async def add_pipeline_run_service(db: Database, *, pipeline: PipelineRun, session: ClientSession | None = None) -> None:
+    """Add a pipeline run to an existing sample.
+
+    Raises EntryNotFound if sample missing and ConflictError if a pipeline run already
+    exists for the sample.
+    """
+    # No matched document - either sample missing or pipeline already present
+    try:
+        sample_id = pipeline.sample_id
+        update_obj = await add_pipeline_run(db, sample_id=sample_id, doc=pipeline.model_dump(exclude_none=True), session=session)
+        if update_obj.matched_count == 0:
+            if not await sample_exists(db, sample_id=sample_id, session=session):
+                raise EntryNotFound(sample_id)
+            raise ConflictError(f"Sample {sample_id} already has a pipeline run")
+
+        # Ensure update actually modified the document
+        if update_obj.modified_count != 1:
+            raise DatabaseOperationError(f"Failed to add pipeline run for {sample_id}")
+    except EntryNotFound:
+        LOG.error("Sample %s not found when adding pipeline run", sample_id)
+        raise
+    except ConflictError:
+        LOG.error("Conflict: pipeline run already exists for %s", sample_id)
+        raise
+    except Exception as exc:  # pragma: no cover - defensive
+        LOG.exception("Unexpected error while adding pipeline run: %s", exc)
+        raise DatabaseOperationError(str(exc)) from exc
