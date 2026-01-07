@@ -24,6 +24,7 @@ from .routers import (
     root,
     samples,
     users,
+    pipeline_run,
 )
 
 logging_config.dictConfig(
@@ -89,6 +90,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(root.router)
     app.include_router(users.router)
     app.include_router(samples.router)
+    app.include_router(pipeline_run.router)
     app.include_router(groups.router)
     app.include_router(locations.router)
     app.include_router(memberships.router)
