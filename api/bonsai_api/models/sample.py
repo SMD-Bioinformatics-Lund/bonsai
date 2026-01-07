@@ -1,5 +1,7 @@
 """Data model definition of input/ output data"""
 
+from datetime import datetime
+from enum import StrEnum
 from typing import Literal, Optional, Union
 
 from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
@@ -11,9 +13,13 @@ from prp.models.phenotype import (
     ResfinderGene,
     VariantBase,
     VirulenceGene,
+    AMRMethodIndex,
+    StressMethodIndex,
+    VariantBase,
+    VirulenceMethodIndex,
 )
 from prp.models.sample import PipelineResult
-from prp.models.species import SpeciesPrediction
+from prp.models.species import SpeciesPrediction, SppMethodIndex
 from prp.models.typing import (
     ResultLineageBase,
     TbProfilerLineage,
@@ -22,14 +28,25 @@ from prp.models.typing import (
     TypingResultGeneAllele,
     TypingResultMlst,
     TypingSoftware,
+    SccmecTypingMethodIndex,
+    EmmTypingMethodIndex,
+    ShigaTypingMethodIndex,
+    SpatyperTypingMethodIndex,
 )
+from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex, KleborateTypeIndex
+from prp.models.qc import QcMethodIndex, KleborateQcIndex
 from pydantic import BaseModel, Field
 
-from ..models.qc import SampleQcClassification, VaraintRejectionReason
-from ..models.tags import Tag
+from bonsai_api.utils import get_timestamp
+
+from .analysis import PipelineRun
+from enum import StrEnum
+from .qc import SampleQcClassification, VaraintRejectionReason
+from .tags import Tag
 from .base import (
     DateTimeModelMixin,
     DBModelMixin,
+    ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
     Timestamps,
@@ -78,13 +95,13 @@ class TbProfilerVariant(VariantInDb):
     )
 
 
-class SampleBase(Timestamps):  # pylint: disable=too-few-public-methods
+class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     tags: list[Tag] = []
-    qc_status: QcClassification = QcClassification()
+    qc_status: QcClassification = Field(default_factory=QcClassification)
     # comments and non analytic results
-    comments: list[CommentInDatabase] = []
+    comments: list[CommentInDatabase] = Field(default_factory=list)
     location: str | None = Field(None, description="Location id")
     # signature file name
     genome_signature: str | None = Field(None, description="Genome signature name")
@@ -155,3 +172,142 @@ class MultipleSampleRecordsResponseModel(
     MultipleRecordsResponseModel
 ):  # pylint: disable=too-few-public-methods
     data: list[SampleInDatabase] = []
+
+
+class SequencingPlatforms(StrEnum):
+    """Supported sequencing platforms."""
+
+    ILLUMUNA = "illumina"
+    IONTORRENT = "ion torrent"
+    ONT = "oxford nanopore technologies"
+    BGI = "bgi"
+    PACBIO = "Pacific Biosciences"
+
+
+class Visibility(StrEnum):
+    """Determines the visibilty of a record."""
+
+    PRIVATE = "private"
+    ORG = "organization"
+    PUBLIC = "public"
+
+
+class SequencingInfo(ForbidExtraModelMixin):
+    """Information on the sample was sequenced."""
+
+    sequencing_run_id: str
+    platform: SequencingPlatforms
+    instrument: str | None = None
+    method: dict[str, str] = Field(default_factory=dict)
+    sequenced_at: datetime | None = None
+
+
+class ReferenceGenome(RWModel):
+    """Reference genome."""
+
+    name: str
+    accession: str
+    fasta: str
+    fasta_index: str
+    genes: str
+
+
+class IgvAnnotationTrack(RWModel):
+    """IGV annotation track data."""
+
+    name: str  # track name to display
+    file: str  # path to the annotation file
+
+
+class ExportStatus(StrEnum):
+    """Status for LIMS export operations."""
+
+    NOT_EXPORTED = "not_exported"
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+class LimsExportStatus(BaseModel):
+    """Record of a LIMS export attempt."""
+
+    exported_at: datetime = Field(default_factory=get_timestamp)
+    exported_by: str | None = None
+    error: str | None = None
+
+
+class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
+    """Defines output structure of group info used for creation."""
+
+    sample_id: str
+    sample_name: str
+    lims_id: str | None = None
+
+    groups: list[str] = Field(default_factory=list, description="Group ids")
+
+    sequencing: SequencingInfo | None = None
+    metadata: list[InputMetaEntry] = Field(default_factory=list)
+
+    # preparation for role based access controll
+    owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
+    owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
+    access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
+    visibility: Visibility = Visibility.PUBLIC
+
+
+class SampleRecordDb(SampleBase):
+    """Database representation of a sample."""
+
+    sample_id: str = Field(..., min_length=3, max_length=100)
+    sample_name: str
+    lims_id: str | None = None
+
+    groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
+    metadata: list[InputMetaEntry] = []
+
+    # rbrc
+    owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
+    owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
+    access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
+    visibility: Visibility = Visibility.PUBLIC
+
+    # metadata
+    sequencing: SequencingInfo | None = None
+    pipeline: PipelineRun | None = None
+
+    # quality
+    qc: list[QcMethodIndex | KleborateQcIndex] = Field(default_factory=list)
+
+    # species identification
+    species_prediction: list[SppMethodIndex] = Field(default_factory=list)
+
+    typing_result: list[
+        Union[
+            ShigaTypingMethodIndex,
+            EmmTypingMethodIndex,
+            SccmecTypingMethodIndex,
+            SpatyperTypingMethodIndex,
+            KleborateTypeIndex,
+            MethodIndex,
+        ]
+    ] = Field(default_factory=list)
+    # optional phenotype prediction
+    element_type_result: list[
+        Union[
+            VirulenceMethodIndex,
+            AMRMethodIndex,
+            StressMethodIndex,
+            KleborateEtIndex,
+            KleborateScoreIndex,
+            MethodIndex,
+        ]
+    ] = Field(default_factory=list)
+
+    # optional alignment info
+    reference_genome: ReferenceGenome | None = None
+    read_mapping: str | None = None
+    genome_annotation: list[IgvAnnotationTrack] | None = None
+
+    # LIMS export tracking
+    lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
+    lims_exports: list[LimsExportStatus] = Field(default_factory=list)

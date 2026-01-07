@@ -53,6 +53,12 @@ class ForbidExtraModelMixin(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class AllowExtraModelMixin(BaseModel):
+    """Mixin to allow extra fields in pydantic model."""
+
+    model_config = ConfigDict(extra="allow")
+
+
 class Timestamps(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
