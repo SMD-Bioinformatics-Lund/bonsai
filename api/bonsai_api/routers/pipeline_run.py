@@ -13,9 +13,6 @@ from bonsai_api.models.pipeline import PipelineRun
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
-# READ_PERMISSION = "pipeline:read"
-# WRITE_PERMISSION = "pipeline:write"
-# UPDATE_PERMISSION = "pipeline:update"
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
