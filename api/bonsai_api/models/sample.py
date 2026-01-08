@@ -239,7 +239,7 @@ class LimsExportStatus(BaseModel):
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info used for creation."""
 
-    sample_id: str
+    sample_id: str | None = None
     sample_name: str
     lims_id: str | None = None
 
@@ -258,7 +258,8 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
 class SampleRecordDb(SampleBase):
     """Database representation of a sample."""
 
-    sample_id: str = Field(..., min_length=3, max_length=100)
+    sample_id: str = Field(description="Internal sample id, assigned at creation")
+    external_sample_id: str = Field(..., min_length=3, max_length=100, description="Id from other systems used to reference the sample.")
     sample_name: str
     lims_id: str | None = None
 
