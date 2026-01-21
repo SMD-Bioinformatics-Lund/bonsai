@@ -6,7 +6,7 @@ from typing import Any
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
-from ..utils import get_timestamp
+from bonsai_api.utils import get_timestamp
 
 
 class ObjectId(BaseObjectId):
