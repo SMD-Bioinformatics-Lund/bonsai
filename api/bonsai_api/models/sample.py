@@ -2,45 +2,15 @@
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Union
+from typing import Any
 
-from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
-from prp.models.phenotype import (
-    AmrFinderGene,
-    AmrFinderResistanceGene,
-    ElementType,
-    PredictionSoftware,
-    ResfinderGene,
-    VariantBase,
-    VirulenceGene,
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantBase,
-    VirulenceMethodIndex,
-)
-from prp.models.sample import PipelineResult
-from prp.models.species import SpeciesPrediction, SppMethodIndex
-from prp.models.typing import (
-    ResultLineageBase,
-    TbProfilerLineage,
-    TypingMethod,
-    TypingResultCgMlst,
-    TypingResultGeneAllele,
-    TypingResultMlst,
-    TypingSoftware,
-    SccmecTypingMethodIndex,
-    EmmTypingMethodIndex,
-    ShigaTypingMethodIndex,
-    SpatyperTypingMethodIndex,
-)
-from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex, KleborateTypeIndex
-from prp.models.qc import QcMethodIndex, KleborateQcIndex
 from pydantic import BaseModel, Field
+
+from prp.parse.models.base import VariantBase
 
 from bonsai_api.utils import get_timestamp
 
 from .pipeline import PipelineRun
-from enum import StrEnum
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
 from .base import (
@@ -108,64 +78,41 @@ class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-
     ska_index: str | None = Field(None, description="Ska index path")
 
 
-class ElementTypeResult(BaseModel):
-    """Phenotype result data model.
-
-    A phenotype result is a generic data structure that stores predicted genes,
-    mutations and phenotyp changes.
-    """
-
-    phenotypes: dict[str, list[str]]
-    genes: list[
-        Union[AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene]
-    ]
-    variants: list[Union[TbProfilerVariant, MykrobeVariant, ResfinderVariant]]
-
-
 class MethodIndex(BaseModel):
     """Container for key-value lookup of analytical results."""
 
-    type: Union[ElementType, TypingMethod]
-    software: PredictionSoftware | TypingSoftware | None
-    result: Union[
-        ElementTypeResult,
-        TypingResultMlst,
-        TypingResultCgMlst,
-        TypingResultGeneAllele,
-        TbProfilerLineage,
-        ResultLineageBase,
-    ]
+    type: str
+    software: str | None = None
+    result: Any
 
 
 class SampleInCreate(
-    SampleBase, PipelineResult
+    SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
-    groups: list[str] = []
-    metadata: list[InputMetaEntry] = []
-    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
+    groups: list[str] = Field(default_factory=list)
+    metadata: list[InputMetaEntry] = Field(default_factory=list)
+    element_type_result: list[MethodIndex] = Field(default_factory=list)
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
 
 class SampleInDatabase(
-    DBModelMixin, SampleBase, PipelineResult
+    DBModelMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
 
-    metadata: list[MetaEntryInDb] = []
-    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
+    metadata: list[MetaEntryInDb] = Field(default_factory=list)
+    element_type_result: list[MethodIndex] = Field(default_factory=list)
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
 
 class SampleSummary(
-    DBModelMixin, SampleBase, PipelineResult
+    DBModelMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
-
-    major_specie: SpeciesPrediction = Field(...)
 
 
 class MultipleSampleRecordsResponseModel(
@@ -277,32 +224,14 @@ class SampleRecordDb(SampleBase):
     pipeline: PipelineRun | None = None
 
     # quality
-    qc: list[QcMethodIndex | KleborateQcIndex] = Field(default_factory=list)
+    qc: list[MethodIndex] = Field(default_factory=list)
 
     # species identification
-    species_prediction: list[SppMethodIndex] = Field(default_factory=list)
+    species_prediction: list[MethodIndex] = Field(default_factory=list)
 
-    typing_result: list[
-        Union[
-            ShigaTypingMethodIndex,
-            EmmTypingMethodIndex,
-            SccmecTypingMethodIndex,
-            SpatyperTypingMethodIndex,
-            KleborateTypeIndex,
-            MethodIndex,
-        ]
-    ] = Field(default_factory=list)
+    typing_result: list[MethodIndex] = Field(default_factory=list)
     # optional phenotype prediction
-    element_type_result: list[
-        Union[
-            VirulenceMethodIndex,
-            AMRMethodIndex,
-            StressMethodIndex,
-            KleborateEtIndex,
-            KleborateScoreIndex,
-            MethodIndex,
-        ]
-    ] = Field(default_factory=list)
+    element_type_result: list[MethodIndex] = Field(default_factory=list)
 
     # optional alignment info
     reference_genome: ReferenceGenome | None = None
