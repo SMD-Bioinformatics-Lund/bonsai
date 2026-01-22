@@ -2,7 +2,7 @@
 
 import logging
 import pathlib
-from typing import Annotated, Any, Union, cast
+from typing import Annotated, Any, cast
 
 from bonsai_api.exceptions import ConflictError
 from api_client.audit_log.client import AuditLogClient
@@ -79,13 +79,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
-from prp.models.phenotype import (
-    AMRMethodIndex,
-    StressMethodIndex,
-    VariantType,
-    VirulenceMethodIndex,
-)
-from prp.models.sample import MethodIndex, ShigaTypingMethodIndex
+from prp.parse.models.enums import VariantType
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from .shared import (
@@ -94,6 +88,7 @@ from .shared import (
     action_from_qc_classification,
     parse_signature_json,
 )
+from bonsai_api.models.sample import MethodIndex
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
@@ -279,10 +274,8 @@ async def read_sample(
 class UpdateSampleInputModel(BaseModel):
     """Input data when updating sample information."""
 
-    typing: list[Union[MethodIndex, ShigaTypingMethodIndex]]
-    phenotype: list[
-        Union[VirulenceMethodIndex, AMRMethodIndex, StressMethodIndex, MethodIndex]
-    ]
+    typing: list[MethodIndex]
+    phenotype: list[MethodIndex]
 
 
 @router.put(

@@ -4,9 +4,10 @@ import logging
 from typing import Any, Callable
 
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import ElementType, SampleInDatabase, VariantInDb
-from prp.models.phenotype import PredictionSoftware
-from prp.models.typing import TypingMethod, TypingResultEmm
+from bonsai_api.models.sample import SampleInDatabase, VariantInDb
+
+from prp.parse.models.enums import AnalysisSoftware, AnalysisType, ElementType
+from prp.parse.models.typing import TypingResultEmm
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 
@@ -126,8 +127,8 @@ def lineage_prediction(
     options = options or {}
     for pred in sample.typing_result:
         if (
-            pred.type == TypingMethod.LINEAGE
-            and pred.software == PredictionSoftware.TBPROFILER
+            pred.type == AnalysisType.LINEAGE
+            and pred.software == AnalysisSoftware.TBPROFILER
         ):
             lin = pred.result.sublineage.replace("lineage", "")  # strip lineage
             return lin, ""

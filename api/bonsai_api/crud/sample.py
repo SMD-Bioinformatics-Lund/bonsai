@@ -8,12 +8,11 @@ import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
-from bonsai_api.crud.summary import get_samples_summary
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound, ConflictError
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.antibiotics import ANTIBIOTICS
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
@@ -31,9 +30,9 @@ from bonsai_api.redis.minhash import (
 from bonsai_api.utils import format_error_message, get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from prp.models import PipelineResult
 from bonsai_api.models.pipeline import PipelineRun
-from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
+from prp.parse.models.enums import AnnotationType, ElementType
+from prp.parse.models.base import PhenotypeInfo
 from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
 from pymongo.client_session import ClientSession
@@ -96,9 +95,44 @@ async def get_samples_full(
     return MultipleRecordsResponseModel(data=data, records_total=total)
 
 
+# async def create_sample(
+#     db: Database,
+#     sample: PipelineResult,
+#     ctx: ApiRequestContext,
+#     audit: AuditLogClient | None = None,
+# ) -> SampleInDatabase:
+#     """Create a new sample document in database from structured input."""
+#     # validate data format
+#     try:
+#         tags = compute_phenotype_tags(sample)
+#     except ValueError as error:
+#         LOG.warning("Error when creating tags... skipping. %s", error)
+#         tags = []
+
+#     event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
+#     with audit_event_context(audit, "create_sample", ctx, event_subject):
+#         sample_db_fmt = SampleInCreate(
+#             in_collections=[],
+#             tags=tags,
+#             **sample.model_dump(),
+#         )
+#         # store data in database
+#         doc = await db.sample_collection.insert_one(
+#             jsonable_encoder(sample_db_fmt, by_alias=False)
+#         )
+
+#         # create object representing the dataformat in database
+#         inserted_id = doc.inserted_id
+#         db_obj = SampleInDatabase(
+#             id=str(inserted_id),
+#             **sample_db_fmt.model_dump(),
+#         )
+#     return db_obj
+
+
 async def create_sample(
     db: Database,
-    sample: PipelineResult,
+    sample: Any,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
 ) -> SampleInDatabase:

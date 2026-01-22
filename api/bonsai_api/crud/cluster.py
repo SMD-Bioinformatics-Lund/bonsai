@@ -8,7 +8,7 @@ from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
-from prp.parse.typing import replace_cgmlst_errors
+from prp.parse.parsers.chewbacca import replace_cgmlst_errors
 
 LOG = logging.getLogger(__name__)
 
