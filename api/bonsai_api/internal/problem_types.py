@@ -1,0 +1,11 @@
+"""Definition of problem detail handlers for the Bonsai API."""
+
+UNSUPPORTED_SOFTWARE = "urn:bonsai:problem:unsupported-software"
+UNSUPPORTED_VERSION  = "urn:bonsai:problem:unsupported-version"
+UNSUPPORTED_ANALYSIS = "urn:bonsai:problem:unsupported-analysis-type"
+SCHEMA_MISMATCH      = "urn:bonsai:problem:schema-mismatch"
+INVALID_DATA         = "urn:bonsai:problem:invalid-data"
+ANALYSIS_ABSENT      = "urn:bonsai:problem:analysis-absent"
+PARSER_ERROR         = "urn:bonsai:problem:parser-error"
+NOT_FOUND            = "urn:bonsai:problem:not-found"
+CONFLICT             = "urn:bonsai:problem:conflict"

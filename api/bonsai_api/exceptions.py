@@ -1,5 +1,7 @@
 """Custom exceptions for the Bonsai API."""
 
+from prp.parse.exceptions import ParserError, UnsupportedVersionError, UnsupportedSoftwareError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError
+
 
 class DomainError(Exception):
     """Raised when there is a domain-specific error."""
