@@ -10,6 +10,7 @@ from prp.parse.models.base import VariantBase
 
 from bonsai_api.utils import get_timestamp
 
+from .analysis import ResultStatus
 from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
@@ -183,6 +184,37 @@ class LimsExportStatus(BaseModel):
     error: str | None = None
 
 
+class AnalysisViewEntry(BaseModel):
+    """
+    A denormalized, latest-view entry for a (software, analysis_type) result on a sample.
+
+    - `result`: small, normalized object your builder expects under each group array.
+    - `summary`: compact fields for overview tables and quick filtering.
+    - `status/reason/meta`: envelope transparency.
+    - `analysis_id`: pointer to canonical batch for drill-down.
+    """
+
+    software: str
+    software_version: str
+    analysis_type: str
+
+    # optional pointers to the analysis
+    analysis_id: str
+    pipeline_run_id: str | None = None
+
+    # analysis envelope fields
+    status: ResultStatus
+    reason: str | None = None
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+    result: Any
+    summary: dict[str, Any] = Field(default_factory=dict, description="Compact summary fields for overviews.")
+
+    # curation flags
+    curated: bool = False
+    curation_ids: list[str] = Field(default_factory=list)
+
+
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info used for creation."""
 
@@ -224,15 +256,14 @@ class SampleRecordDb(SampleBase):
     pipeline: PipelineRun | None = None
 
     # quality
-    qc: list[MethodIndex] = Field(default_factory=list)
+    qc: list[AnalysisViewEntry] = Field(default_factory=list)
 
     # species identification
-    species_prediction: list[MethodIndex] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
 
-    typing_result: list[MethodIndex] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
     # optional phenotype prediction
-    element_type_result: list[MethodIndex] = Field(default_factory=list)
-
+    element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
     # optional alignment info
     reference_genome: ReferenceGenome | None = None
     read_mapping: str | None = None

@@ -16,21 +16,23 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         """Constructor function."""
         self.client: AsyncMongoClient | None = None
         self.db: AsyncDatabase | None = None
-        self.sample_group_collection: AsyncCollection | None = None
-        self.sample_collection: AsyncCollection | None = None
+        self.analysis_collection: AsyncCollection | None = None
         self.location_collection: AsyncCollection | None = None
+        self.sample_collection: AsyncCollection | None = None
+        self.sample_group_collection: AsyncCollection | None = None
         self.user_collection: AsyncCollection | None = None
+        self.group_favorite_collection: AsyncCollection | None = None
 
     def setup(self, client: AsyncMongoClient, db_name: str = "bonsai"):
         """Setup collection handler."""
         self.client = client
         # define collection shorthands
         self.db = self.client.get_database(db_name)
+        self.analysis_collection = self.db.get_collection("analysis")
+        self.location_collection = self.db.get_collection("location")
         self.sample_group_collection = self.db.get_collection("sample_group")
         self.sample_collection = self.db.get_collection("sample")
-        self.location_collection = self.db.get_collection("location")
         self.user_collection = self.db.get_collection("user")
-        # collection for per-user favorite groups
         self.group_favorite_collection = self.db.get_collection("group_favorite")
 
     async def close(self) -> None:
