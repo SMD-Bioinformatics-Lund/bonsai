@@ -3,8 +3,12 @@
 from enum import StrEnum
 from typing import Any
 from uuid import UUID
-from pydantic import Field
+from pydantic import BaseModel, Field
 from .base import Timestamps, AllowExtraModelMixin
+
+from prp.parse.models.base import ParserOutput as PRPParserOutput
+from prp.parse.models.enums import AnalysisType as PrpAnalysisType
+from prp.parse.models.enums import AnalysisSoftware as PrpAnalysisSoftware
 
 
 class CurationStatus(StrEnum):
@@ -22,20 +26,35 @@ class CurationRecord(Timestamps, AllowExtraModelMixin):
     comment: str
 
 
+class ResultStatus(StrEnum):
+    PARSED = "parsed"
+    EMPTY = "empty"
+    ABSENT = "absent"
+    SKIPPED = "skipped"
+    ERROR = "error"
+
+
+class Envelope(BaseModel):
+    """Storage-friendly envelope (mirrors PRP’s ResultEnvelope)."""
+    status: ResultStatus
+    value: Any | None = None
+    reason: str | None = None
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
 class AnalysisResult(Timestamps, AllowExtraModelMixin):
     """Container of analysis results."""
 
     # meta information
     schema_version: int = 1
     sample_id: str
-    analysis_type: str = Field(..., description="The kind of analysis being performed.")
     software: str
-    software_version: str | None = None
+    software_version: str
     pipeline_run_id: str | None = None
 
     # results
-    result: Any = Field(..., description="Formatted analysis result")
-    curration: list[CurationRecord] = Field(default_factory=list)
+    envelopes: dict[str, Envelope] = Field(default_factory=dict, description="Formatted analysis result")
+    meta: dict[str, Any] = Field(default_factory=dict)
 
     # created by
     created_by: str | None = None

@@ -16,8 +16,6 @@ from bonsai_api.dependencies import (
     get_request_context,
     get_audit_log,
 )
-from bonsai_api.models.pipeline import PipelineRun
-from prp.parse.exceptions import ParserError
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
@@ -32,7 +30,7 @@ async def upload_analysis(
     sample_id: str = Form(...),
     software: str = Form(...),
     software_version: str | None = Form(None),
-    analysis_type: str | None = Form(None),
+    pipeline_run_id: str | None = Form(None),
     file: UploadFile = File(...),
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
@@ -40,23 +38,16 @@ async def upload_analysis(
     audit=Depends(get_audit_log),
 ):
     """Upload a software analysis file for a sample."""
-    try:
-        inserted_id = await ingest_analysis_service(
-            db,
-            sample_id=sample_id,
-            analysis_type=analysis_type,
-            software=software,
-            software_version=software_version,
-            file=file,
-            ctx=ctx,
-            audit=audit,
-        )
-    except EntryNotFound as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ParseError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    except Exception as exc:
-        LOG.exception("Error ingesting analysis for %s: %s", sample_id, exc)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    software_version = software_version or "0.0.1"
+    inserted_id = await ingest_analysis_service(
+        db,
+        sample_id=sample_id,
+        pipeline_run=pipeline_run_id,
+        software=software,
+        software_version=software_version,
+        file=file,
+        ctx=ctx,
+        audit=audit,
+    )
 
     return JSONResponse(status_code=201, content={"analysis_id": inserted_id})

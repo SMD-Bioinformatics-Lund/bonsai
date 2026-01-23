@@ -12,8 +12,10 @@ from fastapi import FastAPI
 from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
+from .internal.error_handlers import register_exception_handlers
 from .routers import (
     auth,
+    analysis,
     cluster,
     export,
     groups,
@@ -98,7 +100,11 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(export.router)
     app.include_router(resources.router)
     app.include_router(auth.router)
+    app.include_router(analysis.router)
     app.include_router(jobs.router)
+
+    # Register error handlers
+    register_exception_handlers(app)
 
     return app
 

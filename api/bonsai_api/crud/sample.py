@@ -600,13 +600,46 @@ async def check_samples_exists(
 
 async def sample_exists(db: Database, *, sample_id: str, session: ClientSession | None = None) -> bool:
     """Return True if a sample with id exists."""
-    doc = await db.sample_group_collection.find_one(
+    doc = await db.sample_collection.find_one(
         {"sample_id": sample_id}, {"_id": 1}, session=session
     )
     return bool(doc)
 
 
-async def insert_sample_document(db, *, doc: dict[str, Any], session: Any) -> str:
+async def insert_sample_document(db: Database, *, doc: dict[str, Any], session: ClientSession | None = None) -> str:
     """Insert a new sample document in the database."""
     LOG.debug("Creating sample document", extra={"doc": doc})
     return await db.sample_collection.insert_one(doc, session=session)
+
+
+async def upsert_analysis_results(db: Database, *, sample_id: str, field_name: str, item: dict[str, Any], session: ClientSession | None, ):
+    """Upsert a analysis result in a sample document."""
+
+    now = get_timestamp()
+    last_pipeline_run_id = item.get("pipeline_run_id")
+
+    # Try replacing an existing entry for (software, analysis type)
+    res: UpdateResult = await db.sample_collection.update_one(
+        {"sample_id": sample_id}, 
+        {
+            "$set": {
+                f"{field_name}.$[elem]": item,
+                "modified_at": now,
+                **({"last_pipeline_run_id": last_pipeline_run_id} if last_pipeline_run_id else {})
+        }}, 
+        array_filters=[{"elem.software": item["software"], "elem.analysis_type": item["analysis_type"]}],
+        session=session)
+
+    if res.matched_count == 0:
+        # if no document matched, append a new item
+        await db.sample_collection.update_one(
+            {"sample_id": sample_id},
+            {
+                "$push": { field_name: item}, 
+                "$set": {
+                    "modified_at": now, 
+                    **({"last_pipeline_run_id": last_pipeline_run_id} if last_pipeline_run_id else {})
+                },
+            },
+            session=session, upsert=False
+        )
