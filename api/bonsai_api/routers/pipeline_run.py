@@ -28,13 +28,6 @@ async def add_pipeline_run(
 ):
     """Add a pipeline analysis run to a existing sample."""
     try:
-        await add_pipeline_run_service(db, pipeline=body)
-    except ConflictError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
-    except EntryNotFound as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        return await add_pipeline_run_service(db, pipeline=body)
     except DatabaseOperationError as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc

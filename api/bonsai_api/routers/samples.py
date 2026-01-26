@@ -217,14 +217,8 @@ async def create_sample(
     ),
 ) -> dict[str, str]:
     """Entrypoint for creating a new sample."""
-    try:
-        await create_sample_service(db, sample=sample, ctx=req_ctx, audit=audit_log)
-    except ConflictError as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(error),
-        ) from error
-    return {"type": "success", "sample_id": sample.sample_id}
+    resp = await create_sample_service(db, sample=sample, ctx=req_ctx, audit=audit_log)
+    return {"type": "success", **resp}
 
 
 @router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
@@ -238,16 +232,9 @@ async def delete_many_samples(
     ),
 ):
     """Delete multiple samples from the database."""
-    try:
-        result = await delete_samples_from_db(
-            db, sample_ids, ctx=req_ctx, audit=audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    return result
+    return await delete_samples_from_db(
+        db, sample_ids, ctx=req_ctx, audit=audit_log
+    )
 
 
 @router.get(
@@ -261,14 +248,7 @@ async def read_sample(
     ),
 ) -> SampleInDatabase:
     """Read sample with sample id from database."""
-    try:
-        sample_obj = await get_sample(db, sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    return sample_obj
+    return await get_sample(db, sample_id)
 
 
 class UpdateSampleInputModel(BaseModel):
@@ -311,14 +291,7 @@ async def delete_sample(
     ),
 ):
     """Delete the specific sample."""
-    try:
-        result = await delete_samples_from_db(db, [sample_id], req_ctx, audit_log)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    return result
+    return await delete_samples_from_db(db, [sample_id], req_ctx, audit_log)
 
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])
@@ -391,12 +364,7 @@ async def add_ska_index_to_sample(
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
-    try:
-        sample = await get_sample(db, sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=format_error_message(error)
-        ) from error
+    sample = await get_sample(db, sample_id)
 
     # abort if signature has already been added
     idx_exist_err = HTTPException(
@@ -422,12 +390,7 @@ async def get_sample_read_mapping(
     db: Database = Depends(get_database),
 ) -> str:
     """Get read mapping results for a sample."""
-    try:
-        sample = await get_sample(db, sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=format_error_message(error)
-        ) from error
+    sample = await get_sample(db, sample_id)
 
     if sample.read_mapping is None:
         raise HTTPException(
@@ -475,12 +438,7 @@ async def get_vcf_files_for_sample(
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
-    try:
-        sample = await get_sample(db, sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=format_error_message(error)
-        ) from error
+    sample = await get_sample(db, sample_id)
 
     # build path to the VCF
     file_path = None
@@ -532,12 +490,7 @@ async def add_vcf_to_sample(
 ) -> dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
-    try:
-        sample = await get_sample(db, sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=format_error_message(error)
-        ) from error
+    sample = await get_sample(db, sample_id)
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
@@ -564,37 +517,32 @@ async def update_qc_status(
     ),
 ) -> bool:
     """Update sample QC status."""
-    try:
-        # dont update if the status dont change
-        sample = await get_sample(db, sample_id)
-        if sample.qc_status == classification:
-            return True
 
-        # update
-        status_obj: bool = await update_sample_qc_classification(
-            db, sample_id, classification, ctx=req_ctx, audit=audit_log
+    # dont update if the status dont change
+    sample = await get_sample(db, sample_id)
+    if sample.qc_status == classification:
+        return True
+
+    # update
+    status_obj: bool = await update_sample_qc_classification(
+        db, sample_id, classification, ctx=req_ctx, audit=audit_log
+    )
+
+    # update if status should be excluded from indexing
+    action = action_from_qc_classification(classification)
+    if action == "include":
+        include_job = include_in_analysis(sample_id)
+        schedule_add_genome_signature_to_index(
+            [sample_id],
+            depends_on=[include_job.id],
         )
-
-        # update if status should be excluded from indexing
-        action = action_from_qc_classification(classification)
-        if action == "include":
-            include_job = include_in_analysis(sample_id)
-            schedule_add_genome_signature_to_index(
-                [sample_id],
-                depends_on=[include_job.id],
-            )
-        else:
-            # run exclude job and then remove signature from index
-            exclude_job = exclude_from_analysis(sample_id)
-            schedule_remove_genome_signature_from_index(
-                [sample_id],
-                depends_on=[exclude_job.id],
-            )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
+    else:
+        # run exclude job and then remove signature from index
+        exclude_job = exclude_from_analysis(sample_id)
+        schedule_remove_genome_signature_from_index(
+            [sample_id],
+            depends_on=[exclude_job.id],
+        )
     return status_obj
 
 
@@ -612,16 +560,9 @@ async def update_variant_annotation(
     ),
 ) -> SampleInDatabase:
     """Update manual annotation of one or more variants."""
-    try:
-        sample_info: SampleInDatabase = await update_variant_annotation_for_sample(
-            db, sample_id, classification, username=current_user.username
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    return sample_info
+    return await update_variant_annotation_for_sample(
+        db, sample_id, classification, username=current_user.username
+    )
 
 
 @router.post(
@@ -640,16 +581,9 @@ async def post_comment(
     ),
 ) -> CommentsObj:
     """Add a commet to a sample."""
-    try:
-        comment_obj: CommentsObj = await add_comment(
-            db, sample_id, comment, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
-    return comment_obj
+    return await add_comment(
+        db, sample_id, comment, req_ctx, audit_log
+    )
 
 
 @router.delete(
@@ -667,16 +601,9 @@ async def hide_comment(
     ),
 ) -> bool:
     """Hide a comment in a sample from users."""
-    try:
-        resp: bool = await hide_comment_for_sample(
-            db, sample_id, comment_id, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
-    return resp
+    return await hide_comment_for_sample(
+        db, sample_id, comment_id, req_ctx, audit_log
+    )
 
 
 @router.put(
@@ -693,16 +620,9 @@ async def update_location(
     ),
 ) -> LocationOutputDatabase:
     """Update the location of a sample."""
-    try:
-        location_obj: LocationOutputDatabase = await add_location(
-            db, sample_id, location_id
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
-    return location_obj
+    return await add_location(
+        db, sample_id, location_id
+    )
 
 
 class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
@@ -778,9 +698,5 @@ async def find_similar_samples(
     except ConnectionError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(error)
-        ) from error
-    except NotImplementedError as error:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(error)
         ) from error
     return submission_info

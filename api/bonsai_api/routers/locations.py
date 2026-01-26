@@ -126,11 +126,4 @@ async def get_location(
     :return: Location info
     :rtype: LocationOutputDatabase
     """
-    try:
-        loc = await get_location_from_db(db, location_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
-    return loc
+    return await get_location_from_db(db, location_id)

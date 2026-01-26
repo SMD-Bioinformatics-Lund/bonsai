@@ -87,15 +87,9 @@ async def cluster_samples(
         index_files = await get_ska_index_path_for_samples(db, cluster_input.sample_ids)
         job = schedule_ska_cluster_samples(index_files, cluster_input.method)
     else:
-        try:
-            profiles: TypingProfileOutput = await get_typing_profiles(
-                db, cluster_input.sample_ids, typing_method.value
-            )
-        except EntryNotFound as error:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=error,
-            ) from error
+        profiles: TypingProfileOutput = await get_typing_profiles(
+            db, cluster_input.sample_ids, typing_method.value
+        )
         job = schedule_allele_cluster_samples(profiles, cluster_input.method)
     return job
 

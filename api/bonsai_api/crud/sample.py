@@ -377,7 +377,13 @@ async def update_sample_qc_classification(
     return classification
 
 
-async def add_pipeline_run(db: Database, *, sample_id: str, doc: PipelineRun, session: ClientSession | None = None) -> UpdateResult:
+async def add_pipeline_run(
+    db: Database,
+    *,
+    sample_id: str,
+    doc: PipelineRun,
+    session: ClientSession | None = None,
+) -> UpdateResult:
     """Attach a PipelineRun to a sample document.
 
     Fails with ConflictError if a pipeline is already present for the sample.
@@ -394,7 +400,7 @@ async def add_pipeline_run(db: Database, *, sample_id: str, doc: PipelineRun, se
                 "pipeline": doc,
             }
         },
-        session=session
+        session=session,
     )
     LOG.info("Added pipeline run for %s", sample_id)
     return update_obj
@@ -598,7 +604,9 @@ async def check_samples_exists(
     return missing
 
 
-async def sample_exists(db: Database, *, sample_id: str, session: ClientSession | None = None) -> bool:
+async def sample_exists(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> bool:
     """Return True if a sample with id exists."""
     doc = await db.sample_collection.find_one(
         {"sample_id": sample_id}, {"_id": 1}, session=session
@@ -606,40 +614,115 @@ async def sample_exists(db: Database, *, sample_id: str, session: ClientSession 
     return bool(doc)
 
 
-async def insert_sample_document(db: Database, *, doc: dict[str, Any], session: ClientSession | None = None) -> str:
+async def insert_sample_document(
+    db: Database, *, doc: dict[str, Any], session: ClientSession | None = None
+) -> str:
     """Insert a new sample document in the database."""
     LOG.debug("Creating sample document", extra={"doc": doc})
     return await db.sample_collection.insert_one(doc, session=session)
 
 
-async def upsert_analysis_results(db: Database, *, sample_id: str, field_name: str, item: dict[str, Any], session: ClientSession | None, ):
-    """Upsert a analysis result in a sample document."""
+def _make_denorm_upsert_pipeline(
+    *,
+    field_name: str,
+    item: dict[str, Any],
+    now,  # datetime in UTC
+    last_pipeline_run_id: str | None = None,
+):
+    """Create an update pipeline to upsert an analysis result in a denormalized array."""
+    arr = {"$ifNull": [f"${field_name}", []]}
+
+    match_cond = {
+        "$and": [
+            {"$eq": ["$$e.software", item["software"]]},
+            {"$eq": ["$$e.analysis_type", item["analysis_type"]]},
+        ]
+    }
+
+    replaced = {
+        "$map": {
+            "input": arr,
+            "as": "e",
+            "in": {"$cond": [match_cond, item, "$$e"]},
+        }
+    }
+
+    matched_any = {
+        "$anyElementTrue": {
+            "$map": {
+                "input": arr,
+                "as": "e",
+                "in": match_cond,
+            }
+        }
+    }
+
+    # If matched_any: use 'replaced', else concat original array + [item]
+    new_array = {
+        "$cond": [
+            matched_any,
+            replaced,
+            {"$concatArrays": [arr, [item]]},
+        ]
+    }
+
+    set_ops = {
+        field_name: new_array,
+        "modified_at": now,
+    }
+    if last_pipeline_run_id:
+        set_ops["last_pipeline_run_id"] = last_pipeline_run_id
+
+    return [{"$set": set_ops}]
+
+
+async def upsert_analysis_results(
+    db: Database,
+    *,
+    sample_id: str,
+    field_name: str,
+    item: dict[str, Any],
+    session: ClientSession | None,
+):
+    """
+    Upsert an analysis result in a sample document:
+    - If (software, analysis_type) exists in `field_name`, replace it with `item`
+    - Else push `item`
+    Also updates modified_at and last_pipeline_run_id (if present).
+    """
+    if not isinstance(sample_id, str) or not sample_id:
+        raise ValueError("sample_id cannot be empty string")
+
+    if not isinstance(field_name, str) or not field_name:
+        raise ValueError("field_name cannot be empty string")
+
+    # Ensure the key selectors exist
+    for key in ["software", "analysis_type"]:
+        if key not in item:
+            raise ValueError(f"item must contain key: {key}")
 
     now = get_timestamp()
     last_pipeline_run_id = item.get("pipeline_run_id")
 
-    # Try replacing an existing entry for (software, analysis type)
-    res: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id}, 
-        {
-            "$set": {
-                f"{field_name}.$[elem]": item,
-                "modified_at": now,
-                **({"last_pipeline_run_id": last_pipeline_run_id} if last_pipeline_run_id else {})
-        }}, 
-        array_filters=[{"elem.software": item["software"], "elem.analysis_type": item["analysis_type"]}],
-        session=session)
+    pipeline = _make_denorm_upsert_pipeline(
+        field_name=field_name,
+        item=item,
+        now=now,
+        last_pipeline_run_id=last_pipeline_run_id,
+    )
+
+    res = await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        pipeline,
+        session=session,
+    )
 
     if res.matched_count == 0:
-        # if no document matched, append a new item
-        await db.sample_collection.update_one(
-            {"sample_id": sample_id},
-            {
-                "$push": { field_name: item}, 
-                "$set": {
-                    "modified_at": now, 
-                    **({"last_pipeline_run_id": last_pipeline_run_id} if last_pipeline_run_id else {})
-                },
-            },
-            session=session, upsert=False
+        # The sample document does not exist (should be pre-validated by service)
+        raise EntryNotFound(sample_id)
+
+    if res.modified_count == 0:
+        # In practice this shouldn't happen unless the document was identical
+        raise DatabaseOperationError(
+            f"Failed to upsert analysis result for {sample_id} in {field_name}"
         )

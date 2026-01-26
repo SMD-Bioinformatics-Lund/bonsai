@@ -6,9 +6,9 @@ from fastapi.responses import JSONResponse
 from typing import Any
 
 from bonsai_api.exceptions import (
-    ConflictError, ParserError, EntryNotFound, UnsupportedSoftwareError, UnsupportedVersionError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError
+    ConflictError, ParserError, EntryNotFound, UnsupportedSoftwareError, UnsupportedVersionError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError, AnalysisExistsError
 )
-from .problem_types import CONFLICT, INVALID_DATA, PARSER_ERROR, SCHEMA_MISMATCH, UNSUPPORTED_ANALYSIS, UNSUPPORTED_SOFTWARE, UNSUPPORTED_VERSION
+from .problem_types import ANALYSIS_DUPLICATED, CONFLICT, INVALID_DATA, NOT_IMPLEMENTED, PARSER_ERROR, SCHEMA_MISMATCH, UNSUPPORTED_ANALYSIS, UNSUPPORTED_SOFTWARE, UNSUPPORTED_VERSION
 
 
 def problem_details(
@@ -76,3 +76,12 @@ def register_exception_handlers(app: FastAPI) -> None:
         # Catch-all for parse failures that weren’t matched above
         return problem_details(500, "Parser error", str(exc), type_=PARSER_ERROR,
                                extra={"context": getattr(exc, "context", {})})
+
+    @app.exception_handler(AnalysisExistsError)
+    async def _analysis_exists(_: Request, exc: AnalysisExistsError):
+        return problem_details(409, "", str(exc), type_=ANALYSIS_DUPLICATED)
+
+
+    @app.exception_handler(NotImplementedError)
+    async def _not_implemented(_: Request, exc: NotImplementedError):
+        return problem_details(501, "Not Implemented", str(exc), type_=NOT_IMPLEMENTED)

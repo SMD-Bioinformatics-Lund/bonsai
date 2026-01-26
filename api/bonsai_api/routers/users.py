@@ -21,14 +21,13 @@ from bonsai_api.dependencies import (
     get_database,
     get_request_context,
 )
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.user import (
     SampleBasketObject,
     UserInputCreate,
     UserOutputDatabase,
 )
 from fastapi import APIRouter, Depends, HTTPException, Security, status
-from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
 
@@ -74,11 +73,6 @@ async def add_samples_to_basket(
         basket_obj: list[SampleBasketObject] = await add_samples_to_user_basket(
             current_user, samples, db
         )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
@@ -100,11 +94,6 @@ async def remove_samples_from_basket(
         basket_obj: list[SampleBasketObject] = await remove_samples_from_user_basket(
             current_user=current_user, sample_ids=sample_ids, db=db
         )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -122,14 +111,7 @@ async def get_user_in_db(
     ],
 ) -> UserOutputDatabase:
     """Get user data for user with username."""
-    try:
-        user = await get_user(db, username=username)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
-    return user
+    return await get_user(db, username=username)
 
 
 @router.delete("/users/{username}", tags=[RouterTags.USR])
@@ -145,11 +127,6 @@ async def delete_user_from_db(
     """Delete user with username from the database."""
     try:
         user = await delete_user(db, username=username, ctx=ctx, audit=audit_log)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
     except Exception as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -174,11 +151,6 @@ async def update_user_info(
         user = await update_user(
             db, username=username, user=user, ctx=ctx, audit=audit_log
         )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
     except Exception as error:
         LOG.error(str(error))
         raise HTTPException(
@@ -211,11 +183,4 @@ async def create_user_in_db(
     ctx: ApiRequestContext = Depends(get_request_context),
 ) -> UserOutputDatabase:
     """Create a new user."""
-    try:
-        db_obj = await create_user(db, user, ctx=ctx, audit=audit_log)
-    except DuplicateKeyError as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=error.details["errmsg"],
-        ) from error
-    return db_obj
+    return await create_user(db, user, ctx=ctx, audit=audit_log)
