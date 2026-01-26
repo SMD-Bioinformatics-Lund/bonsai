@@ -253,7 +253,8 @@ class SampleRecordDb(SampleBase):
 
     # metadata
     sequencing: SequencingInfo | None = None
-    pipeline: PipelineRun | None = None
+    pipeline_runs: list[PipelineRun] = Field(default_factory=list)
+    latest_pipeline_run_id: str | None = None
 
     # quality
     qc: list[AnalysisViewEntry] = Field(default_factory=list)

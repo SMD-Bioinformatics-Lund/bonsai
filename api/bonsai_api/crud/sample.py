@@ -381,7 +381,7 @@ async def add_pipeline_run(
     db: Database,
     *,
     sample_id: str,
-    doc: PipelineRun,
+    doc: dict[str, Any],
     session: ClientSession | None = None,
 ) -> UpdateResult:
     """Attach a PipelineRun to a sample document.
@@ -397,13 +397,35 @@ async def add_pipeline_run(
         {
             "$set": {
                 "modified_at": get_timestamp(),
-                "pipeline": doc,
-            }
+                "last_pipeline_run_id": doc['pipeline_run_id'],
+            },
+            "$push": {"pipeline_runs": doc}, 
         },
         session=session,
     )
     LOG.info("Added pipeline run for %s", sample_id)
     return update_obj
+
+
+async def pipeline_run_exists_for_sample(
+    db: Database,
+    *,
+    sample_id: str,
+    pipeline_run_id: str,
+    session: ClientSession | None = None,
+) -> bool:
+    """
+    Return True if sample.pipeline_runs contains pipeline_run_id.
+    """
+    doc = await db.sample_collection.find_one(
+        {
+            "sample_id": sample_id,
+            "pipeline_runs.pipeline_run_id": pipeline_run_id
+        },
+        projection={"_id": 1},
+        session=session,
+    )
+    return doc is not None
 
 
 def update_variant_verificaton(variant, info):
