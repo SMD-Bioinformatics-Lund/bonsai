@@ -2,12 +2,10 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, File, UploadFile, Form
 from fastapi.responses import JSONResponse
 
-from bonsai_api.services.sample_service import add_pipeline_run_service
 from bonsai_api.services.analysis_service import ingest_analysis_service
-from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.db import Database
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.dependencies import (
@@ -31,6 +29,7 @@ async def upload_analysis(
     software: str = Form(...),
     software_version: str | None = Form(None),
     pipeline_run_id: str | None = Form(None),
+    force: bool = Form(False, description="Overwrite existing analysis if present"),
     file: UploadFile = File(...),
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
@@ -45,6 +44,7 @@ async def upload_analysis(
         pipeline_run=pipeline_run_id,
         software=software,
         software_version=software_version,
+        force=force,
         file=file,
         ctx=ctx,
         audit=audit,

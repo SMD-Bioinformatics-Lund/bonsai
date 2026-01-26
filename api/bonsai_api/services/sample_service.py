@@ -1,6 +1,7 @@
 """Service layer for creating and modifying sample info."""
 
 import logging
+import uuid
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pydantic import ValidationError
@@ -37,8 +38,10 @@ async def create_sample_service(
         )
     
     # build sample payload
+    internal_sample_id = str(uuid.uuid4())
     payload = SampleRecordDb(
-        sample_id=sample.sample_id,
+        sample_id=internal_sample_id,
+        external_sample_id=sample.sample_id,
         sample_name=sample.sample_name,
         lims_id=sample.lims_id,
         groups=sample.groups,
@@ -79,7 +82,11 @@ async def create_sample_service(
             raise ValueError(
                 f"Invalid data provided for creating group: {str(ve)}"
             ) from ve
-        return resp.inserted_id
+        return {
+            "inserted_id": str(resp.inserted_id), 
+            "internal_sample_id": internal_sample_id, 
+            "external_sample_id": sample.sample_id
+        }
 
 
 async def add_pipeline_run_service(db: Database, *, pipeline: PipelineRun, session: ClientSession | None = None) -> None:

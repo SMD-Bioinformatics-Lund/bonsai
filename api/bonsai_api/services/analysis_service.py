@@ -6,14 +6,25 @@ from fastapi import UploadFile
 from pydantic import ValidationError
 import asyncio
 from api.bonsai_api.crud.utils import managed_transaction
-from api.bonsai_api.models.analysis import AnalysisResult, Envelope, ResultStatus, PRPParserOutput, PrpAnalysisType
+from api.bonsai_api.models.analysis import (
+    AnalysisResult,
+    Envelope,
+    ResultStatus,
+    PRPParserOutput,
+    PrpAnalysisType,
+)
 from api.bonsai_api.models.sample import AnalysisViewEntry
 from api_client.audit_log.models import Subject, SourceType
 from api_client.audit_log import AuditLogClient, EventCreate
-from bonsai_api.crud.analysis import create_analysis
+from bonsai_api.crud.analysis import analysis_exists, create_analysis
 from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
-from bonsai_api.exceptions import EntryNotFound, ParserError, InvalidDataFormat
+from bonsai_api.exceptions import (
+    AnalysisExistsError,
+    EntryNotFound,
+    ParserError,
+    InvalidDataFormat,
+)
 
 from prp.parse import run_parser
 
@@ -49,19 +60,25 @@ GROUP_FOR: dict[str, str] = {
 }
 
 
-def group_for(analysis_type: PrpAnalysisType, *, default_field: str | None = None) -> str:
+def group_for(
+    analysis_type: PrpAnalysisType, *, default_field: str | None = None
+) -> str:
     """Get sample record field for analysis type.
-    
+
     Raises ValueError if no mapping found and no default provided."""
     try:
         return GROUP_FOR[analysis_type]
     except KeyError:
         if default_field is None:
-            raise ValueError(f"No group mapping for analysis type: {analysis_type.value}")
+            raise ValueError(
+                f"No group mapping for analysis type: {analysis_type.value}"
+            )
         return default_field
 
 
-def to_result_storage(sample_id: str, out: PRPParserOutput, *, pipeline_run_id: str | None) -> AnalysisResult:
+def to_result_storage(
+    sample_id: str, out: PRPParserOutput, *, pipeline_run_id: str | None
+) -> AnalysisResult:
     """Convert parser ouptput to storage format."""
     envelopes = {
         atype.value: Envelope(
@@ -78,7 +95,11 @@ def to_result_storage(sample_id: str, out: PRPParserOutput, *, pipeline_run_id: 
         software_version=out.software_version,
         pipeline_run_id=pipeline_run_id,
         envelopes=envelopes,
-        meta={"parser": out.parser_name, "parser_version": out.parser_version, "schema_version": out.schema_version},
+        meta={
+            "parser": out.parser_name,
+            "parser_version": out.parser_version,
+            "schema_version": out.schema_version,
+        },
     )
 
 
@@ -88,6 +109,7 @@ async def ingest_analysis_service(
     sample_id: str,
     software: str,
     file: UploadFile,
+    force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
     ctx: ApiRequestContext | None = None,
@@ -97,38 +119,55 @@ async def ingest_analysis_service(
 
     Analysis results are stored in the analysis collection and denormalized into the sample record.
 
+    Raise AnalysisExistError if an duplicate analysis for the same software exists and `force` is False.
+
     Raises EntryNotFound (via get_sample) if sample not present.
     """
     # ensure sample exists
     if not await sample_exists(db, sample_id=sample_id):
         raise EntryNotFound(f"Sample with id '{sample_id}' not found")
-    
+
+    exists = await analysis_exists(
+        db,
+        sample_id=sample_id,
+        software=software,
+        software_version=software_version,
+        pipeline_run=pipeline_run,
+    )
+    if exists and not force:
+        raise AnalysisExistsError(
+            f"Analysis for sample {sample_id} with software {software} "
+            f"version {software_version} and pipeline run {pipeline_run} already exists."
+        )
+
     # Execute parser
     try:
         sync_stream = await file.read()
-        out = await asyncio.to_thread(
-            run_parser,
-            software=software,
-            version=software_version,
-            data=sync_stream,                   # pass the sync stream
-        )
-        # for some reason wont the resfinder parser output the parsed result, just the prepopulated absent stuff
-        # the parser tests passes so it should be fine. I dont know why
+        out = run_parser(software=software, version=software_version, data=sync_stream)
 
         # cast to storage format
-        doc: AnalysisResult = to_result_storage(sample_id=sample_id, out=out, pipeline_run_id=pipeline_run)
+        doc: AnalysisResult = to_result_storage(
+            sample_id=sample_id, out=out, pipeline_run_id=pipeline_run
+        )
     except ParserError as exc:
         LOG.error(
             "Error when parsersing %s result for %s",
-            software, sample_id,
-            extra={"error": str(exc), "data": file.filename})
+            software,
+            sample_id,
+            extra={"error": str(exc), "data": file.filename},
+        )
         raise
     except ValidationError as ve:
         LOG.error(
             "Validation error when processing %s result for %s: %s",
-            software, sample_id, str(ve),
-            extra={"data": file.filename})
-        raise InvalidDataFormat(f"Validation error when processing parser output: {str(ve)}") from ve
+            software,
+            sample_id,
+            str(ve),
+            extra={"data": file.filename},
+        )
+        raise InvalidDataFormat(
+            f"Validation error when processing parser output: {str(ve)}"
+        ) from ve
 
     # audit event
     if isinstance(audit, AuditLogClient):
@@ -138,7 +177,11 @@ async def ingest_analysis_service(
             event_type="ingest_analysis",
             actor=ctx.actor if ctx else None,
             subject=subject,
-            metadata={"software": software, "version": software_version, "pipeline_run": pipeline_run},
+            metadata={
+                "software": software,
+                "version": software_version,
+                "pipeline_run": pipeline_run,
+            },
         )
         audit.post_event(event)
 
@@ -148,7 +191,9 @@ async def ingest_analysis_service(
     # store analysis record in database
     async with managed_transaction(db.client) as txn:
         # insert canonical analysis record
-        ins = await create_analysis(db, doc=doc.model_dump(exclude_none=True), session=txn)
+        ins = await create_analysis(
+            db, doc=doc.model_dump(exclude_none=True), session=txn
+        )
         inserted_id = str(ins)
 
         # Denormalize each envelope into the approprate sample array

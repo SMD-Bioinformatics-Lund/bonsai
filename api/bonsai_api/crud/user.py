@@ -2,13 +2,14 @@
 
 import logging
 from typing import Any
+from pymongo.errors import DuplicateKeyError
 
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.extensions.ldap_extension import ldap_connection
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.user import (
@@ -142,7 +143,11 @@ async def create_user(
             hashed_password=hashed_password, **user.model_dump()
         )
         # store data in database
-        resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        try:
+            resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        except DuplicateKeyError as exc:
+            LOG.error("User %s already exists: %s", user.username, str(exc))
+            raise ConflictError(f"User {user.username} already exists") from exc
         inserted_id = resp_obj.inserted_id
         user_obj = UserInputDatabase(
             id=str(inserted_id),

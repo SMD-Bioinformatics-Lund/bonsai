@@ -55,4 +55,19 @@ INDEXES: dict[str, list[IndexDefinition]] = {
             },
         },
     ],
+    "analysis": [
+        {
+            "definition": [
+                ("sample_id", ASCENDING),
+                ("software", ASCENDING),
+                ("software_version", ASCENDING),
+                ("pipeline_run_id", ASCENDING)
+            ],
+            "options": {
+                "name": "analysis_sample_id",
+                "background": True,
+                "unique": False,
+            },
+        },
+    ]
 }

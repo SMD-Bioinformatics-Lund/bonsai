@@ -30,3 +30,7 @@ class ConflictError(DomainError):
 
 class ForbiddenAccess(DomainError):
     """Raised when a resource access is forbidden."""
+
+
+class AnalysisExistsError(Exception):
+    """Raised when a duplicate analysis already exists for a sample."""

@@ -89,11 +89,6 @@ async def create_group(
             audit=audit_log,
             creator=usr,
         )
-    except DuplicateKeyError as error:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=error.details["errmsg"],
-        ) from error
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
@@ -114,13 +109,7 @@ async def get_group_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    try:
-        group = await crud_gr.get_group(db, group_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=group_id,
-        ) from error
+    group = await crud_gr.get_group(db, group_id)
     return group
 
 
@@ -139,15 +128,10 @@ async def delete_group_from_db(
     ),
 ):
     """Delete a group from the database."""
-    try:
-        user = UserContext(user_id=current_user.username, roles=current_user.roles)
-        result = await service_gr.delete_group_service(
-            db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
+    user = UserContext(user_id=current_user.username, roles=current_user.roles)
+    result = await service_gr.delete_group_service(
+        db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log
+    )
     return result
 
 
@@ -165,15 +149,9 @@ async def update_group_info(
     ),
 ):
     """Update mutable group core fields (display name, description)."""
-    try:
-        result = await service_gr.update_group_core_info(
-            db, group_id, group_info, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=f"Group with id '{group_id}' not in database"
-        ) from error
-    return result
+    return await service_gr.update_group_core_info(
+        db, group_id, group_info, req_ctx, audit_log
+    )
 
 
 @router.put(
@@ -192,15 +170,9 @@ async def set_allowed_columns_for_group(
     ),
 ):
     """Set allowed table columns for a group."""
-    try:
-        updated = await crud_gr.set_allowed_columns(
-            db, group_id, payload, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
-    return updated
+    return await crud_gr.set_allowed_columns(
+        db, group_id, payload, req_ctx, audit_log
+    )
 
 
 @router.post(
@@ -223,22 +195,16 @@ async def upsert_preset_for_group(
     ),
 ):
     """Create or update a preset for a group."""
-    try:
-        current_etag = MANIFEST.etag
-        if_match = request.headers.get("If-Match")
-        if if_match is not None and if_match != current_etag:
-            raise HTTPException(
-                status_code=status.HTTP_412_PRECONDITION_FAILED,
-                detail={"message": "Manifest changed", "currentETag": current_etag},
-            )
-        updated = await service_gr.upsert_column_preset(
-            db, group_id, preset, set_default, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
+    current_etag = MANIFEST.etag
+    if_match = request.headers.get("If-Match")
+    if if_match is not None and if_match != current_etag:
         raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
-    return updated
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail={"message": "Manifest changed", "currentETag": current_etag},
+        )
+    return await service_gr.upsert_column_preset(
+        db, group_id, preset, set_default, req_ctx, audit_log
+    )
 
 
 @router.delete(
@@ -257,15 +223,9 @@ async def delete_preset_from_group(
     ),
 ):
     """Delete a preset from a group."""
-    try:
-        updated = await crud_gr.delete_preset(
-            db, group_id, preset_id, req_ctx, audit_log
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
-    return updated
+    return await crud_gr.delete_preset(
+        db, group_id, preset_id, req_ctx, audit_log
+    )
 
 
 @router.put(
@@ -292,11 +252,6 @@ async def add_samples_to_group(
         # reformat the request to edges and perform mutation
         edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
         await service_mem.add_memberships(edges, db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_ids,
-        ) from error
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
@@ -327,11 +282,6 @@ async def remove_sample_from_group(
         # build edges of the groups to remove
         edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
         await service_mem.remove_memberships(edges, db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_ids,
-        ) from error
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
@@ -355,16 +305,10 @@ async def get_columns_for_group(
 ):
     """Get information of the number of samples per group loaded into the database."""
     user = UserContext(user_id=current_user.username, roles=current_user.roles)
-    try:
-        group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
-        columns = await build_column_overrides(
-            group_obj=group_obj,
-            manifest=MANIFEST,
-            preset=preset or "default",
-            include_invisible=include_invisible,
-        )
-    except EntryNotFound as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-        ) from exc
-    return columns
+    group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
+    return await build_column_overrides(
+        group_obj=group_obj,
+        manifest=MANIFEST,
+        preset=preset or "default",
+        include_invisible=include_invisible,
+    )
