@@ -4,19 +4,19 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from prp.parse.models.base import VariantBase
 
 from bonsai_api.utils import get_timestamp
 
-from .analysis import ResultStatus
+from .analysis import ResultStatus, CurationRecord
 from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
 from .base import (
     DateTimeModelMixin,
-    DBModelMixin,
+    RecordIdMixin,
     ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
@@ -100,7 +100,7 @@ class SampleInCreate(
 
 
 class SampleInDatabase(
-    DBModelMixin, SampleBase
+    RecordIdMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
 
@@ -111,7 +111,7 @@ class SampleInDatabase(
 
 
 class SampleSummary(
-    DBModelMixin, SampleBase
+    RecordIdMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
 
@@ -211,8 +211,29 @@ class AnalysisViewEntry(BaseModel):
     summary: dict[str, Any] = Field(default_factory=dict, description="Compact summary fields for overviews.")
 
     # curation flags
-    curated: bool = False
-    curation_ids: list[str] = Field(default_factory=list)
+    curations: list[CurationRecord] = Field(
+        default_factory=list, 
+        description="All curation records for this analysis."
+    )
+
+    @computed_field
+    @property
+    def has_curation(self) -> bool:
+        """Whether this analysis has any curation records."""
+        return len(self.curations) > 0
+    
+    @computed_field
+    @property
+    def curation_staus(self) -> str:
+        """Overall curation status summary."""
+        decisions = {curation.decision for curation in self.curations}
+        if "reject" in decisions:
+            return "rejected"
+        if "ambiguous" in decisions:
+            return "ambiguous"
+        if "accept" in decisions and len(decisions) == 1:
+            return "accepted"
+        return "unprocessed"
 
 
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
@@ -245,6 +266,9 @@ class SampleRecordDb(SampleBase):
     groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
     metadata: list[InputMetaEntry] = []
 
+    # curated
+    curated: bool = False
+
     # rbrc
     owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
     owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
@@ -253,10 +277,11 @@ class SampleRecordDb(SampleBase):
 
     # metadata
     sequencing: SequencingInfo | None = None
-    pipeline: PipelineRun | None = None
+    pipeline: list[PipelineRun] = Field(default_factory=list)
+    last_pipeline_run_id: str | None = None
 
     # quality
-    qc: list[AnalysisViewEntry] = Field(default_factory=list)
+    qc_result: list[AnalysisViewEntry] = Field(default_factory=list)
 
     # species identification
     species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
@@ -273,7 +298,7 @@ class SampleRecordDb(SampleBase):
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
     lims_exports: list[LimsExportStatus] = Field(default_factory=list)
 
-class SampleRecordDbOut(DBModelMixin, SampleBase):
+class SampleRecordDbOut(RecordIdMixin, SampleBase):
     """API output model for samples (excludes internal history fields)."""
 
     model_config = ConfigDict(extra='ignore')
