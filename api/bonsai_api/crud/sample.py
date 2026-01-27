@@ -259,20 +259,12 @@ async def delete_samples(
     return result
 
 
-async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
+async def get_sample_by_id(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
     """Get sample with sample_id."""
     db_obj: SampleInDatabase = await db.sample_collection.find_one(
-        {"sample_id": sample_id}
+        {"sample_id": sample_id}, session=session
     )
-
-    if db_obj is None:
-        raise EntryNotFound(f"Sample {sample_id} not in database")
-
-    inserted_id = db_obj["_id"]
-    sample_obj = SampleInDatabase(
-        **db_obj,
-    )
-    return sample_obj
+    return None if db_obj is None else db_obj
 
 
 async def add_comment(
@@ -284,10 +276,10 @@ async def add_comment(
 ) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
-    sample = await get_sample(db, sample_id)
-    comments: list[CommentInDatabase] = sample.comments
+    sample = await get_sample_by_id(db, sample_id=sample_id)
+    comments: list[CommentInDatabase] = [CommentInDatabase.model_validate(c) for c in sample['comments']]
     comment_id = (
-        max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
+        max(c.id for c in comments) + 1 if len(comments) > 0 else 1
     )
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     meta = {"sample_id": sample_id, "comment_id": comment_id}
@@ -484,7 +476,7 @@ async def update_variant_annotation_for_sample(
     db: Database, sample_id: str, classification: VariantAnnotation, username: str
 ) -> SampleInDatabase:
     """Update annotations of variants for a sample."""
-    sample_info = await get_sample(db=db, sample_id=sample_id)
+    sample_info = await get_sample_by_id(db, sample_id=sample_id)
     # create variant group lookup table
     variant_id_gr = {
         gr_name: [int(id.split("-")[1]) for id in ids]

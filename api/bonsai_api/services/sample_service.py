@@ -8,9 +8,9 @@ from pydantic import ValidationError
 from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.services.membership_service import add_memberships
-from bonsai_api.crud.sample import insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists
+from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
-from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb
+from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordDbOut
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
@@ -116,3 +116,18 @@ async def add_pipeline_run_service(db: Database, *, pipeline: PipelineRun, sessi
     except Exception as exc:  # pragma: no cover - defensive
         LOG.exception("Unexpected error while adding pipeline run: %s", exc)
         raise DatabaseOperationError(str(exc)) from exc
+
+
+async def get_sample_service(db: Database, *, sample_id: str, session: ClientSession | None = None) -> SampleRecordDbOut:
+    """Retrieve a sample by its sample id."""
+    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
+    
+    if raw_sample is None:
+        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+    try:
+        return SampleRecordDbOut.model_validate(raw_sample)
+    except ValidationError as ve:
+        LOG.error("Validation error when retrieving sample %s: %s", sample_id, str(ve))
+        raise DatabaseOperationError(
+            f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
+        ) from ve
