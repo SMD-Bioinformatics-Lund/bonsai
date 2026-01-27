@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from prp.parse.models.base import VariantBase
 
@@ -253,8 +253,7 @@ class SampleRecordDb(SampleBase):
 
     # metadata
     sequencing: SequencingInfo | None = None
-    pipeline_runs: list[PipelineRun] = Field(default_factory=list)
-    latest_pipeline_run_id: str | None = None
+    pipeline: PipelineRun | None = None
 
     # quality
     qc: list[AnalysisViewEntry] = Field(default_factory=list)
@@ -273,3 +272,36 @@ class SampleRecordDb(SampleBase):
     # LIMS export tracking
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
     lims_exports: list[LimsExportStatus] = Field(default_factory=list)
+
+class SampleRecordDbOut(DBModelMixin, SampleBase):
+    """API output model for samples (excludes internal history fields)."""
+
+    model_config = ConfigDict(extra='ignore')
+    
+    sample_id: str
+    external_sample_id: str
+    sample_name: str
+    lims_id: str | None = None
+    
+    groups: list[str] = Field(default_factory=list)
+    metadata: list[InputMetaEntry] = []
+    
+    owners: list[str] = Field(default_factory=list)
+    owner_organizations: list[str] = Field(default_factory=list)
+    access_groups: list[str] = Field(default_factory=list)
+    visibility: Visibility = Visibility.PUBLIC
+    
+    sequencing: SequencingInfo | None = None
+    latest_pipeline_run_id: str | None = None
+    
+    qc: list[AnalysisViewEntry] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
+    element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
+    
+    reference_genome: ReferenceGenome | None = None
+    read_mapping: str | None = None
+    genome_annotation: list[IgvAnnotationTrack] | None = None
+    
+    lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
+    

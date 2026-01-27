@@ -4,7 +4,6 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
-from bonsai_api.exceptions import ConflictError
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
@@ -14,10 +13,9 @@ from bonsai_api.crud.sample import (
     add_comment,
     add_location,
 )
-from bonsai_api.services.sample_service import create_sample_service
+from bonsai_api.services.sample_service import create_sample_service, get_sample_service
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
-    get_sample,
     get_samples_full,
 )
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
@@ -52,6 +50,7 @@ from bonsai_api.models.sample import (
     SampleInCreate,
     SampleInDatabase,
     SampleInfoCreate,
+    SampleRecordDbOut,
 )
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
@@ -246,9 +245,9 @@ async def read_sample(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-) -> SampleInDatabase:
+) -> SampleRecordDbOut:
     """Read sample with sample id from database."""
-    return await get_sample(db, sample_id)
+    return await get_sample_service(db, sample_id=sample_id)
 
 
 class UpdateSampleInputModel(BaseModel):
@@ -321,7 +320,7 @@ async def create_genome_signatures_sample(
     """Entrypoint for uploading a genome signature to the database."""
     # verify that sample are in database
     try:
-        sample = await get_sample(db, sample_id)
+        sample = await get_sample_service(db, sample_id=sample_id)
     except EntryNotFound as error:
         raise HTTPException(
             status_code=404, detail=format_error_message(error)
@@ -364,7 +363,7 @@ async def add_ska_index_to_sample(
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     # verify that sample are in database
-    sample = await get_sample(db, sample_id)
+    sample = await get_sample_service(db, sample_id=sample_id)
 
     # abort if signature has already been added
     idx_exist_err = HTTPException(
@@ -390,7 +389,7 @@ async def get_sample_read_mapping(
     db: Database = Depends(get_database),
 ) -> str:
     """Get read mapping results for a sample."""
-    sample = await get_sample(db, sample_id)
+    sample = await get_sample_service(db, sample_id=sample_id)
 
     if sample.read_mapping is None:
         raise HTTPException(
@@ -438,7 +437,7 @@ async def get_vcf_files_for_sample(
 ) -> str:
     """Get vcfs associated with the sample."""
     # verify that sample are in database
-    sample = await get_sample(db, sample_id)
+    sample = await get_sample_service(db, sample_id=sample_id)
 
     # build path to the VCF
     file_path = None
@@ -490,7 +489,7 @@ async def add_vcf_to_sample(
 ) -> dict[str, str]:
     """Entrypoint for uploading varants in vcf format to the sample."""
     # verify that sample are in database
-    sample = await get_sample(db, sample_id)
+    sample = await get_sample_service(db, sample_id=sample_id)
 
     # updated sample in database with signature object jobid
     # recast the data to proper object
@@ -519,7 +518,7 @@ async def update_qc_status(
     """Update sample QC status."""
 
     # dont update if the status dont change
-    sample = await get_sample(db, sample_id)
+    sample = await get_sample_service(db, sample_id=sample_id)
     if sample.qc_status == classification:
         return True
 
