@@ -4,10 +4,11 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Literal
 
+from api.bonsai_api.services.sample_service import get_sample_service
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
-from bonsai_api.crud.sample import get_sample, get_samples_full, update_sample
+from bonsai_api.crud.sample import get_samples_full, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.user import create_user as create_user_in_db
 from bonsai_api.db import verify
@@ -128,7 +129,7 @@ async def run_lims_export(
         DatabaseOperationError: DB-level problems
     """
     async with get_db_connection() as db:
-        sample = await get_sample(db, sample_id)
+        sample = await get_sample_service(db, sample_id=sample_id)
 
     conf_obj = load_export_config(export_cnf)  # may raise
     lims_data = None

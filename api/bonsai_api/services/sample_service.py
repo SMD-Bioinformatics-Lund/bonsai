@@ -125,7 +125,15 @@ async def get_sample_service(db: Database, *, sample_id: str, session: ClientSes
     if raw_sample is None:
         raise EntryNotFound(f"Sample with id '{sample_id}' not found")
     try:
-        return SampleRecordDbOut.model_validate(raw_sample)
+        # get last pipeline run if set
+        last_pipeline_run = None
+        if (run_id := raw_sample.get("last_pipeline_run_id")) is not None:
+            for pr in raw_sample.get("pipeline_runs", []):
+                if pr.get("pipeline_run_id") == run_id:
+                    last_pipeline_run = pr
+                    break
+        # overload pipeline field with last pipeline run
+        return SampleRecordDbOut.model_validate({**raw_sample, "pipeline": last_pipeline_run})
     except ValidationError as ve:
         LOG.error("Validation error when retrieving sample %s: %s", sample_id, str(ve))
         raise DatabaseOperationError(

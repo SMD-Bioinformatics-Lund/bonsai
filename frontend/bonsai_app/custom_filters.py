@@ -367,7 +367,7 @@ def count_results(results, pred_type=None):
     if type is None:
         n_results = len(results)
     else:
-        n_results = len([res for res in results if res["type"] == pred_type])
+        n_results = len([res for res in results if res["analysis_type"] == pred_type])
     return n_results
 
 

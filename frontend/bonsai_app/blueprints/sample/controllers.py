@@ -190,7 +190,7 @@ def sort_variants(sample_info: dict[str, Any]) -> dict[str, Any]:
         """Sort on verfied status, by reference sequence name, and position."""
         sort_order = {"passed": 1, "unprocessed": 2, "failed": 3}
         return (
-            sort_order[variant["verified"]],
+            sort_order[variant.get("verified", "unprocessed")],
             variant["reference_sequence"],
             variant["start"],
         )
@@ -353,11 +353,11 @@ def filter_variants_if_processed(sample_info, result_type="AMR"):
     """Filter out unprocessed and failed variants if any variants have been processed."""
     results = []
     for result in sample_info["element_type_result"]:
-        if result["type"] == "AMR" and len(result["result"]["variants"]) > 0:
+        if result["analysis_type"] == "amr" and len(result["result"]["variants"]) > 0:
             # check if result has has processed variants
             processed = [QualityControlResult.FAILED, QualityControlResult.PASSED]
             has_proc_variants = any(
-                QualityControlResult(var["verified"]) in processed
+                QualityControlResult(var.get("verifeid", "unprocessed")) in processed
                 for var in result["result"]["variants"]
             )
             # create filtered variant object
@@ -366,7 +366,7 @@ def filter_variants_if_processed(sample_info, result_type="AMR"):
                 variants = [
                     var
                     for var in result["result"]["variants"]
-                    if QualityControlResult(var["verified"])
+                    if QualityControlResult(var.get("verified", "unprocessed"))
                     == QualityControlResult.PASSED
                 ]
             else:
