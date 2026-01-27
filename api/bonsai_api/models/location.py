@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 from pydantic import BaseModel, Field, field_validator
 
-from .base import DBModelMixin, Timestamps
+from .base import RecordIdMixin, Timestamps
 
 COORDS = Tuple[float, float]
 
@@ -85,6 +85,6 @@ class LocationInputDatabase(LocationBase):  # pylint: disable=too-few-public-met
 
 
 class LocationOutputDatabase(
-    LocationInputDatabase, DBModelMixin
+    LocationInputDatabase, RecordIdMixin
 ):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""

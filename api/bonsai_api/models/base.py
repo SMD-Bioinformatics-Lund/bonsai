@@ -2,6 +2,7 @@
 
 import datetime
 from typing import Any
+import uuid_utils as uuid
 
 from bson import ObjectId as BaseObjectId
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
@@ -40,10 +41,10 @@ class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
 
 
-class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
+class RecordIdMixin(BaseModel):  # pylint: disable=too-few-public-methods
     """Default database model."""
 
-    id: str | None = Field(None)
+    id: str = Field(description="Unique record identifier", default_factory=str(uuid.uuid7()))
 
 
 class ForbidExtraModelMixin(BaseModel):
