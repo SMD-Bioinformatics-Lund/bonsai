@@ -32,6 +32,7 @@ dependencies = [
   "rq==2.5.0",
   "pymongo==4.15.4",
   "uvicorn[standard]==0.25.0",
+  "uuid-utils",
 ]
 
 [project.optional-dependencies]

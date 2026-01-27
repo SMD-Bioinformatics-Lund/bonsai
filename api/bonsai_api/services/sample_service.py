@@ -38,7 +38,7 @@ async def create_sample_service(
         )
     
     # build sample payload
-    internal_sample_id = str(uuid.uuid4())
+    internal_sample_id = str(uuid.uuid7())
     payload = SampleRecordDb(
         sample_id=internal_sample_id,
         external_sample_id=sample.sample_id,
