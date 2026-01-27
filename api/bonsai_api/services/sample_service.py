@@ -1,7 +1,7 @@
 """Service layer for creating and modifying sample info."""
 
 import logging
-import uuid
+import uuid_utils as uuid
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pydantic import ValidationError
