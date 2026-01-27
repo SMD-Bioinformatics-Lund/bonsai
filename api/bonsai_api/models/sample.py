@@ -292,7 +292,7 @@ class SampleRecordDbOut(DBModelMixin, SampleBase):
     visibility: Visibility = Visibility.PUBLIC
     
     sequencing: SequencingInfo | None = None
-    latest_pipeline_run_id: str | None = None
+    pipeline: PipelineRun | None = None
     
     qc: list[AnalysisViewEntry] = Field(default_factory=list)
     species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
