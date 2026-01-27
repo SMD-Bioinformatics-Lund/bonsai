@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 from typing import Any
-from uuid import UUID
+import uuid_utils as uuid
 from pydantic import BaseModel, Field
 from .base import Timestamps, AllowExtraModelMixin
 
@@ -19,7 +19,7 @@ class CurationStatus(StrEnum):
 
 class CurationRecord(Timestamps, AllowExtraModelMixin):
     """Manual curation and evaluation of analysis results."""
-    id: UUID
+    id: str = Field(description="UUIDv7 string")
     target: str = Field(description="Pointer or id of relevant object.")
     status: CurationStatus
     currated_by: str
@@ -51,6 +51,7 @@ class AnalysisResult(Timestamps, AllowExtraModelMixin):
     software: str
     software_version: str
     pipeline_run_id: str | None = None
+    database: str | None = None  # e.g., for AMR databases, cgMLST schemas or kraken DBs
 
     # results
     envelopes: dict[str, Envelope] = Field(default_factory=dict, description="Formatted analysis result")
