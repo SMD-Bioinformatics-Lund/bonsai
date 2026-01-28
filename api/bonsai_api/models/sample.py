@@ -67,14 +67,30 @@ class TbProfilerVariant(VariantInDb):
 
 
 class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
-    """Base datamodel for sample data structure"""
+    """Base model for all sample representations.
+    
+    Contains core sample metadata, tags, and annotations.
+    ID hierarchy managed by subclasses:
+    - RecordIdMixin provides `id` (internal UUIDv7)
+    - External reference via `external_sample_id`
+    """
 
+    # Sample metadata
+    sample_name: str
+    lims_id: str | None = None
+
+    # Sample oragnization and classification
     tags: list[Tag] = []
-    qc_status: QcClassification = Field(default_factory=QcClassification)
-    # comments and non analytic results
+    qc_status: QcClassification = Field(
+        default_factory=QcClassification,
+        description="Quality control classification of the sample.",
+    )
+
+    # Annotations
     comments: list[CommentInDatabase] = Field(default_factory=list)
     location: str | None = Field(None, description="Location id")
-    # signature file name
+
+    # Data references
     genome_signature: str | None = Field(None, description="Genome signature name")
     ska_index: str | None = Field(None, description="Ska index path")
 
@@ -258,38 +274,34 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
 class SampleRecordDb(SampleBase):
     """Database representation of a sample."""
 
-    sample_id: str = Field(description="Internal sample id, assigned at creation")
-    external_sample_id: str = Field(..., min_length=3, max_length=100, description="Id from other systems used to reference the sample.")
-    sample_name: str
-    lims_id: str | None = None
+    # IDs
+    external_sample_id: str = Field(..., description="Id from other systems used to reference the sample.")
 
-    groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
-    metadata: list[InputMetaEntry] = []
-
-    # curated
-    curated: bool = False
-
-    # rbrc
+    # Access control
     owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
     owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
     access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
     visibility: Visibility = Visibility.PUBLIC
 
-    # metadata
+    # Grouping and organization
+    groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
+    metadata: list[InputMetaEntry] = []
+
+    # Curation flag
+    curated: bool = False
+
+    # Sequencing and pipeline information
     sequencing: SequencingInfo | None = None
     pipeline: list[PipelineRun] = Field(default_factory=list)
     last_pipeline_run_id: str | None = None
 
-    # quality
+    # Analysis results
     qc_result: list[AnalysisViewEntry] = Field(default_factory=list)
-
-    # species identification
     species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
-
     typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    # optional phenotype prediction
     element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    # optional alignment info
+
+    # Reference and annotation
     reference_genome: ReferenceGenome | None = None
     read_mapping: str | None = None
     genome_annotation: list[IgvAnnotationTrack] | None = None
@@ -298,35 +310,39 @@ class SampleRecordDb(SampleBase):
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
     lims_exports: list[LimsExportStatus] = Field(default_factory=list)
 
-class SampleRecordDbOut(RecordIdMixin, SampleBase):
+class SampleRecordDbOut(SampleBase):
     """API output model for samples (excludes internal history fields)."""
 
     model_config = ConfigDict(extra='ignore')
     
-    sample_id: str
-    external_sample_id: str
-    sample_name: str
-    lims_id: str | None = None
+    # IDs
+    external_sample_id: str = Field(..., description="Id from other systems used to reference the sample.")
     
-    groups: list[str] = Field(default_factory=list)
-    metadata: list[InputMetaEntry] = []
-    
+    # Access control
     owners: list[str] = Field(default_factory=list)
     owner_organizations: list[str] = Field(default_factory=list)
     access_groups: list[str] = Field(default_factory=list)
     visibility: Visibility = Visibility.PUBLIC
     
+    # Grouping and organization
+    groups: list[str] = Field(default_factory=list)
+    metadata: list[InputMetaEntry] = []
+    
+    # Sequencing and pipeline information
     sequencing: SequencingInfo | None = None
     pipeline: PipelineRun | None = None
     
-    qc: list[AnalysisViewEntry] = Field(default_factory=list)
+    # Analysis results
+    qc_result: list[AnalysisViewEntry] = Field(default_factory=list)
     species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
     typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
     element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
     
+    # Reference and annotation
     reference_genome: ReferenceGenome | None = None
     read_mapping: str | None = None
     genome_annotation: list[IgvAnnotationTrack] | None = None
     
+    # LIMS tracking
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
     
