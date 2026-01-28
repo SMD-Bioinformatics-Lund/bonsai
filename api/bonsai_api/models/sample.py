@@ -240,7 +240,7 @@ class AnalysisViewEntry(BaseModel):
     
     @computed_field
     @property
-    def curation_staus(self) -> str:
+    def curation_status(self) -> str:
         """Overall curation status summary."""
         decisions = {curation.decision for curation in self.curations}
         if "reject" in decisions:

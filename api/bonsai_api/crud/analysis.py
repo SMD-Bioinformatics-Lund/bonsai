@@ -26,10 +26,10 @@ async def create_analysis(
     return str(res.inserted_id)
 
 
-async def get_analysis(db: Database, *, analysis_id: str) -> dict[str, Any] | None:
+async def get_analysis(db: Database, *, analysis_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
     """Retrieve an analysis record by its id.o"""
 
-    doc = await db.analysis_collection.find_one({"_id": analysis_id})
+    doc = await db.analysis_collection.find_one({"id": analysis_id}, session=session)
     return doc
 
 

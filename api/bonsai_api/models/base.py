@@ -32,6 +32,7 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     model_config = ConfigDict(
         populate_by_name=True,
         use_enum_values=True,
+        validate_default=True
     )
 
 
@@ -44,7 +45,9 @@ class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
 class RecordIdMixin(BaseModel):  # pylint: disable=too-few-public-methods
     """Default database model."""
 
-    id: str = Field(description="Unique record identifier", default_factory=str(uuid.uuid7()))
+    id: str = Field(
+        description="Unique record identifier", 
+        default_factory=lambda: str(uuid.uuid7()))
 
 
 class ForbidExtraModelMixin(BaseModel):
