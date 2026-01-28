@@ -51,6 +51,7 @@ SAMPLE_ID_PATH: str = Path(
 class RouterTags(StrEnum):
     """Tag names for API routes."""
 
+    ANALYSIS = "analysis"
     SAMPLE = "sample"
     GROUP = "groups"
     MEM = "memberships"
