@@ -69,5 +69,32 @@ INDEXES: dict[str, list[IndexDefinition]] = {
                 "unique": False,
             },
         },
+    ],
+    "curations": [
+        {
+            "definition": [
+                ("analysis_id", ASCENDING),
+                ("annotation_type", ASCENDING),
+                ("target_index", ASCENDING),
+            ],
+            "options": {
+                "name": "uniq_item_level_curation",
+                "background": True,
+                "unique": True,
+                "partialFilterExpression": {"target_index": {"$exists": True}}
+            },
+        },
+        {
+            "definition": [
+                ("analysis_id", ASCENDING),
+                ("annotation_type", ASCENDING),
+            ],
+            "options": {
+                "name": "uniq_analysis_level_curation",
+                "background": True,
+                "unique": True,
+                "partialFilterExpression": {"target_index": {"$exists": True}}
+            },
+        }
     ]
 }

@@ -7,10 +7,11 @@ from typing import Any
 from pydantic import ValidationError, TypeAdapter
 from pymongo import UpdateOne
 from pymongo.client_session import ClientSession
+from pymongo.errors import DuplicateKeyError
 
 from api.bonsai_api.utils import get_timestamp
 from bonsai_api.crud.curation import create_curation, delete_curation_crud, get_curation_by_id_crud, get_curations_crud, update_curation_crud
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.crud.analysis import get_analysis
 from bonsai_api.models.context import ApiRequestContext
@@ -57,8 +58,8 @@ async def create_curation_service(
             record = TypeAdapter(CurationRecord).validate_python(curation_data)
 
             # insert into database
-            await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
             curation_id = record.id
+            await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
 
             # Audit log
             if isinstance(audit, AuditLogClient):
@@ -89,6 +90,11 @@ async def create_curation_service(
                 db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
             )
             return curation_id
+        except DuplicateKeyError as dke:
+            LOG.error("Duplicate key error while creating group: %s", str(dke))
+            raise ConflictError(
+                f"Curation for field {curation.target_index} already exists."
+            ) from dke
         except ValidationError as ve:
             LOG.error("Curation validation error: %s", ve)
             raise DatabaseOperationError(
