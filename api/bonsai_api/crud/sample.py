@@ -95,41 +95,6 @@ async def get_samples_full(
     return MultipleRecordsResponseModel(data=data, records_total=total)
 
 
-# async def create_sample(
-#     db: Database,
-#     sample: PipelineResult,
-#     ctx: ApiRequestContext,
-#     audit: AuditLogClient | None = None,
-# ) -> SampleInDatabase:
-#     """Create a new sample document in database from structured input."""
-#     # validate data format
-#     try:
-#         tags = compute_phenotype_tags(sample)
-#     except ValueError as error:
-#         LOG.warning("Error when creating tags... skipping. %s", error)
-#         tags = []
-
-#     event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
-#     with audit_event_context(audit, "create_sample", ctx, event_subject):
-#         sample_db_fmt = SampleInCreate(
-#             in_collections=[],
-#             tags=tags,
-#             **sample.model_dump(),
-#         )
-#         # store data in database
-#         doc = await db.sample_collection.insert_one(
-#             jsonable_encoder(sample_db_fmt, by_alias=False)
-#         )
-
-#         # create object representing the dataformat in database
-#         inserted_id = doc.inserted_id
-#         db_obj = SampleInDatabase(
-#             id=str(inserted_id),
-#             **sample_db_fmt.model_dump(),
-#         )
-#     return db_obj
-
-
 async def create_sample(
     db: Database,
     sample: Any,

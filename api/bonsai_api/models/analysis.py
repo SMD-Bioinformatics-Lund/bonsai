@@ -48,6 +48,7 @@ class AnalysisResult(RecordIdMixin, Timestamps, AllowExtraModelMixin):
 
 class CurationBase(RWModel, RecordIdMixin, Timestamps):
     """Base for all curation records."""
+    sample_id: str = Field(description="ID of the sample.")
     analysis_id: str = Field(description="ID of analysis record being curated.")
     analysis_type: str = Field(description="Type of result envelope curation relate to.")
     

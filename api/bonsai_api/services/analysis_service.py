@@ -190,10 +190,10 @@ async def ingest_analysis_service(
     # store analysis record in database
     async with managed_transaction(db.client) as txn:
         # insert canonical analysis record
-        ins = await create_analysis(
+        await create_analysis(
             db, doc=doc.model_dump(exclude_none=True), session=txn
         )
-        inserted_id = str(ins)
+        analysis_id = doc.id
 
         # Denormalize each envelope into the approprate sample array
         for atype, env in doc.envelopes.items():
@@ -206,7 +206,7 @@ async def ingest_analysis_service(
                 software=doc.software,
                 software_version=doc.software_version,
                 analysis_type=atype,
-                analysis_id=inserted_id,
+                analysis_id=analysis_id,
                 pipeline_run_id=doc.pipeline_run_id,
                 status=env.status,
                 reason=env.reason,
@@ -223,9 +223,9 @@ async def ingest_analysis_service(
                 session=txn,
             )
 
-    LOG.info("Ingested analysis %s for %s", inserted_id, sample_id)
+    LOG.info("Ingested analysis %s for %s", analysis_id, sample_id)
     return {
-        "analysis_id": inserted_id,
+        "analysis_id": analysis_id,
         "software": doc.software,
         "software_version": doc.software_version,
         "pipeline_run_id": doc.pipeline_run_id,
