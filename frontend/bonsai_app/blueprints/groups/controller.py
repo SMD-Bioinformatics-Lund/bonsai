@@ -20,13 +20,21 @@ DEFAULT_RENDERERS = {
     "list": "list_renderer",
 }
 
+COLUMN_RENDERERS = {
+    "sample_id": "sample_btn_renderer",
+}
+
+
 
 def _get_renderer(column: dict[str, Any]) -> str:
     """Get the renderer for a given column type."""
+    if override := COLUMN_RENDERERS.get(column.get("id")):
+        return override
+
     col_type = column["type"]
     if renderer := DEFAULT_RENDERERS.get(col_type):
         return renderer
-
+    
     if col_type == "object":
         return f"{column['id']}_renderer"
 
@@ -68,10 +76,10 @@ def format_tablular_data(
     cols = [
         TableColumn(
             id=col["id"],
-            label=col["label"],
+            label="" if col["id"] == "sample_id" else col["label"],
             type=col["type"],
             renderer=_get_renderer(col),
-            sortable=col["sortable"],
+            sortable=False if col["id"] == "sample_id" else col["sortable"],
             searchable=col["type"] != "object",
             visible=col.get("default_visible", True),
         )
