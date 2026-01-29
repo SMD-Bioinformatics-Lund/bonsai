@@ -1,5 +1,6 @@
 """Service functions for managing curation records."""
 
+from collections import defaultdict
 import logging
 
 from typing import Any
@@ -17,6 +18,8 @@ from bonsai_api.models.analysis import AnalysisResult, CurationRecord, CurationC
 from bonsai_api.db import Database
 from api_client.audit_log.models import Subject, SourceType
 from api_client.audit_log import AuditLogClient, EventCreate
+
+from .analysis_service import group_for
 
 
 LOG = logging.getLogger(__name__)
@@ -45,11 +48,17 @@ async def create_curation_service(
         try:
             # Set analysis id on curation record and validate curation record
             curation_data = curation.model_dump()
-            curation_data.update({"analysis_id": analysis_id, "analysis_type": analysis_type, "curated_by": curated_by})
+            curation_data.update({
+                "sample_id": analysis["sample_id"], 
+                "analysis_id": analysis_id, 
+                "analysis_type": analysis_type, 
+                "curated_by": curated_by
+            })
             record = TypeAdapter(CurationRecord).validate_python(curation_data)
 
             # insert into database
-            curation_id = await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
+            await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
+            curation_id = record.id
 
             # Audit log
             if isinstance(audit, AuditLogClient):
@@ -73,6 +82,11 @@ async def create_curation_service(
             LOG.info(
                 "Created curation %s for analysis %s by %s",
                 curation_id, analysis_id, curated_by
+            )
+
+            # sync data to sample object after update
+            sync_curation_summary_for_analysis(
+                db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
             )
             return curation_id
         except ValidationError as ve:
@@ -122,9 +136,16 @@ async def approve_curation_service(
         raise EntryNotFound(f"Curation {curation_id} not found")
     
     # uppdate approval
-    await update_curation_crud(
-        db, curation_id=curation_id, updates={"approved_by": approved_by}
-    )
+    async with managed_transaction(db.client) as txn:
+        await update_curation_crud(
+            db, curation_id=curation_id, updates={"approved_by": approved_by},
+            session=txn
+        )
+        # sync data to sample object after update
+        await sync_curation_summary_for_analysis(
+            db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
+        )
+
     # Audit log
     if isinstance(audit, AuditLogClient):
         subject = Subject(id=curation_id, type=SourceType.USR)
@@ -151,7 +172,13 @@ async def delete_curation_service(
     if not curation:
         raise EntryNotFound(f"Curation {curation_id} not found")
     
-    await delete_curation_crud(db, curation_id=curation_id)
+    async with managed_transaction(db.client) as txn:
+        await delete_curation_crud(db, curation_id=curation_id, session=txn)
+
+        # sync changes to sample object
+        sync_curation_summary_for_analysis(
+            db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
+        )
     
     # Audit log
     if isinstance(audit, AuditLogClient):
@@ -168,15 +195,14 @@ async def delete_curation_service(
     LOG.info("Deleted curation %s", curation_id)
 
 
-async def sync_curation_sumary_for_analysis(
+async def sync_curation_summary_for_analysis(
     db: Database,
     *,
     sample_id: str,
     analysis_id: str,
-    analysis: AnalysisResult,
     session: ClientSession | None = None
 ):
-    """Re-sync the the curration summary for one analysis result."""
+    """Re-sync the the curation summary for one analysis result."""
     # Fetch all curations for this analysis from canonical collection
     curations = await get_curations_crud(
         db,
@@ -184,32 +210,40 @@ async def sync_curation_sumary_for_analysis(
         session=session
     )
 
-    # Pull old curation recrods
+    items_idx = defaultdict(list)
+    # Group curations by target summary field
+    for cur in curations:
+        analysis_type = cur["analysis_type"]
+        field_name = group_for(analysis_type)
+        items_idx[(field_name, analysis_type)].append(cur)
+    
     ops: list[UpdateOne] = []
-    for atype in analysis.envelopes:
-        ops.append(
-            UpdateOne(
-                {"sample_id": sample_id},
-                {
-                    "$pull": {
-                        "curations": {
-                            "software": analysis.software,
-                            "analysis_type": atype
-                        }
-                    }
+    for (field_name, at), items in items_idx.items():
+        filter_ = {
+            "sample_id": sample_id,
+            field_name: {
+                "$elemMatch": {
+                    "analysis_id": analysis_id, 
+                    "analysis_type": at
                 }
-            )
-        )
-
-    # add updated curation to sample object
+            }
+        }
+        # pull existing items 
+        ops.append(UpdateOne(
+            filter_,
+            {"$set": {f"{field_name}.$.curations": items}}
+        ))
+    
     ops.append(
         UpdateOne(
-            {"sample_id": sample_id},
-            {
-                "$push": { "curations": curations },
-                "$set": { "modified_at": get_timestamp() },
-            }
+            {"sample_id": sample_id}, 
+            {"$set": {"modified_at": get_timestamp()}}
         )
     )
-    result = await db.sample_collection.bulk_write(ops, ordered=False, session=session)
-    return result.modified_count == 1
+
+    result = await db.sample_collection.bulk_write(
+        ops, ordered=True, session=session
+    )
+    if result.matched_count == 0:
+        raise EntryNotFound(f"No sample with {sample_id}")
+    return bool(result.acknowledged)

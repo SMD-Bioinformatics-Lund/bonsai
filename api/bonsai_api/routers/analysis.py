@@ -29,11 +29,6 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-class CurationCreateRequest(BaseModel):
-    """Input for creating a curation."""
-    pass
-
-
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def upload_analysis(
     sample_id: str = Form(...),
