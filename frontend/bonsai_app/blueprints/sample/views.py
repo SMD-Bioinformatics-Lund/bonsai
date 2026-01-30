@@ -20,7 +20,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests import HTTPError
 
-from ...bonsai import (
+from bonsai_app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
     delete_samples,
@@ -35,7 +35,7 @@ from ...bonsai import (
     update_sample_qc_classification,
     update_variant_info,
 )
-from ...models import BadSampleQualityAction, QualityControlResult
+from bonsai_app.models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
     filter_variants,
     filter_variants_if_processed,
