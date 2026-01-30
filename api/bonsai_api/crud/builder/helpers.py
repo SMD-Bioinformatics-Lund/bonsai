@@ -76,7 +76,7 @@ def build_get_entry_stage(
                                 },
                                 "as": "x",
                                 "cond": (
-                                    {"$and": array_conds[0]} if array_conds else True
+                                    {"$and": array_conds} if array_conds else True
                                 ),
                             }
                         },

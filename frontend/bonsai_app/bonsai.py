@@ -217,7 +217,7 @@ def update_group_presets(
     # conduct query
     url = f"{settings.api_internal_url}/groups/{group_id}/presets"
     if set_default is not None:
-        url + f"?default={set_default}"
+        url += f"?default={set_default}"
 
     resp = requests_post(url, json=preset, headers=headers)
 

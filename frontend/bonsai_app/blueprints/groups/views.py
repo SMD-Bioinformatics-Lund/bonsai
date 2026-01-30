@@ -188,7 +188,7 @@ def group(group_id: str) -> str:
 
     # generate table data
 
-    if (column_info := group_info.get("table_columns", [])) and len(column_info) > 0:
+    if len(group_info.get("table_columns", [])) > 0:
         column_info = get_valid_group_columns(token, group_id=group_id)
     else:  # get default columns
         column_info = get_valid_summary_columns(token)
