@@ -76,6 +76,7 @@ class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-
     """
 
     # Sample metadata
+    sample_id: str
     sample_name: str
     lims_id: str | None = None
 
