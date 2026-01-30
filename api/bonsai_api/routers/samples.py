@@ -5,6 +5,8 @@ import pathlib
 from typing import Annotated, Any, Union, cast
 
 from api_client.audit_log.client import AuditLogClient
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
+from bonsai_api.crud.builder.types import ManifestOutput
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import (
     EntryNotFound,
@@ -15,7 +17,7 @@ from bonsai_api.crud.sample import create_sample as create_sample_record
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
     get_sample,
-    get_samples_summary,
+    get_samples_full,
 )
 from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
 from bonsai_api.crud.sample import update_sample as crud_update_sample
@@ -23,6 +25,7 @@ from bonsai_api.crud.sample import (
     update_sample_qc_classification,
     update_variant_annotation_for_sample,
 )
+from bonsai_api.crud.summary import get_samples_summary
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
@@ -73,7 +76,7 @@ from fastapi import (
     Security,
     status,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from prp.models import PipelineResult
 from prp.models.phenotype import (
     AMRMethodIndex,
@@ -117,43 +120,95 @@ WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
 
 
-class ApiGetSamplesDetailsInput(BaseModel):
+class SamplesSummaryBody(BaseModel):
     """Input parameters for getting sample details."""
 
-    limit: int | None = Field(
-        default=None, gt=-1, title="Limit the output to x samples"
-    )
-    skip: int | None = Field(default=None, gt=-1, title="Skip x samples")
-    prediction_result: bool = Field(default=True, title="Include prediction results")
-    qc_metrics: bool = Field(default=False, title="Include QC metrics")
+    group_id: str | None = None
     sid: list[str] | None = Field(
         None, description="Optional limit query to samples ids"
     )
+    fields: list[str] | None = None
+    sort: str = "-created_at"
+    limit: int | None = Field(default=None, title="Limit the output to x samples")
+    offset: int = Field(0, ge=0)
 
 
-@router.post(
-    "/samples/summary",
-    response_model_by_alias=False,
-    response_model=MultipleRecordsResponseModel,
-    tags=[RouterTags.SAMPLE],
-)
-async def samples_summary(
-    query: ApiGetSamplesDetailsInput,
+@router.post("/samples/summary")
+async def query_samples(
+    body: SamplesSummaryBody,
     db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+    current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    """Entrypoint for getting a summary for multiple samples."""
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
-        db,
-        limit=query.limit,
-        skip=query.skip,
-        prediction_result=query.prediction_result,
-        include_samples=query.sid,
-        qc_metrics=query.qc_metrics,
-    )
-    return db_obj
+    """Get samples."""
+    match = {}
+    if body.group_id:
+        match["groups"] = body.group_id
+    if body.sid:
+        match["sample_id"] = {"$in": body.sid}
+
+    try:
+        return await get_samples_summary(
+            db,
+            MANIFEST,
+            match=match,
+            fields=body.fields,
+            sort=body.sort,
+            limit=body.limit,
+            offset=body.offset,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
+
+
+@router.get("/samples/summary/manifest")
+async def get_summary_manifest():
+    """Get valid fields for the sample summary."""
+    public = ManifestOutput.from_internals(MANIFEST)
+    resp = JSONResponse(content=public.model_dump(exclude_none=True))
+    resp.headers["ETag"] = public.etag
+    return resp
+
+
+@router.get(
+    "/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel
+)
+async def list_samples(
+    group_id: str | None = Query(None, description="Filter group by ID"),
+    sid: list[str] | None = Query(
+        None, description="Fileter by sample ids (Use POST for large sets)"
+    ),
+    fields: list[str] | None = Query(None, description="Fields to include in response"),
+    sort: str = Query("-created_at"),
+    limit: int = Query(50, ge=0),
+    offset: int = Query(0, ge=0),
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Get samples from the database. It can return either the full or summarized sample information."""
+    try:
+        match = {}
+        if group_id:
+            match["groups"] = group_id
+        if sid:
+            match["sample_id"] = {"$in": sid}
+
+        return await get_samples_full(
+            db=db, match=match, fields=fields, sort=sort, limit=limit, offset=offset
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        )
 
 
 @router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])

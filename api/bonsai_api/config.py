@@ -7,10 +7,17 @@ import tomllib
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import (AfterValidator, BaseModel, ConfigDict, Field, FilePath,
-                      HttpUrl, ValidationError, model_validator)
-from pydantic_settings import (BaseSettings, SettingsConfigDict,
-                               TomlConfigSettingsSource)
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    FilePath,
+    HttpUrl,
+    ValidationError,
+    model_validator,
+)
+from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 
 ssl_defaults = ssl.get_default_verify_paths()
 

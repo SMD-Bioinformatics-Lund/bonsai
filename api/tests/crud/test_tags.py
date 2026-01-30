@@ -3,9 +3,14 @@
 import pytest
 from bonsai_api.crud.tags import flag_uncertain_spp_prediction
 from bonsai_api.models.tags import Tag
-from prp.models.species import (BrackenSpeciesPrediction, BrackenSppIndex,
-                                MykrobeSpeciesPrediction, MykrobeSppIndex,
-                                SppMethodIndex, SppPredictionSoftware)
+from prp.models.species import (
+    BrackenSpeciesPrediction,
+    BrackenSppIndex,
+    MykrobeSpeciesPrediction,
+    MykrobeSppIndex,
+    SppMethodIndex,
+    SppPredictionSoftware,
+)
 from pydantic import BaseModel
 
 

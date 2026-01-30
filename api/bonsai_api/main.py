@@ -12,8 +12,19 @@ from fastapi import FastAPI
 from .config import Settings, settings
 from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
-from .routers import (auth, cluster, export, groups, jobs, locations, memberships,
-                      resources, root, samples, users)
+from .routers import (
+    auth,
+    cluster,
+    export,
+    groups,
+    jobs,
+    locations,
+    memberships,
+    resources,
+    root,
+    samples,
+    users,
+)
 
 logging_config.dictConfig(
     {
@@ -55,7 +66,7 @@ async def lifespan(app: FastAPI):
         )
     if settings.notification_service_api is not None:
         app.state.notification = NotificationClient(
-            base_url=str(settings.audit_log_service_api)
+            base_url=str(settings.notification_service_api)
         )
 
     yield

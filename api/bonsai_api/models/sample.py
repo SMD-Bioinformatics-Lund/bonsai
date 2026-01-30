@@ -1,23 +1,39 @@
 """Data model definition of input/ output data"""
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
-from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
-                                  ElementType, PredictionSoftware,
-                                  ResfinderGene, VariantBase, VirulenceGene)
+from prp.models.phenotype import (
+    AmrFinderGene,
+    AmrFinderResistanceGene,
+    ElementType,
+    PredictionSoftware,
+    ResfinderGene,
+    VariantBase,
+    VirulenceGene,
+)
 from prp.models.sample import PipelineResult
 from prp.models.species import SpeciesPrediction
-from prp.models.typing import (ResultLineageBase, TbProfilerLineage,
-                               TypingMethod, TypingResultCgMlst,
-                               TypingResultGeneAllele, TypingResultMlst,
-                               TypingSoftware)
+from prp.models.typing import (
+    ResultLineageBase,
+    TbProfilerLineage,
+    TypingMethod,
+    TypingResultCgMlst,
+    TypingResultGeneAllele,
+    TypingResultMlst,
+    TypingSoftware,
+)
 from pydantic import BaseModel, Field
 
 from ..models.qc import SampleQcClassification, VaraintRejectionReason
 from ..models.tags import Tag
-from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
-                   MultipleRecordsResponseModel, RWModel)
+from .base import (
+    DateTimeModelMixin,
+    DBModelMixin,
+    MultipleRecordsResponseModel,
+    RWModel,
+    Timestamps,
+)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
 
@@ -62,7 +78,7 @@ class TbProfilerVariant(VariantInDb):
     )
 
 
-class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
+class SampleBase(Timestamps):  # pylint: disable=too-few-public-methods
     """Base datamodel for sample data structure"""
 
     tags: list[Tag] = []
@@ -109,6 +125,7 @@ class SampleInCreate(
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
+    groups: list[str] = []
     metadata: list[InputMetaEntry] = []
     element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
     sv_variants: list[VariantInDb] | None = None

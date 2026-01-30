@@ -12,8 +12,7 @@ from bonsai_api.models.user import UserOutputDatabase
 from fastapi import Depends, File, HTTPException, Path, Request, UploadFile
 from pydantic import BaseModel, Field
 
-from ..models.sample import (SAMPLE_ID_PATTERN, QcClassification,
-                             SampleQcClassification)
+from ..models.sample import SAMPLE_ID_PATTERN, QcClassification, SampleQcClassification
 
 LOG = logging.getLogger(__name__)
 

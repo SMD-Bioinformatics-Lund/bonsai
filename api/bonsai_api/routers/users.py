@@ -4,16 +4,29 @@ import logging
 from typing import Annotated
 
 from api_client.audit_log.client import AuditLogClient
-from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
-from bonsai_api.crud.user import (add_samples_to_user_basket, create_user,
-                                  delete_user, get_user, get_users,
-                                  remove_samples_from_user_basket, update_user)
+from bonsai_api.crud.user import (
+    add_samples_to_user_basket,
+    create_user,
+    delete_user,
+    get_user,
+    get_users,
+    remove_samples_from_user_basket,
+    update_user,
+)
 from bonsai_api.db import Database
-from bonsai_api.dependencies import (ApiRequestContext, get_audit_log,
-                                     get_current_active_user, get_database,
-                                     get_request_context)
-from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
-                                    UserOutputDatabase)
+from bonsai_api.dependencies import (
+    ApiRequestContext,
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.models.user import (
+    SampleBasketObject,
+    UserInputCreate,
+    UserOutputDatabase,
+)
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from pymongo.errors import DuplicateKeyError
 
