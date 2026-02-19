@@ -20,7 +20,7 @@
     "doc": "docs"
   },
   "devDependencies": {
-    "eslint": "^9.26.0",
+    "eslint": "^10.0.0",
     "globals": "^16.1.0",
     "prettier": "^3.5.3",
     "ts-loader": "^9.5.2",
