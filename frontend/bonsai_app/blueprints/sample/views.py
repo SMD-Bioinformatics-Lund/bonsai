@@ -148,7 +148,7 @@ def sample(sample_id: str) -> str:
         "sample.html",
         sample=sample_info,
         group_id=group_id,
-        title=sample_id,
+        title=sample_info['sample_name'],
         is_filtered=bool(group_id),
         bad_qc_actions=bad_qc_actions,
         extended=extended,

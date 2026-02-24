@@ -89,25 +89,23 @@ async def create_sample_service(
         }
 
 
-async def add_pipeline_run_service(db: Database, *, pipeline: PipelineRun, session: ClientSession | None = None) -> None:
+async def add_pipeline_run_service(db: Database, *, sample_id: str, pipeline: PipelineRun, session: ClientSession | None = None) -> None:
     """Add a pipeline run to an existing sample.
 
     Raises EntryNotFound if sample missing and ConflictError if a pipeline run already
     exists for the sample.
     """
-    sample_id = pipeline.sample_id
-    if not sample_exists(db, sample_id=pipeline.sample_id, session=session):
+    if not sample_exists(db, sample_id=sample_id, session=session):
         LOG.error("Sample %s not found when adding pipeline run", sample_id)
-        raise EntryNotFound(pipeline.sample_id)
+        raise EntryNotFound(sample_id)
     
     if await pipeline_run_exists_for_sample(
-        db, sample_id=sample_id, 
+        db, sample_id=sample_id,
         pipeline_run_id=pipeline.pipeline_run_id,
         session=session):
         raise ConflictError(f"Pipeline run already exists for sample. pipeline_run_id={pipeline.pipeline_run_id}")
 
     try:
-        sample_id = pipeline.sample_id
         update_obj = await add_pipeline_run(db, sample_id=sample_id, doc=pipeline.model_dump(exclude_none=True), session=session)
 
         # Ensure update actually modified the document

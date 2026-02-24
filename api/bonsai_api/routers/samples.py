@@ -4,6 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
+from api.bonsai_api.exceptions import DatabaseOperationError
+from api.bonsai_api.models.pipeline import PipelineRun
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
@@ -13,7 +15,7 @@ from bonsai_api.crud.sample import (
     add_comment,
     add_location,
 )
-from bonsai_api.services.sample_service import create_sample_service, get_sample_service
+from bonsai_api.services.sample_service import add_pipeline_run_service, create_sample_service, get_sample_service
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
     get_samples_full,
@@ -309,6 +311,22 @@ async def add_sample_metadata(
     except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))
     return resp
+
+
+@router.post("/samples/{sample_id}/pipeline-runs", tags=[RouterTags.SAMPLE, RouterTags.PIPELINE_RUNS])
+async def add_pipeline_run(
+    sample_id: str,
+    body: PipelineRun,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Add a pipeline analysis run to a existing sample."""
+    try:
+        return await add_pipeline_run_service(db, sample_id=sample_id, pipeline=body)
+    except DatabaseOperationError as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
 
 @router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])
