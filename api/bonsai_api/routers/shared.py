@@ -56,6 +56,7 @@ class RouterTags(StrEnum):
     GROUP = "groups"
     MEM = "memberships"
     META = "metadata"
+    PIPELINE_RUNS = "pipeline_runs"
     USR = "user"
     JOB = "jobs"
 
