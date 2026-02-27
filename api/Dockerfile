@@ -30,6 +30,11 @@ CMD ["uvicorn", "bonsai_api.main:app", "--reload", "--log-level", "info", "--hos
 ### Build python deps ###
 FROM base AS python-builder
 
+RUN pip wheel --wheel-dir /wheels \
+    setuptools>=61.0 \
+    setuptools-scm>=8 \
+    wheel
+
 COPY libs/api_client/ ./api_client
 COPY api/ ./api
 
