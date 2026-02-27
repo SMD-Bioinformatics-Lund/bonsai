@@ -44,7 +44,7 @@ async def upload_analysis(
 ):
     """Upload a software analysis file for a sample."""
     software_version = software_version or "0.0.1"
-    inserted_id = await ingest_analysis_service(
+    data = await ingest_analysis_service(
         db,
         sample_id=sample_id,
         pipeline_run=pipeline_run_id,
@@ -56,7 +56,7 @@ async def upload_analysis(
         audit=audit,
     )
 
-    return JSONResponse(status_code=201, content={"analysis_id": inserted_id})
+    return JSONResponse(status_code=201, content=data)
 
 
 @router.post(

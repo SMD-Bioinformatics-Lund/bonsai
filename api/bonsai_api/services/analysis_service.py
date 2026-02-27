@@ -1,6 +1,7 @@
 """Services for ingesting analysis output files."""
 
 import logging
+import io
 
 from fastapi import UploadFile
 from pydantic import ValidationError
@@ -141,8 +142,9 @@ async def ingest_analysis_service(
 
     # Execute parser
     try:
-        sync_stream = await file.read()
-        out = run_parser(software=software, version=software_version, data=sync_stream)
+        binary_stream = file.file  # SpooledTemporaryFile object
+        text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
+        out = run_parser(software=software, version=software_version, data=text_stream)
 
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
