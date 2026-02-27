@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 ### Build SKA2 ###
-FROM rust:1.82-bullseye AS builder
+FROM rust:1-bullseye AS builder
 
 ARG SKA2_VERSION=v0.3.11
 
