@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Literal
 
-from api.bonsai_api.services.sample_service import get_sample_service
+from bonsai_api.services.sample_service import get_sample_service
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings

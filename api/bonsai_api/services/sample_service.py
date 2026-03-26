@@ -14,7 +14,7 @@ from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRec
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
-from api_client.api_client.audit_log.client import AuditLogClient
+from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.group import check_groups_exists
 
