@@ -73,7 +73,7 @@ def test_create_group_success(monkeypatch):
     """Test creating a user successfully."""
     runner = CliRunner()
 
-    async def fake_create_group(group):
+    async def fake_create_group(group, user_id):
         return SimpleNamespace(group_id=group.group_id)
 
     monkeypatch.setattr(
@@ -102,8 +102,8 @@ def test_create_group_duplicate(monkeypatch):
     """Test creating a user that already exists."""
     runner = CliRunner()
 
-    async def fake_create_group(group):
-        raise DuplicateKeyError("Username already exists.")
+    async def fake_create_group(group, user_id):
+        raise DuplicateKeyError("Group ID already exists.")
 
     monkeypatch.setattr(
         "bonsai_api.cli.cli.run_create_group",
@@ -124,4 +124,4 @@ def test_create_group_duplicate(monkeypatch):
     )
 
     assert result.exit_code != 0
-    assert "already exists" in result.output
+    assert isinstance(result.exception, DuplicateKeyError)
