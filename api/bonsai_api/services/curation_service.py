@@ -9,7 +9,7 @@ from pymongo import UpdateOne
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError
 
-from api.bonsai_api.utils import get_timestamp
+from bonsai_api.utils import get_timestamp
 from bonsai_api.crud.curation import create_curation, delete_curation_crud, get_curation_by_id_crud, get_curations_crud, update_curation_crud
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.utils import managed_transaction

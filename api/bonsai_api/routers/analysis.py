@@ -4,7 +4,6 @@ import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 
 from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
 from bonsai_api.models.context import ApiRequestContext
@@ -18,7 +17,7 @@ from bonsai_api.dependencies import (
     get_request_context,
     get_audit_log,
 )
-from api_client.api_client.audit_log.client import AuditLogClient
+from api_client.audit_log.client import AuditLogClient
 from .shared import RouterTags
 
 LOG = logging.getLogger(__name__)

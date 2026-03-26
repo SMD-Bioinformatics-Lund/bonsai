@@ -4,8 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
-from api.bonsai_api.exceptions import DatabaseOperationError
-from api.bonsai_api.models.pipeline import PipelineRun
+from bonsai_api.exceptions import DatabaseOperationError
+from bonsai_api.models.pipeline import PipelineRun
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
