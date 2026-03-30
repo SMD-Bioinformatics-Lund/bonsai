@@ -50,7 +50,7 @@ from bonsai_api.models.sample import (
     Comment,
     CommentInDatabase,
     SampleInCreate,
-    SampleInDatabase,
+    SampleRecordDb,
     SampleInfoCreate,
     SampleRecordDbOut,
 )
@@ -260,7 +260,7 @@ class UpdateSampleInputModel(BaseModel):
 
 
 @router.put(
-    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleInDatabase
+    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleRecordDb
 )
 async def update_sample(
     update_data: UpdateSampleInputModel,
@@ -575,7 +575,7 @@ async def update_variant_annotation(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
-) -> SampleInDatabase:
+) -> SampleRecordDb:
     """Update manual annotation of one or more variants."""
     return await update_variant_annotation_for_sample(
         db, sample_id, classification, username=current_user.username

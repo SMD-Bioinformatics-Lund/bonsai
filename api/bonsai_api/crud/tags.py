@@ -10,7 +10,7 @@ from bonsai_api.config import (
     normalize_species_key,
     thresholds_cfg,
 )
-from bonsai_api.models.sample import SampleInDatabase
+from bonsai_api.models.sample import SampleRecordDb
 from bonsai_api.models.tags import (
     ResistanceTag,
     Tag,
@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 # Phenotypic tags
-def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
+def add_pvl(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample is PVL toxin positive."""
     virs = [
         pred
@@ -66,7 +66,7 @@ def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
             tags.append(tag)
 
 
-def add_mrsa(tags: TagList, sample: SampleInDatabase) -> None:
+def add_mrsa(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample is MRSA.
 
     An SA is classified as MRSA if it carries either mecA, mecB or mecC.
@@ -106,7 +106,7 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> None:
     tags.append(tag)
 
 
-def add_stx_type(tags: TagList, sample: SampleInDatabase) -> None:
+def add_stx_type(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample STX type."""
     for type_res in sample.typing_result:
         if type_res.type == AnalysisType.STX.value:
@@ -119,7 +119,7 @@ def add_stx_type(tags: TagList, sample: SampleInDatabase) -> None:
             tags.append(tag)
 
 
-def add_oh_type(tags: TagList, sample: SampleInDatabase) -> None:
+def add_oh_type(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample OH type."""
     for type_res in sample.typing_result:
         if type_res.type in [AnalysisType.O_TYPE.value, AnalysisType.H_TYPE.value]:
@@ -132,7 +132,7 @@ def add_oh_type(tags: TagList, sample: SampleInDatabase) -> None:
             tags.append(tag)
 
 
-def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> None:
+def add_shigella_typing(tags: TagList, sample: SampleRecordDb) -> None:
     """Get if an E. coli sample is typed as a Shigella."""
     for type_res in sample.typing_result:
         if type_res.type == AnalysisType.SHIGATYPE:
@@ -268,7 +268,7 @@ SPP_EVALUATORS: dict[str, Callable[[list[Any]], EvalResult]] = {
 }
 
 
-def flag_uncertain_spp_prediction(tags: TagList, sample: SampleInDatabase) -> None:
+def flag_uncertain_spp_prediction(tags: TagList, sample: SampleRecordDb) -> None:
     """Flag samples with uncertain species id predictions."""
     for spp_pred in sample.species_prediction:
         software = getattr(spp_pred, "software", None)
@@ -314,7 +314,7 @@ ALL_TAG_FUNCS = [
 ]
 
 
-def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
+def compute_phenotype_tags(sample: SampleRecordDb) -> TagList:
     """Compute tags based on bracken phenotype prediction."""
     tags = []
     # iterate over tag functions to build up list of tags

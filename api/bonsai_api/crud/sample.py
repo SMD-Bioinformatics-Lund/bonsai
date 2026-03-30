@@ -21,7 +21,7 @@ from bonsai_api.models.sample import (
     Comment,
     CommentInDatabase,
     SampleInCreate,
-    SampleInDatabase,
+    SampleRecordDb,
 )
 from bonsai_api.redis.minhash import (
     schedule_remove_genome_signature,
@@ -100,7 +100,7 @@ async def create_sample(
     sample: Any,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
-) -> SampleInDatabase:
+) -> SampleRecordDb:
     """Create a new sample document in database from structured input."""
     # validate data format
     try:
@@ -123,7 +123,7 @@ async def create_sample(
 
         # create object representing the dataformat in database
         inserted_id = doc.inserted_id
-        db_obj = SampleInDatabase(
+        db_obj = SampleRecordDb(
             id=str(inserted_id),
             **sample_db_fmt.model_dump(),
         )
@@ -226,7 +226,7 @@ async def delete_samples(
 
 async def get_sample_by_id(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
     """Get sample with sample_id."""
-    db_obj: SampleInDatabase = await db.sample_collection.find_one(
+    db_obj: SampleRecordDb = await db.sample_collection.find_one(
         {"sample_id": sample_id}, session=session
     )
     return None if db_obj is None else db_obj
@@ -439,7 +439,7 @@ def update_variant_phenotype(variant, info, username):
 
 async def update_variant_annotation_for_sample(
     db: Database, sample_id: str, classification: VariantAnnotation, username: str
-) -> SampleInDatabase:
+) -> SampleRecordDb:
     """Update annotations of variants for a sample."""
     sample_info = await get_sample_by_id(db, sample_id=sample_id)
     # create variant group lookup table
