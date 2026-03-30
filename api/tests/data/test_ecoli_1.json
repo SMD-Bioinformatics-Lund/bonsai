@@ -364,10 +364,9 @@
   ],
   "typing_result": [
     {
-      "type": "mlst",
       "software": "mlst",
       "software_version": "2.19.0",
-      "analysis_type": "typing",
+      "analysis_type": "mlst",
       "analysis_id": "RUN0001",
       "status": "parsed",
       "result": {
@@ -386,10 +385,9 @@
       }
     },
     {
-      "type": "cgmlst",
       "software": "chewbbaca",
       "software_version": "1.3.0",
-      "analysis_type": "typing",
+      "analysis_type": "cgmlst",
       "analysis_id": "RUN0001",
       "status": "parsed",
       "result": {
@@ -8046,7 +8044,6 @@
   ],
   "element_type_result": [
     {
-      "type": "AMR",
       "software": "resfinder",
       "software_version": "1.9.0",
       "analysis_type": "amr",

@@ -263,6 +263,7 @@
       "software_version": "0.1.0",
       "analysis_type": "species_prediction",
       "analysis_id": "RUN0001",
+      "status": "parsed",
       "result": [
         {
           "scientific_name": "Mycobacterium tuberculosis",
@@ -289,283 +290,277 @@
       }
     },
     {
-      "type": "lineage",
       "software": "tbprofiler",
       "software_version": "1.3.0",
-      "analysis_type": "typing",
+      "analysis_type": "lineage",
       "analysis_id": "RUN0001",
       "status": "parsed",
-      "result": {
-        "lineage_depth": null,
-        "main_lineage": "lineage2",
-        "sublineage": "lineage2.2.1",
-        "lineages": [
-          {
-            "lineage": "lineage2",
-            "family": "East-Asian",
-            "rd": "RD105",
-            "fraction": 0.9989017023613399,
-            "support": [
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 39158,
-                "target_allele_count": 196,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 282892,
-                "target_allele_count": 102,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 497491,
-                "target_allele_count": 218,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 811753,
-                "target_allele_count": 136,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 1102468,
-                "target_allele_count": 167,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 1317655,
-                "target_allele_count": 249,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 1577241,
-                "target_allele_count": 169,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 1980652,
-                "target_allele_count": 172,
-                "other_allele_count": 1,
-                "target_allele_percent": 99.42196531791907
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 4254431,
-                "target_allele_count": 165,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2",
-                "chrom": "NC_000962.3",
-                "pos": 4308395,
-                "target_allele_count": 245,
-                "other_allele_count": 1,
-                "target_allele_percent": 99.59349593495935
-              }
-            ]
-          },
-          {
-            "lineage": "lineage2.2.1",
-            "family": "East-Asian (Beijing)",
-            "rd": "RD105;RD207;RD181",
-            "fraction": 0.998792270531401,
-            "support": [
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 135329,
-                "target_allele_count": 171,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 163705,
-                "target_allele_count": 112,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 215977,
-                "target_allele_count": 168,
-                "other_allele_count": 1,
-                "target_allele_percent": 99.40828402366864
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 533547,
-                "target_allele_count": 119,
-                "other_allele_count": 1,
-                "target_allele_percent": 99.16666666666667
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 797736,
-                "target_allele_count": 236,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 1906078,
-                "target_allele_count": 148,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 2078246,
-                "target_allele_count": 149,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 2825581,
-                "target_allele_count": 144,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 3498198,
-                "target_allele_count": 177,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2.1",
-                "chrom": "NC_000962.3",
-                "pos": 4158493,
-                "target_allele_count": 230,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              }
-            ]
-          },
-          {
-            "lineage": "lineage2.2",
-            "family": "East-Asian (Beijing)",
-            "rd": "RD105;RD207",
-            "fraction": 0.9980324643384161,
-            "support": [
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 195682,
-                "target_allele_count": 201,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 363464,
-                "target_allele_count": 240,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 465300,
-                "target_allele_count": 154,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 892416,
-                "target_allele_count": 160,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 1288698,
-                "target_allele_count": 212,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 1695037,
-                "target_allele_count": 243,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 1849051,
-                "target_allele_count": 249,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 2112832,
-                "target_allele_count": 187,
-                "other_allele_count": 2,
-                "target_allele_percent": 98.94179894179894
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 2202500,
-                "target_allele_count": 192,
-                "other_allele_count": 2,
-                "target_allele_percent": 98.96907216494846
-              },
-              {
-                "id": "lineage2.2",
-                "chrom": "NC_000962.3",
-                "pos": 2505085,
-                "target_allele_count": 191,
-                "other_allele_count": 0,
-                "target_allele_percent": 100.0
-              }
-            ]
-          }
-        ]
-      }
+      "result": [
+        {
+          "lineage": "lineage2",
+          "family": "East-Asian",
+          "rd": "RD105",
+          "fraction": 0.9989017023613399,
+          "support": [
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 39158,
+              "target_allele_count": 196,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 282892,
+              "target_allele_count": 102,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 497491,
+              "target_allele_count": 218,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 811753,
+              "target_allele_count": 136,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 1102468,
+              "target_allele_count": 167,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 1317655,
+              "target_allele_count": 249,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 1577241,
+              "target_allele_count": 169,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 1980652,
+              "target_allele_count": 172,
+              "other_allele_count": 1,
+              "target_allele_percent": 99.42196531791907
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 4254431,
+              "target_allele_count": 165,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2",
+              "chrom": "NC_000962.3",
+              "pos": 4308395,
+              "target_allele_count": 245,
+              "other_allele_count": 1,
+              "target_allele_percent": 99.59349593495935
+            }
+          ]
+        },
+        {
+          "lineage": "lineage2.2.1",
+          "family": "East-Asian (Beijing)",
+          "rd": "RD105;RD207;RD181",
+          "fraction": 0.998792270531401,
+          "support": [
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 135329,
+              "target_allele_count": 171,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 163705,
+              "target_allele_count": 112,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 215977,
+              "target_allele_count": 168,
+              "other_allele_count": 1,
+              "target_allele_percent": 99.40828402366864
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 533547,
+              "target_allele_count": 119,
+              "other_allele_count": 1,
+              "target_allele_percent": 99.16666666666667
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 797736,
+              "target_allele_count": 236,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 1906078,
+              "target_allele_count": 148,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 2078246,
+              "target_allele_count": 149,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 2825581,
+              "target_allele_count": 144,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 3498198,
+              "target_allele_count": 177,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2.1",
+              "chrom": "NC_000962.3",
+              "pos": 4158493,
+              "target_allele_count": 230,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            }
+          ]
+        },
+        {
+          "lineage": "lineage2.2",
+          "family": "East-Asian (Beijing)",
+          "rd": "RD105;RD207",
+          "fraction": 0.9980324643384161,
+          "support": [
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 195682,
+              "target_allele_count": 201,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 363464,
+              "target_allele_count": 240,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 465300,
+              "target_allele_count": 154,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 892416,
+              "target_allele_count": 160,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 1288698,
+              "target_allele_count": 212,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 1695037,
+              "target_allele_count": 243,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 1849051,
+              "target_allele_count": 249,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 2112832,
+              "target_allele_count": 187,
+              "other_allele_count": 2,
+              "target_allele_percent": 98.94179894179894
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 2202500,
+              "target_allele_count": 192,
+              "other_allele_count": 2,
+              "target_allele_percent": 98.96907216494846
+            },
+            {
+              "id": "lineage2.2",
+              "chrom": "NC_000962.3",
+              "pos": 2505085,
+              "target_allele_count": 191,
+              "other_allele_count": 0,
+              "target_allele_percent": 100.0
+            }
+          ]
+        }
+      ]
     }
   ],
   "element_type_result": [

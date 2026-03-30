@@ -5,7 +5,7 @@ import io
 import logging
 from typing import Literal
 
-from bonsai_api.models.sample import SampleInDatabase
+from bonsai_api.models.sample import SampleRecordDb
 
 from .formatters import AnalysisNoResultError, AnalysisNotPresentError, get_formatter
 from .models import AssayConfig, LimsRsResult, LimsValue
@@ -21,7 +21,7 @@ def _to_str(value: LimsValue) -> str:
 
 
 def lims_rs_formatter(
-    sample: SampleInDatabase, config: AssayConfig
+    sample: SampleRecordDb, config: AssayConfig
 ) -> list[LimsRsResult]:
     """Format sample information to LIMS-RS format using the provided configuration.
 

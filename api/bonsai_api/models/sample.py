@@ -3,10 +3,13 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
+import logging
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator
 
 from prp.parse.models.base import VariantBase
+from prp.parse import hydrate_result
+from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 
 from bonsai_api.utils import get_timestamp
 
@@ -24,6 +27,8 @@ from .base import (
 )
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
+
+LOG = logging.getLogger(__name__)
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
@@ -116,7 +121,7 @@ class SampleInCreate(
     snv_variants: list[VariantInDb] | None = None
 
 
-class SampleInDatabase(
+class SampleRecordDb(
     RecordIdMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Sample database model outputed from the database."""
@@ -136,7 +141,7 @@ class SampleSummary(
 class MultipleSampleRecordsResponseModel(
     MultipleRecordsResponseModel
 ):  # pylint: disable=too-few-public-methods
-    data: list[SampleInDatabase] = []
+    data: list[SampleRecordDb] = []
 
 
 class SequencingPlatforms(StrEnum):
@@ -251,6 +256,19 @@ class AnalysisViewEntry(BaseModel):
         if "accept" in decisions and len(decisions) == 1:
             return "accepted"
         return "unprocessed"
+    
+    @field_validator("result", mode="before")
+    @classmethod
+    def hydrate_result_field(cls, v: Any, info: ValidationInfo) -> BaseModel:
+        """Hydrate the result field into the expected model based on analysis_type."""
+        analysis_type = info.data.get("analysis_type")
+        software = info.data.get("software")
+
+        try:
+            return hydrate_result(result=v, analysis_type=analysis_type, software=software)
+        except Exception as exc:
+            LOG.warning("Failed to hydrate result for %s/%s: %s", software, analysis_type, exc)
+            return v
 
 
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods

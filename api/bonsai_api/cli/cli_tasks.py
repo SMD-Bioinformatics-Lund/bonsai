@@ -23,7 +23,7 @@ from bonsai_api.models.group import GroupInfoCreate, GroupInfoOut
 from bonsai_api.models.sample import (
     MultipleSampleRecordsResponseModel,
     SampleInCreate,
-    SampleInDatabase,
+    SampleRecordDb,
 )
 from bonsai_api.models.user import UserContext, UserInputCreate, UserOutputDatabase
 from bonsai_api.services.group_service import create_group_service
@@ -100,7 +100,7 @@ async def run_get_samples() -> MultipleSampleRecordsResponseModel:
         return await get_samples_full(db)
 
 
-async def run_update_tag(sample: SampleInDatabase) -> bool:
+async def run_update_tag(sample: SampleRecordDb) -> bool:
     """Update tag of a sample."""
     async with get_db_connection() as db:
         upd_tags = compute_phenotype_tags(sample)
