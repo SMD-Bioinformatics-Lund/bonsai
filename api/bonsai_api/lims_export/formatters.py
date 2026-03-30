@@ -4,7 +4,7 @@ import logging
 from typing import Any, Callable
 
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import SampleInDatabase, VariantInDb
+from bonsai_api.models.sample import SampleRecordDb, VariantInDb
 
 from prp.parse.models.enums import AnalysisSoftware, AnalysisType, ElementType
 from prp.parse.models.typing import TypingResultEmm
@@ -48,13 +48,13 @@ class AnalysisNoResultError(Exception):
 
 @register_formatter("mlst")
 def mlst_typing(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Extract and format MLST (Multi-Locus Sequence Typing) result from a sample."""
     options = options or {}
-    for ty in sample.typing_result:
-        if ty.type == "mlst":
-            mlst_st = ty.result.sequence_type or "NA"
+    for av in sample.typing_result:
+        if av.analysis_type == "mlst":
+            mlst_st = av.result.sequence_type or "NA"
             if mlst_st is None:
                 raise AnalysisNoResultError()
             return mlst_st, ""
@@ -65,7 +65,7 @@ def mlst_typing(
 
 @register_formatter("emm")
 def emm_typing(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Extract and format EMM result from a sample."""
     options = options or {}
@@ -80,7 +80,7 @@ def emm_typing(
 
 @register_formatter("species")
 def species_prediction(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsValue, LimsComment]:
     """Extract and format species prediction result using Bracken.
 
@@ -121,17 +121,20 @@ def species_prediction(
 
 @register_formatter("lineage")
 def lineage_prediction(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample."""
     options = options or {}
-    for pred in sample.typing_result:
+    for av in sample.typing_result:
         if (
-            pred.type == AnalysisType.LINEAGE
-            and pred.software == AnalysisSoftware.TBPROFILER
+            av.analysis_type == AnalysisType.LINEAGE
+            and av.software == AnalysisSoftware.TBPROFILER
         ):
-            lin = pred.result.sublineage.replace("lineage", "")  # strip lineage
-            return lin, ""
+            if len(av.result) == 0:
+                return "", ""
+
+            sublineage = max(av.result, key=lambda x: len(x.lineage))
+            return sublineage.lineage.replace("lineage", ""), ""
     raise AnalysisNotPresentError(
         f"Sample '{sample.sample_name}' dont have tbprofiler prediction results."
     )
@@ -139,7 +142,7 @@ def lineage_prediction(
 
 @register_formatter("qc")
 def qc_status(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample."""
     options = options or {}
@@ -154,7 +157,7 @@ def qc_status(
 
 @register_formatter("amr")
 def amr_prediction_for_antibiotic(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample.
 
@@ -168,7 +171,7 @@ def amr_prediction_for_antibiotic(
     antibiotic_name = options.get("antibiotic_name", "rifampicin")
     include_res_lvl = options.get("resistance_level", "all")
     for pred in sample.element_type_result:
-        if pred.software == preferred_software and pred.type == ElementType.AMR:
+        if pred.software == preferred_software and pred.analysis_type == AnalysisType.AMR:
             variants = _resistance_variants(
                 pred.result.variants, antibiotic_name, include_res_lvl
             )
