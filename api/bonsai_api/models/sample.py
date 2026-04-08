@@ -121,27 +121,21 @@ class SampleInCreate(
     snv_variants: list[VariantInDb] | None = None
 
 
-class SampleRecordDb(
-    RecordIdMixin, SampleBase
-):  # pylint: disable=too-few-public-methods
-    """Sample database model outputed from the database."""
+# class SampleRecordDb(
+#     RecordIdMixin, SampleBase
+# ):  # pylint: disable=too-few-public-methods
+#     """Sample database model outputed from the database."""
 
-    metadata: list[MetaEntryInDb] = Field(default_factory=list)
-    element_type_result: list[MethodIndex] = Field(default_factory=list)
-    sv_variants: list[VariantInDb] | None = None
-    snv_variants: list[VariantInDb] | None = None
+#     metadata: list[MetaEntryInDb] = Field(default_factory=list)
+#     element_type_result: list[MethodIndex] = Field(default_factory=list)
+#     sv_variants: list[VariantInDb] | None = None
+#     snv_variants: list[VariantInDb] | None = None
 
 
 class SampleSummary(
     RecordIdMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
-
-
-class MultipleSampleRecordsResponseModel(
-    MultipleRecordsResponseModel
-):  # pylint: disable=too-few-public-methods
-    data: list[SampleRecordDb] = []
 
 
 class SequencingPlatforms(StrEnum):
@@ -206,7 +200,7 @@ class LimsExportStatus(BaseModel):
     error: str | None = None
 
 
-class AnalysisViewEntry(BaseModel):
+class AnalysisViewEntryBase(BaseModel):
     """
     A denormalized, latest-view entry for a (software, analysis_type) result on a sample.
 
@@ -229,13 +223,38 @@ class AnalysisViewEntry(BaseModel):
     reason: str | None = None
     meta: dict[str, Any] = Field(default_factory=dict)
 
-    result: Any
     summary: dict[str, Any] = Field(default_factory=dict, description="Compact summary fields for overviews.")
 
+
+class AnalysisViewEntryDb(AnalysisViewEntryBase):
+    """
+    A denormalized, latest-view entry for a (software, analysis_type) result on a sample.
+
+    - `result`: small, normalized object your builder expects under each group array.
+    - `summary`: compact fields for overview tables and quick filtering.
+    - `status/reason/meta`: envelope transparency.
+    - `analysis_id`: pointer to canonical batch for drill-down.
+    """
     # curation flags
+    result: Any
     curations: list[CurationRecord] = Field(
         default_factory=list, 
         description="All curation records for this analysis."
+    )
+
+
+class AnalysisViewEntryOut(AnalysisViewEntryBase):
+    """API response model for analysis results."""
+
+    # curation flags
+    result: Any
+    curations: list[CurationRecord] = Field(
+        default_factory=list,
+        description="All curation records for this analysis."
+    )
+    merged_items: list[Any] = Field(
+        default_factory=list,
+        description="For analyses with item-level results (e.g., variants), a merged list of all items across software, with curation decisions applied. Used for unified display and filtering."
     )
 
     @computed_field
@@ -269,6 +288,13 @@ class AnalysisViewEntry(BaseModel):
         except Exception as exc:
             LOG.warning("Failed to hydrate result for %s/%s: %s", software, analysis_type, exc)
             return v
+    
+    # def model_post_init(self, __context):
+    #     # Called after the model is fully created
+    #     self.merged_items = merge_items_with_curations(
+    #         self.result,
+    #         self.curations
+    #     )
 
 
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
@@ -315,10 +341,10 @@ class SampleRecordDb(SampleBase):
     last_pipeline_run_id: str | None = None
 
     # Analysis results
-    qc_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
-    typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
+    qc_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
 
     # Reference and annotation
     reference_genome: ReferenceGenome | None = None
@@ -329,7 +355,8 @@ class SampleRecordDb(SampleBase):
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
     lims_exports: list[LimsExportStatus] = Field(default_factory=list)
 
-class SampleRecordDbOut(SampleBase):
+
+class SampleRecordOut(SampleBase):
     """API output model for samples (excludes internal history fields)."""
 
     model_config = ConfigDict(extra='ignore')
@@ -352,10 +379,10 @@ class SampleRecordDbOut(SampleBase):
     pipeline: PipelineRun | None = None
     
     # Analysis results
-    qc_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    species_prediction: list[AnalysisViewEntry] = Field(default_factory=list)
-    typing_result: list[AnalysisViewEntry] = Field(default_factory=list)
-    element_type_result: list[AnalysisViewEntry] = Field(default_factory=list)
+    qc_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    element_type_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
     
     # Reference and annotation
     reference_genome: ReferenceGenome | None = None
@@ -364,4 +391,9 @@ class SampleRecordDbOut(SampleBase):
     
     # LIMS tracking
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
-    
+
+
+class MultipleSampleRecordsResponseModel(
+    MultipleRecordsResponseModel
+):  # pylint: disable=too-few-public-methods
+    data: list[SampleRecordOut] = []

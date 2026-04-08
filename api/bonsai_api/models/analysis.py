@@ -1,5 +1,4 @@
 """Models for creating and managing analysis results from differnt softwares."""
-
 from enum import StrEnum
 from typing import Any, Annotated, Literal
 from pydantic import BaseModel, Discriminator, Field
@@ -47,11 +46,6 @@ class AnalysisResult(RecordIdMixin, Timestamps, AllowExtraModelMixin):
 
 
 class CurationBase(RWModel, RecordIdMixin, Timestamps):
-    """Base for all curation records."""
-    sample_id: str = Field(description="ID of the sample.")
-    analysis_id: str = Field(description="ID of analysis record being curated.")
-    analysis_type: str = Field(description="Type of result envelope curation relate to.")
-    
     # Audit
     curated_by: str
     approved_by: str | None = None
@@ -61,7 +55,7 @@ class CurationBase(RWModel, RecordIdMixin, Timestamps):
 
 class ItemCuration(CurationBase):
     """Base for item-level curations (variants, genes, etc.)."""
-    target_index: int  # which item in the list
+    result_key: str = Field(..., description="Key of the result this curation applies to.")
     
     # Standard decision pattern
     decision: Literal["accept", "reject", "flag_for_review"]
@@ -78,24 +72,29 @@ class AnalysisCuration(CurationBase):
     notes: str | None = None
 
 
+class PhenotypeAnnotation(BaseModel):
+    """Annotation of phenotypes related to a variant or gene."""
+
+    name: str
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
 # Item-level curations
 class VariantCuration(ItemCuration):
     """Curation for individual variants."""
     annotation_type: Literal["variant"] = "variant"
-    decision: Literal["accept", "reject", "flag_for_review"] = "accept"
     
     # Annotations
-    phenotype: list[str] | None = None
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
 
 
 class GeneCuration(ItemCuration):
     """Curation for detected genes (e.g., AMR genes)."""
     annotation_type: Literal["gene"] = "gene"
-    decision: Literal["accept", "reject"] = "accept"
     
     # Annotations
     functional_status: str | None = None
-    phenotype: list[str] | None = None
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
 
 
 # Analysis-level curations
@@ -146,7 +145,8 @@ class CurationCreateBase(BaseModel):
 
 class ItemCurationCreateBase(CurationCreateBase):
     """Base for item-level curation creation."""
-    target_index: int = Field(ge=0, description="Index of item in result list")
+    result_key: str = Field(..., description="Key of the result this curation applies to.")
+
     rejection_reason: str | None = Field(default=None, max_length=1000)
     notes: str | None = Field(default=None, max_length=2000)
 
@@ -162,7 +162,7 @@ class VariantCurationCreate(ItemCurationCreateBase):
     """Creation request for variant curation."""
     annotation_type: Literal["variant"] = "variant"
     decision: Literal["accept", "reject", "flag_for_review"]
-    phenotype: list[str] | None = None
+    phenotypes: list[str] | None = None
 
 
 class GeneCurationCreate(ItemCurationCreateBase):
@@ -170,7 +170,7 @@ class GeneCurationCreate(ItemCurationCreateBase):
     annotation_type: Literal["gene"] = "gene"
     decision: Literal["accept", "reject"]
     functional_status: str | None = None
-    phenotype: list[str] | None = None
+    phenotypes: list[str] | None = None
 
 
 # Analysis-level creation models

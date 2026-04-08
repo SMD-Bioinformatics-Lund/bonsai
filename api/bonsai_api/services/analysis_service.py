@@ -13,7 +13,7 @@ from bonsai_api.models.analysis import (
     PRPParserOutput,
     PrpAnalysisType,
 )
-from bonsai_api.models.sample import AnalysisViewEntry
+from bonsai_api.models.sample import AnalysisViewEntryDb
 from api_client.audit_log.models import Subject, SourceType
 from api_client.audit_log import AuditLogClient, EventCreate
 from bonsai_api.crud.analysis import analysis_exists, create_analysis
@@ -204,7 +204,7 @@ async def ingest_analysis_service(
                 "reason": env.reason,
             }
 
-            result_view = AnalysisViewEntry(
+            result_view = AnalysisViewEntryDb(
                 software=doc.software,
                 software_version=doc.software_version,
                 analysis_type=atype,
