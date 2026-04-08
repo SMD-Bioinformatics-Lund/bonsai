@@ -6,7 +6,7 @@ import pytest
 from bonsai_api.crud.user import oauth2_scheme
 from bonsai_api.dependencies import get_database
 from bonsai_api.main import app
-from bonsai_api.models.sample import SampleRecordDb
+from bonsai_api.models.sample import SampleRecordOut
 from fastapi.testclient import TestClient
 
 from .data import *
@@ -18,7 +18,7 @@ DATABASE = "testdb"
 def mtuberculosis_sample(mtuberculosis_sample_path):
     """Sample db object."""
     with open(mtuberculosis_sample_path) as inpt:
-        sample_obj = SampleRecordDb(**json.load(inpt))
+        sample_obj = SampleRecordOut(**json.load(inpt))
     return sample_obj
 
 
@@ -26,7 +26,7 @@ def mtuberculosis_sample(mtuberculosis_sample_path):
 def ecoli_sample(ecoli_sample_path):
     """Sample db object."""
     with open(ecoli_sample_path) as inpt:
-        sample_obj = SampleRecordDb(**json.load(inpt))
+        sample_obj = SampleRecordOut(**json.load(inpt))
     return sample_obj
 
 
