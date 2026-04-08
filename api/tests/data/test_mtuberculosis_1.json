@@ -10,7 +10,7 @@
     "method": {"type": "PE"},
     "sequenced_at": "2024-05-20T13:36:09.671742+02:00"
   },
-  "pipeline": [{
+  "pipeline": {
     "pipeline_run_id": "RUN0001",
     "executed_at": "2024-05-20T13:36:09.671742+02:00",
     "assay": "mtuberculosis",
@@ -30,7 +30,7 @@
       },
       "artifacts": []
     }
-  }],
+  },
   "qc_result": [
     {
       "software": "quast",
@@ -789,6 +789,27 @@
       "analysis_type": "amr",
       "analysis_id": "RUN0001",
       "status": "parsed",
+      "curations": [
+        {
+          "result_key": "19",
+          "annotation_type": "variant",
+          "decision": "accept",
+          "curated_by": "user01",
+          "notes": "Associaed with resistance to rifampicin",
+          "phenotypes": [
+            {"name": "rifampicin", "meta": {"resistance_level": "high"}},
+            {"name": "isoniazid", "meta": {"resistance_level": "high"}}
+          ]
+        },
+        {
+          "result_key": "31",
+          "annotation_type": "variant",
+          "decision": "accept",
+          "curated_by": "user01",
+          "notes": "Associaed with resistance to bedaquiline",
+          "phenotypes": [{"name": "bedaquiline", "meta": {"resistance_level": "high"}}]
+        }
+      ],
       "result": {
         "phenotypes": {
           "susceptible": [
@@ -994,8 +1015,7 @@
             "passed_qc": true,
             "variant_effect": "upstream_gene_variant",
             "hgvs_nt_change": "c.-28T>C",
-            "hgvs_aa_change": "",
-            "verified": "passed"
+            "hgvs_aa_change": ""
           },
           {
             "id": 20,
@@ -1106,8 +1126,7 @@
             "passed_qc": true,
             "variant_effect": "upstream_gene_variant",
             "hgvs_nt_change": "c.-129A>G",
-            "hgvs_aa_change": "",
-            "verified": "passed"
+            "hgvs_aa_change": ""
           },
           {
             "id": 62,
