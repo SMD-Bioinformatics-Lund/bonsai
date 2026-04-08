@@ -1,22 +1,28 @@
 """User CRUD operations."""
 
 import logging
+from typing import Any
+from pymongo.errors import DuplicateKeyError
 
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.extensions.ldap_extension import ldap_connection
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.user import (SampleBasketObject, UserInputCreate,
-                                    UserInputDatabase, UserOutputDatabase)
+from bonsai_api.models.user import (
+    SampleBasketObject,
+    UserInputCreate,
+    UserInputDatabase,
+    UserOutputDatabase,
+)
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from jose import JWTError, jwt
 
-from .errors import DatabaseOperationError, EntryNotFound
 from .utils import audit_event_context
 
 LOG = logging.getLogger(__name__)
@@ -137,7 +143,11 @@ async def create_user(
             hashed_password=hashed_password, **user.model_dump()
         )
         # store data in database
-        resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        try:
+            resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
+        except DuplicateKeyError as exc:
+            LOG.error("User %s already exists: %s", user.username, str(exc))
+            raise ConflictError(f"User {user.username} already exists") from exc
         inserted_id = resp_obj.inserted_id
         user_obj = UserInputDatabase(
             id=str(inserted_id),
@@ -156,8 +166,8 @@ async def get_users(
 
     upd_user_obj = []
     async for user in db_obj.user_collection.find(query):
-        inserted_id = user["_id"]
-        upd_user_obj.append(UserInputDatabase(id=str(inserted_id), **user))
+        user.pop("_id", False)
+        upd_user_obj.append(UserInputDatabase(**user))
     return upd_user_obj
 
 
@@ -249,3 +259,11 @@ async def remove_samples_from_user_basket(
     # get updated basket
     user: UserOutputDatabase = await get_user(db, username=current_user.username)
     return user.basket
+
+
+async def user_exists(db: Database, *, user_id: str, session: Any = None) -> bool:
+    """Check if user with user_id exists in database."""
+    user = await db.user_collection.find_one(
+        {"username": user_id}, {"_id": 1}, session=session
+    )
+    return user is not None

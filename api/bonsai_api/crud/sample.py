@@ -2,404 +2,105 @@
 
 import logging
 from itertools import groupby
-from typing import Any, Dict, Sequence
+from typing import Any
 
 import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject
+from bonsai_api.crud.location import get_location
+from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.utils import audit_event_context
+from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.models.antibiotics import ANTIBIOTICS
+from bonsai_api.models.base import MultipleRecordsResponseModel
+from bonsai_api.models.location import LocationOutputDatabase
+from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.sample import (
+    Comment,
+    CommentInDatabase,
+    SampleInCreate,
+    SampleRecordDb,
+)
+from bonsai_api.redis.minhash import (
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
+)
+from bonsai_api.utils import format_error_message, get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from prp.models import PipelineResult
-from prp.models.phenotype import AnnotationType, ElementType, PhenotypeInfo
-from prp.parse.typing import replace_cgmlst_errors
-from pydantic import ValidationError
-from pymongo.asynchronous.cursor import AsyncCursor
+from bonsai_api.models.pipeline import PipelineRun
+from prp.parse.models.enums import AnnotationType, ElementType
+from prp.parse.models.base import PhenotypeInfo
+from pymongo import ASCENDING, DESCENDING
 from pymongo.results import UpdateResult
-
-from ..crud.location import get_location
-from ..crud.tags import compute_phenotype_tags
-from ..db import Database
-from ..models.antibiotics import ANTIBIOTICS
-from ..models.base import MultipleRecordsResponseModel, RWModel
-from ..models.location import LocationOutputDatabase
-from ..models.qc import QcClassification, VariantAnnotation
-from ..models.sample import (Comment, CommentInDatabase,
-                             MultipleSampleRecordsResponseModel,
-                             SampleInCreate, SampleInDatabase)
-from ..redis.minhash import (schedule_remove_genome_signature,
-                             schedule_remove_genome_signature_from_index)
-from ..utils import format_error_message, get_timestamp
-from .errors import DatabaseOperationError, EntryNotFound
+from pymongo.client_session import ClientSession
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
 
 
-class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
-    """Sample id and predicted alleles."""
-
-    sample_id: str
-    typing_result: Dict[str, Any]
-
-    def allele_profile(self, strip_errors: bool = True):
-        """Get allele profile."""
-        profile = {}
-        for gene, allele in self.typing_result.items():
-            if isinstance(allele, int):
-                profile[gene] = allele
-            elif isinstance(allele, str) and allele.startswith("*"):
-                profile[gene] = int(allele[1:])
-            elif strip_errors:
-                profile[gene] = None
-            else:
-                profile[gene] = allele
-        return profile
-
-
-TypingProfileOutput = list[TypingProfileAggregate]
-
-PREDICTION_SUMMARY_QUERY: list[dict[str, Any]] = [
-    {
-        "$addFields": {
-            "mlst": {
-                "$cond": {
-                    "if": {"$in": ["mlst", "$typing_result.type"]},
-                    "then": {"$arrayElemAt": ["$typing_result", 0]},
-                    "else": None,
-                }
-            },
-            "stx": {
-                "$ifNull": [
-                    {
-                        "$arrayElemAt": [
-                            {
-                                "$map": {
-                                    "input": {
-                                        "$filter": {
-                                            "input": "$typing_result",
-                                            "cond": {"$eq": ["$$this.type", "stx"]},
-                                        }
-                                    },
-                                    "in": "$$this.result.gene_symbol",
-                                }
-                            },
-                            0,
-                        ]
-                    },
-                    "-",
-                ]
-            },
-            "oh_type": {
-                "$concat": [
-                    {
-                        "$ifNull": [
-                            {
-                                "$arrayElemAt": [
-                                    {
-                                        "$map": {
-                                            "input": {
-                                                "$filter": {
-                                                    "input": "$typing_result",
-                                                    "cond": {
-                                                        "$eq": [
-                                                            "$$this.type",
-                                                            "O_type",
-                                                        ]
-                                                    },
-                                                }
-                                            },
-                                            "in": "$$this.result.sequence_name",
-                                        }
-                                    },
-                                    0,
-                                ]
-                            },
-                            "-",
-                        ]
-                    },
-                    ":",
-                    {
-                        "$ifNull": [
-                            {
-                                "$arrayElemAt": [
-                                    {
-                                        "$map": {
-                                            "input": {
-                                                "$filter": {
-                                                    "input": "$typing_result",
-                                                    "cond": {
-                                                        "$eq": [
-                                                            "$$this.type",
-                                                            "H_type",
-                                                        ]
-                                                    },
-                                                }
-                                            },
-                                            "in": "$$this.result.sequence_name",
-                                        }
-                                    },
-                                    0,
-                                ]
-                            },
-                            "-",
-                        ]
-                    },
-                ]
-            },
-        }
-    },
-]
-
-QC_METRICS_SUMMARY_QUERY: list[dict[str, Any]] = [
-    {
-        "$addFields": {
-            "mlst": {
-                "$cond": {
-                    "if": {"$in": ["mlst", "$typing_result.type"]},
-                    "then": {"$arrayElemAt": ["$typing_result", 0]},
-                    "else": None,
-                }
-            },
-            "quast": {
-                "$arrayElemAt": [
-                    {
-                        "$filter": {
-                            "input": "$qc",
-                            "as": "qc",
-                            "cond": {"$eq": ["$$qc.software", "quast"]},
-                        }
-                    },
-                    0,
-                ]
-            },
-            "postalignqc": {
-                "$arrayElemAt": [
-                    {
-                        "$filter": {
-                            "input": "$qc",
-                            "as": "qc",
-                            "cond": {"$eq": ["$$qc.software", "postalignqc"]},
-                        }
-                    },
-                    0,
-                ]
-            },
-            "cgmlst": {
-                "$arrayElemAt": [
-                    {
-                        "$filter": {
-                            "input": "$typing_result",
-                            "as": "m",
-                            "cond": {"$eq": ["$$m.type", "cgmlst"]},
-                        }
-                    },
-                    0,
-                ]
-            },
-        }
-    },
-]
-
-
-async def get_samples_summary(
+async def get_samples_full(
     db: Database,
+    *,
+    match: dict[str, Any] | None = None,
+    fields: list[str] | None = None,
+    sort: str = "-created_at",
     limit: int | None = None,
-    skip: int | None = None,
-    include_samples: list[str] | None = None,
-    prediction_result: bool = True,
-    qc_metrics: bool = False,
+    offset: int | None = None,
 ) -> MultipleRecordsResponseModel:
-    """Get a summay of several samples."""
-    # build query pipeline
-    pipeline: list[dict[str, Any]] = []
-    if isinstance(include_samples, list) and len(include_samples) > 0:
-        pipeline.append({"$match": {"sample_id": {"$in": include_samples}}})
-
-    # Lookup group information and return group display name
-    pipeline.extend([
-        {
-            "$lookup": {
-                "from": db.sample_group_collection.name,
-                "localField": "groups",
-                "foreignField": "group_id",
-                "as": "groups_meta",
-            }
-        },
-        {"$addFields": {
-            "groups_info": {
-                "$map": {
-                    "input": "$groups_meta",
-                    "as": "g",
-                    "in": {"id": "$$g.group_id", "display_name": "$$g.display_name"},
-                }
-            }
-        }},
-        {"$project": {"groups_meta": 0}}
-    ])
-
-    # species prediction projection
-    # get the first entry of the bracken result
-    spp_cmd: dict[str, Any] = {
-        "$arrayElemAt": [
-            {
-                "$arrayElemAt": [
-                    {
-                        "$map": {
-                            "input": {
-                                "$filter": {
-                                    "input": "$species_prediction",
-                                    "cond": {"$eq": ["$$this.software", "bracken"]},
-                                }
-                            },
-                            "in": "$$this.result",
-                        },
-                    },
-                    0,
-                ]
-            },
-            0,
-        ]
-    }
-
-    # define base projection
-    base_projection: dict[str, int | str | dict[str, Any]] = {
-        "_id": 0,
-        "id": {"$convert": {"input": "$_id", "to": "string"}},
+    """Get full sample info with optional projections."""
+    allowed_fields = {
         "sample_id": 1,
         "sample_name": 1,
-        "lims_id": 1,
-        "sequencing_run": "$sequencing.run_id",
-        "qc_status": 1,
         "metadata": 1,
-        "groups_info": 1,
-        "species_prediction": spp_cmd,
-        "created_at": 1,
-        "profile": "$pipeline.analysis_profile",
-        "assay": "$pipeline.assay",
-        "release_life_cycle": "$pipeline.release_life_cycle",
-        "classification": "$pipeline.assay",
-        "n_records": 1,
+        "groups": 1,
+        "species_prediction": 1,
+        "pipeline": 1,
         "tags": 1,
         "comments": 1,
+        "created_at": 1,
+        "lims_id": 1,
+        "sequencing": 1,
+        "qc_status": 1,
+        "typing_results": 1,
+        "element_type_results": 1,
     }
 
-    # define container for opitional projections
-    optional_projecton: dict[str, int | str] = {}
+    # build an inclusion projection (1 for requested fields)
+    projection: dict[str, int] = {"_id": 0}
+    if fields:
+        additonal_fields = {f: allowed_fields[f] for f in fields if f in allowed_fields}
+        projection.update(additonal_fields)
 
-    # build query for prediction result
-    if prediction_result:
-        pipeline.extend(PREDICTION_SUMMARY_QUERY)
-        optional_projecton = {
-            "stx": 1,
-            "oh_type": 1,
-            "mlst": "$mlst.result.sequence_type",
-            **optional_projecton,
-        }
+    # Sort
+    sort_dir = DESCENDING if sort.startswith("-") else ASCENDING
+    sort_key = sort[1:] if sort.startswith("-") else sort
+    allowed_sorts = {"created_at": "created_at", "_id": "_id", "sample_id": "sample_id"}
+    if sort_key not in allowed_sorts:
+        raise ValueError(f"Unsupported sort: {sort_key}")
+    sort_tuple = [(allowed_sorts[sort_key], sort_dir), ("_id", sort_dir)]
 
-    # build query control for quality metrics
-    if qc_metrics:
-        pipeline.extend(QC_METRICS_SUMMARY_QUERY)
-        optional_projecton = {
-            "platform": "$sequencing.platform",
-            "quast": "$quast.result",
-            "postalignqc": "$postalignqc.result",
-            "mlst": "$mlst.result.sequence_type",
-            "missing_cgmlst_loci": "$cgmlst.result.n_missing",
-            **optional_projecton,
-        }
+    # Query
+    match = match or {}
+    cursor = db.sample_collection.find(match, projection).sort(sort_tuple)
+    if offset and offset > 0:
+        cursor = cursor.skip(offset)
+    if limit and limit > 0:
+        cursor = cursor.limit(limit)
 
-    # add projections to pipeline
-    pipeline.append({"$project": {**base_projection, **optional_projecton}})
-    LOG.warning("Pipeline for sample summary: %s", pipeline)
-
-    # add limit, skip and count total records in db
-    facet_pipe: list[dict[str, int]] = []
-    if isinstance(limit, int) and limit > 0:
-        facet_pipe.append({"$limit": limit})
-    if isinstance(skip, int) and skip > 0:
-        facet_pipe.append({"$skip": skip})
-
-    pipeline.append(
-        {
-            "$facet": {
-                "data": facet_pipe,
-                "records_total": [{"$count": "count"}],
-            }
-        },
-    )
-
-    if isinstance(include_samples, list) and len(include_samples) == 0:
-        # avoid query if include_samples is set and is empty.
-        query_response = MultipleRecordsResponseModel(data=[], records_total=0)
-    else:
-        # query database for the number of samples
-        cursor = await db.sample_collection.aggregate(pipeline)
-
-        # get query results from the database
-        query_results: list[dict[str, Any]] = await cursor.to_list(None)
-        query_response = MultipleRecordsResponseModel(
-            data=query_results[0]["data"],
-            records_total=(
-                0
-                if len(query_results[0]["records_total"]) == 0
-                else query_results[0]["records_total"][0]["count"]
-            ),
-        )
-    LOG.warning("Response: %s", [col.keys() for col in query_response.data])
-    return query_response
-
-
-async def get_samples(
-    db: Database,
-    limit: int = 0,
-    skip: int = 0,
-    include: list[str] | None = None,
-) -> MultipleSampleRecordsResponseModel:
-    """Get samples from database."""
-
-    # get number of samples in collection
-    if db.sample_collection is None:
-        raise ValueError("Database connection not initialized.")
-
-    # query the database for samples
-    n_samples: int = await db.sample_collection.count_documents({})
-    cursor = db.sample_collection.find({}, limit=limit, skip=skip)
-    samp_objs: list[SampleInDatabase] = []
-    for samp in await cursor.to_list(None):
-        inserted_id: ObjectId = samp["_id"]
-        # cast database object as data model
-        try:
-            sample = SampleInDatabase.model_validate(
-                {"id": str(inserted_id), **samp},
-            )
-        except ValidationError as err:
-            LOG.error(
-                (
-                    "Sample '%s' do not conform to the expected data format. "
-                    "This can be caused if the data format has been updated. "
-                    "If that is the case the database needs to be migrated. "
-                    "See the documentation for more information."
-                ),
-                samp.get("sample_id", "unknown id"),
-            )
-            raise err
-        # Compute tags
-        tags = compute_phenotype_tags(sample)
-        sample.tags = tags
-        if include is not None and sample.sample_id not in include:
-            continue
-        samp_objs.append(sample)
-    return MultipleSampleRecordsResponseModel(data=samp_objs, records_total=n_samples)
+    data = await cursor.to_list(None)
+    total = await db.sample_collection.count_documents(match)
+    return MultipleRecordsResponseModel(data=data, records_total=total)
 
 
 async def create_sample(
     db: Database,
-    sample: PipelineResult,
+    sample: Any,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
-) -> SampleInDatabase:
+) -> SampleRecordDb:
     """Create a new sample document in database from structured input."""
     # validate data format
     try:
@@ -422,7 +123,7 @@ async def create_sample(
 
         # create object representing the dataformat in database
         inserted_id = doc.inserted_id
-        db_obj = SampleInDatabase(
+        db_obj = SampleRecordDb(
             id=str(inserted_id),
             **sample_db_fmt.model_dump(),
         )
@@ -523,20 +224,12 @@ async def delete_samples(
     return result
 
 
-async def get_sample(db: Database, sample_id: str) -> SampleInDatabase:
+async def get_sample_by_id(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
     """Get sample with sample_id."""
-    db_obj: SampleInDatabase = await db.sample_collection.find_one(
-        {"sample_id": sample_id}
+    db_obj: SampleRecordDb = await db.sample_collection.find_one(
+        {"sample_id": sample_id}, session=session
     )
-
-    if db_obj is None:
-        raise EntryNotFound(f"Sample {sample_id} not in database")
-
-    inserted_id = db_obj["_id"]
-    sample_obj = SampleInDatabase(
-        **db_obj,
-    )
-    return sample_obj
+    return None if db_obj is None else db_obj
 
 
 async def add_comment(
@@ -548,10 +241,10 @@ async def add_comment(
 ) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
-    sample = await get_sample(db, sample_id)
-    comments: list[CommentInDatabase] = sample.comments
+    sample = await get_sample_by_id(db, sample_id=sample_id)
+    comments: list[CommentInDatabase] = [CommentInDatabase.model_validate(c) for c in sample['comments']]
     comment_id = (
-        max(c.id for c in sample.comments) + 1 if len(sample.comments) > 0 else 1
+        max(c.id for c in comments) + 1 if len(comments) > 0 else 1
     )
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     meta = {"sample_id": sample_id, "comment_id": comment_id}
@@ -641,6 +334,57 @@ async def update_sample_qc_classification(
     return classification
 
 
+async def add_pipeline_run(
+    db: Database,
+    *,
+    sample_id: str,
+    doc: dict[str, Any],
+    session: ClientSession | None = None,
+) -> UpdateResult:
+    """Attach a PipelineRun to a sample document.
+
+    Fails with ConflictError if a pipeline is already present for the sample.
+    """
+    query = {
+        "sample_id": sample_id,
+        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}],
+    }
+    update_obj = await db.sample_collection.update_one(
+        query,
+        {
+            "$set": {
+                "modified_at": get_timestamp(),
+                "last_pipeline_run_id": doc['pipeline_run_id'],
+            },
+            "$push": {"pipeline_runs": doc}, 
+        },
+        session=session,
+    )
+    LOG.info("Added pipeline run for %s", sample_id)
+    return update_obj
+
+
+async def pipeline_run_exists_for_sample(
+    db: Database,
+    *,
+    sample_id: str,
+    pipeline_run_id: str,
+    session: ClientSession | None = None,
+) -> bool:
+    """
+    Return True if sample.pipeline_runs contains pipeline_run_id.
+    """
+    doc = await db.sample_collection.find_one(
+        {
+            "sample_id": sample_id,
+            "pipeline_runs.pipeline_run_id": pipeline_run_id
+        },
+        projection={"_id": 1},
+        session=session,
+    )
+    return doc is not None
+
+
 def update_variant_verificaton(variant, info):
     """Update variant with selected annotations."""
 
@@ -695,9 +439,9 @@ def update_variant_phenotype(variant, info, username):
 
 async def update_variant_annotation_for_sample(
     db: Database, sample_id: str, classification: VariantAnnotation, username: str
-) -> SampleInDatabase:
+) -> SampleRecordDb:
     """Update annotations of variants for a sample."""
-    sample_info = await get_sample(db=db, sample_id=sample_id)
+    sample_info = await get_sample_by_id(db, sample_id=sample_id)
     # create variant group lookup table
     variant_id_gr = {
         gr_name: [int(id.split("-")[1]) for id in ids]
@@ -814,80 +558,150 @@ async def add_location(
     return location_obj
 
 
-async def get_typing_profiles(
-    db: Database, sample_idx: list[str], typing_method: str
-) -> TypingProfileOutput:
-    """Get locations from database."""
-    pipeline = [
-        {"$project": {"_id": 0, "sample_id": 1, "typing_result": 1}},
-        {"$unwind": "$typing_result"},
-        {
-            "$match": {
-                "$and": [
-                    {"sample_id": {"$in": sample_idx}},
-                    {"typing_result.type": typing_method},
-                ]
+async def check_samples_exists(
+    db: Database, *, sample_ids: list[str], session: Any = None
+) -> list[str]:
+    """Check if group with group_id exists in database.
+
+    Return missing group ids.
+    """
+    if not sample_ids:
+        return []
+
+    # Deduplicate and sort input ids for consistent behavior
+    input_ids = sorted(set(sample_ids))
+
+    cursor = await db.sample_collection.find(
+        {"sample_id": {"$in": input_ids}}, {"sample_id": 1, "_id": 0}, session=session
+    )
+    existing = await cursor.to_list(None)
+
+    existing_ids: set[str] = {gr["sample_id"] for gr in existing}
+    missing = set(input_ids) - existing_ids
+    if missing:
+        LOG.warning("Did not find samples: %s", missing)
+    return missing
+
+
+async def sample_exists(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> bool:
+    """Return True if a sample with id exists."""
+    doc = await db.sample_collection.find_one(
+        {"sample_id": sample_id}, {"_id": 1}, session=session
+    )
+    return bool(doc)
+
+
+async def insert_sample_document(
+    db: Database, *, doc: dict[str, Any], session: ClientSession | None = None
+) -> str:
+    """Insert a new sample document in the database."""
+    LOG.debug("Creating sample document", extra={"doc": doc})
+    return await db.sample_collection.insert_one(doc, session=session)
+
+
+def _make_denorm_upsert_pipeline(
+    *,
+    field_name: str,
+    item: dict[str, Any],
+    now,  # datetime in UTC
+    last_pipeline_run_id: str | None = None,
+):
+    """Create an update pipeline to upsert an analysis result in a denormalized array."""
+    arr = {"$ifNull": [f"${field_name}", []]}
+
+    match_cond = {
+        "$and": [
+            {"$eq": ["$$e.software", item["software"]]},
+            {"$eq": ["$$e.analysis_type", item["analysis_type"]]},
+        ]
+    }
+
+    replaced = {
+        "$map": {
+            "input": arr,
+            "as": "e",
+            "in": {"$cond": [match_cond, item, "$$e"]},
+        }
+    }
+
+    matched_any = {
+        "$anyElementTrue": {
+            "$map": {
+                "input": arr,
+                "as": "e",
+                "in": match_cond,
             }
-        },
-        {"$addFields": {"typing_result": "$typing_result.result.alleles"}},
-    ]
+        }
+    }
 
-    # query database
-    results = []
-    async for raw_typing_profile in db.sample_collection.aggregate(pipeline):
-        results.append(
-            TypingProfileAggregate(
-                sample_id=raw_typing_profile["sample_id"],
-                typing_result={
-                    loci: replace_cgmlst_errors(
-                        allele, include_novel_alleles=True, correct_alleles=True
-                    )
-                    for loci, allele in raw_typing_profile["typing_result"].items()
-                },
-            )
+    # If matched_any: use 'replaced', else concat original array + [item]
+    new_array = {
+        "$cond": [
+            matched_any,
+            replaced,
+            {"$concatArrays": [arr, [item]]},
+        ]
+    }
+
+    set_ops = {
+        field_name: new_array,
+        "modified_at": now,
+    }
+    if last_pipeline_run_id:
+        set_ops["last_pipeline_run_id"] = last_pipeline_run_id
+
+    return [{"$set": set_ops}]
+
+
+async def upsert_analysis_results(
+    db: Database,
+    *,
+    sample_id: str,
+    field_name: str,
+    item: dict[str, Any],
+    session: ClientSession | None,
+):
+    """
+    Upsert an analysis result in a sample document:
+    - If (software, analysis_type) exists in `field_name`, replace it with `item`
+    - Else push `item`
+    Also updates modified_at and last_pipeline_run_id (if present).
+    """
+    if not isinstance(sample_id, str) or not sample_id:
+        raise ValueError("sample_id cannot be empty string")
+
+    if not isinstance(field_name, str) or not field_name:
+        raise ValueError("field_name cannot be empty string")
+
+    # Ensure the key selectors exist
+    for key in ["software", "analysis_type"]:
+        if key not in item:
+            raise ValueError(f"item must contain key: {key}")
+
+    now = get_timestamp()
+    last_pipeline_run_id = item.get("pipeline_run_id")
+
+    pipeline = _make_denorm_upsert_pipeline(
+        field_name=field_name,
+        item=item,
+        now=now,
+        last_pipeline_run_id=last_pipeline_run_id,
+    )
+
+    res = await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        pipeline,
+        session=session,
+    )
+
+    if res.matched_count == 0:
+        # The sample document does not exist (should be pre-validated by service)
+        raise EntryNotFound(sample_id)
+
+    if res.modified_count == 0:
+        # In practice this shouldn't happen unless the document was identical
+        raise DatabaseOperationError(
+            f"Failed to upsert analysis result for {sample_id} in {field_name}"
         )
-
-    missing_samples = set(sample_idx) - {s.sample_id for s in results}
-    if len(missing_samples) > 0:
-        sample_ids = ", ".join(list(missing_samples))
-        msg = f'The samples "{sample_ids}" didnt have {typing_method} typing result.'
-        raise EntryNotFound(msg)
-    return results
-
-
-async def get_signature_path_for_samples(
-    db: Database, sample_ids: list[str]
-) -> TypingProfileOutput:
-    """Get genome signature paths for samples."""
-    LOG.info("Get signatures for samples")
-    query = {
-        "$and": [  # query for documents with
-            {"sample_id": {"$in": sample_ids}},  # matching sample ids
-            {"genome_signature": {"$ne": None}},  # AND genome_signatures not null
-        ]
-    }
-    projection = {"_id": 0, "sample_id": 1, "genome_signature": 1}  # projection
-    LOG.debug("Query: %s; projection: %s", query, projection)
-    cursor = db.sample_collection.find(query, projection)
-    results = await cursor.to_list(None)
-    LOG.debug("Found %d signatures", len(results))
-    return results
-
-
-async def get_ska_index_path_for_samples(
-    db: Database, sample_ids: Sequence[str]
-) -> Sequence[str]:
-    """Get genome signature paths for a samples stored in the database."""
-    LOG.info("Get ska indexes for samples")
-    query = {
-        "$and": [  # query for documents with
-            {"sample_id": {"$in": sample_ids}},  # matching sample ids
-            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
-        ]
-    }
-    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
-    LOG.debug("Query: %s; projection: %s", query, projection)
-    cursor = db.sample_collection.find(query, projection)
-    results = await cursor.to_list(None)
-    LOG.debug("Found %d ska indexes", len(results))
-    return results

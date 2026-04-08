@@ -1,13 +1,10 @@
 """Entrypoints for getting group data."""
 
-from itertools import groupby
 import bonsai_api.crud.group as crud_gr
-import bonsai_api.crud.memberships as crud_mem
+import bonsai_api.services.group_service as service_gr
+import bonsai_api.services.membership_service as service_mem
 from api_client.audit_log import AuditLogClient
-from bonsai_api.crud.errors import DatabaseOperationError, EntryNotFound
-from bonsai_api.crud.metadata import get_metadata_fields_for_samples
-from bonsai_api.crud.sample import get_samples_summary
-from bonsai_api.crud.memberships import get_samples_by_group_ids
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
@@ -15,20 +12,31 @@ from bonsai_api.dependencies import (
     get_database,
     get_request_context,
 )
-from bonsai_api.models.base import MultipleRecordsResponseModel
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import (
-    DEFAULT_COLUMNS,
-    GroupInCreate,
-    GroupInfoDatabase,
-    SampleTableColumnInput,
-    pred_res_cols,
-    qc_cols,
+    ColumnOut,
+    GroupAllowedUpdate,
+    GroupInfoCreate,
+    GroupInfoOut,
+    GroupListResponse,
+    GroupPresetIn,
+    GroupUpdate,
 )
 from bonsai_api.models.memberships import MembershipEdge
-from bonsai_api.models.user import UserOutputDatabase
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security, status
-from fastapi.encoders import jsonable_encoder
+from bonsai_api.models.user import UserContext, UserOutputDatabase
+from bonsai_api.services import group_service
+from bonsai_api.services.group_service import build_column_overrides
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Security,
+    status,
+)
 from pymongo.errors import DuplicateKeyError
 
 from .shared import RouterTags
@@ -39,57 +47,12 @@ READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
 
 
-async def build_column_definitions(
-    group_obj: GroupInfoDatabase | None = None,
-    include_qc: bool = False,
-    include_metadata: bool = False,
-    db: Database | None = None,
-) -> list[SampleTableColumnInput]:
-    """
-    Build column definitions for sample table display.
-
-    Args:
-        group_obj: Optional group object containing column preferences.
-        qc: Whether to use QC columns.
-        include_metadata: Whether to include metadata fields.
-        db: Database connection, required if include_metadata is True.
-
-    Returns:
-        List of SampleTableColumnInput objects.
-    """
-    base_columns = qc_cols if include_qc else pred_res_cols
-    idx_base_cols = {col.id: col for col in base_columns}
-    columns: list[SampleTableColumnInput] = []
-
-    if group_obj:
-        for col in group_obj.table_columns:
-            column_def = idx_base_cols.get(col.id)
-            if column_def:
-                upd_model = column_def.model_copy(update=col.model_dump())
-                columns.append(upd_model)
-    else:
-        columns = [idx_base_cols[col_id] for col_id in DEFAULT_COLUMNS]
-
-    if include_metadata and db and group_obj:
-        # TODO remove additional db query
-        edges = await get_samples_by_group_ids([group_obj.group_id], db=db)
-        meta_entries = await get_metadata_fields_for_samples(
-            db, sample_ids=[e.sample_id for e in edges]
-        )
-        columns += meta_entries
-
-    return columns
-
-
-@router.get("/groups/default/columns", tags=[RouterTags.GROUP])
-async def get_valid_columns(qc: bool = False):
-    """Get group info schema."""
-    # get pipeline analysis related columns
-    columns = await build_column_definitions(include_qc=qc)
-    return jsonable_encoder(columns)
-
-
-@router.get("/groups/", response_model=list[GroupInfoDatabase], tags=[RouterTags.GROUP])
+@router.get(
+    "/groups/",
+    response_model=GroupListResponse,
+    response_model_by_alias=False,
+    tags=[RouterTags.GROUP],
+)
 async def get_groups_in_db(
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
@@ -103,12 +66,12 @@ async def get_groups_in_db(
 
 @router.post(
     "/groups/",
-    response_model=GroupInfoDatabase,
+    response_model=GroupInfoOut,
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.GROUP],
 )
 async def create_group(
-    group_info: GroupInCreate,
+    group_info: GroupInfoCreate,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -118,18 +81,24 @@ async def create_group(
 ):
     """Create a new group document in the database"""
     try:
-        result = await crud_gr.create_group(db, group_info, req_ctx, audit_log)
-    except DuplicateKeyError as error:
+        usr = UserContext(user_id=current_user.username, roles=current_user.roles)
+        result = await group_service.create_group_service(
+            db,
+            group_record=group_info,
+            ctx=req_ctx,
+            audit=audit_log,
+            creator=usr,
+        )
+    except ValueError as error:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=error.details["errmsg"],
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
         ) from error
     return result
 
 
 @router.get(
     "/groups/{group_id}",
-    response_model=GroupInfoDatabase,
+    response_model=GroupInfoOut,
     tags=[RouterTags.GROUP],
 )
 async def get_group_in_db(
@@ -159,12 +128,10 @@ async def delete_group_from_db(
     ),
 ):
     """Delete a group from the database."""
-    try:
-        result = await crud_gr.delete_group(db, group_id, req_ctx, audit_log)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
+    user = UserContext(user_id=current_user.username, roles=current_user.roles)
+    result = await service_gr.delete_group_service(
+        db, group_id=group_id, ctx=req_ctx, user=user, audit=audit_log
+    )
     return result
 
 
@@ -173,7 +140,7 @@ async def delete_group_from_db(
 )
 async def update_group_info(
     group_id: str,
-    group_info: GroupInCreate,
+    group_info: GroupUpdate,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -181,22 +148,91 @@ async def update_group_info(
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
-    """Update information of an group in the database."""
-    # cast input information as group db object
-    # TODO define which parameters that are allowed to change
-    try:
-        await crud_gr.update_group(db, group_id, group_info, req_ctx, audit_log)
-    except EntryNotFound as error:
+    """Update mutable group core fields (display name, description)."""
+    return await service_gr.update_group_core_info(
+        db, group_id, group_info, req_ctx, audit_log
+    )
+
+
+@router.put(
+    "/groups/{group_id}/allowed_columns",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
+)
+async def set_allowed_columns_for_group(
+    group_id: str,
+    payload: GroupAllowedUpdate,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Set allowed table columns for a group."""
+    return await crud_gr.set_allowed_columns(
+        db, group_id, payload, req_ctx, audit_log
+    )
+
+
+@router.post(
+    "/groups/{group_id}/presets",
+    status_code=status.HTTP_201_CREATED,
+    tags=[RouterTags.GROUP],
+)
+async def upsert_preset_for_group(
+    group_id: str,
+    preset: GroupPresetIn,
+    set_default: bool = Query(
+        False, alias="default", description="Set this preset as default"
+    ),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    request: Request = None,
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Create or update a preset for a group."""
+    current_etag = MANIFEST.etag
+    if_match = request.headers.get("If-Match")
+    if if_match is not None and if_match != current_etag:
         raise HTTPException(
-            status_code=404, detail=f"Group with id: {group_id} not in database"
-        ) from error
-    return {"id": group_id, "group_info": group_info}
+            status_code=status.HTTP_412_PRECONDITION_FAILED,
+            detail={"message": "Manifest changed", "currentETag": current_etag},
+        )
+    return await service_gr.upsert_column_preset(
+        db, group_id, preset, set_default, req_ctx, audit_log
+    )
+
+
+@router.delete(
+    "/groups/{group_id}/presets/{preset_id}",
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.GROUP],
+)
+async def delete_preset_from_group(
+    group_id: str,
+    preset_id: str,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Delete a preset from a group."""
+    return await crud_gr.delete_preset(
+        db, group_id, preset_id, req_ctx, audit_log
+    )
 
 
 @router.put(
     "/groups/{group_id}/samples",
     status_code=status.HTTP_200_OK,
     tags=[RouterTags.GROUP],
+    deprecated=True,
 )
 async def add_samples_to_group(
     group_id: str = Path(..., title="The id of the group to get"),
@@ -214,15 +250,8 @@ async def add_samples_to_group(
     # cast input information as group db object
     try:
         # reformat the request to edges and perform mutation
-        edges = [
-            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
-        ]
-        await crud_mem.add_memberships(edges, db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_ids,
-        ) from error
+        edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
+        await service_mem.add_memberships(edges, db=db)
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
@@ -251,15 +280,8 @@ async def remove_sample_from_group(
     # cast input information as group db object
     try:
         # build edges of the groups to remove
-        edges = [
-            MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids
-        ]
-        await crud_mem.remove_memberships(edges, db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=sample_ids,
-        ) from error
+        edges = [MembershipEdge(sample_id=sid, group_id=group_id) for sid in sample_ids]
+        await service_mem.remove_memberships(edges, db=db)
     except DatabaseOperationError as error:
         raise HTTPException(
             status_code=status.HTTP_304_NOT_MODIFIED,
@@ -270,58 +292,23 @@ async def remove_sample_from_group(
 @router.get(
     "/groups/{group_id}/columns",
     tags=[RouterTags.GROUP],
+    response_model=list[ColumnOut],
 )
 async def get_columns_for_group(
     group_id: str,
+    preset: str | None = None,
+    include_invisible: bool = False,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group_obj = GroupInfoDatabase.model_validate(
-        await crud_gr.get_group(db, group_id, lookup_samples=False)
+    user = UserContext(user_id=current_user.username, roles=current_user.roles)
+    group_obj = await service_gr.get_group_raw(db, group_id=group_id, user=user)
+    return await build_column_overrides(
+        group_obj=group_obj,
+        manifest=MANIFEST,
+        preset=preset or "default",
+        include_invisible=include_invisible,
     )
-    columns = await build_column_definitions(
-        group_obj=group_obj, include_metadata=True, db=db
-    )
-    return columns
-
-
-@router.get(
-    "/groups/{group_id}/samples",
-    status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
-    response_model=MultipleRecordsResponseModel,
-)
-async def get_samples_in_group(
-    prediction_result: bool = Query(True, description="Include prediction results"),
-    qc_metrics: bool = Query(False, description="Include QC metrics"),
-    skip: int = 0,
-    limit: int = 0,
-    group_id: str = Path(..., tilte="The id of the group to get"),
-    db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[READ_PERMISSION]
-    ),
-):
-    """Get basic prediction results of all samples in a group."""
-    # get group info
-    try:
-        memberships_edges = await crud_mem.get_samples_by_group_ids([group_id], db=db)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=group_id,
-        ) from error
-    # query samples
-    samples_in_group = [edge.sample_id for edge in memberships_edges]
-    db_obj: MultipleRecordsResponseModel = await get_samples_summary(
-        db,
-        include_samples=samples_in_group,
-        limit=limit,
-        skip=skip,
-        prediction_result=prediction_result,
-        qc_metrics=qc_metrics,
-    )
-    return db_obj

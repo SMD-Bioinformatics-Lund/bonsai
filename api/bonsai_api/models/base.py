@@ -2,11 +2,12 @@
 
 import datetime
 from typing import Any
+import uuid_utils as uuid
 
 from bson import ObjectId as BaseObjectId
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
-from ..utils import get_timestamp
+from bonsai_api.utils import get_timestamp
 
 
 class ObjectId(BaseObjectId):
@@ -29,9 +30,9 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     """Base model for read/ write operations"""
 
     model_config = ConfigDict(
-        allow_population_by_alias=True,
         populate_by_name=True,
         use_enum_values=True,
+        validate_default=True
     )
 
 
@@ -41,17 +42,37 @@ class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
 
 
-class DBModelMixin(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
+class RecordIdMixin(BaseModel):  # pylint: disable=too-few-public-methods
     """Default database model."""
 
-    id: str | None = Field(None)
+    id: str = Field(
+        description="Unique record identifier", 
+        default_factory=lambda: str(uuid.uuid7()))
 
 
-class ModifiedAtRWModel(RWModel):  # pylint: disable=too-few-public-methods
+class ForbidExtraModelMixin(BaseModel):
+    """Mixin to forbid extra fields in pydantic model."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AllowExtraModelMixin(BaseModel):
+    """Mixin to allow extra fields in pydantic model."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class Timestamps(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base RW model that keep reocrds of when a document was last modified."""
 
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
     modified_at: datetime.datetime = Field(default_factory=get_timestamp)
+
+    @model_validator(mode="after")
+    def _ensure_modified_after_created(self) -> "Timestamps":
+        if self.modified_at < self.created_at:
+            raise ValueError("modified_at must be >= created_at")
+        return self
 
 
 class MultipleRecordsResponseModel(RWModel):  # pylint: disable=too-few-public-methods

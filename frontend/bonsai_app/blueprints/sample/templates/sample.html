@@ -52,27 +52,27 @@
                     {{ similar_samples_card(group_id) }}
                 </div>
                 {% for res in sample.typing_result %}
-                    {% if res.type == "mlst" %}
+                    {% if res.analysis_type == "mlst" %}
                         <div class="col-md-auto">
                         {{ mlst_card(res.result) }}
                         </div>
-                    {% elif res.type == "emmtype" %}
+                    {% elif res.analysis_type == "emmtype" %}
                         <div class="col-md-auto">
                         {{ emm_card(res.result) }}
                         </div>
-                    {% elif res.type == "stx" %}
+                    {% elif res.analysis_type == "stx" %}
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
                         </div>
-                    {% elif res.type == "H_type" or res.type == "O_type"%}
+                    {% elif res.analysis_type == "H_type" or res.type == "O_type"%}
                         <div class="col-md-auto">
                         {{ oh_card(res) }}
                         </div>
-                    {% elif res.type == "lineage" %}
+                    {% elif res.analysis_type == "lineage" %}
                         <div class="col-md-auto">
                         {{ tb_lineage_card(res) }}
                         </div>
-                    {% elif res.type == "shigatype" %}
+                    {% elif res.analysis_type == "shigatype" %}
                         <div class="col-md-auto">
                         {{ shigella_typing_card(res) }}
                         </div>
@@ -94,7 +94,7 @@
                     </div>
                 {% endif %}
                 {% for elem in sample.element_type_result %}
-                    {% if elem.type != 'VIRULENCE' %}
+                    {% if elem.analysis_type != 'virulence' %}
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=extended) }}
                         </div>
@@ -102,7 +102,7 @@
                 {% endfor %}
                 {# Add supplementary resistance info #}
                 {% for elem in sample.element_type_result %}
-                    {% if elem.type.startswith('STRESS') %}
+                    {% if elem.analysis_type.startswith('stress') %}
                         {% if elem.result.genes | length > 0 or elem.result.mutations | length > 0 %}
                         <div class="col-md-auto">
                         </div>
@@ -118,7 +118,7 @@
 
                 {% set n_virulence_pred=sample.element_type_result | count_results("VIRULENCE") %}
                 {% for res in sample.element_type_result %}
-                    {% if res.type == "VIRULENCE" %}
+                    {% if res.analysis_type == "virulence" %}
                         {% set n_genes=res.result.genes | length %}
                         {% if is_filtered and n_genes == 0 %}
                             <p>No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.</p>
@@ -144,7 +144,7 @@
                 {% endfor %}
 
                 {% for res in sample.typing_result %}
-                    {% if res.type == "cgmlst" %}
+                    {% if res.analysis_type == "cgmlst" %}
                         <div class="col-md-auto">
                         {{ cgmlst_qc_card(res) }}
                         </div>

@@ -1,310 +1,203 @@
 """Routes related to collections of samples."""
 
-from typing import Literal
+from enum import StrEnum
+from typing import Any, Literal
 
-from prp.models.phenotype import ElementType
+from bonsai_api.crud.builder.types import ColumnDataType, DataSource
+from bonsai_api.utils import get_timestamp
 from pydantic import BaseModel, Field
 
-from .base import DBModelMixin, ModifiedAtRWModel, RWModel
+from .base import (
+    ForbidExtraModelMixin,
+    MultipleRecordsResponseModel,
+    RWModel,
+    Timestamps,
+)
 
 FilterParams = list[dict[str, str | int | float],]
 
+SCHEMA_VERSION = 1
 
-class SampleTableColumnInput(BaseModel):  # pylint: disable=too-few-public-methods
-    """Definition of how to display and function of overview table."""
-
-    id: str = Field(..., description="Column id")
-    label: str = Field(..., description="Display name")
-    path: str = Field(..., description="JSONpath describing how to access the data")
-    type: Literal["string", "number", "date", "boolean", "list", "custom"] = "string"
-    source: Literal["static", "metadata"] = (
-        "static"  # where the columns are predefined or relate to metadata
-    )
-    renderer: str | None = None
-    visible: bool = True
-    sortable: bool = True
-    searchable: bool = True
+DEFAULT_PRESET_NAME = "default"
 
 
-class SampleTableColumnDB(BaseModel):  # pylint: disable=too-few-public-methods
-    """Database representation of a column."""
+class Visibility(StrEnum):
+    """Group visibility levels."""
 
-    id: str = Field(..., description="Column id")
-    visible: bool = True
-    sortable: bool = True
-    searchable: bool = True
+    PUBLIC = "public"
+    PRIVATE = "private"
 
 
-VALID_BASE_COLS: list[SampleTableColumnInput] = [
-    SampleTableColumnInput(
-        id="sample_btn",
-        label="",
-        type="custom",
-        renderer="sample_btn_renderer",
-        path="$.sample_id",
-        sortable=False,
-        searchable=False,
-    ),
-    SampleTableColumnInput(
-        id="sample_id",
-        label="Sample Id",
-        path="$.sample_id",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="groups_info",
-        label="Groups",
-        path="$.groups_info",
-        sortable=False,
-        type="custom",
-        renderer="groups_info_renderer",
-    ),
-]
-
-# Prediction result columns
-VALID_PREDICTION_COLS: list[SampleTableColumnInput] = [
-    SampleTableColumnInput(
-        id="sample_name",
-        label="Name",
-        path="$.sample_name",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="lims_id",
-        label="LIMS id",
-        path="$.lims_id",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="assay",
-        label="Assay",
-        path="$.assay",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="release_life_cycle",
-        label="Release life cycle",
-        path="$.release_life_cycle",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="sequencing_run",
-        label="Sequencing run",
-        path="$.sequencing_run",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="taxonomic_name",
-        label="Major species",
-        renderer="taxonomic_name_renderer",
-        path="$.species_prediction.scientific_name",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="qc_status",
-        label="QC",
-        type="custom",
-        path="$.qc_status",
-        sortable=True,
-        renderer="qc_status_renderer",
-    ),
-    SampleTableColumnInput(
-        id="analysis_profile",
-        label="Analysis profile",
-        path="$.profile",
-        type="list",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="comments",
-        label="Comments",
-        type="custom",
-        path="$.comments",
-        renderer="comments_renderer",
-    ),
-    SampleTableColumnInput(
-        id="tags",
-        label="Tags",
-        type="custom",
-        path="$.tags",
-        renderer="tags_renderer",
-    ),
-    SampleTableColumnInput(
-        id="mlst_typing",
-        label="MLST ST",
-        path="$.mlst",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="stx_typing",
-        label="STX typing",
-        path="$.stx",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="oh_typing",
-        label="OH typing",
-        path="$.oh_type",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="cdate",
-        label="Date",
-        type="date",
-        path="$.created_at",
-        sortable=True,
-    ),
-]
-
-# Prediction result columns
-VALID_QC_COLS = [
-    SampleTableColumnInput(
-        id="sample_name",
-        label="Name",
-        path="$.sample_name",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="sequencing_run",
-        label="Sequencing run",
-        path="$.sequencing_run",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="assay",
-        label="Assay",
-        path="$.assay",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="qc_status",
-        label="QC",
-        type="custom",
-        path="$.qc_status",
-        sortable=True,
-        renderer="qc_status_renderer",
-    ),
-    SampleTableColumnInput(
-        id="taxonomic_name",
-        label="Major species",
-        renderer="taxonomic_name_renderer",
-        path="$.species_prediction.scientific_name",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="tags",
-        label="Tags",
-        type="custom",
-        path="$.tags",
-        renderer="tags_renderer",
-    ),
-    SampleTableColumnInput(
-        id="n50",
-        label="N50",
-        type="number",
-        path="$.quast.n50",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="n_contigs",
-        label="#Contigs",
-        path="$.quast.n_contigs",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="median_cov",
-        label="Median cov",
-        path="$.postalignqc.median_cov",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="n_reads",
-        label="# Reads",
-        type="number",
-        path="$.postalignqc.n_reads",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="pct_cov_over_10",
-        label="Cov > 10",
-        type="number",
-        path='$.postalignqc.pct_above_x["10"]',
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="pct_cov_over_30",
-        label="Cov > 30",
-        type="number",
-        path='$.postalignqc.pct_above_x["30"]',
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="cgmlst_missing_loci",
-        label="# Missing loci",
-        type="number",
-        path="$.missing_cgmlst_loci",
-        sortable=True,
-    ),
-    SampleTableColumnInput(
-        id="cdate",
-        label="Date",
-        type="date",
-        path="$.created_at",
-        sortable=True,
-    ),
-]
-
-
-DEFAULT_COLUMNS: list[str] = [
-    "sample_btn",
-    "sample_id",
-    "sample_name",
-    "groups_info",
-    "tags",
-    "assay",
-    "taxonomic_name",
-    "qc_status",
-    "comments",
-    "cdate",
-]
-
-# create combination of valid columns
-pred_res_cols = [*VALID_BASE_COLS, *VALID_PREDICTION_COLS]
-qc_cols = [*VALID_BASE_COLS, *VALID_QC_COLS]
-
-SCHEMA_VERSION: str = "1"
-
-
-class GroupBase(RWModel):  # pylint: disable=too-few-public-methods
-    """Basic specie information."""
+class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
+    """Basic group core information."""
 
     group_id: str = Field(..., min_length=5)
     display_name: str = Field(..., min_length=1, max_length=45)
     description: str | None = None
-    table_columns: list[SampleTableColumnDB] = Field(
-        default=[], description="IDs of columns to display."
+    sample_count: int = Field(default=0, ge=0)
+    owner_id: str | None = None
+    visibility: Visibility = Field(default=Visibility.PUBLIC)
+
+
+class ColumnOverride(BaseModel):
+    """Defines column overrides for group sample table."""
+
+    id: str = Field(..., description="Column id", frozen=True)
+    visible: bool | None = None
+    sortable: bool | None = None
+    searchable: bool | None = None
+    order: int | None = None
+    locked: bool = Field(
+        False, description="If true, user cannot change this column setting"
     )
-    sample_count: int = Field(default=0, ge=0, description="Total number of samples in this group")
+    label: str | None = Field(None, description="Custom column label")
 
 
-class GroupInCreate(GroupBase):  # pylint: disable=too-few-public-methods
-    """Defines expected input format for groups."""
+class ColumnOut(ForbidExtraModelMixin):
+    """User-facing column after applying manifest + overrides."""
 
-    schema_version: str = Field(
-        default=SCHEMA_VERSION, description="Version of the group schema."
-    )
-    validated_genes: dict[ElementType, list[str]] | None = {}
+    id: str
+    type: ColumnDataType
+    source: DataSource
+
+    # Manifest defaults (useful context for UIs)
+    default_visible: bool
+    filterable: bool
+    sortable: bool
+
+    # Effective values after overrides (required or well-defined optional)
+    visible: bool
+    searchable: bool | None = None
+    order: int
+    locked: bool = False
+    label: str
+
+    overridden_fields: list[
+        Literal[
+            "visible", "sortable", "searchable", "order", "width", "label", "locked"
+        ]
+    ] = Field(default_factory=list, description="What has changed")
 
 
-class GroupInfoDatabase(
-    DBModelMixin, ModifiedAtRWModel, GroupInCreate
-):  # pylint: disable=too-few-public-methods
-    """Defines group info stored in the databas."""
+class GroupPreset(BaseModel):
+    """Defines preset column settings for group sample table."""
+
+    preset_id: str
+    label: str
+    overrides: list[ColumnOverride] = Field(default_factory=list)
 
 
-class GroupInfoOut(GroupBase):  # pylint: disable=too-few-public-methods
+class GroupPresets(ForbidExtraModelMixin):
+    """Preset collection for a group and track the default preset id."""
+
+    default_preset_id: str = DEFAULT_PRESET_NAME
+    items: list[GroupPreset] = Field(default_factory=list)
+
+    def get(self, preset_id: str | None) -> GroupPreset | None:
+        """Get preset by id or default."""
+        if not self.items:
+            return None
+
+        pid = preset_id or self.default_preset_id
+        if not pid:
+            return None
+
+        for preset in self.items:
+            if preset.preset_id == pid:
+                return preset
+        return None
+
+
+class GroupAllowed(ForbidExtraModelMixin):
+    """Explicit catalog of columns users can choose from."""
+
+    column_ids: list[str] = Field(default_factory=list)
+
+
+class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
+    """Database representation of a group.
+
+    - schema_version: version of the group schema
+    - core: identity and description
+    - allowed_columns: permitted data columns
+    - presets: named column subsets with overrides
+    - invited_users: optional list of user ids invited to access private group
+    """
+
+    schema_version: int = SCHEMA_VERSION
+    core: GroupCore
+    allowed_columns: GroupAllowed = Field(default_factory=GroupAllowed)
+    presets: GroupPresets = Field(default_factory=GroupPresets)
+    invited_users: list[str] = Field(default_factory=list)
+
+
+class GroupInfoOut(Timestamps):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
+    group_id: str
+    display_name: str
+    description: str | None = None
+    sample_count: int
+
+    default_preset_id: str | None = None
+    presets: list[dict[str, Any]] = Field(default_factory=list)
+
     table_columns: list[str] = Field(
-        default=[], description="IDs of columns to display."
+        default_factory=list, description="IDs of columns to display."
     )
+
+
+class GroupAllowedUpdate(BaseModel):
+    """Payload to update allowed columns for a group."""
+
+    column_ids: list[str] = Field(default_factory=list)
+
+
+class GroupPresetIn(BaseModel):
+    """Payload to create or replace a preset for a group."""
+
+    preset_id: str
+    label: str
+    overrides: list[ColumnOverride] = Field(default_factory=list)
+
+
+class GroupPresetUpdate(BaseModel):
+    """Payload to partially update a preset."""
+
+    label: str | None = None
+    manifest_version: str | None = None
+    overrides: list[ColumnOverride] | None = None
+
+
+class GroupUpdate(BaseModel):
+    """Payload to update mutable group core fields."""
+
+    display_name: str | None = None
+    description: str | None = None
+
+
+class GroupFavorite(RWModel):
+    """Represents a user's favorite group link stored in a separate collection."""
+
+    user_id: str
+    group_id: str
+    created_at: float = Field(default_factory=get_timestamp)
+
+
+class GroupListResponse(MultipleRecordsResponseModel):
+    """Response model for listing groups."""
+
+    data: list[GroupInfoOut]
+
+
+class GroupInfoCreate(BaseModel):  # pylint: disable=too-few-public-methods
+    """Defines output structure of group info used for creation."""
+
+    group_id: str
+    display_name: str
+    description: str | None = None
+    visibility: Visibility = Visibility.PUBLIC
+    invited_users: list[str] = Field(default_factory=list)
+    allowed_columns: list[str] = Field(default_factory=list)
+    default_preset_id: str | None = None
+    presets: list[GroupPresetIn] = Field(default_factory=list)

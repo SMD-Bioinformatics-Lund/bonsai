@@ -9,6 +9,7 @@ import {
   ApiUserInfo,
   ApiSampleQcStatus,
   MembershipEdges,
+  ApiGroupInfoResponse,
 } from "./types";
 import { JobStatusEnum, TypingMethod } from "./constants";
 
@@ -190,7 +191,7 @@ export class ApiService {
   };
 
   getGroups = async () => {
-    return this.http.request<GroupInfo[]>(`/groups/`);
+    return this.http.request<ApiGroupInfoResponse>(`/groups/`);
   };
 
   addSamplesToGroup = async (groupId: string, sampleIds: string[]) => {

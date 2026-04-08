@@ -4,11 +4,11 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Literal
 
+from bonsai_api.services.sample_service import get_sample_service
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
-from bonsai_api.crud.group import create_group as create_group_in_db
-from bonsai_api.crud.sample import get_sample, get_samples, update_sample
+from bonsai_api.crud.sample import get_samples_full, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.user import create_user as create_user_in_db
 from bonsai_api.db import verify
@@ -16,14 +16,17 @@ from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
 from bonsai_api.db.verify import MissingFile
 from bonsai_api.lims_export.config import load_export_config
-from bonsai_api.lims_export.export import (lims_rs_formatter,
-                                           serialize_lims_results)
+from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
 from bonsai_api.migrate import migration_functions
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.group import GroupInCreate, GroupInfoDatabase
-from bonsai_api.models.sample import (MultipleSampleRecordsResponseModel,
-                                      SampleInCreate, SampleInDatabase)
-from bonsai_api.models.user import UserInputCreate, UserOutputDatabase
+from bonsai_api.models.group import GroupInfoCreate, GroupInfoOut
+from bonsai_api.models.sample import (
+    MultipleSampleRecordsResponseModel,
+    SampleInCreate,
+    SampleRecordDb,
+)
+from bonsai_api.models.user import UserContext, UserInputCreate, UserOutputDatabase
+from bonsai_api.services.group_service import create_group_service
 
 LOG = logging.getLogger(__name__)
 
@@ -58,7 +61,7 @@ async def run_create_user(user_obj: UserInputCreate) -> UserOutputDatabase:
         return await create_user_in_db(db, user_obj, ctx, audit_log)
 
 
-async def run_create_group(group_obj: GroupInCreate) -> GroupInfoDatabase:
+async def run_create_group(group_obj: GroupInfoCreate, user_id: str) -> GroupInfoOut:
     """Create a group in the database.
 
     Args:
@@ -67,13 +70,16 @@ async def run_create_group(group_obj: GroupInCreate) -> GroupInfoDatabase:
     Returns:
         GroupInfoDatabase: The created group object.
     """
-    ctx = ApiRequestContext(
-        actor=Actor(id="cli_user", type=SourceType.USR), metadata={}
-    )
-    audit_log = _get_audit_log_client()
-    LOG.info("Creating group: %s", group_obj.group_id)
     async with get_db_connection() as db:
-        return await create_group_in_db(db, group_obj, ctx, audit_log)
+        ctx = ApiRequestContext(
+            actor=Actor(id="cli_user", type=SourceType.USR), metadata={}
+        )
+        audit_log = _get_audit_log_client()
+        LOG.info("Creating group: %s", group_obj.group_id)
+        group_owner = UserContext(user_id=user_id)
+        return await create_group_service(
+            db, group_record=group_obj, ctx=ctx, creator=group_owner, audit=audit_log
+        )
 
 
 async def run_create_index(col_name: str, indexes: list[dict[str, Any]]) -> None:
@@ -91,10 +97,10 @@ async def run_create_index(col_name: str, indexes: list[dict[str, Any]]) -> None
 async def run_get_samples() -> MultipleSampleRecordsResponseModel:
     """CLI helper to get all samples from the database."""
     async with get_db_connection() as db:
-        return await get_samples(db)
+        return await get_samples_full(db)
 
 
-async def run_update_tag(sample: SampleInDatabase) -> bool:
+async def run_update_tag(sample: SampleRecordDb) -> bool:
     """Update tag of a sample."""
     async with get_db_connection() as db:
         upd_tags = compute_phenotype_tags(sample)
@@ -123,7 +129,7 @@ async def run_lims_export(
         DatabaseOperationError: DB-level problems
     """
     async with get_db_connection() as db:
-        sample = await get_sample(db, sample_id)
+        sample = await get_sample_service(db, sample_id=sample_id)
 
     conf_obj = load_export_config(export_cnf)  # may raise
     lims_data = None
@@ -148,7 +154,7 @@ async def run_check_paths(redis_timeout: int) -> dict:
       - 'missing_files': list of MissingFile objects
     """
     async with get_db_connection() as db:
-        samples = await get_samples(db)
+        samples = await get_samples_full(db)
 
     missing_files: list[MissingFile] = []
     for sample in samples.data:

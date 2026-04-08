@@ -188,13 +188,38 @@ def delete_group(headers: CaseInsensitiveDict[str], group_id: str):
 
 
 @api_authentication
-def update_group(
-    headers: CaseInsensitiveDict[str], group_id: str, data: dict[str, Any]
+def update_group_core_info(
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    name: str | None = None,
+    description: str | None = None,
 ):
     """Update information in database for a group with group_id."""
     # conduct query
+    payload = {"display_name": name, "description": description}
     url = f"{settings.api_internal_url}/groups/{group_id}"
-    resp = requests_put(url, json=data, headers=headers)
+    resp = requests_put(url, json=payload, headers=headers)
+
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def update_group_presets(
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    preset: dict[str, Any],
+    set_default: bool | None = None,
+):
+    """Update information in database for a group with group_id."""
+    # conduct query
+    url = f"{settings.api_internal_url}/groups/{group_id}/presets"
+    if set_default is not None:
+        url + f"?default={set_default}"
+
+    resp = requests_post(url, json=preset, headers=headers)
 
     resp.raise_for_status()
     return resp.json()
@@ -238,11 +263,12 @@ def remove_samples_from_basket(
 
 
 @api_authentication
-def get_samples(
+def get_sample_summaries(
     headers: CaseInsensitiveDict[str],
-    limit: int | None = None,
-    skip: int | None = None,
+    group_id: str | None = None,
     sample_ids: list[str] | None = None,
+    limit: int | None = None,
+    offset: int = 0,
 ):
     """Get multipe samples from database.
 
@@ -256,9 +282,9 @@ def get_samples(
         if len(sample_ids) == 0:
             raise ValueError("sample_ids list cant be empty!")
     data = ApiGetSamplesDetailsInput.model_validate(
-        {"limit": limit, "skip": skip, "sid": sample_ids}
+        {"limit": limit, "offset": offset, "sid": sample_ids, "group_id": group_id}
     )
-    resp = requests_post(url, headers=headers, json=data.model_dump())
+    resp = requests_post(url, headers=headers, json=data.model_dump(mode="json"))
 
     try:
         resp.raise_for_status()
@@ -268,42 +294,21 @@ def get_samples(
 
 
 @api_authentication
-def delete_samples(headers: CaseInsensitiveDict[str], sample_ids: List[str]):
-    """Remove samples from database."""
-    # conduct query
-    url = f"{settings.api_internal_url}/samples/"
-    resp = requests_delete(url, headers=headers, json=sample_ids)
-
+def get_valid_summary_columns(headers: CaseInsensitiveDict[str]):
+    """Query API for valid group columns."""
+    resp = requests_get(
+        f"{settings.api_internal_url}/samples/summary/manifest", headers=headers
+    )
     resp.raise_for_status()
     return resp.json()
 
 
 @api_authentication
-def get_samples_in_group(
-    headers: CaseInsensitiveDict[str],
-    group_id: str | None = None,
-    limit: int = 0,
-    skip_lines: int = 0,
-    prediction_result: bool = True,
-    qc_metrics: bool = False,
-):
-    """Search the database for the samples that are part of a given group."""
+def delete_samples(headers: CaseInsensitiveDict[str], sample_ids: List[str]):
+    """Remove samples from database."""
     # conduct query
-    url = f"{settings.api_internal_url}/groups/{group_id}/samples"
-    if group_id is None:
-        raise ValueError("No sample id provided.")
-
-    current_app.logger.debug("Query API for samples in group: %s", group_id)
-    resp = requests_get(
-        url,
-        headers=headers,
-        params={
-            "limit": limit,
-            "skip": skip_lines,
-            "prediction_result": prediction_result,
-            "qc_metrics": qc_metrics,
-        },
-    )
+    url = f"{settings.api_internal_url}/samples/"
+    resp = requests_delete(url, headers=headers, json=sample_ids)
 
     resp.raise_for_status()
     return resp.json()
@@ -494,14 +499,26 @@ def get_lims_export_response(
 
 @api_authentication
 def get_valid_group_columns(
-    headers: CaseInsensitiveDict[str], group_id: str | None = None, qc: bool = False
+    headers: CaseInsensitiveDict[str],
+    *,
+    group_id: str,
+    preset: str | None = None,
+    include_invisible: bool | None = None,
 ):
     """Query API for valid group columns."""
-    partial_url: str = (
-        "groups/default/columns" if group_id is None else f"groups/{group_id}/columns"
-    )
+    url: str = f"groups/{group_id}/columns"
+
+    # bulid params
+    params = {}
+    if preset is not None:
+        params["preset"] = preset
+
+    if include_invisible is not None:
+        params["include_invisible"] = include_invisible
+
+    # submit requests
     resp = requests_get(
-        f"{settings.api_internal_url}/{partial_url}", params={"qc": qc}, headers=headers
+        f"{settings.api_internal_url}/{url}", params=params, headers=headers
     )
     resp.raise_for_status()
     return resp.json()

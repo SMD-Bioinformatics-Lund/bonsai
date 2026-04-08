@@ -3,10 +3,12 @@
 import logging
 from typing import Any, Callable
 
+from bonsai_api.models.analysis import CurationRecord
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import ElementType, SampleInDatabase, VariantInDb
-from prp.models.phenotype import PredictionSoftware
-from prp.models.typing import TypingMethod, TypingResultEmm
+from bonsai_api.models.sample import SampleRecordDb, VariantInDb
+
+from prp.parse.models.enums import AnalysisSoftware, AnalysisType, ElementType
+from prp.parse.models.typing import TypingResultEmm
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 
@@ -47,13 +49,13 @@ class AnalysisNoResultError(Exception):
 
 @register_formatter("mlst")
 def mlst_typing(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Extract and format MLST (Multi-Locus Sequence Typing) result from a sample."""
     options = options or {}
-    for ty in sample.typing_result:
-        if ty.type == "mlst":
-            mlst_st = ty.result.sequence_type or "NA"
+    for av in sample.typing_result:
+        if av.analysis_type == "mlst":
+            mlst_st = av.result.sequence_type or "NA"
             if mlst_st is None:
                 raise AnalysisNoResultError()
             return mlst_st, ""
@@ -64,7 +66,7 @@ def mlst_typing(
 
 @register_formatter("emm")
 def emm_typing(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Extract and format EMM result from a sample."""
     options = options or {}
@@ -79,7 +81,7 @@ def emm_typing(
 
 @register_formatter("species")
 def species_prediction(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsValue, LimsComment]:
     """Extract and format species prediction result using Bracken.
 
@@ -120,17 +122,20 @@ def species_prediction(
 
 @register_formatter("lineage")
 def lineage_prediction(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample."""
     options = options or {}
-    for pred in sample.typing_result:
+    for av in sample.typing_result:
         if (
-            pred.type == TypingMethod.LINEAGE
-            and pred.software == PredictionSoftware.TBPROFILER
+            av.analysis_type == AnalysisType.LINEAGE
+            and av.software == AnalysisSoftware.TBPROFILER
         ):
-            lin = pred.result.sublineage.replace("lineage", "")  # strip lineage
-            return lin, ""
+            if len(av.result) == 0:
+                return "", ""
+
+            sublineage = max(av.result, key=lambda x: len(x.lineage))
+            return sublineage.lineage.replace("lineage", ""), ""
     raise AnalysisNotPresentError(
         f"Sample '{sample.sample_name}' dont have tbprofiler prediction results."
     )
@@ -138,7 +143,7 @@ def lineage_prediction(
 
 @register_formatter("qc")
 def qc_status(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample."""
     options = options or {}
@@ -153,7 +158,76 @@ def qc_status(
 
 @register_formatter("amr")
 def amr_prediction_for_antibiotic(
-    sample: SampleInDatabase, *, options: Any
+    sample: SampleRecordDb, *, options: Any
+) -> tuple[LimsAtomic, LimsComment]:
+    """Get lineage information for a sample.
+
+    Supported options:
+        antibiotic_name: str
+        software: str                (default "tbprofiler")
+        resistance_level: str        (default "all")
+    """
+    options = options or {}
+    preferred_software = options.get("software", "tbprofiler")
+    antibiotic_name = options.get("antibiotic_name", "rifampicin")
+    include_res_lvl = options.get("resistance_level", "all")
+
+    accepted_variants: list[str] = []
+    accepted_genes: list[str] = []  # TODO implement gene serialization
+
+    for pred in sample.element_type_result:
+        # Only consider AMR predictions from preferred software
+        if pred.software != preferred_software and pred.analysis_type != AnalysisType.AMR:
+            continue
+
+        # Step 1: Collect relevant curations
+        targeted_types = {"variant", "gene"}
+
+        relevant_curations: list[CurationRecord] = [
+            curr
+            for curr in pred.curations
+            if curr.decision == "accept"
+            and curr.annotation_type in targeted_types
+            and any(phe.name == antibiotic_name for phe in curr.phenotypes)
+            and (
+                include_res_lvl == "all" or any(
+                    phe.name == antibiotic_name
+                    and phe.meta.get("resistance_level") == include_res_lvl
+                    for phe in curr.phenotypes
+                )
+            )
+        ]
+
+        # Skip this prediction if no curations apply
+        if not relevant_curations:
+            continue
+
+        # Step 2: Index result entities for efficient lookup
+        variants_by_id = {str(var.id): var for var in pred.result.variants}
+
+        # Step 3: Resolve curations
+        for curr in relevant_curations:
+            if curr.annotation_type == "variant":
+                var = variants_by_id.get(curr.result_key)
+                if var is not None:
+                    accepted_variants.append(_serialize_variant(var))
+            elif curr.annotation_type == "gene":
+                # TODO implement gene serialization
+                pass
+        
+        # Step 4: return if anything was found
+        if accepted_variants or accepted_genes:
+            return ", ".join(accepted_variants + accepted_genes), ""
+        
+        # If curations existed but nothing was resolved, treat as no result
+        raise AnalysisNoResultError()
+    raise AnalysisNoResultError(
+        f"Sample '{sample.sample_name}' dont have AMR prediction from {preferred_software}."
+    )
+
+
+def amr_prediction_for_antibiotic_back(
+    sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
     """Get lineage information for a sample.
 
@@ -167,14 +241,27 @@ def amr_prediction_for_antibiotic(
     antibiotic_name = options.get("antibiotic_name", "rifampicin")
     include_res_lvl = options.get("resistance_level", "all")
     for pred in sample.element_type_result:
-        if pred.software == preferred_software and pred.type == ElementType.AMR:
-            variants = _resistance_variants(
-                pred.result.variants, antibiotic_name, include_res_lvl
-            )
+        if pred.software == preferred_software and pred.analysis_type == AnalysisType.AMR:
+            # first filter for accepted variants and genes.
+            targeted_types = ["variant", "gene"]
+            accepted_markers = [
+                curr 
+                for curr 
+                in pred.curations 
+                if (curr.decision == "accept" and curr.annotation_type in targeted_types)]
+            import pdb; pdb.set_trace()
+            # then fetch curated variants from result
+            # and format them to string representation
+            accepted_variants = []
+            for marker in accepted_markers:
+                if marker.annotation_type == "variant" and antibiotic_name in marker.phenotypes:
+                    variant = pred.result.variants[marker.target_index]
+                    accepted_variants.append(_serialize_variant(variant))
+
             genes = []  # TODO implement formatting of genes
-            if variants is None:
+            if len(accepted_variants) == 0 and len(genes) == 0:
                 raise AnalysisNoResultError()
-            return ", ".join(variants + genes), ""
+            return ", ".join(accepted_variants + genes), ""
     raise AnalysisNotPresentError(
         f"Sample '{sample.sample_name}' dont have AMR prediction from {preferred_software}."
     )
