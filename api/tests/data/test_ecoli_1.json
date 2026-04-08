@@ -10,7 +10,7 @@
     "method": {"type": "PE"},
     "sequenced_at": "2024-05-20T13:36:09.671742+02:00"
   },
-  "pipeline": [{
+  "pipeline": {
     "pipeline_run_id": "RUN0001",
     "executed_at": "2024-05-20T13:36:09.671742+02:00",
     "assay": "ecoli",
@@ -30,7 +30,7 @@
       },
       "artifacts": []
     }
-  }],
+  },
   "qc_result": [
     {
       "software": "quast",
