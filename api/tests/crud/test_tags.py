@@ -3,7 +3,7 @@
 import pytest
 from bonsai_api.crud.tags import flag_uncertain_spp_prediction
 from bonsai_api.models.tags import Tag
-from bonsai_api.models.sample import AnalysisViewEntry
+from bonsai_api.models.sample import AnalysisViewEntryDb
 from prp.models.enums import AnalysisSoftware
 from prp.parse.models.bracken import BrackenSpeciesPrediction
 from prp.parse.models.mykrobe import MykrobeSpeciesPrediction
@@ -13,7 +13,7 @@ from pydantic import BaseModel
 class SampleInDatabase(BaseModel):
     """Mocked sample model."""
 
-    species_prediction: list[AnalysisViewEntry] = []
+    species_prediction: list[AnalysisViewEntryDb] = []
 
 
 def test_add_contamination_tag_when_failed():
@@ -33,14 +33,14 @@ def test_add_contamination_tag_when_failed():
         species_coverage=0.8,
     )
     spp = [
-        AnalysisViewEntry(
+        AnalysisViewEntryDb(
             software=AnalysisSoftware.BRACKEN,
             software_version="0.1.0",
             analysis_type="species_prediction",
             analysis_id="analysis1",
             status="parsed",
             result=[bracken_spp]),
-        AnalysisViewEntry(
+        AnalysisViewEntryDb(
             software=AnalysisSoftware.MYKROBE,
             software_version="0.1.0",
             analysis_type="species_prediction",
@@ -75,14 +75,14 @@ def test_no_tags_when_all_contamination_checks_pass():
         species_coverage=98,
     )
     spp = [
-        AnalysisViewEntry(
+        AnalysisViewEntryDb(
             software=AnalysisSoftware.BRACKEN,
             software_version="0.1.0",
             analysis_type="species_prediction",
             analysis_id="analysis1",
             status="parsed",
             result=[bracken_spp]),
-        AnalysisViewEntry(
+        AnalysisViewEntryDb(
             software=AnalysisSoftware.MYKROBE,
             software_version="0.1.0",
             analysis_type="species_prediction",
@@ -108,7 +108,7 @@ def test_unknown_software_raises_exeption():
     )
     with pytest.raises(NotImplementedError):
         spp = [
-            AnalysisViewEntry(
+            AnalysisViewEntryDb(
                 software=AnalysisSoftware.TBPROFILER,
                 software_version="0.1.0",
                 analysis_type="species_prediction",
