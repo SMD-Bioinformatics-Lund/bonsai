@@ -10,7 +10,7 @@ from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.services.membership_service import add_memberships
 from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
-from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordDbOut
+from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
@@ -116,7 +116,7 @@ async def add_pipeline_run_service(db: Database, *, sample_id: str, pipeline: Pi
         raise DatabaseOperationError(str(exc)) from exc
 
 
-async def get_sample_service(db: Database, *, sample_id: str, session: ClientSession | None = None) -> SampleRecordDbOut:
+async def get_sample_service(db: Database, *, sample_id: str, session: ClientSession | None = None) -> SampleRecordOut:
     """Retrieve a sample by its sample id."""
     raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
     
@@ -130,8 +130,9 @@ async def get_sample_service(db: Database, *, sample_id: str, session: ClientSes
                 if pr.get("pipeline_run_id") == run_id:
                     last_pipeline_run = pr
                     break
-        # overload pipeline field with last pipeline run
-        return SampleRecordDbOut.model_validate({**raw_sample, "pipeline": last_pipeline_run})
+        
+        # merge analysis result and curations into dedicated field for API output
+        return SampleRecordOut.model_validate({**raw_sample, "pipeline": last_pipeline_run})
     except ValidationError as ve:
         LOG.error("Validation error when retrieving sample %s: %s", sample_id, str(ve))
         raise DatabaseOperationError(

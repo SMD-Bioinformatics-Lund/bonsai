@@ -52,7 +52,7 @@ from bonsai_api.models.sample import (
     SampleInCreate,
     SampleRecordDb,
     SampleInfoCreate,
-    SampleRecordDbOut,
+    SampleRecordOut,
 )
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, ConnectionError
@@ -247,7 +247,7 @@ async def read_sample(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
-) -> SampleRecordDbOut:
+) -> SampleRecordOut:
     """Read sample with sample id from database."""
     return await get_sample_service(db, sample_id=sample_id)
 
