@@ -77,6 +77,7 @@ services:
       network: host
     depends_on:
       - mongodb
+      - mongo-init-replica
       - minhash_service
       - ska_service
       - allele_cluster_service

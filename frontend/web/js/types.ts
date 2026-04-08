@@ -1,5 +1,11 @@
 import { DistanceMethod, ClusterMethod, TypingMethod, JobStatusEnum } from "./constants";
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  records_total: number;
+  records_filtered: number;
+}
+
 interface ApiSampleSimilarity {
   sample_id: string;
   similarity: number;
@@ -74,6 +80,8 @@ export interface GroupInfo {
   modified_at: string;
 }
 
+export type ApiGroupInfoResponse = PaginatedResponse<GroupInfo>;
+
 export interface SamplesDetails {
   sample_id: string;
   sample_name: string;
@@ -88,11 +96,7 @@ export interface ApiSampleQcStatus {
   comment: string | null;
 }
 
-export interface ApiSampleDetailsResponse {
-  data: SamplesDetails[];
-  records_total: number;
-  records_filtered: number;
-}
+export type ApiSampleDetailsResponse = PaginatedResponse<SamplesDetails>;
 
 export interface ApiUserInfo {
   id: string;

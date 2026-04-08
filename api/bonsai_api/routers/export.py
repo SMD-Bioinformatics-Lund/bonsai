@@ -3,13 +3,11 @@ from functools import lru_cache
 from typing import Literal
 
 from bonsai_api.config import settings
-from bonsai_api.crud.sample import EntryNotFound, get_sample
+from bonsai_api.crud.sample import get_sample_by_id
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
-from bonsai_api.lims_export.config import (InvalidFormatError,
-                                           load_export_config)
-from bonsai_api.lims_export.export import (lims_rs_formatter,
-                                           serialize_lims_results)
+from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
+from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
 from bonsai_api.lims_export.models import AssayConfig
 from bonsai_api.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Security, status
@@ -81,56 +79,23 @@ async def export_to_lims(
 ):
     """Export a sample to a LIMS compatible file."""
     # 1. Get sample
-    try:
-        sample_obj = await get_sample(db, sample_id)
-    except EntryNotFound as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
+    sample_obj = await get_sample_by_id(db, sample_id=sample_id)
 
     # 2. Load configuration and format data
-    assay = sample_obj.pipeline.assay
-    try:
-        config_map = _load_lims_config_map()
-        conf = config_map.get(assay)
-        if conf is None:
-            LOG.info(
-                "No LIMS config for assay '%s'", assay, extra={"sample_id": sample_id}
-            )
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Export not supported for assay '{assay}'",
-            )
-        # Convert sample info to LIMS format
-        lims_data = lims_rs_formatter(sample_obj, conf)
-    except NotImplementedError as exc:
-        LOG.exception(
-            "LIMS formatter not implemented for this assay",
-            extra={"sample_id": sample_id, "assay": assay},
+    # TODO add helper for getting last pipeline run
+    assay = sample_obj['pipeline'][0]['assay']
+    config_map = _load_lims_config_map()
+    conf = config_map.get(assay)
+    if conf is None:
+        LOG.info(
+            "No LIMS config for assay '%s'", assay, extra={"sample_id": sample_id}
         )
         raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"LIMS export not implemented for assay '{assay}'",
-        ) from exc
-    except FileNotFoundError as exc:
-        LOG.exception(
-            "LIMS export configuration file missing/unreadable",
-            extra={"config": settings.lims_export_config},
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Export not supported for assay '{assay}'",
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="LIMS export configuration is missing or unreadable.",
-        ) from exc
-    except (InvalidFormatError, ValueError) as exc:
-        LOG.exception(
-            "Failed to format LIMS export",
-            extra={"sample_id": sample_id, "assay": assay},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to format LIMS export.",
-        ) from exc
+    # Convert sample info to LIMS format
+    lims_data = lims_rs_formatter(sample_obj, conf)
 
     # 3. Serialize output data to correct media type
     if fmt == "tsv":

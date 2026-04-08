@@ -1,6 +1,10 @@
 {% from  'sidebar.html' import qc_classification_form_fields  %}
 {% import "cell_fmt.html" as render_funcs with context %}
 
+{% macro select_render_func(cell_data, name='text_renderer') -%}
+  {{ render_funcs| attr(name) | default(render_funcs.text_renderer, true)(cell_data) }}
+{% endmacro %}
+
 {% macro add_to_basket_btn() %}
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
     <i class="bi bi-plus-lg"></i>
@@ -123,7 +127,7 @@
                 <tr id="{{ row.sample_id }}" {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
                     {% for col_info in table_data.columns %}
                         {% set cell_data=row[col_info.id] %}
-                        {{ render_funcs[col_info.renderer](cell_data) }}
+                        {{ select_render_func(cell_data, name=col_info.renderer) }}
                     {% endfor %}
                 </tr>
             {% endfor %}
@@ -146,7 +150,7 @@
     {% endif %}
 
     {% if macro %}
-        {{ render_funcs[macro](cell_info) }}
+        {{ select_render_func(cell_data, name=col_info.renderer) }}
     {% else %}
         <td class="{{ style }}" 
             {% if tooltip %}

@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Minimal packages + curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl ca-certificates \
+      curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -29,6 +29,11 @@ CMD ["uvicorn", "bonsai_api.main:app", "--reload", "--log-level", "info", "--hos
 
 ### Build python deps ###
 FROM base AS python-builder
+
+RUN pip wheel --wheel-dir /wheels \
+    setuptools>=61.0 \
+    setuptools-scm>=8 \
+    wheel
 
 COPY libs/api_client/ ./api_client
 COPY api/ ./api

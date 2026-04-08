@@ -1,25 +1,34 @@
 """Data model definition of input/ output data"""
 
-from typing import Optional, Union
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
+import logging
 
-from prp.models.kleborate import KleborateEtIndex, KleborateScoreIndex
-from prp.models.phenotype import (AmrFinderGene, AmrFinderResistanceGene,
-                                  ElementType, PredictionSoftware,
-                                  ResfinderGene, VariantBase, VirulenceGene)
-from prp.models.sample import PipelineResult
-from prp.models.species import SpeciesPrediction
-from prp.models.typing import (ResultLineageBase, TbProfilerLineage,
-                               TypingMethod, TypingResultCgMlst,
-                               TypingResultGeneAllele, TypingResultMlst,
-                               TypingSoftware)
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator
 
-from ..models.qc import SampleQcClassification, VaraintRejectionReason
-from ..models.tags import Tag
-from .base import (DateTimeModelMixin, DBModelMixin, ModifiedAtRWModel,
-                   MultipleRecordsResponseModel, RWModel)
+from prp.parse.models.base import VariantBase
+from prp.parse import hydrate_result
+from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
+
+from bonsai_api.utils import get_timestamp
+
+from .analysis import ResultStatus, CurationRecord
+from .pipeline import PipelineRun
+from .qc import SampleQcClassification, VaraintRejectionReason
+from .tags import Tag
+from .base import (
+    DateTimeModelMixin,
+    RecordIdMixin,
+    ForbidExtraModelMixin,
+    MultipleRecordsResponseModel,
+    RWModel,
+    Timestamps,
+)
 from .metadata import InputMetaEntry, MetaEntryInDb
 from .qc import QcClassification
+
+LOG = logging.getLogger(__name__)
 
 CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
@@ -41,7 +50,7 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
 
 class VariantInDb(VariantBase):
     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-    reason: Optional[VaraintRejectionReason] = None
+    reason: VaraintRejectionReason | None = None
 
 
 class ResfinderVariant(VariantInDb):
@@ -56,85 +65,335 @@ class TbProfilerVariant(VariantInDb):
     """Container for TbProfiler variant information"""
 
     variant_effect: str
-    hgvs_nt_change: Optional[str] = Field(..., description="DNA change in HGVS format")
-    hgvs_aa_change: Optional[str] = Field(
+    hgvs_nt_change: str | None = Field(..., description="DNA change in HGVS format")
+    hgvs_aa_change: str | None = Field(
         ..., description="Protein change in HGVS format"
     )
 
 
-class SampleBase(ModifiedAtRWModel):  # pylint: disable=too-few-public-methods
-    """Base datamodel for sample data structure"""
-
-    tags: list[Tag] = []
-    qc_status: QcClassification = QcClassification()
-    # comments and non analytic results
-    comments: list[CommentInDatabase] = []
-    location: str | None = Field(None, description="Location id")
-    # signature file name
-    genome_signature: str | None = Field(None, description="Genome signature name")
-    ska_index: str | None = Field(None, description="Ska index path")
-
-
-class ElementTypeResult(BaseModel):
-    """Phenotype result data model.
-
-    A phenotype result is a generic data structure that stores predicted genes,
-    mutations and phenotyp changes.
+class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
+    """Base model for all sample representations.
+    
+    Contains core sample metadata, tags, and annotations.
+    ID hierarchy managed by subclasses:
+    - RecordIdMixin provides `id` (internal UUIDv7)
+    - External reference via `external_sample_id`
     """
 
-    phenotypes: dict[str, list[str]]
-    genes: list[
-        Union[AmrFinderResistanceGene, AmrFinderGene, ResfinderGene, VirulenceGene]
-    ]
-    variants: list[Union[TbProfilerVariant, MykrobeVariant, ResfinderVariant]]
+    # Sample metadata
+    sample_id: str
+    sample_name: str
+    lims_id: str | None = None
+
+    # Sample oragnization and classification
+    tags: list[Tag] = []
+    qc_status: QcClassification = Field(
+        default_factory=QcClassification,
+        description="Quality control classification of the sample.",
+    )
+
+    # Annotations
+    comments: list[CommentInDatabase] = Field(default_factory=list)
+    location: str | None = Field(None, description="Location id")
+
+    # Data references
+    genome_signature: str | None = Field(None, description="Genome signature name")
+    ska_index: str | None = Field(None, description="Ska index path")
 
 
 class MethodIndex(BaseModel):
     """Container for key-value lookup of analytical results."""
 
-    type: Union[ElementType, TypingMethod]
-    software: PredictionSoftware | TypingSoftware | None
-    result: Union[
-        ElementTypeResult,
-        TypingResultMlst,
-        TypingResultCgMlst,
-        TypingResultGeneAllele,
-        TbProfilerLineage,
-        ResultLineageBase,
-    ]
+    type: str
+    software: str | None = None
+    result: Any
 
 
 class SampleInCreate(
-    SampleBase, PipelineResult
+    SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Sample data model used when creating new db entries."""
 
-    metadata: list[InputMetaEntry] = []
-    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
+    groups: list[str] = Field(default_factory=list)
+    metadata: list[InputMetaEntry] = Field(default_factory=list)
+    element_type_result: list[MethodIndex] = Field(default_factory=list)
     sv_variants: list[VariantInDb] | None = None
     snv_variants: list[VariantInDb] | None = None
 
 
-class SampleInDatabase(
-    DBModelMixin, SampleBase, PipelineResult
-):  # pylint: disable=too-few-public-methods
-    """Sample database model outputed from the database."""
+# class SampleRecordDb(
+#     RecordIdMixin, SampleBase
+# ):  # pylint: disable=too-few-public-methods
+#     """Sample database model outputed from the database."""
 
-    metadata: list[MetaEntryInDb] = []
-    element_type_result: list[KleborateEtIndex | KleborateScoreIndex | MethodIndex] = []
-    sv_variants: list[VariantInDb] | None = None
-    snv_variants: list[VariantInDb] | None = None
+#     metadata: list[MetaEntryInDb] = Field(default_factory=list)
+#     element_type_result: list[MethodIndex] = Field(default_factory=list)
+#     sv_variants: list[VariantInDb] | None = None
+#     snv_variants: list[VariantInDb] | None = None
 
 
 class SampleSummary(
-    DBModelMixin, SampleBase, PipelineResult
+    RecordIdMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
 
-    major_specie: SpeciesPrediction = Field(...)
+
+class SequencingPlatforms(StrEnum):
+    """Supported sequencing platforms."""
+
+    ILLUMUNA = "illumina"
+    IONTORRENT = "ion torrent"
+    ONT = "oxford nanopore technologies"
+    BGI = "bgi"
+    PACBIO = "Pacific Biosciences"
+
+
+class Visibility(StrEnum):
+    """Determines the visibilty of a record."""
+
+    PRIVATE = "private"
+    ORG = "organization"
+    PUBLIC = "public"
+
+
+class SequencingInfo(ForbidExtraModelMixin):
+    """Information on the sample was sequenced."""
+
+    sequencing_run_id: str
+    platform: SequencingPlatforms
+    instrument: str | None = None
+    method: dict[str, str] = Field(default_factory=dict)
+    sequenced_at: datetime | None = None
+
+
+class ReferenceGenome(RWModel):
+    """Reference genome."""
+
+    name: str
+    accession: str
+    fasta: str
+    fasta_index: str
+    genes: str
+
+
+class IgvAnnotationTrack(RWModel):
+    """IGV annotation track data."""
+
+    name: str  # track name to display
+    file: str  # path to the annotation file
+
+
+class ExportStatus(StrEnum):
+    """Status for LIMS export operations."""
+
+    NOT_EXPORTED = "not_exported"
+    PENDING = "pending"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+class LimsExportStatus(BaseModel):
+    """Record of a LIMS export attempt."""
+
+    exported_at: datetime = Field(default_factory=get_timestamp)
+    exported_by: str | None = None
+    error: str | None = None
+
+
+class AnalysisViewEntryBase(BaseModel):
+    """
+    A denormalized, latest-view entry for a (software, analysis_type) result on a sample.
+
+    - `result`: small, normalized object your builder expects under each group array.
+    - `summary`: compact fields for overview tables and quick filtering.
+    - `status/reason/meta`: envelope transparency.
+    - `analysis_id`: pointer to canonical batch for drill-down.
+    """
+
+    software: str
+    software_version: str
+    analysis_type: str
+
+    # optional pointers to the analysis
+    analysis_id: str
+    pipeline_run_id: str | None = None
+
+    # analysis envelope fields
+    status: ResultStatus
+    reason: str | None = None
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+    summary: dict[str, Any] = Field(default_factory=dict, description="Compact summary fields for overviews.")
+
+
+class AnalysisViewEntryDb(AnalysisViewEntryBase):
+    """
+    A denormalized, latest-view entry for a (software, analysis_type) result on a sample.
+
+    - `result`: small, normalized object your builder expects under each group array.
+    - `summary`: compact fields for overview tables and quick filtering.
+    - `status/reason/meta`: envelope transparency.
+    - `analysis_id`: pointer to canonical batch for drill-down.
+    """
+    # curation flags
+    result: Any
+    curations: list[CurationRecord] = Field(
+        default_factory=list, 
+        description="All curation records for this analysis."
+    )
+
+
+class AnalysisViewEntryOut(AnalysisViewEntryBase):
+    """API response model for analysis results."""
+
+    # curation flags
+    result: Any
+    curations: list[CurationRecord] = Field(
+        default_factory=list,
+        description="All curation records for this analysis."
+    )
+    merged_items: list[Any] = Field(
+        default_factory=list,
+        description="For analyses with item-level results (e.g., variants), a merged list of all items across software, with curation decisions applied. Used for unified display and filtering."
+    )
+
+    @computed_field
+    @property
+    def has_curation(self) -> bool:
+        """Whether this analysis has any curation records."""
+        return len(self.curations) > 0
+    
+    @computed_field
+    @property
+    def curation_status(self) -> str:
+        """Overall curation status summary."""
+        decisions = {curation.decision for curation in self.curations}
+        if "reject" in decisions:
+            return "rejected"
+        if "ambiguous" in decisions:
+            return "ambiguous"
+        if "accept" in decisions and len(decisions) == 1:
+            return "accepted"
+        return "unprocessed"
+    
+    @field_validator("result", mode="before")
+    @classmethod
+    def hydrate_result_field(cls, v: Any, info: ValidationInfo) -> BaseModel:
+        """Hydrate the result field into the expected model based on analysis_type."""
+        analysis_type = info.data.get("analysis_type")
+        software = info.data.get("software")
+
+        try:
+            return hydrate_result(result=v, analysis_type=analysis_type, software=software)
+        except Exception as exc:
+            LOG.warning("Failed to hydrate result for %s/%s: %s", software, analysis_type, exc)
+            return v
+    
+    # def model_post_init(self, __context):
+    #     # Called after the model is fully created
+    #     self.merged_items = merge_items_with_curations(
+    #         self.result,
+    #         self.curations
+    #     )
+
+
+class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
+    """Defines output structure of group info used for creation."""
+
+    sample_id: str | None = None
+    sample_name: str
+    lims_id: str | None = None
+
+    groups: list[str] = Field(default_factory=list, description="Group ids")
+
+    sequencing: SequencingInfo | None = None
+    metadata: list[InputMetaEntry] = Field(default_factory=list)
+
+    # preparation for role based access controll
+    owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
+    owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
+    access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
+    visibility: Visibility = Visibility.PUBLIC
+
+
+class SampleRecordDb(SampleBase):
+    """Database representation of a sample."""
+
+    # IDs
+    external_sample_id: str = Field(..., description="Id from other systems used to reference the sample.")
+
+    # Access control
+    owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
+    owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
+    access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
+    visibility: Visibility = Visibility.PUBLIC
+
+    # Grouping and organization
+    groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
+    metadata: list[InputMetaEntry] = []
+
+    # Curation flag
+    curated: bool = False
+
+    # Sequencing and pipeline information
+    sequencing: SequencingInfo | None = None
+    pipeline: list[PipelineRun] = Field(default_factory=list)
+    last_pipeline_run_id: str | None = None
+
+    # Analysis results
+    qc_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
+    element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
+
+    # Reference and annotation
+    reference_genome: ReferenceGenome | None = None
+    read_mapping: str | None = None
+    genome_annotation: list[IgvAnnotationTrack] | None = None
+
+    # LIMS export tracking
+    lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
+    lims_exports: list[LimsExportStatus] = Field(default_factory=list)
+
+
+class SampleRecordOut(SampleBase):
+    """API output model for samples (excludes internal history fields)."""
+
+    model_config = ConfigDict(extra='ignore')
+    
+    # IDs
+    external_sample_id: str = Field(..., description="Id from other systems used to reference the sample.")
+    
+    # Access control
+    owners: list[str] = Field(default_factory=list)
+    owner_organizations: list[str] = Field(default_factory=list)
+    access_groups: list[str] = Field(default_factory=list)
+    visibility: Visibility = Visibility.PUBLIC
+    
+    # Grouping and organization
+    groups: list[str] = Field(default_factory=list)
+    metadata: list[InputMetaEntry] = []
+    
+    # Sequencing and pipeline information
+    sequencing: SequencingInfo | None = None
+    pipeline: PipelineRun | None = None
+    
+    # Analysis results
+    qc_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    species_prediction: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    typing_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    element_type_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
+    
+    # Reference and annotation
+    reference_genome: ReferenceGenome | None = None
+    read_mapping: str | None = None
+    genome_annotation: list[IgvAnnotationTrack] | None = None
+    
+    # LIMS tracking
+    lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
 
 
 class MultipleSampleRecordsResponseModel(
     MultipleRecordsResponseModel
 ):  # pylint: disable=too-few-public-methods
-    data: list[SampleInDatabase] = []
+    data: list[SampleRecordOut] = []

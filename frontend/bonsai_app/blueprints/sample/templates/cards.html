@@ -390,29 +390,33 @@
 {% macro resfinder_prediction(result, extended=False) %}
 <div>
     <h5 class="card-title">Genes</h5>
-    <table class="table table-striped">
-        <caption>Database: {{result.genes[0].ref_database}}</caption>
-        <thead>
-            <td scope="col">Gene</td>
-            <td scope="col">Accession</td>
-            <td scope="col">Identity</td>
-            <td scope="col">Coverage</td>
-            <td scope="col">Depth</td>
-            <td scope="col">Antibiotics</td>
-        </thead>
-        <tbody class="table-group-divider">
-        {% for gene in result.genes %}
-            <tr>
-                <td>{{ gene.gene_symbol }}</td>
-                <td>{{ accession_link(gene.accession) }}</td>
-                <td>{{ gene.coverage }}%</td>
-                <td>{{ gene.identity }}%</td>
-                <td>{{ gene.depth | fmt_number }}</td>
-                <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% if result.genes | length == 0 %}
+        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+    {% else %}
+        <table class="table table-striped">
+            <caption>Database: {{result.genes[0].ref_database}}</caption>
+            <thead>
+                <td scope="col">Gene</td>
+                <td scope="col">Accession</td>
+                <td scope="col">Identity</td>
+                <td scope="col">Coverage</td>
+                <td scope="col">Depth</td>
+                <td scope="col">Antibiotics</td>
+            </thead>
+            <tbody class="table-group-divider">
+            {% for gene in result.genes %}
+                <tr>
+                    <td>{{ gene.gene_symbol }}</td>
+                    <td>{{ accession_link(gene.accession) }}</td>
+                    <td>{{ gene.coverage }}%</td>
+                    <td>{{ gene.identity }}%</td>
+                    <td>{{ gene.depth | fmt_number }}</td>
+                    <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% endif  %}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>

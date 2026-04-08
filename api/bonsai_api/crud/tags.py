@@ -4,21 +4,29 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Protocol, runtime_checkable
 
-from bonsai_api.config import (BrackenThresholds, MykrobeThresholds,
-                               normalize_species_key, thresholds_cfg)
-from bonsai_api.models.sample import SampleInDatabase
-from bonsai_api.models.tags import (ResistanceTag, Tag, TagList, TagSeverity,
-                                    TagType, VirulenceTag)
-from prp.models.phenotype import ElementType, ElementTypeResult
-from prp.models.species import (BrackenSpeciesPrediction,
-                                MykrobeSpeciesPrediction)
-from prp.models.typing import TypingMethod
+from bonsai_api.config import (
+    BrackenThresholds,
+    MykrobeThresholds,
+    normalize_species_key,
+    thresholds_cfg,
+)
+from bonsai_api.models.sample import SampleRecordDb
+from bonsai_api.models.tags import (
+    ResistanceTag,
+    Tag,
+    TagList,
+    TagSeverity,
+    TagType,
+    VirulenceTag,
+)
+from prp.parse.models.enums import AnalysisType, ElementType
+from prp.parse.models.base import ElementTypeResult, BaseSpeciesPrediction
 
 LOG = logging.getLogger(__name__)
 
 
 # Phenotypic tags
-def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
+def add_pvl(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample is PVL toxin positive."""
     virs = [
         pred
@@ -30,6 +38,7 @@ def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
         has_luks = any(gene.gene_symbol.startswith("lukS") for gene in vir_result.genes)
         has_lukf = any(gene.gene_symbol.startswith("lukF") for gene in vir_result.genes)
         # classify PVL
+        tag: Tag | None = None
         if has_lukf and has_luks:
             tag = Tag(
                 type=TagType.VIRULENCE,
@@ -53,10 +62,11 @@ def add_pvl(tags: TagList, sample: SampleInDatabase) -> None:
                 description="Neither lukF or lukS was identified",
                 severity=TagSeverity.PASSED,
             )
-        tags.append(tag)
+        if tag is not None:
+            tags.append(tag)
 
 
-def add_mrsa(tags: TagList, sample: SampleInDatabase) -> None:
+def add_mrsa(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample is MRSA.
 
     An SA is classified as MRSA if it carries either mecA, mecB or mecC.
@@ -96,10 +106,10 @@ def add_mrsa(tags: TagList, sample: SampleInDatabase) -> None:
     tags.append(tag)
 
 
-def add_stx_type(tags: TagList, sample: SampleInDatabase) -> None:
+def add_stx_type(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample STX type."""
     for type_res in sample.typing_result:
-        if type_res.type == TypingMethod.STX.value:
+        if type_res.type == AnalysisType.STX.value:
             tag = Tag(
                 type=TagType.TYPING,
                 label=type_res.result.gene_symbol.upper(),
@@ -109,10 +119,10 @@ def add_stx_type(tags: TagList, sample: SampleInDatabase) -> None:
             tags.append(tag)
 
 
-def add_oh_type(tags: TagList, sample: SampleInDatabase) -> None:
+def add_oh_type(tags: TagList, sample: SampleRecordDb) -> None:
     """Check if sample OH type."""
     for type_res in sample.typing_result:
-        if type_res.type in [TypingMethod.OTYPE.value, TypingMethod.HTYPE.value]:
+        if type_res.type in [AnalysisType.O_TYPE.value, AnalysisType.H_TYPE.value]:
             tag = Tag(
                 type=TagType.TYPING,
                 label=type_res.result.sequence_name.upper(),
@@ -122,10 +132,10 @@ def add_oh_type(tags: TagList, sample: SampleInDatabase) -> None:
             tags.append(tag)
 
 
-def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> None:
+def add_shigella_typing(tags: TagList, sample: SampleRecordDb) -> None:
     """Get if an E. coli sample is typed as a Shigella."""
     for type_res in sample.typing_result:
-        if type_res.type == TypingMethod.SHIGATYPE:
+        if type_res.type == AnalysisType.SHIGATYPE:
             if type_res.result.ipah.lower() == "ipah+":
                 if type_res.result.predicted_serotype is not None:
                     result = "Shigella"
@@ -142,8 +152,8 @@ def add_shigella_typing(tags: TagList, sample: SampleInDatabase) -> None:
 
 
 def _pick_main_bracken(
-    preds: Iterable[BrackenSpeciesPrediction],
-) -> BrackenSpeciesPrediction:
+    preds: Iterable[BaseSpeciesPrediction],
+) -> BaseSpeciesPrediction:
     # Robust even if caller doesn't pre-sort
     try:
         return max(preds, key=lambda p: p.fraction_total_reads)
@@ -152,8 +162,8 @@ def _pick_main_bracken(
 
 
 def _pick_main_mykrobe(
-    preds: Iterable[MykrobeSpeciesPrediction],
-) -> MykrobeSpeciesPrediction:
+    preds: Iterable[BaseSpeciesPrediction],
+) -> BaseSpeciesPrediction:
     # Species coverage tends to be the meaningful ranking for mykrobe
     try:
         return max(preds, key=lambda p: p.species_coverage)
@@ -185,7 +195,7 @@ class EvalResult:
     species: str
 
 
-def evaluate_bracken(preds: list[BrackenSpeciesPrediction]) -> EvalResult:
+def evaluate_bracken(preds: list[BaseSpeciesPrediction]) -> EvalResult:
     main = _pick_main_bracken(preds)
     cfg = thresholds_cfg.species
     thr: BrackenThresholds = cfg.get_bracken(
@@ -258,7 +268,7 @@ SPP_EVALUATORS: dict[str, Callable[[list[Any]], EvalResult]] = {
 }
 
 
-def flag_uncertain_spp_prediction(tags: TagList, sample: SampleInDatabase) -> None:
+def flag_uncertain_spp_prediction(tags: TagList, sample: SampleRecordDb) -> None:
     """Flag samples with uncertain species id predictions."""
     for spp_pred in sample.species_prediction:
         software = getattr(spp_pred, "software", None)
@@ -304,7 +314,7 @@ ALL_TAG_FUNCS = [
 ]
 
 
-def compute_phenotype_tags(sample: SampleInDatabase) -> TagList:
+def compute_phenotype_tags(sample: SampleRecordDb) -> TagList:
     """Compute tags based on bracken phenotype prediction."""
     tags = []
     # iterate over tag functions to build up list of tags

@@ -11,8 +11,7 @@ from bonsai_api.crud.sample import update_sample
 from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import Database
 from bonsai_api.models.group import SCHEMA_VERSION as GROUP_SCHEMA_VERSION
-from bonsai_api.models.group import (GroupInCreate, SampleTableColumnDB,
-                                     pred_res_cols, qc_cols)
+from bonsai_api.models.group import GroupInfoCreate
 from bonsai_api.models.sample import SampleInCreate
 from bson import json_util
 from prp.migration.convert import migrate_result as sample_migrate_result
@@ -70,35 +69,6 @@ def group_pre_1_to_1(group: UnformattedResult) -> UnformattedResult:
 
     LOG.info("Migrating to schema version %d", 1)
     upd_group = copy(group)
-
-    # add schema version
-    upd_group["schema_version"] = "1"
-
-    # build a uniqe index of all valid columns
-    all_valid_cols: list[str] = list({col.id for col in pred_res_cols + qc_cols})
-    ID_MIGRATION_TBL = {
-        "qc": "qc_status",
-        "profile": "analysis_profile",
-        "mlst": "mlst_typing",
-        "stx": "stx_typing",
-        "oh": "oh_typing",
-        "missing_loci": "cgmlst_missing_loci",
-    }
-
-    # replace SampleTableColumnInput objects with the id
-    upd_col_def: list[str] = []
-    for col in upd_group["table_columns"]:
-        upd_id = ID_MIGRATION_TBL.get(col["id"], col["id"])
-        if upd_id not in all_valid_cols:
-            LOG.warning("Failed to migrate column with %s", upd_id)
-            continue
-        upd_col_def.append(upd_id)
-    upd_col_def: list[str] = [
-        SampleTableColumnDB(id=col["id"]) for col in upd_group["table_columns"]
-    ]
-    assert all([isinstance(col, str) and len(col) > 0 for col in upd_col_def])
-
-    upd_group["table_columns"] = upd_col_def
     return upd_group
 
 
@@ -137,8 +107,8 @@ async def migrate_group_collection(db: Database, backup_path: pathlib.Path | Non
     click.confirm("Do you what to continue?", abort=True)
 
     # 3 migrate data and validate using the current schema
-    migrated_groups: list[GroupInCreate] = [
-        GroupInCreate.model_validate(migrate_group(group)) for group in groups
+    migrated_groups: list[GroupInfoCreate] = [
+        GroupInfoCreate.model_validate(migrate_group(group)) for group in groups
     ]
 
     # 4 backup old records as json array
@@ -149,11 +119,12 @@ async def migrate_group_collection(db: Database, backup_path: pathlib.Path | Non
             outf.write(json_util.dumps(groups, indent=3))
 
     # 5 groups in database
-    click.secho(f"Updating samples in the database")
+    click.secho("Updating groups in the database")
     for upd_group in migrated_groups:
-        was_updated = await update_group(db, upd_group.group_id, upd_group)
-        if not was_updated:
-            raise MigrationError(f"Sample '{upd_group.group_id}' was not updated.")
+        ...
+        # was_updated = await update_group(db, upd_group.group_id, upd_group)
+        # if not was_updated:
+        #     raise MigrationError(f"Sample '{upd_group.group_id}' was not updated.")
 
 
 migration_functions: list[Callable[..., Any]] = [

@@ -1,24 +1,17 @@
 """File IO operations."""
 
-import itertools
 import logging
 import mimetypes
 import os
 import pathlib
 import re
-from collections import defaultdict
-from enum import Enum
+from enum import StrEnum
 from io import StringIO
-from typing import List, Tuple
 
 import pandas as pd
 from fastapi.responses import Response
-from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
-from prp.models.typing import TypingMethod
 
 from .models.metadata import InputTableMetadata, TableMetadataInDb
-from .models.qc import SampleQcClassification
-from .models.sample import SampleInDatabase
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -33,7 +26,7 @@ TARGETED_ANTIBIOTICS = {
 }
 
 
-class TBResponses(Enum):
+class TBResponses(StrEnum):
     """Valid responses for M. tuberculosis results."""
 
     resistant = "Mutation pavisad"
@@ -69,7 +62,7 @@ def is_file_readable(file_path: str) -> bool:
     return True
 
 
-def parse_byte_range(byte_range: str) -> Tuple[int, int]:
+def parse_byte_range(byte_range: str) -> tuple[int, int]:
     """Returns the two numbers in 'bytes=123-456' or throws ValueError.
     The last number or both numbers may be None.
     """

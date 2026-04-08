@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ..config import settings
 from ..io import is_file_readable
-from ..models.sample import SampleInDatabase
+from ..models.sample import SampleRecordDb
 from ..redis import minhash, ska
 from ..redis.queue import JobFailedError
 from ..redis.utils import SubmittedJob, wait_for_job
@@ -29,7 +29,7 @@ class MissingFile(BaseModel):
 MISSING_FILES = list[MissingFile]
 
 
-def verify_reference_genome(sample: SampleInDatabase) -> MISSING_FILES:
+def verify_reference_genome(sample: SampleRecordDb) -> MISSING_FILES:
     """Verify paths to the reference genome and assets."""
     missing_files: MISSING_FILES = []
 
@@ -56,7 +56,7 @@ def verify_reference_genome(sample: SampleInDatabase) -> MISSING_FILES:
     return missing_files
 
 
-def verify_read_mapping(sample: SampleInDatabase) -> MissingFile | None:
+def verify_read_mapping(sample: SampleRecordDb) -> MissingFile | None:
     """Check paths for mapped reads."""
     if sample.read_mapping is not None:
         try:
@@ -70,7 +70,7 @@ def verify_read_mapping(sample: SampleInDatabase) -> MissingFile | None:
             )
 
 
-def verify_ska_index(sample: SampleInDatabase, timeout: int = 60) -> MissingFile | None:
+def verify_ska_index(sample: SampleRecordDb, timeout: int = 60) -> MissingFile | None:
     """Verify files for SKA clustering."""
     if sample.ska_index is None:
         return None
@@ -89,7 +89,7 @@ def verify_ska_index(sample: SampleInDatabase, timeout: int = 60) -> MissingFile
 
 
 def verify_sourmash_files(
-    sample: SampleInDatabase, timeout: int = 60
+    sample: SampleRecordDb, timeout: int = 60
 ) -> MissingFile | None:
     """Verify files for minhash clustering."""
     if sample.genome_signature is not None:
