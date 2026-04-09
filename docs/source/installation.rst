@@ -11,7 +11,6 @@ Installing Bonsai using docker-compose and setup involves the following steps.
 #. :ref:`Setup IGV (optional)<Setup IGV integration>`.
 #. :doc:`Configure LDAP based authentication (optional)</dev/login_systems>`.
 #. Start the Bonsai with ``docker-compose up -d``
-#. :ref:`Create indexes for the database<Create database indexes>`.
 #. :ref:`Create or configure an admin user<Create an admin user>`.
 #. :ref:`Upload samples<Upload samples to Bonsai>`.
 

@@ -1,5 +1,3 @@
-"""Main entrypoint for API server."""
-
 import logging
 import logging.config as logging_config
 from contextlib import asynccontextmanager
@@ -52,6 +50,24 @@ logging_config.dictConfig(
 LOG = logging.getLogger(__name__)
 
 
+async def ensure_database_setup(db):
+    """Ensure all database indexes are created and collections are available."""
+    from bonsai_api.db.index import INDEXES
+
+    LOG.info("Ensuring database indexes are created.")
+    for col_name, indexes in INDEXES.items():
+        if col_name == "curations":
+            collection = db.curations_collection
+        else:
+            collection = getattr(db, f"{col_name}_collection")
+        for idx in indexes:
+            try:
+                await collection.create_index(idx["definition"], **idx["options"])
+                LOG.info(f"Created or ensured index {idx['options']['name']} on {col_name}")
+            except Exception as e:
+                LOG.warning(f"Failed to create index {idx['options']['name']} on {col_name}: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handles startup and teardown events."""
@@ -60,6 +76,8 @@ async def lifespan(app: FastAPI):
         raise RuntimeError("Database connection has not been configured")
     db = setup_db_connection(settings.mongodb_uri, db_name=settings.database_name)
     app.state.db = db
+    # ensure database indexes and collections
+    await ensure_database_setup(db)
     # setup ldap conneciton
     if settings.use_ldap_auth:
         ldap_connection.init_app()

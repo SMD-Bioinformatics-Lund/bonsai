@@ -3,6 +3,7 @@
 ### Added
 
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
+- Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
 - Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
