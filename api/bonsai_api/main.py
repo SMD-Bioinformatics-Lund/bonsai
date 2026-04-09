@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from api_client.audit_log import AuditLogClient
 from api_client.notification import NotificationClient
 from bonsai_api.db.db import setup_db_connection
+from bonsai_api.services.user_service import create_user_on_startup
 from fastapi import FastAPI
 
 from .config import Settings, settings
@@ -72,6 +73,30 @@ async def lifespan(app: FastAPI):
             base_url=str(settings.notification_service_api)
         )
 
+    if settings.bonsai_admin_user:
+
+        if not settings.bonsai_admin_password:
+            LOG.error(
+                "Admin user configured without password, skipping admin user creation."
+            )
+        else:
+            LOG.info(
+                "Admin user configured, seeding database with admin user if no users exist."
+            )
+            if await db.user_collection.count_documents({}) == 0:
+                admin_email = (
+                    settings.bonsai_admin_mail
+                    or f"{settings.bonsai_admin_user}@example.com"
+                )
+                await create_user_on_startup(
+                    db,
+                    username=settings.bonsai_admin_user,
+                    password=settings.bonsai_admin_password,
+                    email=admin_email,
+                    audit=getattr(app.state, "audit_log", None),
+                )
+                LOG.info("Created admin user %s on startup.", settings.bonsai_admin_user)
+
     yield
     # teardown
     db.close()
@@ -86,9 +111,14 @@ def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="Bonsai", lifespan=lifespan)
     # configure CORS
     configure_cors(app)
+
     # check if api authentication is disabled
     if not settings.api_authentication:
         LOG.warning("API authentication disabled!")
+    
+    # admin user bootstrap is handled during lifespan startup
+    
+    # register routers
     app.include_router(root.router)
     app.include_router(users.router)
     app.include_router(samples.router)
