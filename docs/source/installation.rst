@@ -12,7 +12,7 @@ Installing Bonsai using docker-compose and setup involves the following steps.
 #. :doc:`Configure LDAP based authentication (optional)</dev/login_systems>`.
 #. Start the Bonsai with ``docker-compose up -d``
 #. :ref:`Create indexes for the database<Create database indexes>`.
-#. :ref:`Create an admin user<Create an admin user>`.
+#. :ref:`Create or configure an admin user<Create an admin user>`.
 #. :ref:`Upload samples<Upload samples to Bonsai>`.
 
 Please note that your ``docker-compose.yml`` file might be different from the minimal example in the documentaiton depending on your network and server environment. You can configure the different services using environmental variables (defined in the docker-compose file). See advanced :ref:`container configuration<Container configuration>` for the available options. In rare instances you might need to  or by editing the related config files (`frontend config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/frontend/app/config.py>`_ and `api config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/api/app/config.py>`_) and mount these to the container using `volume mounts <https://docs.docker.com/storage/volumes/>`_.
@@ -110,6 +110,10 @@ The database must be indexed for Bonsai to work correctly. The database indexes 
 Create an admin user
 --------------------
 
+You can create an admin user either manually using the CLI or automatically on startup by configuring environment variables.
+
+**Manual Creation (CLI)**
+
 Create an admin user with the CLI. The *admin* has full permission to view, create, modify and delete data and can be used to login, upload samples, and create additional users.
 
 .. code-block:: bash
@@ -120,6 +124,26 @@ Create an admin user with the CLI. The *admin* has full permission to view, crea
                                                   --lname Holder           \
                                                   -m place.holder@mail.com \
                                                   -r admin
+
+**Automatic Creation on Startup**
+
+Alternatively, Bonsai can automatically create an admin user when the API starts up if no users exist in the database. Configure the following environment variables in your docker-compose.yml or environment:
+
+- ``BONSAI_ADMIN_USER``: Username for the admin user
+- ``BONSAI_ADMIN_PASSWORD``: Password for the admin user
+- ``BONSAI_ADMIN_MAIL``: Email for the admin user (optional, defaults to username@example.com)
+
+Example docker-compose environment configuration:
+
+.. code-block:: yaml
+
+   api:
+      environment:
+         - BONSAI_ADMIN_USER=admin
+         - BONSAI_ADMIN_PASSWORD=securepassword
+         - BONSAI_ADMIN_MAIL=admin@example.com
+
+This feature is particularly useful for containerized deployments and automated setups.
 
 Additional users can be created in the WebUI in the admin panel (``http://your-ip/admin/users``) or by using the CLI as above. For more information see :ref:`create users<Create users>`.
 
