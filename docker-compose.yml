@@ -64,8 +64,8 @@ services:
       - "8000:8000"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
-      - TZ=Europe/Stockholm
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
 
@@ -85,10 +85,9 @@ services:
     ports: 
       - "8001:8000"
     environment:
-      - ALLOWED_ORIGINS=["*"]
-      - DB_HOST=mongodb
       - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
 
@@ -139,6 +138,7 @@ services:
       - redis
     scale: 1
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
     command: minhash-service run-cron-scheduler
