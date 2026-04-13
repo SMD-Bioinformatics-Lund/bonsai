@@ -134,6 +134,12 @@ class QCConfig(BaseModel):
 class Settings(BaseSettings):
     """API configuration."""
 
+    # Options for creating a admin user on first startup.
+    # Its useful when running Bonsai in a containerized environment
+    bonsai_admin_user: str | None = None
+    bonsai_admin_password: str | None = None
+    bonsai_admin_mail: str | None = None
+
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
     allowed_origins: list[str] = []
