@@ -1,3 +1,12 @@
+"""
+Application entry point for the Bonsai API.
+
+This module configures logging, initialises the FastAPI application, manages
+startup and shutdown lifecycle concerns (database connections, indexes,
+external services, and optional admin bootstrapping), and registers all API
+routers, middleware, and exception handlers.
+"""
+
 import logging
 import logging.config as logging_config
 from contextlib import asynccontextmanager
