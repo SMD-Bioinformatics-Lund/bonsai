@@ -6,13 +6,13 @@ from typing import Annotated
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.user import (
     add_samples_to_user_basket,
-    create_user,
     delete_user,
     get_user,
     get_users,
     remove_samples_from_user_basket,
     update_user,
 )
+from bonsai_api.services.user_service import create_user_service
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     ApiRequestContext,
@@ -183,4 +183,4 @@ async def create_user_in_db(
     ctx: ApiRequestContext = Depends(get_request_context),
 ) -> UserOutputDatabase:
     """Create a new user."""
-    return await create_user(db, user, ctx=ctx, audit=audit_log)
+    return await create_user_service(db, user, ctx=ctx, audit=audit_log)

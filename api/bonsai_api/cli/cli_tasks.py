@@ -10,7 +10,7 @@ from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
 from bonsai_api.crud.sample import get_samples_full, update_sample
 from bonsai_api.crud.tags import compute_phenotype_tags
-from bonsai_api.crud.user import create_user as create_user_in_db
+from bonsai_api.services.user_service import create_user_service
 from bonsai_api.db import verify
 from bonsai_api.db.index import INDEXES
 from bonsai_api.db.utils import get_db_connection
@@ -58,7 +58,7 @@ async def run_create_user(user_obj: UserInputCreate) -> UserOutputDatabase:
     audit_log = _get_audit_log_client()
     LOG.info("Creating user: %s", user_obj.username)
     async with get_db_connection() as db:
-        return await create_user_in_db(db, user_obj, ctx, audit_log)
+        return await create_user_service(db, user_obj, ctx, audit_log)
 
 
 async def run_create_group(group_obj: GroupInfoCreate, user_id: str) -> GroupInfoOut:

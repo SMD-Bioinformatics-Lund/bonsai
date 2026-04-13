@@ -130,30 +130,20 @@ async def update_user(
 
 async def create_user(
     db_obj: Database,
-    user: UserInputCreate,
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
+    user: UserInputDatabase,
 ) -> UserOutputDatabase:
-    """Create new user in the database."""
-    event_subject = Subject(id=user.username, type=SourceType.SYS)
-    with audit_event_context(audit, "create_user", ctx, event_subject):
-        # create hash for password
-        hashed_password = get_password_hash(user.password)
-        user_db_fmt: UserInputDatabase = UserInputDatabase(
-            hashed_password=hashed_password, **user.model_dump()
-        )
-        # store data in database
-        try:
-            resp_obj = await db_obj.user_collection.insert_one(user_db_fmt.model_dump())
-        except DuplicateKeyError as exc:
-            LOG.error("User %s already exists: %s", user.username, str(exc))
-            raise ConflictError(f"User {user.username} already exists") from exc
-        inserted_id = resp_obj.inserted_id
-        user_obj = UserInputDatabase(
-            id=str(inserted_id),
-            **user_db_fmt.model_dump(),
-        )
-    return user_obj
+    """Insert a user document into the database."""
+    try:
+        resp_obj = await db_obj.user_collection.insert_one(user.model_dump())
+    except DuplicateKeyError as exc:
+        LOG.error("User %s already exists: %s", user.username, str(exc))
+        raise ConflictError(f"User {user.username} already exists") from exc
+
+    inserted_id = resp_obj.inserted_id
+    return UserOutputDatabase(
+        id=str(inserted_id),
+        **user.model_dump(exclude={"hashed_password"}),
+    )
 
 
 async def get_users(
