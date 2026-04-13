@@ -75,6 +75,11 @@ services:
       context: .
       dockerfile: api/Dockerfile
       network: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/ | grep -q 'Welcome to the Bonsai API'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     depends_on:
       - mongodb
       - mongo-init-replica
