@@ -64,8 +64,8 @@ services:
       - "8000:8000"
     environment:
       - FLASK_APP=bonsai_app.app:create_app
-      - TZ=Europe/Stockholm
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
 
@@ -75,6 +75,11 @@ services:
       context: .
       dockerfile: api/Dockerfile
       network: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/ | grep -q 'Welcome to the Bonsai API'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     depends_on:
       - mongodb
       - mongo-init-replica
@@ -85,10 +90,9 @@ services:
     ports: 
       - "8001:8000"
     environment:
-      - ALLOWED_ORIGINS=["*"]
-      - DB_HOST=mongodb
       - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
 
@@ -139,6 +143,7 @@ services:
       - redis
     scale: 1
     restart: unless-stopped
+    env_file: docker-compose.env
     networks:
       - bonsai-net
     command: minhash-service run-cron-scheduler

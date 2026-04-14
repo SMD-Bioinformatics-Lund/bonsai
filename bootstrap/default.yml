@@ -1,0 +1,23 @@
+users:
+  - username: user_one
+    email: user_one@mail.com
+    password: user123
+    role: [user]
+  - username: user_two
+    email: user_two@mail.com
+    password: user123
+    role: [user]
+  - username: uploader
+    email: uploader@mail.com
+    password: user123
+    role: [creator]
+groups:
+  - group_id: mtuberculosis
+    display_name: "M. tuberculosis"
+    description: "Tuberculosis test samples"
+  - group_id: ecoli
+    display_name: "E. coli"
+    description: "Escherichia test samples"
+  - group_id: saureus
+    display_name: "S. aureus"
+    description: "Staphylococcus test samples"
