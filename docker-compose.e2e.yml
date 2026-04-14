@@ -33,17 +33,18 @@ services:
     restart: no
     networks:
      - bonsai-net
-
-  ska_service:
-    volumes:
-      - "./e2e_tests/fixtures/samples/ska:/data/index_files/ska"
-
-  frontend:
+    
+  smoke-data:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
     environment:
-      - API_INTERNAL_URL=http://api:8000
-      - API_EXTERNAL_URL=http://api:8000
-
-  api:
+      - API_URL=http://api:8000
     volumes:
-     - "./e2e_tests/setup_bonsai_database.sh:/tmp/setup_bonsai_database.sh"
-    entrypoint: /tmp/setup_bonsai_database.sh
+      - ./e2e_tests/fixture/smoke:/data
+    command: "prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml"
+    restart: no
+    env_file: docker-compose.env
+    networks:
+      - bonsai-net
