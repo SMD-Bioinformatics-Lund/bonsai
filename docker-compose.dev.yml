@@ -15,7 +15,6 @@ services:
     build: 
       target: development
     environment:
-      - FLASK_ENV=development 
       - API_INTERNAL_URL=http://api:8000
       - API_EXTERNAL_URL=http://localhost:8001
     depends_on:
@@ -34,7 +33,7 @@ services:
     build: 
       target: development
     environment: 
-      - notification_service_api=http://notification_service:8000/
+      - NOTIFICATION_SERVICE_API=http://notification_service:8000/
     develop:
       watch: 
         - path: ./api/Dockerfile
@@ -69,9 +68,6 @@ services:
           action: sync
 
   minhash_cron_service:
-    environment:
-      - INTEGRITY_TASK_CRON=* * * * *
-      - PURGE_FILES_TASK_CRON=* * * * *
     build: 
       target: development
     develop:
@@ -162,11 +158,8 @@ services:
     networks:
       - bonsai-net
 
-  seed:
-    build: 
-      context: .
-      dockerfile: api/Dockerfile
-      network: host
+  bootstrap:
+    image: clinicalgenomicslund/bonsai-prp:dev
     depends_on:
       mongodb:
         condition: service_healthy
@@ -176,29 +169,11 @@ services:
         condition: service_completed_successfully
     environment:
       - MONGODB_URI=mongodb://mongodb:27017?replicaSet=rs0
+      - API_URL=http://api:8000
     volumes:
-      - ./scripts/seed_db.py:/seed_db.py:ro
-    command: "python /seed_db.py"
+      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
+    command: "prp bonsai bootstrap /bootstrap/default.yml"
     restart: no
-    networks:
-      - bonsai-net
-  
-  db_upload:
-    container_name: db-upload
-    build: 
-      context: e2e_tests
-      network: host
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-      seed:
-        condition: service_completed_successfully
-    volumes:
-     - ./scripts/upload_sample.py:/app/upload_sample.py:ro
-     - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
-    command: bash /app/upload_test_samples.sh
-    restart: no
+    env_file: docker-compose.env
     networks:
       - bonsai-net
