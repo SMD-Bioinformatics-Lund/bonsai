@@ -7,9 +7,54 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
-  mongodb:
-    ports:
-      - "27017:27017"
+  # ─────────────────────────────────────────────
+  # Initialisation
+  # ─────────────────────────────────────────────
+
+  bootstrap:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["init", "e2e"]
+    depends_on:
+      api:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017?replicaSet=rs0
+      API_URL: http://api:8000
+    volumes:
+      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
+    command: prp bonsai bootstrap /bootstrap/default.yml
+    restart: "no"
+    networks: [bonsai]
+  
+  # ─────────────────────────────────────────────
+  # Smoke / verification
+  # ─────────────────────────────────────────────
+
+  smoke-tests:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["e2e"]
+    depends_on:
+      api:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    environment:
+      API_URL: http://api:8000
+    volumes:
+      - ./e2e_tests/fixture/smoke:/data:ro
+    command: >
+      sh -c "
+        prp bonsai status &&
+        prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
+      "
+    restart: "no"
+    networks: [bonsai]
+
+  # ─────────────────────────────────────────────
+  # Development conveniences
+  # ─────────────────────────────────────────────
 
   frontend:
     build: 
@@ -17,8 +62,6 @@ services:
     environment:
       - API_INTERNAL_URL=http://api:8000
       - API_EXTERNAL_URL=http://localhost:8001
-    depends_on:
-      - api
     develop:
       watch: 
         - path: ./frontend/setup.cfg
@@ -155,25 +198,32 @@ services:
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
-  bootstrap:
-    image: clinicalgenomicslund/bonsai-prp:dev
+  # ─────────────────────────────────────────────
+  # End‑to‑end testing
+  # ─────────────────────────────────────────────
+  
+  chrome:
+    image: selenium/standalone-chrome
+    profiles: ["e2e"]
+    shm_size: 2gb
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    networks: [bonsai]
+
+  e2e-tests:
+    build: e2e_tests
+    profiles: ["e2e"]
     depends_on:
-      mongodb:
-        condition: service_healthy
+      chrome:
+        condition: service_started
+      frontend:
+        condition: service_started
       api:
         condition: service_healthy
-      mongo-init-replica:
-        condition: service_completed_successfully
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017?replicaSet=rs0
-      - API_URL=http://api:8000
     volumes:
-      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
-    command: "prp bonsai bootstrap /bootstrap/default.yml"
-    restart: no
-    env_file: docker-compose.env
-    networks:
-      - bonsai-net
+      - ./reports:/app/reports
+    restart: "no"
+    networks: [bonsai]
