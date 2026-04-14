@@ -1,0 +1,24 @@
+{
+  "workflow_name": "disturbed_sanger",
+  "sample_name": "tb_test_1",
+  "lims_id": "test_tb_1",
+  "assay": "mtuberculosis",
+  "release_life_cycle": "development",
+  "sequencing_run": "validering",
+  "sequencing_platform": "illumina",
+  "sequencing_type": "PE",
+  "date": "2026-04-14T09:47:34.000294+02:00",
+  "pipeline": "main.nf",
+  "version": "1.2.0",
+  "commit": "null",
+  "configuration_files": [
+    "/fs1/pipelines/jasen_dev/nextflow.config"
+  ],
+  "analysis_profile": [
+    "mycobacterium_tuberculosis",
+    "dev",
+    "illumina",
+    "singularity"
+  ],
+  "command": "nextflow run /fs1/pipelines/jasen_dev/main.nf -profile mycobacterium_tuberculosis,dev,illumina,singularity -c /fs1/pipelines/jasen_dev/nextflow.config --csv /fs1/markus/prp-test-samples/prp_test_samples_mtuberculosis.csv --queue normal -with-singularity /fs1/resources/containers/jasen_2023_02-28.sif -with-report /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.report.html -with-trace /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.trace.txt -with-timeline /fs1/nextflow//reports/mtuberculosis-val.jasen-mtuberculosis-dev.timeline.html -work-dir /fs1/nextflow//mtuberculosis-val.jasen-mtuberculosis-dev"
+}
