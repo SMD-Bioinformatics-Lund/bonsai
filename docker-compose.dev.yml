@@ -177,4 +177,3 @@ services:
     env_file: docker-compose.env
     networks:
       - bonsai-net
-  
