@@ -11,9 +11,32 @@ services:
   # Initialisation
   # ─────────────────────────────────────────────
 
+
+  mongo-init:
+    image: mongo:4.4.22
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: |
+      mongo mongodb:27017 --eval "
+        try {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
+          print('Replica set initialized');
+        } catch (e) {
+          if (e.code === 23) {
+            print('Replica set already initialized');
+          } else {
+            throw e;
+          }
+        }
+      "
+    networks: [bonsai]
+    restart: on-failure
+
   bootstrap:
     image: clinicalgenomicslund/bonsai-prp:dev
     profiles: ["init", "e2e"]
+    env_file: docker-compose.env
     depends_on:
       api:
         condition: service_healthy
@@ -21,7 +44,7 @@ services:
         condition: service_completed_successfully
     environment:
       MONGODB_URI: mongodb://mongodb:27017?replicaSet=rs0
-      API_URL: http://api:8000
+      BONSAI_API: http://api:8000
     volumes:
       - ./bootstrap/default.yml:/bootstrap/default.yml:ro
     command: prp bonsai bootstrap /bootstrap/default.yml
@@ -29,26 +52,23 @@ services:
     networks: [bonsai]
   
   # ─────────────────────────────────────────────
-  # Smoke / verification
+  # Data seeder
   # ─────────────────────────────────────────────
 
-  smoke-tests:
+  test-data-seeder:
     image: clinicalgenomicslund/bonsai-prp:dev
-    profiles: ["e2e"]
+    profiles: ["init", "e2e"]
+    env_file: docker-compose.env
     depends_on:
       api:
         condition: service_healthy
-      bootstrap:
+      mongo-init:
         condition: service_completed_successfully
     environment:
-      API_URL: http://api:8000
+      BONSAI_API: http://api:8000
     volumes:
-      - ./e2e_tests/fixture/smoke:/data:ro
-    command: >
-      sh -c "
-        prp bonsai status &&
-        prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
-      "
+      - ./e2e_tests/fixtures/smoke:/data:ro
+    command: prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
     restart: "no"
     networks: [bonsai]
 
@@ -60,8 +80,8 @@ services:
     build: 
       target: development
     environment:
-      - API_INTERNAL_URL=http://api:8000
-      - API_EXTERNAL_URL=http://localhost:8001
+      API_INTERNAL_URL: http://api:8000
+      API_EXTERNAL_URL: http://localhost:8001
     develop:
       watch: 
         - path: ./frontend/setup.cfg
@@ -76,7 +96,10 @@ services:
     build: 
       target: development
     environment: 
-      - NOTIFICATION_SERVICE_API=http://notification_service:8000/
+      NOTIFICATION_SERVICE_API: http://notification_service:8000/
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
     develop:
       watch: 
         - path: ./api/Dockerfile
@@ -145,7 +168,7 @@ services:
     build:
       target: development
     environment:
-      - log_level=debug
+      LOG_LEVEL: debug
     develop:
       watch: 
         - path: ./ska_service/setup.cfg
@@ -160,8 +183,8 @@ services:
     build: 
       target: development
     environment:
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
     ports: 
       - "8005:8000"
     develop:

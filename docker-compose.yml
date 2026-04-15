@@ -14,27 +14,6 @@ services:
       start_period: 30s
     networks: [bonsai]
 
-  mongo-init:
-    image: mongo:4.4.22
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    entrypoint: |
-      mongo mongodb:27017 --eval "
-        try {
-          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
-          print('Replica set initialized');
-        } catch (e) {
-          if (e.code === 23) {
-            print('Replica set already initialized');
-          } else {
-            throw e;
-          }
-        }
-      "
-    networks: [bonsai]
-    restart: on-failure
-
   redis:
     container_name: redis
     image: redis:7.0.10
@@ -75,7 +54,7 @@ services:
     ports: 
       - "8001:8000"
     environment:
-      - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
+      AUDIT_LOG_SERVICE_API: http://audit_log_service:8000/
     restart: unless-stopped
     env_file: docker-compose.env
     networks: [bonsai]
@@ -92,7 +71,7 @@ services:
     ports: 
       - "8000:8000"
     environment:
-      - FLASK_APP=bonsai_app.app:create_app
+      FLASK_APP: bonsai_app.app:create_app
     env_file: docker-compose.env
     networks: [bonsai]
 
