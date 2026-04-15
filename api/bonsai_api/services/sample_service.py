@@ -115,6 +115,7 @@ async def add_pipeline_run_service(db: Database, *, sample_id: str, pipeline: Pi
 
         # Ensure update actually modified the document
         if update_obj.modified_count != 1:
+            LOG.error("Matched count=%d; Modified count=%d; ", update_obj.matched_count, update_obj.modified_count)
             raise DatabaseOperationError(f"Failed to add pipeline run for {sample_id}")
     except Exception as exc:  # pragma: no cover - defensive
         LOG.exception("Unexpected error while adding pipeline run: %s", exc)
@@ -171,7 +172,7 @@ async def add_sourmash_index_service(db: Database, *, sample_id: str, sketch: st
     # check that sample exist
     sample = await get_sample_service(db, sample_id=sample_id, session=session)
 
-    if sample.sourmash_sketch is not None:
+    if sample.genome_signature is not None:
         raise ConflictError("Sample {sample_id} is associated with index")
 
     # Schedule adding sketch and reindex
