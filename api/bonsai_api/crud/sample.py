@@ -347,7 +347,7 @@ async def add_pipeline_run(
     """
     query = {
         "sample_id": sample_id,
-        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}],
+        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}, {"pipeline": {"$size": 0}}],
     }
     update_obj = await db.sample_collection.update_one(
         query,
