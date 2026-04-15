@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.services.membership_service import add_memberships
-from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists
+from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists, add_ska_index
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
 from bonsai_api.models.context import ApiRequestContext
@@ -138,3 +138,23 @@ async def get_sample_service(db: Database, *, sample_id: str, session: ClientSes
         raise DatabaseOperationError(
             f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
         ) from ve
+
+
+async def add_ska_index_service(db: Database, *, sample_id: str, index_uri: str, session: ClientSession | None = None, force: bool = False):
+    """Add a SKA index to a sample."""
+
+    sample = await get_sample_service(db=db, sample_id=sample_id, session=session)
+
+    # check if index has already been added
+    if sample.ska_index is not None and not force:
+        raise ConflictError("Sample {sample_id} is already associated with an index.")
+    
+    try:
+        update_obj = await add_ska_index(db, sample_id=sample_id, index_uri=index_uri, session=session)
+
+        # Ensure update actually modified the document
+        if update_obj.modified_count != 1:
+            raise DatabaseOperationError(f"Failed to add SKA index to {sample_id}")
+    except Exception as exc:  # pragma: no cover - defensive
+        LOG.exception("Unexpected error while adding SKA index: %s", exc)
+        raise DatabaseOperationError(str(exc)) from exc

@@ -705,3 +705,12 @@ async def upsert_analysis_results(
         raise DatabaseOperationError(
             f"Failed to upsert analysis result for {sample_id} in {field_name}"
         )
+
+
+async def add_ska_index(db: Database, *, sample_id: str, index_uri: str, session: ClientSession):
+    """Add a SKA index uri in a sample document."""
+
+    return await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        {"$set": {"ska_index": index_uri}},
+        session=session)
