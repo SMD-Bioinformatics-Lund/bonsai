@@ -67,7 +67,7 @@ services:
     environment:
       BONSAI_API: http://api:8000
     volumes:
-      - ./e2e_tests/fixtures/smoke:/data:ro
+      - ./e2e_tests/fixtures/samples:/data:ro
     command: prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
     restart: "no"
     networks: [bonsai]
