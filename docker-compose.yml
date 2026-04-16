@@ -12,31 +12,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    networks:
-      - bonsai-net
-    restart: always
-  
-  mongo-init-replica:
-    image: mongo:4.4.22
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    entrypoint: |
-      mongo mongodb:27017 --eval "
-        try {
-          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
-          print('Replica set initialized');
-        } catch (e) {
-          if (e.code === 23) {
-            print('Replica set already initialized');
-          } else {
-            throw e;
-          }
-        }
-      "
-    networks:
-      - bonsai-net
-    restart: on-failure
+    networks: [bonsai]
 
   redis:
     container_name: redis
@@ -47,27 +23,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    networks:
-      - bonsai-net
-    restart: always
-
-  frontend:
-    container_name: frontend
-    build: 
-      context: .
-      dockerfile: frontend/Dockerfile
-      network: host
-    depends_on:
-      api:
-        condition: service_healthy
-    ports: 
-      - "8000:8000"
-    environment:
-      - FLASK_APP=bonsai_app.app:create_app
-    restart: unless-stopped
-    env_file: docker-compose.env
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
   api:
     container_name: api
@@ -81,42 +37,62 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
-      - mongodb
-      - mongo-init-replica
-      - minhash_service
-      - ska_service
-      - allele_cluster_service
-      - audit_log_service
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notification_service:
+        condition: service_started
+      audit_log_service:
+        condition: service_started
+      minhash_service:
+        condition: service_started
+      ska_service:
+        condition: service_started
+      allele_cluster_service:
+        condition: service_started
     ports: 
       - "8001:8000"
     environment:
-      - AUDIT_LOG_SERVICE_API=http://audit_log_service:8000/
+      AUDIT_LOG_SERVICE_API: http://audit_log_service:8000/
     restart: unless-stopped
     env_file: docker-compose.env
-    networks:
-      - bonsai-net
+    networks: [bonsai]
+
+  frontend:
+    container_name: frontend
+    build: 
+      context: .
+      dockerfile: frontend/Dockerfile
+      network: host
+    depends_on:
+      api:
+        condition: service_healthy
+    ports: 
+      - "8000:8000"
+    environment:
+      FLASK_APP: bonsai_app.app:create_app
+    env_file: docker-compose.env
+    networks: [bonsai]
 
   notification_service:
     build: 
       context: .
       dockerfile: notification_service/Dockerfile
       network: host
-    scale: 1
     restart: unless-stopped
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
   audit_log_service:
     build: 
       context: .
       dockerfile: audit_log_service/Dockerfile
       network: host
-    scale: 1
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
   minhash_service:
     build: 
@@ -124,14 +100,12 @@ services:
       dockerfile: minhash_service/Dockerfile
       network: host
     depends_on:
-      - mongodb
-      - redis
-      - minhash_cron_service
-      - notification_service
-    scale: 1
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - bonsai-net
+    networks: [bonsai]
     command: minhash-service run-minhash-worker
 
   minhash_cron_service:
@@ -140,12 +114,11 @@ services:
       dockerfile: minhash_service/Dockerfile
       network: host
     depends_on:
-      - redis
-    scale: 1
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     env_file: docker-compose.env
-    networks:
-      - bonsai-net
+    networks: [bonsai]
     command: minhash-service run-cron-scheduler
 
   ska_service:
@@ -155,10 +128,10 @@ services:
       dockerfile: ska_service/Dockerfile
       network: host
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
   allele_cluster_service:
     container_name: allele_cluster_service
@@ -167,15 +140,11 @@ services:
       dockerfile: allele_cluster_service/Dockerfile
       network: host
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
 networks:
-  bonsai-net:
+  bonsai:
     driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.0.20.0/24

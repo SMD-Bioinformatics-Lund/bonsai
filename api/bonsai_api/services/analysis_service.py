@@ -11,7 +11,6 @@ from bonsai_api.models.analysis import (
     Envelope,
     ResultStatus,
     PRPParserOutput,
-    PrpAnalysisType,
 )
 from bonsai_api.models.sample import AnalysisViewEntryDb
 from api_client.audit_log.models import Subject, SourceType
@@ -52,7 +51,7 @@ GROUP_FOR: dict[str, str] = {
     "shigatype": TYPING_RESULT,
     "smst": TYPING_RESULT,
     "spatype": TYPING_RESULT,
-    "species": SPP_RESULT,
+    "species_prediction": SPP_RESULT,
     "stress": ELEMENT_TYPE_RESULT,
     "stx": TYPING_RESULT,
     "virulence": TYPING_RESULT,
@@ -61,7 +60,7 @@ GROUP_FOR: dict[str, str] = {
 
 
 def group_for(
-    analysis_type: PrpAnalysisType, *, default_field: str | None = None
+    analysis_type: str, *, default_field: str | None = None
 ) -> str:
     """Get sample record field for analysis type.
 
@@ -71,7 +70,7 @@ def group_for(
     except KeyError:
         if default_field is None:
             raise ValueError(
-                f"No group mapping for analysis type: {analysis_type.value}"
+                f"No group mapping for analysis type: {analysis_type}"
             )
         return default_field
 

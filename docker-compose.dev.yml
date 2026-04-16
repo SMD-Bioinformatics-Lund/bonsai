@@ -7,18 +7,81 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
-  mongodb:
-    ports:
-      - "27017:27017"
+  # ─────────────────────────────────────────────
+  # Initialisation
+  # ─────────────────────────────────────────────
+
+
+  mongo-init:
+    image: mongo:4.4.22
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: |
+      mongo mongodb:27017 --eval "
+        try {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
+          print('Replica set initialized');
+        } catch (e) {
+          if (e.code === 23) {
+            print('Replica set already initialized');
+          } else {
+            throw e;
+          }
+        }
+      "
+    networks: [bonsai]
+    restart: on-failure
+
+  bootstrap:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["init", "e2e"]
+    env_file: docker-compose.env
+    depends_on:
+      api:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017?replicaSet=rs0
+      BONSAI_API: http://api:8000
+    volumes:
+      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
+    command: prp bonsai bootstrap /bootstrap/default.yml
+    restart: "no"
+    networks: [bonsai]
+  
+  # ─────────────────────────────────────────────
+  # Data seeder
+  # ─────────────────────────────────────────────
+
+  test-data-seeder:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["init", "e2e"]
+    env_file: docker-compose.env
+    depends_on:
+      api:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      BONSAI_API: http://api:8000
+    volumes:
+      - ./e2e_tests/fixtures/samples:/data:ro
+    command: prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
+    restart: "no"
+    networks: [bonsai]
+
+  # ─────────────────────────────────────────────
+  # Development conveniences
+  # ─────────────────────────────────────────────
 
   frontend:
     build: 
       target: development
     environment:
-      - API_INTERNAL_URL=http://api:8000
-      - API_EXTERNAL_URL=http://localhost:8001
-    depends_on:
-      - api
+      API_INTERNAL_URL: http://api:8000
+      API_EXTERNAL_URL: http://localhost:8001
     develop:
       watch: 
         - path: ./frontend/setup.cfg
@@ -33,7 +96,10 @@ services:
     build: 
       target: development
     environment: 
-      - NOTIFICATION_SERVICE_API=http://notification_service:8000/
+      NOTIFICATION_SERVICE_API: http://notification_service:8000/
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
     develop:
       watch: 
         - path: ./api/Dockerfile
@@ -102,7 +168,7 @@ services:
     build:
       target: development
     environment:
-      - log_level=debug
+      LOG_LEVEL: debug
     develop:
       watch: 
         - path: ./ska_service/setup.cfg
@@ -117,8 +183,8 @@ services:
     build: 
       target: development
     environment:
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
     ports: 
       - "8005:8000"
     develop:
@@ -155,25 +221,32 @@ services:
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
-  bootstrap:
-    image: clinicalgenomicslund/bonsai-prp:dev
+  # ─────────────────────────────────────────────
+  # End‑to‑end testing
+  # ─────────────────────────────────────────────
+  
+  chrome:
+    image: selenium/standalone-chrome
+    profiles: ["e2e"]
+    shm_size: 2gb
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    networks: [bonsai]
+
+  e2e-tests:
+    build: e2e_tests
+    profiles: ["e2e"]
     depends_on:
-      mongodb:
-        condition: service_healthy
+      chrome:
+        condition: service_started
+      frontend:
+        condition: service_started
       api:
         condition: service_healthy
-      mongo-init-replica:
-        condition: service_completed_successfully
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017?replicaSet=rs0
-      - API_URL=http://api:8000
     volumes:
-      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
-    command: "prp bonsai bootstrap /bootstrap/default.yml"
-    restart: no
-    env_file: docker-compose.env
-    networks:
-      - bonsai-net
+      - ./reports:/app/reports
+    restart: "no"
+    networks: [bonsai]

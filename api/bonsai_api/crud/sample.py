@@ -347,7 +347,7 @@ async def add_pipeline_run(
     """
     query = {
         "sample_id": sample_id,
-        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}],
+        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}, {"pipeline": {"$size": 0}}],
     }
     update_obj = await db.sample_collection.update_one(
         query,
@@ -705,3 +705,21 @@ async def upsert_analysis_results(
         raise DatabaseOperationError(
             f"Failed to upsert analysis result for {sample_id} in {field_name}"
         )
+
+
+async def add_ska_index(db: Database, *, sample_id: str, index_uri: str, session: ClientSession):
+    """Add a SKA index uri in a sample document."""
+
+    return await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        {"$set": {"ska_index": index_uri}},
+        session=session)
+
+
+async def add_sourmash_sketch(db: Database, *, sample_id: str, sketch: str, session: ClientSession):
+    """Add a sourmash sketch job id to a sample document."""
+
+    return await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        {"$set": {"genome_signature": sketch}},
+        session=session)
