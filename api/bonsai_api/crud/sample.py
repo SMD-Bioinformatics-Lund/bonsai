@@ -4,7 +4,6 @@ import logging
 from itertools import groupby
 from typing import Any
 
-import bonsai_api
 from api_client.audit_log import AuditLogClient, EventCreate
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
@@ -153,75 +152,15 @@ async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
     return is_updated
 
 
-async def delete_samples(
+async def delete_sample_crud(
     db: Database,
-    sample_ids: list[str],
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> dict[str, Any]:
-    """Delete a sample from the database, remove it from groups, and remove its signature."""
-    result: dict[str, Any] = {
-        "sample_ids": sample_ids,
-        "n_deleted": 0,
-        "removed_from_n_groups": 0,
-        "remove_signature_jobs": None,
-        "update_index_job": None,
-    }
-    # remove sample from database
-    resp = await db.sample_collection.delete_many({"sample_id": {"$in": sample_ids}})
-    # verify that only one sample found and one document was modified
-    result["n_deleted"] = resp.deleted_count
-    all_deleted = resp.deleted_count == len(sample_ids)
-    LOG.info("Removing samples: %s; status: %s", ", ".join(sample_ids), all_deleted)
-
-    # remove sample from group if sample was deleted
-    resp = await db.sample_group_collection.update_many(
-        {"included_samples": {"$in": sample_ids}},  # filter
-        {
-            "$pull": {
-                "included_samples": {"$in": sample_ids}
-            },  # remove samples from group
-            "$set": {"modified_at": get_timestamp()},  # update modified at
-        },
-    )
-    # verify that number of modified groups and samples match
-    result["removed_from_n_groups"] = resp.modified_count
-    LOG.info(
-        "Removing sample %s from groups; in n groups: %d; n modified documents: %d",
-        ", ".join(sample_ids),
-        resp.matched_count,
-        resp.modified_count,
-    )
-
-    # remove signature from database and reindex database
-    samples_was_removed = result["n_deleted"] > 0
-    if samples_was_removed:
-        # remove signatures
-        job_ids: list[str] = []
-        for sample_id in sample_ids:
-            submitted_job = schedule_remove_genome_signature(sample_id)
-            job_ids.append(submitted_job.id)
-        result["remove_signature_jobs"] = job_ids
-        # remove reindex
-        index_job = schedule_remove_genome_signature_from_index(
-            sample_ids, depends_on=job_ids
-        )
-        result["update_index_job"] = index_job.id
-
-    if isinstance(audit, AuditLogClient) and samples_was_removed:
-        for sample_id in sample_ids:
-            # prepare event metadata and submit event
-            event_subject = Subject(id=sample_id, type=SourceType.USR)
-            event = EventCreate(
-                source_service=bonsai_api.__name__,
-                event_type="delete_sample",
-                actor=ctx.actor,
-                subject=event_subject,
-                metadata=ctx.metadata,
-            )
-            audit.post_event(event)
-
-    return result
+    *,
+    sample_id: str,
+    session: ClientSession | None = None,
+) -> bool:
+    """Delete a samples from the sample collection, return true if deleted."""
+    result = await db.sample_collection.delete_one({"sample_id": sample_id}, session=session)
+    return result.deleted_count == 1
 
 
 async def get_sample_by_id(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
