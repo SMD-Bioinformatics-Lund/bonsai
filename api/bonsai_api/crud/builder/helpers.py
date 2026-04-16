@@ -273,7 +273,7 @@ def build_latest_pipeline_run_stage() -> PipelineStages:
                             "as": "run",
                             "cond": {
                                 "$eq": [
-                                    "$$run._id",
+                                    "$$run.pipeline_run_id",
                                     "$last_pipeline_run_id",
                                 ]
                             },
