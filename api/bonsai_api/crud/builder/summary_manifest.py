@@ -45,8 +45,8 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
         as_field="groups_info",
         let={"group_ids": {"$ifNull": ["$groups", []]}},
         pipeline=[
-            {"$match": {"$expr": {"$in": ["$group_id", "$$group_ids"]}}},
-            {"$project": {"_id": 0, "id": "$group_id", "display_name": 1}},
+            {"$match": {"$expr": {"$in": ["$core.group_id", "$$group_ids"]}}},
+            {"$project": {"_id": 0, "id": "$core.group_id", "display_name": "$core.display_name"}},
         ],
     ),
 }
