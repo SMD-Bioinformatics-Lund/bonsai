@@ -15,7 +15,7 @@ from bonsai_api.crud.sample import (
     add_comment,
     add_location,
 )
-from bonsai_api.services.sample_service import add_pipeline_run_service, create_sample_service, get_sample_service
+from bonsai_api.services.sample_service import add_pipeline_run_service, create_sample_service, get_sample_service, add_ska_index_service, add_sourmash_index_service
 from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
 from bonsai_api.crud.sample import (
     get_samples_full,
@@ -60,7 +60,6 @@ from bonsai_api.redis.minhash import (
     SubmittedJob,
     exclude_from_analysis,
     include_in_analysis,
-    schedule_add_genome_signature,
     schedule_add_genome_signature_to_index,
     schedule_find_similar_and_cluster,
     schedule_find_similar_samples,
@@ -336,65 +335,24 @@ async def create_genome_signatures_sample(
     db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
-    # verify that sample are in database
-    try:
-        sample = await get_sample_service(db, sample_id=sample_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=404, detail=format_error_message(error)
-        ) from error
 
-    # abort if signature has already been added
-    sig_exist_err = HTTPException(
-        status_code=409, detail="Signature is already added to sample"
-    )
-    if sample.genome_signature is not None:
-        raise sig_exist_err
-
-    add_sig_job = schedule_add_genome_signature(sample_id, signature)
-    index_job = schedule_add_genome_signature_to_index(
-        [sample_id],
-        depends_on=[add_sig_job.id],
-    )
-
-    # updated sample in database with signature object jobid
-    # recast the data to proper object
-    sample_obj: dict[str, Any] = {
-        **sample.model_dump(),
-        **{"genome_signature": add_sig_job.id},
-    }
-    upd_sample_data = SampleInCreate.model_validate(sample_obj)
-    await crud_update_sample(db, upd_sample_data)
-
+    job_ids = await add_sourmash_index_service(db, sample_id=sample_id, sketch=signature)
     return {
         "id": sample_id,
-        "add_signature_job": add_sig_job.id,
-        "index_job": index_job.id,
+        "add_signature_job": job_ids["add_sketch_job"],
+        "index_job": job_ids["index_job"],
     }
 
 
 @router.post("/samples/{sample_id}/ska_index", tags=[RouterTags.SAMPLE])
 async def add_ska_index_to_sample(
     sample_id: str,
-    index: str,
+    index: str = Body(...),
     db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
-    # verify that sample are in database
-    sample = await get_sample_service(db, sample_id=sample_id)
 
-    # abort if signature has already been added
-    idx_exist_err = HTTPException(
-        status_code=409, detail="Sample is already associated with an SKA index."
-    )
-    if sample.ska_index is not None:
-        raise idx_exist_err
-
-    # updated sample in database with signature object jobid
-    # recast the data to proper object
-    sample_obj = {**sample.model_dump(), **{"ska_index": index}}
-    upd_sample_data = SampleInCreate(**sample_obj)
-    await crud_update_sample(db, upd_sample_data)
+    await add_ska_index_service(db, sample_id=sample_id, index_uri=index)
 
     return {"sample_id": sample_id, "index_file": index}
 

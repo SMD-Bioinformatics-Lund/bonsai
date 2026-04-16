@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.services.membership_service import add_memberships
-from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists
+from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists, add_ska_index, add_sourmash_sketch
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
 from bonsai_api.models.context import ApiRequestContext
@@ -17,6 +17,11 @@ from bonsai_api.db import Database
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.group import check_groups_exists
+
+from bonsai_api.redis.minhash import (
+    schedule_add_genome_signature,
+    schedule_add_genome_signature_to_index,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -110,6 +115,7 @@ async def add_pipeline_run_service(db: Database, *, sample_id: str, pipeline: Pi
 
         # Ensure update actually modified the document
         if update_obj.modified_count != 1:
+            LOG.error("Matched count=%d; Modified count=%d; ", update_obj.matched_count, update_obj.modified_count)
             raise DatabaseOperationError(f"Failed to add pipeline run for {sample_id}")
     except Exception as exc:  # pragma: no cover - defensive
         LOG.exception("Unexpected error while adding pipeline run: %s", exc)
@@ -138,3 +144,49 @@ async def get_sample_service(db: Database, *, sample_id: str, session: ClientSes
         raise DatabaseOperationError(
             f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
         ) from ve
+
+
+async def add_ska_index_service(db: Database, *, sample_id: str, index_uri: str, session: ClientSession | None = None, force: bool = False):
+    """Add a SKA index to a sample."""
+
+    sample = await get_sample_service(db=db, sample_id=sample_id, session=session)
+
+    # check if index has already been added
+    if sample.ska_index is not None and not force:
+        raise ConflictError("Sample {sample_id} is already associated with an index.")
+    
+    try:
+        update_obj = await add_ska_index(db, sample_id=sample_id, index_uri=index_uri, session=session)
+
+        # Ensure update actually modified the document
+        if update_obj.modified_count != 1:
+            raise DatabaseOperationError(f"Failed to add SKA index to {sample_id}")
+    except Exception as exc:  # pragma: no cover - defensive
+        LOG.exception("Unexpected error while adding SKA index: %s", exc)
+        raise DatabaseOperationError(str(exc)) from exc
+
+
+async def add_sourmash_index_service(db: Database, *, sample_id: str, sketch: str, session: ClientSession | None = None) -> dict[str, str]:
+    """Add sourmash index to the database and schedule an addition job."""
+
+    # check that sample exist
+    sample = await get_sample_service(db, sample_id=sample_id, session=session)
+
+    if sample.genome_signature is not None:
+        raise ConflictError("Sample {sample_id} is associated with index")
+
+    # Schedule adding sketch and reindex
+    add_sig_job = schedule_add_genome_signature(sample_id, sketch)
+    index_job = schedule_add_genome_signature_to_index(
+        [sample_id],
+        depends_on=[add_sig_job.id],
+    )
+
+    # Add job id to sample
+    add_idx_job = add_sig_job.id
+    add_sourmash_sketch(db, sample_id=sample_id, sketch=add_idx_job, session=session)
+
+    return {
+        "add_sketch_job": add_idx_job,
+        "index_job": index_job.id
+    }
