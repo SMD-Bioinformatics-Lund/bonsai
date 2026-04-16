@@ -114,7 +114,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="analysis_date",
             label="Analysis date",
-            path="$pipeline_runs[0].executed_at",
+            path="$latest_pipeline_run.executed_a",
             type="date",
             default_visible=True,
         ),
