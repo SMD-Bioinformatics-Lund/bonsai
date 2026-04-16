@@ -259,7 +259,7 @@ async def get_groups_by_sample_ids(
         raise EntryNotFound(f"Unknown sample_id(s): {sorted(missing_sids)}")
 
     edges: MembershipEdges = []
-    async for doc in find_groups_by_sample_ids(
+    for doc in await find_groups_by_sample_ids(
         db, sample_ids=sample_ids, session=session
     ):
         for gid in doc.get("groups", []):

@@ -571,7 +571,7 @@ async def check_samples_exists(
     # Deduplicate and sort input ids for consistent behavior
     input_ids = sorted(set(sample_ids))
 
-    cursor = await db.sample_collection.find(
+    cursor = db.sample_collection.find(
         {"sample_id": {"$in": input_ids}}, {"sample_id": 1, "_id": 0}, session=session
     )
     existing = await cursor.to_list(None)
