@@ -61,7 +61,7 @@ MANIFEST = Manifest(
             id="lims_id", label="LIMS id", path="$lims_id", default_visible=True
         ),
         ColumnFull(
-            id="assay", label="Assay", path="$pipeline.assay", default_visible=True
+            id="assay", label="Assay", path="$latest_pipeline_run.assay", default_visible=True
         ),
         ColumnFull(
             id="created_at",
@@ -109,12 +109,12 @@ MANIFEST = Manifest(
             path="$sequencing.platform",
         ),
         ColumnFull(
-            id="pipeline_version", label="Pipeline version", path="$pipeline.version"
+            id="pipeline_version", label="Pipeline version", path="$latest_pipeline_run.pipeline_info.definition.version"
         ),
         ColumnFull(
             id="analysis_date",
             label="Analysis date",
-            path="$latest_pipeline_run.executed_a",
+            path="$latest_pipeline_run.executed_at",
             type="date",
             default_visible=True,
         ),
