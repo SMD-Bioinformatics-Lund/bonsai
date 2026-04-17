@@ -12,7 +12,6 @@ from bonsai_api.models.group import (
     GroupAllowedUpdate,
     GroupInfoCreate,
     GroupInfoOut,
-    GroupListResponse,
 )
 from bonsai_api.utils import get_timestamp
 from pydantic import ValidationError
