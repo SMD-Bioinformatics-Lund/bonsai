@@ -133,11 +133,8 @@ def sample(sample_id: str) -> str:
     )
 
     # filter tbprofiler results and sort variants
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
     sample_info = filter_variants_if_processed(sample_info)
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
     sample_info = sort_variants(sample_info)
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
 
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
