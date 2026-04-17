@@ -34,7 +34,7 @@ LOG = logging.getLogger(__name__)
 VisibilityScope = Literal["admin", "user", "public_only"]
 
 
-async def get_groups(
+async def get_groups_crud(
     db: Database,
     *,
     offset: int = 0,
@@ -43,70 +43,44 @@ async def get_groups(
     user_id: str | None = None,
     user_roles: list[str] | None = None,
     session: Any = None,
-) -> GroupListResponse:
-    """Get collections from database.
+) -> tuple[list[dict[str, Any]], int]:
+    """Return raw group documents from the database.
 
-    Retrieve groups with optional filtering, projection and pagination.
-    - limit: max results to return; use None for no limit (but avoid for large collections).
-    - offset: documents to skip (offset pagination).
-    - sort: fieldname to sort by, use prefix - to indicate descending.
-    - user_id: if provided, filter groups based on user access.
-    - user_roles: roles of the user for access control.
+    This helper builds the aggregation pipeline and returns raw results.
+    It does not perform Pydantic validation or translate database errors.
     """
-    try:
-        data_pipeline: PipelineStages = []
+    data_pipeline: PipelineStages = []
 
-        if user_id is not None and "admin" not in (user_roles or []):
-            # non-admin users only see public groups, or those they own / are invited to
-            data_pipeline.append(build_public_visibility_match_stage(user_id))
+    if user_id is not None and "admin" not in (user_roles or []):
+        # non-admin users only see public groups, or those they own / are invited to
+        data_pipeline.append(build_public_visibility_match_stage(user_id))
 
-        # format the group data
-        data_pipeline.append(
-            group_project_stage(include_allowed=True, include_presets=True)
-        )
+    # format the group data
+    data_pipeline.append(group_project_stage(include_allowed=True, include_presets=True))
 
-        if sort:
-            allowed_sort_fields = {
-                "group_id",
-                "display_name",
-                "sample_count",
-                "created_at",
-                "modified_at",
-            }
-            data_pipeline.append(build_sort_stage(sort, allowed_sort_fields))
+    if sort:
+        allowed_sort_fields = {
+            "group_id",
+            "display_name",
+            "sample_count",
+            "created_at",
+            "modified_at",
+        }
+        data_pipeline.append(build_sort_stage(sort, allowed_sort_fields))
 
-        # add pagination facet
-        data_pipeline.append(build_facet_pagination(offset, limit))
+    # add pagination facet
+    data_pipeline.append(build_facet_pagination(offset, limit))
 
-        agg_cursor = await db.sample_group_collection.aggregate(
-            data_pipeline, session=session
-        )
-        results = await agg_cursor.to_list(None)
-    except PyMongoError as pme:
-        LOG.error("MongoDB error while retrieving groups: %s", str(pme))
-        raise DatabaseOperationError(
-            f"Database error occurred while retrieving groups: {str(pme)}"
-        ) from pme
-    except ValueError as ve:
-        LOG.error("Value error while building group retrieval pipeline: %s", str(ve))
-        raise
-
-    # process the data
-    facet = results[0] if results else {}
-
-    validated: list[GroupInfoOut] = []
-    raw_data = facet.get("data", [])
-    for doc in raw_data:
-        try:
-            validated.append(GroupInfoOut.model_validate(doc))
-        except ValidationError as ve:
-            LOG.error("Skipping invalid group document: %s", str(ve))
-            continue
-    records_total = facet.get("records_total", [])
-    return GroupListResponse(
-        data=validated,
-        records_total=records_total[0]["count"] if records_total else len(validated),
+    agg_cursor = await db.sample_group_collection.aggregate(
+        data_pipeline, session=session
     )
+    results = await agg_cursor.to_list(None)
+
+    facet = results[0] if results else {}
+    raw_data = facet.get("data", [])
+    records_total = facet.get("records_total", [])
+    count = records_total[0]["count"] if records_total else len(raw_data)
+    return raw_data, count
 
 
 async def fetch_group_raw(
