@@ -155,7 +155,7 @@
         <td class="{{ style }}" 
             {% if tooltip %}
                 data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="{{ cell_info.tooltip }}">
+                data-bs-title="{{ cell_info.tooltip | default("-") }}">
             {% endif %}
         >
             {{ data }}
