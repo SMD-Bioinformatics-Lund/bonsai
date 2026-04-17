@@ -60,7 +60,8 @@ async def get_groups_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    groups = await crud_gr.get_groups(db)
+    user = UserContext(user_id=current_user.username, roles=current_user.roles)
+    groups = await service_gr.get_groups_service(db, current_user=user)
     return groups
 
 
