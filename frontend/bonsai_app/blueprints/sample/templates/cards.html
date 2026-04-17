@@ -204,7 +204,7 @@
 
 {% macro virulence_card(pred) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
         <p class="card-text fst-italic">No  identified virulence factors.</p>
@@ -350,17 +350,17 @@
 {% endmacro %}
 
 
-{% macro species_prediction_card(prediction, extended=False) %}
+{% macro species_prediction_card(pred, extended=False) %}
 <div class="card">
     <div class="card-header">
         Species prediction
-        [<i>{{ prediction.software | capitalize }}</i>]
+        [<i>{{ pred.software | capitalize }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
-        {% if prediction.software == "bracken"%}
-            {{ bracken_prediction(prediction.result, extended) }}
-        {% elif prediction.software == "mykrobe"%}
-            {{ mykrobe_prediction(prediction.result, extended) }}
+        {% if pred.software == "bracken"%}
+            {{ bracken_prediction(pred.result, extended) }}
+        {% elif pred.software == "mykrobe"%}
+            {{ mykrobe_prediction(pred.result, extended) }}
         {% endif %}
     </div>
 </div>
@@ -369,7 +369,7 @@
 
 {% macro amr_prediction_card(pred, extended=False) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.analysis_type | upper }}</i> ]</div>
     <div class="card-body">
     {% if pred.software == "resfinder" %}
         {{ resfinder_prediction(pred.result, extended=extended) }}
@@ -834,7 +834,7 @@
 {% macro stx_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -862,7 +862,7 @@
 {% macro oh_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -890,7 +890,7 @@
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -1016,7 +1016,7 @@
 {% macro shigella_typing_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <div>
