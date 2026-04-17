@@ -227,7 +227,8 @@ export async function initGroupView(
 
 export async function initVariantsTable(tableId: string, search: boolean = true): Promise<Any> {
   if (document.getElementById(tableId) === null) {
-    console.error(`No table with id: ${tableId} found, cant create datatable`);
+    console.warn(`No table with id: ${tableId} found, cant create datatable`);
+    return;
   }
   console.log(tableId);
   const tbl = new DataTable(tableId, {
