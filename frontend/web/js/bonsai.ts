@@ -170,6 +170,7 @@ export async function initGroupView(
     addToGroupSelector.getSelectedSamples = table.getSelectedRows.bind(table);
     addToGroupSelector.getGroupMembership = api.getMembershipsBySamples;
     addToGroupSelector.addToGroup = api.addSamplesToGroup;
+    addToGroupSelector.removeFromGroup = api.removeSamplesFromGroup;
 
     // set up listners for updates and failurs
     addToGroupSelector.addEventListener("apply:success", (ev: Event) => {
