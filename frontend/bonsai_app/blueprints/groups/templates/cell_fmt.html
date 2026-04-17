@@ -44,7 +44,7 @@
         {% if tooltip_info %}
             <i class="bi bi-info-circle"
                 data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="{{ tooltip_info }}"></i>
+                data-bs-title="{{ tooltip_info | default("-") }}"></i>
         {% endif %}
     </td>
 {% endmacro %}
@@ -81,7 +81,7 @@
     {% for tag in tag_info %}
         <span class="badge text-bg-{{tag.severity}} p-1 me-1"
               data-bs-toggle="tooltip" data-bs-placement="top" 
-              data-bs-title="{{ tag.description }}">{{tag.label}}</span>
+              data-bs-title="{{ tag.description | default("-") }}">{{tag.label}}</span>
     {% endfor %}
     </td>
 {% endmacro %}

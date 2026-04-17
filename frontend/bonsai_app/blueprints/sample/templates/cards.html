@@ -53,7 +53,7 @@
                     <span 
                         class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
                         data-bs-toggle="tooltip" data-bs-placement="top"
-                        {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
+                        {% if tag.description %}data-bs-title="{{ tag.description | default("-") }}"{% endif %}
                     >
                         {{tag.label | upper }}
                     </span>
@@ -243,7 +243,7 @@
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
                 data-bs-html="true"
-                data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
         </td>
         {% if extended %}
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -482,7 +482,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -529,7 +529,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
@@ -591,7 +591,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -660,14 +660,14 @@
 
 {% macro fmt_resistance_info(phenotype) %}
 <span data-bs-toggle="tooltip" data-bs-placement="top" 
-        data-bs-title="{{ phenotype.group }}">
+        data-bs-title="{{ phenotype.group | default("-") }}">
     {{ phenotype.name | capitalize }}
 </span>
 {# Add tag for expected resistance level #}
 {% if phenotype.resistance_level == "low" %}
     <span class="badge text-bg-secondary"
             data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
+            data-bs-title="{{ phenotype.resistance_level | capitalize | default("-") }}">
             {{ phenotype.resistance_level[:2].upper() }}
     </span>
 {% endif %}
@@ -675,7 +675,7 @@
 {% if phenotype.annotation_type == "user" %}
     <span class="badge text-bg-primary"
             data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="{{ phenotype.annotation_author }}">
+            data-bs-title="{{ phenotype.annotation_author | default("-") }}">
         <i class="bi bi-person-fill"></i>
     </span>
 {% endif %}
@@ -733,7 +733,7 @@
                                 {% if variant.verified == "failed" and variant.reason %}
                                     <span class="ms-2 badge text-bg-warning"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ variant.reason.description }}" >
+                                            data-bs-title="{{ variant.reason.description | default("-") }}" >
                                         {{ variant.reason.label | upper }}
                                     </span>
                                 {% endif %}
@@ -741,7 +741,7 @@
                             <td>
                                 {% if variant.hgvs_nt_change | length > 20 %}
                                     <span data-bs-toggle="tooltip" data-bs-placement="top"
-                                          data-bs-title="{{ variant.hgvs_nt_change }}">
+                                          data-bs-title="{{ variant.hgvs_nt_change | default("-") }}">
                                         {{ variant.hgvs_nt_change | truncate(20, killwords=True, leeway=0) }}
                                     </span>
                                 {% else %}
@@ -751,7 +751,7 @@
                             {% if variant.hgvs_aa_change %}
                                 <td>
                                     <span data-bs-toggle="tooltip" data-bs-placement="top"
-                                          data-bs-title="{{ variant.hgvs_aa_change }}">
+                                          data-bs-title="{{ variant.hgvs_aa_change | default("-") }}">
                                           {{ variant.hgvs_aa_change | truncate(20, killwords=True, leeway=0) }}
                                     </span>
                                 </td>
@@ -784,7 +784,7 @@
                                         {% if phenotype.source is not none %}
                                             <span class="badge text-bg-secondary"
                                                 data-bs-toggle="tooltip" data-bs-placement="top"
-                                                data-bs-title="{{ phenotype.source }}">
+                                                data-bs-title="{{ phenotype.source | default("-") }}">
                                                 {{ phenotype | fmt_db_annotation }}
                                             </span>
                                         {% endif %}
