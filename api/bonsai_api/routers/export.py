@@ -100,10 +100,8 @@ async def export_to_lims(
     # 3. Serialize output data to correct media type
     if fmt == "tsv":
         media_type = "text/tab-separated-values; charset=utf-8"
-        ext = "tsv"
     else:
         media_type = "text/csv; charset=utf-8"
-        ext = "csv"
     body = serialize_lims_results(lims_data, delimiter=fmt)
 
     filename = f"{sample_obj.sample_id}_lims.txt"
