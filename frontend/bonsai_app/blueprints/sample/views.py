@@ -247,17 +247,19 @@ def download_lims(sample_id: str):
         api_resp = get_lims_export_response(token, sample_id=sample_id, fmt=fmt)
     except HTTPError as error:
         # log errors
+        status_code = error.response.status_code
         status = error.response.status_code == 401
         if status:
             current_app.logger.warning(
                 "LIMS export error - no permissoin %s", current_user.username
             )
             flash("You dont have permission to export the result to LIMS", "warning")
-        elif status == 404:
+        elif status_code == 404:
             flash("Sample not found", "warning")
-        elif status == 422:
-            flash("Export is not supported for this assay", "warning")
-        elif status == 501:
+        elif status_code == 422:
+            default_msg = "Export is not supported for this assay"
+            flash(error.response.json().get("detail", default_msg), "warning")
+        elif status_code == 501:
             flash("Export not implemented for this assay", "warning")
         else:
             current_app.logger.error(
