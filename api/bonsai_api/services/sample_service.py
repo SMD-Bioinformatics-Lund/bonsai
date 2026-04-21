@@ -1,18 +1,19 @@
 """Service layer for creating and modifying sample info."""
 
 import logging
+from typing import Any
 import uuid_utils as uuid
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pydantic import ValidationError
 from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.memberships import MembershipEdge
-from bonsai_api.services.membership_service import add_memberships
-from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists, add_ska_index, add_sourmash_sketch
+from bonsai_api.services.membership_service import add_memberships, remove_memberships, get_groups_by_sample_ids
+from bonsai_api.crud.sample import get_sample_by_id, insert_sample_document, add_pipeline_run, pipeline_run_exists_for_sample, sample_exists, add_ska_index, add_sourmash_sketch, delete_sample_crud
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.crud.utils import audit_event_context
+from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
@@ -21,6 +22,8 @@ from bonsai_api.crud.group import check_groups_exists
 from bonsai_api.redis.minhash import (
     schedule_add_genome_signature,
     schedule_add_genome_signature_to_index,
+    schedule_remove_genome_signature,
+    schedule_remove_genome_signature_from_index,
 )
 
 LOG = logging.getLogger(__name__)
@@ -33,7 +36,7 @@ async def create_sample_service(
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
     session: ClientSession | None = None,
-) -> str | None:
+) -> dict[str, Any] | None:
     """Create a new sample document in the database."""
     # verify that groups exists
     if len(sample.groups) > 0 and (missing_groups := check_groups_exists(db, group_ids=sample.groups)):
@@ -91,6 +94,39 @@ async def create_sample_service(
             "inserted_id": str(resp.inserted_id), 
             "internal_sample_id": internal_sample_id, 
             "external_sample_id": sample.sample_id
+        }
+
+
+async def delete_sample_service(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any]:
+    """Delete a samples from bonsai.
+    
+    The delete operation includes removing the sample from groups, and triggering removal of signatures.
+    """
+    async with managed_transaction(db.client, session) as sess:
+        exists = await sample_exists(db, sample_id=sample_id, session=sess)
+        if not exists:
+            sess.abort_transaction()
+            raise EntryNotFound(f"Sample={sample_id} not found!")
+
+        status = await delete_sample_crud(db, sample_id=sample_id, session=sess)
+
+        # remove sample from memberships
+        memberships = await get_groups_by_sample_ids(db, sample_ids=[sample_id], session=sess)
+        await remove_memberships(memberships, db=db, session=sess)
+
+        # abort if sample could not be removed
+        if not status:
+            sess.abort_transaction()
+            raise DatabaseOperationError("Something went wrong in the transaction")
+        
+        # schedule removal of sourmash data
+        job_id = schedule_remove_genome_signature(sample_id)
+        reidx_job = schedule_remove_genome_signature_from_index([sample_id], depends_on=[job_id])
+
+        return {
+            "removed_sample": status,
+            "remove_sourmash": job_id,
+            "remove_sourmash_idx": reidx_job
         }
 
 

@@ -293,7 +293,7 @@ def get_variant_genes(sample_info, software=None) -> tuple[str, ...]:
     genes = set()
     for prediction in sample_info["element_type_result"]:
         # skip predictions that are not resistance
-        if not prediction["type"] == "AMR":
+        if not prediction["analysis_type"] == "amr":
             continue
         # skip predictions that are not madew with the desired software
         if software and not software == prediction["software"]:
@@ -319,7 +319,7 @@ def get_all_who_classifications(sample_info, software=None) -> tuple[str, ...]:
     classification = set()
     for prediction in sample_info["element_type_result"]:
         # skip predictions that are not resistance
-        if not prediction["type"] == "AMR":
+        if not prediction["analysis_type"] == "amr":
             continue
         # skip predictions that are not made w with the desired software
         if software and not prediction["software"] == software:
@@ -336,7 +336,7 @@ def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
     variant_types = set()
     for prediction in sample_info["element_type_result"]:
         # skip predictions that are not resistance
-        if not prediction["type"] == "AMR":
+        if not prediction["analysis_type"] == "amr":
             continue
         # skip predictions that are not made w with the desired software
         if software and not prediction["software"] == software:

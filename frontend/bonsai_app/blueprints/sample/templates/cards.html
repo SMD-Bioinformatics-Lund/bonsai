@@ -53,7 +53,7 @@
                     <span 
                         class="tag badge ms-2 rounded-pill bg-{{tag.severity}}"
                         data-bs-toggle="tooltip" data-bs-placement="top"
-                        {% if tag.description %}data-bs-title="{{ tag.description }}"{% endif %}
+                        {% if tag.description %}data-bs-title="{{ tag.description | default("-") }}"{% endif %}
                     >
                         {{tag.label | upper }}
                     </span>
@@ -204,7 +204,7 @@
 
 {% macro virulence_card(pred) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.type}}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
         <p class="card-text fst-italic">No  identified virulence factors.</p>
@@ -243,7 +243,7 @@
                 data-bs-toggle="tooltip"
                 data-bs-placement="top"
                 data-bs-html="true"
-                data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
         </td>
         {% if extended %}
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -350,17 +350,17 @@
 {% endmacro %}
 
 
-{% macro species_prediction_card(prediction, extended=False) %}
+{% macro species_prediction_card(pred, extended=False) %}
 <div class="card">
     <div class="card-header">
         Species prediction
-        [<i>{{ prediction.software | capitalize }}</i>]
+        [<i>{{ pred.software | capitalize }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
-        {% if prediction.software == "bracken"%}
-            {{ bracken_prediction(prediction.result, extended) }}
-        {% elif prediction.software == "mykrobe"%}
-            {{ mykrobe_prediction(prediction.result, extended) }}
+        {% if pred.software == "bracken"%}
+            {{ bracken_prediction(pred.result, extended) }}
+        {% elif pred.software == "mykrobe"%}
+            {{ mykrobe_prediction(pred.result, extended) }}
         {% endif %}
     </div>
 </div>
@@ -369,7 +369,7 @@
 
 {% macro amr_prediction_card(pred, extended=False) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.analysis_type | upper }}</i> ]</div>
     <div class="card-body">
     {% if pred.software == "resfinder" %}
         {{ resfinder_prediction(pred.result, extended=extended) }}
@@ -482,7 +482,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -529,7 +529,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
@@ -591,7 +591,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-html="true"
-                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) }}"></i>
+                        data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
@@ -660,14 +660,14 @@
 
 {% macro fmt_resistance_info(phenotype) %}
 <span data-bs-toggle="tooltip" data-bs-placement="top" 
-        data-bs-title="{{ phenotype.group }}">
+        data-bs-title="{{ phenotype.group | default("-") }}">
     {{ phenotype.name | capitalize }}
 </span>
 {# Add tag for expected resistance level #}
 {% if phenotype.resistance_level == "low" %}
     <span class="badge text-bg-secondary"
             data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="{{ phenotype.resistance_level | capitalize }}">
+            data-bs-title="{{ phenotype.resistance_level | capitalize | default("-") }}">
             {{ phenotype.resistance_level[:2].upper() }}
     </span>
 {% endif %}
@@ -675,7 +675,7 @@
 {% if phenotype.annotation_type == "user" %}
     <span class="badge text-bg-primary"
             data-bs-toggle="tooltip" data-bs-placement="top"
-            data-bs-title="{{ phenotype.annotation_author }}">
+            data-bs-title="{{ phenotype.annotation_author | default("-") }}">
         <i class="bi bi-person-fill"></i>
     </span>
 {% endif %}
@@ -733,7 +733,7 @@
                                 {% if variant.verified == "failed" and variant.reason %}
                                     <span class="ms-2 badge text-bg-warning"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ variant.reason.description }}" >
+                                            data-bs-title="{{ variant.reason.description | default("-") }}" >
                                         {{ variant.reason.label | upper }}
                                     </span>
                                 {% endif %}
@@ -741,7 +741,7 @@
                             <td>
                                 {% if variant.hgvs_nt_change | length > 20 %}
                                     <span data-bs-toggle="tooltip" data-bs-placement="top"
-                                          data-bs-title="{{ variant.hgvs_nt_change }}">
+                                          data-bs-title="{{ variant.hgvs_nt_change | default("-") }}">
                                         {{ variant.hgvs_nt_change | truncate(20, killwords=True, leeway=0) }}
                                     </span>
                                 {% else %}
@@ -751,7 +751,7 @@
                             {% if variant.hgvs_aa_change %}
                                 <td>
                                     <span data-bs-toggle="tooltip" data-bs-placement="top"
-                                          data-bs-title="{{ variant.hgvs_aa_change }}">
+                                          data-bs-title="{{ variant.hgvs_aa_change | default("-") }}">
                                           {{ variant.hgvs_aa_change | truncate(20, killwords=True, leeway=0) }}
                                     </span>
                                 </td>
@@ -784,7 +784,7 @@
                                         {% if phenotype.source is not none %}
                                             <span class="badge text-bg-secondary"
                                                 data-bs-toggle="tooltip" data-bs-placement="top"
-                                                data-bs-title="{{ phenotype.source }}">
+                                                data-bs-title="{{ phenotype.source | default("-") }}">
                                                 {{ phenotype | fmt_db_annotation }}
                                             </span>
                                         {% endif %}
@@ -834,7 +834,7 @@
 {% macro stx_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -862,7 +862,7 @@
 {% macro oh_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} typing [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -890,7 +890,7 @@
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -1016,7 +1016,7 @@
 {% macro shigella_typing_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }}</i>]
+        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <div>

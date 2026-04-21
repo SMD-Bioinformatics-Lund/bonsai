@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Literal
 
 from bonsai_api.config import settings
-from bonsai_api.crud.sample import get_sample_by_id
+from bonsai_api.services.sample_service import get_sample_service
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
 from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
@@ -47,6 +47,10 @@ def _load_lims_config_map() -> dict[str, AssayConfig]:
     return config_map
 
 
+def _get_pipeline_run():
+    """Get pipeline run using id."""
+
+
 @router.get(
     "/export/{sample_id}/lims",
     response_class=PlainTextResponse,
@@ -79,12 +83,18 @@ async def export_to_lims(
 ):
     """Export a sample to a LIMS compatible file."""
     # 1. Get sample
-    sample_obj = await get_sample_by_id(db, sample_id=sample_id)
+    sample_obj = await get_sample_service(db, sample_id=sample_id)
 
     # 2. Load configuration and format data
-    # TODO add helper for getting last pipeline run
-    assay = sample_obj['pipeline'][0]['assay']
+    if sample_obj.pipeline is None:
+        LOG.warning("No pipeline run associated with sample=%s, cant export data", sample_id)
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Export not supported since sample is not associated with pipeline run",
+        )
+
     config_map = _load_lims_config_map()
+    assay = sample_obj.pipeline.assay
     conf = config_map.get(assay)
     if conf is None:
         LOG.info(
@@ -100,10 +110,8 @@ async def export_to_lims(
     # 3. Serialize output data to correct media type
     if fmt == "tsv":
         media_type = "text/tab-separated-values; charset=utf-8"
-        ext = "tsv"
     else:
         media_type = "text/csv; charset=utf-8"
-        ext = "csv"
     body = serialize_lims_results(lims_data, delimiter=fmt)
 
     filename = f"{sample_obj.sample_id}_lims.txt"

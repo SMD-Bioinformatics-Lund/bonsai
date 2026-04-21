@@ -51,7 +51,7 @@
                             {% if variant.verified == "failed" and variant.reason %}
                                 <span class="ms-2 badge text-bg-warning"
                                         data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-title="{{ variant.reason.description }}" >
+                                        data-bs-title="{{ variant.reason.description | default("-") }}" >
                                     {{ variant.reason.label | upper }}
                                 </span>
                             {% endif %}

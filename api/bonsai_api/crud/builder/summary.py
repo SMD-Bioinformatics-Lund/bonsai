@@ -8,6 +8,7 @@ from .helpers import (
     build_flatten_results_stage,
     build_get_entry_stage,
     build_lookup_stage,
+    build_latest_pipeline_run_stage
 )
 from .summary_manifest import BUILDER_REGISTRY
 from .types import BuilderArgs, LookupSpec, Manifest, PipelineProjection, PipelineStages
@@ -97,8 +98,12 @@ def compile_summary_pipeline(
     """Compile aggregation pipeline from the manifest."""
 
     pipeline: PipelineStages = []
-    project: PipelineProjection = {"_id": 0}
 
+    # Phase 1: Schema normalization
+    pipeline.extend(build_latest_pipeline_run_stage())
+
+    # Phase 2: Build summary pipeline
+    project: PipelineProjection = {"_id": 0}
     drop_after_build = set()
     used_builders = []
     for col in manifest.columns:
