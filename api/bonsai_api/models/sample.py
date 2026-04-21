@@ -337,7 +337,7 @@ class SampleRecordDb(SampleBase):
 
     # Sequencing and pipeline information
     sequencing: SequencingInfo | None = None
-    pipeline: list[PipelineRun] = Field(default_factory=list)
+    pipeline_runs: list[PipelineRun] = Field(default_factory=list)
     last_pipeline_run_id: str | None = None
 
     # Analysis results

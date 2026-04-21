@@ -250,3 +250,36 @@ def build_facet_pagination(offset: int = 0, limit: int | None = None) -> Pipelin
     """Build a $facet stage for unified pagination."""
     data_pipeline = build_skip_limit(offset, limit)
     return {"$facet": {"data": data_pipeline, "records_total": [{"$count": "count"}]}}
+
+
+def build_latest_pipeline_run_stage() -> PipelineStages:
+    """
+    Normalise pipeline execution data by materialising the latest
+    pipeline run into a dedicated top-level field.
+
+    Guarantees:
+    - `latest_pipeline_run` exists if a matching run exists
+    - Does not modify or remove existing fields
+    - Safe if `pipeline_runs` is missing or empty
+    """
+
+    return [
+        {
+            "$addFields": {
+                "latest_pipeline_run": {
+                    "$first": {
+                        "$filter": {
+                            "input": {"$ifNull": ["$pipeline_runs", []]},
+                            "as": "run",
+                            "cond": {
+                                "$eq": [
+                                    "$$run.pipeline_run_id",
+                                    "$last_pipeline_run_id",
+                                ]
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    ]

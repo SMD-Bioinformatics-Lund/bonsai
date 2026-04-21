@@ -45,8 +45,8 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
         as_field="groups_info",
         let={"group_ids": {"$ifNull": ["$groups", []]}},
         pipeline=[
-            {"$match": {"$expr": {"$in": ["$group_id", "$$group_ids"]}}},
-            {"$project": {"_id": 0, "id": "$group_id", "display_name": 1}},
+            {"$match": {"$expr": {"$in": ["$core.group_id", "$$group_ids"]}}},
+            {"$project": {"_id": 0, "id": "$core.group_id", "display_name": "$core.display_name"}},
         ],
     ),
 }
@@ -61,7 +61,7 @@ MANIFEST = Manifest(
             id="lims_id", label="LIMS id", path="$lims_id", default_visible=True
         ),
         ColumnFull(
-            id="assay", label="Assay", path="$pipeline.assay", default_visible=True
+            id="assay", label="Assay", path="$latest_pipeline_run.assay", default_visible=True
         ),
         ColumnFull(
             id="created_at",
@@ -109,12 +109,12 @@ MANIFEST = Manifest(
             path="$sequencing.platform",
         ),
         ColumnFull(
-            id="pipeline_version", label="Pipeline version", path="$pipeline.version"
+            id="pipeline_version", label="Pipeline version", path="$latest_pipeline_run.pipeline_info.definition.version"
         ),
         ColumnFull(
             id="analysis_date",
             label="Analysis date",
-            path="$pipeline.date",
+            path="$latest_pipeline_run.executed_at",
             type="date",
             default_visible=True,
         ),

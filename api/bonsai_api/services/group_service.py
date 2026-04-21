@@ -11,6 +11,7 @@ from bonsai_api.crud.group import (
     delete_group_by_group_id,
     fetch_group_raw,
     find_group_owner_id,
+    get_groups_crud,
     insert_group_document,
     update_group_core_doc,
     upsert_preset_doc,
@@ -34,6 +35,7 @@ from bonsai_api.models.group import (
     GroupCore,
     GroupInfoCreate,
     GroupInfoOut,
+    GroupListResponse,
     GroupPresetIn,
     GroupPresets,
     GroupRecordDb,
@@ -74,6 +76,49 @@ def _validate_allowed_columns(
     for col in allowed_columns:
         if col not in manifest_column_ids:
             raise ValueError(f"Invalid column id in allowed_columns: {col}")
+
+
+async def get_groups_service(
+    db: Database,
+    *,
+    offset: int = 0,
+    limit: int | None = None,
+    sort: str | None = None,
+    current_user: UserContext | None = None,
+    session: Any = None,
+) -> GroupListResponse:
+    """Return groups with optional visibility filtering and pagination."""
+    user_id = current_user.user_id if current_user is not None else None
+    user_roles = current_user.roles if current_user is not None else None
+
+    try:
+        raw_data, records_total = await get_groups_crud(
+            db,
+            offset=offset,
+            limit=limit,
+            sort=sort,
+            user_id=user_id,
+            user_roles=user_roles,
+            session=session,
+        )
+    except PyMongoError as pme:
+        LOG.error("MongoDB error while retrieving groups: %s", str(pme))
+        raise DatabaseOperationError(
+            f"Database error occurred while retrieving groups: {str(pme)}"
+        ) from pme
+    except ValueError as ve:
+        LOG.error("Value error while building group retrieval pipeline: %s", str(ve))
+        raise
+
+    validated: list[GroupInfoOut] = []
+    for doc in raw_data:
+        try:
+            validated.append(GroupInfoOut.model_validate(doc))
+        except ValidationError as ve:
+            LOG.error("Skipping invalid group document: %s", str(ve))
+            continue
+
+    return GroupListResponse(data=validated, records_total=records_total)
 
 
 def _build_group_payload(

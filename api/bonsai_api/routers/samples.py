@@ -4,6 +4,7 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
+from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.pipeline import PipelineRun
 from api_client.audit_log.client import AuditLogClient
@@ -15,8 +16,7 @@ from bonsai_api.crud.sample import (
     add_comment,
     add_location,
 )
-from bonsai_api.services.sample_service import add_pipeline_run_service, create_sample_service, get_sample_service, add_ska_index_service, add_sourmash_index_service
-from bonsai_api.crud.sample import delete_samples as delete_samples_from_db
+from bonsai_api.services.sample_service import add_pipeline_run_service, create_sample_service, delete_sample_service, get_sample_service, add_ska_index_service, add_sourmash_index_service
 from bonsai_api.crud.sample import (
     get_samples_full,
 )
@@ -81,6 +81,8 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse
 from prp.parse.models.enums import VariantType
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+from api_client.audit_log.models import EventCreate, SourceType, Subject
 
 from .shared import (
     SAMPLE_ID_PATH,
@@ -232,9 +234,32 @@ async def delete_many_samples(
     ),
 ):
     """Delete multiple samples from the database."""
-    return await delete_samples_from_db(
-        db, sample_ids, ctx=req_ctx, audit=audit_log
-    )
+
+    async with managed_transaction(db.client) as sess:
+        removed = []
+        jobs = []
+        for sample_id in sample_ids:
+            status = delete_sample_service(db, sample_id=sample_ids, session=sess)
+            if status:
+                removed.append(sample_id)
+                jobs.append(status['remove_sourmash'])
+
+            # Log removal
+            if isinstance(audit_log, AuditLogClient) and status:
+                event_subject = Subject(id=sample_id, type=SourceType.USR)
+                event = EventCreate(
+                    source_service="bonsai_api",
+                    event_type="delete_sample",
+                    actor=req_ctx.actor,
+                    subject=event_subject,
+                    metadata=req_ctx.metadata,
+                )
+                audit_log.post_event(event)
+    return {
+        "sample_ids": sample_ids,
+        "n_deleted": len(removed),
+        "remove_signature_jobs": jobs,
+    }
 
 
 @router.get(
@@ -291,7 +316,18 @@ async def delete_sample(
     ),
 ):
     """Delete the specific sample."""
-    return await delete_samples_from_db(db, [sample_id], req_ctx, audit_log)
+    status = await delete_sample_service(db, sample_id=sample_id)
+    if isinstance(audit_log, AuditLogClient) and status:
+        event_subject = Subject(id=sample_id, type=SourceType.USR)
+        event = EventCreate(
+            source_service="bonsai_api",
+            event_type="delete_sample",
+            actor=req_ctx.actor,
+            subject=event_subject,
+            metadata=req_ctx.metadata,
+        )
+        audit_log.post_event(event)
+    return status
 
 
 @router.post("/samples/{sample_id}/metadata", tags=[RouterTags.SAMPLE, RouterTags.META])

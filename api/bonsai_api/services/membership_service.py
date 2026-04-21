@@ -134,8 +134,8 @@ def _build_group_ops(
             continue
         ops.append(
             UpdateOne(
-                {"group_id": gid},
-                {"$inc": {"sample_count": delta}, "$set": {"modified_at": ts}},
+                {"core.group_id": gid},
+                {"$inc": {"core.sample_count": delta}, "$set": {"modified_at": ts}},
                 upsert=False,
             )
         )
@@ -183,7 +183,7 @@ async def _mutate_memberships(
     if not per_sample:  # nothing to do
         return
 
-    # 4. Build groups to add per sample and per group sample_count increments
+    # 4. Build groups to add per sample and per group sample_count increments/decrements
     ts = get_timestamp()
     smp_ops = _build_sample_ops(per_sample, mode=mode, ts=ts)
     grp_ops = _build_group_ops(per_group_delta, ts)
@@ -193,15 +193,18 @@ async def _mutate_memberships(
         await db.sample_collection.bulk_write(smp_ops, ordered=False, session=session)
 
     if grp_ops:
-        await db.sample_group_collection.bulk_write(
+        LOG.debug("Updating group sample counters: %s", per_group_delta)
+        result = await db.sample_group_collection.bulk_write(
             grp_ops, ordered=False, session=session
         )
+        LOG.info("Updated %d group counters (modified: %d)", len(grp_ops), result.modified_count)
 
 
 async def add_memberships(
     edges: MembershipEdges, *, db: Database, session: ClientSession | None = None
 ) -> None:
-    """Add new group memberships."""
+    """Add new group memberships and increment group sample counters."""
+    LOG.info("Adding %d memberships", len(edges))
 
     try:
         async with managed_transaction(db.client, session) as sess:
@@ -222,7 +225,8 @@ async def add_memberships(
 async def remove_memberships(
     edges: MembershipEdges, *, db: Database, session: ClientSession | None = None
 ) -> None:
-    """Remove group memberships."""
+    """Remove group memberships and decrement group sample counters."""
+    LOG.info("Removing %d memberships", len(edges))
     try:
         async with managed_transaction(db.client, session) as sess:
             return await _mutate_memberships(edges, mode="remove", db=db, session=sess)
@@ -259,7 +263,7 @@ async def get_groups_by_sample_ids(
         raise EntryNotFound(f"Unknown sample_id(s): {sorted(missing_sids)}")
 
     edges: MembershipEdges = []
-    async for doc in find_groups_by_sample_ids(
+    for doc in await find_groups_by_sample_ids(
         db, sample_ids=sample_ids, session=session
     ):
         for gid in doc.get("groups", []):
