@@ -5,9 +5,8 @@ from pathlib import Path
 import pytest
 
 from minhash_service.analysis.models import SimilaritySearchConfig, SimilarResult
-from minhash_service.analysis.similarity import get_similar_signatures, get_similar_signatures_v2, parse_manysearch_results
-from minhash_service.signatures.index import SBTIndexStore, RocksDBIndexStore
-from minhash_service.signatures.io import read_signatures
+from minhash_service.analysis.similarity import filter_search_results, get_similar_signatures, parse_manysearch_results
+from minhash_service.signatures.index import RocksDBIndexStore
 
 from ..utils import get_data_path
 
@@ -17,19 +16,19 @@ def test_get_similar_signatures_no_dupl(data_dir: Path, limit: int | None, exp_s
     """Test get similar signatures with no duplicates in the index."""
 
     cnf = SimilaritySearchConfig(min_similarity=0.5, ksize=31, limit=limit)
+
     # read query signature
     query_path = get_data_path(data_dir, "DRR237260.sig")
-    query_sig = read_signatures(query_path, 31)
 
     # get index
-    idx_path = get_data_path(data_dir, "index.all.sbt.zip")
-    idx = SBTIndexStore(idx_path)
+    idx_path = get_data_path(data_dir, "rocksdb31.all")
+    idx = RocksDBIndexStore(idx_path)
 
     # query
-    sigs = get_similar_signatures(query_sig[0], idx, config=cnf)
+    result = get_similar_signatures(query_path, idx, config=cnf)
 
     # test that limit was respected
-    assert len(sigs) == exp_samples
+    assert len(result.matches) == exp_samples
 
 
 def test_get_similar_signatures_dupl(data_dir: Path):
@@ -44,7 +43,7 @@ def test_get_similar_signatures_dupl(data_dir: Path):
     idx_path = get_data_path(data_dir, "rocksdb31.duplicates")
     idx = RocksDBIndexStore(idx_path)
 
-    result = get_similar_signatures_v2(query_path, idx, config=cnf)
+    result = get_similar_signatures(query_path, idx, config=cnf)
 
     # assert that both the query and duplicate was found
     matches = [m.name for m in result.matches]
@@ -65,3 +64,19 @@ def test_parse_multisearch_results(data_dir: Path):
     # Assert that all hits was parsed
     assert len(results) == 3
     assert results[0].name == "DRR237261"
+
+
+def test_filter_search_results(data_dir: Path):
+    """Test filtering of similarity search results."""
+
+    result_file = get_data_path(data_dir, "multisearch_results.out")
+    results = parse_manysearch_results(result_file)
+
+    # filter with min_similarity
+    filtered = filter_search_results(results, min_similarity=0.999)
+    assert len(filtered) == 2
+    assert all(r.jaccard_similarity >= 0.999 for r in filtered)
+
+    # filter with limit
+    filtered = filter_search_results(results, limit=2)
+    assert len(filtered) == 2
