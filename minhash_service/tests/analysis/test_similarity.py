@@ -80,3 +80,9 @@ def test_filter_search_results(data_dir: Path):
     # filter with limit
     filtered = filter_search_results(results, limit=2)
     assert len(filtered) == 2
+
+    filtered = filter_search_results(results, subset_names=["DRR237261", "DRR237260.dupl"])
+    assert len(filtered) == 2
+
+    filtered = filter_search_results(results, subset_names=["DRR237261", "DRR237260.dupl"], limit=1)
+    assert len(filtered) == 1

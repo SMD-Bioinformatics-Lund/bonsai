@@ -35,10 +35,20 @@ def parse_manysearch_results(path: Path) -> SimilaritySearchResults:
     return result
 
 
-def filter_search_results(results: SimilaritySearchResults, min_similarity: float | None = None, limit: int | None = None) -> SimilaritySearchResults:
+def filter_search_results(
+        results: SimilaritySearchResults, 
+        *, 
+        min_similarity: float | None = None, 
+        limit: int | None = None,
+        subset_names: list[str] | None = None,
+    ) -> SimilaritySearchResults:
     """Filter similarity search results based on minimum similarity and limit."""
     if min_similarity is not None:
         results = [r for r in results if r.jaccard_similarity is not None and r.jaccard_similarity >= min_similarity]
+
+    if subset_names is not None:
+        results = [r for r in results if r.name in subset_names]
+
     if limit is not None:
         results = results[:limit]
     return results
