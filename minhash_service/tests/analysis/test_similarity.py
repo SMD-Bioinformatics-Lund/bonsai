@@ -50,3 +50,19 @@ def test_get_similar_signatures_dupl(data_dir: Path):
     # assert that both the query and duplicate was found
     matches = [r.match.name for r in result]
     assert set(["DRR237260", "DRR237260.dupl"]).issubset(set(matches))
+
+
+def test_parse_multisearch_results(data_dir: Path):
+    """Test parsing of branchwater multisearch results."""
+
+    result_file = get_data_path(data_dir, "multisearch_results.out")
+
+    results = parse_manysearch_results(result_file)
+
+    # Assert correct output format
+    assert isinstance(results, list)
+    assert isinstance(results[0], SimilarResult)
+
+    # Assert that all hits was parsed
+    assert len(results) == 3
+    assert results[0].name == "DRR237261"
