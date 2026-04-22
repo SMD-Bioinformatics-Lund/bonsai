@@ -1,6 +1,7 @@
 """Data models and types."""
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -40,24 +41,19 @@ class SimilarSignature(BaseModel):  # pydantic: disable=too-few-public-methods
     similarity: float
 
 
+SimilarSignatures = list[SimilarSignature]
+
+
 class SimilaritySearchConfig(BaseModel):
     """Parameters for similarity searches."""
 
-    min_similarity: float = Field(
+    min_similarity: float | None = Field(
         ge=0,
         le=1,
         description="Only inlcude samples with a similarity score equal or greater than threshold.",
     )
-    ani_estimate: AniEstimateOptions = Field(
-        default=AniEstimateOptions.JACCARD,
-        description="How sourmash should estimate average nucleotide identity (ANI).",
-    )
     limit: int | None = Field(
         default=None, description="Limit the search results to N hits."
-    )
-    ignore_abundance: bool = Field(
-        default=False,
-        description="If abundance information in Sourmash signature be ignored.",
     )
     subset_checksums: list[str] | None = Field(
         default=None, description="Subset search to signatures with checksum."
