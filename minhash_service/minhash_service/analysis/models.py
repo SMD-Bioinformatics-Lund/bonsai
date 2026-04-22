@@ -63,5 +63,33 @@ class SimilaritySearchConfig(BaseModel):
         default=None, description="Subset search to signatures with checksum."
     )
 
+    # sourmash parameters
+    ksize: int
+    scaled: int | None = None
+    moltype: Literal["DNA", "protein"] = "DNA"
+    estimate_ani: bool = False
+    estimate_prob_overlap: bool = False
+    calc_abund_stats: bool = False
+    
 
-SimilarSignatures = list[SimilarSignature]
+
+class SimilarResult(BaseModel):
+    """Container for """
+
+    name: str
+    md5: str
+    containment: float
+    jaccard_similarity: float
+    max_containment: float
+
+
+class SimilarSearchResult(BaseModel):
+    """Container for a single similarity search result."""
+
+    # search info
+    query: str
+    ksize: int
+    moltype: str
+    search_time: float
+
+    matches: list[SimilarResult]
