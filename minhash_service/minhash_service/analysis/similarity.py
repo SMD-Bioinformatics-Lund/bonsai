@@ -3,13 +3,9 @@
 import logging
 import time
 from csv import DictReader
-from typing import cast
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from sourmash.search import (SearchResult, search_databases_with_abund_query,
-                             search_databases_with_flat_query)
-from sourmash.signature import SourmashSignature
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater
 
 from minhash_service.signatures.index import BaseIndexStore
@@ -19,82 +15,10 @@ from .models import AniEstimateOptions, SimilaritySearchConfig, SimilarSearchRes
 LOG = logging.getLogger(__name__)
 
 
-SimilaritySearchResults = list[SearchResult]
+SimilaritySearchResults = list[SimilarResult]
 
 
-def get_similar_signatures(
-    query_sig: SourmashSignature,
-    index_repo: BaseIndexStore,
-    config: SimilaritySearchConfig,
-) -> SimilaritySearchResults:
-    """Get find samples that are similar to reference sample.
-
-    min_similarity - minimum similarity score to be included
-    """
-    LOG.info(
-        "Finding similar samples - query: %s; similarity: %f, limit: %s",
-        query_sig.name,
-        config.min_similarity,
-        config.limit,
-    )
-    # define query params
-    best_only = config.limit == 1
-    max_containment = False
-
-    match config.ani_estimate:
-        case AniEstimateOptions.CONTAINMENT:
-            containment = True
-            max_containment = False
-        case AniEstimateOptions.MAX_CONTAINMENT:
-            containment = False
-            max_containment = True
-        case _:
-            containment = False
-            max_containment = False
-
-    if query_sig.minhash.track_abundance and config.ignore_abundance:
-        query_sig.minhash = query_sig.minhash.flatten()
-
-    # do the acctual query
-    results: SimilaritySearchResults = []
-    if query_sig.minhash.track_abundance:
-        try:
-            results = cast(
-                SimilaritySearchResults,
-                search_databases_with_abund_query(
-                    query=query_sig,
-                    databases=[index_repo.index],
-                    threshold=config.min_similarity,
-                    do_containment=containment,
-                    do_max_containment=max_containment,
-                    best_only=best_only,
-                    unload_data=True,
-                ),
-            )
-        except TypeError as exc:
-            LOG.error("Sourmash error: %s", exc)
-            raise
-    else:
-        results = cast(
-            SimilaritySearchResults,
-            search_databases_with_flat_query(
-                query=query_sig,
-                databases=[index_repo.index],
-                threshold=config.min_similarity,
-                do_containment=containment,
-                do_max_containment=max_containment,
-                best_only=best_only,
-                unload_data=True,
-                estimate_ani_ci=False,
-            ),
-        )
-    if config.limit is not None:
-        n_hits_to_include = min([len(results), config.limit])
-        results = results[:n_hits_to_include]
-    return results
-
-
-def parse_manysearch_results(path: Path) -> list[SimilarResult]:
+def parse_manysearch_results(path: Path) -> SimilaritySearchResults:
     """Parse sourmash branchwater multisearch results."""
     result = []
     reader = DictReader(path.open(encoding="utf-8"), delimiter=",")
@@ -111,7 +35,16 @@ def parse_manysearch_results(path: Path) -> list[SimilarResult]:
     return result
 
 
-def get_similar_signatures_v2(
+def filter_search_results(results: SimilaritySearchResults, min_similarity: float | None = None, limit: int | None = None) -> SimilaritySearchResults:
+    """Filter similarity search results based on minimum similarity and limit."""
+    if min_similarity is not None:
+        results = [r for r in results if r.jaccard_similarity is not None and r.jaccard_similarity >= min_similarity]
+    if limit is not None:
+        results = results[:limit]
+    return results
+
+
+def get_similar_signatures(
     query_sig: Path,
     index_repo: BaseIndexStore,
     config: SimilaritySearchConfig,
@@ -148,6 +81,7 @@ def get_similar_signatures_v2(
         
         try:
             result = parse_manysearch_results(output_path)
+            result = filter_search_results(result, min_similarity=config.min_similarity, limit=config.limit)
         except Exception as exc:
             LOG.error("Error parsing branchwater multisearch results: %s", exc)
             raise
