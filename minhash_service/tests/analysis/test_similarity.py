@@ -81,8 +81,12 @@ def test_filter_search_results(data_dir: Path):
     filtered = filter_search_results(results, limit=2)
     assert len(filtered) == 2
 
-    filtered = filter_search_results(results, subset_names=["DRR237261", "DRR237260.dupl"])
+    checksums = [
+        "c3325498b73ef2668ad4afa2802948f5",
+        "bb95e9ec1ed6d5b4c5a8694fd6e020c6", 
+    ]
+    filtered = filter_search_results(results, subset_checksums=checksums)
     assert len(filtered) == 2
 
-    filtered = filter_search_results(results, subset_names=["DRR237261", "DRR237260.dupl"], limit=1)
+    filtered = filter_search_results(results, subset_checksums=checksums, limit=1)
     assert len(filtered) == 1
