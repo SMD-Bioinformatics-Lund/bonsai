@@ -344,7 +344,7 @@ def _load_signatures_from_sample_id(sample_ids: list[str]) -> SourmashSignatures
     return signatures
 
 
-def search_similar(
+def search_similar_samples(
     sample_id: str,
     estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
     min_similarity: float = 0.5,
@@ -366,14 +366,6 @@ def search_similar(
     if record is None:
         raise FileNotFoundError(f'No record found for sample_id: "{sample_id}"')
 
-    # is allways one sig
-    query = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)[0]
-
-    # check if signature is empty
-    if len(query.minhash) == 0:
-        raise ValueError("Cant perform search, No query hashes?")
-
-    # get index store
     index = create_index_store(
         get_index_path(cnf.signature_dir, cnf.index_format),
         index_format=cnf.index_format,
@@ -389,36 +381,14 @@ def search_similar(
     )
 
     # lookup sample ids from matches
-    similarity_result: SimilarSignatures = []
-    for res in get_similar_signatures(query, index, search_cnf):
-        # enforce limit
-        if limit is not None and len(similarity_result) >= limit:
-            break
-
-        # optionally skip samples that are not in subset
-        match_checksum = cast(str, res.match.md5sum())
-        if subset_checksums is not None and match_checksum not in subset_checksums:
-            continue
-
-        # use matched signature checksum to lookup the sample
-        sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
-        if sample is None:
-            LOG.warning("Could not find a sample with checksum: %s", match_checksum)
-            raise SampleNotFoundError(
-                f"Cant find a sample with checksum: {match_checksum}"
-            )
-        # recast result to a internally maintained data type
-        similarity_result.append(
-            SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
-        )
-
+    result = get_similar_signatures(record.signature_path, index, search_cnf)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
-    return [s.model_dump(mode="json") for s in similarity_result]
+    return result.model_dump(mode="json")
 
 
 def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:

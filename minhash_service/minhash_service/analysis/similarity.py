@@ -40,14 +40,14 @@ def filter_search_results(
         *, 
         min_similarity: float | None = None, 
         limit: int | None = None,
-        subset_names: list[str] | None = None,
+        subset_checksums: list[str] | None = None,
     ) -> SimilaritySearchResults:
     """Filter similarity search results based on minimum similarity and limit."""
     if min_similarity is not None:
         results = [r for r in results if r.jaccard_similarity is not None and r.jaccard_similarity >= min_similarity]
 
-    if subset_names is not None:
-        results = [r for r in results if r.name in subset_names]
+    if subset_checksums is not None:
+        results = [r for r in results if r.md5 in subset_checksums]
 
     if limit is not None:
         results = results[:limit]
@@ -66,8 +66,8 @@ def get_similar_signatures(
         config.min_similarity,
         config.limit,
     )
-    # define query params
-    output_all = config.min_similarity is None and config.limit is None
+    # output all and then do filtering in python
+    output_all = True
 
     # do multisearch
     with TemporaryDirectory() as tmpdir:
@@ -76,7 +76,7 @@ def get_similar_signatures(
         exit_status = sourmash_plugin_branchwater.do_multisearch(
             str(query_sig.absolute()),
             str(index_repo.index_path.absolute()),
-            threshold=config.min_similarity,
+            threshold=0,
             ksize=config.ksize,
             scaled=config.scaled,
             moltype=config.moltype,
