@@ -103,7 +103,6 @@ class BaseIndexStore(ABC):
     def add_signatures(
         self,
         signatures: Iterable[sourmash.SourmashSignature],
-        dedupe_by_md5: bool = True,
     ) -> AddResult:
         """Add one or more signatures to index."""
 
@@ -129,9 +128,9 @@ class SBTIndexStore(BaseIndexStore):
 
         try:
             index = cast(SBTIndex, sourmash.load_file_as_index(str(self.index_path)))
-        except (FileNotFoundError, ValueError):
+        except (FileNotFoundError, ValueError) as err:
             if not create_if_missing:
-                raise
+                raise FileNotFoundError(f"SBT index not found at {self.index_path}") from err
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             index = sourmash.create_sbt_index()
         self._index = index
@@ -155,7 +154,6 @@ class SBTIndexStore(BaseIndexStore):
     def add_signatures(
         self,
         signatures: Iterable[sourmash.SourmashSignature],
-        dedupe_by_md5: bool = True,
     ) -> AddResult:
         """Add one or more signatures to index."""
 
@@ -165,20 +163,11 @@ class SBTIndexStore(BaseIndexStore):
             return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
 
         with self.aquire_lock():
-            index = self._load_index(create_if_missing=True)
+            self._load_index(create_if_missing=True)
             existing_md5: set[str] = set()
-            if dedupe_by_md5:
-                for sig in index.signatures():
-                    existing_md5.add(sig.md5sum())
-
             added: int = 0
             for sig in sigs:
                 md5 = cast(str, sig.md5sum())
-                if dedupe_by_md5 and md5 in existing_md5:
-                    LOG.warning(
-                        "Signature with md5sum %s already in index, skipping...", md5
-                    )
-                    continue
                 leaf = sourmash.sbtmh.SigLeaf(md5, sig)
                 self._index.add_node(leaf)
                 added_md5s.append(md5)
@@ -207,28 +196,31 @@ class SBTIndexStore(BaseIndexStore):
 
             self._index = new_index  # replace in-memory cache
             self._atomic_save()
-            not_removed = checksums_to_remove - set(removed)
-            if not_removed:
-                return RemoveResult(
-                    ok=False,
-                    warnings=[f"could not remove {', '.join(not_removed)}"],
-                    removed=removed,
-                    removed_count=len(removed),
-                )
+        not_removed = checksums_to_remove - set(removed)
+        if not_removed:
             return RemoveResult(
-                ok=True, warnings=[], removed_count=len(removed), removed=removed
+                ok=False,
+                warnings=[f"could not remove {', '.join(not_removed)}"],
+                removed=[r.md5sum() for r in removed],
+                removed_count=len(removed),
             )
+        return RemoveResult(
+            ok=True, warnings=[], removed_count=len(removed), removed=removed
+        )
 
 
 class RocksDBIndexStore(BaseIndexStore):
     """Handles RocksDB index on disk."""
 
     def _load_index(self, create_if_missing: bool = True) -> DiskRevIndex:
+        if self._index is not None:
+            return self._index
+
         try:
             self._index = DiskRevIndex(str(self.index_path))
         except (FileNotFoundError, ValueError):
             if not create_if_missing:
-                raise
+                raise FileNotFoundError(f"RocksDB index not found at {self.index_path}")
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             self._index = DiskRevIndex.create_from_sigs([], str(self.index_path))
         except SourmashError as err:
@@ -259,7 +251,6 @@ class RocksDBIndexStore(BaseIndexStore):
     def add_signatures(
         self,
         signatures: Iterable[sourmash.SourmashSignature],
-        dedupe_by_md5: bool = True,
     ) -> AddResult:
         """Add one or more signatures to index."""
         try:
@@ -273,7 +264,7 @@ class RocksDBIndexStore(BaseIndexStore):
         return AddResult(
             ok=True,
             warnings=[],
-            added_count=len(self.list_signatures()),
+            added_count=len(signatures),
             added_md5s=added_md5s,
         )
 
@@ -287,16 +278,16 @@ class RocksDBIndexStore(BaseIndexStore):
                 checksum = sig.md5sum()
                 (removed if checksum in checksums_to_remove else kept).append(sig)
 
-            # build new index
-            self._index = self._rebuild_index(kept)
-            not_removed = checksums_to_remove - set(removed)
-            if not_removed:
-                return RemoveResult(
-                    ok=False,
-                    warnings=[f"could not remove {', '.join(not_removed)}"],
-                    removed=removed,
-                    removed_count=len(removed),
-                )
+        # build new index
+        self._index = self._rebuild_index(kept)
+        not_removed = checksums_to_remove - set(removed)
+        if not_removed:
             return RemoveResult(
-                ok=True, warnings=[], removed_count=len(removed), removed=removed
+                ok=False,
+                warnings=[f"could not remove {', '.join(not_removed)}"],
+                removed=[s.md5sum() for s in removed],
+                removed_count=len(removed),
             )
+        return RemoveResult(
+            ok=True, warnings=[], removed_count=len(removed), removed=removed
+        )
