@@ -12,6 +12,7 @@ from pydantic import (DirectoryPath, Field, HttpUrl, PositiveInt,
                       model_validator)
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from minhash_service.utils import ensure_directory_structure
 from minhash_service.signatures.models import IndexFormat
 
 
@@ -126,8 +127,7 @@ class Settings(BaseSettings):
     @classmethod
     def ensure_trash_dir_exists(cls, val: Path) -> Path:
         """Ensure that the trash directory exists."""
-        val.mkdir(parents=True, exist_ok=True)
-        return val
+        return ensure_directory_structure(val)
 
     @model_validator(mode="after")
     def validate_report_service_config(self):

@@ -1,5 +1,6 @@
 """Test reading and writing signatures to disk."""
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -117,7 +118,7 @@ class TestWriteSignatures:
 
         # Read back all kmers
         sigs = read_signatures(output_path)
-        kmers = {sig.ksize for sig in sigs}
+        kmers = {sig.minhash.ksize for sig in sigs}
 
         # Should have both kmers
         assert 31 in kmers
@@ -136,7 +137,7 @@ class TestWriteSignatures:
         # Read back and verify only kmer=31
         sigs = read_signatures(output_path)
         for sig in sigs:
-            assert sig.ksize == 31
+            assert sig.minhash.ksize == 31
 
     def test_write_signatures_with_name(
         self, sig_content_single_kmer: str, tmp_path: Path
@@ -172,10 +173,11 @@ class TestWriteSignatures:
         # Checksums should match
         assert sigs_1[0].md5sum() == sigs_2[0].md5sum()
 
-    def test_write_signatures_permission_error(self, sig_content_single_kmer: str):
+    def test_write_signatures_permission_error(self, sig_content_single_kmer: str, tmp_path: Path):
         """Write to read-only location raises PermissionError."""
         # Use /dev/null or similar read-only location
-        readonly_path = Path("/dev/null")
+        readonly_path = tmp_path / "file.txt"
+        readonly_path.touch(mode=0o444)
 
         with pytest.raises(PermissionError):
             write_signatures(
@@ -205,8 +207,8 @@ class TestKmerFilteringMultiKmer:
         sigs_k51 = read_signatures(file_k51)
 
         # Verify they only contain their kmers
-        assert all(sig.ksize == 31 for sig in sigs_k31)
-        assert all(sig.ksize == 51 for sig in sigs_k51)
+        assert all(sig.minhash.ksize == 31 for sig in sigs_k31)
+        assert all(sig.minhash.ksize == 51 for sig in sigs_k51)
 
     def test_write_kmer_then_read_different_kmer_fails(
         self, sig_content_single_kmer: str, tmp_path: Path
@@ -234,7 +236,7 @@ class TestKmerFilteringMultiKmer:
 
         # Read without filter
         sigs = read_signatures(output_path)
-        kmers = {sig.ksize for sig in sigs}
+        kmers = {sig.minhash.ksize for sig in sigs}
 
         # Should have multiple kmers
         assert len(kmers) > 1
@@ -269,8 +271,8 @@ class TestEdgeCases:
 
         # Verify signature has valid hash values
         for sig in sigs:
-            assert len(sig.mins) > 0
-            assert sig.ksize in [31, 51]
+            assert sig.minhash.moltype == "DNA"
+            assert sig.minhash.ksize in [31, 51]
 
     def test_multiple_write_overwrites(
         self, sig_content_single_kmer: str, tmp_path: Path
