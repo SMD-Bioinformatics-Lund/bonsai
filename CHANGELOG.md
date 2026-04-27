@@ -9,6 +9,12 @@
 ### Changed
 
 
+## [v2.1.1]
+
+### Fixed
+
+- Fixed 422 error when uploading samples produced by JASEN v1.3.0 / bonsai-prp v1.6.1 (#412). Bumped `bonsai-prp` dependency from `1.3.3` to `1.6.1`.
+
 ## [v2.1.0]
 
 ### Added
