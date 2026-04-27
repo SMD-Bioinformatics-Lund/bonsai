@@ -8,6 +8,7 @@ import sourmash
 from sourmash.signature import FrozenSourmashSignature
 
 from minhash_service.core.exceptions import SignatureNotFoundError
+from minhash_service.utils import ensure_directory_structure
 
 from .models import SourmashSignatures
 
@@ -48,6 +49,7 @@ def write_signatures(
     - only include signature of KMER size
     - rename signatrue to name
     """
+    ensure_directory_structure(path.parent)
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
     loaded_signatures = cast(
