@@ -105,7 +105,7 @@ class Settings(BaseSettings):
 
     kmer_size: PositiveInt = 31
     signature_dir: Path = Path("/data/signature_db")
-    index_format: IndexFormat = IndexFormat.SBT
+    index_format: IndexFormat = IndexFormat.ROCKSDB
     trash_dir: DirectoryPath = Field(
         default_factory=_get_trash_dir, description="Directory for trashed files"
     )
