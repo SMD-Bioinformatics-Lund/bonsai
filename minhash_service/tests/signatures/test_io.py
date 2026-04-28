@@ -59,9 +59,7 @@ class TestReadSignatures:
         for sig in sigs:
             assert sig.minhash.ksize == 51
 
-    def test_read_signatures_kmer_mismatch_raises(
-        self, sig_file_single_kmer: Path
-    ):
+    def test_read_signatures_kmer_mismatch_raises(self, sig_file_single_kmer: Path):
         """Reading non-existent kmer size raises error."""
         with pytest.raises(SignatureNotFoundError, match="No signatures"):
             read_signatures(sig_file_single_kmer, kmer_size=99)
@@ -173,16 +171,16 @@ class TestWriteSignatures:
         # Checksums should match
         assert sigs_1[0].md5sum() == sigs_2[0].md5sum()
 
-    def test_write_signatures_permission_error(self, sig_content_single_kmer: str, tmp_path: Path):
+    def test_write_signatures_permission_error(
+        self, sig_content_single_kmer: str, tmp_path: Path
+    ):
         """Write to read-only location raises PermissionError."""
         # Use /dev/null or similar read-only location
         readonly_path = tmp_path / "file.txt"
         readonly_path.touch(mode=0o444)
 
         with pytest.raises(PermissionError):
-            write_signatures(
-                path=readonly_path, signature=sig_content_single_kmer
-            )
+            write_signatures(path=readonly_path, signature=sig_content_single_kmer)
 
 
 class TestKmerFilteringMultiKmer:
@@ -225,9 +223,7 @@ class TestKmerFilteringMultiKmer:
         with pytest.raises(SignatureNotFoundError):
             read_signatures(output_path, kmer_size=51)
 
-    def test_no_kmer_filter_reads_all(
-        self, sig_file_single_kmer: Path, tmp_path: Path
-    ):
+    def test_no_kmer_filter_reads_all(self, sig_file_single_kmer: Path, tmp_path: Path):
         """Reading without kmer filter gets all kmers."""
         sig_content = sig_file_single_kmer.read_text(encoding="utf-8")
         output_path = tmp_path / "all_kmers.sig"
@@ -253,9 +249,7 @@ class TestEdgeCases:
         """Write creates parent directories if needed."""
         nested_path = tmp_path / "nested" / "dir" / "sig.sig"
 
-        result = write_signatures(
-            path=nested_path, signature=sig_content_single_kmer
-        )
+        result = write_signatures(path=nested_path, signature=sig_content_single_kmer)
 
         assert result.exists()
 
@@ -286,9 +280,7 @@ class TestEdgeCases:
 
         # Second write with different kmer filter
         write_signatures(
-            path=output_path,
-            signature=sig_content_single_kmer,
-            kmer_size=51
+            path=output_path, signature=sig_content_single_kmer, kmer_size=51
         )
         sigs_2 = read_signatures(output_path, kmer_size=51)
 

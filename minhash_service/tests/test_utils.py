@@ -1,5 +1,5 @@
-
 from pathlib import Path
+
 from minhash_service.utils import ensure_directory_structure
 
 
