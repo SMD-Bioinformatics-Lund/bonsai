@@ -216,18 +216,14 @@ class TestTrashOperations:
         current_year = str(dt.datetime.now(dt.timezone.utc).year)
         assert current_year in trash_path.parts
 
-    def test_move_to_trash_nonexistent_file_raises(
-        self, storage: SignatureStorage
-    ):
+    def test_move_to_trash_nonexistent_file_raises(self, storage: SignatureStorage):
         """Moving non-existent file raises error."""
         nonexistent = storage.base_dir / "nonexistent.sig"
 
         with pytest.raises(FileNotFoundError):
             storage.move_to_trash(nonexistent, "checksum")
 
-    def test_purge_path_deletes_file(
-        self, storage: SignatureStorage, test_file: Path
-    ):
+    def test_purge_path_deletes_file(self, storage: SignatureStorage, test_file: Path):
         """Purge removes file from trash."""
         checksum = "abc123def456abc123def456abc12345"
         cannonical = storage.ensure_file(test_file, checksum)
@@ -274,7 +270,9 @@ class TestFileIntegrity:
         self, storage: SignatureStorage, test_file: Path
     ):
         """File integrity check fails for mismatched checksum."""
-        wrong_checksum = "0000000000000000000000000000000000000000000000000000000000000000"
+        wrong_checksum = (
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        )
 
         result = storage.check_file_integrity(test_file, wrong_checksum)
 

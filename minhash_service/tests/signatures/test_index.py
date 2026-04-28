@@ -6,10 +6,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 from minhash_service.signatures.index import (
-    create_index_store,
-    get_index_path,
     RocksDBIndexStore,
     SBTIndexStore,
+    create_index_store,
+    get_index_path,
 )
 from minhash_service.signatures.models import IndexFormat
 
@@ -284,13 +284,13 @@ class TestRocksDBIndexStore:
 
             assert result is not None
 
-    def test_rocksdb_load_raises_if_missing_and_not_create(
-        self, tmp_index_dir: Path
-    ):
+    def test_rocksdb_load_raises_if_missing_and_not_create(self, tmp_index_dir: Path):
         """Loading raises if file missing and create_if_missing=False."""
         index_path = tmp_index_dir / "nonexistent"
 
-        with patch("sourmash.index.revindex.DiskRevIndex", side_effect=FileNotFoundError):
+        with patch(
+            "sourmash.index.revindex.DiskRevIndex", side_effect=FileNotFoundError
+        ):
             store = RocksDBIndexStore(index_path)
             with pytest.raises(FileNotFoundError):
                 store._load_index(create_if_missing=False)
@@ -401,7 +401,9 @@ class TestErrorHandling:
         """Handle sourmash errors gracefully during add."""
         index_path = tmp_index_dir / "test"
 
-        with patch("sourmash.create_sbt_index", side_effect=Exception("Sourmash error")):
+        with patch(
+            "sourmash.create_sbt_index", side_effect=Exception("Sourmash error")
+        ):
             store = SBTIndexStore(index_path)
             with pytest.raises(Exception):
                 store.add_signatures([mock_signature])
@@ -410,7 +412,9 @@ class TestErrorHandling:
         """Handle sourmash errors gracefully during remove."""
         index_path = tmp_index_dir / "test"
 
-        with patch("sourmash.create_sbt_index", side_effect=Exception("Sourmash error")):
+        with patch(
+            "sourmash.create_sbt_index", side_effect=Exception("Sourmash error")
+        ):
             store = SBTIndexStore(index_path)
             with pytest.raises(Exception):
                 store.remove_signatures({"checksum"})

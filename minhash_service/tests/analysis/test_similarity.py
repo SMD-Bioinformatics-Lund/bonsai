@@ -5,14 +5,20 @@ from pathlib import Path
 import pytest
 
 from minhash_service.analysis.models import SimilaritySearchConfig, SimilarResult
-from minhash_service.analysis.similarity import filter_search_results, get_similar_signatures, parse_manysearch_results
+from minhash_service.analysis.similarity import (
+    filter_search_results,
+    get_similar_signatures,
+    parse_manysearch_results,
+)
 from minhash_service.signatures.index import RocksDBIndexStore
 
 from ..utils import get_data_path
 
 
 @pytest.mark.parametrize("limit,exp_samples", [(None, 4), (4, 4), (2, 2)])
-def test_get_similar_signatures_no_dupl(data_dir: Path, limit: int | None, exp_samples: int):
+def test_get_similar_signatures_no_dupl(
+    data_dir: Path, limit: int | None, exp_samples: int
+):
     """Test get similar signatures with no duplicates in the index."""
 
     cnf = SimilaritySearchConfig(min_similarity=0.5, ksize=31, limit=limit)
@@ -83,7 +89,7 @@ def test_filter_search_results(data_dir: Path):
 
     checksums = [
         "c3325498b73ef2668ad4afa2802948f5",
-        "bb95e9ec1ed6d5b4c5a8694fd6e020c6", 
+        "bb95e9ec1ed6d5b4c5a8694fd6e020c6",
     ]
     filtered = filter_search_results(results, subset_checksums=checksums)
     assert len(filtered) == 2
