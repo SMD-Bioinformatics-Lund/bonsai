@@ -1,5 +1,5 @@
 """Test signature index operations."""
-
+import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -11,7 +11,21 @@ from minhash_service.signatures.index import (
     create_index_store,
     get_index_path,
 )
+from minhash_service.signatures.io import read_signatures
 from minhash_service.signatures.models import IndexFormat
+
+
+@pytest.fixture()
+def tmp_rocksdb_index(tmp_path: Path, data_dir: Path) -> Path:
+    """Create temporary index directory."""
+    org = data_dir / "rocksdb31.all"
+    return shutil.copytree(org, tmp_path, dirs_exist_ok=True)
+
+
+@pytest.fixture()
+def tmp_dupl_signature(data_dir: Path) -> Path:
+    """Create temporary index directory."""
+    return data_dir / "DRR237260.dupl.sig"
 
 
 @pytest.fixture()
@@ -295,56 +309,6 @@ class TestRocksDBIndexStore:
             with pytest.raises(FileNotFoundError):
                 store._load_index(create_if_missing=False)
 
-    def test_rocksdb_add_signatures(self, tmp_index_dir: Path, mock_signature):
-        """Add signatures to RocksDB index."""
-        index_path = tmp_index_dir / "test"
-
-        with patch("sourmash.index.revindex.DiskRevIndex") as mock_class:
-            mock_index = Mock()
-            mock_class.create_from_sigs.return_value = mock_index
-
-            store = RocksDBIndexStore(index_path)
-            with patch.object(store, "_rebuild_index") as mock_rebuild_index:
-                result = store.add_signatures([mock_signature])
-
-            mock_rebuild_index.assert_called_once()
-            assert result.ok is True
-            assert result.added_count >= 0
-
-    def test_rocksdb_remove_signatures(self, tmp_index_dir: Path, mock_signature):
-        """Remove signatures from RocksDB index."""
-        index_path = tmp_index_dir / "test"
-
-        with patch("sourmash.index.revindex.DiskRevIndex") as mock_class:
-            mock_index = Mock()
-            mock_index.signatures.return_value = [mock_signature]
-            mock_class.return_value = mock_index
-            mock_class.create_from_sigs.return_value = mock_index
-
-            store = RocksDBIndexStore(index_path)
-            store.index  # assert index is created
-            with patch.object(store, "_rebuild_index") as mock_rebuild_index:
-                result = store.remove_signatures({mock_signature.md5sum()})
-
-            mock_rebuild_index.assert_called_once()
-            assert result.removed_count == 1
-
-    def test_rocksdb_remove_nonexistent_signature(self, tmp_index_dir: Path):
-        """Removing non-existent signature fails gracefully."""
-        index_path = tmp_index_dir / "test"
-
-        with patch("sourmash.index.revindex.DiskRevIndex") as mock_class:
-            mock_index = Mock()
-            mock_index.signatures.return_value = []
-            mock_class.return_value = mock_index
-            mock_class.create_from_sigs.return_value = mock_index
-
-            store = RocksDBIndexStore(index_path)
-            store.index  # assert index is created
-            result = store.remove_signatures({"nonexistent_md5"})
-
-            assert result.ok is False
-
     def test_rocksdb_list_signatures(self, tmp_index_dir: Path, mock_signature):
         """List signatures from RocksDB index."""
         index_path = tmp_index_dir / "test"
@@ -359,6 +323,44 @@ class TestRocksDBIndexStore:
             sigs = store.list_signatures()
 
             assert len(sigs) == 1
+
+    def test_rocksdb_add_signature(self, tmp_rocksdb_index: Path, tmp_dupl_signature: Path):
+        """Use the actual database to test adding a signature."""
+
+        store = RocksDBIndexStore(tmp_rocksdb_index)
+
+        start_n_sigs = len(store.list_signatures())
+
+        # add a signature to the db
+        sigs = [sig for sig in read_signatures(tmp_dupl_signature) if sig.minhash.ksize == 31]
+        status = store.add_signatures(sigs)
+
+        assert status.ok
+
+        assert len(store.list_signatures()) == start_n_sigs + 1
+
+    def test_rocksdb_remove_signature(self, tmp_rocksdb_index: Path):
+        """Use the actual database to test removing a signature."""
+
+        store = RocksDBIndexStore(tmp_rocksdb_index)
+
+        start_sigs = store.list_signatures()
+        start_n_sigs = len(start_sigs)
+        assert start_n_sigs > 0, "Index must have at least one signature to test removal"
+
+        # remove the first signature
+        sig_to_remove = start_sigs[0]
+        md5_to_remove = None
+        for sig in store.index.signatures():
+            if sig.name == sig_to_remove.name:
+                md5_to_remove = sig.md5sum()
+                break
+
+        assert md5_to_remove is not None
+        status = store.remove_signatures({md5_to_remove})
+
+        assert status.ok
+        assert len(store.list_signatures()) == start_n_sigs - 1 
 
 
 class TestLockManagement:

@@ -235,17 +235,18 @@ class RocksDBIndexStore(BaseIndexStore):
 
         DiskRevIndex or RocksDB doesnt have an API for appending or removing signatures
         from the index.
+
+        NOTE: Assumes caller holds aquire_lock(). Do not call directly.
         """
-        with self.aquire_lock():
-            parent = self.index_path.parent  # keep on same file system
-            with tempfile.TemporaryDirectory(
-                dir=parent, prefix=self.index_path.name
-            ) as tmp_dir:
-                tmp_path = Path(tmp_dir) / "index.tmp"
-                index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
-                if self.index_path.exists():
-                    shutil.rmtree(self.index_path)
-                tmp_path.replace(self.index_path)  # atomic save
+        parent = self.index_path.parent  # keep on same file system
+        with tempfile.TemporaryDirectory(
+            dir=parent, prefix=self.index_path.name
+        ) as tmp_dir:
+            tmp_path = Path(tmp_dir) / "index.tmp"
+            index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
+            if self.index_path.exists():
+                shutil.rmtree(self.index_path)
+            tmp_path.replace(self.index_path)  # atomic save
         return index
 
     def add_signatures(
@@ -253,23 +254,37 @@ class RocksDBIndexStore(BaseIndexStore):
         signatures: Iterable[sourmash.SourmashSignature],
     ) -> AddResult:
         """Add one or more signatures to index."""
+        sigs = list(signatures)
+        if not sigs:
+            return AddResult(ok=False, warnings=[], added_count=0, added_md5s=[])
+
         try:
-            self._index = self._rebuild_index(signatures)
+            with self.aquire_lock():
+                old_index = self._load_index(create_if_missing=True)
+                existing: SourmashSignatures = list(old_index.signatures())
+                # Combine existing and new signatures
+                combined = existing + sigs
+                # Rebuild index while holding lock for atomicity
+                self._index = self._rebuild_index(combined)
         except Exception as error:
             LOG.error("Got a error when rebuilding index: %s", error)
             return AddResult(
                 ok=False, warnings=[str(error)], added_count=0, added_md5s=[]
             )
-        added_md5s: list[str] = [sig.md5sum() for sig in signatures]
+        added_md5s: list[str] = [sig.md5sum() for sig in sigs]
         return AddResult(
             ok=True,
             warnings=[],
-            added_count=len(signatures),
+            added_count=len(sigs),
             added_md5s=added_md5s,
         )
 
     def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
+        sigs = list(checksums_to_remove)
+        if not sigs:
+            return AddResult(ok=False, warnings=[], added_count=0, added_md5s=[])
+
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
             kept: SourmashSignatures = []
@@ -277,10 +292,11 @@ class RocksDBIndexStore(BaseIndexStore):
             for sig in old_index.signatures():
                 checksum = sig.md5sum()
                 (removed if checksum in checksums_to_remove else kept).append(sig)
+            # Rebuild index while holding lock for atomicity
+            self._index = self._rebuild_index(kept)
 
-        # build new index
-        self._index = self._rebuild_index(kept)
-        not_removed = checksums_to_remove - set(removed)
+        removed_checksums = {r.md5sum() for r in removed}
+        not_removed = checksums_to_remove - removed_checksums
         if not_removed:
             return RemoveResult(
                 ok=False,
@@ -289,5 +305,5 @@ class RocksDBIndexStore(BaseIndexStore):
                 removed_count=len(removed),
             )
         return RemoveResult(
-            ok=True, warnings=[], removed_count=len(removed), removed=removed
+            ok=True, warnings=[], removed_count=len(removed), removed=list(removed_checksums)
         )
