@@ -387,6 +387,9 @@ def get_who_group_from_tbprofiler_comment(comment: Dict[str, str]) -> str | None
         "not assoc w r - interim": 4,
         "not assoc w r": 5,
     }
+    if "note" not in comment:
+        return None
+
     if isinstance(comment["note"], str):
         who_group = who_classes.get(comment["note"].lower())
         if who_group is not None:

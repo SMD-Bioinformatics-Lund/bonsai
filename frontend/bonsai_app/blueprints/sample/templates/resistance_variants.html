@@ -40,12 +40,7 @@
             </thead>
             <tbody id="sv-variant-table">
                 {% for variant in variants %}
-                    {% if variant.verified == "passed" %}
-                        {% set row_class = "table-success" %}
-                    {% elif variant.verified == "failed" %}
-                        {% set row_class = "table-danger" %}
-                    {% endif %}
-                    <tr class="{{ row_class }}">
+                    <tr class=\"{{ variant.row_class }}\">
                         <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
                         <td>
                             {% if variant.verified == "failed" and variant.reason %}
@@ -70,8 +65,7 @@
                         </td>
                         {% if display_igv %}
                             <td>
-                                {% set variant_id = "sv_variants-{}".format(variant["id"]) %}
-                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant_id) }}"
+                                <a href="{{ url_for('alignviewers.igv', sample_id=sample.sample_id, variant_id=variant.display_id) }}"
                                    target="_blank" class="btn btn-sm btn-secondary" type="button">
                                    IGV
                                 </a>
@@ -90,10 +84,6 @@
 </script>
 {% endmacro %}
 
-<form method="POST" action="{{ url_for(request.endpoint, **request.view_args) }}">
-    <input value="{{ request.form.get('input-name') }}">
-</form>
-
 {% macro variant_filters(form_data) %}
 <div class="variant-options y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
     {{ sidebar_header("Filter variants", size="md") }}
@@ -101,24 +91,24 @@
         <label class="form-label" for="min-frequency">Frequency</label>
         <div class="input-group mb-2">
             <select class="form-select form-select-sm br-filter-select" aria-label="Select comparison" name="freq-operator" >
-                <option {% if request.form.get('freq-operator') == "gte" %}selected{% endif %} value="gte">≥</option>
-                <option {% if request.form.get('freq-operator') == "lte" %}selected{% endif %} value="lte">≤</option>
+                <option {% if form_state.freq_operator == "gte" %}selected{% endif %} value="gte">≥</option>
+                <option {% if form_state.freq_operator == "lte" %}selected{% endif %} value="lte">≤</option>
             </select>
-            <input class="form-control form-control-sm" type="number" name="min-frequency" id="min-frequency" min="0" max="100" placeholder="%" value="{{ request.form.get('min-frequency') }}" default="">
+            <input class="form-control form-control-sm" type="number" name="min-frequency" id="min-frequency" min="0" max="100" placeholder="%" value="{{ form_state.min_frequency }}" default="">
         </div>
-        {# filter by gte or lte than frequency #}
+        {# filter by gte or lte than depth #}
         <label class="form-label" for="min-depth">Depth</label>
         <div class="input-group mb-2">
             <select class="form-select form-select-sm br-filter-select" aria-label="Select comparison" name="depth-operator" >
-                <option {% if request.form.get('depth-operator') == "gte" %}selected{% endif %} value="gte">≥</option>
-                <option {% if request.form.get('depth-operator') == "lte" %}selected{% endif %} value="lte">≤</option>
+                <option {% if form_state.depth_operator == "gte" %}selected{% endif %} value="gte">≥</option>
+                <option {% if form_state.depth_operator == "lte" %}selected{% endif %} value="lte">≤</option>
             </select>
-            <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ request.form.get('min-depth') }}" default="">
+            <input class="form-control form-control-sm" type="number" name="min-depth" id="minimum-depth" min="0" value="{{ form_state.min_depth }}" default="">
         </div>
         {# filter on variant type #}
         <select name="filter-variant-type" id="filter-variant-type" class="form-select form-select-sm" data-placeholder="Variant type" data-close-on-select="false" multiple>
             {% for var_type in form_data.get('filter_variant_type', []) %}
-                <option value="{{var_type}}" {% if var_type in request.form.getlist('filter-variant-type') %}selected{% endif %}>
+                <option value="{{var_type}}" {% if var_type in form_state.selected_types %}selected{% endif %}>
                     {{var_type}}
                 </option>
             {% endfor %}
@@ -128,7 +118,7 @@
         <label class="form-label" for="filter-genes">Select genes</label>
         <select name="filter-genes" id="filter-genes" class="form-select form-select-sm" data-placeholder="Select gene" data-close-on-select="false" multiple>
             {% for gene in form_data.get('filter_genes', []) %}
-                <option value="{{gene}}" {% if gene in request.form.getlist('filter-genes') %}selected{% endif %}>
+                <option value="{{gene}}" {% if gene in form_state.selected_genes %}selected{% endif %}>
                     {{gene}}
                 </option>
             {% endfor %}
@@ -137,7 +127,7 @@
         <label class="form-label" for="filter-who-class">Select WHO class</label>
         <select name="filter-who-class" id="filter-who-class" class="form-select form-select-sm" data-placeholder="Select class" data-close-on-select="false" multiple>
             {% for w_class in form_data.get('filter_who_class', []) %}
-                <option value="{{w_class}}" {% if w_class in request.form.getlist('filter-who-class') %}selected{% endif %}>
+                <option value="{{w_class}}" {% if w_class in form_state.selected_who_classes %}selected{% endif %}>
                     {{w_class}}
                 </option>
             {% endfor %}
@@ -147,7 +137,7 @@
         <div class="row">
             <div class="col-auto">
                 <input type="checkbox" name="yeild-resistance" id="yeild-resistance"
-                       {% if request.form.get('yeild-resistance') %}checked{% endif %}
+                       {% if form_state.yield_resistance %}checked{% endif %}
                 >
                 <label for="yeild-resistance">Yield resistance</label>
             </div>
@@ -155,7 +145,7 @@
         <div class="row">
             <div class="col-auto">
                 <input type="checkbox" name="hide-dismissed" id="hide-dismissed"
-                       {% if request.form.get('hide-dismissed') %}checked{% endif %}
+                       {% if form_state.hide_dismissed %}checked{% endif %}
                 >
                 <label for="hide-dismissed">Hide dismissed</label>
             </div>
@@ -248,18 +238,15 @@
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
-                {% set n_res=sample.element_type_result | count_results("AMR") %}
-                {% if is_filtered and n_res == 0 %}
+                {% if is_filtered and amr_results | length == 0 %}
                     <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
-                {% elif n_res == 0 %}
+                {% elif amr_results | length == 0 %}
                     <p>No predicted resistance determinants.</p>
                 {% else %}
-                    {% for elem in sample.element_type_result %}
-                        {% if elem.type != 'VIRULENCE' and elem.software == 'tbprofiler' %}
-                            <div class="col-md-auto">
-                                {{ amr_prediction_card(elem, extended=True) }}
-                            </div>
-                        {% endif %}
+                    {% for elem in amr_results %}
+                        <div class="col-md-auto">
+                            {{ amr_prediction_card(elem, extended=True) }}
+                        </div>
                     {% endfor %}
                 {% endif %}
             </div>

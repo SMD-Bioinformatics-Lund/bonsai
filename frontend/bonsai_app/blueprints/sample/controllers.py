@@ -177,37 +177,49 @@ def create_amr_summary(sample: SampleObj) -> tuple[dict[str, Any], dict[str, Any
     return amr_summary, resistance_info
 
 
-def sort_variants(sample_info: dict[str, Any]) -> dict[str, Any]:
-    """Sort variants for a sample by verified status, ref sequence and position.
+def get_results_by(sample_info: SampleObj, *, software: str | None = None, analysis_type: str | None = None) -> list[dict[str, Any]]:
+    """Get prediction results for a given software and/or analysis type.
 
-    :param sample_info: Sample object.
-    :type sample_info: dict[str, Any]
-    :return: Sample object with sorted variants.
-    :rtype: dict[str, Any]
+    :param sample_info: Sample object containing element_type_result
+    :type sample_info: SampleObj
+    :param software: Optional software filter (case-insensitive)
+    :type software: str | None
+    :param analysis_type: Optional analysis type filter (case-insensitive)
+    :type analysis_type: str | None
+    :return: List of matching prediction results
+    :rtype: list[dict[str, Any]]
     """
+    results = []
+    for res in sample_info.get("element_type_result", []):
+        if software and res.get("software", "").lower() != software.lower():
+            continue
+        if analysis_type and res.get("analysis_type", "").lower() != analysis_type.lower():
+            continue
+        results.append(res)
+    return results
 
-    def _sort_func(variant: dict[str, Any]):
-        """Sort on verfied status, by reference sequence name, and position."""
+
+def sort_variants(variants: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort a list of variants by verified status, reference sequence, and position.
+
+    Sorts in order: verified status (passed → unprocessed → failed), 
+    then by reference sequence name, then by position.
+
+    :param variants: List of variant dictionaries to sort
+    :type variants: list[dict[str, Any]]
+    :return: Sorted list of variants
+    :rtype: list[dict[str, Any]]
+    """
+    def _sort_key(variant: dict[str, Any]) -> tuple:
+        """Generate sort key based on verification status, ref sequence, and position."""
         sort_order = {"passed": 1, "unprocessed": 2, "failed": 3}
         return (
-            sort_order[variant.get("verified", "unprocessed")],
-            variant["reference_sequence"],
-            variant["start"],
+            sort_order.get(variant.get("verified", "unprocessed"), 999),
+            variant.get("reference_sequence", ""),
+            variant.get("start", 0),
         )
 
-    # sort the filtered variants by verification status and then gene name
-    for pred_res in sample_info["element_type_result"]:
-        sorted_variants = sorted(pred_res["result"]["variants"], key=_sort_func)
-        pred_res["result"]["variants"] = sorted_variants
-
-    # sort SNV and SV variants
-    for variant_type in ["snv_variants", "sv_variants"]:
-        if sample_info.get(variant_type) is not None:
-            sample_info[variant_type] = sorted(
-                sample_info[variant_type], key=_sort_func
-            )
-
-    return sample_info
+    return sorted(variants, key=_sort_key)
 
 
 def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) -> bool:
