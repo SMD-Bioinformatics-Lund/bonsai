@@ -4,6 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
+from api.bonsai_api.models.analysis import CurationCreateRecord
+from api.bonsai_api.services.curation_service import create_curation_service
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.pipeline import PipelineRun
@@ -561,6 +563,7 @@ async def update_qc_status(
     "/samples/{sample_id}/resistance/variants",
     response_model_by_alias=False,
     tags=[RouterTags.SAMPLE],
+    deprecated=True,
 )
 async def update_variant_annotation(
     classification: VariantAnnotation,
