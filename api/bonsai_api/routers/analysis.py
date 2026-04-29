@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status
+from fastapi.params import Security
 from fastapi.responses import JSONResponse
 
 from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
@@ -59,13 +60,12 @@ async def upload_analysis(
 
 
 @router.post(
-    "/{analysis_id}/{analysis_type}/curations",
+    "/{analysis_id}/curations",
     status_code=status.HTTP_201_CREATED,
     response_model=dict[str, str]
 )
 async def create_analysis_curation(
     analysis_id: str,
-    analysis_type: str,
     curation: CurationCreateRecord,
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
@@ -75,7 +75,7 @@ async def create_analysis_curation(
     """Create a curation for an analysis result."""
 
     curation_id = await create_curation_service(
-        db, analysis_id=analysis_id, analysis_type=analysis_type,
+        db, analysis_id=analysis_id,
         curation=curation, curated_by=user.username, ctx=ctx, audit=audit
     )
     return {"curation_id": curation_id}
@@ -106,6 +106,37 @@ async def list_curations(
 
     curations = await get_curations_service(db, filters=filters)
     return curations
+
+
+@router.put(
+    "/analysis/{analysis_id}/curation",
+    tags=[RouterTags.SAMPLE],
+)
+async def curate_analysis_results(
+    *,
+    analysis_id: str,
+    curation: CurationCreateRecord,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[UPDATE_PERMISSION]
+    ),
+) -> str:
+    """
+    Create a curation record for an analysis result.
+    """
+
+    return await create_curation_service(
+        db=db,
+        analysis_id=analysis_id,
+        curation=curation,
+        curated_by=current_user.username,
+        ctx=req_ctx,
+        audit=audit_log,
+    )
+
+
 
 
 @router.get(

@@ -30,7 +30,6 @@ async def create_curation_service(
         db: Database,
         *,
         analysis_id: str,
-        analysis_type: str,
         curation: CurationCreateRecord,
         curated_by: str,
         ctx: ApiRequestContext,
@@ -43,8 +42,8 @@ async def create_curation_service(
         if not analysis:
             raise EntryNotFound(f"Analysis with id '{analysis_id}' was not found")
 
-        if analysis_type not in analysis.get('envelopes', {}):
-            raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis_type}'")
+        if analysis.analysis_type not in analysis.get('envelopes', {}):
+            raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis.analysis_type}'")
         
         try:
             # Set analysis id on curation record and validate curation record
@@ -52,7 +51,7 @@ async def create_curation_service(
             curation_data.update({
                 "sample_id": analysis["sample_id"], 
                 "analysis_id": analysis_id, 
-                "analysis_type": analysis_type, 
+                "analysis_type": analysis.analysis_type, 
                 "curated_by": curated_by
             })
             record = TypeAdapter(CurationRecord).validate_python(curation_data)
@@ -67,7 +66,7 @@ async def create_curation_service(
                 event_data = {
                     "curation_id": curation_id,
                     "analysis_id": analysis_id,
-                    "analysis_type": analysis_type,
+                    "analysis_type": analysis.analysis_type,
                     "curation_type": curation.annotation_type,
                     "decision": curation.decision,
                 }
