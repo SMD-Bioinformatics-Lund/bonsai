@@ -23,6 +23,7 @@ from requests import HTTPError
 from bonsai_app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
+    create_curation,
     delete_samples,
     find_samples_similar_to_reference,
     get_antibiotics,
@@ -36,6 +37,7 @@ from bonsai_app.bonsai import (
 )
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
+    build_curation_records,
     filter_variants,
     filter_variants_if_processed,
     get_all_variant_types,
@@ -45,6 +47,7 @@ from .controllers import (
     kw_metadata_to_table,
     sort_variants,
     split_metadata,
+    submit_curations_batch,
 )
 
 LOG = logging.getLogger(__name__)
@@ -320,30 +323,56 @@ def resistance_variants(sample_id: str) -> str:
     # Handle POST requests for filtering or variant classification
     if request.method == "POST":
         if "classify-variant" in request.form:
-            # Parse variant classification from form
-            variant_ids = json.loads(request.form.get("variant-ids", "[]"))
-            resistance: list[str] = request.form.getlist("amrs")
+            try:
+                records = json.loads(request.form.get("curations", "[]"))
+                resistance = request.form.getlist("amrs")
+
+                if len(records) == 0:
+                    flash("No variants selected for curation", "info")
+                    return redirect(url_for("samples.resistance_variants", sample_id=sample_id))
+                
+                # resolve rejection reason
+                rej_reason = None
+                if request.form.get("verify-variant-btn") == "failed":
+                    rej_reason_label = request.form.get("rejection-reason")
+                    rejection_reasons = get_variant_rejection_reasons()
+                    rej_reason = next(
+                        (r for r in rejection_reasons 
+                         if r["label"] == rej_reason_label),
+                        None
+                    )
+                    if not rej_reason:
+                        flash("Invalid rejection reason", "danger")
+                        return redirect(url_for("samples.resistance_variants",
+                                               sample_id=sample_id))
+                    
+                # Build and submit curations
+                batch_records = build_curation_records(
+                    records=records,
+                    decision=request.form.get("verify-variant-btn"),
+                    rejection_reason=rej_reason,
+                    phenotypes=resistance,
+                )
+                results = submit_curations_batch(token, batch_records)
             
-            # Expand rejection reason label to full database object
-            rej_reason = None
-            rejection_reasons = get_variant_rejection_reasons()
-            for reason in rejection_reasons:
-                if reason["label"] == request.form.get("rejection-reason"):
-                    rej_reason = reason
-                    break
+                # Report results to user
+                successes = sum(1 for r in results if r.success)
+                failures = sum(1 for r in results if not r.success)
+                
+                if successes > 0:
+                    flash(f"Successfully created {successes} curation(s)", "success")
+                if failures > 0:
+                    error_details = "; ".join(r.error for r in results if not r.success)
+                    flash(f"Failed to create {failures} curation(s): {error_details}", 
+                          "danger")
+
+            except (json.JSONDecodeError, ValueError) as err:
+                LOG.error("Invalid form data: %s", err)
+                flash("Invalid form data submitted", "danger")
+            # except Exception as err:
+            #     LOG.error("Unexpected error processing curations: %s", err)
+            #     flash("An unexpected error occurred", "danger")
             
-            # Build status update for variants
-            status: dict[str, str | list[str] | None] = {
-                "verified": request.form.get("verify-variant-btn"),
-                "reason": rej_reason,
-                "phenotypes": resistance,
-                "resistance_lvl": request.form.get("resistance-lvl-btn"),
-            }
-            
-            # Update variants in API
-            sample_info = update_variant_info(
-                token, sample_id=sample_id, variant_ids=variant_ids, status=status
-            )
         else:
             # Apply variant filters from form
             sample_info = filter_variants(sample_info, form=request.form)

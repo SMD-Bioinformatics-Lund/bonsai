@@ -6,7 +6,7 @@ from typing import Any, Callable, List
 
 import requests
 from flask import current_app
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
@@ -28,6 +28,14 @@ requests_put = partial(
 requests_delete = partial(
     requests.delete, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
+
+class VariantCurationRecord(BaseModel):
+    """Input data for creating a variant curation."""
+
+    result_key: str
+    decision: str
+    rejection_reason: str | None = None
+    phenotypes: list[str] = Field(default_factory=list)
 
 
 class TokenObject(BaseModel):  # pylint: disable=too-few-public-methods
@@ -399,6 +407,23 @@ def update_variant_info(
     # conduct query
     url = f"{settings.api_internal_url}/samples/{sample_id}/resistance/variants"
     resp = requests_put(url, headers=headers, json=data)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def create_curation(
+    headers: CaseInsensitiveDict[str],
+    *,
+    analysis_id: str,
+    record: VariantCurationRecord,
+):
+    """Create or update a the cruration of a variant. """
+    # conduct query
+    url = f"{settings.api_internal_url}/analysis/{analysis_id}/curations"
+    payload = record.model_dump(mode="json")
+    raise Exception(payload)
+    resp = requests_post(url, headers=headers, json=payload)
     resp.raise_for_status()
     return resp.json()
 
