@@ -169,7 +169,7 @@
         {# Varaint rejection section #}
         {{ sidebar_header("verify prediction") }}
         <div class="d-flex justify-content-md-left mb-2">
-            <input name="variant-ids" id="variant-ids-input" autocomplete="off" minlength="2" value="[]" hidden>
+            <input name="curations" id="curations-input" autocomplete="off" value="[]" hidden>
             <div>
                 <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="passed" onclick="">
                 <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
@@ -216,7 +216,7 @@
         </div>
         {# Confirm annotation #}
         <hr>
-        <div class="col-auto">
+        <div class="col-auto"auld tri>
             <input class="btn btn-sm btn-success" type="submit" value="Confirm" name="classify-variant">
         </div>
     </form>
@@ -295,24 +295,27 @@
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
     const selectVariant = (element) => {
-        let selectedVariants
-        // get selected variants
-        if (window.localStorage.getItem("selectedVariants")) {
-            selectedVariants = new Set(JSON.parse(localStorage.getItem("selectedVariants")))
+        const selected = new Set(JSON.parse(localStorage.getItem("selectedVariants") || "[]"));
+
+        const item = {
+            variant_id: element.dataset.variantId,
+            analysis_id: element.dataset.analysisId,
+        };
+        const key = `${item.analysis_id}:${item.variant_id}`;
+
+        if (element.checked) {
+            selected.add(key);
         } else {
-            selectedVariants = new Set([])
+            selected.delete(key);
         }
-        // update selected variants
-        if ( element.checked ) {
-            selectedVariants.add(element.name)
-        } else {
-            selectedVariants.delete(element.name)
-        }
-        // update selected variant counter
-        document.getElementById("selected-variants-counter").innerHTML = selectedVariants.size
-        const variantsObj = JSON.stringify(Array.from(selectedVariants))
-        document.getElementById("variant-ids-input").value = variantsObj // store the selected variants
-        window.localStorage.setItem("selectedVariants", variantsObj)
+
+        const payload = Array.from(selected).map(key => {
+            const [analysis_id, variant_id] = key.split(':');
+            return { analysis_id, variant_id };
+        });
+
+        document.getElementById("curations-input").value = JSON.stringify(payload);
+        localStorage.setItem("selectedVariants", JSON.stringify(Array.from(selected)));
     }
     // reset selected varants on page load
     const selectAllVariants = (elem, tableId) => {
