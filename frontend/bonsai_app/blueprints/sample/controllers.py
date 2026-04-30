@@ -1,14 +1,18 @@
 """Functions that generate data rendered by views."""
 
+from dataclasses import dataclass
 import logging
 from collections import defaultdict
 from itertools import chain, groupby
 from typing import Any
 
 import pandas as pd
+from requests import HTTPError
 
-from ...custom_filters import get_who_group_from_tbprofiler_comment
-from ...models import ElementType, PredictionSoftware, QualityControlResult
+from bonsai_app.bonsai import TokenObject, create_curation, VariantCurationRecord
+
+from bonsai_app.custom_filters import get_who_group_from_tbprofiler_comment
+from bonsai_app.models import ElementType, PredictionSoftware, QualityControlResult
 
 LOG = logging.getLogger(__name__)
 SampleObj = dict[str, Any]
@@ -417,3 +421,93 @@ def kw_metadata_to_table(metadata: list[dict[str, Any]]) -> dict[str, dict[str, 
         )
         grouped_kw_meta[name] = raw_series.to_frame().to_dict("split")
     return grouped_kw_meta
+
+
+@dataclass
+class CurationResult:
+    """Result of a single curation submission."""
+    variant_id: str
+    analysis_id: str
+    success: bool
+    response: dict | None = None
+    error: str | None = None
+
+
+
+
+
+def build_curation_records(
+    records: list[dict[str, str]],
+    decision: str,
+    rejection_reason: dict | None = None,
+    phenotypes: list[str] | None = None,
+) -> list[dict[str, str | VariantCurationRecord]]:
+    """Build curation record payloads.
+    
+    Validates and structures curation data for API submission.
+    """
+    if not records:
+        raise ValueError("At least one curation record required")
+    
+    if decision == "rejected" and not rejection_reason:
+        raise ValueError("Rejection reason required when rejecting variants")
+    
+    return [
+        {
+            "analysis_id": rec["analysis_id"],
+            "curation": VariantCurationRecord(
+                result_key=rec["variant_id"],
+                decision=decision,
+                rejection_reason=rejection_reason,
+                phenotypes=phenotypes or [],
+            )
+            } for rec in records
+    ]
+
+
+def submit_curations_batch(
+    token: TokenObject,
+    records: list[dict[str, str | VariantCurationRecord]],
+) -> list[CurationResult]:
+    """Submit multiple curation records and aggregate results.
+    
+    Handles errors gracefully and returns detailed results.
+    Returns all results (successes and failures) for reporting.
+    """
+    results = []
+    
+    for rec in records:
+        analysis_id = rec["analysis_id"]
+        curation_record = rec["curation"]
+        try:
+            resp = create_curation(token, analysis_id=analysis_id, record=curation_record)
+            results.append(CurationResult(
+                variant_id=curation_record.result_key,
+                analysis_id=analysis_id,
+                success=True,
+                response=resp,
+            ))
+            LOG.info("Curation created for variant %s in analysis %s", 
+                    curation_record.result_key, analysis_id)
+        except HTTPError as err:
+            LOG.warning(
+                "HTTP error creating curation for %s: %s",
+                curation_record.result_key, err.response.status_code
+            )
+            results.append(CurationResult(
+                variant_id=curation_record.result_key,
+                analysis_id=analysis_id,
+                success=False,
+                error=f"HTTP {err.response.status_code}: {err.response.reason}",
+            ))
+        except Exception as err:
+            LOG.error("Unexpected error creating curation for %s: %s", 
+                     curation_record.result_key, err)
+            results.append(CurationResult(
+                variant_id=curation_record.result_key,
+                analysis_id=analysis_id,
+                success=False,
+                error=str(err),
+            ))
+    
+    return results
