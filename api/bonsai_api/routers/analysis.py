@@ -108,37 +108,6 @@ async def list_curations(
     return curations
 
 
-@router.put(
-    "/analysis/{analysis_id}/curation",
-    tags=[RouterTags.SAMPLE],
-)
-async def curate_analysis_results(
-    *,
-    analysis_id: str,
-    curation: CurationCreateRecord,
-    db: Database = Depends(get_database),
-    audit_log: AuditLogClient = Depends(get_audit_log),
-    req_ctx: ApiRequestContext = Depends(get_request_context),
-    current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[UPDATE_PERMISSION]
-    ),
-) -> str:
-    """
-    Create a curation record for an analysis result.
-    """
-
-    return await create_curation_service(
-        db=db,
-        analysis_id=analysis_id,
-        curation=curation,
-        curated_by=current_user.username,
-        ctx=req_ctx,
-        audit=audit_log,
-    )
-
-
-
-
 @router.get(
     "/curations/{curation_id}",
     response_model=CurationRecord,
