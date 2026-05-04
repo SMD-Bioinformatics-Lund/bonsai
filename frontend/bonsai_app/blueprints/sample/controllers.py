@@ -433,9 +433,6 @@ class CurationResult:
     error: str | None = None
 
 
-
-
-
 def build_curation_records(
     records: list[dict[str, str]],
     decision: str,
@@ -457,6 +454,7 @@ def build_curation_records(
             "analysis_id": rec["analysis_id"],
             "curation": VariantCurationRecord(
                 result_key=rec["variant_id"],
+                annotation_type="variant",
                 decision=decision,
                 rejection_reason=rejection_reason,
                 phenotypes=phenotypes or [],
