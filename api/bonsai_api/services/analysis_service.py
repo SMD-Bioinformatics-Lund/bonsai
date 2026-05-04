@@ -15,7 +15,7 @@ from bonsai_api.models.analysis import (
 from bonsai_api.models.sample import AnalysisViewEntryDb
 from api_client.audit_log.models import Subject, SourceType
 from api_client.audit_log import AuditLogClient, EventCreate
-from bonsai_api.crud.analysis import analysis_exists, create_analysis
+from bonsai_api.crud.analysis import analysis_exists, create_analysis, get_analysis
 from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
 from bonsai_api.exceptions import (
@@ -232,3 +232,10 @@ async def ingest_analysis_service(
         "pipeline_run_id": doc.pipeline_run_id,
         "envelopes": envelopes_summary,
     }
+
+async def get_analysis_service(db, *, analysis_id: str, session=None) -> AnalysisResult:
+    """Get analysis record by id."""
+    resp = await get_analysis(db, analysis_id=analysis_id, session=session)
+    if resp is None:
+        raise EntryNotFound(f"Analysis with id '{analysis_id}' not found")
+    return AnalysisResult.model_validate(resp)

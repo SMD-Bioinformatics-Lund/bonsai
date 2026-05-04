@@ -2,8 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status
-from fastapi.params import Security
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body
 from fastapi.responses import JSONResponse
 
 from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
@@ -67,6 +66,7 @@ async def upload_analysis(
 async def create_analysis_curation(
     analysis_id: str,
     curation: CurationCreateRecord,
+    analysis_type: str = Body(description="Type of analysis result this curation applies to (e.g., 'resistance_variants')"),
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
     ctx: ApiRequestContext = Depends(get_request_context),
@@ -75,7 +75,7 @@ async def create_analysis_curation(
     """Create a curation for an analysis result."""
 
     curation_id = await create_curation_service(
-        db, analysis_id=analysis_id,
+        db, analysis_id=analysis_id, analysis_type=analysis_type,
         curation=curation, curated_by=user.username, ctx=ctx, audit=audit
     )
     return {"curation_id": curation_id}

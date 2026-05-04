@@ -34,6 +34,7 @@ class VariantCurationRecord(BaseModel):
 
     result_key: str
     decision: str
+    annotation_type: str
     rejection_reason: str | None = None
     phenotypes: list[str] = Field(default_factory=list)
 
@@ -422,7 +423,6 @@ def create_curation(
     # conduct query
     url = f"{settings.api_internal_url}/analysis/{analysis_id}/curations"
     payload = record.model_dump(mode="json")
-    raise Exception(payload)
     resp = requests_post(url, headers=headers, json=payload)
     resp.raise_for_status()
     return resp.json()
