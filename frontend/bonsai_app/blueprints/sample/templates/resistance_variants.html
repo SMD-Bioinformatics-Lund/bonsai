@@ -300,8 +300,9 @@
         const item = {
             variant_id: element.dataset.variantId,
             analysis_id: element.dataset.analysisId,
+            analysis_type: element.dataset.analysisType,
         };
-        const key = `${item.analysis_id}:${item.variant_id}`;
+        const key = `${item.analysis_id}:${item.analysis_type}:${item.variant_id}`;
 
         if (element.checked) {
             selected.add(key);
@@ -310,8 +311,8 @@
         }
 
         const payload = Array.from(selected).map(key => {
-            const [analysis_id, variant_id] = key.split(':');
-            return { analysis_id, variant_id };
+            const [analysis_id, analysis_type, variant_id] = key.split(':');
+            return { analysis_id, analysis_type, variant_id };
         });
 
         document.getElementById("curations-input").value = JSON.stringify(payload);

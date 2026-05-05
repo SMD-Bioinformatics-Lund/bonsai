@@ -40,17 +40,17 @@ async def create_curation_service(
         # Verify that analysis exists
         analysis = await get_analysis_service(db, analysis_id=analysis_id, session=txn)
 
-        if analysis_type not in analysis.get('envelopes', {}):
+        if analysis_type not in analysis.envelopes:
             raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis_type}'")
         
         try:
-            # Set analysis id on curation record and validate curation record
+            # Enrich curation with analysis context and validate
             curation_data = curation.model_dump()
             curation_data.update({
-                "sample_id": analysis["sample_id"], 
-                "analysis_id": analysis_id, 
-                "analysis_type": analysis_type, 
-                "curated_by": curated_by
+                "sample_id": analysis.sample_id,
+                "analysis_id": analysis_id,
+                "analysis_type": analysis_type,
+                "curated_by": curated_by,
             })
             record = TypeAdapter(CurationRecord).validate_python(curation_data)
 
@@ -83,7 +83,7 @@ async def create_curation_service(
             )
 
             # sync data to sample object after update
-            sync_curation_summary_for_analysis(
+            await sync_curation_summary_for_analysis(
                 db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
             )
             return curation_id
@@ -179,7 +179,7 @@ async def delete_curation_service(
         await delete_curation_crud(db, curation_id=curation_id, session=txn)
 
         # sync changes to sample object
-        sync_curation_summary_for_analysis(
+        await sync_curation_summary_for_analysis(
             db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
         )
     
@@ -218,7 +218,13 @@ async def sync_curation_summary_for_analysis(
     for cur in curations:
         analysis_type = cur["analysis_type"]
         field_name = group_for(analysis_type)
-        items_idx[(field_name, analysis_type)].append(cur)
+        # Strip redundant IDs when embedding in sample object
+        # (context is implicit in the nested structure)
+        cur_copy = cur.copy()
+        cur_copy.pop("sample_id", None)
+        cur_copy.pop("analysis_id", None)
+        cur_copy.pop("analysis_type", None)
+        items_idx[(field_name, analysis_type)].append(cur_copy)
     
     ops: list[UpdateOne] = []
     for (field_name, at), items in items_idx.items():
@@ -231,7 +237,7 @@ async def sync_curation_summary_for_analysis(
                 }
             }
         }
-        # pull existing items 
+        # Store curations without redundant ID fields
         ops.append(UpdateOne(
             filter_,
             {"$set": {f"{field_name}.$.curations": items}}

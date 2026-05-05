@@ -45,16 +45,42 @@ class AnalysisResult(RecordIdMixin, Timestamps, AllowExtraModelMixin):
     created_by: str | None = None
 
 
-class CurationBase(RWModel, RecordIdMixin, Timestamps):
-    # Audit
+class CurationAuditBase(RWModel, RecordIdMixin, Timestamps):
+    """Shared curation metadata for both canonical and embedded curation records.
+
+    This base holds the audit and annotation fields common to all curations.
+    It does not include storage-specific linking context.
+    """
+
     curated_by: str
     approved_by: str | None = None
     comment: str = Field(default="")
     tags: list[str] = Field(default_factory=list)
 
 
-class ItemCuration(CurationBase):
-    """Base for item-level curations (variants, genes, etc.)."""
+class CanonicalCurationBase(CurationAuditBase):
+    """Base class for curations stored in the dedicated curation collection.
+
+    These records include sample/analysis context so they can be queried
+    independently of the sample embedding.
+    """
+
+    sample_id: str = Field(..., description="ID of the sample this curation relates to")
+    analysis_id: str = Field(..., description="ID of the analysis this curation applies to")
+    analysis_type: str = Field(..., description="Type of analysis (e.g., 'amr', 'typing', 'species_prediction')")
+
+
+class EmbeddedCurationBase(CurationAuditBase):
+    """Base class for curations embedded in sample view documents.
+
+    Embedded curations omit sample/analysis linking context because the
+    parent sample and analysis view already provide that information.
+    """
+
+
+class ItemCuration(CanonicalCurationBase):
+    """Curation for individual items stored in the canonical curation collection."""
+
     result_key: str = Field(..., description="Key of the result this curation applies to.")
     
     # Standard decision pattern
@@ -63,8 +89,8 @@ class ItemCuration(CurationBase):
     notes: str | None = None
 
 
-class AnalysisCuration(CurationBase):
-    """Base for whole-analysis curations (typing, species, qc)."""
+class AnalysisCuration(CanonicalCurationBase):
+    """Curation for whole-analysis records stored in the canonical curation collection."""
     
     # Standard decision pattern (different literals per type)
     decision: str  # overridden per subclass
@@ -81,7 +107,7 @@ class PhenotypeAnnotation(BaseModel):
 
 # Item-level curations
 class VariantCuration(ItemCuration):
-    """Curation for individual variants."""
+    """Curation for individual variants stored in the canonical curation collection."""
     annotation_type: Literal["variant"] = "variant"
     
     # Annotations
@@ -89,7 +115,7 @@ class VariantCuration(ItemCuration):
 
 
 class GeneCuration(ItemCuration):
-    """Curation for detected genes (e.g., AMR genes)."""
+    """Curation for detected genes stored in the canonical curation collection."""
     annotation_type: Literal["gene"] = "gene"
     
     # Annotations
@@ -99,7 +125,7 @@ class GeneCuration(ItemCuration):
 
 # Analysis-level curations
 class TypingCuration(AnalysisCuration):
-    """Curation for typing results (MLST, cgMLST, etc.)."""
+    """Curation for typing results stored in the canonical curation collection."""
     annotation_type: Literal["typing"] = "typing"
     decision: Literal["accept", "reject", "investigate"] = "accept"
     
@@ -107,7 +133,7 @@ class TypingCuration(AnalysisCuration):
 
 
 class SpeciesCuration(AnalysisCuration):
-    """Curation for species identification."""
+    """Curation for species identification stored in the canonical curation collection."""
     annotation_type: Literal["species_prediction"] = "species_prediction"
     decision: Literal["accept", "reject", "ambiguous"] = "accept"
     
@@ -115,10 +141,61 @@ class SpeciesCuration(AnalysisCuration):
 
 
 class QCCuration(AnalysisCuration):
-    """Curation for overall sample QC."""
+    """Curation for overall sample QC stored in the canonical curation collection."""
     annotation_type: Literal["qc"] = "qc"
     decision: Literal["pass", "fail", "conditional"] = "pass"
     
+    conditional_reason: str | None = None
+
+
+class ItemEmbeddedCuration(EmbeddedCurationBase):
+    """Base type for item-level curations embedded in sample views."""
+
+    result_key: str = Field(..., description="Key of the result this curation applies to.")
+    decision: Literal["accept", "reject", "flag_for_review"]
+    rejection_reason: str | None = None
+    notes: str | None = None
+
+
+class AnalysisEmbeddedCuration(EmbeddedCurationBase):
+    """Base type for whole-analysis curations embedded in sample views."""
+
+    decision: str
+    rejection_reason: str | None = None
+    notes: str | None = None
+
+
+class EmbeddedVariantCuration(ItemEmbeddedCuration):
+    """Denormalized variant curation embedded in sample views."""
+    annotation_type: Literal["variant"] = "variant"
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
+
+
+class EmbeddedGeneCuration(ItemEmbeddedCuration):
+    """Denormalized gene curation embedded in sample views."""
+    annotation_type: Literal["gene"] = "gene"
+    functional_status: str | None = None
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
+
+
+class EmbeddedTypingCuration(AnalysisEmbeddedCuration):
+    """Denormalized typing curation embedded in sample views."""
+    annotation_type: Literal["typing"] = "typing"
+    decision: Literal["accept", "reject", "investigate"] = "accept"
+    epi_type: str | None = None
+
+
+class EmbeddedSpeciesCuration(AnalysisEmbeddedCuration):
+    """Denormalized species curation embedded in sample views."""
+    annotation_type: Literal["species_prediction"] = "species_prediction"
+    decision: Literal["accept", "reject", "ambiguous"] = "accept"
+    corrected_species: str | None = None
+
+
+class EmbeddedQCCuration(AnalysisEmbeddedCuration):
+    """Denormalized QC curation embedded in sample views."""
+    annotation_type: Literal["qc"] = "qc"
+    decision: Literal["pass", "fail", "conditional"] = "pass"
     conditional_reason: str | None = None
 
 
@@ -128,6 +205,15 @@ CurationRecord = Annotated[
     | TypingCuration
     | SpeciesCuration
     | QCCuration,
+    Discriminator("annotation_type"),
+]
+
+EmbeddedCurationRecord = Annotated[
+    EmbeddedVariantCuration
+    | EmbeddedGeneCuration
+    | EmbeddedTypingCuration
+    | EmbeddedSpeciesCuration
+    | EmbeddedQCCuration,
     Discriminator("annotation_type"),
 ]
 

@@ -452,6 +452,7 @@ def build_curation_records(
     return [
         {
             "analysis_id": rec["analysis_id"],
+            "analysis_type": rec["analysis_type"],
             "curation": VariantCurationRecord(
                 result_key=rec["variant_id"],
                 annotation_type="variant",
@@ -476,9 +477,10 @@ def submit_curations_batch(
     
     for rec in records:
         analysis_id = rec["analysis_id"]
+        analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
         try:
-            resp = create_curation(token, analysis_id=analysis_id, record=curation_record)
+            resp = create_curation(token, analysis_type=analysis_type, analysis_id=analysis_id, record=curation_record)
             results.append(CurationResult(
                 variant_id=curation_record.result_key,
                 analysis_id=analysis_id,
