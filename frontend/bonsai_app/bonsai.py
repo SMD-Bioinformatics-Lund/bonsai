@@ -417,12 +417,16 @@ def create_curation(
     headers: CaseInsensitiveDict[str],
     *,
     analysis_id: str,
+    analysis_type: str,
     record: VariantCurationRecord,
 ):
     """Create or update a the cruration of a variant. """
     # conduct query
     url = f"{settings.api_internal_url}/analysis/{analysis_id}/curations"
-    payload = record.model_dump(mode="json")
+    payload = {
+        "analysis_type": analysis_type,
+        "curation": record.model_dump(mode="json")
+    }
     resp = requests_post(url, headers=headers, json=payload)
     resp.raise_for_status()
     return resp.json()
