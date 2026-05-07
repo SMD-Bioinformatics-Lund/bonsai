@@ -29,6 +29,13 @@ requests_delete = partial(
     requests.delete, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
 
+
+class PhenotypeAnnotation(BaseModel):
+
+    name: str
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
 class VariantCurationRecord(BaseModel):
     """Input data for creating a variant curation."""
 
@@ -36,7 +43,7 @@ class VariantCurationRecord(BaseModel):
     decision: str
     annotation_type: str
     rejection_reason: str | None = None
-    phenotypes: list[str] = Field(default_factory=list)
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
 
 
 class TokenObject(BaseModel):  # pylint: disable=too-few-public-methods
