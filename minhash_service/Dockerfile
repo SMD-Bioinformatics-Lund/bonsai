@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.14.4-slim AS base
+FROM python:3.11.3-slim AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,30 +8,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
-
-# Build requirements (only needed for compiling wheel
-
-FROM base AS build-deps
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    clang \
-    pkg-config \
-    rustc \
-    cargo \
-    curl \
-    && rm -rf /var/lib/apt/lists
-
-# Build sourmash / branchwater plugin wheels
-
-FROM build-deps AS branchwater-builder
-
-WORKDIR /src/branchwater
-
-RUN curl -L https://github.com/sourmash-bio/sourmash_plugin_branchwater/archive/refs/tags/v0.9.14.tar.gz \
-    | tar xz --strip-components=1
-
-RUN pip wheel --wheel-dir /wheels .
 
 # Build application wheels
 
@@ -49,15 +25,16 @@ RUN pip wheel --wheel-dir /wheels \
 
 # Development layer
 
-FROM build-deps AS development
+FROM condaforge/miniforge3 AS development
 
 WORKDIR /app
 
+RUN conda install -y python=3.11.3 pip sourmash_plugin_branchwater
+
 COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
-COPY --from=branchwater-builder /wheels /wheels
 
-RUN pip install -e ./api_client -e ./minhash_service /wheels/*
+RUN pip install -e ./api_client -e ./minhash_service
 
 # Dev-only runtime convenience
 RUN mkdir -p /data/signature_db
@@ -68,6 +45,8 @@ CMD ["bash"]
 
 FROM base AS production
 
+RUN conda install -y python=3.11.3 pip sourmash_plugin_branchwater
+
 # Create non-root user early
 RUN addgroup --system --gid 1000 worker && \
     adduser --system --uid 1000 --ingroup worker \
@@ -75,14 +54,11 @@ RUN addgroup --system --gid 1000 worker && \
 
 # Install wheels only
 COPY --from=python-builder /wheels /wheels
-COPY --from=branchwater-builder /wheels /branchwater-wheels
 
 RUN pip install --no-index \
         --find-links=/wheels \
-        --find-links=/branchwater-wheels \
         minhash_service \
-        sourmash_plugin_branchwater \
-    && rm -rf /wheels /branchwater-wheels
+    && rm -rf /wheels
 
 # Runtime directories
 RUN mkdir -p /data/signature_db && \
