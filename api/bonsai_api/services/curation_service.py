@@ -58,6 +58,11 @@ async def create_curation_service(
             curation_id = record.id
             await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
 
+            # sync data to sample object after update
+            await sync_curation_summary_for_analysis(
+                db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
+            )
+
             # Audit log
             if isinstance(audit, AuditLogClient):
                 subject = Subject(id=analysis_id, type=SourceType.USR)
@@ -82,10 +87,6 @@ async def create_curation_service(
                 curation_id, analysis_id, curated_by
             )
 
-            # sync data to sample object after update
-            await sync_curation_summary_for_analysis(
-                db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
-            )
             return curation_id
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))

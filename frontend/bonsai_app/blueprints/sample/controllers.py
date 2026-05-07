@@ -9,7 +9,7 @@ from typing import Any
 import pandas as pd
 from requests import HTTPError
 
-from bonsai_app.bonsai import TokenObject, create_curation, VariantCurationRecord
+from bonsai_app.bonsai import TokenObject, create_curation, VariantCurationRecord, PhenotypeAnnotation
 
 from bonsai_app.custom_filters import get_who_group_from_tbprofiler_comment
 from bonsai_app.models import ElementType, PredictionSoftware, QualityControlResult
@@ -438,6 +438,7 @@ def build_curation_records(
     decision: str,
     rejection_reason: dict | None = None,
     phenotypes: list[str] | None = None,
+    resistance_level: str | None = None,
 ) -> list[dict[str, str | VariantCurationRecord]]:
     """Build curation record payloads.
     
@@ -449,6 +450,9 @@ def build_curation_records(
     if decision == "rejected" and not rejection_reason:
         raise ValueError("Rejection reason required when rejecting variants")
     
+    meta = {"resistance_level": resistance_level} if resistance_level else {}
+    phenotype_records = [PhenotypeAnnotation(name=p, meta=meta) for p in phenotypes] if phenotypes else []
+    
     return [
         {
             "analysis_id": rec["analysis_id"],
@@ -457,8 +461,8 @@ def build_curation_records(
                 result_key=rec["variant_id"],
                 annotation_type="variant",
                 decision=decision,
-                rejection_reason=rejection_reason,
-                phenotypes=phenotypes or [],
+                rejection_reason=rejection_reason["description"] if rejection_reason else None,
+                phenotypes=phenotype_records,
             )
             } for rec in records
     ]
@@ -498,11 +502,11 @@ def submit_curations_batch(
                 variant_id=curation_record.result_key,
                 analysis_id=analysis_id,
                 success=False,
-                error=f"HTTP {err.response.status_code}: {err.response.reason}",
+                error=f"HTTP {err.response.status_code}: {err.response.text}",
             ))
         except Exception as err:
             LOG.error("Unexpected error creating curation for %s: %s", 
-                     curation_record.result_key, err)
+                     curation_record.result_key, str(err))
             results.append(CurationResult(
                 variant_id=curation_record.result_key,
                 analysis_id=analysis_id,
@@ -511,3 +515,45 @@ def submit_curations_batch(
             ))
     
     return results
+
+
+def merge_variants_with_curations(analysis_result: dict[str, Any]) -> dict[str, Any]:
+    """Merge variant curation data into the analysis result for frontend display.
+
+    Takes an analysis result (e.g., from element_type_result) and enriches each variant
+    with its curation status, decision, and phenotypes from the embedded curations.
+
+    :param analysis_result: Single analysis result dict with 'result' and 'curations' keys
+    :return: Modified analysis_result with variants enriched with curation data
+    """
+    if "result" not in analysis_result or "variants" not in analysis_result["result"]:
+        return analysis_result  # No variants to process
+
+    if "curations" not in analysis_result:
+        return analysis_result  # No curations to merge
+
+    # Build lookup of curations by result_key (variant ID)
+    curation_lookup = {
+        curation["result_key"]: curation
+        for curation in analysis_result["curations"]
+        if curation.get("annotation_type") == "variant"
+    }
+
+    # Enrich each variant with curation data
+    for variant in analysis_result["result"]["variants"]:
+        variant_id = str(variant.get("id") or variant.get("variant_id"))
+        if variant_id in curation_lookup:
+            curation = curation_lookup[variant_id]
+            variant["curation"] = {
+                "decision": curation.get("decision"),
+                "rejection_reason": curation.get("rejection_reason"),
+                "notes": curation.get("notes"),
+                "phenotypes": curation.get("phenotypes", []),
+                "curated_by": curation.get("curated_by"),
+                "curated_at": curation.get("created_at"),
+                "approved_by": curation.get("approved_by"),
+            }
+        else:
+            variant["curation"] = None  # No curation for this variant
+
+    return analysis_result

@@ -248,7 +248,7 @@ class VariantCurationCreate(ItemCurationCreateBase):
     """Creation request for variant curation."""
     annotation_type: Literal["variant"] = "variant"
     decision: Literal["accept", "reject", "flag_for_review"]
-    phenotypes: list[str] | None = None
+    phenotypes: list[PhenotypeAnnotation] | None = None
 
 
 class GeneCurationCreate(ItemCurationCreateBase):
@@ -256,7 +256,7 @@ class GeneCurationCreate(ItemCurationCreateBase):
     annotation_type: Literal["gene"] = "gene"
     decision: Literal["accept", "reject"]
     functional_status: str | None = None
-    phenotypes: list[str] | None = None
+    phenotypes: list[PhenotypeAnnotation] | None = None
 
 
 # Analysis-level creation models

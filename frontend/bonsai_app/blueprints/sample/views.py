@@ -45,6 +45,7 @@ from .controllers import (
     get_results_by,
     get_variant_genes,
     kw_metadata_to_table,
+    merge_variants_with_curations,
     sort_variants,
     split_metadata,
     submit_curations_batch,
@@ -149,6 +150,11 @@ def sample(sample_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     kw_meta_records, meta_tbls = split_metadata(sample_info)
+
+    # Filter AMR results and merge curation data into variants for each AMR result
+    for result in sample_info.get("element_type_result", []):
+        if result.get("analysis_type") == "amr":
+            merge_variants_with_curations(result)
 
     return render_template(
         "sample.html",
@@ -326,6 +332,7 @@ def resistance_variants(sample_id: str) -> str:
             try:
                 records = json.loads(request.form.get("curations", "[]"))
                 resistance = request.form.getlist("amrs")
+                resistance_level = request.form.get("resistance-lvl-btn")
 
                 if len(records) == 0:
                     flash("No variants selected for curation", "info")
@@ -333,7 +340,7 @@ def resistance_variants(sample_id: str) -> str:
                 
                 # resolve rejection reason
                 rej_reason = None
-                if request.form.get("verify-variant-btn") == "failed":
+                if request.form.get("verify-variant-btn") == "reject":
                     rej_reason_label = request.form.get("rejection-reason")
                     rejection_reasons = get_variant_rejection_reasons()
                     rej_reason = next(
@@ -352,6 +359,7 @@ def resistance_variants(sample_id: str) -> str:
                     decision=request.form.get("verify-variant-btn"),
                     rejection_reason=rej_reason,
                     phenotypes=resistance,
+                    resistance_level=resistance_level,
                 )
                 results = submit_curations_batch(token, batch_records)
             
@@ -424,6 +432,10 @@ def resistance_variants(sample_id: str) -> str:
         elem for elem in sample_info.get("element_type_result", [])
         if elem.get("software") == "tbprofiler" and elem.get("type") != "VIRULENCE"
     ]
+
+    # Merge curation data into variants for each AMR result
+    for result in amr_results:
+        merge_variants_with_curations(result)
 
     # Prepare form state with user selections
     form_state = {
