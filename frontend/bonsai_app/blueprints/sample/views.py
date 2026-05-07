@@ -23,10 +23,10 @@ from requests import HTTPError
 from bonsai_app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
+    create_curation,
     delete_samples,
     find_samples_similar_to_reference,
     get_antibiotics,
-    get_group_by_id,
     get_lims_export_response,
     get_sample_by_id,
     get_variant_rejection_reasons,
@@ -37,14 +37,18 @@ from bonsai_app.bonsai import (
 )
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
+    build_curation_records,
     filter_variants,
     filter_variants_if_processed,
     get_all_variant_types,
     get_all_who_classifications,
+    get_results_by,
     get_variant_genes,
     kw_metadata_to_table,
+    merge_variants_with_curations,
     sort_variants,
     split_metadata,
+    submit_curations_batch,
 )
 
 LOG = logging.getLogger(__name__)
@@ -134,12 +138,23 @@ def sample(sample_id: str) -> str:
 
     # filter tbprofiler results and sort variants
     sample_info = filter_variants_if_processed(sample_info)
-    sample_info = sort_variants(sample_info)
+    
+    # Sort variants within all prediction results
+    for pred_res in sample_info.get("element_type_result", []):
+        if "variants" in pred_res.get("result", {}):
+            pred_res["result"]["variants"] = sort_variants(
+                pred_res["result"]["variants"]
+            )
 
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     kw_meta_records, meta_tbls = split_metadata(sample_info)
+
+    # Filter AMR results and merge curation data into variants for each AMR result
+    for result in sample_info.get("element_type_result", []):
+        if result.get("analysis_type") == "amr":
+            merge_variants_with_curations(result)
 
     return render_template(
         "sample.html",
@@ -299,27 +314,109 @@ def download_lims(sample_id: str):
 @samples_bp.route("/sample/<sample_id>/resistance/variants", methods=["GET", "POST"])
 @login_required
 def resistance_variants(sample_id: str) -> str:
-    """Samples view."""
+    """Display and manage resistance variants for a sample.
+
+    Supports filtering and classification of variants from tbprofiler AMR analysis.
+
+    :param sample_id: The sample identifier
+    :type sample_id: str
+    :return: Rendered HTML page
+    :rtype: str
+    """
     token = TokenObject(**current_user.get_id())
     sample_info = get_sample_by_id(token, sample_id=sample_id)
-    sample_info = sort_variants(sample_info)
 
-    # check if IGV should be enabled
+    # Handle POST requests for filtering or variant classification
+    if request.method == "POST":
+        if "classify-variant" in request.form:
+            try:
+                records = json.loads(request.form.get("curations", "[]"))
+                resistance = request.form.getlist("amrs")
+                resistance_level = request.form.get("resistance-lvl-btn")
+
+                if len(records) == 0:
+                    flash("No variants selected for curation", "info")
+                    return redirect(url_for("samples.resistance_variants", sample_id=sample_id))
+                
+                # resolve rejection reason
+                rej_reason = None
+                if request.form.get("verify-variant-btn") == "reject":
+                    rej_reason_label = request.form.get("rejection-reason")
+                    rejection_reasons = get_variant_rejection_reasons()
+                    rej_reason = next(
+                        (r for r in rejection_reasons 
+                         if r["label"] == rej_reason_label),
+                        None
+                    )
+                    if not rej_reason:
+                        flash("Invalid rejection reason", "danger")
+                        return redirect(url_for("samples.resistance_variants",
+                                               sample_id=sample_id))
+                    
+                # Build and submit curations
+                batch_records = build_curation_records(
+                    records=records,
+                    decision=request.form.get("verify-variant-btn"),
+                    rejection_reason=rej_reason,
+                    phenotypes=resistance,
+                    resistance_level=resistance_level,
+                )
+                results = submit_curations_batch(token, batch_records)
+            
+                # Report results to user
+                successes = sum(1 for r in results if r.success)
+                failures = sum(1 for r in results if not r.success)
+                
+                if successes > 0:
+                    flash(f"Successfully created {successes} curation(s)", "success")
+                if failures > 0:
+                    error_details = "; ".join(r.error for r in results if not r.success)
+                    flash(f"Failed to create {failures} curation(s): {error_details}", 
+                          "danger")
+
+            except (json.JSONDecodeError, ValueError) as err:
+                LOG.error("Invalid form data: %s", err)
+                flash("Invalid form data submitted", "danger")
+            # except Exception as err:
+            #     LOG.error("Unexpected error processing curations: %s", err)
+            #     flash("An unexpected error occurred", "danger")
+            
+        else:
+            # Apply variant filters from form
+            sample_info = filter_variants(sample_info, form=request.form)
+
+    # Sort variants within all tbprofiler AMR results
+    tbprofiler_results = get_results_by(
+        sample_info, software="tbprofiler", analysis_type="amr"
+    )
+    for pred_res in tbprofiler_results:
+        pred_res["result"]["variants"] = sort_variants(
+            pred_res["result"]["variants"]
+        )
+
+    # Sort top-level structural and SNV variants if present
+    for variant_key in ("sv_variants", "snv_variants"):
+        if variant_key in sample_info and sample_info[variant_key]:
+            sample_info[variant_key] = sort_variants(sample_info[variant_key])
+
+    # Check if IGV genome browser should be enabled
     display_genome_browser = all(
         [
-            sample_info["reference_genome"] is not None,
-            sample_info["read_mapping"] is not None,
+            sample_info.get("reference_genome") is not None,
+            sample_info.get("read_mapping") is not None,
         ]
     )
 
-    # populate form for filter varaints
+    # Prepare antibiotics grouped by family for filter form
     antibiotics = {
         fam: list(amrs)
         for fam, amrs in groupby(get_antibiotics(), key=lambda ant: ant["family"])
     }
+    
+    # Get rejection reasons for form
     rejection_reasons = get_variant_rejection_reasons()
 
-    # populate form for filter varaints
+    # Prepare filter form data
     form_data = {
         "filter_genes": get_variant_genes(sample_info, software="tbprofiler"),
         "filter_who_class": get_all_who_classifications(
@@ -330,39 +427,50 @@ def resistance_variants(sample_id: str) -> str:
         ),
     }
 
-    if request.method == "POST":
-        # check if which form deposited data
-        if "classify-variant" in request.form:
-            token = TokenObject(**current_user.get_id())
-            variant_ids = json.loads(request.form.get("variant-ids", "[]"))
-            resistance: list[str] = request.form.getlist("amrs")
-            # expand rejection reason label to full db object
-            rej_reason = None
-            for reason in rejection_reasons:
-                if reason["label"] == request.form.get("rejection-reason"):
-                    rej_reason = reason
-            # parse updated variant classification
-            status: dict[str, str | list[str] | None] = {
-                "verified": request.form.get("verify-variant-btn"),
-                "reason": rej_reason,
-                "phenotypes": resistance,
-                "resistance_lvl": request.form.get("resistance-lvl-btn"),
-            }
-            sample_info = update_variant_info(
-                token, sample_id=sample_id, variant_ids=variant_ids, status=status
-            )
-        else:
-            sample_info = filter_variants(sample_info, form=request.form)
-        # resort variants after processing
-        sample_info = sort_variants(sample_info)
+    # Filter AMR results to only display tbprofiler non-virulence results
+    amr_results = [
+        elem for elem in sample_info.get("element_type_result", [])
+        if elem.get("software") == "tbprofiler" and elem.get("type") != "VIRULENCE"
+    ]
 
+    # Merge curation data into variants for each AMR result
+    for result in amr_results:
+        merge_variants_with_curations(result)
+
+    # Prepare form state with user selections
+    form_state = {
+        "freq_operator": request.form.get("freq-operator", "gte"),
+        "min_frequency": request.form.get("min-frequency", ""),
+        "depth_operator": request.form.get("depth-operator", "gte"),
+        "min_depth": request.form.get("min-depth", ""),
+        "selected_genes": set(request.form.getlist("filter-genes")),
+        "selected_types": set(request.form.getlist("filter-variant-type")),
+        "selected_who_classes": set(request.form.getlist("filter-who-class")),
+        "yield_resistance": bool(request.form.get("yeild-resistance")),
+        "hide_dismissed": bool(request.form.get("hide-dismissed")),
+    }
+
+    # Enhance structural variants with computed data
+    for variant in sample_info.get("sv_variants", []):
+        # Determine row styling based on verification status
+        variant["row_class"] = (
+            "table-success" if variant.get("verified") == "passed"
+            else "table-danger" if variant.get("verified") == "failed"
+            else ""
+        )
+        # Prepare display ID for IGV links
+        variant["display_id"] = f"sv_variants-{variant.get('id', '')}"
+
+    # Split metadata into key-value and table formats
     _, meta_tbls = split_metadata(sample_info)
 
     return render_template(
         "resistance_variants.html",
         title=f"{sample_id} resistance",
         sample=sample_info,
+        amr_results=amr_results,
         form_data=form_data,
+        form_state=form_state,
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,

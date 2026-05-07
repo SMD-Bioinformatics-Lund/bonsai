@@ -6,7 +6,7 @@ from typing import Any, Callable, List
 
 import requests
 from flask import current_app
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from requests.structures import CaseInsensitiveDict
 
 from .config import settings
@@ -28,6 +28,22 @@ requests_put = partial(
 requests_delete = partial(
     requests.delete, timeout=settings.request_timeout, verify=settings.verify_ssl
 )
+
+
+class PhenotypeAnnotation(BaseModel):
+
+    name: str
+    meta: dict[str, Any] = Field(default_factory=dict)
+
+
+class VariantCurationRecord(BaseModel):
+    """Input data for creating a variant curation."""
+
+    result_key: str
+    decision: str
+    annotation_type: str
+    rejection_reason: str | None = None
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
 
 
 class TokenObject(BaseModel):  # pylint: disable=too-few-public-methods
@@ -399,6 +415,26 @@ def update_variant_info(
     # conduct query
     url = f"{settings.api_internal_url}/samples/{sample_id}/resistance/variants"
     resp = requests_put(url, headers=headers, json=data)
+    resp.raise_for_status()
+    return resp.json()
+
+
+@api_authentication
+def create_curation(
+    headers: CaseInsensitiveDict[str],
+    *,
+    analysis_id: str,
+    analysis_type: str,
+    record: VariantCurationRecord,
+):
+    """Create or update a the cruration of a variant. """
+    # conduct query
+    url = f"{settings.api_internal_url}/analysis/{analysis_id}/curations"
+    payload = {
+        "analysis_type": analysis_type,
+        "curation": record.model_dump(mode="json")
+    }
+    resp = requests_post(url, headers=headers, json=payload)
     resp.raise_for_status()
     return resp.json()
 

@@ -13,14 +13,13 @@ from bonsai_api.utils import get_timestamp
 from bonsai_api.crud.curation import create_curation, delete_curation_crud, get_curation_by_id_crud, get_curations_crud, update_curation_crud
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.crud.utils import managed_transaction
-from bonsai_api.crud.analysis import get_analysis
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.analysis import AnalysisResult, CurationRecord, CurationCreateRecord
+from bonsai_api.models.analysis import CurationRecord, CurationCreateRecord
 from bonsai_api.db import Database
 from api_client.audit_log.models import Subject, SourceType
 from api_client.audit_log import AuditLogClient, EventCreate
 
-from .analysis_service import group_for
+from .analysis_service import group_for, get_analysis_service
 
 
 LOG = logging.getLogger(__name__)
@@ -39,27 +38,30 @@ async def create_curation_service(
     """Retrieve curations for an analysis."""
     async with managed_transaction(db.client) as txn:
         # Verify that analysis exists
-        analysis = await get_analysis(db, analysis_id=analysis_id, session=txn)
-        if not analysis:
-            raise EntryNotFound(f"Analysis with id '{analysis_id}' was not found")
+        analysis = await get_analysis_service(db, analysis_id=analysis_id, session=txn)
 
-        if analysis_type not in analysis.get('envelopes', {}):
+        if analysis_type not in analysis.envelopes:
             raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis_type}'")
         
         try:
-            # Set analysis id on curation record and validate curation record
+            # Enrich curation with analysis context and validate
             curation_data = curation.model_dump()
             curation_data.update({
-                "sample_id": analysis["sample_id"], 
-                "analysis_id": analysis_id, 
-                "analysis_type": analysis_type, 
-                "curated_by": curated_by
+                "sample_id": analysis.sample_id,
+                "analysis_id": analysis_id,
+                "analysis_type": analysis_type,
+                "curated_by": curated_by,
             })
             record = TypeAdapter(CurationRecord).validate_python(curation_data)
 
             # insert into database
             curation_id = record.id
             await create_curation(db, doc=record.model_dump(exclude_none=True), session=txn)
+
+            # sync data to sample object after update
+            await sync_curation_summary_for_analysis(
+                db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
+            )
 
             # Audit log
             if isinstance(audit, AuditLogClient):
@@ -85,10 +87,6 @@ async def create_curation_service(
                 curation_id, analysis_id, curated_by
             )
 
-            # sync data to sample object after update
-            sync_curation_summary_for_analysis(
-                db, sample_id=curation_data['sample_id'], analysis_id=analysis_id, session=txn
-            )
             return curation_id
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
@@ -182,7 +180,7 @@ async def delete_curation_service(
         await delete_curation_crud(db, curation_id=curation_id, session=txn)
 
         # sync changes to sample object
-        sync_curation_summary_for_analysis(
+        await sync_curation_summary_for_analysis(
             db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
         )
     
@@ -221,7 +219,13 @@ async def sync_curation_summary_for_analysis(
     for cur in curations:
         analysis_type = cur["analysis_type"]
         field_name = group_for(analysis_type)
-        items_idx[(field_name, analysis_type)].append(cur)
+        # Strip redundant IDs when embedding in sample object
+        # (context is implicit in the nested structure)
+        cur_copy = cur.copy()
+        cur_copy.pop("sample_id", None)
+        cur_copy.pop("analysis_id", None)
+        cur_copy.pop("analysis_type", None)
+        items_idx[(field_name, analysis_type)].append(cur_copy)
     
     ops: list[UpdateOne] = []
     for (field_name, at), items in items_idx.items():
@@ -234,7 +238,7 @@ async def sync_curation_summary_for_analysis(
                 }
             }
         }
-        # pull existing items 
+        # Store curations without redundant ID fields
         ops.append(UpdateOne(
             filter_,
             {"$set": {f"{field_name}.$.curations": items}}

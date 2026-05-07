@@ -367,28 +367,29 @@
 {% endmacro %}
 
 
-{% macro amr_prediction_card(pred, extended=False) %}
+{% macro amr_prediction_card(analysis, extended=False) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.analysis_type | upper }}</i> ]</div>
+    <div class="card-header">{{ analysis.software | capitalize }} v{{ analysis.software_version }} [ <i>{{analysis.analysis_type | upper }}</i> ]</div>
     <div class="card-body">
-    {% if pred.software == "resfinder" %}
-        {{ resfinder_prediction(pred.result, extended=extended) }}
-    {% elif pred.software == "amrfinder" and pred.type == "AMR" %}
-        {{ amrfinder_amr_prediction(pred.result, extended=extended) }}
-    {% elif pred.software == "amrfinder" and pred.type == "STRESS" %}
-        {{ amrfinder_stress_prediction(pred.result, extended=extended) }}
-    {% elif pred.software == "mykrobe" %}
-        {{ mykrobe_amr_prediction(pred.result, extended=extended) }}
-    {% elif pred.software == "tbprofiler" %}
-        {{ tbprofiler_amr_prediction(pred.result, extended=extended) }}
+    {% if analysis.software == "resfinder" %}
+        {{ resfinder_prediction(analysis, extended=extended) }}
+    {% elif analysis.software == "amrfinder" and analysis.type == "AMR" %}
+        {{ amrfinder_amr_prediction(analysis, extended=extended) }}
+    {% elif analysis.software == "amrfinder" and analysis.type == "STRESS" %}
+        {{ amrfinder_stress_prediction(analysis, extended=extended) }}
+    {% elif analysis.software == "mykrobe" %}
+        {{ mykrobe_amr_prediction(analysis, extended=extended) }}
+    {% elif analysis.software == "tbprofiler" %}
+        {{ tbprofiler_amr_prediction(analysis, extended=extended) }}
     {% endif %}
     </div>
 </div>
 {% endmacro %}
 
 
-{% macro resfinder_prediction(result, extended=False) %}
+{% macro resfinder_prediction(analysis, extended=False) %}
 <div>
+    {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
@@ -451,9 +452,10 @@
 {% endmacro %}
 
 
-{% macro amrfinder_amr_prediction(result, extended=False) %}
+{% macro amrfinder_amr_prediction(analysis, extended=False) %}
 <div>
     <h5 class="card-title">Genes</h5>
+    {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
     {% else %}
@@ -503,9 +505,10 @@
 {% endmacro %}
 
 
-{% macro amrfinder_stress_prediction(result, extended=False) %}
+{% macro amrfinder_stress_prediction(analysis, extended=False) %}
 <div>
     <h5 class="card-title">Genes</h5>
+    {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
     {% else %}
@@ -560,8 +563,9 @@
 {% endmacro %}
 
 
-{% macro mykrobe_amr_prediction(result, extended=False) %}
+{% macro mykrobe_amr_prediction(analysis, extended=False) %}
 <div>
+    {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
         <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
@@ -682,8 +686,9 @@
 {% endmacro %}
 
 
-{% macro tbprofiler_amr_prediction(result, extended=False) %}
+{% macro tbprofiler_amr_prediction(analysis, extended=False) %}
 <div>
+    {% set result = analysis.result %}
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | n_results_with_resistance == 0 and not extended %}
@@ -698,7 +703,7 @@
                                 <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'tbprofiler-variant-table')">
                             </td>
                         {% endif %}
-                        <td scope="col">Tags</td>
+                        <td scope="col">Status</td>
                         <td scope="col">Variant</td>
                         <td scope="col">Protein change</td>
                         <td scope="col">Gene</td>
@@ -708,7 +713,9 @@
                         {% endif %}
                         <td class="cell-sm" scope="col">Read depth</td>
                         <td scope="col">Freq</td>
-                        <td scope="col">Antibiotics</td>
+                        <td scope="col">Resistance (predicted)</td>
+                        <td scope="col">Resistance (annotated)</td>
+                        <td scope="col">Curation</td>
                         {% if extended %}
                             <td scope="col"></td>
                         {% endif %}
@@ -717,24 +724,41 @@
                 <tbody id="tbprofiler-variant-table" class="table-group-divider">
                     {% for variant in result.variants %}
                         {% if variant.phenotypes | length > 0 or extended %}
-                        {% if variant.verified == "passed" %}
-                            {% set row_class = "table-success" %}
-                        {% elif variant.verified == "failed" %}
-                            {% set row_class = "table-danger" %}
-                        {% endif %}
                         <tr class="{{ row_class }}">
                             {% if extended %}
                                 <td>
-                                    <input type="checkbox" class="form-check-input col-auto" name="tbprofiler-{{ variant.id }}" id="tbprofiler-{{ variant.id }}" onclick="selectVariant(this)">
+                                    <input type="checkbox" class="form-check-input col-auto" 
+                                           name="tbprofiler-{{ variant.id }}" 
+                                           id="tbprofiler-{{ variant.id }}" 
+                                           data-variant-id="{{ variant.id }}"
+                                           data-analysis-type="{{ analysis.analysis_type }}"
+                                           data-analysis-id="{{ analysis.analysis_id }}"
+                                           onclick="selectVariant(this)">
                                 </td>
                             {% endif %}
                             <td>
-                                {# TAGS #}
-                                {% if variant.verified == "failed" and variant.reason %}
-                                    <span class="ms-2 badge text-bg-warning"
+                                {# Status #}
+                                {% if variant.curation.decision == "reject" %}
+                                    <span class="ms-2 badge text-bg-danger"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
-                                            data-bs-title="{{ variant.reason.description | default("-") }}" >
-                                        {{ variant.reason.label | upper }}
+                                            data-bs-title="{{ variant.curation.rejection_reason | default('-') }}" >
+                                            <i class="bi bi-exclamation-octagon"></i>
+                                            Rejected
+                                    </span>
+                                {% elif variant.curation.decision == "accept" %}
+                                    <span class="ms-2 badge text-bg-success">
+                                        <i class="bi bi-check2-square"></i>
+                                        Accepted
+                                    </span>
+                                {% elif variant.curation.decision == "flag_for_review" %}
+                                    <span class="ms-2 badge text-bg-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Under review
+                                    </span>
+                                {% else %}
+                                    <span class="ms-2 badge text-bg-secondary">
+                                        <i class="bi bi-dash-circle"></i>
+                                        Uncurated
                                     </span>
                                 {% endif %}
                             </td>
@@ -798,6 +822,38 @@
                                     </li>
                                 {% endfor %}
                                 </ul>
+                            </td>
+                            {# Add column for user annotated resistance #}
+                            <td>
+                                {% set user_annotated = variant.curation.phenotypes | list %}
+                                <ul class="no-bullets">
+                                {% for phenotype in user_annotated %}
+                                    <li>
+                                        {{ phenotype.name | capitalize }}
+                                        {% set resistance_level = phenotype.meta.resistance_level %}
+                                        <span class="badge text-bg-secondary"
+                                                data-bs-toggle="tooltip" data-bs-placement="top"
+                                                data-bs-title="{{ resistance_level | capitalize | default("-") }}">
+                                                {{ resistance_level[:2].upper() }}
+                                        </span>
+                                    </li>
+                                {% endfor %}
+
+                                </ul>
+                            </td>
+                            <td>
+                                {% set rejection_reason = variant.curation.rejection_reason %}
+                                {%  if rejection_reason is none %}
+                                    -
+                                {% else %}
+                                    {{ rejection_reason | default("-") }}
+                                {% endif %}
+                                <span class="badge text-bg-primary"
+                                        data-bs-toggle="tooltip" data-bs-placement="top"
+                                        data-bs-html=true
+                                        data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
                             </td>
                             {% if extended %}
                                 <td>
