@@ -9,13 +9,10 @@ from typing import Any, Iterable, cast
 
 from minhash_service.analysis.cluster import cluster_signatures
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
-                                             SimilaritySearchConfig,
-                                             SimilarSignature,
-                                             SimilarSignatures)
+                                             SimilaritySearchConfig)
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
-from minhash_service.core.exceptions import (FileRemovalError,
-                                             SampleNotFoundError)
+from minhash_service.core.exceptions import FileRemovalError
 from minhash_service.core.factories import (create_audit_trail_repo,
                                             create_report_repo,
                                             create_signature_repo)
@@ -72,23 +69,23 @@ def add_signature(sample_id: str, signature: str) -> str:
     sharded_path = store.ensure_file(signature_path, file_checksum)
 
     # store signature checksum in database
-    loaded_sig = read_signatures(sharded_path, cnf.kmer_size)[0]
-
-    # store as a signature record
-    record = SignatureRecord(
-        sample_id=sample_id,
-        signature_path=sharded_path,
-        signature_checksum=cast(str, loaded_sig.md5sum()),
-        file_checksum=file_checksum,
-    )
-    try:
-        repo.add_signature(record)
-    except Exception as err:
-        LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
-        # create audit trail event
-        event = Event(event_type=EventType.ERROR, sample_id=sample_id, details=str(err))
-        at.log_event(event)
-        raise
+    loaded_sigs = read_signatures(sharded_path)
+    for sig in loaded_sigs:
+        record = SignatureRecord(
+            sample_id=sample_id,
+            kmer_size=sig.ksize,
+            signature_path=sharded_path,
+            signature_checksum=cast(str, sig.md5sum()),
+            file_checksum=file_checksum,
+        )
+        try:
+            repo.add_signature(record)
+        except Exception as err:
+            LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
+            # create audit trail event
+            event = Event(event_type=EventType.ERROR, sample_id=sample_id, details=str(err))
+            at.log_event(event)
+            raise
 
     event = Event(
         event_type=EventType.UPLOAD,
@@ -126,22 +123,23 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         )
 
     # stage file for removal
-    record = repo.get_by_sample_id_or_checksum(sample_id)
-    if record is None:
+    records = repo.get_by_sample_id_or_checksum(sample_id)
+    if records is None or len(records) == 0:
         LOG.error("No record found for sample_id %s", sample_id)
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     metadata: dict[str, str] = {}
+    rec = records[0]
     try:
         repo.remove_by_sample_id(sample_id)
         # remove signature file if there are not other records with the same checksum
-        if repo.count_by_checksum(record.signature_checksum) == 0:
+        if repo.count_by_checksum(rec.signature_checksum) == 0:
             removed_path = store.move_to_trash(
-                record.signature_path, record.signature_checksum
+                rec.signature_path, rec.signature_checksum
             )
             metadata["staged_path"] = str(removed_path)
 
-        result = index.remove_signatures(set([record.signature_checksum]))
+        result = index.remove_signatures(set([rec.signature_checksum]))
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -154,7 +152,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         )
         at.log_event(e)
         raise FileRemovalError(
-            filepath=str(record.signature_path), reason=str(err)
+            filepath=str(rec.signature_path), reason=str(err)
         ) from err
 
     LOG.info("Signature with sample_id %s was removed", sample_id)
@@ -323,14 +321,14 @@ def _lookup_checksums_from_sample_ids(
     ]
 
 
-def _load_signatures_from_sample_id(sample_ids: list[str]) -> SourmashSignatures:
+def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None = None) -> SourmashSignatures:
     """Load signatures from sample ids."""
     LOG.debug("Load signatures to memory")
     repo = create_signature_repo()
 
     signatures: SourmashSignatures = []
     for sample_id in sample_ids:
-        record = repo.get_by_sample_id_or_checksum(sample_id=sample_id)
+        record = repo.get_by_sample_id_or_checksum(sample_id=sample_id, kmer_size=kmer_size)
         if record is None:
             LOG.error("No signature for sample id: %s", sample_id)
             continue
@@ -339,8 +337,8 @@ def _load_signatures_from_sample_id(sample_ids: list[str]) -> SourmashSignatures
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
 
-        signature = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)
-        signatures.extend(signature)  # append to all signatures
+        sigs = read_signatures(record.signature_path, kmer_size=kmer_size)
+        signatures.extend(sigs)  # append to all signatures
     return signatures
 
 
@@ -366,14 +364,6 @@ def search_similar(
     if record is None:
         raise FileNotFoundError(f'No record found for sample_id: "{sample_id}"')
 
-    # is allways one sig
-    query = read_signatures(record.signature_path, kmer_size=cnf.kmer_size)[0]
-
-    # check if signature is empty
-    if len(query.minhash) == 0:
-        raise ValueError("Cant perform search, No query hashes?")
-
-    # get index store
     index = create_index_store(
         get_index_path(cnf.signature_dir, cnf.index_format),
         index_format=cnf.index_format,
@@ -389,36 +379,14 @@ def search_similar(
     )
 
     # lookup sample ids from matches
-    similarity_result: SimilarSignatures = []
-    for res in get_similar_signatures(query, index, search_cnf):
-        # enforce limit
-        if limit is not None and len(similarity_result) >= limit:
-            break
-
-        # optionally skip samples that are not in subset
-        match_checksum = cast(str, res.match.md5sum())
-        if subset_checksums is not None and match_checksum not in subset_checksums:
-            continue
-
-        # use matched signature checksum to lookup the sample
-        sample = repo.get_by_sample_id_or_checksum(checksum=match_checksum)
-        if sample is None:
-            LOG.warning("Could not find a sample with checksum: %s", match_checksum)
-            raise SampleNotFoundError(
-                f"Cant find a sample with checksum: {match_checksum}"
-            )
-        # recast result to a internally maintained data type
-        similarity_result.append(
-            SimilarSignature(sample_id=sample.sample_id, similarity=res.similarity)
-        )
-
+    result = get_similar_signatures(record.signature_path, index, search_cnf)
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
-    return [s.model_dump(mode="json") for s in similarity_result]
+    return result.model_dump(mode="json")
 
 
 def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:

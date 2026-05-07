@@ -29,7 +29,7 @@ class SignatureRepository:
         """Create indexes if they don't exist."""
         # Unique sample_id ensures deduplication
         self._col.create_index(
-            [("sample_id", ASCENDING)], name="ux_sample_id", unique=True
+            [("sample_id", ASCENDING), ("kmer_size", ASCENDING)], name="ix_sample_id_ksize", unique=True
         )
         # Query accelerator for unindexed signatures
         self._col.create_index(
@@ -68,8 +68,9 @@ class SignatureRepository:
 
     # ---- read ---------------------------------------------------------------
     def get_by_sample_id_or_checksum(
-        self, sample_id: str | None = None, checksum: str | None = None
-    ) -> SignatureRecord | None:
+        self, sample_id: str | None = None, checksum: str | None = None,
+        kmer_size: int | None = None
+    ) -> list[SignatureRecord] | None:
         """Get a signature by either sample_id or checksum. Returns None if not found."""
         # input validation
         if sample_id is None and checksum is None:
@@ -79,18 +80,20 @@ class SignatureRepository:
             raise ValueError("Both sample_id and checksum can't be defined.")
 
         # build query
+        query = {}
         if sample_id is not None:
-            field_name = "sample_id"
-            query = sample_id
+            query["sample_id"] = sample_id
         else:
-            field_name = "signature_checksum"
-            query = checksum
+            query["signature_checksum"] = checksum
+
+        if kmer_size is not None:
+            query["kmer_size"] = kmer_size
 
         # query the database and cast result
-        doc = self._col.find_one({field_name: query}, projection={"_id": 0})
-        if not doc:
+        docs = self._col.find(query, projection={"_id": 0})
+        if not docs.alive:
             return None
-        return SignatureRecord.model_validate(doc)
+        return [SignatureRecord.model_validate(doc) for doc in docs]
 
     def get_all_signatures(self) -> Iterator[SignatureRecord]:
         """Get all signatures in the database."""
@@ -146,9 +149,14 @@ class SignatureRepository:
         return self._set_flag(sample_id, flag="mark_for_deletion", status=True)
 
     # ---- delete -------------------------------------------------------------
-    def remove_by_sample_id(self, sample_id: str) -> int:
-        """Delete by sample_id. Returns number of docs deleted."""
-        res = self._col.delete_one({"sample_id": sample_id})
+    def remove_by_sample_id(self, sample_id: str, kmer_size: int | None = None) -> int:
+        """Delete samples by sample_id. Optionally provide a kmer size.
+        
+        Returns number of docs deleted ."""
+        query = {"sample_id": sample_id}
+        if kmer_size is not None:
+            query["kmer_size"] = kmer_size
+        res = self._col.delete_many(query)
         if res.deleted_count == 0:
             LOG.info("No signature found with sample_id=%s", sample_id)
         return res.deleted_count

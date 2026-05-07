@@ -28,11 +28,6 @@ class SignatureName(BaseModel):
     filename: str
 
 
-# Constrain `checksum` to md5 hex; adjust if you support other algos.
-Md5Hex = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{32}$")]
-Sha256Hex = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{64}$")]
-
-
 class SignatureRecord(BaseModel):
     """
     Signature bookkeeping record.
@@ -49,9 +44,10 @@ class SignatureRecord(BaseModel):
 
     version: int = Field(default=1, description="Record schema version")
     sample_id: SampleIdStr
+    kmer_size: int
     signature_path: Path
-    file_checksum: Sha256Hex
-    signature_checksum: Md5Hex
+    file_checksum: str
+    signature_checksum: str
 
     has_been_indexed: bool = False
     indexed_at: dt.datetime | None = None

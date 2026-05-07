@@ -8,6 +8,7 @@ import sourmash
 from sourmash.signature import FrozenSourmashSignature
 
 from minhash_service.core.exceptions import SignatureNotFoundError
+from minhash_service.utils import ensure_directory_structure
 
 from .models import SourmashSignatures
 
@@ -17,10 +18,14 @@ LOG = logging.getLogger(__name__)
 def read_signatures(path: Path, kmer_size: int | None = None) -> SourmashSignatures:
     """Read signature to memory."""
     # read signature
-    loaded = cast(
-        Iterable[FrozenSourmashSignature],
-        sourmash.load_file_as_signatures(str(path), ksize=kmer_size),
-    )
+    try:
+        loaded = cast(
+            Iterable[FrozenSourmashSignature],
+            sourmash.load_file_as_signatures(str(path), ksize=kmer_size),
+        )
+    except ValueError as e:
+        LOG.error("Error reading signature file %s: %s", path, e)
+        raise FileNotFoundError(f"Error reading signature file {path}: {e}") from e
 
     # check that were signatures loaded with current kmer
     loaded_sigs: SourmashSignatures = list(loaded)
@@ -44,6 +49,7 @@ def write_signatures(
     - only include signature of KMER size
     - rename signatrue to name
     """
+    ensure_directory_structure(path.parent)
     # convert signature from JSON to a mutable signature object
     # then annotate sample_id as name
     loaded_signatures = cast(

@@ -1,0 +1,4 @@
+query_name,query_md5,match_name,match_md5,containment,max_containment,jaccard,average_containment,intersect_hashes,ksize,scaled,moltype,cosine
+DRR237260,bb95e9ec1ed6d5b4c5a8694fd6e020c6,DRR237261,c3325498b73ef2668ad4afa2802948f5,0.9881574364332985,0.9975386779184248,0.9857539958304378,0.9928480571758616,2837.0,31,1000,DNA,
+DRR237260,bb95e9ec1ed6d5b4c5a8694fd6e020c6,DRR237260.dupl,aa95e9ec1ed6d5b4c5a8694fd6e020c6,1.0,1.0,1.0,1.0,2871.0,31,1000,DNA,
+DRR237260,bb95e9ec1ed6d5b4c5a8694fd6e020c6,DRR237260,bb95e9ec1ed6d5b4c5a8694fd6e020c6,1.0,1.0,1.0,1.0,2871.0,31,1000,DNA,
