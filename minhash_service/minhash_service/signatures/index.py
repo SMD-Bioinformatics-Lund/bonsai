@@ -46,7 +46,7 @@ def create_index_store(
 class AddResult(BaseModel):
     """Result of adding new signatures to index."""
 
-    ok: bool
+    is_successful: bool
     warnings: list[str]
     added_count: int
     added_md5s: list[str]
@@ -55,7 +55,7 @@ class AddResult(BaseModel):
 class RemoveResult(BaseModel):
     """Result of adding new signatures to index."""
 
-    ok: bool
+    is_successful: bool
     warnings: list[str]
     removed_count: int
     removed: list[str] = []
@@ -160,7 +160,7 @@ class SBTIndexStore(BaseIndexStore):
         warnings, added_md5s = [], []
         sigs = list(signatures)
         if not sigs:
-            return AddResult(ok=False, warnings=warnings, added_count=0, added_md5s=[])
+            return AddResult(is_successful=False, warnings=warnings, added_count=0, added_md5s=[])
 
         with self.aquire_lock():
             self._load_index(create_if_missing=True)
@@ -175,7 +175,7 @@ class SBTIndexStore(BaseIndexStore):
                 existing_md5.add(md5)
             self._atomic_save()
         return AddResult(
-            ok=True, warnings=warnings, added_count=added, added_md5s=added_md5s
+            is_successful=True, warnings=warnings, added_count=added, added_md5s=added_md5s
         )
 
     def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
@@ -199,13 +199,13 @@ class SBTIndexStore(BaseIndexStore):
         not_removed = checksums_to_remove - set(removed)
         if not_removed:
             return RemoveResult(
-                ok=False,
+                is_successful=False,
                 warnings=[f"could not remove {', '.join(not_removed)}"],
                 removed=[r.md5sum() for r in removed],
                 removed_count=len(removed),
             )
         return RemoveResult(
-            ok=True, warnings=[], removed_count=len(removed), removed=removed
+            is_successful=True, warnings=[], removed_count=len(removed), removed=removed
         )
 
 
@@ -256,7 +256,7 @@ class RocksDBIndexStore(BaseIndexStore):
         """Add one or more signatures to index."""
         sigs = list(signatures)
         if not sigs:
-            return AddResult(ok=False, warnings=[], added_count=0, added_md5s=[])
+            return AddResult(is_successful=False, warnings=[], added_count=0, added_md5s=[])
 
         try:
             with self.aquire_lock():
@@ -269,11 +269,11 @@ class RocksDBIndexStore(BaseIndexStore):
         except Exception as error:
             LOG.error("Got a error when rebuilding index: %s", error)
             return AddResult(
-                ok=False, warnings=[str(error)], added_count=0, added_md5s=[]
+                is_successful=False, warnings=[str(error)], added_count=0, added_md5s=[]
             )
         added_md5s: list[str] = [sig.md5sum() for sig in sigs]
         return AddResult(
-            ok=True,
+            is_successful=True,
             warnings=[],
             added_count=len(sigs),
             added_md5s=added_md5s,
@@ -283,7 +283,7 @@ class RocksDBIndexStore(BaseIndexStore):
         """Remove signatures by name."""
         sigs = list(checksums_to_remove)
         if not sigs:
-            return AddResult(ok=False, warnings=[], added_count=0, added_md5s=[])
+            return AddResult(is_successful=False, warnings=[], added_count=0, added_md5s=[])
 
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
