@@ -13,7 +13,7 @@ from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 
 from bonsai_api.utils import get_timestamp
 
-from .analysis import ResultStatus, CurationRecord
+from .analysis import ResultStatus, EmbeddedCurationRecord
 from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
@@ -237,9 +237,9 @@ class AnalysisViewEntryDb(AnalysisViewEntryBase):
     """
     # curation flags
     result: Any
-    curations: list[CurationRecord] = Field(
+    curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list, 
-        description="All curation records for this analysis."
+        description="All denormalized curation records for this analysis embedded in the sample view."
     )
 
 
@@ -248,9 +248,9 @@ class AnalysisViewEntryOut(AnalysisViewEntryBase):
 
     # curation flags
     result: Any
-    curations: list[CurationRecord] = Field(
+    curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list,
-        description="All curation records for this analysis."
+        description="All denormalized curation records for this analysis embedded in the sample view."
     )
     merged_items: list[Any] = Field(
         default_factory=list,
