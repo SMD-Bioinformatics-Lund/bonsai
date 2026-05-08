@@ -108,11 +108,11 @@ async def delete_sample_service(db: Database, *, sample_id: str, session: Client
             sess.abort_transaction()
             raise EntryNotFound(f"Sample={sample_id} not found!")
 
-        status = await delete_sample_crud(db, sample_id=sample_id, session=sess)
-
         # remove sample from memberships
         memberships = await get_groups_by_sample_ids(db, sample_ids=[sample_id], session=sess)
         await remove_memberships(memberships, db=db, session=sess)
+
+        status = await delete_sample_crud(db, sample_id=sample_id, session=sess)
 
         # abort if sample could not be removed
         if not status:
@@ -120,13 +120,13 @@ async def delete_sample_service(db: Database, *, sample_id: str, session: Client
             raise DatabaseOperationError("Something went wrong in the transaction")
         
         # schedule removal of sourmash data
-        job_id = schedule_remove_genome_signature(sample_id)
-        reidx_job = schedule_remove_genome_signature_from_index([sample_id], depends_on=[job_id])
+        rm_job = schedule_remove_genome_signature(sample_id)
+        reidx_job = schedule_remove_genome_signature_from_index([sample_id], depends_on=[rm_job.id])
 
         return {
             "removed_sample": status,
-            "remove_sourmash": job_id,
-            "remove_sourmash_idx": reidx_job
+            "remove_sourmash": rm_job.id,
+            "remove_sourmash_idx": reidx_job.id
         }
 
 

@@ -126,7 +126,7 @@ async def lifespan(app: FastAPI):
 
     yield
     # teardown
-    db.close()
+    await db.close()
     app.state.db = None
     if settings.use_ldap_auth:
         ldap_connection.teardown()
