@@ -241,13 +241,13 @@ async def delete_many_samples(
         removed = []
         jobs = []
         for sample_id in sample_ids:
-            status = delete_sample_service(db, sample_id=sample_ids, session=sess)
-            if status:
+            job_status = await delete_sample_service(db, sample_id=sample_id, session=sess)
+            if job_status:
                 removed.append(sample_id)
-                jobs.append(status['remove_sourmash'])
+                jobs.append(job_status['remove_sourmash'])
 
             # Log removal
-            if isinstance(audit_log, AuditLogClient) and status:
+            if isinstance(audit_log, AuditLogClient) and job_status:
                 event_subject = Subject(id=sample_id, type=SourceType.USR)
                 event = EventCreate(
                     source_service="bonsai_api",
