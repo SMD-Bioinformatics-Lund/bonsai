@@ -4,8 +4,8 @@ import logging
 import pathlib
 from typing import Annotated, Any, cast
 
-from api.bonsai_api.models.analysis import CurationCreateRecord
-from api.bonsai_api.services.curation_service import create_curation_service
+from bonsai_api.models.analysis import CurationCreateRecord
+from bonsai_api.services.curation_service import create_curation_service
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.pipeline import PipelineRun
