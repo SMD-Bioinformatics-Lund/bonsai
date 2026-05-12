@@ -3,13 +3,13 @@
 from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
-from ...bonsai import TokenObject, get_samples_by_id
+from bonsai_app.bonsai import TokenObject, get_samples_by_id
 
 comparison_bp = Blueprint(
     "comparison",
     __name__,
-    template_folder="template",
-    static_folder="statis",
+    template_folder="templates",
+    static_folder="static",
     static_url_path="/comparison",
 )
 
