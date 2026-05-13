@@ -49,6 +49,7 @@ include = ["bonsai_app*"]
 
 [tool.setuptools.package-data]
 "bonsai_app" = ["templates/**/*.html", "static/**/*", "*.toml"]
+"bonsai_app.blueprints" = ["**/*.html", "**/static/**/*"]
 
 [tool.isort]
 profile = "black"
