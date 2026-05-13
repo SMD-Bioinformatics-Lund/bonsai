@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Iterable, cast
 
-from minhash_service.analysis.cluster import cluster_signatures
+from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
                                              SimilaritySearchConfig)
 from minhash_service.analysis.similarity import get_similar_signatures
@@ -491,17 +491,20 @@ def find_similar_and_cluster(
     repo = create_signature_repo()
     kmer_size = cnf.kmer_size
     sample_ids: list[str] = []
+    checksums_lookup = {}
     for match in results["matches"]:
         records = repo.get_by_sample_id_or_checksum(checksum=match["md5"], kmer_size=kmer_size)
         record = records[0]
         if record is None:
             continue
         sample_ids.append(record.sample_id)
+        checksums_lookup[record.signature_checksum] = record.sample_id
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
 
     # cluster samples
     LOG.info("Cluster samples...")
-    newick: str = cluster_signatures(signatures, method)
+    tree, checksums  = cluster_signatures(signatures, method)
+    newick = tree_to_newick(tree, "", tree.dist, [checksums_lookup.get(c, c) for c in checksums])
     return newick
 
 
