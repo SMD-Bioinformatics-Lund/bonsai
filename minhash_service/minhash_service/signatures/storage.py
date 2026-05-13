@@ -1,5 +1,6 @@
 """Manage the storage of signatures in the service."""
 
+import shutil
 import datetime as dt
 import json
 import logging
@@ -52,8 +53,8 @@ class SignatureStorage:
             tmp_path.unlink()
             return dest_path
 
-        # atomic move on the file system
-        tmp_path.replace(dest_path)
+        # Move file (atomic if on same filesystem, safe otherwise)
+        shutil.move(tmp_path, dest_path)
 
         return dest_path
 
@@ -90,7 +91,7 @@ class SignatureStorage:
             json.dumps(meta, indent=2)
         )
 
-        cannonical.replace(target)
+        shutil.move(cannonical, target)
         LOG.info("Moved %s to trash at %s", cannonical, target)
         return target
 

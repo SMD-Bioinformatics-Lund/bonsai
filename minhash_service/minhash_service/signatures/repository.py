@@ -70,7 +70,7 @@ class SignatureRepository:
     def get_by_sample_id_or_checksum(
         self, sample_id: str | None = None, checksum: str | None = None,
         kmer_size: int | None = None
-    ) -> list[SignatureRecord] | None:
+    ) -> list[SignatureRecord]:
         """Get a signature by either sample_id or checksum. Returns None if not found."""
         # input validation
         if sample_id is None and checksum is None:
@@ -91,8 +91,6 @@ class SignatureRepository:
 
         # query the database and cast result
         docs = self._col.find(query, projection={"_id": 0})
-        if not docs.alive:
-            return None
         return [SignatureRecord.model_validate(doc) for doc in docs]
 
     def get_all_signatures(self) -> Iterator[SignatureRecord]:
