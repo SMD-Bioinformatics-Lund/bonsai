@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Build application wheels
 
-FROM build-deps AS python-builder
+FROM base AS python-builder
 
 WORKDIR /src
 
@@ -25,11 +25,11 @@ RUN pip wheel --wheel-dir /wheels \
 
 # Development layer
 
-FROM condaforge/miniforge3 AS development
+FROM continuumio/miniconda3 AS development
 
 WORKDIR /app
 
-RUN conda install -y python=3.11.3 pip sourmash_plugin_branchwater
+RUN /opt/conda conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
 COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
@@ -43,9 +43,10 @@ CMD ["bash"]
 
 # Production layer
 
-FROM base AS production
+FROM continuumio/miniconda3 AS production
 
-RUN conda install -y python=3.11.3 pip sourmash_plugin_branchwater
+RUN opt/conda/bin/conda init \
+    && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
 # Create non-root user early
 RUN addgroup --system --gid 1000 worker && \
