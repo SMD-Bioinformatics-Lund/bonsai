@@ -1,12 +1,12 @@
 import { onEvent } from "../utils/event-bus";
-import { GroupInfo, ApiGroupInfoResponse } from "../types";
+import { GroupInfo, ApiGroupInfoResponse } from "../core/types";
 
 // Helper to create group card HTML
 function groupCardHTML(group: GroupInfo, isAdmin: boolean): string {
   return String.raw`
     <div class="col-sm-6 col-md-4 col-lg-auto py-2">
       <div class="card group-card position-relative">
-        ${isAdmin ? `<a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle" role="button" href="${baseUrl}/groups/edit/${group.group_id}"><i class="bi bi-pencil"></i></a>` : ""}
+        ${isAdmin ? `<a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle" role="button" href="${baseUrl}/groups/${group.group_id}/edit"><i class="bi bi-pencil"></i></a>` : ""}
         <a href="${baseUrl}/groups/${group.group_id}" class="text-decoration-none text-dark">
           <div class="card-body">
             <h5 class="card-title">${group.display_name}</h5>

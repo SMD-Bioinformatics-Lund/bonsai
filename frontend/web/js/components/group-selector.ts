@@ -1,5 +1,5 @@
 import { emitEvent } from "../utils/event-bus";
-import { GroupInfo, MembershipEdges } from "../types";
+import { GroupInfo, MembershipEdges } from "../core/types";
 import { ChoiceSelect } from "../utils/choice-select";
 
 const template = document.createElement("template");

@@ -10,127 +10,10 @@ import {
   ApiSampleQcStatus,
   MembershipEdges,
   ApiGroupInfoResponse,
-} from "./types";
-import { JobStatusEnum, TypingMethod } from "./constants";
+} from "../types";
+import { JobStatusEnum, TypingMethod } from "../types/enums";
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public message: string,
-    public data?: any,
-  ) {
-    super(message);
-    this.name = "ApiError";
-    if (message) {
-      try {
-        this.data = JSON.parse(message);
-      } catch {
-        // not JSON, keep as is
-      }
-    }
-  }
-}
 
-export class AuthService {
-  private authToken: string | null = localStorage.getItem("authToken");
-  private refreshToken: string | null = localStorage.getItem("refreshToken");
-  private isRefreshing = false;
-
-  constructor(private apiUrl: string) {}
-
-  setTokens = (accessToken: string, refreshToken: string) => {
-    this.authToken = accessToken;
-    this.refreshToken = refreshToken;
-    localStorage.setItem("authToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-  };
-
-  clearTokens = () => {
-    this.authToken = null;
-    this.refreshToken = null;
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
-  };
-
-  isAuthenticated = (): boolean => {
-    if (!this.authToken) return false;
-    try {
-      const payload = JSON.parse(atob(this.authToken.split(".")[1]));
-      return payload.exp > Math.floor(Date.now() / 1000);
-    } catch {
-      return false;
-    }
-  };
-
-  refreshAuthToken = async (): Promise<void> => {
-    if (!this.refreshToken) throw new Error("No refresh token available");
-    if (this.isRefreshing) return;
-
-    this.isRefreshing = true;
-    try {
-      const response = await fetch(`${this.apiUrl}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken: this.refreshToken }),
-      });
-
-      if (!response.ok) throw new Error("Failed to refresh token");
-      const data = await response.json();
-      this.setTokens(data.accessToken, data.refreshToken);
-    } finally {
-      this.isRefreshing = false;
-    }
-  };
-
-  getAuthHeader = (): HeadersInit => {
-    return this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
-  };
-}
-
-export class HttpClient {
-  constructor(
-    private apiUrl: string,
-    private authService: AuthService,
-  ) {}
-
-  request = async <T>(endpoint: string, options: RequestInit = {}, retry = true): Promise<T> => {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...this.authService.getAuthHeader(),
-      ...options.headers,
-    };
-
-    const response = await fetch(`${this.apiUrl}${endpoint}`, {
-      ...options,
-      headers,
-      signal: options.signal,
-    });
-
-    if (response.status === 401 && retry) {
-      await this.authService.refreshAuthToken();
-      return this.request<T>(endpoint, options, false);
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new ApiError(response.status, errorText || `Http error: ${response.status}`);
-    }
-
-    return await response.json();
-  };
-}
-
-function objectToQueryParams(query: Record<string, any>): string {
-  const params = new URLSearchParams();
-  Object.entries(query).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((v) => params.append(key, String(v)));
-    } else if (value !== undefined && value !== null) {
-      params.append(key, String(value));
-    }
-  });
-  return params.toString();
-}
 
 export class ApiService {
   constructor(private http: HttpClient) {}
@@ -192,32 +75,6 @@ export class ApiService {
       method: "POST",
       body: JSON.stringify(params),
     });
-  };
-
-  getGroup = async (groupId: string) => {
-    return this.http.request<GroupInfo>(`/groups/${groupId}`);
-  };
-
-  getGroups = async () => {
-    return this.http.request<ApiGroupInfoResponse>(`/groups/`);
-  };
-
-  addSamplesToGroup = async (groupId: string, sampleIds: string[]) => {
-    return this.http.request<void>(
-      `/groups/${groupId}/samples?${objectToQueryParams({ s: sampleIds })}`,
-      {
-        method: "PUT",
-      },
-    );
-  };
-
-  removeSamplesFromGroup = async (groupId: string, sampleIds: string[]) => {
-    return this.http.request<void>(
-      `/groups/${groupId}/samples?${objectToQueryParams({ s: sampleIds })}`,
-      {
-        method: "DELETE",
-      },
-    );
   };
 
   getMembershipByGroups = async (groupIds: string[], signal?: AbortSignal) => {
@@ -303,3 +160,15 @@ function validateJobStatus(job: ApiJobStatus): boolean {
     return true;
   }
 }
+
+export * from "./http/ApiError";
+export * from "./http/AuthService";
+export * from "./http/HttpClient";
+
+export * from "./services/groups";
+export * from "./services/samples";
+export * from "./services/jobs";
+export * from "./services/users";
+export * from "./services/memberships";
+
+export * from "./polling/pollJob";
