@@ -2,7 +2,7 @@ import * as bootstrap from "bootstrap";
 import jQuery from "jquery";
 
 import { initToast, initTooltip, throwSmallToast } from "./utils/notification";
-import { ApiService, AuthService, HttpClient } from "./api";
+import { ApiService, AuthService, HttpClient } from "./core/api";
 import { initSamplesTable } from "./utils/table-controller";
 import {
   deleteSelectedSamples,
@@ -11,12 +11,12 @@ import {
   initSetSampleQc,
   removeSamplesFromGroup,
   updateQcStatus,
-} from "./actions/sample-actions";
-import { clusterSamples } from "./actions/cluster-actions";
+} from "./core/actions/sample-actions";
+import { clusterSamples } from "./core/actions/cluster-actions";
 import { GroupList } from "./components/group-list";
 import { GroupSelector } from "./components/group-selector";
 import { User } from "./user";
-import { BasketState } from "./state/basket-state";
+import { BasketState } from "./core/state/basket-state";
 import { SampleBasketCounter } from "./components/samples-basket-counter";
 import { BasketComponent } from "./components/sample-basket";
 

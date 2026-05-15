@@ -1,18 +1,18 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
-import { ApiService, pollJob, wait, ApiError } from "../../api";
+import { ApiService, pollJob, wait, ApiError } from "../api";
 import { emitEvent } from "../../utils/event-bus";
 import { throwSmallToast } from "../../utils/notification";
 import { TableController } from "../../utils/table-controller";
-import { ClusterMethod, TypingMethod } from "../../constants";
-import { ApiFindSimilarInput } from "../../types";
+import { ClusterMethod, TypingMethod } from "../types/enums";
+import { ApiFindSimilarInput } from "../types";
 import {
   ApiJobStatusNewick,
   ApiJobStatusSimilarity,
   ApiJobSubmission,
   ApiSampleQcStatus,
-} from "../../types";
-import { ApiJobTimeout } from "../../constants";
+} from "../types";
+import { ApiJobTimeout } from "../types/enums";
 import SpinnerElement from "../../components/spinner-element";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
@@ -41,9 +41,9 @@ export async function getSimilarSamplesAndCheckRows(
   try {
     const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
-    dt.selectedRows = result.result.matches.map(m => m.name);
+    dt.selectedRows = result.result.map((sample) => sample.sample_id);
     throwSmallToast(
-      `Search complete: ${result.result.matches.length} similar samples identified`,
+      `Search complete: ${result.result.length} similar samples identified`,
       "success",
     );
   } catch (error) {

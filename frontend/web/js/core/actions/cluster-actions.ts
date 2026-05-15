@@ -1,7 +1,7 @@
 import { ApiService, pollJob } from "../api";
-import { throwSmallToast } from "../utils/notification";
+import { throwSmallToast } from "../../utils/notification";
 import { ApiJobStatusNewick, ApiClusterInput } from "../types";
-import { ClusterMethod, DistanceMethod, TypingMethod } from "../constants";
+import { ClusterMethod, DistanceMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
 async function openGrapeTree(

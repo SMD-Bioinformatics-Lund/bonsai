@@ -1,4 +1,4 @@
-import { ApiUserInfo } from "./types";
+import { ApiUserInfo } from "./api/users";
 
 /* User information container. */
 export class User {

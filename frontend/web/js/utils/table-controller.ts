@@ -9,7 +9,7 @@ import "datatables.net-searchbuilder-bs5";
 import "datatables.net-searchpanes-bs5";
 import "datatables.net-select-bs5";
 
-import { TblStateCallbackFunc } from "../types";
+import { TblStateCallbackFunc } from "../core/types";
 
 export class TableController {
   private table: any;
