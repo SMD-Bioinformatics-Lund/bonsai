@@ -20,10 +20,12 @@ from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
 from bonsai_api.exceptions import (
     AnalysisExistsError,
+    AuditLogError,
     EntryNotFound,
     ParserError,
     InvalidDataFormat,
 )
+from api_client.core.exceptions import ApiRequestError
 
 from prp.parse import run_parser
 
@@ -183,7 +185,12 @@ async def ingest_analysis_service(
                 "pipeline_run": pipeline_run,
             },
         )
-        audit.post_event(event)
+        try:
+            audit.post_event(event)
+        except ApiRequestError as exc:
+            raise AuditLogError(
+                f"Audit log event failed for analysis ingest on sample {sample_id}: {exc}"
+            ) from exc
 
     # Store canonical + denormalize view entries atomically
     envelopes_summary: dict[str, dict[str, str | None]] = {}
