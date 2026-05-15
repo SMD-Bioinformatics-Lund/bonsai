@@ -156,6 +156,7 @@ export async function findAndClusterSimilarSamples(
   narrow_to_sample_ids: string[] | null,
   api: ApiService,
 ) {
+  let jobResult: ApiJobStatusNewick | undefined;
   const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
   spinner?.show();
