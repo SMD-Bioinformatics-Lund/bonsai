@@ -1,296 +1,71 @@
 {% extends "admin_panel_base.html" %}
 
 {% block css %}
-{{ super() }}
-<link rel="stylesheet" href="{{url_for('groups.static', filename='edit.css')}}">
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('groups.static', filename='edit.css') }}">
 {% endblock css %}
 
 {% block scripts %}
-{{ super() }}
-<script src="{{url_for('groups.static', filename='edit_groups.js')}}"></script>
+  {{ super() }}
+  <script src="{{ url_for('groups.static', filename='edit_groups.js') }}"></script>
 {% endblock scripts %}
-
-{% macro inputText(id, value="", label="", description="", required=False) %}
-<label for="input-{{id}}" class="form-label">{{label}}</label>
-<input id="input-{{id}}" class="form-control" aria-describedby="{{id}}-help-block" 
-       type="text" value="{{value}}" placeholder="{{description}}"
-       {% if required %}required{% endif %}>
-{% endmacro %}
-
-{% macro inputCheck(id, label, name=None, checked=False, disabled=False) %}
-<div class="form-check">
-    <label class="form-check-label" for="{{id}}-check">{{label}}</label>
-    <input class="form-check-input" type="checkbox" id="{{id}}-check" 
-           {% if name %}name="{{name}}"{% endif %} {% if checked %}checked{% endif %} {% if disabled %}disabled{% endif %}>
-</div>
-{% endmacro %}
-
-
-{% macro inputCheckBtn(id, label, checked=False) %}
-    <input type="checkbox" class="btn-check" id="{{id}}-check" autocomplete="off" {% if checked %}checked{% endif %}>
-    <label class="btn btn-sm btn-outline-secondary" for="{{id}}-check">{{label}}</label>
-{% endmacro %}
-
-
-{% macro column_info_form(col) %}
-{% set base_id=col.label | lower | text_to_camelcase %}
-<div class="card column-card col-md-auto m-2 {% if col.selected %}active{% endif %}"
-     data-id="{{ col.id }}" data-label="{{ col.label }}" data-dtype="{{ col.type }}" 
-     data-path="{{ col.path }}">
-    <div class="card-body">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" role="switch" id="{{base_id}}" onclick="toggleDisabled(this)"
-                   {% if col.visible %}checked{% endif %}>
-            <p class="card-title">{{ col.label }}</p>
-        </div>
-        <span class="display-params-input">
-            {{ inputCheck(base_id + '_sortable', 'Sortable', name='sortable', checked=col.sortable, disabled=not col.selected) }}
-            {{ inputCheck(base_id + '_searchable', 'Searchable', name='searchable', checked=col.searchable, disabled=not col.selected) }}
-            {{ inputCheck(base_id + '_hidden', 'Hidden', name='hidden', checked=not col.visible, disabled=not col.selected) }}
-        </span>
-    </div>
-</div>
-{% endmacro %}
-
-{% macro column_info_form_v1(col) %}
-<div class="br-col-info mb-2 bg-light border">
-    <div class="card-body d-flex justify-content-between">
-        <div class="form-check form-switch pe-2">
-            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
-        </div>
-        <div class="btn-group pe-4">
-            {{ inputCheckBtn('sortable', 'Sortable', checked=col.sortable) }}
-            {{ inputCheckBtn('searchable', 'Searchable', checked=col.searchable) }}
-            {{ inputCheckBtn('hidden', 'Hidden', checked=col.hidden) }}
-        </div>
-        <div class="fs-4"><i class="bi bi-list"></i></div>
-    </div>
-</div>
-{% endmacro %}
-
-
-{% macro create_or_edit_group(group, valid_columns) %}
-{% if group == None %}
-    <h2>Create new group</h2>
-{% else %}
-    <h2>Edit <i>{{group.display_name}}</i> group</h2>
-{% endif %}
-{# Extract or set dummy variables to populate the fields #}
-{% if group == None %}
-    {% set group_id = "" %}
-    {% set display_name = "" %}
-    {% set description = "" %}
-    {% set table_columns = [] %}
-    {% set included_samples = [] %}
-{% else %}
-    {% set group_id = group.group_id %}
-    {% set display_name = group.display_name %}
-    {% set description = group.description %}
-    {% set table_columns = group.table_columns %}
-    {% set included_samples = group.included_samples %}
-{% endif %}
-<div class="row g-3">
-    <div class="col-auto">
-        {{ inputText(id='group-id', value=group_id, label='Group id', description='Unique id') }}
-        <div class="invalid-feedback">Group id must be unique and longer than 5 characters</div>
-    </div>
-    <div class="col-auto">
-        {{ inputText(id='group-name', value=display_name, label='Group name', description='Human readable group name') }}
-        <div class="invalid-feedback"></div>
-    </div>
-</div>
-<div class="form-floating pt-2">
-    <textarea class="form-control" placeholder="Group description" id="input-group-description">{{ description }}</textarea>
-    <label for="input-group-description">Group description</label>
-</div>
-<div class="row g-3 my-2">
-    {% if group == None %}
-        <div class="col-auto">
-            <form method="POST" onsubmit="updateGroup(event, 'create')">
-                <input type="text" name="input-group-id" value="{{group.group_id}}" hidden>
-                <input type="text" name="input-create-group" value="" hidden>
-                <button class="btn btn-sm btn-success">
-                    <i class="bi bi-pencil-square"></i>
-                    Create
-                </button>
-            </form>
-        </div>
-    {% else %}
-        <div class="col-auto">
-            <form method="POST" onsubmit="updateGroup(event, 'update')">
-                <input type="text" name="input-group-id" value="{{group.group_id}}" hidden>
-                <input type="text" name="input-update-group" value="" hidden>
-                <button class="btn btn-sm btn-success">
-                    <i class="bi bi-save"></i>
-                    Update
-                </button>
-            </form>
-        </div>
-        <div class="col-auto">
-            <form method="POST">
-                <input type="text" name="input-remove-group" value="{{group.group_id}}" hidden>
-                <button type="submit" class="btn btn-sm btn-danger">
-                    <i class="bi bi-trash3-fill"></i>
-                    Delete group
-                </button>
-            </form>
-        </div>
-    {% endif  %}
-</div>
-<hr>
-<div class="row g-3">
-    <h5 class="">Columns</h5>
-    <div id="added-columns-list" class="container-fluid">
-        <div class="row">
-        {% for col in valid_columns %}
-            {{ column_info_form(col) }}
-        {% endfor %}
-        </div>
-    </div>
-</div>
-<hr>
-<div class="row g-3">
-    <h5 class="">Validated genes</h5>
-    {% if not group == None %}
-        <div class="row gx-6">
-        {% for name, value in valid_phenotypes.items() %}
-            <div class="col-md" {% if not value in group.validatedGenes %}hidden{% endif %}>
-                <div class="rounded-1 p-2 bg-light">
-                    <h6>{{ name }}</h6>
-                    <ul id="{{value}}-list" class="list-group validated-genes-list">
-                    {% if group.validated_genes %}
-                        {% for gene in group.validated_genes.get(value, []) %}
-                            <li key={{gene}} class="list-group-item list-group-item-action d-flex justify-content-between">
-                                {{ gene }}
-                                <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
-                            </li>
-                        {% endfor %}
-                    {% endif %}
-                    </ul>
-                </div>
-            </div>
-        {% endfor %}
-        </div>
-    {% endif %}
-    <form method="post" onsubmit="event.preventDefault(); addGeneToList(this.querySelector('input').value, this.querySelector('select').value)">
-        <div class="row">
-            <div class="col-auto">
-                <select name="gene-type" id="gene-type-select" class="form-select">
-                    {% for name, value in valid_phenotypes.items() %}
-                        <option value="{{value}}">{{name}}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-5">
-                <input id="verified-gene-input" type="text" class="form-control" placeholder="Gene name" aria-label="Update list of validated genes.">
-            </div>
-        </div>
-        <button class="btn btn-sm btn-outline-primary mt-2" type="submit">Add gene</button>
-    </form>
-</div>
-<hr>
-<div class="row g-3 pb-2">
-    <h5 class="">Samples</h5>
-    <p class="">Samples added to the group</p>
-    <form action="#" onsubmit="event.preventDefault() ;addSampleToList(this.querySelector('input').value)">
-        <div class="input-group mb-3">
-            <input id="add-sample-input" type="text" class="form-control" placeholder="Sample id" aria-label="Sample Id" aria-describedby="add-sample-button" required>
-            <button 
-                class="btn btn-outline-secondary" type="submit" id="add-sample-button">
-                Add sample
-            </button>
-        </div>
-    </form>
-    <ul id="added-samples-list" class="list-group">
-    {% for sample_id in included_samples %}
-        <li key={{sample_id}} class="list-group-item list-group-item-action d-flex justify-content-between">
-            {{ sample_id }}
-            <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
-        </li>
-    {% endfor %}
-    </ul>
-</div>
-{% endmacro %}
 
 {% block admin_panel_content %}
 <div id="edit-group-panel" class="br-layout container-fluid px-0">
-    <aside class="br-sidebar bg-light border">
-        <div class="d-flex flex-column align-items-stretch flex-shrink-0">
-            <div class="list-group list-group-flush border-bottom scrollarea br-groups">
-                <a class="list-group-item d-flex align-items-center border-end flex-shrink-0 p-3 link-dark list-group-item-action"  
-                href="{{ url_for('groups.edit_groups') }}"
-                >
-                    <span class="fs-6 fw-semibold">
-                        <i class="bi bi-pencil-square"></i>
-                        Create group
-                    </span>
-                </a>
-                {% for group in groups %}
-                    <a class="list-group-item list-group-item-action py-2 lh-tight border-end {% if selected_group == group.group_id %}selected{% endif %}" 
-                    href="{{ url_for('groups.edit_groups', group_id=group.group_id) }}"
-                    {% if selected_group == group.group_id %} aria-current="true"{% endif %}
-                    >
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div>
-                                <div><strong>{{group.display_name | truncate(30) }}</strong></div>
-                                <div><small>{{group.modified_at | strftime }}</small></div>
-                            </div>
-                            <span class="badge bg-dark">{{group.included_samples | length}} samples</span>
-                        </div>
-                    </a>
-                {% endfor %}
+
+  {# ───────────── Sidebar: server-rendered navigation ───────────── #}
+  <aside class="br-sidebar bg-light border">
+    <div class="d-flex flex-column align-items-stretch">
+
+      <div class="list-group list-group-flush border-bottom scrollarea br-groups">
+
+        <a
+          class="list-group-item d-flex align-items-center border-end p-3 link-dark list-group-item-action"
+          href="{{ url_for('groups.group_editor_view') }}"
+        >
+          <span class="fs-6 fw-semibold">
+            <i class="bi bi-plus-square"></i>
+            Create group
+          </span>
+        </a>
+
+        {% for group in groups %}
+          <a
+            class="list-group-item list-group-item-action py-2 lh-tight border-end
+                   {% if selected_group == group.group_id %}selected{% endif %}"
+            href="{{ url_for('groups.group_editor_view', group_id=group.group_id) }}"
+            {% if selected_group == group.group_id %}aria-current="true"{% endif %}
+          >
+            <div class="d-flex align-items-center justify-content-between">
+              <div>
+                <div><strong>{{ group.display_name | truncate(30) }}</strong></div>
+                <div><small>{{ group.modified_at | strftime }}</small></div>
+              </div>
+              <span class="badge bg-dark">
+                {{ group.sample_count }} samples
+              </span>
             </div>
-        </div>
-    </aside>
-    <main class="br-main order-1">
-        <div class="container-fluid">
-            {# content #}
-            {% if selected_group == None %}
-                {{ create_or_edit_group(None, valid_columns) }}
-            {% else %}
-                {% for group in groups %}
-                    {% if selected_group == group.group_id %}
-                        {{ create_or_edit_group(group, valid_columns) }}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        </div>
-    </main>
-</div>
-<template id="sample-list-item-template">
-    <li class="list-group-item list-group-item-action d-flex justify-content-between">
-        <button onclick="this.parentElement.remove()" type="button" class="btn-close" aria-label="Remove"></button>
-    </li>
-</template>
-<template id="column-list-item-template">
-    <div class="card mb-2 bg-light column-card">
-        <div class="card-body">
-            <button 
-                class="float-end btn-close" aria-label="Remove"
-                onclick="this.parentElement.parentElement.remove()" type="button"></button>
-            <div class="row">
-                <div class="col-auto">
-                    {{ inputText(id='col-label', value='', label='Column name') }}
-                </div>
-                <div class="col-auto">
-                    {{ inputText(id='col-data-type', value='', label='Data type') }}
-                </div>
-                <div class="col-lg-6">
-                    {{ inputText(id='col-data-path', value='', label='JSON Path') }}
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-auto">
-                    {{ inputCheck('sortable', 'Sortable', checked=False) }}
-                </div>
-                <div class="col-auto">
-                    {{ inputCheck('searchable', 'Searchable', checked=False) }}
-                </div>
-                <div class="col-auto">
-                    {{ inputCheck('hidden', 'Hidden', checked=False) }}
-                </div>
-            </div>
-        </div>
+          </a>
+        {% endfor %}
+
+      </div>
     </div>
-</template>
+  </aside>
+
+  {# ───────────── Main: JS mounting point ───────────── #}
+  <main class="br-main order-1">
+    <div class="container-fluid py-3">
+
+      <div
+        id="group-editor"
+        data-mode="{{ mode }}"
+        {% if selected_group %}
+          data-group-id="{{ selected_group }}"
+        {% endif %}
+      ></div>
+
+    </div>
+  </main>
+
+</div>
 {% endblock admin_panel_content %}

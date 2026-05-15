@@ -72,10 +72,25 @@ def groups() -> str:
     )
 
 
-@groups_bp.route("/groups/edit", methods=["GET", "POST"])
-@groups_bp.route("/groups/edit/<group_id>", methods=["GET", "POST"])
+@groups_bp.route("/groups/create", methods=["GET"])
+@groups_bp.route("/groups/<group_id>/edit", methods=["GET"])
 @login_required
-def edit_groups(group_id: str | None = None):
+def group_editor_view(group_id: str | None = None):
+    token = TokenObject(**current_user.get_id())
+    groups = get_groups(token)
+
+    return render_template(
+        "edit_groups.html",
+        mode="create" if group_id is None else "edit",
+        selected_group=group_id,
+        groups=groups["data"],
+    )
+
+
+@groups_bp.route("/groups/edit_old", methods=["GET", "POST"])
+@groups_bp.route("/groups/edit_old/<group_id>", methods=["GET", "POST"])
+@login_required
+def edit_groups_old(group_id: str | None = None):
     """Generate edit groups view
 
     :param group_id: Group id, defaults to None
@@ -99,7 +114,7 @@ def edit_groups(group_id: str | None = None):
                 flash("Group updated", "success")
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
-            return redirect(url_for("groups.edit_groups"))
+            return redirect(url_for("groups.group_editor_view"))
         elif "input-update-group" in request.form:
             updated_data = json.loads(request.form.get("input-update-group"))
             try:
@@ -114,7 +129,7 @@ def edit_groups(group_id: str | None = None):
                     token, group_id=group_id, set_default=True, preset=preset
                 )
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups", group_id=group_id))
+                return redirect(url_for("groups.group_editor_view", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
         elif "input-create-group" in request.form:
@@ -123,7 +138,7 @@ def edit_groups(group_id: str | None = None):
                 group_id = input_data["group_id"]
                 create_group(token, data=input_data)
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups", group_id=group_id))
+                return redirect(url_for("groups.group_editor_view", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
 
