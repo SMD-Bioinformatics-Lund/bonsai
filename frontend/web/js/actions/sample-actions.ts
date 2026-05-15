@@ -1,6 +1,6 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
-import { ApiService, pollJob, wait } from "../api";
+import { ApiService, pollJob, wait, ApiError } from "../api";
 import { emitEvent } from "../utils/event-bus";
 import { throwSmallToast } from "../utils/notification";
 import { TableController } from "../utils/table-controller";
@@ -48,7 +48,20 @@ export async function getSimilarSamplesAndCheckRows(
     );
   } catch (error) {
     console.error("Error while checking job status:", error);
-    throwSmallToast("Error while finding similar samples", "error");
+    
+    // Parse API error response for user-friendly message
+    let message = "Error while finding similar samples. Please try again.";
+    if (error instanceof ApiError && error.data) {
+      const data = error.data;
+      if (data.title && typeof data.title === 'string') {
+        message = data.title;
+      }
+      if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
+        message = "Service temporarily unavailable due to logging issues. Please try again later.";
+      }
+    }
+    
+    throwSmallToast(message, "error");
   }
   hideSpinner(container);
 }
@@ -73,7 +86,20 @@ export function removeSamplesFromGroup(
     })
     .catch((error) => {
       console.error(`Error removing ${selectedSamples.length} from group:`, error);
-      throwSmallToast(`Error removing ${selectedSamples.length} from group`, "error");
+      
+      // Parse API error response for user-friendly message
+      let message = `Failed to remove ${selectedSamples.length} samples from group. Please try again.`;
+      if (error instanceof ApiError && error.data) {
+        const data = error.data;
+        if (data.title && typeof data.title === 'string') {
+          message = data.title;
+        }
+        if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
+          message = "Service temporarily unavailable due to logging issues. Please try again later.";
+        }
+      }
+      
+      throwSmallToast(message, "error");
     });
 }
 
@@ -90,7 +116,22 @@ export function deleteSelectedSamples(table: TableController, api: ApiService): 
     })
     .catch((error) => {
       console.error("Error removing samples from database", error);
-      throwSmallToast("Error when removing samples", "error");
+      
+      // Parse API error response for user-friendly message
+      let message = "Failed to delete samples. Please try again.";
+      if (error instanceof ApiError && error.data) {
+        const data = error.data;
+        // Use the API's problem-details title if available and safe
+        if (data.title && typeof data.title === 'string') {
+          message = data.title;
+        }
+        // Optionally map specific types to custom messages
+        if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
+          message = "Service temporarily unavailable due to logging issues. Please try again later.";
+        }
+      }
+      
+      throwSmallToast(message, "error");
     });
 }
 
@@ -141,7 +182,20 @@ export function initSetSampleQc(
     sampleIds.forEach((sampleId) => {
       submitQc(sampleId, qcStatus).catch((e: Error) => {
         console.error(`Error updating QC of sample: ${sampleId}`, e);
-        throwSmallToast(`Failed to update QC of sample ${sampleId}`, "error");
+        
+        // Parse API error response for user-friendly message
+        let message = `Failed to update QC of sample ${sampleId}. Please try again.`;
+        if (e instanceof ApiError && e.data) {
+          const data = e.data;
+          if (data.title && typeof data.title === 'string') {
+            message = data.title;
+          }
+          if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
+            message = "Service temporarily unavailable due to logging issues. Please try again later.";
+          }
+        }
+        
+        throwSmallToast(message, "error");
       });
       wait(100);
     });
@@ -180,8 +234,21 @@ export async function findAndClusterSimilarSamples(
     drawDendrogram("#tree-body", jobResult.result, sampleId);
   } catch (error) {
     container.hidden = true;
-    throwSmallToast("Error while finding similar samples");
     console.error("Error while checking job status:", error);
+    
+    // Parse API error response for user-friendly message
+    let message = "Error while finding similar samples. Please try again.";
+    if (error instanceof ApiError && error.data) {
+      const data = error.data;
+      if (data.title && typeof data.title === 'string') {
+        message = data.title;
+      }
+      if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
+        message = "Service temporarily unavailable due to logging issues. Please try again later.";
+      }
+    }
+    
+    throwSmallToast(message);
     throw error;
   } finally {
     spinner?.hide();

@@ -7,7 +7,7 @@ from typing import Annotated, Any, cast
 from bonsai_api.models.analysis import CurationCreateRecord
 from bonsai_api.services.curation_service import create_curation_service
 from bonsai_api.crud.utils import managed_transaction
-from bonsai_api.exceptions import DatabaseOperationError
+from bonsai_api.exceptions import AuditLogError, DatabaseOperationError
 from bonsai_api.models.pipeline import PipelineRun
 from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
@@ -85,6 +85,7 @@ from prp.parse.models.enums import VariantType
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from api_client.audit_log.models import EventCreate, SourceType, Subject
+from api_client.core.exceptions import ApiRequestError
 
 from .shared import (
     SAMPLE_ID_PATH,
@@ -240,23 +241,33 @@ async def delete_many_samples(
     async with managed_transaction(db.client) as sess:
         removed = []
         jobs = []
+        audit_events: list[EventCreate] = []
+
         for sample_id in sample_ids:
             job_status = await delete_sample_service(db, sample_id=sample_id, session=sess)
             if job_status:
                 removed.append(sample_id)
                 jobs.append(job_status['remove_sourmash'])
 
-            # Log removal
-            if isinstance(audit_log, AuditLogClient) and job_status:
-                event_subject = Subject(id=sample_id, type=SourceType.USR)
-                event = EventCreate(
-                    source_service="bonsai_api",
-                    event_type="delete_sample",
-                    actor=req_ctx.actor,
-                    subject=event_subject,
-                    metadata=req_ctx.metadata,
-                )
+                if isinstance(audit_log, AuditLogClient):
+                    event_subject = Subject(id=sample_id, type=SourceType.USR)
+                    audit_events.append(
+                        EventCreate(
+                            source_service="bonsai_api",
+                            event_type="delete_sample",
+                            actor=req_ctx.actor,
+                            subject=event_subject,
+                            metadata=req_ctx.metadata,
+                        )
+                    )
+
+        for event in audit_events:
+            try:
                 audit_log.post_event(event)
+            except ApiRequestError as exc:
+                raise AuditLogError(
+                    f"Audit log event failed for sample {event.subject.id}: {exc}"
+                ) from exc
     return {
         "sample_ids": sample_ids,
         "n_deleted": len(removed),
@@ -328,7 +339,12 @@ async def delete_sample(
             subject=event_subject,
             metadata=req_ctx.metadata,
         )
-        audit_log.post_event(event)
+        try:
+            audit_log.post_event(event)
+        except ApiRequestError as exc:
+            raise AuditLogError(
+                f"Audit log event failed for sample {sample_id}: {exc}"
+            ) from exc
     return status
 
 

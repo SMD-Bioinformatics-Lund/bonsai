@@ -28,6 +28,10 @@ class ConflictError(DomainError):
     """Raised when a resource conflict occurs."""
 
 
+class AuditLogError(DomainError):
+    """Raised when an audit log operation fails."""
+
+
 class ForbiddenAccess(DomainError):
     """Raised when a resource access is forbidden."""
 

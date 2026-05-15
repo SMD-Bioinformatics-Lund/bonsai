@@ -7,7 +7,9 @@ from typing import Any
 import bonsai_api
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import EventCreate, EventSeverity, Subject
+from api_client.core.exceptions import ApiRequestError
 from bonsai_api.db import Database
+from bonsai_api.exceptions import AuditLogError
 from bonsai_api.models.context import ApiRequestContext
 from pymongo import AsyncMongoClient
 from pymongo.client_session import ClientSession
@@ -60,7 +62,12 @@ def audit_event_context(
                 subject=subject,
                 metadata=meta,
             )
-            audit.post_event(event)
+            try:
+                audit.post_event(event)
+            except ApiRequestError as exc:
+                raise AuditLogError(
+                    f"Audit log event failed for {event_type}: {exc}"
+                ) from exc
 
 
 @asynccontextmanager
