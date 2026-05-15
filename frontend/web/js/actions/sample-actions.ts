@@ -1,19 +1,19 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
-import { ApiService, pollJob, wait, ApiError } from "../api";
-import { emitEvent } from "../utils/event-bus";
-import { throwSmallToast } from "../utils/notification";
-import { TableController } from "../utils/table-controller";
-import { ClusterMethod, TypingMethod } from "../constants";
-import { ApiFindSimilarInput } from "../types";
+import { ApiService, pollJob, wait, ApiError } from "../../api";
+import { emitEvent } from "../../utils/event-bus";
+import { throwSmallToast } from "../../utils/notification";
+import { TableController } from "../../utils/table-controller";
+import { ClusterMethod, TypingMethod } from "../../constants";
+import { ApiFindSimilarInput } from "../../types";
 import {
   ApiJobStatusNewick,
   ApiJobStatusSimilarity,
   ApiJobSubmission,
   ApiSampleQcStatus,
-} from "../types";
-import { ApiJobTimeout } from "../constants";
-import SpinnerElement from "../components/spinner-element";
+} from "../../types";
+import { ApiJobTimeout } from "../../constants";
+import SpinnerElement from "../../components/spinner-element";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
 export async function getSimilarSamplesAndCheckRows(
