@@ -34,7 +34,10 @@ FROM base AS python-builder
 
 COPY frontend/  ./frontend
 
-RUN pip wheel --wheel-dir /wheels ./frontend
+# Copy built JS to the static directory before building the wheel
+COPY --from=node-builder /app/frontend/build/js/bonsai.min.js ./frontend/bonsai_app/blueprints/public/static/
+
+RUN rm -rf ./frontend/node_modules && pip wheel --wheel-dir /wheels ./frontend
 
 ### Production layer ###
 FROM base AS production
@@ -47,9 +50,6 @@ RUN addgroup --system --gid 1000 worker && \
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
 RUN pip install --no-index --find-links=/wheels bonsai_app && rm -rf /wheels
-
-# Copy built JavaScript
-COPY --from=node-builder /app/frontend/build/*/bonsai.min.* bonsai_app/blueprints/public/static/
 
 USER 1000:1000
 
