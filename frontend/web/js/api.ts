@@ -17,9 +17,17 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public message: string,
+    public data?: any,
   ) {
     super(message);
     this.name = "ApiError";
+    if (message) {
+      try {
+        this.data = JSON.parse(message);
+      } catch {
+        // not JSON, keep as is
+      }
+    }
   }
 }
 
