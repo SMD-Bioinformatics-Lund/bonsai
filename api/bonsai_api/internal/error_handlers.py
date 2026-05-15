@@ -6,9 +6,29 @@ from fastapi.responses import JSONResponse
 from typing import Any
 
 from bonsai_api.exceptions import (
-    ConflictError, ParserError, EntryNotFound, UnsupportedSoftwareError, UnsupportedVersionError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError, AnalysisExistsError
+    AuditLogError,
+    ConflictError,
+    ParserError,
+    EntryNotFound,
+    UnsupportedSoftwareError,
+    UnsupportedVersionError,
+    UnsupportedAnalysisTypeError,
+    InvalidDataFormat,
+    SchemaMismatchError,
+    AnalysisExistsError,
 )
-from .problem_types import ANALYSIS_DUPLICATED, CONFLICT, INVALID_DATA, NOT_IMPLEMENTED, PARSER_ERROR, SCHEMA_MISMATCH, UNSUPPORTED_ANALYSIS, UNSUPPORTED_SOFTWARE, UNSUPPORTED_VERSION
+from .problem_types import (
+    ANALYSIS_DUPLICATED,
+    AUDIT_LOG_UNAVAILABLE,
+    CONFLICT,
+    INVALID_DATA,
+    NOT_IMPLEMENTED,
+    PARSER_ERROR,
+    SCHEMA_MISMATCH,
+    UNSUPPORTED_ANALYSIS,
+    UNSUPPORTED_SOFTWARE,
+    UNSUPPORTED_VERSION,
+)
 
 
 def problem_details(
@@ -70,6 +90,15 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def _conflict(_: Request, exc: ConflictError):
         return problem_details(409, "Conflict", str(exc), type_=CONFLICT,
                                extra={"context": getattr(exc, "context", {})})
+
+    @app.exception_handler(AuditLogError)
+    async def _audit_log_error(_: Request, exc: AuditLogError):
+        return problem_details(
+            503,
+            "Audit log unavailable",
+            str(exc),
+            type_=AUDIT_LOG_UNAVAILABLE,
+        )
 
     @app.exception_handler(ParserError)
     async def _parser_error(_: Request, exc: ParserError):
