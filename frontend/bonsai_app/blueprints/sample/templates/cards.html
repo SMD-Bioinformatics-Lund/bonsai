@@ -991,41 +991,25 @@
                 Pipeline
             </a>
         </h5>
+        {% set p = sample_info.pipeline %}
         <table class="table">
             <tbody>
                 <tr>
                     <th>Pipeline</th>
-                    <td>{{ sample_info.pipeline.name }}</td>
+                    <td>{{ p.pipeline_info.definition.name }}</td>
                 </tr>
                 <tr>
                     <th>Version</th>
-                    <td>{{ sample_info.pipeline.version }}</td>
+                    <td>{{ p.pipeline_info.definition.version }}</td>
                 </tr>
                 <tr>
                     <th>Profile</th>
-                    <td>{{ sample_info.pipeline.analysis_profile | join(', ') }}</td>
+                    <td>{{ p.pipeline_info.run_config.analysis_profile | join(', ') }}</td>
                 </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endmacro %}
-
-{% macro analysis_meta_databases(sample_info) %}
-{% set meta = sample_info["pipeline"] %}
-<div class="card">
-    <div class="card-body">
-        <h6 class="card-title">
-            <i class="bi bi-server me-2"></i>Databases
-        </h6>
-        <table class="table">
-            <tbody>
-                {% for db in meta["softwares"] if db.type == 'database' %}
                 <tr>
-                    <th>{{ db["name"] }}</th>
-                    <td>{{ make_db_link(db) }}</td>
+                    <th>Config file</th>
+                    <td>{{ p.pipeline_info.run_config.configuration_files | join(', ') }}</td>
                 </tr>
-                {% endfor %}
             </tbody>
         </table>
     </div>
