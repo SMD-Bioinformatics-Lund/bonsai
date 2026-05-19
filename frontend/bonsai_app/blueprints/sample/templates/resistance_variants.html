@@ -317,6 +317,8 @@
 
         document.getElementById("curations-input").value = JSON.stringify(payload);
         localStorage.setItem("selectedVariants", JSON.stringify(Array.from(selected)));
+        // update counter on page
+        document.getElementById("selected-variants-counter").innerHTML = selected.size
     }
     // reset selected varants on page load
     const selectAllVariants = (elem, tableId) => {
