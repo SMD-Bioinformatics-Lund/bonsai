@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 from typing import Any
 
-from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries
+from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries, get_valid_summary_columns
 from bonsai_app.custom_filters import get_json_path
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
@@ -178,7 +178,7 @@ def tree():
             )
             # get column info
             if column_info is None:
-                column_info = get_valid(token_obj=token)
+                column_info = get_valid_summary_columns(token_obj=token)
             metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
         data: dict[str, str] = {"nwk": newick, **metadata}
         return render_template(
