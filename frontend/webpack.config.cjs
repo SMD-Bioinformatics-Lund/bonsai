@@ -18,9 +18,8 @@ module.exports = {
   output: {
     path: resolve(__dirname, 'build/js'),
     filename: '[name].min.js',
-    library: 'bonsai',
-    libraryTarget: 'umd',
     clean: true,
+    iife: true,
   },
 
   resolve: {
