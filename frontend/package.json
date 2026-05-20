@@ -1,4 +1,14 @@
 {
+  "name": "bonsai",
+  "description": "",
+  "version": "1.0.0",
+  "sideEffects": [
+    "web/js/components/**/*.ts"
+  ],
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
   "dependencies": {
     "bootstrap": "^5.3.0",
     "choices.js": "^11.1.0",
@@ -10,16 +20,11 @@
     "datatables.net-searchpanes-bs5": "^2.3.3",
     "datatables.net-select-bs5": "^3.0.0",
     "jquery": "^3.7.1",
-    "select2": "^4.1.0-rc.0"
-  },
-  "name": "bonsai",
-  "description": "",
-  "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
+    "select2": "^4.1.0-rc.0",
+    "sortablejs": "^1.15.7"
   },
   "devDependencies": {
+    "@types/sortablejs": "^1.15.9",
     "eslint": "^9.26.0",
     "globals": "^16.1.0",
     "prettier": "^3.5.3",
@@ -32,7 +37,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
-    "buildcp": "webpack && cp -v build/js/bonsai.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/shared.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-editor.min.js bonsai_app/blueprints/groups/static",
+    "buildcp": "webpack && cp -v build/js/bonsai.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-editor.min.js bonsai_app/blueprints/groups/static",
     "lint": "eslint web",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "npx prettier web",
