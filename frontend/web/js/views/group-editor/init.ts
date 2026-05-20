@@ -5,32 +5,36 @@ import { AuthService } from "../../core/api";
 import { InputCoreGroupInfo } from "../../core/types";
 import { GroupEditorApi } from "./api";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const editor = document.querySelector('group-editor') as GroupEditor;
+export function initGroupEditor() {
+  console.log("group editor init loaded!")
 
-  const redirectTemplate = editor.dataset.redirectTemplate;
-  if (!editor) {
-    console.log("<group-editor> was not found in DOM")
-    return;
-  };
+  document.addEventListener("DOMContentLoaded", () => {
+    const editor = document.querySelector('group-editor') as GroupEditor;
 
-  // setup API
-  const auth = new AuthService("/api")
-  const http = new HttpClient("/api", auth)
-  const groupApi = new GroupApi(http)
+    const redirectTemplate = editor.dataset.redirectTemplate;
+    if (!editor) {
+      console.log("<group-editor> was not found in DOM")
+      return;
+    };
 
-  const api: GroupEditorApi = {
-    createGroup: (data: InputCoreGroupInfo) => api.createGroup(data),
-    updateGroup: (id: string, data: InputCoreGroupInfo) => api.updateGroup(id, data),
-    getGroup: (id: string) => groupApi.getGroup(id),
-    updateAllowedColumns: (id: string, columnIds: string[]) => api.updateAllowedColumns(id, columnIds),
-  }
+    // setup API
+    const auth = new AuthService("/api")
+    const http = new HttpClient("/api", auth)
+    const groupApi = new GroupApi(http)
 
-  editor.api = api;
+    const api: GroupEditorApi = {
+      createGroup: (data: InputCoreGroupInfo) => api.createGroup(data),
+      updateGroup: (id: string, data: InputCoreGroupInfo) => api.updateGroup(id, data),
+      getGroup: (id: string) => groupApi.getGroup(id),
+      updateAllowedColumns: (id: string, columnIds: string[]) => api.updateAllowedColumns(id, columnIds),
+    }
 
-  // Setup optional redirects
-  editor.config = {
-    redirectOnSuccess: (groupId: string) => redirectTemplate!.replace("__GROUP_ID__", groupId),
-    presentation: "page"
-  }
-})
+    editor.api = api;
+
+    // Setup optional redirects
+    editor.config = {
+      redirectOnSuccess: (groupId: string) => redirectTemplate!.replace("__GROUP_ID__", groupId),
+      presentation: "page"
+    }
+  })
+}

@@ -7,7 +7,7 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('groups.static', filename='group-creator.min.js') }}"></script>
+  <script src="{{ url_for('groups.static', filename='group-editor.min.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}
@@ -16,7 +16,7 @@
     <group-editor
       mode="{{ mode }}"
       {% if group_id %}group-id="{{group_id}}"{% endif %}
-      data-redirect-template="{{ url_for('groups.edit_groups', group_id='__GROUP_ID__') }}"
+      data-redirect-template="{{ url_for('groups.group_editor_view', group_id='__GROUP_ID__') }}"
     ></group-editor>
   </div>
 </main>
