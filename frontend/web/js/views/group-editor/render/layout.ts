@@ -1,5 +1,5 @@
 import { GroupEditModel } from "../model";
-import { renderHeader } from "./header";
+import { renderHeader } from "./meta";
 
 export function renderLayout(
   mount: HTMLElement,

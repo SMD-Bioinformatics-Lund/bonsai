@@ -1,7 +1,10 @@
 import { GroupEditModel } from "./model";
 import { GroupEditorApi } from "./api";
-import { renderHeader } from "./render/header";
+import { renderMeta } from "./render/meta";
 import { initGroupEditor } from "./init"
+import { renderColumns } from "./render/columns";
+import { renderSamples } from "./render/samples";
+import { renderActions } from "./render/actions";
 
 export class GroupEditor extends HTMLElement {
   private model!: GroupEditModel;
@@ -85,21 +88,61 @@ export class GroupEditor extends HTMLElement {
     };
   }
 
+  private reset() {
+    this.model.displayName = "";
+    this.model.description = "";
+    this.model.allowedColumns = [];
+    this.model.samples = [];
+    this.render();
+  }
+
   async renderSkeleton() {
     this.innerHTML = String.raw`
-      <section class="ge-header"></section>
-      <section class="ge-body"></section>
-      <section class="ge-action-bar"></section>
+      <div class="card shadow-sm group-editor-card">
+        <div class="card-body">
+
+          <section class="ge-meta"></section>
+          <hr />
+
+          <section class="ge-columns">
+            <column-selector></column-selector>
+          </section>
+          <hr />
+
+          <section class="ge-samples"></section>
+          <hr />
+
+          <section class="ge-actions d-flex justify-content-end gap-2"></section>
+
+        </div>
+      </div>
     `
   }
 
   async render() {
-    renderHeader(
-      this.querySelector(".ge-header"),
-      this.model,
+    renderMeta(
+      this.querySelector(".ge-meta")!,
+      this.model
     );
 
-    // render columns...
+    renderColumns(
+      this.querySelector("column-selector")!,
+      this.model
+    );
+
+    renderSamples(
+      this.querySelector(".ge-samples")!,
+      this.model
+    );
+
+    renderActions(
+      this.querySelector(".ge-actions")!,
+      this.model,
+      {
+        onSave: () => this.save(),
+        onReset: () => this.reset(),
+      }
+    );
   }
 }
 

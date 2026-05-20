@@ -9,6 +9,9 @@ export class GroupEditModel {
   displayName: string;
   description: string;
 
+  samples: string[];
+  allowedColumns: string[];
+
   createdAt?: string;
   modifiedAt?: string;
   sampleCount?: number;
@@ -18,6 +21,8 @@ export class GroupEditModel {
     this.groupId = null;
     this.displayName = "";
     this.description = "";
+    this.samples = [];
+    this.allowedColumns = [];
   }
 
   /* Create a fresh model */
