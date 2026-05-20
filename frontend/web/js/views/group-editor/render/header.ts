@@ -47,10 +47,7 @@ function createDescription(model: GroupEditModel): HTMLElement {
 function createMeta(model: GroupEditModel): HTMLElement {
   const meta = document.createElement("div");
   meta.className = "group-header-meta";
-
-  if (model.sampleCount !== undefined) {
-    meta.textContent = `Samples: ${model.sampleCount}`;
-  }
+  meta.textContent = model.sampleCount !== undefined ? `Samples: ${model.sampleCount}` : "No samples";
 
   return meta;
 }

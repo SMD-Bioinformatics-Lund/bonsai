@@ -1,0 +1,17 @@
+import { GroupInfo, InputCoreGroupInfo } from "../../core/types";
+
+export interface GroupEditorApi {
+  createGroup(data: InputCoreGroupInfo): Promise<string>;
+
+  updateGroup(
+    groupId: string,
+    data: InputCoreGroupInfo
+  ): Promise<void>;
+
+  updateAllowedColumns(
+    groupId: string,
+    columnIds: string[]
+  ): Promise<void>;
+
+  getGroup(groupId: string): Promise<GroupInfo>;
+}

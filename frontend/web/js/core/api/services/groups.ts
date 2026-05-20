@@ -1,8 +1,20 @@
 import { HttpClient } from "../http/HttpClient";
-import { GroupInfo, ApiGroupInfoResponse } from "core/types";
+import { GroupInfo, ApiGroupInfoResponse, InputCoreGroupInfo } from "../../types";
 
 export class GroupApi {
   constructor(private http: HttpClient) {}
+
+  createGroup(data: InputCoreGroupInfo): Promise<string> {
+    return Promise.resolve("mock-group-id");
+  }
+
+  updateGroup(groupId: string, data: InputCoreGroupInfo): Promise<void> {
+    return Promise.resolve();
+  }
+
+  updateAllowedColumns(groupId: string, columnIds: string[]): Promise<void> {
+    return Promise.resolve();
+  }
 
   getGroup(groupId: string) {
     return this.http.request<GroupInfo>(`/groups/${groupId}`);
