@@ -19,7 +19,6 @@ module.exports = {
     path: resolve(__dirname, 'build/js'),
     filename: '[name].min.js',
     clean: true,
-    iife: true,
   },
 
   resolve: {
@@ -51,19 +50,19 @@ module.exports = {
     ],
   },
 
-  optimization: {
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        shared: {
-          name: 'shared',
-          minChunks: 2,
-          priority: 10,
-          reuseExistingChunk: true,
-        },
-      },
-    },
-  },
+  // optimization: {
+  //   splitChunks: {
+  //     chunks: 'all',
+  //     cacheGroups: {
+  //       shared: {
+  //         name: 'shared',
+  //         minChunks: 2,
+  //         priority: 10,
+  //         reuseExistingChunk: true,
+  //       },
+  //     },
+  //   },
+  // },
 
   plugins: [
     new webpack.ProvidePlugin({
