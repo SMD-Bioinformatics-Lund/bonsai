@@ -1,4 +1,4 @@
-{% extends "admin_panel_base.html" %}
+{% extends "layout.html" %}
 
 {% block css %}
   {{ super() }}
@@ -7,65 +7,17 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('groups.static', filename='edit_groups.js') }}"></script>
+  <script src="{{ url_for('groups.static', filename='group-creator.min.js') }}"></script>
 {% endblock scripts %}
 
-{% block admin_panel_content %}
-<div id="edit-group-panel" class="br-layout container-fluid px-0">
-
-  {# ───────────── Sidebar: server-rendered navigation ───────────── #}
-  <aside class="br-sidebar bg-light border">
-    <div class="d-flex flex-column align-items-stretch">
-
-      <div class="list-group list-group-flush border-bottom scrollarea br-groups">
-
-        <a
-          class="list-group-item d-flex align-items-center border-end p-3 link-dark list-group-item-action"
-          href="{{ url_for('groups.group_editor_view') }}"
-        >
-          <span class="fs-6 fw-semibold">
-            <i class="bi bi-plus-square"></i>
-            Create group
-          </span>
-        </a>
-
-        {% for group in groups %}
-          <a
-            class="list-group-item list-group-item-action py-2 lh-tight border-end
-                   {% if selected_group == group.group_id %}selected{% endif %}"
-            href="{{ url_for('groups.group_editor_view', group_id=group.group_id) }}"
-            {% if selected_group == group.group_id %}aria-current="true"{% endif %}
-          >
-            <div class="d-flex align-items-center justify-content-between">
-              <div>
-                <div><strong>{{ group.display_name | truncate(30) }}</strong></div>
-                <div><small>{{ group.modified_at | strftime }}</small></div>
-              </div>
-              <span class="badge bg-dark">
-                {{ group.sample_count }} samples
-              </span>
-            </div>
-          </a>
-        {% endfor %}
-
-      </div>
-    </div>
-  </aside>
-
-  {# ───────────── Main: JS mounting point ───────────── #}
-  <main class="br-main order-1">
-    <div class="container-fluid py-3">
-
-      <div
-        id="group-editor"
-        data-mode="{{ mode }}"
-        {% if selected_group %}
-          data-group-id="{{ selected_group }}"
-        {% endif %}
-      ></div>
-
-    </div>
-  </main>
-
-</div>
-{% endblock admin_panel_content %}
+{% block content %}
+<main>
+  <div class="contianer-fluid py-3">
+    <group-editor
+      mode="{{ mode }}"
+      {% if group_id %}group-id="{{group_id}}"{% endif %}
+      data-redirect-template="{{ url_for('groups.edit_groups', group_id='__GROUP_ID__') }}"
+    ></group-editor>
+  </div>
+</main>
+{% endblock content %}
