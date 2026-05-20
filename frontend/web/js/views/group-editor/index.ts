@@ -1,13 +1,27 @@
 import { GroupEditModel } from "./model";
 import { GroupEditorApi } from "./api";
 import { renderHeader } from "./render/header";
+import { initGroupEditor } from "./init"
 
 export class GroupEditor extends HTMLElement {
   private model!: GroupEditModel;
   private mode!: "create" | "edit";
   private groupId: string | null = null;
 
-  public api!: GroupEditorApi;
+  private _api?: GroupEditorApi;
+  private isInitialized = false;
+
+  set api(api: GroupEditorApi) {
+    this._api = api;
+    this.tryInitialize()
+  }
+
+  get api(): GroupEditorApi {
+    if (!this._api) {
+      throw new Error("<group-editor> API not available")
+    }
+    return this._api
+  }
 
   public config = {
     redirectOnSuccess: undefined as undefined | ((id: string) => string),
@@ -15,16 +29,20 @@ export class GroupEditor extends HTMLElement {
   };
 
   connectedCallback() {
-    if (!this.api) {
-      throw new Error("<group-editor> requires a api to be injected")
-    }
-    this.mode = this.getAttribute("mode") as "create" | "edit"
-    this.groupId = this.getAttribute("group-id")
+    this.groupId = this.getAttribute("group-id");
+    this.mode = this.getAttribute("mode") as "create" | "edit";
 
-    this.model = GroupEditModel.initial(this.mode)
+    this.model = GroupEditModel.initial(this.mode);
 
     this.renderSkeleton();
+    this.isInitialized = true;
+    this.tryInitialize();
+  }
 
+  private tryInitialize() {
+    if (!this.isInitialized || !this._api) return;
+
+    // Safe to proceed
     if (this.mode == "edit" && this.groupId) {
       this.load(this.groupId)
     } else {
@@ -39,6 +57,10 @@ export class GroupEditor extends HTMLElement {
   }
 
   async save() {
+    if (!this._api) {
+      throw new Error("<group-editor> cannot save without API");
+    }
+
     try {
       // post updates to group
       const groupId = "temp-id"
@@ -82,3 +104,5 @@ export class GroupEditor extends HTMLElement {
 }
 
 customElements.define("group-editor", GroupEditor);
+
+initGroupEditor()
