@@ -73,8 +73,11 @@ def group_editor_view(group_id: str | None = None):
     return render_template(
         "edit_groups.html",
         mode="create" if group_id is None else "edit",
-        selected_group=group_id,
+        group_id=group_id,
         groups=groups["data"],
+        api_base_url=settings.api_external_url,
+        access_token=token.token,
+        refresh_token="",
     )
 
 
