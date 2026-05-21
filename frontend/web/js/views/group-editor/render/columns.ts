@@ -15,7 +15,7 @@ export function renderColumns(
       console.warn("<column-selector> not found; skipping column")
     }
     selector.items = availbleColumns.map( col => {
-        return {id: col.id, label: col.label, enabled: true }
+        return {id: col.id, label: col.label, enabled: false }
     });
 
     selector.addEventListener("column-selector:change", (e: any) => {
