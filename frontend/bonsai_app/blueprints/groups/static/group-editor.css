@@ -11,6 +11,11 @@ group-editor .ge-input {
   max-width: 420px;
 }
 
+column-selector .ge-columns-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 group-editor .drag-handle {
   cursor: grab;
 }
