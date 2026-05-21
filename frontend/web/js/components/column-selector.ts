@@ -50,8 +50,10 @@ class ColumnSelector extends HTMLElement {
         </div>
       </div>
 
-      <ul class="list-group ge-columns-list">
-      </ul>
+      <div class="border rounded border-muted">
+        <ul class="list-group ge-columns-list">
+        </ul>
+      </div>
     `;
 
     this.renderSelectors();
