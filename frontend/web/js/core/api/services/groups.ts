@@ -4,8 +4,11 @@ import { GroupInfo, ApiGroupInfoResponse, InputCoreGroupInfo } from "../../types
 export class GroupApi {
   constructor(private http: HttpClient) {}
 
-  createGroup(data: InputCoreGroupInfo): Promise<string> {
-    return Promise.resolve("mock-group-id");
+  createGroup(data: InputCoreGroupInfo): Promise<GroupInfo> {
+    return this.http.request<GroupInfo>(`/groups/`, {
+      method: 'POST', 
+      body: JSON.stringify(data)
+    });
   }
 
   updateGroup(groupId: string, data: InputCoreGroupInfo): Promise<void> {

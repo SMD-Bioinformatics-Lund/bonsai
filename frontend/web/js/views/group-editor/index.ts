@@ -7,6 +7,7 @@ import { renderSamples } from "./render/samples";
 import { renderActions } from "./render/actions";
 
 import { ManifestColumn } from "core/types";
+import { ColumnSelector } from "components/column-selector";
 
 export class GroupEditor extends HTMLElement {
   private model!: GroupEditModel;
@@ -73,7 +74,30 @@ export class GroupEditor extends HTMLElement {
 
     try {
       // post updates to group
-      const groupId = "temp-id"
+      let groupId;
+
+      // create or update core info
+      const corePayload = {
+        display_name: this.model.displayName,
+        description: this.model.description,
+      }
+      if ( this.mode == "create" ) {
+        const groupObj = await this._api.createGroup(corePayload)
+        this.model.groupId = groupObj.group_id;
+        this.mode = "edit";
+      } else {
+        groupId = this.model.groupId!;
+        this._api.updateGroup(groupId, corePayload)
+      }
+
+      // update allowed columns
+      // first narrow to only selected elements then get the col id
+      const selector =this.querySelector('column-selector') as ColumnSelector
+      await this._api.updateAllowedColumns(
+        groupId,
+        selector.items.filter(item => item.enabled).map(item => item.id)
+      );
+
       this.dispatchEvent(
         new CustomEvent("group-editor:saved", {
           detail: { groupId, mode: this.mode },
@@ -81,8 +105,9 @@ export class GroupEditor extends HTMLElement {
       );
 
       if (this.config.redirectOnSuccess) {
+        debugger
         const url = typeof this.config.redirectOnSuccess === "function"
-        ? this.config.redirectOnSuccess(groupId)
+        ? this.config.redirectOnSuccess(this.model.groupId)
         : this.config.redirectOnSuccess;
         window.location.href = url;
       }
@@ -98,7 +123,7 @@ export class GroupEditor extends HTMLElement {
   private reset() {
     this.model.displayName = "";
     this.model.description = "";
-    this.model.allowedColumns = [];
+    //this.model.allowedColumnIds = [];
     this.model.samples = [];
     this.render();
   }
