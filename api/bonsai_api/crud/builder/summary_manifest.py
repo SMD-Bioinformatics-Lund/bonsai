@@ -186,7 +186,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="postalignqc_median_cov",
             requires=["postalignqc"],
-            label="median coverage",
+            label="Median coverage",
             path="$postalignqc.median_cov",
             type="number",
         ),
@@ -200,7 +200,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="postalignqc_n_mapped_reads",
             requires=["postalignqc"],
-            label="# Reads",
+            label="# Mapped reads",
             path="$postalignqc.n_mapped_reads",
             type="number",
         ),
