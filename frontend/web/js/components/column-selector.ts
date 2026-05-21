@@ -1,6 +1,6 @@
 import Sortable from "sortablejs";
 
-interface ColumnItem {
+export interface ColumnItem {
   id: string;
   label: string;
   enabled: boolean;

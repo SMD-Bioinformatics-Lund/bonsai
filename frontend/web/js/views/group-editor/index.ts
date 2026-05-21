@@ -6,17 +6,20 @@ import { renderColumns } from "./render/columns";
 import { renderSamples } from "./render/samples";
 import { renderActions } from "./render/actions";
 
+import { ManifestColumn } from "core/types";
+
 export class GroupEditor extends HTMLElement {
   private model!: GroupEditModel;
   private mode!: "create" | "edit";
   private groupId: string | null = null;
+  private availableColumns: ManifestColumn[] = [];
 
   private _api?: GroupEditorApi;
   private isInitialized = false;
 
   set api(api: GroupEditorApi) {
     this._api = api;
-    this.tryInitialize()
+    this.initialize()
   }
 
   get api(): GroupEditorApi {
@@ -39,12 +42,16 @@ export class GroupEditor extends HTMLElement {
 
     this.renderSkeleton();
     this.isInitialized = true;
-    this.tryInitialize();
+    this.initialize()
+    .catch(err => console.error("Failed to initialize <group-editor>", err));
   }
 
-  private tryInitialize() {
+  private async initialize() {
     if (!this.isInitialized || !this._api) return;
 
+    // Fetch data
+    this.availableColumns = await this.api.getAvailableColumns().then(resp => resp.columns);
+    
     // Safe to proceed
     if (this.mode == "edit" && this.groupId) {
       this.load(this.groupId)
@@ -127,6 +134,7 @@ export class GroupEditor extends HTMLElement {
 
     renderColumns(
       this.querySelector("column-selector")!,
+      this.availableColumns,
       this.model
     );
 
