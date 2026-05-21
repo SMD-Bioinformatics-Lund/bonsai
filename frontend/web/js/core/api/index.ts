@@ -106,28 +106,28 @@ export class ApiService {
   };
 }
 
-export async function pollJob<T extends ApiJobStatus>(
-  checkJobFn: () => Promise<T>,
-  waitTime: number,
-  maxRetries: number = 100,
-): Promise<T> {
-  let retries = 0;
-  let result = await checkJobFn();
-  console.log(`Initial job status: ${result.status}`);
+// export async function pollJob<T extends ApiJobStatus>(
+//   checkJobFn: () => Promise<T>,
+//   waitTime: number,
+//   maxRetries: number = 100,
+// ): Promise<T> {
+//   let retries = 0;
+//   let result = await checkJobFn();
+//   console.log(`Initial job status: ${result.status}`);
 
-  while (validateJobStatus(result)) {
-    if (retries >= maxRetries) {
-      throw new Error(`Polling exceeded maximum retries (${maxRetries})`);
-    }
-    console.log(`Retry ${retries + 1}/${maxRetries} - Status: ${result.status}`);
-    await wait(waitTime);
-    result = await checkJobFn();
-    retries++;
-  }
+//   while (validateJobStatus(result)) {
+//     if (retries >= maxRetries) {
+//       throw new Error(`Polling exceeded maximum retries (${maxRetries})`);
+//     }
+//     console.log(`Retry ${retries + 1}/${maxRetries} - Status: ${result.status}`);
+//     await wait(waitTime);
+//     result = await checkJobFn();
+//     retries++;
+//   }
 
-  console.log(`Job finished with status: ${result.status}`);
-  return result;
-}
+//   console.log(`Job finished with status: ${result.status}`);
+//   return result;
+// }
 
 /**
  * Pauses execution for a specified duration.
@@ -167,8 +167,8 @@ export * from "./http/HttpClient";
 
 export * from "./services/groups";
 export * from "./services/samples";
-export * from "./services/jobs";
-export * from "./services/users";
-export * from "./services/memberships";
+//export * from "./services/jobs";
+//export * from "./services/users";
+//export * from "./services/memberships";
 
 export * from "./polling/pollJob";

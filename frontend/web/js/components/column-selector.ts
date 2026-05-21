@@ -7,7 +7,7 @@ export interface ColumnItem {
 }
 
 
-class ColumnSelector extends HTMLElement {
+export class ColumnSelector extends HTMLElement {
   private _items: ColumnItem[] = [];
   private sortable?: Sortable;
   private searchQuery = "";
