@@ -22,6 +22,7 @@ from bonsai_app.models import (
     PhenotypeType,
     QualityControlResult,
 )
+from bonsai_app.config import settings
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
@@ -82,8 +83,11 @@ def group_editor_view(group_id: str | None = None):
     return render_template(
         "edit_groups.html",
         mode="create" if group_id is None else "edit",
-        selected_group=group_id,
+        group_id=group_id,
         groups=groups["data"],
+        api_base_url=settings.api_external_url,
+        access_token=token.token,
+        refresh_token="",
     )
 
 

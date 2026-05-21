@@ -1,4 +1,5 @@
 import { GroupInfo, InputCoreGroupInfo } from "../../core/types";
+import { ApiSummaryManifestResponse } from "../../core/types";
 
 export interface GroupEditorApi {
   createGroup(data: InputCoreGroupInfo): Promise<string>;
@@ -14,4 +15,6 @@ export interface GroupEditorApi {
   ): Promise<void>;
 
   getGroup(groupId: string): Promise<GroupInfo>;
+
+  getAvailableColumns(): Promise<ApiSummaryManifestResponse>
 }

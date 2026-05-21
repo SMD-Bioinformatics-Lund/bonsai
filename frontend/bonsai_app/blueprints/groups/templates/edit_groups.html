@@ -18,6 +18,9 @@
       mode="{{ mode }}"
       {% if group_id %}group-id="{{group_id}}"{% endif %}
       data-redirect-template="{{ url_for('groups.group_editor_view', group_id='__GROUP_ID__') }}"
+      data-api-base-url="{{ api_base_url }}"
+      data-access-token="{{ access_token }}"
+      data-refresh-token="{{ refresh_token }}"
     ></group-editor>
   </div>
 </main>

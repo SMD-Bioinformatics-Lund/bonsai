@@ -22,5 +22,21 @@ export interface ApiSampleQcStatus {
   comment: string | null;
 }
 
+export interface ManifestColumn {
+  id: string,
+  type: string,
+  label: string,
+  source: string,
+  default_visible: boolean,
+  filterable: boolean,
+  sortable: boolean,
+}
+
+export interface ApiSummaryManifestResponse {
+  columns: ManifestColumn[]
+  etag: string
+  version: string
+}
+
 export type ApiSampleDetailsResponse =
   PaginatedResponse<SamplesDetails>;
