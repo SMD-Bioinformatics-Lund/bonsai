@@ -10,7 +10,7 @@ export class GroupEditModel {
   description: string;
 
   samples: string[];
-  allowedColumns: string[];
+  allowedColumnIds: string[];
 
   createdAt?: string;
   modifiedAt?: string;
@@ -22,7 +22,7 @@ export class GroupEditModel {
     this.displayName = "";
     this.description = "";
     this.samples = [];
-    this.allowedColumns = [];
+    this.allowedColumnIds = [];
   }
 
   /* Create a fresh model */

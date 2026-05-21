@@ -2,7 +2,7 @@ import { GroupInfo, InputCoreGroupInfo } from "../../core/types";
 import { ApiSummaryManifestResponse } from "../../core/types";
 
 export interface GroupEditorApi {
-  createGroup(data: InputCoreGroupInfo): Promise<string>;
+  createGroup(data: InputCoreGroupInfo): Promise<GroupInfo>;
 
   updateGroup(
     groupId: string,
