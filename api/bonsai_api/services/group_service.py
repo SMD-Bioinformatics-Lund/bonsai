@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+import uuid_utils as uuid
 
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
@@ -125,8 +126,9 @@ def _build_group_payload(
     group_record: GroupInfoCreate, owner_id: str | None
 ) -> GroupRecordDb:
     """Build GroupRecordDb representation from create payload."""
+    group_id = str(uuid.uuid7())
     core = GroupCore(
-        group_id=group_record.group_id,
+        group_id=group_id,
         display_name=group_record.display_name,
         description=group_record.description,
         visibility=group_record.visibility,
@@ -206,7 +208,7 @@ async def create_group_service(
     # Build database document
     payload = _build_group_payload(group_record, creator.user_id)
 
-    event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
+    event_subject = Subject(id=payload.core.group_id, type=SourceType.USR)
     with audit_event_context(audit, "create_group", ctx, event_subject):
         try:
             await insert_group_document(
@@ -215,7 +217,7 @@ async def create_group_service(
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
             raise ConflictError(
-                f"Group with id {group_record.group_id} already exists."
+                f"Group with id {payload.core.group_id} already exists."
             ) from dke
         except PyMongoError as pme:
             LOG.error("MongoDB error while creating group: %s", str(pme))

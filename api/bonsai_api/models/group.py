@@ -193,7 +193,6 @@ class GroupListResponse(MultipleRecordsResponseModel):
 class GroupInfoCreate(BaseModel):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info used for creation."""
 
-    group_id: str
     display_name: str
     description: str | None = None
     visibility: Visibility = Visibility.PUBLIC
