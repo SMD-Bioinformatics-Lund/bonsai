@@ -11,7 +11,7 @@ export interface GroupInfo {
   display_name: string;
   description: string;
   sample_count: number;
-  table_columns: ColumnDefinition[];
+  table_columns: string[];
   created_at: string;
   modified_at: string;
 }
