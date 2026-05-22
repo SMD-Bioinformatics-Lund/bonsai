@@ -43,11 +43,15 @@ export const throwSmallToast = (message: string, type: string = "info") => {
       toast._element.classList.add("text-bg-danger");
       btn.classList.add("btn-close-white");
       break;
-    const errorMessage = toast._element.querySelector(".toast-message");
-    // add custom error message
-    errorMessage.innerText = message;
-    toast.show();
+    default:
+      toast._element.classList.add("text-bg-secondary");
+      btn.classList.add("btn-close-white");
   }
+
+  const errorMessage = toast._element.querySelector(".toast-message");
+  // add custom error message
+  errorMessage.innerText = message;
+  toast.show();
 };
 
 /* Setup bootstrap toast */
