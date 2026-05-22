@@ -7,12 +7,12 @@ export interface GroupEditorApi {
   updateGroup(
     groupId: string,
     data: InputCoreGroupInfo
-  ): Promise<void>;
+  ): Promise<GroupInfo>;
 
   updateAllowedColumns(
     groupId: string,
     columnIds: string[]
-  ): Promise<void>;
+  ): Promise<GroupInfo>;
 
   getGroup(groupId: string): Promise<GroupInfo>;
 
