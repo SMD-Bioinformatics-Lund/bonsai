@@ -209,7 +209,7 @@ async def add_sourmash_index_service(db: Database, *, sample_id: str, sketch: st
     sample = await get_sample_service(db, sample_id=sample_id, session=session)
 
     if sample.genome_signature is not None:
-        raise ConflictError("Sample {sample_id} is associated with index")
+        raise ConflictError(f"Sample {sample_id} is associated with index")
 
     # Schedule adding sketch and reindex
     add_sig_job = schedule_add_genome_signature(sample_id, sketch)
@@ -220,7 +220,10 @@ async def add_sourmash_index_service(db: Database, *, sample_id: str, sketch: st
 
     # Add job id to sample
     add_idx_job = add_sig_job.id
-    add_sourmash_sketch(db, sample_id=sample_id, sketch=add_idx_job, session=session)
+    resp = await add_sourmash_sketch(db, sample_id=sample_id, sketch=add_idx_job, session=session)
+    if resp.modified_count != 1:
+        LOG.error("Matched count=%d; Modified count=%d; ", resp.matched_count, resp.modified_count)
+        raise DatabaseOperationError(f"Failed to add sourmash sketch for {sample_id}")
 
     return {
         "add_sketch_job": add_idx_job,
