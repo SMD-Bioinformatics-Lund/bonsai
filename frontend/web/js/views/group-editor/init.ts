@@ -5,6 +5,7 @@ import { HttpClient } from "core/api";
 import { AuthService } from "core/api";
 import { InputCoreGroupInfo } from "../../core/types";
 import { GroupEditorApi } from "./api";
+import { throwSmallToast } from "utils/notification";
 
 
 function createGroupEditorApi(apiBaseUrl: string, accessToken: string, refreshToken: string): GroupEditorApi {
@@ -54,5 +55,15 @@ export function initGroupEditor() {
       redirectOnSuccess: (groupId: string) => redirectTemplate!.replace("__GROUP_ID__", groupId),
       presentation: "page"
     }
+
+    // View specific
+    editor.addEventListener("group-editor:saved", () => {
+      throwSmallToast("Group saved successfully", "success")
+    });
+
+    editor.addEventListener("group-editor:error", (e: any) => {
+      throwSmallToast(e.detail.message, "danger");
+    });
+
   })
 }
