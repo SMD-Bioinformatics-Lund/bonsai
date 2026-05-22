@@ -189,7 +189,7 @@ async def add_ska_index_service(db: Database, *, sample_id: str, index_uri: str,
 
     # check if index has already been added
     if sample.ska_index is not None and not force:
-        raise ConflictError("Sample {sample_id} is already associated with an index.")
+        raise ConflictError(f"Sample {sample_id} is already associated with an index.")
     
     try:
         update_obj = await add_ska_index(db, sample_id=sample_id, index_uri=index_uri, session=session)
