@@ -401,12 +401,12 @@ async def create_genome_signatures_sample(
 @router.post("/samples/{sample_id}/ska_index", tags=[RouterTags.SAMPLE])
 async def add_ska_index_to_sample(
     sample_id: str,
-    index: str = Body(...),
+    index: str = Body(..., embed=True),
+    force: bool = Body(False, embed=True),
     db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
-
-    await add_ska_index_service(db, sample_id=sample_id, index_uri=index)
+    await add_ska_index_service(db, sample_id=sample_id, index_uri=index, force=force)
 
     return {"sample_id": sample_id, "index_file": index}
 
