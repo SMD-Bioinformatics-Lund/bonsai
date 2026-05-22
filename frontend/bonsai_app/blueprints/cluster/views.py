@@ -69,7 +69,7 @@ def fmt_metadata(
     sample_obj: dict[str, str | int | list[str | dict[str, Any]]],
     column: dict[str, Any],
 ) -> str:
-    data = get_json_path(sample_obj, column["path"])
+    data = sample_obj.get(column['id'])
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
@@ -112,8 +112,10 @@ def gather_metadata(
     # Get which metadata points to display
     # skip column with sample button
     columns = [
-        col for col in column_definition if not col["hidden"] and col["label"] != ""
+        col for col in column_definition.get('columns', [])
+        if not col["default_visible"] and col["label"] != ""
     ]
+    
     # create metadata structure
     metadata: dict[str, dict[str, str | int | float | None]] = {}
     for sample in samples:
@@ -126,7 +128,7 @@ def gather_metadata(
         # exclude metadata tables as they cant be rendered
         meta_records: dict[str, str] = {
             meta["fieldname"]: meta["value"]
-            for meta in sample["metadata"]
+            for meta in sample.get("metadata", [])
             if meta["type"] != "table"
         }
         metadata[sample_id] = {**default_cols, **meta_records}

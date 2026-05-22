@@ -71,7 +71,8 @@ async def get_typing_profiles(
 
     # Query database
     results: list[TypingProfileAggregate] = []
-    async for raw in db.sample_collection.aggregate(pipeline):
+    cursor = await db.sample_collection.aggregate(pipeline)
+    async for raw in cursor:
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
