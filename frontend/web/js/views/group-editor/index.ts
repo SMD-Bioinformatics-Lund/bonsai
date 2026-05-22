@@ -108,7 +108,11 @@ export class GroupEditor extends HTMLElement {
         const url = typeof this.config.redirectOnSuccess === "function"
         ? this.config.redirectOnSuccess(this.model.groupId)
         : this.config.redirectOnSuccess;
-        window.location.href = url;
+
+        /* only change url if it's different */
+        if (window.location.pathname !== url) {
+          window.location.href = url;
+        }
       }
     } catch (err) {
       this.dispatchEvent(
