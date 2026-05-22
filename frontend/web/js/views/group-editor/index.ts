@@ -87,7 +87,7 @@ export class GroupEditor extends HTMLElement {
         this.mode = "edit";
       } else {
         groupId = this.model.groupId!;
-        this._api.updateGroup(groupId, corePayload)
+        await this._api.updateGroup(groupId, corePayload)
       }
 
       // update allowed columns
@@ -105,7 +105,6 @@ export class GroupEditor extends HTMLElement {
       );
 
       if (this.config.redirectOnSuccess) {
-        debugger
         const url = typeof this.config.redirectOnSuccess === "function"
         ? this.config.redirectOnSuccess(this.model.groupId)
         : this.config.redirectOnSuccess;
@@ -121,10 +120,13 @@ export class GroupEditor extends HTMLElement {
   }
 
   private reset() {
-    this.model.displayName = "";
-    this.model.description = "";
-    //this.model.allowedColumnIds = [];
-    this.model.samples = [];
+    if (this.mode === "edit" && this.model.groupId) {
+      this.load(this.model.groupId);
+    } else {
+      this.model.displayName = "";
+      this.model.description = "";
+      this.model.samples = [];
+    }
     this.render();
   }
 
