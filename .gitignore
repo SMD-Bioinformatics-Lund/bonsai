@@ -135,7 +135,7 @@ dmypy.json
 node_modules
 .npm
 frontend/build/
-frontend/bonsai_app/blueprints/public/static/bonsai.min.js
+*.min.js
 
 # directory tree
 volumes/mongodb/*
