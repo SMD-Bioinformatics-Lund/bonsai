@@ -46,6 +46,6 @@ def create_app():
 
     # start worker with json serializer
     LOG.info("Starting worker...")
-    queue = Queue(connection=redis)
+    queue = Queue(name=settings.redis_queue, connection=redis)
     worker = Worker([queue], connection=redis)
     worker.work()
