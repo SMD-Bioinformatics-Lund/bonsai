@@ -434,9 +434,11 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
 
     # load sequence signatures to memory
     signatures = _load_signatures_from_sample_id(sample_ids)
+    checksum_lookup = {sig.md5sum(): sig.name for sig in signatures}
 
     LOG.info("Cluster %d signatures", len(sample_ids))
-    newick: str = cluster_signatures(signatures, method)
+    tree, checksums  = cluster_signatures(signatures, method)
+    newick = tree_to_newick(tree, "", tree.dist, [checksum_lookup.get(c, c) for c in checksums])
     return newick
 
 
