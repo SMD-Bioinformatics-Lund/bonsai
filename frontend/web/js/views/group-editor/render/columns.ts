@@ -10,15 +10,13 @@ export function renderColumns(
   availbleColumns: ManifestColumn[],
   model: GroupEditModel
 ) {
-    console.log("Function called!")
     if (!selector) {
       console.warn("<column-selector> not found; skipping column")
     }
     selector.items = availbleColumns.map( col => {
-        return {id: col.id, label: col.label, enabled: false }
-    });
+        return {id: col.id, label: col.label, enabled: false || model.allowedColumnIds.includes(col.id)}});
 
     selector.addEventListener("column-selector:change", (e: any) => {
-      model.allowedColumns = e.detail.items;
+      model.allowedColumnIds = e.detail.items;
     })
 }

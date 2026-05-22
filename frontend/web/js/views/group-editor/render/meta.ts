@@ -14,6 +14,7 @@ export function renderMeta(
         id="group-name"
         type="text"
         class="form-control"
+        value="${model.displayName}"
       />
     </div>
     <div class="mb-3">
