@@ -110,8 +110,11 @@ async def get_group_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await crud_gr.get_group(db, group_id)
-    return group
+    return await group_service.get_group(
+        db, group_id, 
+        user_id=current_user.username,
+        user_roles=current_user.roles,
+    )
 
 
 @router.delete(
@@ -171,8 +174,10 @@ async def set_allowed_columns_for_group(
     ),
 ):
     """Set allowed table columns for a group."""
-    return await crud_gr.set_allowed_columns(
-        db, group_id, payload, req_ctx, audit_log
+    return await service_gr.set_allowed_columns(
+        db, group_id=group_id,
+        column_ids=payload.column_ids, 
+        ctx=req_ctx, audit=audit_log
     )
 
 
