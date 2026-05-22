@@ -5,7 +5,7 @@ import { HttpClient } from "core/api";
 import { AuthService } from "core/api";
 import { InputCoreGroupInfo } from "../../core/types";
 import { GroupEditorApi } from "./api";
-import { throwSmallToast } from "utils/notification";
+import { throwSmallToast, initToast } from "utils/notification";
 
 
 function createGroupEditorApi(apiBaseUrl: string, accessToken: string, refreshToken: string): GroupEditorApi {
@@ -38,6 +38,8 @@ export function initGroupEditor() {
   console.log("group editor init loaded!")
 
   document.addEventListener("DOMContentLoaded", () => {
+    initToast();
+
     const editor = document.querySelector('group-editor') as GroupEditor;
     if (!editor) return;
 
