@@ -38,5 +38,6 @@ export class GroupEditModel {
     this.createdAt = data.created_at;
     this.modifiedAt = data.modified_at;
     this.sampleCount = data.sample_count;
+    this.allowedColumnIds = data.table_columns;
   }
 }
