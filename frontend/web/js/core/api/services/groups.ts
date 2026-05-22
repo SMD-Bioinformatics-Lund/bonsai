@@ -11,12 +11,18 @@ export class GroupApi {
     });
   }
 
-  updateGroup(groupId: string, data: InputCoreGroupInfo): Promise<void> {
-    return Promise.resolve();
+  updateGroup(groupId: string, data: InputCoreGroupInfo): Promise<GroupInfo> {
+    return this.http.request<GroupInfo>(`/groups/${groupId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
   }
 
-  updateAllowedColumns(groupId: string, columnIds: string[]): Promise<void> {
-    return Promise.resolve();
+  updateAllowedColumns(groupId: string, columnIds: string[]): Promise<GroupInfo> {
+    return this.http.request<GroupInfo>(`/groups/${groupId}/allowed_columns`, {
+      method: 'PUT',
+      body: JSON.stringify({ column_ids: columnIds })
+    });
   }
 
   getGroup(groupId: string) {
