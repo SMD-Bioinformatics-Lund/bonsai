@@ -34,7 +34,7 @@ LOG = logging.getLogger(__name__)
 
 TYPING_RESULT = "typing_result"
 ELEMENT_TYPE_RESULT = "element_type_result"
-QC_RESULT = "qc"
+QC_RESULT = "qc_result"
 SPP_RESULT = "species_prediction"
 GROUP_FOR: dict[str, str] = {
     "abst": TYPING_RESULT,
