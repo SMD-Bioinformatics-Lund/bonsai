@@ -113,7 +113,7 @@ def gather_metadata(
     # skip column with sample button
     columns = [
         col for col in column_definition.get('columns', [])
-        if not col["default_visible"] and col["label"] != ""
+        if not col.get('default_visible', True) and col.get("label", "") != ""
     ]
     
     # create metadata structure
