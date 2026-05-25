@@ -23,7 +23,6 @@
     {% endif %}
     <p class="card-text">
         QC: 
-        <strong>
             <span name="qc-status" class="{{ txt_fmt }}">{{ status | capitalize }}</span>
         </strong>
         <span name="container" {% if action is none %}hidden{% endif %}>
@@ -373,9 +372,9 @@
     <div class="card-body">
     {% if analysis.software == "resfinder" %}
         {{ resfinder_prediction(analysis, extended=extended) }}
-    {% elif analysis.software == "amrfinder" and analysis.type == "AMR" %}
+    {% elif analysis.software == "amrfinder" and analysis.analysis_type == "amr" %}
         {{ amrfinder_amr_prediction(analysis, extended=extended) }}
-    {% elif analysis.software == "amrfinder" and analysis.type == "STRESS" %}
+    {% elif analysis.software == "amrfinder" and analysis.analysis_type == "stress" %}
         {{ amrfinder_stress_prediction(analysis, extended=extended) }}
     {% elif analysis.software == "mykrobe" %}
         {{ mykrobe_amr_prediction(analysis, extended=extended) }}
