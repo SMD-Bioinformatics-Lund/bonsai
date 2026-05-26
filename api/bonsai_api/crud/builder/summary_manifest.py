@@ -150,13 +150,13 @@ MANIFEST = Manifest(
         ColumnFull(
             id="chewbacca_n_missing",
             requires=["chewbbaca"],
-            label="# Missing cgMLST alleles",
+            label="Nr missing cgMLST alleles",
             path="$chewbbaca.n_missing",
         ),
         ColumnFull(
             id="chewbacca_n_novel",
             requires=["chewbbaca"],
-            label="# Novel cgMLST alleles",
+            label="Nr novel cgMLST alleles",
             path="$chewbbaca.n_novel",
         ),
         ColumnFull(
@@ -186,21 +186,21 @@ MANIFEST = Manifest(
         ColumnFull(
             id="postalignqc_median_cov",
             requires=["postalignqc"],
-            label="median coverage",
+            label="Median coverage",
             path="$postalignqc.median_cov",
             type="number",
         ),
         ColumnFull(
             id="postalignqc_n_reads",
             requires=["postalignqc"],
-            label="# Reads",
+            label="Nr Reads",
             path="$postalignqc.n_reads",
             type="number",
         ),
         ColumnFull(
             id="postalignqc_n_mapped_reads",
             requires=["postalignqc"],
-            label="# Reads",
+            label="Nr Mapped reads",
             path="$postalignqc.n_mapped_reads",
             type="number",
         ),
