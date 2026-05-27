@@ -7,8 +7,17 @@ export interface PaginatedResponse<T> {
 }
 
 interface ApiSampleSimilarity {
-  sample_id: string;
-  similarity: number;
+  query: string;
+  ksize: number;
+  moltype: string;
+  search_time: number;
+  matches: {
+    name: string;
+    md5: string;
+    containment: number;
+    max_containment: number;
+    similarity: number;
+  }[];
 }
 
 export interface ApiJobStatusBase {
@@ -25,7 +34,7 @@ export interface ApiJobStatusNewick extends ApiJobStatusBase {
 }
 
 export interface ApiJobStatusSimilarity extends ApiJobStatusBase {
-  result: ApiSampleSimilarity[]; // result is an array of sample similarities
+  result: ApiSampleSimilarity; // result is an array of sample similarities
 }
 
 export type ApiJobStatus = ApiJobStatusNewick | ApiJobStatusSimilarity;
