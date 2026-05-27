@@ -29,13 +29,14 @@ import DataTable from "datatables.net-bs5";
 const sampleTableConfig = {
   select: true,
   layout: {
-    top1Start: {
-      buttons: ["selectAll", "selectNone", "showSelected"],
+    top1Start: {buttons: ["colvis"]},
+    top2Start: {
+      buttons: ["selectAll", "selectNone", "showSelected", "colvis"],
     },
-    top1End: {
+    top2End: {
       buttons: ["copy", "csv", "excel"],
     },
-    top2Start: "searchBuilder",
+    top3Start: ["searchBuilder"],
   },
   lengthMenu: [10, 25, 50, 100, { label: "All", value: -1 }],
   scrollX: true,
