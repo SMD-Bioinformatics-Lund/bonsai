@@ -12,8 +12,9 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
     "bracken": BuilderArgs(
         selector={"software": "bracken"}, source_path="species_prediction"
     ),
-    "quast": BuilderArgs(selector={"software": "quast"}, source_path="qc"),
-    "postalignqc": BuilderArgs(selector={"software": "postalignqc"}, source_path="qc"),
+    "quast": BuilderArgs(selector={"software": "quast"}, source_path="qc_result"),
+    "postalignqc": BuilderArgs(selector={"software": "postalignqc"}, source_path="qc_result"),
+    "gambit": BuilderArgs(selector={"software": "gambit"}, source_path="qc_result"),
     "mlst": BuilderArgs(
         selector={"software": "mlst"},
         source_path="typing_result",
@@ -100,13 +101,18 @@ MANIFEST = Manifest(
         ColumnFull(
             id="sequencing_run",
             label="Sequencing run",
-            path="$sequencing.run_id",
+            path="$sequencing.sequencing_run",
             default_visible=True,
         ),
         ColumnFull(
             id="sequencing_platform",
             label="Sequencing platform",
             path="$sequencing.platform",
+        ),
+        ColumnFull(
+            id="sequencing_date",
+            label="Sequencing date",
+            path="$sequencing.sequenced_at",
         ),
         ColumnFull(
             id="pipeline_version", label="Pipeline version", path="$latest_pipeline_run.pipeline_info.definition.version"
