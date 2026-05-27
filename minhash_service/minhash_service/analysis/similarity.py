@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater
 
+from minhash_service.core.factories import create_signature_repo
 from minhash_service.signatures.index import BaseIndexStore
 
 from .models import AniEstimateOptions, SimilaritySearchConfig, SimilarSearchResult, SimilarResult
@@ -54,6 +55,18 @@ def filter_search_results(
     return results
 
 
+def annotate_sample_id(results: SimilaritySearchResults, *, kmer_size: int) -> SimilaritySearchResults:
+    """Annotate similarity search results with sample IDs."""
+    repo = create_signature_repo()
+    for i, match in enumerate(results):
+        records = repo.get_by_sample_id_or_checksum(checksum=match.md5, kmer_size=kmer_size)
+        record = records[0]
+        if record is None:
+            continue
+        results[i] = match.model_copy(update={"name": record.sample_id})
+    return results
+
+
 def get_similar_signatures(
     query_sig: Path,
     index_repo: BaseIndexStore,
@@ -92,6 +105,7 @@ def get_similar_signatures(
         try:
             result = parse_manysearch_results(output_path)
             result = filter_search_results(result, min_similarity=config.min_similarity, limit=config.limit)
+            result = annotate_sample_id(result, kmer_size=config.ksize)
         except Exception as exc:
             LOG.error("Error parsing branchwater multisearch results: %s", exc)
             raise
