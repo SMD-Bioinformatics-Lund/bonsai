@@ -65,6 +65,22 @@ def get_value(sample: dict[str | int, Any], value: str | int) -> str | int | flo
     return "-" if val is None else val
 
 
+def _fmt_object(col_id: str, *, data: Any):
+    if col_id == "qc_status":
+        return f"{data.get('status', 'unknown')} - {data.get('comment', 'No comment')}"
+    if col_id == "groups":
+        return ", ".join([group for group in data])
+    if col_id == "comments":
+        return ", ".join([
+            comment_obj["comment"]
+            for comment_obj in data
+            if comment_obj["displayed"]
+        ])
+    if col_id == "tags":
+        return ", ".join([point["label"] for point in data])
+    return json.dumps(data)
+
+
 def fmt_metadata(
     sample_obj: dict[str, str | int | list[str | dict[str, Any]]],
     column: dict[str, Any],
@@ -81,12 +97,18 @@ def fmt_metadata(
                     if comment_obj["displayed"]
                 ]
             )
+        case "object":
+            fmt_data = _fmt_object(column["id"], data=data)
         case "date":
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
         case "list":
             fmt_data = ", ".join(data)
-        case _:
+        case "number":
             fmt_data = data
+        case "string":
+            fmt_data = data
+        case _:
+            raise ValueError(f"Unhandled column type: {column['type']}")
     return fmt_data
 
 
@@ -113,7 +135,7 @@ def gather_metadata(
     # skip column with sample button
     columns = [
         col for col in column_definition.get('columns', [])
-        if not col.get('default_visible', True) and col.get("label", "") != ""
+        if col.get("label", "") != ""
     ]
     
     # create metadata structure
