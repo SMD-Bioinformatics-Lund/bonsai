@@ -3,13 +3,15 @@
 import itertools
 import logging
 from enum import Enum
-from typing import Sequence
+from typing import Sequence, Any
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Phylo.TreeConstruction import DistanceMatrix as BioDistanceMatrix
 from scipy.cluster import hierarchy
 
 LOG = logging.getLogger(__name__)
+
+TreeObj = (tuple[None, Any] | Any | None)
 
 
 class DistanceMatrix(BioDistanceMatrix):
@@ -67,11 +69,9 @@ def calc_snv_distance(aln: MultipleSeqAlignment) -> DistanceMatrix:
     return dm
 
 
-def cluster_distances(dm: DistanceMatrix, method: ClusterMethod) -> str:
+def cluster_distances(dm: DistanceMatrix, method: ClusterMethod) -> tuple[TreeObj, list[str]]:
     """Cluster two or more samples from a distance matrix."""
 
     linkage = hierarchy.linkage(dm.to_condensed(), method=method.value)
     tree = hierarchy.to_tree(linkage, False)
-
-    newick_tree = to_newick(tree, "", tree.dist, dm.names)
-    return newick_tree
+    return tree, dm.names
