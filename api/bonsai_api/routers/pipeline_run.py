@@ -7,8 +7,10 @@ from bonsai_api.db import Database
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.dependencies import get_current_active_user, get_database
 
+.tags import RouterTags
+
 LOG = logging.getLogger(__name__)
-router = APIRouter(tags=["pipeline_runs"])
+router = APIRouter(tags=[RouterTags.PIPELINE_RUNS])
 
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"

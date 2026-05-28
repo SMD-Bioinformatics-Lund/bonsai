@@ -48,19 +48,6 @@ SAMPLE_ID_PATH: str = Path(
 )
 
 
-class RouterTags(StrEnum):
-    """Tag names for API routes."""
-
-    ANALYSIS = "analysis"
-    SAMPLE = "sample"
-    GROUP = "groups"
-    MEM = "memberships"
-    META = "metadata"
-    PIPELINE_RUNS = "pipeline_runs"
-    USR = "user"
-    JOB = "jobs"
-
-
 Action = Literal["include", "exclude"]
 
 

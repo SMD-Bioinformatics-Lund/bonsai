@@ -18,7 +18,7 @@ from bonsai_api.dependencies import (
     get_audit_log,
 )
 from api_client.audit_log.client import AuditLogClient
-from .shared import RouterTags
+from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
 router = APIRouter(prefix="/analysis", tags=[RouterTags.ANALYSIS])

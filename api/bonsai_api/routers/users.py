@@ -29,18 +29,18 @@ from bonsai_api.models.user import (
 )
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 
-from .shared import RouterTags
+from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.USR])
 
 OWN_USER = "users:me"
 READ_PERMISSION = "users:read"
 WRITE_PERMISSION = "users:write"
 
 
-@router.get("/users/me", tags=[RouterTags.USR], response_model=UserOutputDatabase)
+@router.get("/users/me", response_model=UserOutputDatabase)
 async def get_users_me(
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[OWN_USER]
@@ -50,7 +50,7 @@ async def get_users_me(
     return current_user
 
 
-@router.get("/users/basket", tags=[RouterTags.USR])
+@router.get("/users/basket")
 async def get_samples_in_basket(
     current_user: Annotated[
         UserOutputDatabase, Security(get_current_active_user, scopes=[OWN_USER])
@@ -60,7 +60,7 @@ async def get_samples_in_basket(
     return current_user.basket
 
 
-@router.put("/users/basket", tags=[RouterTags.USR])
+@router.put("/users/basket")
 async def add_samples_to_basket(
     samples: list[SampleBasketObject],
     db: Annotated[Database, Depends(get_database)],
@@ -81,7 +81,7 @@ async def add_samples_to_basket(
     return basket_obj
 
 
-@router.delete("/users/basket", tags=[RouterTags.USR])
+@router.delete("/users/basket")
 async def remove_samples_from_basket(
     sample_ids: list[str],
     db: Annotated[Database, Depends(get_database)],
@@ -102,7 +102,7 @@ async def remove_samples_from_basket(
     return basket_obj
 
 
-@router.get("/users/{username}", tags=[RouterTags.USR])
+@router.get("/users/{username}")
 async def get_user_in_db(
     username: str,
     db: Annotated[Database, Depends(get_database)],
@@ -114,7 +114,7 @@ async def get_user_in_db(
     return await get_user(db, username=username)
 
 
-@router.delete("/users/{username}", tags=[RouterTags.USR])
+@router.delete("/users/{username}")
 async def delete_user_from_db(
     username: str,
     db: Annotated[Database, Depends(get_database)],
@@ -135,7 +135,7 @@ async def delete_user_from_db(
     return user
 
 
-@router.put("/users/{username}", tags=[RouterTags.USR])
+@router.put("/users/{username}")
 async def update_user_info(
     username: str,
     user: UserInputCreate,
@@ -160,7 +160,7 @@ async def update_user_info(
     return user
 
 
-@router.get("/users/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.USR])
+@router.get("/users/", status_code=status.HTTP_201_CREATED)
 async def get_users_in_db(
     db: Annotated[Database, Depends(get_database)],
     current_user: Annotated[
@@ -172,7 +172,7 @@ async def get_users_in_db(
     return users
 
 
-@router.post("/users/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.USR])
+@router.post("/users/", status_code=status.HTTP_201_CREATED)
 async def create_user_in_db(
     user: UserInputCreate,
     db: Annotated[Database, Depends(get_database)],

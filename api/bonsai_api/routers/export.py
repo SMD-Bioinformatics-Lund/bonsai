@@ -14,13 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.responses import PlainTextResponse
 
 from .shared import SAMPLE_ID_PATH
+from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.EXPORT])
 
-DEFAULT_TAGS = [
-    "export",
-]
 READ_PERMISSION = "samples:read"
 WRITE_PERMISSION = "samples:write"
 UPDATE_PERMISSION = "samples:update"
@@ -54,7 +52,6 @@ def _get_pipeline_run():
 @router.get(
     "/export/{sample_id}/lims",
     response_class=PlainTextResponse,
-    tags=DEFAULT_TAGS,
     summary="Export a sample to a LIMS-compatible file.",
     response_description="Result in TSV (default) or CSV for ingestion by a LIMS.",
     responses={

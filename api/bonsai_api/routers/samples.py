@@ -97,7 +97,7 @@ from bonsai_api.models.sample import MethodIndex
 
 CommentsObj = list[CommentInDatabase]
 LOG = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.SAMPLE])
 
 
 class SearchParams(BaseModel):  # pylint: disable=too-few-public-methods
@@ -176,7 +176,7 @@ async def get_summary_manifest():
 
 
 @router.get(
-    "/samples", tags=[RouterTags.SAMPLE], response_model=MultipleRecordsResponseModel
+    "/samples", response_model=MultipleRecordsResponseModel
 )
 async def list_samples(
     group_id: str | None = Query(None, description="Filter group by ID"),
@@ -211,7 +211,7 @@ async def list_samples(
         )
 
 
-@router.post("/samples/", status_code=status.HTTP_201_CREATED, tags=[RouterTags.SAMPLE])
+@router.post("/samples/", status_code=status.HTTP_201_CREATED)
 async def create_sample(
     sample: SampleInfoCreate,
     db: Database = Depends(get_database),
@@ -226,7 +226,7 @@ async def create_sample(
     return {"type": "success", **resp}
 
 
-@router.delete("/samples/", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE])
+@router.delete("/samples/", status_code=status.HTTP_200_OK)
 async def delete_many_samples(
     sample_ids: list[str],
     db: Database = Depends(get_database),
@@ -276,7 +276,7 @@ async def delete_many_samples(
 
 
 @router.get(
-    "/samples/{sample_id}", response_model_by_alias=False, tags=[RouterTags.SAMPLE]
+    "/samples/{sample_id}", response_model_by_alias=False
 )
 async def read_sample(
     sample_id: str = SAMPLE_ID_PATH,
@@ -297,7 +297,7 @@ class UpdateSampleInputModel(BaseModel):
 
 
 @router.put(
-    "/samples/{sample_id}", tags=[RouterTags.SAMPLE], response_model=SampleRecordDb
+    "/samples/{sample_id}", response_model=SampleRecordDb
 )
 async def update_sample(
     update_data: UpdateSampleInputModel,
@@ -317,7 +317,7 @@ async def update_sample(
 
 
 @router.delete(
-    "/samples/{sample_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.SAMPLE]
+    "/samples/{sample_id}", status_code=status.HTTP_200_OK
 )
 async def delete_sample(
     sample_id: str = SAMPLE_ID_PATH,
@@ -382,7 +382,7 @@ async def add_pipeline_run(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
 
 
-@router.post("/samples/{sample_id}/signature", tags=[RouterTags.SAMPLE])
+@router.post("/samples/{sample_id}/signature")
 async def create_genome_signatures_sample(
     sample_id: str,
     signature: str = Depends(parse_signature_json),
@@ -398,7 +398,7 @@ async def create_genome_signatures_sample(
     }
 
 
-@router.post("/samples/{sample_id}/ska_index", tags=[RouterTags.SAMPLE])
+@router.post("/samples/{sample_id}/ska_index")
 async def add_ska_index_to_sample(
     sample_id: str,
     index: str = Body(..., embed=True),
@@ -411,7 +411,7 @@ async def add_ska_index_to_sample(
     return {"sample_id": sample_id, "index_file": index}
 
 
-@router.get("/samples/{sample_id}/alignment", tags=[RouterTags.SAMPLE])
+@router.get("/samples/{sample_id}/alignment")
 async def get_sample_read_mapping(
     sample_id: str,
     index: bool = Query(False),
@@ -458,7 +458,7 @@ async def get_sample_read_mapping(
     return response
 
 
-@router.get("/samples/{sample_id}/vcf", tags=[RouterTags.SAMPLE])
+@router.get("/samples/{sample_id}/vcf")
 async def get_vcf_files_for_sample(
     sample_id: str = Path(...),
     variant_type: VariantType = Query(...),
@@ -511,7 +511,7 @@ async def get_vcf_files_for_sample(
     return response
 
 
-@router.post("/samples/{sample_id}/vcf", tags=[RouterTags.SAMPLE])
+@router.post("/samples/{sample_id}/vcf")
 async def add_vcf_to_sample(
     sample_id: str,
     vcf: Annotated[bytes, File()],
@@ -533,7 +533,6 @@ async def add_vcf_to_sample(
 @router.put(
     "/samples/{sample_id}/qc_status",
     response_model=QcClassification,
-    tags=[RouterTags.SAMPLE],
 )
 async def update_qc_status(
     classification: QcClassification,
@@ -578,7 +577,6 @@ async def update_qc_status(
 @router.put(
     "/samples/{sample_id}/resistance/variants",
     response_model_by_alias=False,
-    tags=[RouterTags.SAMPLE],
     deprecated=True,
 )
 async def update_variant_annotation(
@@ -598,7 +596,6 @@ async def update_variant_annotation(
 @router.post(
     "/samples/{sample_id}/comment",
     response_model=CommentsObj,
-    tags=[RouterTags.SAMPLE],
 )
 async def post_comment(
     comment: Comment,
@@ -618,7 +615,6 @@ async def post_comment(
 
 @router.delete(
     "/samples/{sample_id}/comment/{comment_id}",
-    tags=[RouterTags.SAMPLE],
 )
 async def hide_comment(
     sample_id: str = SAMPLE_ID_PATH,
@@ -639,7 +635,7 @@ async def hide_comment(
 @router.put(
     "/samples/{sample_id}/location",
     response_model=LocationOutputDatabase,
-    tags=[RouterTags.SAMPLE, "locations"],
+    tags=[RouterTags.SAMPLE, RouterTags.LOCATION],
 )
 async def update_location(
     location_id: str = Body(...),
@@ -691,7 +687,7 @@ class SearchSimilarInput(BaseModel):  # pylint: disable=too-few-public-methods
     "/samples/{sample_id}/similar",
     response_model=SubmittedJob,
     status_code=status.HTTP_202_ACCEPTED,
-    tags=["minhash", RouterTags.SAMPLE],
+    tags=[RouterTags.MINHASH, RouterTags.SAMPLE],
 )
 async def find_similar_samples(
     body: SearchSimilarInput,
