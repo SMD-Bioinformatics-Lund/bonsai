@@ -1180,7 +1180,7 @@
 
 {% macro qc_card_postalign(qc_info) %}
 <div class="card">
-    <div class="card-header">PostQc Alignment</div>
+    <div class="card-header">PostQc Alignment v{{ qc_info.software_version }}</div>
     <div class="card-body">
         {% set pct_above_hist=qc_info.result.pct_above_x %}
         {# create entries for tabular data #}
@@ -1252,7 +1252,7 @@
 
 {% macro qc_card_generic(qc_info) %}
 <div class="card">
-    <div class="card-header">{{qc_info.software | capitalize}}</div>
+    <div class="card-header">{{qc_info.software | capitalize}} v{{ qc_info.software_version }}</div>
     <div class="card-body">
         <table class="table table-sm table-striped">
             <thead>
@@ -1275,20 +1275,20 @@
 {% endmacro %}
 
 
-{% macro cgmlst_qc_card(result) %}
+{% macro cgmlst_qc_card(qc_info) %}
 <div class="card">
     <div class="card-header">
-        {{ result.type }} QC
+        {{ qc_info.type }} QC v{{ qc_info.software_version }}
     </div>
     <div class="card-body">
         <table class="table table-sm table-striped">
             <tr>
                 <th scope="row">N Called Alleles</th>
-                <td>{{ result.result.alleles | cgmlst_count_called }}</td>
+                <td>{{ qc_info.result.alleles | cgmlst_count_called }}</td>
             </tr>
             <tr>
                 <th scope="row">N Missing Alleles</th>
-                <td>{{ result.result.n_missing }}</td>
+                <td>{{ qc_info.result.n_missing }}</td>
             </tr>
         </table>
     </div>
