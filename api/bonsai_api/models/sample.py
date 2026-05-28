@@ -1,7 +1,6 @@
 """Data model definition of input/ output data"""
 
 from datetime import datetime
-from enum import StrEnum
 from typing import Any
 import logging
 
@@ -13,6 +12,7 @@ from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 
 from bonsai_api.utils import get_timestamp
 
+from .enums import Visibility, ExportStatus, SequencingPlatforms
 from .analysis import ResultStatus, EmbeddedCurationRecord
 from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
@@ -25,7 +25,7 @@ from .base import (
     RWModel,
     Timestamps,
 )
-from .metadata import InputMetaEntry, MetaEntryInDb
+from .metadata import InputMetaEntry
 from .qc import QcClassification
 
 LOG = logging.getLogger(__name__)
@@ -138,24 +138,6 @@ class SampleSummary(
     """Summary of a sample stored in the database."""
 
 
-class SequencingPlatforms(StrEnum):
-    """Supported sequencing platforms."""
-
-    ILLUMUNA = "illumina"
-    IONTORRENT = "ion torrent"
-    ONT = "oxford nanopore technologies"
-    BGI = "bgi"
-    PACBIO = "Pacific Biosciences"
-
-
-class Visibility(StrEnum):
-    """Determines the visibilty of a record."""
-
-    PRIVATE = "private"
-    ORG = "organization"
-    PUBLIC = "public"
-
-
 class SequencingInfo(ForbidExtraModelMixin):
     """Information on the sample was sequenced."""
 
@@ -181,15 +163,6 @@ class IgvAnnotationTrack(RWModel):
 
     name: str  # track name to display
     file: str  # path to the annotation file
-
-
-class ExportStatus(StrEnum):
-    """Status for LIMS export operations."""
-
-    NOT_EXPORTED = "not_exported"
-    PENDING = "pending"
-    SUCCESS = "success"
-    FAILED = "failed"
 
 
 class LimsExportStatus(BaseModel):
@@ -347,6 +320,13 @@ class SampleRecordDb(SampleBase):
     element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
 
     # Reference and annotation
+    genomic_asset_ids: list[str] = Field(
+        default_factory=list,
+        description="Associated genomic asset sets"
+    )
+    latest_genomic_asset_id: str | None = None
+
+
     reference_genome: ReferenceGenome | None = None
     read_mapping: str | None = None
     genome_annotation: list[IgvAnnotationTrack] | None = None
