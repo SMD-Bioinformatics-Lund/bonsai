@@ -1,7 +1,6 @@
 """Operations on minhash signatures."""
 
 import logging
-from typing import List
 
 from .models import ClusterMethod, SubmittedJob
 from .queue import redis
@@ -10,7 +9,7 @@ LOG = logging.getLogger(__name__)
 
 
 def schedule_cluster_samples(
-    index_files: List[str], cluster_method: ClusterMethod
+    index_files: dict[str, str], cluster_method: ClusterMethod
 ) -> SubmittedJob:
     """Schedule SNV clustering uisng SKA."""
     task = "ska_service.tasks.cluster"
