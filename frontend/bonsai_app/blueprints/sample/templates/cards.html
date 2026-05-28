@@ -826,34 +826,37 @@
                             {# Add column for user annotated resistance #}
                             <td>
                                 {% set user_annotated = variant.curation.phenotypes | list %}
+                                {% if user_annotated | length == 0 %}
+                                    -
+                                {% else %}
                                 <ul class="no-bullets">
-                                {% for phenotype in user_annotated %}
-                                    <li>
-                                        {{ phenotype.name | capitalize }}
-                                        {% set resistance_level = phenotype.meta.resistance_level %}
-                                        <span class="badge text-bg-secondary"
-                                                data-bs-toggle="tooltip" data-bs-placement="top"
-                                                data-bs-title="{{ resistance_level | capitalize | default("-") }}">
-                                                {{ resistance_level[:2].upper() }}
-                                        </span>
-                                    </li>
-                                {% endfor %}
-
-                                </ul>
+                                    {% for phenotype in user_annotated %}
+                                        <li>
+                                            {{ phenotype.name | capitalize }}
+                                            {% set resistance_level = phenotype.meta.resistance_level %}
+                                            <span class="badge text-bg-secondary"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top"
+                                                    data-bs-title="{{ resistance_level | capitalize | default("-") }}">
+                                                    {{ resistance_level[:2].upper() }}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                {% endif%}
                             </td>
                             <td>
                                 {% set rejection_reason = variant.curation.rejection_reason %}
-                                {%  if rejection_reason is none %}
+                                {%  if rejection_reason is undefined or rejection_reason is none %}
                                     -
                                 {% else %}
                                     {{ rejection_reason | default("-") }}
+                                    <span class="badge text-bg-primary"
+                                            data-bs-toggle="tooltip" data-bs-placement="top"
+                                            data-bs-html=true
+                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
                                 {% endif %}
-                                <span class="badge text-bg-primary"
-                                        data-bs-toggle="tooltip" data-bs-placement="top"
-                                        data-bs-html=true
-                                        data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
-                                    <i class="bi bi-person-fill"></i>
-                                </span>
                             </td>
                             {% if extended %}
                                 <td>
