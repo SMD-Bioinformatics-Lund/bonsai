@@ -7,18 +7,15 @@ from bonsai_api.dependencies import get_database
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..auth import create_access_token
-from ..config import settings
-from ..crud.user import authenticate_user
+from bonsai_api.auth import create_access_token
+from bonsai_api.config import settings
+from bonsai_api.crud.user import authenticate_user
 
-router = APIRouter()
+from .tags import RouterTags
 
-DEFAULT_TAGS = [
-    "authentication",
-]
+router = APIRouter(tags=[RouterTags.AUTH])
 
-
-@router.post("/token", tags=DEFAULT_TAGS)
+@router.post("/token")
 async def login_for_access_token(
     db: Database = Depends(get_database),
     form_data: OAuth2PasswordRequestForm = Depends(),

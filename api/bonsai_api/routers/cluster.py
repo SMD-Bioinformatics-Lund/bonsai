@@ -31,12 +31,11 @@ from bonsai_api.redis.ska import (
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ConfigDict, Field
 
-LOG = logging.getLogger(__name__)
-router = APIRouter()
+from .tags import RouterTags
 
-DEFAULT_TAGS = [
-    "cluster",
-]
+LOG = logging.getLogger(__name__)
+router = APIRouter(tags=[RouterTags.CLUSTER])
+
 READ_PERMISSION = "cluster:read"
 WRITE_PERMISSION = "cluster:write"
 
@@ -59,7 +58,7 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
     "/cluster/{typing_method}",
     status_code=status.HTTP_201_CREATED,
     response_model=SubmittedJob,
-    tags=["minhash", *DEFAULT_TAGS],
+    tags=[RouterTags.MINHASH, RouterTags.CLUSTER],
 )
 async def cluster_samples(
     typing_method: TypingMethod,
@@ -105,7 +104,7 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
     force: bool = False
 
 
-@router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=["minhash"])
+@router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=[RouterTags.MINHASH])
 async def index_genome_signatures(
     index_input: IndexInput,
     db: Database = Depends(get_database),

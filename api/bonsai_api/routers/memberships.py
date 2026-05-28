@@ -6,7 +6,7 @@ from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
 from bonsai_api.models.memberships import MembershipEdges
 from bonsai_api.models.user import UserOutputDatabase
-from bonsai_api.routers.shared import RouterTags
+from .tags import RouterTags
 from bonsai_api.services.membership_service import (
     get_groups_by_sample_ids,
     get_samples_by_group_ids,

@@ -39,9 +39,9 @@ from fastapi import (
 )
 from pymongo.errors import DuplicateKeyError
 
-from .shared import RouterTags
+from .tags import RouterTags
 
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.GROUP])
 
 READ_PERMISSION = "groups:read"
 WRITE_PERMISSION = "groups:write"
@@ -51,7 +51,6 @@ WRITE_PERMISSION = "groups:write"
     "/groups/",
     response_model=GroupListResponse,
     response_model_by_alias=False,
-    tags=[RouterTags.GROUP],
 )
 async def get_groups_in_db(
     db: Database = Depends(get_database),
@@ -69,7 +68,6 @@ async def get_groups_in_db(
     "/groups/",
     response_model=GroupInfoOut,
     status_code=status.HTTP_201_CREATED,
-    tags=[RouterTags.GROUP],
 )
 async def create_group(
     group_info: GroupInfoCreate,
@@ -100,7 +98,6 @@ async def create_group(
 @router.get(
     "/groups/{group_id}",
     response_model=GroupInfoOut,
-    tags=[RouterTags.GROUP],
 )
 async def get_group_in_db(
     group_id: str,
@@ -117,7 +114,6 @@ async def get_group_in_db(
 @router.delete(
     "/groups/{group_id}",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
 )
 async def delete_group_from_db(
     group_id: str,
@@ -137,7 +133,7 @@ async def delete_group_from_db(
 
 
 @router.put(
-    "/groups/{group_id}", status_code=status.HTTP_200_OK, tags=[RouterTags.GROUP]
+    "/groups/{group_id}", status_code=status.HTTP_200_OK
 )
 async def update_group_info(
     group_id: str,
@@ -158,7 +154,6 @@ async def update_group_info(
 @router.put(
     "/groups/{group_id}/allowed_columns",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
 )
 async def set_allowed_columns_for_group(
     group_id: str,
@@ -179,7 +174,6 @@ async def set_allowed_columns_for_group(
 @router.post(
     "/groups/{group_id}/presets",
     status_code=status.HTTP_201_CREATED,
-    tags=[RouterTags.GROUP],
 )
 async def upsert_preset_for_group(
     group_id: str,
@@ -211,7 +205,6 @@ async def upsert_preset_for_group(
 @router.delete(
     "/groups/{group_id}/presets/{preset_id}",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
 )
 async def delete_preset_from_group(
     group_id: str,
@@ -232,7 +225,6 @@ async def delete_preset_from_group(
 @router.put(
     "/groups/{group_id}/samples",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
     deprecated=True,
 )
 async def add_samples_to_group(
@@ -263,7 +255,6 @@ async def add_samples_to_group(
 @router.delete(
     "/groups/{group_id}/samples",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GROUP],
 )
 async def remove_sample_from_group(
     group_id: str = Path(..., title="The id of the group to get"),
@@ -292,7 +283,6 @@ async def remove_sample_from_group(
 
 @router.get(
     "/groups/{group_id}/columns",
-    tags=[RouterTags.GROUP],
     response_model=list[ColumnOut],
 )
 async def get_columns_for_group(

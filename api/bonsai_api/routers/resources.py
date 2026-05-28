@@ -7,38 +7,37 @@ from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
-from ..config import settings
-from ..io import (
+from bonsai_api.config import settings
+from bonsai_api.io import (
     InvalidRangeError,
     RangeOutOfBoundsError,
     is_file_readable,
     send_partial_file,
 )
-from ..models.antibiotics import ANTIBIOTICS
-from ..models.qc import VARIANT_REJECTION_REASONS
+from bonsai_api.models.antibiotics import ANTIBIOTICS
+from bonsai_api.models.qc import VARIANT_REJECTION_REASONS
+
+from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.RESOURCE])
 
-DEFAULT_TAGS = [
-    "resources",
-]
 READ_PERMISSION = "resources:read"
 
 
-@router.get("/resources/antibiotics", tags=DEFAULT_TAGS)
+@router.get("/resources/antibiotics")
 async def get_antibiotics():
     """Get antibiotic names."""
     return ANTIBIOTICS
 
 
-@router.get("/resources/variant/rejection", tags=DEFAULT_TAGS)
+@router.get("/resources/variant/rejection")
 async def get_variant_rejection():
     """Get antibiotic names."""
     return VARIANT_REJECTION_REASONS
 
 
-@router.get("/resources/genome/info", tags=DEFAULT_TAGS)
+@router.get("/resources/genome/info")
 async def get_genome_resources(
     file: str = Query(..., description="Name of the annotation file with suffix"),
     range: Annotated[str | None, Header()] = None,

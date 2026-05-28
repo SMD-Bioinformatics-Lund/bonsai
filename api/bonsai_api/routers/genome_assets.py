@@ -13,7 +13,7 @@ from bonsai_api.models.genome_asset import GenomicAssetCreate, GenomicAssetOut, 
 from api_client.audit_log import AuditLogClient
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.user import UserContext, UserOutputDatabase
-from bonsai_api.serivces.genome_asset_service
+from bonsai_api.services import genome_asset_service
 
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -23,10 +23,10 @@ from bonsai_api.dependencies import (
     get_request_context,
 )
 
-from .shared import RouterTags
+from .tags import RouterTags
 
 
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.GENOMIC_ASSET])
 
 READ_PERMISSION = "genomic_assets:read"
 WRITE_PERMISSION = "genomic_assets:write"
@@ -71,7 +71,6 @@ async def create_genomic_asset(
 @router.get(
     "/genomic-assets/{asset_id}",
     response_model=GenomicAssetOut,
-    tags=[RouterTags.GENOMIC_ASSET],
 )
 async def get_genomic_asset(
     asset_id: str,
@@ -120,7 +119,6 @@ async def list_genomic_assets_for_sample(
 @router.delete(
     "/genomic-assets/{asset_id}",
     status_code=status.HTTP_200_OK,
-    tags=[RouterTags.GENOMIC_ASSET],
 )
 async def delete_genomic_asset(
     asset_id: str,

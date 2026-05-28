@@ -17,16 +17,15 @@ from bonsai_api.models.location import (
 from bonsai_api.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
-router = APIRouter()
+from .tags import RouterTags
 
-DEFAULT_TAGS = [
-    "locations",
-]
+router = APIRouter(tags=[RouterTags.LOCATION])
+
 READ_PERMISSION = "locations:read"
 WRITE_PERMISSION = "locations:write"
 
 
-@router.get("/locations/", tags=DEFAULT_TAGS)
+@router.get("/locations/")
 async def get_locations(
     limit: int = Query(10, gt=0),
     skip: int = Query(0, gt=-1),
@@ -50,7 +49,7 @@ async def get_locations(
     return result
 
 
-@router.post("/locations/", tags=DEFAULT_TAGS)
+@router.post("/locations/")
 async def create_location(
     location: LocationInputCreate,
     db: Database = Depends(get_database),
@@ -71,7 +70,7 @@ async def create_location(
     return loc
 
 
-@router.get("/locations/bbox", tags=DEFAULT_TAGS)
+@router.get("/locations/bbox")
 async def get_location_bbox(
     left: float,
     bottom: float,
@@ -108,7 +107,7 @@ async def get_location_bbox(
     return loc
 
 
-@router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
+@router.get("/locations/{location_id}")
 async def get_location(
     location_id: str,
     db: Database = Depends(get_database),
