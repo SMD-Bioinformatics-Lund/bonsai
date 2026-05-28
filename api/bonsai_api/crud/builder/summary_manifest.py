@@ -101,7 +101,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="sequencing_run",
             label="Sequencing run",
-            path="$sequencing.sequencing_run",
+            path="$sequencing.sequencing_run_id",
             default_visible=True,
         ),
         ColumnFull(
