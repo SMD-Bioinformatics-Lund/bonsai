@@ -23,6 +23,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.sample_collection: AsyncCollection | None = None
         self.sample_group_collection: AsyncCollection | None = None
         self.user_collection: AsyncCollection | None = None
+        self.reference_genome_collection: AsyncCollection | None = None
 
     def setup(self, client: AsyncMongoClient, db_name: str = "bonsai"):
         """Setup collection handler."""
@@ -36,6 +37,7 @@ class MongoDatabase:  # pylint: disable=too-few-public-methods
         self.sample_collection = self.db.get_collection("sample")
         self.sample_group_collection = self.db.get_collection("sample_group")
         self.user_collection = self.db.get_collection("user")
+        self.reference_genome_collection = self.db.get_collection("reference_genome")
 
     async def close(self) -> None:
         """Close database connection."""
