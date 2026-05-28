@@ -78,6 +78,8 @@ def _fmt_object(col_id: str, *, data: Any):
         ])
     if col_id == "tags":
         return ", ".join([point["label"] for point in data])
+    if col_id == "postalignqc_pct_above_x":
+        return ", ".join([f"{x_cov}x: {cov}" for x_cov, cov in data.items()])
     return json.dumps(data)
 
 
