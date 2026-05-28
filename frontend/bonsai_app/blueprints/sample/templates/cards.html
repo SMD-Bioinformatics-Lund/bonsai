@@ -946,40 +946,71 @@
 {% endmacro %}
 
 
+{% macro generic_lineage(pred) %}
+    <table class="table table-sm">
+        <thead>
+            <th></th>
+            <th>ID</th>
+            {% if pred.result.lineages is defined %}
+                <th>Family</th>
+            {% endif %}
+        </thead>
+        <tbody>
+            <tr>
+                <th scope="row">Lineage</th>
+                <td>{{ pred.result.main_lineage | replace('lineage', '') }}</td>
+            </tr>
+            <tr>
+                <th scope="row">Sublineage</th>
+                {% set sublin=pred.result.sublineage %}
+                <td>{{ sublin | replace('lineage', '') }}</td>
+                {# Lookup sublineage if lineages is defined #}
+                {% if pred.result.lineages is defined %}
+                    {% for lin in pred.result.lineages %}
+                        {% if lin.lineage == sublin %}
+                            <td>{{ lin.family }}</td>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </tr>
+        </tbody>
+    </table>
+{% endmacro %}
+
+
+{% macro tbprofiler_lineage(pred) %}
+    <table class="table table-sm">
+        <thead>
+            <th></th>
+            <th>ID</th>
+            <th>Family</th>
+            <th>Fraction</th>
+        </thead>
+        <tbody>
+            {% for lineage in pred.result %}
+                <tr>
+                    <th scope="row">Lineage</th>
+                    <td>{{ lineage.lineage | replace('lineage', '') }}</td>
+                    <td>{{ lineage.family }}</td>
+                    <td>{{ lineage.fraction }}</td>
+                </tr>
+            {% endfor%}
+        </tbody>
+    </table>
+{% endmacro %}
+
+
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
         {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
-        <table class="table table-sm">
-            <thead>
-                <th></th>
-                <th>ID</th>
-                {% if pred.result.lineages is defined %}
-                    <th>Family</th>
-                {% endif %}
-            </thead>
-            <tbody>
-                <tr>
-                    <th scope="row">Lineage</th>
-                    <td>{{ pred.result.main_lineage | replace('lineage', '') }}</td>
-                </tr>
-                <tr>
-                    <th scope="row">Sublineage</th>
-                    {% set sublin=pred.result.sublineage %}
-                    <td>{{ sublin | replace('lineage', '') }}</td>
-                    {# Lookup sublineage if lineages is defined #}
-                    {% if pred.result.lineages is defined %}
-                        {% for lin in pred.result.lineages %}
-                            {% if lin.lineage == sublin %}
-                                <td>{{ lin.family }}</td>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </tr>
-            </tbody>
-        </table>
+        {% if pred.software == "tbprofiler" %}
+            {{ tbprofiler_lineage(pred) }}
+        {% else %}
+            {{ generic_lineage(pred) }}
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
