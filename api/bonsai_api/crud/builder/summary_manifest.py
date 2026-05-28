@@ -96,7 +96,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="release_life_cycle",
             label="Release life cycle",
-            path="$release_life_cycle",
+            path="$latest_pipeline_run.pipeline_info.definition.release_life_cycle",
         ),
         ColumnFull(
             id="sequencing_run",
