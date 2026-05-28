@@ -179,7 +179,7 @@ MANIFEST = Manifest(
             id="postalignqc_pct_above_x",
             requires=["postalignqc"],
             label="Coverage breadth above x",
-            path="$postalignqc.prc_above_x",
+            path="$postalignqc.pct_above_x",
             type="object",
         ),
         ColumnFull(
