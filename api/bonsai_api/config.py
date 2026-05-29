@@ -262,6 +262,7 @@ USER_ROLES = {
         "samples:update",
         "locations:read",
         "locations:write",
+        "reference_genomes:write"
     ],
     "user": [
         "users:me",
@@ -272,8 +273,8 @@ USER_ROLES = {
         "locations:write",
     ],
     "uploader": [
-        "groups:write" "samples:write",
-    ],
+        "groups:write", "samples:write", "reference_genomes:write"
+    ]
 }
 
 # load raw thresholds
