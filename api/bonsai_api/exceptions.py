@@ -38,3 +38,7 @@ class ForbiddenAccess(DomainError):
 
 class AnalysisExistsError(Exception):
     """Raised when a duplicate analysis already exists for a sample."""
+
+
+class GenomeResourceError(DomainError):
+    """Raised when there is an error resolving a genome resource."""
