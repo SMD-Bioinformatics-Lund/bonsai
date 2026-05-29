@@ -16,6 +16,7 @@ class RouterTags(StrEnum):
     META = "metadata"
     MINHASH = "minhash"
     PIPELINE_RUNS = "pipeline_runs"
+    REFERENCE_GENOME = "reference_genome"
     RESOURCE = "resource"
     SAMPLE = "sample"
     USR = "user"

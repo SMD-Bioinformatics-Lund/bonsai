@@ -7,7 +7,7 @@ from bonsai_api.db import Database
 from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.dependencies import get_current_active_user, get_database
 
-.tags import RouterTags
+from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
 router = APIRouter(tags=[RouterTags.PIPELINE_RUNS])
