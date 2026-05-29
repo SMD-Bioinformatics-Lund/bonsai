@@ -1,4 +1,20 @@
-
+from api_client.audit_log import AuditLogClient
+from bonsai_api.db import Database
+from bonsai_api.dependencies import (
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
+from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.genome_asset import (
+    GenomicAssetCreate,
+    GenomicAssetListResponse,
+    GenomicAssetOut,
+)
+from bonsai_api.models.user import UserContext, UserOutputDatabase
+from bonsai_api.services import genomic_asset_service
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,23 +24,7 @@ from fastapi import (
     status,
 )
 
-from api.bonsai_api.exceptions import EntryNotFound
-from bonsai_api.models.genome_asset import GenomicAssetCreate, GenomicAssetOut, GenomicAssetListResponse
-from api_client.audit_log import AuditLogClient
-from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.user import UserContext, UserOutputDatabase
-from bonsai_api.services import genome_asset_service
-
-from bonsai_api.db import Database
-from bonsai_api.dependencies import (
-    get_audit_log,
-    get_current_active_user,
-    get_database,
-    get_request_context,
-)
-
 from .tags import RouterTags
-
 
 router = APIRouter(tags=[RouterTags.GENOMIC_ASSET])
 
@@ -50,23 +50,19 @@ async def create_genomic_asset(
 ):
     """Create a genomic asset set for a sample."""
     try:
-        user = UserContext(
-            user_id=current_user.username,
-            roles=current_user.roles,
-        )
         return await genomic_asset_service.create_genomic_asset_service(
             db=db,
             sample_id=sample_id,
-            payload=payload,
+            asset=payload,
             ctx=req_ctx,
             audit=audit_log,
-            creator=user,
         )
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error),
         ) from error
+
 
 @router.get(
     "/genomic-assets/{asset_id}",
@@ -82,7 +78,7 @@ async def get_genomic_asset(
     """Fetch a genomic asset by ID."""
     try:
         return await genomic_asset_service.get_genomic_asset_service(
-            db=db,
+            db,
             asset_id=asset_id,
         )
     except EntryNotFound as error:
@@ -114,7 +110,7 @@ async def list_genomic_assets_for_sample(
         sample_id=sample_id,
         user=user,
     )
-    
+
 
 @router.delete(
     "/genomic-assets/{asset_id}",

@@ -4,7 +4,7 @@ from bonsai_api.models.user import UserContext
 from bonsai_api.db import Database
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.genome_asset import GenomicAssetCreate
-from api_client.api_client.audit_log.client import AuditLogClient
+from api_client.audit_log.client import AuditLogClient
 
 
 def create_genomic_asset_service(
@@ -18,7 +18,15 @@ def create_genomic_asset_service(
     """Create a genomic asset set for a sample."""
 
 
-def list_genomic_asset_service(
+def get_genomic_asset_service(
+        db: Database,
+        *,
+        asset_id: str,
+    ):
+    """Get a genomic asset."""
+
+
+def list_genomic_assets_for_sample_service(
         db: Database,
         *,
         sample_id: str,

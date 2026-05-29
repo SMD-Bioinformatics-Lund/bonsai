@@ -37,7 +37,7 @@ async def get_variant_rejection():
     return VARIANT_REJECTION_REASONS
 
 
-@router.get("/resources/genome/info")
+@router.get("/resources/genome/info", name="genome-resource")
 async def get_genome_resources(
     file: str = Query(..., description="Name of the annotation file with suffix"),
     range: Annotated[str | None, Header()] = None,
