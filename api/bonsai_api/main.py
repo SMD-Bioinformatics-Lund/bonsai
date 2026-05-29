@@ -35,6 +35,8 @@ from .routers import (
     samples,
     users,
     pipeline_run,
+    genomic_assets,
+    reference_genomes,
 )
 
 logging_config.dictConfig(
@@ -146,19 +148,21 @@ def create_app(settings: Settings) -> FastAPI:
     # admin user bootstrap is handled during lifespan startup
     
     # register routers
-    app.include_router(root.router)
-    app.include_router(users.router)
-    app.include_router(samples.router)
-    app.include_router(pipeline_run.router)
-    app.include_router(groups.router)
-    app.include_router(locations.router)
-    app.include_router(memberships.router)
+    app.include_router(analysis.router)
+    app.include_router(auth.router)
     app.include_router(cluster.router)
     app.include_router(export.router)
-    app.include_router(resources.router)
-    app.include_router(auth.router)
-    app.include_router(analysis.router)
+    app.include_router(genomic_assets.router)
+    app.include_router(groups.router)
     app.include_router(jobs.router)
+    app.include_router(locations.router)
+    app.include_router(memberships.router)
+    app.include_router(pipeline_run.router)
+    app.include_router(reference_genomes.router)
+    app.include_router(resources.router)
+    app.include_router(root.router)
+    app.include_router(samples.router)
+    app.include_router(users.router)
 
     # Register error handlers
     register_exception_handlers(app)
