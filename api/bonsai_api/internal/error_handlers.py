@@ -59,6 +59,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(EntryNotFound)
     async def _not_found(_: Request, exc: EntryNotFound):
         return problem_details(404, "Not Found", str(exc), type_=NOT_FOUND)
+
+
+    @app.exception_handler(FileNotFoundError)
+    async def _file_not_found(_: Request, exc: FileNotFoundError):
+        return problem_details(404, "Not Found", str(exc), type_=NOT_FOUND)
     
 
     @app.exception_handler(UnsupportedSoftwareError)
