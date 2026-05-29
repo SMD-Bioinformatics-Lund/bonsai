@@ -89,10 +89,10 @@ from api_client.core.exceptions import ApiRequestError
 
 from .shared import (
     SAMPLE_ID_PATH,
-    RouterTags,
     action_from_qc_classification,
     parse_signature_json,
 )
+from .tags import RouterTags
 from bonsai_api.models.sample import MethodIndex
 
 CommentsObj = list[CommentInDatabase]
