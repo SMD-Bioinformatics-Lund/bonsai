@@ -36,18 +36,19 @@ class RWModel(BaseModel):  # pylint: disable=too-few-public-methods
     )
 
 
-class DateTimeModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
+class CreatedAtModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
     """Add explicit time stamps to database model."""
 
     created_at: datetime.datetime = Field(default_factory=get_timestamp)
 
 
-class RecordIdMixin(BaseModel):  # pylint: disable=too-few-public-methods
-    """Default database model."""
+class UUIDModelMixin(BaseModel):  # pylint: disable=too-few-public-methods
+    """Default database model with UUID as id."""
 
     id: str = Field(
-        description="Unique record identifier", 
-        default_factory=lambda: str(uuid.uuid7()))
+        description="Unique record identifier",
+        default_factory=lambda: str(uuid.uuid7()),
+    )
 
 
 class ForbidExtraModelMixin(BaseModel):
