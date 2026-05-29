@@ -18,8 +18,8 @@ from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
 from .base import (
-    DateTimeModelMixin,
-    RecordIdMixin,
+    CreatedAtModelMixin,
+    UUIDModelMixin,
     ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
@@ -34,7 +34,7 @@ CURRENT_SCHEMA_VERSION = 1
 SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
 
 
-class Comment(DateTimeModelMixin):  # pylint: disable=too-few-public-methods
+class Comment(CreatedAtModelMixin):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
 
     username: str = Field(..., min_length=0)
@@ -133,7 +133,7 @@ class SampleInCreate(
 
 
 class SampleSummary(
-    RecordIdMixin, SampleBase
+    UUIDModelMixin, SampleBase
 ):  # pylint: disable=too-few-public-methods
     """Summary of a sample stored in the database."""
 
