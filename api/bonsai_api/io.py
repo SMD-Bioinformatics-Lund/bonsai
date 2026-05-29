@@ -7,11 +7,13 @@ import pathlib
 import re
 from enum import StrEnum
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 from fastapi.responses import Response
 
 from .models.metadata import InputTableMetadata, TableMetadataInDb
+from .exceptions import GenomeResourceError
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -130,3 +132,37 @@ def parse_metadata_table(
     return TableMetadataInDb.model_validate(
         {"fieldname": entry.fieldname, "category": entry.category, **df_json}
     )
+
+
+def resolve_genome_resource(resource: str, base_dir: Path) -> Path:
+    """
+    Resolve a logical genome resource identifier to a filesystem path.
+
+    Rules:
+    - Identifiers must be relative
+    - No directory traversal
+    - Resolution must stay within base_dir
+    - Target must exist and be a file
+    """
+    if not resource:
+        raise GenomeResourceError("Empty genome resource identifier")
+
+    requested = Path(resource)
+
+    # 1. Reject absolute paths and traversal
+    if requested.is_absolute() or ".." in requested.parts:
+        raise GenomeResourceError("Invalid genome resource identifier")
+
+    # 2. Resolve against base directory
+    base_dir = base_dir.resolve()
+    resolved = (base_dir / requested).resolve()
+
+    # 3. Enforce containment
+    if base_dir not in resolved.parents:
+        raise GenomeResourceError("Genome resource outside allowed directory")
+
+    # 4. Enforce existence and type
+    if not resolved.is_file():
+        raise GenomeResourceError(f"Genome resource {resolved} not found or not a file")
+
+    return resolved
