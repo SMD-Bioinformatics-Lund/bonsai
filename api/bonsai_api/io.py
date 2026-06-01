@@ -134,35 +134,39 @@ def parse_metadata_table(
     )
 
 
-def resolve_genome_resource(resource: str, base_dir: Path) -> Path:
-    """
-    Resolve a logical genome resource identifier to a filesystem path.
+def validate_resource_identifier(resource: str) -> Path:
+    """Validate a genome resource identifier to prevent path traversal and ensure it is not empty."""
 
-    Rules:
-    - Identifiers must be relative
-    - No directory traversal
-    - Resolution must stay within base_dir
-    - Target must exist and be a file
-    """
     if not resource:
         raise GenomeResourceError("Empty genome resource identifier")
 
     requested = Path(resource)
 
-    # 1. Reject absolute paths and traversal
     if requested.is_absolute() or ".." in requested.parts:
         raise GenomeResourceError("Invalid genome resource identifier")
 
-    # 2. Resolve against base directory
+    return requested
+
+
+def resolve_resource_path(resource: str, base_dir: Path) -> Path:
+    """Resolve a genome resource path, ensuring it is within the base directory."""
+
     base_dir = base_dir.resolve()
+    requested = validate_resource_identifier(resource)
     resolved = (base_dir / requested).resolve()
 
-    # 3. Enforce containment
     if base_dir not in resolved.parents:
-        raise GenomeResourceError("Genome resource outside allowed directory")
+        raise GenomeResourceError("Outside allowed directory")
 
-    # 4. Enforce existence and type
     if not resolved.is_file():
-        raise GenomeResourceError(f"Genome resource {resolved} not found or not a file")
+        raise GenomeResourceError(f"{resolved} not found")
 
     return resolved
+
+
+def to_relative_resource(resource: str | None, base_dir: Path) -> str | None:
+    """Convert an absolute resource path to a relative one, validating it in the process."""
+
+    if not resource:
+        return None
+    return str(resolve_resource_path(resource, base_dir).relative_to(base_dir))
