@@ -159,8 +159,8 @@ class Settings(BaseSettings):
     redis_port: str = "6379"
 
     # Reference genome and annotations for IGV
-    reference_genomes_dir: str = "/tmp/reference_genomes"
-    annotations_dir: str = "/tmp/annotations"
+    reference_genomes_dir: str = "/reference_genomes"
+    annotations_dir: str = "/annotations"
     # authentication options
     secret_key: str = "not-so-secret"  # openssl rand -hex 32
     access_token_expire_minutes: int = 180  # expiration time for accesst token
