@@ -4,7 +4,7 @@ import logging
 import pathlib
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi import APIRouter, Header, HTTPException, Path, status
 from fastapi.responses import FileResponse
 
 from bonsai_api.config import settings
@@ -37,9 +37,9 @@ async def get_variant_rejection():
     return VARIANT_REJECTION_REASONS
 
 
-@router.get("/resources/genome/info", name="genome-resource")
+@router.get("/resources/genome/{file:path}", name="genome-resource")
 async def get_genome_resources(
-    file: str = Query(..., description="Name of the annotation file with suffix"),
+    file: str,
     range: Annotated[str | None, Header()] = None,
 ) -> str:
     """Genome sequence and annotated genes for a given reference genome."""
