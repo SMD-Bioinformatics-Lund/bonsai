@@ -8,25 +8,29 @@ from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 from fastapi import Request
 
+from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.exceptions import DatabaseOperationError, GenomeResourceError
 from bonsai_api.db import Database
 from bonsai_api.models.reference_genome import ReferenceGenomeCreate, ReferenceGenomeDb, ReferenceGenomeResponse
 
 import bonsai_api.crud.reference_genomes as reference_genome_crud
-from bonsai_api.io import resolve_genome_resource
+from bonsai_api.io import to_relative_resource, validate_resource_identifier
 from bonsai_api.config import settings
 
 
 LOG = logging.getLogger(__name__)
 
 
-def resolve_resource_url(resource: str) -> str:
+def resolve_resource_url(request: Request, resource: str) -> str:
     """Resolve a resource URI to an accessible URL."""
-    return Request.url_for('genome-resource', file=resource)
+    LOG.warning(request)
+    return str(request.url_for('genome-resource', file=resource))
 
 
 async def list_reference_genomes_service(
     db: Database,
+    *,
+    request: Request,
 ) -> list[ReferenceGenomeResponse]:
     """List available reference genomes."""
     try:
@@ -37,9 +41,9 @@ async def list_reference_genomes_service(
                 name=doc["name"],
                 accession=doc["accession"],
                 organism=doc["organism"],
-                fasta_url=resolve_resource_url(doc["fasta_resource"]),
-                fasta_index_url=resolve_resource_url(doc["fasta_index_resource"]),
-                genome_annotation_url=resolve_resource_url(doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
+                fasta_url=resolve_resource_url(request, doc["fasta_resource"]),
+                fasta_index_url=resolve_resource_url(request, doc["fasta_index_resource"]),
+                genome_annotation_url=resolve_resource_url(request, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
                 created_at=doc["created_at"].isoformat() if doc.get("created_at") else None,
             ) for doc in docs]
     except PyMongoError as pme:
@@ -58,21 +62,36 @@ async def create_reference_genome_service(
     db: Database,
     *,
     reference_genome: ReferenceGenomeCreate,
+    request: Request,
 ) -> ReferenceGenomeResponse:
     """Create a new reference genome."""
     # build ref genome payload
     try:
+        for resource in [reference_genome.fasta_resource, reference_genome.fasta_index_resource, reference_genome.genome_annotation_resource]:
+            if resource:
+                validate_resource_identifier(resource)
+
         base_path = Path(settings.reference_genomes_dir)
-        payload = ReferenceGenomeDb(
-            name=reference_genome.name,
-            accession=reference_genome.accession,
-            organism=reference_genome.organism,
-            fasta_resource=resolve_genome_resource(reference_genome.fasta_resource, base_path),
-            fasta_index_resource=resolve_genome_resource(reference_genome.fasta_index_resource, base_path),
-            genome_annotation_resource=resolve_genome_resource(reference_genome.genome_annotation_resource, base_path) if reference_genome.genome_annotation_resource else None,
-        )
-        result = await reference_genome_crud.insert_reference_genome_document(db, doc=payload.model_dump())
-        return ReferenceGenomeResponse.model_validate(result)
+        async with managed_transaction(db.client) as txn:
+            payload = ReferenceGenomeDb(
+                name=reference_genome.name,
+                accession=reference_genome.accession,
+                organism=reference_genome.organism,
+                fasta_resource=str(to_relative_resource(reference_genome.fasta_resource, base_path)),
+                fasta_index_resource=str(to_relative_resource(reference_genome.fasta_index_resource, base_path)),
+                genome_annotation_resource=str(to_relative_resource(reference_genome.genome_annotation_resource, base_path)) if reference_genome.genome_annotation_resource else None,
+            )
+            await reference_genome_crud.insert_reference_genome_document(db, doc=payload.model_dump(), session=txn)
+
+            return ReferenceGenomeResponse(
+                **payload.model_dump(mode="json"),
+                fasta_url=resolve_resource_url(request, payload.fasta_resource),
+                fasta_index_url=resolve_resource_url(request, payload.fasta_index_resource),
+                genome_annotation_url=(
+                    resolve_resource_url(request, payload.genome_annotation_resource)
+                    if payload.genome_annotation_resource else None
+                ),
+            )
     except PyMongoError as pme:
         LOG.error("MongoDB error while creating reference genome: %s", str(pme))
         raise DatabaseOperationError(
