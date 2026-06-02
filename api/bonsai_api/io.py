@@ -73,11 +73,11 @@ def parse_byte_range(byte_range: str) -> tuple[int, int]:
     return first, last
 
 
-def send_partial_file(path: str, range_header: str) -> Response:
+def send_partial_file(path: Path, range_header: str) -> Response:
     """Send partial file as a response.
 
     :param path: File path
-    :type path: str
+    :type path: Path
     :param range_header: byte range, ie bytes=123-456
     :type range_header: str
     :raises RangeOutOfBoundsError: Error if the byte range is out of bounds.
@@ -88,7 +88,7 @@ def send_partial_file(path: str, range_header: str) -> Response:
     first, last = byte_range
 
     data = None
-    with open(path, "rb") as file_handle:
+    with path.open("rb") as file_handle:
         fs = os.fstat(file_handle.fileno())
         file_len = fs[6]
         if first >= file_len:
@@ -140,8 +140,9 @@ def validate_resource_identifier(resource: str) -> Path:
     return requested
 
 
+
 def resolve_resource_path(resource: str, base_dir: Path) -> Path:
-    """Resolve a genome resource path, ensuring it is within the base directory."""
+    """Resolve and validate a resource path."""
 
     base_dir = base_dir.resolve()
     requested = validate_resource_identifier(resource)
@@ -152,6 +153,9 @@ def resolve_resource_path(resource: str, base_dir: Path) -> Path:
 
     if not resolved.is_file():
         raise GenomeResourceError(f"{resolved} not found")
+
+    if not os.access(resolved, os.R_OK):
+        raise GenomeResourceError(f"{resolved} not readable")
 
     return resolved
 
