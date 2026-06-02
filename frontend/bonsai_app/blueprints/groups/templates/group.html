@@ -72,15 +72,10 @@
         {{ sample_table(table_data) }}
     </div>
 </div>
+<script src="{{ url_for('public.static', filename='group-view.min.js') }}"></script>
 <script>
-    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
-    const accessToken = "{{ token }}"
-    const groupId = "{{ group_id }}"
-    // template code for adding to basket
-    // template code for searching similar samples
-
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
+        initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
     });
 </script>
 {% endblock content %}

@@ -167,10 +167,13 @@
     const rawGroupId = "{{ group_id|tojson }}"
     const groupId = "null" ? null : rawGroupId 
 
+    <script src="{{ url_for('public.static', filename='sample-view.min.js') }}"></script>
+    <script>
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
-        bonsai.initSampleView(apiUrl, accessToken, "", sampleId, groupId)
+        initSampleView("{{ config.API_EXTERNAL_URL }}", "{{ token }}", "", sampleId, groupId)
     });
+    </script>
 
     function getSampleId() {
         // get sample id from the URL
