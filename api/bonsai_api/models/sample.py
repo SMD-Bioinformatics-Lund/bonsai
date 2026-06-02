@@ -4,15 +4,16 @@ from datetime import datetime
 from typing import Any
 import logging
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
 from prp.parse.models.base import VariantBase
 from prp.parse import hydrate_result
 from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
+from pydantic_core import ValidationError
 
 from bonsai_api.utils import get_timestamp
 
-from .enums import Visibility, ExportStatus, SequencingPlatforms
+from .enums import Visibility, ExportStatus, SequencingPlatforms, TypingMethod, ClusterMethod
 from .analysis import ResultStatus, EmbeddedCurationRecord
 from .pipeline import PipelineRun
 from .qc import SampleQcClassification, VaraintRejectionReason
@@ -131,6 +132,56 @@ class SampleInCreate(
 #     sv_variants: list[VariantInDb] | None = None
 #     snv_variants: list[VariantInDb] | None = None
 
+
+class InputSearchSimilar(BaseModel):  # pylint: disable=too-few-public-methods
+    """Input parameters for finding similar samples."""
+
+    limit: int | None = Field(default=10, ge=1, title="Limit the output to x samples")
+    similarity: float = Field(default=0.5, gt=0, le=1, title="Similarity threshold")
+    cluster: bool = Field(
+        default=False,
+        title="Cluster the similar",
+        description="If the samples found with similar search should be clustered.",
+    )
+    narrow_to_sample_ids: list[str] | None = Field(
+        default=None,
+        description="Restrict the similarity search to these sample IDs. If None, search across all samples.",
+        examples=[["sample_id"]],
+    )
+    typing_method: TypingMethod | None = Field(
+        default=None, title="Cluster using a specific typing method"
+    )
+    cluster_method: ClusterMethod | None = Field(
+        default=None, title="Cluster the similar"
+    )
+
+    @model_validator(mode="after")
+    def validate_cluster_settings(self):
+        """Validate that cluster settings are defined if cluster=True."""
+        if self.cluster and (self.cluster_method is None or self.typing_method is None):
+            raise ValidationError(
+                "'cluster_method' and 'typing_method' must be set if 'cluster' is True."
+            )
+        return self
+
+class InputSamplesSummary(BaseModel):
+    """Input parameters for getting sample details."""
+
+    group_id: str | None = None
+    sid: list[str] | None = Field(
+        None, description="Optional limit query to samples ids"
+    )
+    fields: list[str] | None = None
+    sort: str = "-created_at"
+    limit: int | None = Field(default=None, title="Limit the output to x samples")
+    offset: int = Field(0, ge=0)
+
+
+class UpdateSampleInputModel(BaseModel):
+    """Input data when updating sample information."""
+
+    typing: list
+    phenotype: list
 
 class SampleSummary(
     UUIDModelMixin, SampleBase
