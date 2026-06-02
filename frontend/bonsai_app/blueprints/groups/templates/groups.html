@@ -52,8 +52,11 @@
     // template code for adding to basket
     // template code for searching similar samples
 
-    document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
-    });
-</script>
+    </script>
+    <script src="{{ url_for('public.static', filename='group-view.min.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
+        });
+    </script>
 {% endblock content %}

@@ -1,3 +1,1 @@
-import { initGroupView } from "./init";
-
-initGroupView();
+export { initGroupView } from "./init";

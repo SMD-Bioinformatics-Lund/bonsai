@@ -5,14 +5,14 @@ module.exports = {
   devtool: 'inline-source-map',
 
   entry: {
-    // Existing global bundle (unchanged)
-    bonsai: resolve(__dirname, 'web/js/bonsai'),
-
-    // New view-level entry
+    // New view-level entries
     'group-editor': resolve(
       __dirname,
       'web/js/views/group-editor/index'
     ),
+    'group-view': resolve(__dirname, 'web/js/views/groups-view/index'),
+    'sample-view': resolve(__dirname, 'web/js/views/sample-view/index'),
+    'variants-table': resolve(__dirname, 'web/js/views/variants-table/index'),
   },
 
   output: {
@@ -50,19 +50,26 @@ module.exports = {
     ],
   },
 
-  // optimization: {
-  //   splitChunks: {
-  //     chunks: 'all',
-  //     cacheGroups: {
-  //       shared: {
-  //         name: 'shared',
-  //         minChunks: 2,
-  //         priority: 10,
-  //         reuseExistingChunk: true,
-  //       },
-  //     },
-  //   },
-  // },
+  optimization: {
+    runtimeChunk: 'single',
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendor',
+          chunks: 'all',
+          priority: 20,
+        },
+        commons: {
+          name: 'commons',
+          minChunks: 2,
+          priority: 10,
+          reuseExistingChunk: true,
+        },
+      },
+    },
+  },
 
   plugins: [
     new webpack.ProvidePlugin({
