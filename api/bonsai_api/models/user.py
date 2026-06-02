@@ -3,7 +3,7 @@
 from bonsai_api.config import settings
 from pydantic import EmailStr
 
-from .base import UUIDModelMixin, ForbidExtraModelMixin, RWModel, Timestamps
+from .base import UUIDMixin, ForbidExtraModelMixin, RWModel, TimestampsMixin
 
 
 class SampleBasketObject(RWModel):  # pylint: disable=too-few-public-methods
@@ -33,7 +33,7 @@ class UserInputCreate(UserBase):  # pylint: disable=too-few-public-methods
     password: str
 
 
-class UserInputDatabase(UserBase, Timestamps):  # pylint: disable=too-few-public-methods
+class UserInputDatabase(UserBase, TimestampsMixin):  # pylint: disable=too-few-public-methods
     """User data to be written to database.
 
     Includes modified timestamp.
@@ -43,7 +43,7 @@ class UserInputDatabase(UserBase, Timestamps):  # pylint: disable=too-few-public
 
 
 class UserOutputDatabase(
-    UserBase, UUIDModelMixin
+    UserBase, UUIDMixin
 ):  # pylint: disable=too-few-public-methods
     """Representation of the userdata in the database.
 

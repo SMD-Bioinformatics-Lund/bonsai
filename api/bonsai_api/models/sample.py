@@ -22,7 +22,7 @@ from .base import (
     ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
-    Timestamps,
+    TimestampsMixin,
 )
 from .metadata import InputMetaEntry
 from .qc import QcClassification
@@ -48,7 +48,7 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
 # class VariantInDb(VariantBase):
 #     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
 #     reason: VaraintRejectionReason | None = None
-class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
+class SampleBase(TimestampsMixin, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base model for all sample representations.
     
     Contains core sample metadata, tags, and annotations.

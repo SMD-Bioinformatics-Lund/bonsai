@@ -4,7 +4,7 @@ from typing import List, Tuple
 
 from pydantic import BaseModel, Field, field_validator
 
-from .base import UUIDModelMixin, Timestamps
+from .base import UUIDMixin, TimestampsMixin
 
 COORDS = Tuple[float, float]
 
@@ -67,7 +67,7 @@ class GeoJSONPolygon(BaseModel):  # pylint: disable=too-few-public-methods
         return coords
 
 
-class LocationBase(Timestamps):  # pylint: disable=too-few-public-methods
+class LocationBase(TimestampsMixin):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""
 
     display_name: str = Field(..., min_length=0, alias="displayName")
@@ -85,6 +85,6 @@ class LocationInputDatabase(LocationBase):  # pylint: disable=too-few-public-met
 
 
 class LocationOutputDatabase(
-    LocationInputDatabase, UUIDModelMixin
+    LocationInputDatabase, UUIDMixin
 ):  # pylint: disable=too-few-public-methods
     """Contianer for geo locations, based on GeoJSON format."""

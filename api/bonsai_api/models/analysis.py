@@ -3,7 +3,7 @@ from enum import StrEnum
 from typing import Any, Annotated, Literal
 from pydantic import BaseModel, Discriminator, Field
 
-from .base import RWModel, UUIDModelMixin, Timestamps, AllowExtraModelMixin
+from .base import RWModel, UUIDMixin, TimestampsMixin, AllowExtraModelMixin
 
 from prp.parse.models.base import ParserOutput as PRPParserOutput
 from prp.parse.models.enums import AnalysisType as PrpAnalysisType
@@ -26,7 +26,7 @@ class Envelope(BaseModel):
     meta: dict[str, Any] = Field(default_factory=dict)
 
 
-class AnalysisResult(UUIDModelMixin, Timestamps, AllowExtraModelMixin):
+class AnalysisResult(UUIDMixin, TimestampsMixin, AllowExtraModelMixin):
     """Container of analysis results."""
 
     # meta information
@@ -45,7 +45,7 @@ class AnalysisResult(UUIDModelMixin, Timestamps, AllowExtraModelMixin):
     created_by: str | None = None
 
 
-class CurationAuditBase(RWModel, UUIDModelMixin, Timestamps):
+class CurationAuditBase(RWModel, UUIDMixin, TimestampsMixin):
     """Shared curation metadata for both canonical and embedded curation records.
 
     This base holds the audit and annotation fields common to all curations.
