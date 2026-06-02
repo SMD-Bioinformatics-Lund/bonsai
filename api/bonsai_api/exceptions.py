@@ -50,3 +50,8 @@ class InvalidRangeError(Exception):
 
 class RangeOutOfBoundsError(Exception):
     """Exception if range is out of bounds."""
+
+
+class MigrationError(Exception):
+    """Raised when a migration operation fails."""
+

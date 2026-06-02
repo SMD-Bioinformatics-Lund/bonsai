@@ -16,7 +16,7 @@ from .base import (
 
 FilterParams = list[dict[str, str | int | float],]
 
-SCHEMA_VERSION = 1
+GROUP_SCHEMA_VERSION = 1
 
 DEFAULT_PRESET_NAME = "default"
 
@@ -124,7 +124,7 @@ class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     - invited_users: optional list of user ids invited to access private group
     """
 
-    schema_version: int = SCHEMA_VERSION
+    schema_version: int = GROUP_SCHEMA_VERSION
     core: GroupCore
     allowed_columns: GroupAllowed = Field(default_factory=GroupAllowed)
     presets: GroupPresets = Field(default_factory=GroupPresets)

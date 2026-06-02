@@ -6,22 +6,14 @@ from copy import copy
 from typing import Any, Callable
 
 import click
-from bonsai_api.crud.group import update_group
-from bonsai_api.crud.sample import update_sample
 from bonsai_api.crud.utils import get_deprecated_records
 from bonsai_api.db import Database
-from bonsai_api.models.group import SCHEMA_VERSION as GROUP_SCHEMA_VERSION
-from bonsai_api.models.group import GroupInfoCreate
-from bonsai_api.models.sample import SampleInCreate
+from bonsai_api.models.sample import SAMPLE_SCHEMA_VERSION, SampleRecordDb
+from bonsai_api.models.group import GROUP_SCHEMA_VERSION, GroupInfoCreate
 from bson import json_util
-from prp.migration.convert import migrate_result as sample_migrate_result
-from prp.models.sample import SCHEMA_VERSION as SAMPLE_SCHEMA_VERSION
 
 LOG = logging.getLogger(__name__)
 UnformattedResult = dict[str, Any]
-
-
-class MigrationError(Exception): ...
 
 
 async def migrate_sample_collection(db: Database, backup_path: str | None):
@@ -45,40 +37,25 @@ async def migrate_sample_collection(db: Database, backup_path: str | None):
     click.confirm("Do you what to continue?", abort=True)
 
     # 3 migrate data and validate using the current schema
-    migrated_samples: list[SampleInCreate] = [
-        SampleInCreate.model_validate(sample_migrate_result(sample, validate=False))
-        for sample in samples
-    ]
+    migrated_samples: list[SampleRecordDb] = []
+    raise NotImplementedError("Sample migration function not implemented yet")
+
     # 4 backup old records as json array
-    if backup_path is not None:
-        click.secho(f"Backing up old entries to: {backup_path}")
-        with open(backup_path, "w", encoding="utf-8") as outf:
-            outf.write(json_util.dumps(samples, indent=3))
+    # if backup_path is not None:
+    #     click.secho(f"Backing up old entries to: {backup_path}")
+    #     with open(backup_path, "w", encoding="utf-8") as outf:
+    #         outf.write(json_util.dumps(samples, indent=3))
     # 5 update samples
-    click.secho(f"Updating samples in the database")
-    for upd_sample in migrated_samples:
-        was_updated = update_sample(db, upd_sample)
-        if not was_updated:
-            raise MigrationError(f"Sample '{upd_sample.sample_id}' was not updated.")
-
-
-def group_pre_1_to_1(group: UnformattedResult) -> UnformattedResult:
-    """Convert group object format from pre-v1 to v1."""
-    if "schema_version" in group:
-        raise MigrationError("Invalid schema version - expected undefined field!")
-
-    LOG.info("Migrating to schema version %d", 1)
-    upd_group = copy(group)
-    return upd_group
+    # click.secho(f"Updating samples in the database")
+    # for upd_sample in migrated_samples:
+    #     was_updated = update_sample(db, upd_sample)
+    #     if not was_updated:
+    #         raise MigrationError(f"Sample '{upd_sample.sample_id}' was not updated.")
 
 
 def migrate_group(group: UnformattedResult) -> UnformattedResult:
     """Migrate group documents in the database."""
     ALL_FUNCS: dict[int, Callable[..., UnformattedResult]] = {}
-
-    # for migrating pre-version 1 data
-    if "schema_version" not in group:
-        group = group_pre_1_to_1(group)
 
     # apply migrations for v1 and onwards
     for start_version, migration_func in ALL_FUNCS.items():

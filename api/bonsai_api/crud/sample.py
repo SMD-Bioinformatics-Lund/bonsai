@@ -6,7 +6,6 @@ from typing import Any
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
-from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
@@ -18,10 +17,9 @@ from bonsai_api.models.qc import QcClassification
 from bonsai_api.models.sample import (
     Comment,
     CommentInDatabase,
-    SampleInCreate,
     SampleRecordDb,
 )
-from bonsai_api.utils import format_error_message, get_timestamp
+from bonsai_api.utils import get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
 from prp.parse.models.enums import AnnotationType, ElementType
@@ -86,64 +84,6 @@ async def get_samples_full(
     data = await cursor.to_list(None)
     total = await db.sample_collection.count_documents(match)
     return MultipleRecordsResponseModel(data=data, records_total=total)
-
-
-async def create_sample(
-    db: Database,
-    sample: Any,
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> SampleRecordDb:
-    """Create a new sample document in database from structured input."""
-    # validate data format
-    try:
-        tags = compute_phenotype_tags(sample)
-    except ValueError as error:
-        LOG.warning("Error when creating tags... skipping. %s", error)
-        tags = []
-
-    event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
-    with audit_event_context(audit, "create_sample", ctx, event_subject):
-        sample_db_fmt = SampleInCreate(
-            in_collections=[],
-            tags=tags,
-            **sample.model_dump(),
-        )
-        # store data in database
-        doc = await db.sample_collection.insert_one(
-            jsonable_encoder(sample_db_fmt, by_alias=False)
-        )
-
-        # create object representing the dataformat in database
-        inserted_id = doc.inserted_id
-        db_obj = SampleRecordDb(
-            id=str(inserted_id),
-            **sample_db_fmt.model_dump(),
-        )
-    return db_obj
-
-
-async def update_sample(db: Database, updated_data: SampleInCreate) -> bool:
-    """Replace an existing sample in the database with an updated version."""
-    sample_id = updated_data.sample_id
-    LOG.debug("Updating sample: %s in database", sample_id)
-
-    # store data in database
-    try:
-        doc = await db.sample_collection.replace_one(
-            {"sample_id": sample_id}, jsonable_encoder(updated_data, by_alias=False)
-        )
-    except Exception as err:
-        LOG.error(
-            "Error when updating sample: %s{sample_id} - %s",
-            sample_id,
-            format_error_message(err),
-        )
-        raise err
-
-    # verify that only one sample found and one document was modified
-    is_updated = doc.matched_count == 1 and doc.modified_count == 1
-    return is_updated
 
 
 async def delete_sample_crud(
