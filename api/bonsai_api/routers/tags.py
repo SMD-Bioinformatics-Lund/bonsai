@@ -8,7 +8,7 @@ class RouterTags(StrEnum):
     AUTH = "auth"
     CLUSTER = "cluster"
     EXPORT = "export"
-    GENOMIC_ASSET = "genomic-assets"
+    GENOMIC_RESOURCE = "genomic-resource"
     GROUP = "groups"
     JOB = "jobs"
     LOCATION = "location"

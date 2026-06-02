@@ -2,7 +2,9 @@
 
 import logging
 
+from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.sample import update_sample_qc_classification
+from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
     get_current_active_user,
@@ -11,20 +13,18 @@ from bonsai_api.dependencies import (
 )
 from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.qc import QcClassification
 from bonsai_api.models.user import UserOutputDatabase
-from bonsai_api.services.sample_service import (
-    add_pipeline_run_service,
-    get_sample_service,
-)
-from bonsai_api.db import Database
-from bonsai_api.models.pipeline import PipelineRun
-from api_client.audit_log.client import AuditLogClient
 from bonsai_api.redis.minhash import (
     exclude_from_analysis,
     include_in_analysis,
     schedule_add_genome_signature_to_index,
     schedule_remove_genome_signature_from_index,
+)
+from bonsai_api.services.sample_service import (
+    add_pipeline_run_service,
+    get_sample_service,
 )
 from fastapi import (
     APIRouter,
@@ -62,7 +62,9 @@ async def add_pipeline_run(
     try:
         return await add_pipeline_run_service(db, sample_id=sample_id, pipeline=body)
     except DatabaseOperationError as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+        ) from exc
 
 
 @router.put(

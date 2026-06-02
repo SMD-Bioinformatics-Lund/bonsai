@@ -8,13 +8,11 @@ from bonsai_api.dependencies import (
 )
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.genome_resource import (
+from api.bonsai_api.models.genomic_resource import (
     GenomicResourceCreate,
-    GenomicResourceListResponse,
     GenomicResourceOut,
 )
 from bonsai_api.models.user import UserContext, UserOutputDatabase
-from bonsai_api.routers.tags import RouterTags
 from api.bonsai_api.services import genomic_resource_service
 from fastapi import (
     APIRouter,
@@ -25,13 +23,16 @@ from fastapi import (
     status,
 )
 
-from .permissions import READ_PERMISSION, WRITE_PERMISSION
+from bonsai_api.routers.tags import RouterTags
 
 router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
 
+READ_PERMISSION = "genomic_resources:read"
+WRITE_PERMISSION = "genomic_resources:write"
+
 
 @router.post(
-    "/samples/{sample_id}/resources",
+    "/samples/{sample_id}/genomic-resources",
     response_model=GenomicResourceOut,
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.SAMPLE],
@@ -47,23 +48,17 @@ async def create_genomic_resource(
     ),
 ):
     """Create a genomic resource set for a sample."""
-    try:
-        return await genomic_resource_service.create_genomic_resource_service(
-            db=db,
-            sample_id=sample_id,
-            resource=payload,
-            ctx=req_ctx,
-            audit=audit_log,
-        )
-    except ValueError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error),
-        ) from error
+    return await genomic_resource_service.create_genomic_resource_service(
+        db=db,
+        sample_id=sample_id,
+        resource=payload,
+        ctx=req_ctx,
+        audit=audit_log,
+    )
 
 
 @router.get(
-    "/resources/{resource_id}",
+    "/genomic-resources/{resource_id}",
     response_model=GenomicResourceOut,
 )
 async def get_genomic_resource(
@@ -74,21 +69,15 @@ async def get_genomic_resource(
     ),
 ):
     """Fetch a genomic resource by ID."""
-    try:
-        return await genomic_resource_service.get_genomic_resource_service(
-            db,
-            resource_id=resource_id,
-        )
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(error),
-        ) from error
+    return await genomic_resource_service.get_genomic_resource_service(
+        db,
+        resource_id=resource_id,
+    )
 
 
 @router.get(
     "/samples/{sample_id}/resources",
-    response_model=GenomicResourceListResponse,
+    response_model=list[GenomicResourceOut],
     tags=[RouterTags.SAMPLE],
 )
 async def list_genomic_resources_for_sample(
@@ -111,7 +100,7 @@ async def list_genomic_resources_for_sample(
 
 
 @router.delete(
-    "/resources/{resource_id}",
+    "/genomic-resources/{resource_id}",
     status_code=status.HTTP_200_OK,
 )
 async def delete_genomic_resource(
