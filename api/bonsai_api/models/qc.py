@@ -1,7 +1,6 @@
 """QC data models."""
 
-from enum import Enum, StrEnum
-from typing import List
+from enum import StrEnum
 
 from pydantic import BaseModel
 
@@ -33,7 +32,7 @@ class SampleQcClassification(StrEnum):
     UNPROCESSED = "unprocessed"
 
 
-class BadSampleQualityAction(Enum):
+class BadSampleQualityAction(StrEnum):
     """Actions that could be taken if a sample have low quality."""
 
     # phenotype
@@ -42,26 +41,9 @@ class BadSampleQualityAction(Enum):
     FAILED = "permanent fail"
 
 
-class ResistanceLevel(Enum):
-    """The level of resistance a gene or variant yeilds."""
-
-    HIGH = "high"
-    LOW = "low"
-
-
 class QcClassification(RWModel):  # pylint: disable=too-few-public-methods
     """The classification of sample quality."""
 
     status: SampleQcClassification = SampleQcClassification.UNPROCESSED
     action: BadSampleQualityAction | None = None
     comment: str = ""
-
-
-class VariantAnnotation(RWModel):  # pylint: disable=too-few-public-methods
-    """User variant annotation."""
-
-    variant_ids: List[str]
-    verified: SampleQcClassification | None = None
-    reason: VaraintRejectionReason | None = None
-    phenotypes: List[str] | None = None
-    resistance_lvl: ResistanceLevel | None = None

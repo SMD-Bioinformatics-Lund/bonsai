@@ -12,9 +12,8 @@ from bonsai_api.crud.cluster import (
 )
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
-from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
-from bonsai_api.models.cluster import DistanceMethod, TypingMethod
+from bonsai_api.models.enums import DistanceMethod, TypingMethod
 from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
