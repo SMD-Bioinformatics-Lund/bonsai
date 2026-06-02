@@ -13,7 +13,7 @@ import pandas as pd
 from fastapi.responses import Response
 
 from .models.metadata import InputTableMetadata, TableMetadataInDb
-from .exceptions import GenomeResourceError
+from .exceptions import GenomeResourceError, InvalidRangeError, RangeOutOfBoundsError
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -34,14 +34,6 @@ class TBResponses(StrEnum):
     resistant = "Mutation pavisad"
     susceptible = "Mutation ej pavisad"
     sample_failed = "Ej bedombart"
-
-
-class InvalidRangeError(Exception):
-    """Exception for retrieving invalid file ranges."""
-
-
-class RangeOutOfBoundsError(Exception):
-    """Exception if range is out of bounds."""
 
 
 def is_file_readable(file_path: str) -> bool:
