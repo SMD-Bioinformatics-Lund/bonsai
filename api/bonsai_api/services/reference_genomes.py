@@ -23,8 +23,7 @@ LOG = logging.getLogger(__name__)
 
 def resolve_resource_url(request: Request, resource: str) -> str:
     """Resolve a resource URI to an accessible URL."""
-    LOG.warning(request)
-    return str(request.url_for('genome-resource', file=resource))
+    return str(request.url_for('file-resource', path=resource))
 
 
 async def list_reference_genomes_service(
