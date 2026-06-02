@@ -258,58 +258,6 @@ async def pipeline_run_exists_for_sample(
     return doc is not None
 
 
-def update_variant_verificaton(variant, info):
-    """Update variant with selected annotations."""
-
-    if info.verified is not None:
-        LOG.debug("cals: %s", info)
-        variant = variant.model_copy(
-            update={"verified": info.verified, "reason": info.reason}
-        )
-    return variant
-
-
-def update_variant_phenotype(variant, info, username):
-    """Update variant with selected annotations"""
-
-    predicted_pheno = [
-        phe
-        for phe in variant.phenotypes
-        if phe.annotation_type == AnnotationType.TOOL.value
-    ]
-    if info.phenotypes is not None:
-        annotated_pheno = []
-        antibiotics_lookup = {ant.name: ant for ant in ANTIBIOTICS}
-        for phenotype in info.phenotypes:
-            # uppdate phenotypic annotation
-            if phenotype in antibiotics_lookup:
-                pheno = PhenotypeInfo(
-                    name=phenotype,
-                    group=antibiotics_lookup[phenotype].family,
-                    type=ElementType.AMR,
-                    resistance_level=info.resistance_lvl,
-                    annotation_type=AnnotationType.USER,
-                    annotation_author=username,
-                )
-            else:
-                pheno = PhenotypeInfo(
-                    name=phenotype,
-                    group="",
-                    type=ElementType.AMR,
-                    resistance_level=info.resistance_lvl,
-                    annotation_type=AnnotationType.USER,
-                    annotation_author=username,
-                )
-            annotated_pheno.append(pheno)
-        # update variant info
-        variant = variant.model_copy(
-            update={
-                "phenotypes": predicted_pheno + annotated_pheno,
-            }
-        )
-    return variant
-
-
 async def add_location(
     db: Database, sample_id: str, location_id: str
 ) -> LocationOutputDatabase:
