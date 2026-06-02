@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from .base import CreatedAtModelMixin, RWModel, UUIDModelMixin
+from .base import CreatedAtModelMixin, RWModel, UUIDMixin
 
 
 class ReferenceGenomeCreate(RWModel):
@@ -18,7 +18,7 @@ class ReferenceGenomeCreate(RWModel):
     )
 
 
-class ReferenceGenomeDb(ReferenceGenomeCreate, CreatedAtModelMixin, UUIDModelMixin):
+class ReferenceGenomeDb(ReferenceGenomeCreate, CreatedAtModelMixin, UUIDMixin):
     """Canonical reference genome definition."""
 
 class ReferenceGenomeResponse(RWModel):

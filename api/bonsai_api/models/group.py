@@ -11,21 +11,15 @@ from .base import (
     ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
-    Timestamps,
+    TimestampsMixin,
 )
+from .enums import Visibility
 
 FilterParams = list[dict[str, str | int | float],]
 
 GROUP_SCHEMA_VERSION = 1
 
 DEFAULT_PRESET_NAME = "default"
-
-
-class Visibility(StrEnum):
-    """Group visibility levels."""
-
-    PUBLIC = "public"
-    PRIVATE = "private"
 
 
 class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
@@ -36,7 +30,7 @@ class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
     description: str | None = None
     sample_count: int = Field(default=0, ge=0)
     owner_id: str | None = None
-    visibility: Visibility = Field(default=Visibility.PUBLIC)
+    visibility: Visibility = Visibility.PUBLIC
 
 
 class ColumnOverride(BaseModel):
@@ -114,7 +108,7 @@ class GroupAllowed(ForbidExtraModelMixin):
     column_ids: list[str] = Field(default_factory=list)
 
 
-class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
+class GroupRecordDb(TimestampsMixin, ForbidExtraModelMixin):
     """Database representation of a group.
 
     - schema_version: version of the group schema
@@ -131,7 +125,7 @@ class GroupRecordDb(Timestamps, ForbidExtraModelMixin):
     invited_users: list[str] = Field(default_factory=list)
 
 
-class GroupInfoOut(Timestamps):  # pylint: disable=too-few-public-methods
+class GroupInfoOut(TimestampsMixin):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
     group_id: str
