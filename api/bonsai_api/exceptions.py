@@ -42,3 +42,11 @@ class AnalysisExistsError(Exception):
 
 class GenomeResourceError(DomainError):
     """Raised when there is an error resolving a genome resource."""
+
+
+class InvalidRangeError(Exception):
+    """Exception for retrieving invalid file ranges."""
+
+
+class RangeOutOfBoundsError(Exception):
+    """Exception if range is out of bounds."""
