@@ -38,11 +38,11 @@ class GenomicResourceCreate(RWModel):
 
     reference_genome_id: str
     pipeline_run_id: str | None
-    resources: list[ResourceInput] = Field(default_factory=list, description="List of genomic resources")
+    resource_data: list[ResourceInput] = Field(default_factory=list, description="List of genomic resources")
     visibility: Visibility = Visibility.PRIVATE
 
 
-class GenomicResourceDb(ResourceInput, UUIDMixin, TimestampsMixin):
+class GenomicResourceDb(ResourceInput, UUIDMixin):
     """Genomic analysis artefacts for a sample, suitable for IGV."""
 
     # Relationships
@@ -57,7 +57,7 @@ class GenomicResourceDb(ResourceInput, UUIDMixin, TimestampsMixin):
     visibility: Visibility
 
 
-class GenomicResourceResponse(ResourceOutput, UUIDMixin, TimestampsMixin):
+class GenomicResourceResponse(ResourceOutput, UUIDMixin):
     """Genomic resource returned to clients."""
 
     # Relationships

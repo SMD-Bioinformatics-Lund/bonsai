@@ -19,24 +19,25 @@ from fastapi import (
     Depends,
     HTTPException,
     Path,
+    Request,
     Security,
     status,
 )
 
+from .permissions import READ_PERMISSION, WRITE_PERMISSION
+
 router = APIRouter()
-
-READ_PERMISSION = "genomic_resources:read"
-WRITE_PERMISSION = "genomic_resources:write"
-
 
 @router.post(
     "/samples/{sample_id}/genomic-resources",
-    response_model=GenomicResourceResponse,
+    response_model=list[GenomicResourceResponse],
     status_code=status.HTTP_201_CREATED,
 )
 async def create_genomic_resource(
     payload: GenomicResourceCreate,
+    request: Request,
     sample_id: str = Path(..., description="Sample ID"),
+    force: bool = False,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -48,7 +49,8 @@ async def create_genomic_resource(
     return await genomic_resource_service.create_genomic_resource_service(
         db=db,
         sample_id=sample_id,
-        request=req_ctx.request,
+        force=force,
+        request=request,
         resource=payload,
         ctx=req_ctx,
         audit=audit_log,

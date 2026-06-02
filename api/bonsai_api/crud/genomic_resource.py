@@ -25,18 +25,16 @@ async def insert_genomic_resource(
     db: Database,
     *,
     sample_id: str,
-    pipeline_id: str,
-    resource_data: dict,
+    resource_data: list[dict[str, Any]],
     session: ClientSession | None = None
 ):
     """Insert a genomic resource for a sample."""
-    await db.sample_collection.update_one(
+    await db.sample_collection.update_one( 
         {"sample_id": sample_id},
         {
             "$push": {
                 "genomic_resources": {
-                    "pipeline_id": pipeline_id,
-                    "resource_data": resource_data,
+                    "$each": resource_data
                 }
             }
         },

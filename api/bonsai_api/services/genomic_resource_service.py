@@ -4,10 +4,12 @@ import logging
 from pydantic import ValidationError
 from pymongo.errors import PyMongoError
 from fastapi import Request
+from pathlib import Path
 
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.genomic_resource import (
+    insert_genomic_resource,
     sample_has_resource,
     get_genomic_resources_by_id,
     delete_genomic_resource,
@@ -21,7 +23,6 @@ from bonsai_api.models.genomic_resource import (
     GenomicResourceCreate,
     GenomicResourceDb,
     GenomicResourceResponse,
-    ResourceInput,
 )
 from bonsai_api.io import to_relative_resource
 from bonsai_api.models.user import UserContext
@@ -48,11 +49,11 @@ async def create_genomic_resource_service(
         raise EntryNotFound(f"Sample with ID {sample_id} not found")
 
     has_resource_for_pipeline = await sample_has_resource(
-        db, sample_id=sample_id, pipeline_id=resource.pipeline_id
+        db, sample_id=sample_id, pipeline_id=resource.pipeline_run_id
     )
     if has_resource_for_pipeline and not force:
         raise ConflictError(
-            f"Sample {sample_id} already has genomic resources for pipeline {resource.pipeline_id}. "
+            f"Sample {sample_id} already has genomic resources for pipeline {resource.pipeline_run_id}. "
             "Use force=True to overwrite."
         )
     
@@ -66,35 +67,38 @@ async def create_genomic_resource_service(
 
     # Create payload
     try:
-        base_dir = settings.annotations_dir
+        base_dir = Path(settings.annotations_dir)
 
-        payload = GenomicResourceDb(
-            sample_id=sample_id,
-            pipeline_id=resource.pipeline_id,
-            resource_data=[
-                ResourceInput(
-                    format=r.format,
-                    type=r.type,
-                    name=r.name,
-                    path=to_relative_resource(r.path, base_dir=base_dir),
-                    index_path=to_relative_resource(r.index_path, base_dir=base_dir) if r.index_path else None,
-                ) for r in resource.resource_data],
-        )
+        payload = [
+            GenomicResourceDb(
+                format=r.format,
+                type=r.type,
+                name=r.name,
+                path=to_relative_resource(r.path, base_dir=base_dir),
+                index_path=to_relative_resource(r.index_path, base_dir=base_dir) if r.index_path else None,
+                pipeline_id=resource.pipeline_run_id,
+                reference_genome_id=resource.reference_genome_id,
+                visibility=resource.visibility,
+            ) for r in resource.resource_data
+        ]
     except ValidationError as ve:
         LOG.error("Validation error while creating group: %s", str(ve))
         raise ValueError(f"Invalid data provided for creating group: {str(ve)}") from ve
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     with audit_event_context(audit, "add_genomic_resource", ctx, event_subject):
         try:
-            await db.insert_genomic_resource(
+            await insert_genomic_resource(
+                db,
                 sample_id=sample_id,
-                pipeline_id=resource.pipeline_id,
-                resource_data=payload.model_dump(),
+                resource_data=[p.model_dump(mode="json") for p in payload],
             )
-            output_resource = GenomicResourceResponse(
-                **payload.model_dump(mode="json"),
-                url=resolve_resource_url(request, payload.resource_data[0].path),
-            )
+            output_resource = [
+                GenomicResourceResponse(
+                    **p.model_dump(mode="json"),
+                    url=resolve_resource_url(request, p.path),
+                    index_url=resolve_resource_url(request, p.index_path) if p.index_path else None,
+                ) for p in payload
+            ]
         except PyMongoError as pme:
             LOG.error("MongoDB error while creating group: %s", str(pme))
             raise DatabaseOperationError(

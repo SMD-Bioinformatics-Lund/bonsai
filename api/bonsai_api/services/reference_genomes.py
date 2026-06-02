@@ -38,7 +38,7 @@ async def get_reference_genome_service(
             raise EntryNotFound(f"Reference genome with ID {resource_id} not found")
 
         return ReferenceGenomeResponse(
-                id=str(doc["_id"]),
+                id=doc["id"],
                 name=doc["name"],
                 accession=doc["accession"],
                 organism=doc["organism"],
@@ -69,7 +69,7 @@ async def list_reference_genomes_service(
         docs = await reference_genome_crud.list_reference_genomes_service(db)
         return [
             ReferenceGenomeResponse(
-                id=str(doc["_id"]),
+                id=doc["id"],
                 name=doc["name"],
                 accession=doc["accession"],
                 organism=doc["organism"],
