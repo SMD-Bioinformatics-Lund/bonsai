@@ -1,0 +1,1 @@
+export { initVariantsTable } from "./init";

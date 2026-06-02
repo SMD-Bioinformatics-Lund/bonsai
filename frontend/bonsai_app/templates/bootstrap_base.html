@@ -30,9 +30,9 @@
 
         {% block scripts %}
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="{{ url_for('public.static', filename='shared.min.js') }}"></script>
-        <script src="{{ url_for('public.static', filename='bonsai.min.js') }}"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <!-- vendor bundle (shared libs) emitted by webpack splitChunks -->
+        <script src="{{ url_for('public.static', filename='vendor.min.js') }}"></script>
         {% endblock scripts %}
     </head>
     <body class="bg-light">

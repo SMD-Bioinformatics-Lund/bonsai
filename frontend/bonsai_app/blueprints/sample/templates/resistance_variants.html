@@ -77,9 +77,10 @@
         </table>
     </div>
 </div>
+<script src="{{ url_for('public.static', filename='variants-table.min.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const tbl = bonsai.initVariantsTable('#sv-variant-tbl', false)
+        const tbl = initVariantsTable('#sv-variant-tbl', false)
     });
 </script>
 {% endmacro %}

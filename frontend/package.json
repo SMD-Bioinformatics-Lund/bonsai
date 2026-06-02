@@ -37,7 +37,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
-    "buildcp": "webpack && cp -v build/js/bonsai.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-editor.min.js bonsai_app/blueprints/groups/static",
+    "buildcp": "webpack && cp -v build/js/vendor.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-view.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/sample-view.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/variants-table.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-editor.min.js bonsai_app/blueprints/groups/static",
     "lint": "eslint web",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "npx prettier web",
