@@ -1,1 +1,0 @@
-"""Genomic asset CRUD operations."""
