@@ -10,7 +10,7 @@ from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
 from api.bonsai_api.models.genomic_resource import (
     GenomicResourceCreate,
-    GenomicResourceOut,
+    GenomicResourceResponse,
 )
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from api.bonsai_api.services import genomic_resource_service
@@ -23,9 +23,7 @@ from fastapi import (
     status,
 )
 
-from bonsai_api.routers.tags import RouterTags
-
-router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
+router = APIRouter()
 
 READ_PERMISSION = "genomic_resources:read"
 WRITE_PERMISSION = "genomic_resources:write"
@@ -33,9 +31,8 @@ WRITE_PERMISSION = "genomic_resources:write"
 
 @router.post(
     "/samples/{sample_id}/genomic-resources",
-    response_model=GenomicResourceOut,
+    response_model=GenomicResourceResponse,
     status_code=status.HTTP_201_CREATED,
-    tags=[RouterTags.SAMPLE],
 )
 async def create_genomic_resource(
     payload: GenomicResourceCreate,
@@ -51,6 +48,7 @@ async def create_genomic_resource(
     return await genomic_resource_service.create_genomic_resource_service(
         db=db,
         sample_id=sample_id,
+        request=req_ctx.request,
         resource=payload,
         ctx=req_ctx,
         audit=audit_log,
@@ -59,7 +57,7 @@ async def create_genomic_resource(
 
 @router.get(
     "/genomic-resources/{resource_id}",
-    response_model=GenomicResourceOut,
+    response_model=GenomicResourceResponse,
 )
 async def get_genomic_resource(
     resource_id: str,
@@ -77,8 +75,7 @@ async def get_genomic_resource(
 
 @router.get(
     "/samples/{sample_id}/resources",
-    response_model=list[GenomicResourceOut],
-    tags=[RouterTags.SAMPLE],
+    response_model=list[GenomicResourceResponse],
 )
 async def list_genomic_resources_for_sample(
     sample_id: str,
@@ -95,7 +92,6 @@ async def list_genomic_resources_for_sample(
     return await genomic_resource_service.list_genomic_resources_for_sample_service(
         db=db,
         sample_id=sample_id,
-        user=user,
     )
 
 

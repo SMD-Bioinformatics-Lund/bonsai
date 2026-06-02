@@ -10,7 +10,9 @@ from bonsai_api.io import resolve_resource_path
 from bonsai_api.exceptions import GenomeResourceError, InvalidRangeError, RangeOutOfBoundsError
 from bonsai_api.services.files_service import build_file_response
 
-router = APIRouter()
+from .tags import RouterTags
+
+router = APIRouter(tags=[RouterTags.FILES])
 
 
 @router.get("/files/{path:path}", name="file-resource")
