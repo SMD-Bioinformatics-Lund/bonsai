@@ -9,7 +9,7 @@ from pymongo.errors import PyMongoError
 from fastapi import Request
 
 from bonsai_api.crud.utils import managed_transaction
-from bonsai_api.exceptions import DatabaseOperationError, GenomeResourceError
+from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound, GenomeResourceError
 from bonsai_api.db import Database
 from bonsai_api.models.reference_genome import ReferenceGenomeCreate, ReferenceGenomeDb, ReferenceGenomeResponse
 
@@ -17,13 +17,46 @@ import bonsai_api.crud.reference_genomes as reference_genome_crud
 from bonsai_api.io import to_relative_resource, validate_resource_identifier
 from bonsai_api.config import settings
 
+from .utils import resolve_resource_url
+
+
 
 LOG = logging.getLogger(__name__)
 
 
-def resolve_resource_url(request: Request, resource: str) -> str:
-    """Resolve a resource URI to an accessible URL."""
-    return str(request.url_for('file-resource', path=resource))
+async def get_reference_genome_service(
+    db: Database,
+    *,
+    resource_id: str,
+    request: Request,
+) -> ReferenceGenomeResponse:
+    """Get a reference genome by ID."""
+    try:
+        doc = await reference_genome_crud.get_reference_genome_by_id(db, resource_id=resource_id)
+
+        if not doc:
+            raise EntryNotFound(f"Reference genome with ID {resource_id} not found")
+
+        return ReferenceGenomeResponse(
+                id=str(doc["_id"]),
+                name=doc["name"],
+                accession=doc["accession"],
+                organism=doc["organism"],
+                fasta_url=resolve_resource_url(request, doc["fasta_resource"]),
+                fasta_index_url=resolve_resource_url(request, doc["fasta_index_resource"]),
+                genome_annotation_url=resolve_resource_url(request, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
+                created_at=doc["created_at"].isoformat() if doc.get("created_at") else None,
+        )
+    except PyMongoError as pme:
+        LOG.error("MongoDB error while fetching reference genome: %s", str(pme))
+        raise DatabaseOperationError(
+            f"Database error occurred while fetching reference genome: {str(pme)}"
+        ) from pme
+    except ValidationError as ve:
+        LOG.error("Validation error fetching reference genome: %s", str(ve))
+        raise ValueError(
+            f"Invalid data provided for fetching reference genome: {str(ve)}"
+        ) from ve
 
 
 async def list_reference_genomes_service(
