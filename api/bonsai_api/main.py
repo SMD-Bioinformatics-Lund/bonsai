@@ -26,16 +26,15 @@ from .routers import (
     analysis,
     cluster,
     export,
+    files,
     groups,
     jobs,
     locations,
     memberships,
-    resources,
     root,
     samples,
     users,
     pipeline_run,
-    genomic_assets,
     reference_genomes,
 )
 
@@ -152,14 +151,13 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(cluster.router)
     app.include_router(export.router)
-    app.include_router(genomic_assets.router)
+    app.include_router(files.router)
     app.include_router(groups.router)
     app.include_router(jobs.router)
     app.include_router(locations.router)
     app.include_router(memberships.router)
     app.include_router(pipeline_run.router)
     app.include_router(reference_genomes.router)
-    app.include_router(resources.router)
     app.include_router(root.router)
     app.include_router(samples.router)
     app.include_router(users.router)
