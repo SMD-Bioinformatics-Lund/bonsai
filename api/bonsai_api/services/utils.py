@@ -1,5 +1,7 @@
 """Service layer helpers."""
 
+from fastapi import Request
+
 
 def normalize_roles(user_roles: list[str]) -> list[str]:
     """Normalize user roles to lowercase stripped strings."""
@@ -11,3 +13,9 @@ def normalize_roles(user_roles: list[str]) -> list[str]:
 def is_admin(user_roles: list[str]) -> bool:
     """Check if user roles include admin."""
     return "admin" in normalize_roles(user_roles)
+
+
+def resolve_resource_url(request: Request, resource: str) -> str:
+    """Resolve a resource URI to an accessible URL."""
+    return str(request.url_for('file-resource', path=resource))
+
