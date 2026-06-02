@@ -2,9 +2,14 @@
 
 import logging
 
-from bonsai_api.crud.utils import managed_transaction
+from api_client.audit_log.client import AuditLogClient
+from api_client.audit_log.models import EventCreate, SourceType, Subject
+from api_client.core.exceptions import ApiRequestError
+from bonsai_api.crud.builder.summary_manifest import MANIFEST
+from bonsai_api.crud.builder.types import ManifestOutput
 from bonsai_api.crud.sample import get_samples_full
 from bonsai_api.crud.summary import get_samples_summary
+from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
@@ -16,10 +21,10 @@ from bonsai_api.exceptions import AuditLogError
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.sample import (
+    InputSamplesSummary,
     SampleInfoCreate,
     SampleRecordDb,
     SampleRecordOut,
-    InputSamplesSummary,
     UpdateSampleInputModel,
 )
 from bonsai_api.models.user import UserOutputDatabase
@@ -28,11 +33,6 @@ from bonsai_api.services.sample_service import (
     delete_sample_service,
     get_sample_service,
 )
-from bonsai_api.crud.builder.summary_manifest import MANIFEST
-from bonsai_api.crud.builder.types import ManifestOutput
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import EventCreate, SourceType, Subject
-from api_client.core.exceptions import ApiRequestError
 from fastapi import (
     APIRouter,
     Depends,
@@ -51,7 +51,6 @@ router = APIRouter()
 
 # Shared import constant
 SAMPLE_ID_PATH = "sample_id"
-
 
 
 @router.post("/samples/summary")
@@ -163,10 +162,12 @@ async def delete_many_samples(
         audit_events: list[EventCreate] = []
 
         for sample_id in sample_ids:
-            job_status = await delete_sample_service(db, sample_id=sample_id, session=sess)
+            job_status = await delete_sample_service(
+                db, sample_id=sample_id, session=sess
+            )
             if job_status:
                 removed.append(sample_id)
-                jobs.append(job_status['remove_sourmash'])
+                jobs.append(job_status["remove_sourmash"])
 
                 if isinstance(audit_log, AuditLogClient):
                     event_subject = Subject(id=sample_id, type=SourceType.USR)

@@ -8,13 +8,14 @@ from bonsai_api.dependencies import (
 )
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.genome_asset import (
-    GenomicAssetCreate,
-    GenomicAssetListResponse,
-    GenomicAssetOut,
+from bonsai_api.models.genome_resource import (
+    GenomicResourceCreate,
+    GenomicResourceListResponse,
+    GenomicResourceOut,
 )
 from bonsai_api.models.user import UserContext, UserOutputDatabase
-from bonsai_api.services import genomic_asset_service
+from bonsai_api.routers.tags import RouterTags
+from api.bonsai_api.services import genomic_resource_service
 from fastapi import (
     APIRouter,
     Depends,
@@ -24,22 +25,19 @@ from fastapi import (
     status,
 )
 
-from ..tags import RouterTags
+from .permissions import READ_PERMISSION, WRITE_PERMISSION
 
-router = APIRouter(tags=[RouterTags.GENOMIC_ASSET])
-
-READ_PERMISSION = "genomic_resources:read"
-WRITE_PERMISSION = "genomic_resources:write"
+router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
 
 
 @router.post(
     "/samples/{sample_id}/resources",
-    response_model=GenomicAssetOut,
+    response_model=GenomicResourceOut,
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.SAMPLE],
 )
 async def create_genomic_resource(
-    payload: GenomicAssetCreate,
+    payload: GenomicResourceCreate,
     sample_id: str = Path(..., description="Sample ID"),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
@@ -48,12 +46,12 @@ async def create_genomic_resource(
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
-    """Create a genomic asset set for a sample."""
+    """Create a genomic resource set for a sample."""
     try:
-        return await genomic_asset_service.create_genomic_resource_service(
+        return await genomic_resource_service.create_genomic_resource_service(
             db=db,
             sample_id=sample_id,
-            asset=payload,
+            resource=payload,
             ctx=req_ctx,
             audit=audit_log,
         )
@@ -65,21 +63,21 @@ async def create_genomic_resource(
 
 
 @router.get(
-    "/resources/{asset_id}",
-    response_model=GenomicAssetOut,
+    "/resources/{resource_id}",
+    response_model=GenomicResourceOut,
 )
-async def get_genomic_asset(
-    asset_id: str,
+async def get_genomic_resource(
+    resource_id: str,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    """Fetch a genomic asset by ID."""
+    """Fetch a genomic resource by ID."""
     try:
-        return await genomic_asset_service.get_genomic_resource_service(
+        return await genomic_resource_service.get_genomic_resource_service(
             db,
-            asset_id=asset_id,
+            resource_id=resource_id,
         )
     except EntryNotFound as error:
         raise HTTPException(
@@ -90,22 +88,22 @@ async def get_genomic_asset(
 
 @router.get(
     "/samples/{sample_id}/resources",
-    response_model=GenomicAssetListResponse,
+    response_model=GenomicResourceListResponse,
     tags=[RouterTags.SAMPLE],
 )
-async def list_genomic_assets_for_sample(
+async def list_genomic_resources_for_sample(
     sample_id: str,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
-    """List all genomic assets associated with a sample."""
+    """List all genomic resources associated with a sample."""
     user = UserContext(
         user_id=current_user.username,
         roles=current_user.roles,
     )
-    return await genomic_asset_service.list_genomic_assets_for_sample_service(
+    return await genomic_resource_service.list_genomic_resources_for_sample_service(
         db=db,
         sample_id=sample_id,
         user=user,
@@ -113,11 +111,11 @@ async def list_genomic_assets_for_sample(
 
 
 @router.delete(
-    "/resources/{asset_id}",
+    "/resources/{resource_id}",
     status_code=status.HTTP_200_OK,
 )
-async def delete_genomic_asset(
-    asset_id: str,
+async def delete_genomic_resource(
+    resource_id: str,
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -125,15 +123,15 @@ async def delete_genomic_asset(
         get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
-    """Delete a genomic asset."""
+    """Delete a genomic resource."""
     try:
         user = UserContext(
             user_id=current_user.username,
             roles=current_user.roles,
         )
-        return await genomic_asset_service.delete_genomic_asset_service(
+        return await genomic_resource_service.delete_genomic_resource_service(
             db=db,
-            asset_id=asset_id,
+            resource_id=resource_id,
             ctx=req_ctx,
             audit=audit_log,
             user=user,

@@ -3,20 +3,23 @@
 import logging
 from typing import cast
 
-from bonsai_api.models.sample import InputSearchSimilar
-from bonsai_api.models.enums import ClusterMethod, TypingMethod
-from bonsai_api.redis.minhash import schedule_find_similar_and_cluster, schedule_find_similar_samples
-from bonsai_api.redis.models import SubmittedJob
+from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_current_active_user,
     get_database,
 )
+from bonsai_api.models.enums import ClusterMethod, TypingMethod
+from bonsai_api.models.sample import InputSearchSimilar
 from bonsai_api.models.user import UserOutputDatabase
+from bonsai_api.redis.minhash import (
+    schedule_find_similar_and_cluster,
+    schedule_find_similar_samples,
+)
+from bonsai_api.redis.models import SubmittedJob
 from bonsai_api.services.sample_service import (
     add_ska_index_service,
     add_sourmash_index_service,
 )
-from bonsai_api.db import Database
 from fastapi import (
     APIRouter,
     Body,
@@ -32,15 +35,17 @@ router = APIRouter()
 
 from .permissions import READ_PERMISSION
 
+
 def parse_signature_json(signature: str = Body(..., embed=True)) -> dict:
     """Parse and validate signature JSON."""
     import json
+
     try:
         return json.loads(signature)
     except json.JSONDecodeError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid JSON in signature: {str(e)}"
+            detail=f"Invalid JSON in signature: {str(e)}",
         ) from e
 
 
@@ -52,7 +57,9 @@ async def create_genome_signatures_sample(
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
 
-    job_ids = await add_sourmash_index_service(db, sample_id=sample_id, sketch=signature)
+    job_ids = await add_sourmash_index_service(
+        db, sample_id=sample_id, sketch=signature
+    )
     return {
         "id": sample_id,
         "add_signature_job": job_ids["add_sketch_job"],

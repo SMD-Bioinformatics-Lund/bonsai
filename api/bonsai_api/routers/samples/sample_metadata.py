@@ -2,12 +2,14 @@
 
 import logging
 
+from api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import (
     add_comment,
     add_location,
-    hide_comment as hide_comment_for_sample,
 )
+from bonsai_api.crud.sample import hide_comment as hide_comment_for_sample
+from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
     get_current_active_user,
@@ -19,8 +21,6 @@ from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.sample import Comment, CommentInDatabase
 from bonsai_api.models.user import UserOutputDatabase
-from bonsai_api.db import Database
-from api_client.audit_log.client import AuditLogClient
 from fastapi import (
     APIRouter,
     Body,
@@ -77,9 +77,7 @@ async def post_comment(
     ),
 ) -> CommentsObj:
     """Add a comment to a sample."""
-    return await add_comment(
-        db, sample_id, comment, req_ctx, audit_log
-    )
+    return await add_comment(db, sample_id, comment, req_ctx, audit_log)
 
 
 @router.delete(
@@ -96,9 +94,7 @@ async def hide_comment(
     ),
 ) -> bool:
     """Hide a comment in a sample from users."""
-    return await hide_comment_for_sample(
-        db, sample_id, comment_id, req_ctx, audit_log
-    )
+    return await hide_comment_for_sample(db, sample_id, comment_id, req_ctx, audit_log)
 
 
 @router.put(
@@ -114,6 +110,4 @@ async def update_location(
     ),
 ) -> LocationOutputDatabase:
     """Update the location of a sample."""
-    return await add_location(
-        db, sample_id, location_id
-    )
+    return await add_location(db, sample_id, location_id)
