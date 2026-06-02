@@ -8,7 +8,7 @@ from bonsai_api.services.sample_service import get_sample_service
 from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
-from bonsai_api.crud.sample import get_samples_full, update_sample
+from bonsai_api.crud.sample import get_samples_full
 from bonsai_api.crud.tags import compute_phenotype_tags
 from bonsai_api.services.user_service import create_user_service
 from bonsai_api.db import verify
@@ -22,7 +22,6 @@ from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import GroupInfoCreate, GroupInfoOut
 from bonsai_api.models.sample import (
     MultipleSampleRecordsResponseModel,
-    SampleInCreate,
     SampleRecordDb,
 )
 from bonsai_api.models.user import UserContext, UserInputCreate, UserOutputDatabase
@@ -104,9 +103,8 @@ async def run_update_tag(sample: SampleRecordDb) -> bool:
     """Update tag of a sample."""
     async with get_db_connection() as db:
         upd_tags = compute_phenotype_tags(sample)
-        upd_sample = SampleInCreate(**{**sample.model_dump(), "tags": upd_tags})
         # update sample as sync function
-        return await update_sample(db, upd_sample)
+        raise NotImplementedError("Tag update function not implemented yet")
 
 
 async def run_migrate_database(backup_path: Path | None = None) -> None:

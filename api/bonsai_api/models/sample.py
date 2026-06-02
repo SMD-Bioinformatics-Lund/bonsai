@@ -6,7 +6,7 @@ import logging
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-from prp.parse.models.base import VariantBase
+# from prp.parse.models.base import VariantBase
 from prp.parse import hydrate_result
 from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 from pydantic_core import ValidationError
@@ -16,11 +16,9 @@ from bonsai_api.utils import get_timestamp
 from .enums import Visibility, ExportStatus, SequencingPlatforms, TypingMethod, ClusterMethod
 from .analysis import ResultStatus, EmbeddedCurationRecord
 from .pipeline import PipelineRun
-from .qc import SampleQcClassification, VaraintRejectionReason
 from .tags import Tag
 from .base import (
     CreatedAtModelMixin,
-    UUIDModelMixin,
     ForbidExtraModelMixin,
     MultipleRecordsResponseModel,
     RWModel,
@@ -31,9 +29,7 @@ from .qc import QcClassification
 
 LOG = logging.getLogger(__name__)
 
-CURRENT_SCHEMA_VERSION = 1
-SAMPLE_ID_PATTERN = r"^[a-zA-Z0-9-_]+$"
-
+SAMPLE_SCHEMA_VERSION = 1
 
 class Comment(CreatedAtModelMixin):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
@@ -49,29 +45,9 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
-class VariantInDb(VariantBase):
-    verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-    reason: VaraintRejectionReason | None = None
-
-
-class ResfinderVariant(VariantInDb):
-    """Container for ResFinder variant information"""
-
-
-class MykrobeVariant(VariantInDb):
-    """Container for Mykrobe variant information"""
-
-
-class TbProfilerVariant(VariantInDb):
-    """Container for TbProfiler variant information"""
-
-    variant_effect: str
-    hgvs_nt_change: str | None = Field(..., description="DNA change in HGVS format")
-    hgvs_aa_change: str | None = Field(
-        ..., description="Protein change in HGVS format"
-    )
-
-
+# class VariantInDb(VariantBase):
+#     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
+#     reason: VaraintRejectionReason | None = None
 class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base model for all sample representations.
     
@@ -100,37 +76,6 @@ class SampleBase(Timestamps, ForbidExtraModelMixin):  # pylint: disable=too-few-
     # Data references
     genome_signature: str | None = Field(None, description="Genome signature name")
     ska_index: str | None = Field(None, description="Ska index path")
-
-
-class MethodIndex(BaseModel):
-    """Container for key-value lookup of analytical results."""
-
-    type: str
-    software: str | None = None
-    result: Any
-
-
-class SampleInCreate(
-    SampleBase
-):  # pylint: disable=too-few-public-methods
-    """Sample data model used when creating new db entries."""
-
-    groups: list[str] = Field(default_factory=list)
-    metadata: list[InputMetaEntry] = Field(default_factory=list)
-    element_type_result: list[MethodIndex] = Field(default_factory=list)
-    sv_variants: list[VariantInDb] | None = None
-    snv_variants: list[VariantInDb] | None = None
-
-
-# class SampleRecordDb(
-#     RecordIdMixin, SampleBase
-# ):  # pylint: disable=too-few-public-methods
-#     """Sample database model outputed from the database."""
-
-#     metadata: list[MetaEntryInDb] = Field(default_factory=list)
-#     element_type_result: list[MethodIndex] = Field(default_factory=list)
-#     sv_variants: list[VariantInDb] | None = None
-#     snv_variants: list[VariantInDb] | None = None
 
 
 class InputSearchSimilar(BaseModel):  # pylint: disable=too-few-public-methods
@@ -182,11 +127,6 @@ class UpdateSampleInputModel(BaseModel):
 
     typing: list
     phenotype: list
-
-class SampleSummary(
-    UUIDModelMixin, SampleBase
-):  # pylint: disable=too-few-public-methods
-    """Summary of a sample stored in the database."""
 
 
 class SequencingInfo(ForbidExtraModelMixin):
@@ -312,13 +252,6 @@ class AnalysisViewEntryOut(AnalysisViewEntryBase):
         except Exception as exc:
             LOG.warning("Failed to hydrate result for %s/%s: %s", software, analysis_type, exc)
             return v
-    
-    # def model_post_init(self, __context):
-    #     # Called after the model is fully created
-    #     self.merged_items = merge_items_with_curations(
-    #         self.result,
-    #         self.curations
-    #     )
 
 
 class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
