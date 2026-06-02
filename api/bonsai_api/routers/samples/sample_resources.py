@@ -1,3 +1,4 @@
+from api.bonsai_api.services import genomic_resource_service
 from api_client.audit_log import AuditLogClient
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -15,7 +16,6 @@ from bonsai_api.models.genome_resource import (
 )
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.routers.tags import RouterTags
-from api.bonsai_api.services import genomic_resource_service
 from fastapi import (
     APIRouter,
     Depends,

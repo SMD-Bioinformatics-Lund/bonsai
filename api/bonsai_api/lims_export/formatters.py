@@ -5,9 +5,9 @@ from typing import Any, Callable
 
 from bonsai_api.models.analysis import CurationRecord
 from bonsai_api.models.qc import SampleQcClassification
-from bonsai_api.models.sample import SampleRecordDb, VariantInDb
+from bonsai_api.models.sample import SampleRecordDb
 
-from prp.parse.models.enums import AnalysisSoftware, AnalysisType, ElementType
+from prp.parse.models.enums import AnalysisSoftware, AnalysisType
 from prp.parse.models.typing import TypingResultEmm
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
@@ -268,7 +268,7 @@ def amr_prediction_for_antibiotic_back(
 
 
 def _resistance_variants(
-    variants: list[VariantInDb], antibiotic: str, resistance_lvl: str
+    variants: list[Any], antibiotic: str, resistance_lvl: str
 ) -> list[str] | None:
     """Parse identified resistance variants."""
     passed_variants = [variant for variant in variants if variant.verified == "passed"]
@@ -295,7 +295,7 @@ def _resistance_variants(
     return selected_variants
 
 
-def _serialize_variant(variant: VariantInDb) -> str:
+def _serialize_variant(variant: Any) -> str:
     """Serialize variant model to string representation."""
     who_classes = {
         "Assoc w R": 1,

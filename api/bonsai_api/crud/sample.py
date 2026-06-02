@@ -10,7 +10,6 @@ from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
-from bonsai_api.models.antibiotics import ANTIBIOTICS
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.qc import QcClassification
