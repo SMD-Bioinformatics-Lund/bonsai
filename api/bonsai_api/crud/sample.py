@@ -1,10 +1,9 @@
 """Functions for performing CURD operations on sample collection."""
 
 import logging
-from itertools import groupby
 from typing import Any
 
-from api_client.audit_log import AuditLogClient, EventCreate
+from api_client.audit_log import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
 from bonsai_api.crud.tags import compute_phenotype_tags
@@ -15,21 +14,16 @@ from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.antibiotics import ANTIBIOTICS
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
-from bonsai_api.models.qc import QcClassification, VariantAnnotation
+from bonsai_api.models.qc import QcClassification
 from bonsai_api.models.sample import (
     Comment,
     CommentInDatabase,
     SampleInCreate,
     SampleRecordDb,
 )
-from bonsai_api.redis.minhash import (
-    schedule_remove_genome_signature,
-    schedule_remove_genome_signature_from_index,
-)
 from bonsai_api.utils import format_error_message, get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from bonsai_api.models.pipeline import PipelineRun
 from prp.parse.models.enums import AnnotationType, ElementType
 from prp.parse.models.base import PhenotypeInfo
 from pymongo import ASCENDING, DESCENDING
@@ -374,94 +368,6 @@ def update_variant_phenotype(variant, info, username):
             }
         )
     return variant
-
-
-async def update_variant_annotation_for_sample(
-    db: Database, sample_id: str, classification: VariantAnnotation, username: str
-) -> SampleRecordDb:
-    """Update annotations of variants for a sample."""
-    sample_info = await get_sample_by_id(db, sample_id=sample_id)
-    # create variant group lookup table
-    variant_id_gr = {
-        gr_name: [int(id.split("-")[1]) for id in ids]
-        for gr_name, ids in groupby(
-            classification.variant_ids, key=lambda variant: variant.split("-")[0]
-        )
-    }
-    # update element type results
-    upd_results = []
-    for pred_res in sample_info.element_type_result:
-        # just store results that are not modified
-        LOG.debug(
-            "sw: %s; gr_sw: %s; sw not in gr ? %s",
-            pred_res.software.value,
-            list(variant_id_gr),
-            pred_res.software.value not in variant_id_gr,
-        )
-        if pred_res.software.value not in variant_id_gr:
-            upd_results.append(pred_res)
-            continue
-        # update individual variants
-        upd_variants = []
-        for variant in pred_res.result.variants:
-            # update varaint if its id is in the list
-            if variant.id in variant_id_gr[pred_res.software.value]:
-                variant = update_variant_verificaton(variant, classification)
-                variant = update_variant_phenotype(variant, classification, username)
-            upd_variants.append(variant)
-
-        # update prediction and add to list of updated results
-        upd_results.append(
-            pred_res.model_copy(
-                update={
-                    "result": pred_res.result.model_copy(
-                        update={"variants": upd_variants}
-                    )
-                }
-            )
-        )
-    updated_data = {"element_type_result": upd_results}
-    # update SV variants
-    for variant_type in ["snv_variants", "sv_variants"]:
-        if variant_type in variant_id_gr:
-            upd_variants = []
-            for variant in getattr(sample_info, variant_type):
-                if variant.id in variant_id_gr[variant_type]:
-                    # update variant classification and annotation
-                    LOG.error(
-                        "CLS: %s; Variant before update: %s", classification, variant
-                    )
-                    variant = update_variant_verificaton(variant, classification)
-                    variant = update_variant_phenotype(
-                        variant, classification, username
-                    )
-                    LOG.error("Variant after update: %s", variant)
-                upd_variants.append(variant)
-            updated_data[variant_type] = upd_variants
-
-    # update phenotypic prediction information in the database
-    update_obj: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {
-            "$set": {
-                "modified_at": get_timestamp(),
-                **{
-                    key: jsonable_encoder(value, by_alias=False)
-                    for key, value in updated_data.items()
-                },
-            }
-        },
-    )
-    # verify successful update
-    # if sample is not fund
-    if not update_obj.matched_count == 1:
-        raise EntryNotFound(sample_id)
-    # if not modifed
-    if not update_obj.modified_count == 1:
-        raise DatabaseOperationError(sample_id)
-    # make a copy of updated result and return it
-    upd_sample_info = sample_info.model_copy(update=updated_data)
-    return upd_sample_info
 
 
 async def add_location(
