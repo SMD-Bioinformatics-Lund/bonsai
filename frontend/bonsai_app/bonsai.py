@@ -562,15 +562,15 @@ def get_valid_group_columns(
 
 def get_antibiotics():
     """Query the API for antibiotics."""
-    url = f"{settings.api_internal_url}/resources/antibiotics"
+    url = f"{settings.api_internal_url}/reference/antibiotics"
     resp = requests_get(url)
     resp.raise_for_status()
     return resp.json()
 
 
 def get_variant_rejection_reasons():
-    """Query the API for antibiotics."""
-    url = f"{settings.api_internal_url}/resources/variant/rejection"
+    """Query the API for variant rejection reasons."""
+    url = f"{settings.api_internal_url}/reference/variant-rejection"
     resp = requests_get(url)
     resp.raise_for_status()
     return resp.json()
