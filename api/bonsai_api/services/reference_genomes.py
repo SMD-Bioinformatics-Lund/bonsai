@@ -12,6 +12,7 @@ from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound, GenomeResourceError
 from bonsai_api.db import Database
 from bonsai_api.models.reference_genome import ReferenceGenomeCreate, ReferenceGenomeDb, ReferenceGenomeResponse
+from bonsai_api.models.enums import FileSources
 
 import bonsai_api.crud.reference_genomes as reference_genome_crud
 from bonsai_api.io import to_relative_resource, validate_resource_identifier
@@ -42,9 +43,9 @@ async def get_reference_genome_service(
                 name=doc["name"],
                 accession=doc["accession"],
                 organism=doc["organism"],
-                fasta_url=resolve_resource_url(request, doc["fasta_resource"]),
-                fasta_index_url=resolve_resource_url(request, doc["fasta_index_resource"]),
-                genome_annotation_url=resolve_resource_url(request, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
+                fasta_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_resource"]),
+                fasta_index_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_index_resource"]),
+                genome_annotation_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
                 created_at=doc["created_at"].isoformat() if doc.get("created_at") else None,
         )
     except PyMongoError as pme:
@@ -73,9 +74,9 @@ async def list_reference_genomes_service(
                 name=doc["name"],
                 accession=doc["accession"],
                 organism=doc["organism"],
-                fasta_url=resolve_resource_url(request, doc["fasta_resource"]),
-                fasta_index_url=resolve_resource_url(request, doc["fasta_index_resource"]),
-                genome_annotation_url=resolve_resource_url(request, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
+                fasta_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_resource"]),
+                fasta_index_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_index_resource"]),
+                genome_annotation_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["genome_annotation_resource"]) if doc.get("genome_annotation_resource") else None,
                 created_at=doc["created_at"].isoformat() if doc.get("created_at") else None,
             ) for doc in docs]
     except PyMongoError as pme:
@@ -117,10 +118,10 @@ async def create_reference_genome_service(
 
             return ReferenceGenomeResponse(
                 **payload.model_dump(mode="json"),
-                fasta_url=resolve_resource_url(request, payload.fasta_resource),
-                fasta_index_url=resolve_resource_url(request, payload.fasta_index_resource),
+                fasta_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, payload.fasta_resource),
+                fasta_index_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, payload.fasta_index_resource),
                 genome_annotation_url=(
-                    resolve_resource_url(request, payload.genome_annotation_resource)
+                    resolve_resource_url(request, FileSources.REFERENCE_GENOMES, payload.genome_annotation_resource)
                     if payload.genome_annotation_resource else None
                 ),
             )

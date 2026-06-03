@@ -9,18 +9,31 @@ from bonsai_api.config import settings
 from bonsai_api.io import resolve_resource_path
 from bonsai_api.exceptions import GenomeResourceError, InvalidRangeError, RangeOutOfBoundsError
 from bonsai_api.services.files_service import build_file_response
+from bonsai_api.models.enums import FileSources
 
 from .tags import RouterTags
 
 router = APIRouter(tags=[RouterTags.FILES])
 
 
-@router.get("/files/{path:path}", name="file-resource")
+FILE_ROOTS: dict[FileSources, Path] = {
+    FileSources.REFERENCE_GENOMES: Path(settings.reference_genomes_dir),
+    FileSources.GENOMIC_RESOURCES: Path(settings.annotations_dir),
+}
+
+
+@router.get("/files/{source}/{path:path}", name="file-resource")
 async def get_file(
+    source: FileSources,
     path: str,
     range: Annotated[str | None, Header()] = None,
 ):
-    base_path = Path(settings.reference_genomes_dir)
+    base_path = FILE_ROOTS.get(source)
+    if not base_path:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file source: {source}",
+        )
 
     try:
         file_path = resolve_resource_path(path, base_path)
