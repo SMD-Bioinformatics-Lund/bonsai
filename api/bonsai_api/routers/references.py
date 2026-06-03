@@ -21,7 +21,7 @@ async def get_antibiotics():
     return ANTIBIOTICS
 
 
-@router.get("/reference/variant/rejection")
+@router.get("/reference/variant-rejection")
 async def get_variant_rejection():
     """Get antibiotic names."""
     return VARIANT_REJECTION_REASONS
