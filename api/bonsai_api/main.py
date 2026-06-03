@@ -22,8 +22,8 @@ from .extensions.ldap_extension import ldap_connection
 from .internal.middlewares import configure_cors
 from .internal.error_handlers import register_exception_handlers
 from .routers import (
-    auth,
     analysis,
+    auth,
     cluster,
     export,
     files,
@@ -31,11 +31,12 @@ from .routers import (
     jobs,
     locations,
     memberships,
+    pipeline_run,
+    reference_genomes,
+    references,
     root,
     samples,
     users,
-    pipeline_run,
-    reference_genomes,
 )
 
 logging_config.dictConfig(
@@ -158,10 +159,11 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(memberships.router)
     app.include_router(pipeline_run.router)
     app.include_router(reference_genomes.router)
+    app.include_router(references.router)
     app.include_router(root.router)
     app.include_router(samples.router)
     app.include_router(users.router)
-
+    
     # Register error handlers
     register_exception_handlers(app)
 
