@@ -10,7 +10,6 @@ from pymongo.results import UpdateResult
 async def sample_has_resource(
     db: Database,
     *,
-    sample_id: str,
     pipeline_id: str,
     session: ClientSession | None = None
 ) -> bool:
