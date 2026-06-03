@@ -11,6 +11,7 @@ from prp.parse import hydrate_result
 from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 from pydantic_core import ValidationError
 
+from bonsai_api.models.genomic_resource import GenomicResourceDb
 from bonsai_api.utils import get_timestamp
 
 from .enums import Visibility, ExportStatus, SequencingPlatforms, TypingMethod, ClusterMethod
@@ -287,7 +288,7 @@ class SampleRecordDb(SampleBase):
 
     # Grouping and organization
     groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
-    metadata: list[InputMetaEntry] = []
+    metadata: list[InputMetaEntry] = Field(default_factory=list)
 
     # Curation flag
     curated: bool = False
@@ -304,16 +305,11 @@ class SampleRecordDb(SampleBase):
     element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
 
     # Reference and annotation
-    genomic_asset_ids: list[str] = Field(
+    reference_genome_id: str | None = None
+    genomic_resources: list[GenomicResourceDb] = Field(
         default_factory=list,
-        description="Associated genomic asset sets"
+        description="Associated genomic resource sets"
     )
-    latest_genomic_asset_id: str | None = None
-
-
-    reference_genome: ReferenceGenome | None = None
-    read_mapping: str | None = None
-    genome_annotation: list[IgvAnnotationTrack] | None = None
 
     # LIMS export tracking
     lims_export_status: ExportStatus = ExportStatus.NOT_EXPORTED
