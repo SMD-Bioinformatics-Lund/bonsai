@@ -42,24 +42,35 @@ async def insert_genomic_resource(
     )
 
 
-async def get_genomic_resources_by_id(
-    db: Database,
-    *,
-    sample_id: str | None = None,
-    resource_id: str | None = None,
-    session: ClientSession | None = None
-) -> list[dict[str, Any]]:
-    """Get a genomic resources by ID."""
-    query = {}
-    if sample_id is not None:
-        query["sample_"] = "sample_id"
-    if resource_id is not None:
-        query["genomic_resources.resource_id"] = resource_id
+async def get_genomic_resource_by_id(db, resource_id: str, session=None) -> dict[str, Any] | None:
+    """Get a genomic resource by ID."""
 
-    if not query:
-        raise ValueError("At least one of sample_id or resource_id must be provided")
+    doc = await db.sample_collection.find_one(
+        {"genomic_resources.id": resource_id},
+        session=session
+    )
 
-    return await db.sample_collection.find(query, session=session)
+    if not doc:
+        return None
+
+    for r in doc.get("genomic_resources", []):
+        if r["id"] == resource_id:
+            return r
+
+    return None
+
+
+async def list_genomic_resources_by_sample_id(db, sample_id: str, session=None) -> list[dict[str, Any]]:
+    """List genomic resources for a sample."""
+
+    doc = await db.sample_collection.find_one(
+        {"sample_id": sample_id},
+        session=session,
+    )
+    if not doc:
+        return []
+    
+    return doc.get("genomic_resources", [])
 
 
 async def delete_genomic_resource(

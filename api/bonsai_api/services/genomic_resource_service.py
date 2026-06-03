@@ -11,7 +11,8 @@ from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.genomic_resource import (
     insert_genomic_resource,
     sample_has_resource,
-    get_genomic_resources_by_id,
+    get_genomic_resource_by_id,
+    list_genomic_resources_by_sample_id,
     delete_genomic_resource,
 )
 from bonsai_api.crud.sample import sample_exists
@@ -112,20 +113,25 @@ async def get_genomic_resource_service(
     db: Database,
     *,
     resource_id: str,
+    request: Request,
 ) -> GenomicResourceResponse:
     """Get a genomic resource."""
-    resources = await get_genomic_resources_by_id(db, resource_id=resource_id)
-    if not resources:
+    resource = await get_genomic_resource_by_id(db, resource_id=resource_id)
+    if not resource:
         raise EntryNotFound(f"Genomic resource with ID {resource_id} not found")
 
-    if len(resources) > 1:
-        LOG.warning(
-            "Multiple genomic resources found with ID %s, returning the first one",
-            resource_id,
-        )
-    
     try:
-        return GenomicResourceResponse.model_validate(resources[0])
+        return GenomicResourceResponse(
+            id=resource_id,
+            format=resource["format"],
+            type=resource["type"],
+            name=resource["name"],
+            url=resolve_resource_url(request, resource["path"]),
+            index_url=resolve_resource_url(request, resource["index_path"]) if resource.get("index_path") else None,
+            pipeline_run_id=resource.get("pipeline_id"),
+            reference_genome_id=resource["reference_genome_id"],
+            visibility=resource["visibility"],
+        )
     except ValidationError as ve:
         LOG.error("Validation error while parsing genomic resource: %s", str(ve))
         raise ValueError(
@@ -137,11 +143,27 @@ async def list_genomic_resources_for_sample_service(
     db: Database,
     *,
     sample_id: str,
+    request: Request,
 ) -> list[GenomicResourceResponse]:
     """List a genomic resources."""
-    resources = await get_genomic_resources_by_id(db, sample_id=sample_id)
+    if not await sample_exists(db, sample_id=sample_id):
+        raise EntryNotFound(f"Sample with ID {sample_id} not found")
+
+    resources = await list_genomic_resources_by_sample_id(db, sample_id=sample_id)
     try:
-        return [GenomicResourceResponse.model_validate(resource) for resource in resources]
+        return [
+            GenomicResourceResponse(
+                id=r["id"],
+                format=r["format"],
+                type=r["type"],
+                name=r["name"],
+                url=resolve_resource_url(request, r["path"]),
+                index_url=resolve_resource_url(request, r["index_path"]) if r.get("index_path") else None,
+                pipeline_run_id=r.get("pipeline_id"),
+                reference_genome_id=r["reference_genome_id"],
+                visibility=r["visibility"],
+            )
+            for r in resources]
     except ValidationError as ve:
         LOG.error("Validation error while parsing genomic resource: %s", str(ve))
         raise ValueError(f"Invalid data format for genomic resource: {str(ve)}") from ve
