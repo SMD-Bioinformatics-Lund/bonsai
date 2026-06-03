@@ -2,6 +2,8 @@
 
 from fastapi import Request
 
+from bonsai_api.models.enums import FileSources
+
 
 def normalize_roles(user_roles: list[str]) -> list[str]:
     """Normalize user roles to lowercase stripped strings."""
@@ -15,7 +17,7 @@ def is_admin(user_roles: list[str]) -> bool:
     return "admin" in normalize_roles(user_roles)
 
 
-def resolve_resource_url(request: Request, resource: str) -> str:
+def resolve_resource_url(request: Request, source: FileSources, resource: str) -> str:
     """Resolve a resource URI to an accessible URL."""
-    return str(request.url_for('file-resource', path=resource))
+    return str(request.url_for('file-resource', source=source, path=resource))
 

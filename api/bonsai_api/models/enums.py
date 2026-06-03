@@ -1,5 +1,5 @@
 
-from enum import Enum, StrEnum
+from enum import StrEnum
 
 
 class Visibility(StrEnum):
@@ -52,3 +52,10 @@ class TypingMethod(StrEnum):  # pylint: disable=too-few-public-methods
     CGMLST = "cgmlst"
     SKA = "ska"
     MINHASH = "minhash"
+
+
+class FileSources(StrEnum):
+    """Valid file sources."""
+
+    REFERENCE_GENOMES = "reference-genomes"
+    GENOMIC_RESOURCES = "genomic-resources"

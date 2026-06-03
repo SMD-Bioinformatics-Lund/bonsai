@@ -19,6 +19,7 @@ from bonsai_api.crud.sample import sample_exists
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
+from bonsai_api.models.enums import FileSources
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.genomic_resource import (
     GenomicResourceCreate,
@@ -96,8 +97,8 @@ async def create_genomic_resource_service(
             output_resource = [
                 GenomicResourceResponse(
                     **p.model_dump(mode="json"),
-                    url=resolve_resource_url(request, p.path),
-                    index_url=resolve_resource_url(request, p.index_path) if p.index_path else None,
+                    url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, p.path),
+                    index_url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, p.index_path) if p.index_path else None,
                 ) for p in payload
             ]
         except PyMongoError as pme:
@@ -126,8 +127,8 @@ async def get_genomic_resource_service(
             format=resource["format"],
             type=resource["type"],
             name=resource["name"],
-            url=resolve_resource_url(request, resource["path"]),
-            index_url=resolve_resource_url(request, resource["index_path"]) if resource.get("index_path") else None,
+            url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, resource["path"]),
+            index_url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, resource["index_path"]) if resource.get("index_path") else None,
             pipeline_run_id=resource.get("pipeline_id"),
             reference_genome_id=resource["reference_genome_id"],
             visibility=resource["visibility"],
@@ -157,8 +158,8 @@ async def list_genomic_resources_for_sample_service(
                 format=r["format"],
                 type=r["type"],
                 name=r["name"],
-                url=resolve_resource_url(request, r["path"]),
-                index_url=resolve_resource_url(request, r["index_path"]) if r.get("index_path") else None,
+                url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, r["path"]),
+                index_url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, r["index_path"]) if r.get("index_path") else None,
                 pipeline_run_id=r.get("pipeline_id"),
                 reference_genome_id=r["reference_genome_id"],
                 visibility=r["visibility"],
