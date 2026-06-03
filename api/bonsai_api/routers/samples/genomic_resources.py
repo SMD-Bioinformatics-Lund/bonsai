@@ -63,6 +63,7 @@ async def create_genomic_resource(
 )
 async def get_genomic_resource(
     resource_id: str,
+    request: Request,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -72,6 +73,7 @@ async def get_genomic_resource(
     return await genomic_resource_service.get_genomic_resource_service(
         db,
         resource_id=resource_id,
+        request=request,
     )
 
 
@@ -81,6 +83,7 @@ async def get_genomic_resource(
 )
 async def list_genomic_resources_for_sample(
     sample_id: str,
+    request: Request,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -94,6 +97,7 @@ async def list_genomic_resources_for_sample(
     return await genomic_resource_service.list_genomic_resources_for_sample_service(
         db=db,
         sample_id=sample_id,
+        request=request,
     )
 
 
