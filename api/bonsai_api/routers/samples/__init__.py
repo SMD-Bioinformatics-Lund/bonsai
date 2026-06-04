@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from bonsai_api.routers.tags import RouterTags
-from . import sample_analysis, sample_metadata, sample_qc, samples, genomic_resources
+from . import sample_analysis, sample_metadata, sample_qc, samples, sample_resources
 from .permissions import READ_PERMISSION, WRITE_PERMISSION, UPDATE_PERMISSION
 
 router = APIRouter()
@@ -17,7 +17,7 @@ router.include_router(sample_qc.router, tags=[RouterTags.SAMPLE, RouterTags.QUAL
 router.include_router(sample_metadata.router, tags=[RouterTags.SAMPLE, RouterTags.META])
 router.include_router(sample_metadata.router, tags=[RouterTags.SAMPLE, RouterTags.META])
 router.include_router(
-    genomic_resources.router, tags=[RouterTags.SAMPLE, RouterTags.GENOMIC_RESOURCE]
+    sample_resources.router, tags=[RouterTags.SAMPLE, RouterTags.GENOMIC_RESOURCE]
 )
 
 __all__ = ["router"]

@@ -21,11 +21,11 @@ from bonsai_api.models.sample import (
 from bonsai_api.utils import get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from prp.parse.models.enums import AnnotationType, ElementType
 from prp.parse.models.base import PhenotypeInfo
+from prp.parse.models.enums import AnnotationType, ElementType
 from pymongo import ASCENDING, DESCENDING
-from pymongo.results import UpdateResult
 from pymongo.client_session import ClientSession
+from pymongo.results import UpdateResult
 
 LOG = logging.getLogger(__name__)
 CURRENT_SCHEMA_VERSION = 1
@@ -92,11 +92,15 @@ async def delete_sample_crud(
     session: ClientSession | None = None,
 ) -> bool:
     """Delete a samples from the sample collection, return true if deleted."""
-    result = await db.sample_collection.delete_one({"sample_id": sample_id}, session=session)
+    result = await db.sample_collection.delete_one(
+        {"sample_id": sample_id}, session=session
+    )
     return result.deleted_count == 1
 
 
-async def get_sample_by_id(db: Database, *, sample_id: str, session: ClientSession | None = None) -> dict[str, Any] | None:
+async def get_sample_by_id(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> dict[str, Any] | None:
     """Get sample with sample_id."""
     db_obj: SampleRecordDb = await db.sample_collection.find_one(
         {"sample_id": sample_id}, session=session
@@ -114,10 +118,10 @@ async def add_comment(
     """Add comment to previously added sample."""
     # get existing comments for sample to get the next comment id
     sample = await get_sample_by_id(db, sample_id=sample_id)
-    comments: list[CommentInDatabase] = [CommentInDatabase.model_validate(c) for c in sample['comments']]
-    comment_id = (
-        max(c.id for c in comments) + 1 if len(comments) > 0 else 1
-    )
+    comments: list[CommentInDatabase] = [
+        CommentInDatabase.model_validate(c) for c in sample["comments"]
+    ]
+    comment_id = max(c.id for c in comments) + 1 if len(comments) > 0 else 1
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     meta = {"sample_id": sample_id, "comment_id": comment_id}
     with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
@@ -219,16 +223,20 @@ async def add_pipeline_run(
     """
     query = {
         "sample_id": sample_id,
-        "$or": [{"pipeline": {"$exists": False}}, {"pipeline": None}, {"pipeline": {"$size": 0}}],
+        "$or": [
+            {"pipeline": {"$exists": False}},
+            {"pipeline": None},
+            {"pipeline": {"$size": 0}},
+        ],
     }
     update_obj = await db.sample_collection.update_one(
         query,
         {
             "$set": {
                 "modified_at": get_timestamp(),
-                "last_pipeline_run_id": doc['pipeline_run_id'],
+                "last_pipeline_run_id": doc["pipeline_run_id"],
             },
-            "$push": {"pipeline_runs": doc}, 
+            "$push": {"pipeline_runs": doc},
         },
         session=session,
     )
@@ -247,10 +255,7 @@ async def pipeline_run_exists_for_sample(
     Return True if sample.pipeline_runs contains pipeline_run_id.
     """
     doc = await db.sample_collection.find_one(
-        {
-            "sample_id": sample_id,
-            "pipeline_runs.pipeline_run_id": pipeline_run_id
-        },
+        {"sample_id": sample_id, "pipeline_runs.pipeline_run_id": pipeline_run_id},
         projection={"_id": 1},
         session=session,
     )
@@ -439,19 +444,35 @@ async def upsert_analysis_results(
         )
 
 
-async def add_ska_index(db: Database, *, sample_id: str, index_uri: str, session: ClientSession):
+async def add_ska_index(
+    db: Database, *, sample_id: str, index_uri: str, session: ClientSession
+) -> UpdateResult:
     """Add a SKA index uri in a sample document."""
 
     return await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {"$set": {"ska_index": index_uri}},
-        session=session)
+        {"sample_id": sample_id}, {"$set": {"ska_index": index_uri}}, session=session
+    )
 
 
-async def add_sourmash_sketch(db: Database, *, sample_id: str, sketch: str, session: ClientSession):
+async def add_sourmash_sketch(
+    db: Database, *, sample_id: str, sketch: str, session: ClientSession
+) -> UpdateResult:
     """Add a sourmash sketch job id to a sample document."""
 
     return await db.sample_collection.update_one(
         {"sample_id": sample_id},
         {"$set": {"genome_signature": sketch}},
-        session=session)
+        session=session,
+    )
+
+
+async def add_reference_genome_to_sample(
+    db: Database, *, sample_id: str, reference_genome_id: str, session: ClientSession
+) -> UpdateResult:
+    """Add a reference genome id to a existing sample."""
+
+    return await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        {"$set": {"reference_genome_id": reference_genome_id}},
+        session=session,
+    )
