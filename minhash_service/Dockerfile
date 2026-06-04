@@ -29,7 +29,7 @@ FROM continuumio/miniconda3 AS development
 
 WORKDIR /app
 
-RUN /opt/conda conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
+RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
 COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
