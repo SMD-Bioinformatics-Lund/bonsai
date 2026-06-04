@@ -1,6 +1,5 @@
 """Custom FastAPI error handlers."""
 
-from http.client import NOT_FOUND
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from typing import Any
@@ -8,6 +7,7 @@ from typing import Any
 from bonsai_api.exceptions import (
     AuditLogError,
     ConflictError,
+    NotChangedError,
     ParserError,
     EntryNotFound,
     UnsupportedSoftwareError,
@@ -22,7 +22,9 @@ from .problem_types import (
     AUDIT_LOG_UNAVAILABLE,
     CONFLICT,
     INVALID_DATA,
+    NOT_FOUND,
     NOT_IMPLEMENTED,
+    NOT_MODIFIED,
     PARSER_ERROR,
     SCHEMA_MISMATCH,
     UNSUPPORTED_ANALYSIS,
@@ -59,6 +61,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(EntryNotFound)
     async def _not_found(_: Request, exc: EntryNotFound):
         return problem_details(404, "Not Found", str(exc), type_=NOT_FOUND)
+
+
+    @app.exception_handler(NotChangedError)
+    async def _not_modified(_: Request, exc: NotChangedError):
+        return problem_details(304, "Not modified", str(exc), type_=NOT_MODIFIED)
 
 
     @app.exception_handler(FileNotFoundError)

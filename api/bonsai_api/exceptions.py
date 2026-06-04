@@ -11,6 +11,10 @@ class EntryNotFound(DomainError):
     """Raised when a requested entry is not found in the database."""
 
 
+class NotChangedError(Exception):
+    """Raised when an update does not change anything."""
+
+
 class UserNotFound(EntryNotFound):
     """Raised when a requested user is not found in the database."""
 
