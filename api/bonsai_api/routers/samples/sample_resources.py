@@ -1,4 +1,4 @@
-from api.bonsai_api.services import genomic_resource_service
+from bonsai_api.services import genomic_resource_service, sample_service
 from api_client.audit_log import AuditLogClient
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -9,11 +9,13 @@ from bonsai_api.dependencies import (
 )
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.reference_genome import AddReferenceGenomeRequest, ReferenceGenomeResponse
 from bonsai_api.models.genomic_resource import GenomicResourceCreate, GenomicResourceResponse
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.routers.tags import RouterTags
 from fastapi import (
     APIRouter,
+    Body,
     Depends,
     HTTPException,
     Path,
@@ -139,3 +141,29 @@ async def delete_genomic_resource(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(error),
         ) from error
+
+
+@router.put(
+    "/samples/{sample_id}/reference-genome",
+    response_model=ReferenceGenomeResponse,
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.SAMPLE, RouterTags.REFERENCE_GENOME],
+)
+async def add_reference_genome_to_sample(
+    request: Request,
+    sample_id: str = Path(..., description="Sample ID"),
+    body: AddReferenceGenomeRequest = Body(...),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Add a reference genome to a sample."""
+    return await sample_service.add_reference_genome_service(
+        db, sample_id=sample_id, 
+        reference_genome_id=body.reference_genome_id,
+        request=request,
+        ctx=req_ctx, audit=audit_log
+    )

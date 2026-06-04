@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, BaseModel
 
 from .base import CreatedAtModelMixin, RWModel, UUIDMixin
 from .genomic_resource import ResourceInput, ResourceOutput
@@ -33,3 +33,9 @@ class ReferenceGenomeResponse(RWModel):
 
     reference_tracks: list[ResourceOutput] = Field(default_factory=list, description="Optional list of reference tracks")
     created_at: str
+
+
+class AddReferenceGenomeRequest(BaseModel):
+    """Inut for adding a reference gnome."""
+
+    reference_genome_id: str
