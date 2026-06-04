@@ -9,11 +9,7 @@ from bonsai_api.dependencies import (
 )
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.genome_resource import (
-    GenomicResourceCreate,
-    GenomicResourceListResponse,
-    GenomicResourceOut,
-)
+from bonsai_api.models.genomic_resource import GenomicResourceCreate, GenomicResourceResponse
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.routers.tags import RouterTags
 from fastapi import (
@@ -21,6 +17,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Path,
+    Request,
     Security,
     status,
 )
@@ -32,12 +29,13 @@ router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
 
 @router.post(
     "/samples/{sample_id}/resources",
-    response_model=GenomicResourceOut,
+    response_model=GenomicResourceResponse,
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.SAMPLE],
 )
 async def create_genomic_resource(
     payload: GenomicResourceCreate,
+    request: Request,
     sample_id: str = Path(..., description="Sample ID"),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
@@ -52,6 +50,7 @@ async def create_genomic_resource(
             db=db,
             sample_id=sample_id,
             resource=payload,
+            request=request,
             ctx=req_ctx,
             audit=audit_log,
         )
@@ -64,10 +63,11 @@ async def create_genomic_resource(
 
 @router.get(
     "/resources/{resource_id}",
-    response_model=GenomicResourceOut,
+    response_model=GenomicResourceResponse,
 )
 async def get_genomic_resource(
     resource_id: str,
+    request: Request,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -78,6 +78,7 @@ async def get_genomic_resource(
         return await genomic_resource_service.get_genomic_resource_service(
             db,
             resource_id=resource_id,
+            request=request,
         )
     except EntryNotFound as error:
         raise HTTPException(
@@ -88,25 +89,22 @@ async def get_genomic_resource(
 
 @router.get(
     "/samples/{sample_id}/resources",
-    response_model=GenomicResourceListResponse,
+    response_model=list[GenomicResourceResponse],
     tags=[RouterTags.SAMPLE],
 )
 async def list_genomic_resources_for_sample(
     sample_id: str,
+    request: Request,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """List all genomic resources associated with a sample."""
-    user = UserContext(
-        user_id=current_user.username,
-        roles=current_user.roles,
-    )
     return await genomic_resource_service.list_genomic_resources_for_sample_service(
         db=db,
         sample_id=sample_id,
-        user=user,
+        request=request
     )
 
 
