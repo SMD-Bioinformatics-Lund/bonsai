@@ -1,6 +1,7 @@
 from pydantic import Field
 
 from .base import CreatedAtModelMixin, RWModel, UUIDMixin
+from .genomic_resource import ResourceInput, ResourceOutput
 
 
 class ReferenceGenomeCreate(RWModel):
@@ -13,9 +14,7 @@ class ReferenceGenomeCreate(RWModel):
     fasta_resource: str = Field(..., description="Path or URL to FASTA file")
     fasta_index_resource: str = Field(..., description="Path or URL to FASTA index.")
 
-    genome_annotation_resource: str | None = Field(
-        None, description="Optional GTF/GFF gene annotation"
-    )
+    reference_tracks: list[ResourceInput] = Field(default_factory=list, description="Optional list of reference tracks")
 
 
 class ReferenceGenomeDb(ReferenceGenomeCreate, CreatedAtModelMixin, UUIDMixin):
@@ -32,7 +31,5 @@ class ReferenceGenomeResponse(RWModel):
     fasta_url: str = Field(..., description="Path or URL to FASTA file")
     fasta_index_url: str = Field(..., description="Path or URL to FASTA .fai index")
 
-    genome_annotation_url: str | None = Field(
-        None, description="Optional GTF/GFF gene annotation"
-    )
+    reference_tracks: list[ResourceOutput] = Field(default_factory=list, description="Optional list of reference tracks")
     created_at: str
