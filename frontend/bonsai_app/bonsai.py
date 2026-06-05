@@ -9,10 +9,19 @@ from flask import current_app
 from pydantic import BaseModel, Field
 from requests.structures import CaseInsensitiveDict
 
+from bonsai_libs.api_client import BonsaiApiClient
+from bonsai_libs.api_client.core.auth import BearerTokenAuth
+
 from .config import settings
 from .models import ApiGetSamplesDetailsInput, SampleBasketObject, SubmittedJob
 
 LOG = logging.getLogger(__name__)
+
+
+def make_bonsai_client(base_url: str, token: str | None = None):
+    """Create bonsai API client."""
+
+    return BonsaiApiClient(base_url=base_url, auth=BearerTokenAuth(token))
 
 
 # define default arguments for requests
