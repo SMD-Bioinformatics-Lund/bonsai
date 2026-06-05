@@ -23,7 +23,6 @@ from requests import HTTPError
 from bonsai_app.bonsai import (
     TokenObject,
     cgmlst_cluster_samples,
-    create_curation,
     delete_samples,
     find_samples_similar_to_reference,
     get_antibiotics,
@@ -33,7 +32,6 @@ from bonsai_app.bonsai import (
     post_comment_to_sample,
     remove_comment_from_sample,
     update_sample_qc_classification,
-    update_variant_info,
 )
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
 from .controllers import (
@@ -377,9 +375,6 @@ def resistance_variants(sample_id: str) -> str:
             except (json.JSONDecodeError, ValueError) as err:
                 LOG.error("Invalid form data: %s", err)
                 flash("Invalid form data submitted", "danger")
-            # except Exception as err:
-            #     LOG.error("Unexpected error processing curations: %s", err)
-            #     flash("An unexpected error occurred", "danger")
             
         else:
             # Apply variant filters from form
@@ -400,12 +395,7 @@ def resistance_variants(sample_id: str) -> str:
             sample_info[variant_key] = sort_variants(sample_info[variant_key])
 
     # Check if IGV genome browser should be enabled
-    display_genome_browser = all(
-        [
-            sample_info.get("reference_genome") is not None,
-            sample_info.get("read_mapping") is not None,
-        ]
-    )
+    display_genome_browser = sample_info.get("reference_genome_id") is not None
 
     # Prepare antibiotics grouped by family for filter form
     antibiotics = {
