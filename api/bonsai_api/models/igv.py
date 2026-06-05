@@ -1,10 +1,7 @@
 """Define cofiguration of IGVjs."""
 
 from enum import StrEnum
-from pydantic import Field
-
-from .base import RWModel
-
+from pydantic import Field, BaseModel, ConfigDict
 
 class IgvDisplayMode(StrEnum):
     """Valid display modes."""
@@ -14,7 +11,15 @@ class IgvDisplayMode(StrEnum):
     SQUISHED = "SQUISHED"
 
 
-class IgvTrack(RWModel):
+class IgvBase(BaseModel):
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        ser_json_exclude_none=True
+    )
+
+
+class IgvTrack(IgvBase):
     """Generic IGV track model."""
 
     name: str
@@ -42,7 +47,7 @@ class IgvTrack(RWModel):
     filter_types: list[str] | None = Field(None, alias="filterTypes")
 
 
-class IgvReferenceGenome(RWModel):
+class IgvReferenceGenome(IgvBase):
     """IGV reference genome container."""
 
     name: str
@@ -51,8 +56,13 @@ class IgvReferenceGenome(RWModel):
     cytoband_url: str | None = Field(None, alias="cytobandURL")
 
 
-class IgvConfig(RWModel):
+class IgvConfig(IgvBase):
     """Definition of data used by IGV."""
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        ser_json_exclude_none=True
+    )
 
     locus: str
     reference: IgvReferenceGenome
