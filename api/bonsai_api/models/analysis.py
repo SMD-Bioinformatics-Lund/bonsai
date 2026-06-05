@@ -289,3 +289,7 @@ CurationCreateRecord = Annotated[
     | QCCurationCreate,
     Discriminator("annotation_type"),
 ]
+
+class VariantContext(BaseModel):
+    analysis_id: str
+    variant_id: int | str

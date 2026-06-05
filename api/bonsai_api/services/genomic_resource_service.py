@@ -51,7 +51,7 @@ async def create_genomic_resource_service(
         raise EntryNotFound(f"Sample with ID {sample_id} not found")
 
     has_resource_for_pipeline = await sample_has_resource(
-        db, sample_id=sample_id, pipeline_id=resource.pipeline_run_id
+        db, pipeline_id=resource.pipeline_run_id
     )
     if has_resource_for_pipeline and not force:
         raise ConflictError(
