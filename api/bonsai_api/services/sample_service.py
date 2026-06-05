@@ -1,12 +1,11 @@
 """Service layer for creating and modifying sample info."""
 
+import itertools
 import logging
 from typing import Any
 
-from bonsai_api.models.reference_genome import ReferenceGenomeResponse
+from .genomic_resource_service import list_genomic_resources_for_sample_service
 import uuid_utils as uuid
-from fastapi import Request, HTTPException, status
-
 from api_client.audit_log.client import AuditLogClient
 from api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.group import check_groups_exists
@@ -23,10 +22,24 @@ from bonsai_api.crud.sample import (
 )
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
-from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, NotChangedError
+from bonsai_api.exceptions import (
+    ConflictError,
+    DatabaseOperationError,
+    EntryNotFound,
+    NotChangedError,
+)
+from bonsai_api.models.analysis import AnalysisResult, VariantContext
 from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.genomic_resource import GenomicResourceResponse
+from bonsai_api.models.igv import (
+    IgvConfig,
+    IgvDisplayMode,
+    IgvReferenceGenome,
+    IgvTrack,
+)
 from bonsai_api.models.memberships import MembershipEdge
 from bonsai_api.models.pipeline import PipelineRun
+from bonsai_api.models.reference_genome import ReferenceGenomeResponse
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
 from bonsai_api.redis.minhash import (
     schedule_add_genome_signature,
@@ -34,15 +47,18 @@ from bonsai_api.redis.minhash import (
     schedule_remove_genome_signature,
     schedule_remove_genome_signature_from_index,
 )
-from bonsai_api.services.reference_genomes import get_reference_genome_service
 from bonsai_api.services.membership_service import (
     add_memberships,
     get_groups_by_sample_ids,
     remove_memberships,
 )
+from bonsai_api.services.reference_genomes import get_reference_genome_service
+from fastapi import Request
 from pydantic import ValidationError
 from pymongo.client_session import ClientSession
 from pymongo.errors import DuplicateKeyError, PyMongoError
+
+from .analysis_service import get_analysis_service
 
 LOG = logging.getLogger(__name__)
 
@@ -309,7 +325,9 @@ async def add_reference_genome_service(
         raise EntryNotFound(sample_id)
 
     # check that reference genome exist
-    ref_genome = await get_reference_genome_service(db, resource_id=reference_genome_id, request=request)
+    ref_genome = await get_reference_genome_service(
+        db, resource_id=reference_genome_id, request=request
+    )
 
     event_subject = Subject(id=reference_genome_id, type=SourceType.USR)
     with audit_event_context(audit, "add_reference_genome", ctx, event_subject):
@@ -321,7 +339,9 @@ async def add_reference_genome_service(
                 session=session,
             )
         except PyMongoError as pme:
-            LOG.error("MongoDB error while adding reference genome to sample: %s", str(pme))
+            LOG.error(
+                "MongoDB error while adding reference genome to sample: %s", str(pme)
+            )
             raise DatabaseOperationError(
                 f"Database error occurred adding reference genome to sample: {str(pme)}"
             ) from pme
@@ -333,3 +353,134 @@ async def add_reference_genome_service(
         if update_obj.modified_count != 1:
             raise NotChangedError("Reference genome was not changed.")
     return ref_genome
+
+
+def _to_igv_track(resouce: GenomicResourceResponse) -> IgvTrack:
+    """Convert GenomicResoucre to IGV track"""
+    opts = {}
+    if resouce.type == "alignment":
+        opts = {
+            "display_mode": IgvDisplayMode.SQUISHED,
+            "auto_height": True,
+            "max_height": 450,
+            "show_soft_clips": True,
+        }
+    if resouce.type == "annotation" and resouce.type == "gff":
+        opts = {
+            "display_mode": IgvDisplayMode.EXPANDED,
+            "height": 120,
+            "name_field": "gene",
+            "filter_types": ["chromosome", "region", "gene", "exon"],
+        }
+
+    return IgvTrack(
+        name=resouce.name,
+        type=resouce.type,
+        format=resouce.format,
+        url=resouce.url,
+        index_url=resouce.index_url,
+        source_type="file",
+        **opts,
+    )
+
+
+def _get_variant_positions(
+    variant_id: str, *, analysis_obj: AnalysisResult
+) -> tuple[int, int] | None:
+    """Get variant with ID from sample object."""
+    amr_pred = analysis_obj.envelopes.get("amr")
+    if not amr_pred:
+        return None
+
+    variants = amr_pred.value.get("variants", [])
+    for var in variants:
+        if not var.get("id") == variant_id:
+            continue
+
+        start = var["start"]
+        stop = var.get("end") or var["start"]
+
+        if var["variant_type"] == "SV":
+            var_length = (stop - start) + 1
+            start = round(start - (var_length * 0.1), 0)
+            stop = round(stop + (var_length * 0.1), 0)
+
+        return start, stop
+
+
+async def _build_locus(
+    db: Database,
+    *,
+    variant_ctx: VariantContext,
+    reference_name: str,
+) -> str:
+    """
+    Build IGV locus string (e.g. chr1:100-200) from a variant context.
+
+    Returns empty string if variant or positions cannot be found.
+    """
+
+    # Fetch analysis
+    analysis = await get_analysis_service(
+        db, analysis_id=variant_ctx.analysis_id
+    )
+
+    if not analysis:
+        return ""
+
+    # Extract variant positions
+    positions = _get_variant_positions(
+        variant_ctx.variant_id,
+        analysis_obj=analysis,
+    )
+
+    if not positions:
+        return ""
+
+    start, stop = positions
+
+    return f"{reference_name}:{start}-{stop}"
+
+
+async def get_igv_config(
+    db: Database,
+    *,
+    sample_id: str,
+    variant_ctx: VariantContext | None,
+    request: Request,
+) -> IgvConfig:
+    """Build a IGV configuration for a sample."""
+
+    # fetch needed resources
+    sample_info = await get_sample_service(db, sample_id=sample_id)
+    if sample_info.reference_genome_id is None:
+        raise EntryNotFound(f"No reference genome associated with sample: {sample_id}")
+
+    ref_genome = await get_reference_genome_service(
+        db, resource_id=sample_info.reference_genome_id, request=request
+    )
+
+    genomec_resouces = await list_genomic_resources_for_sample_service(db, sample_id=sample_id, request=request)
+
+    # get locus for a variant if variant id was provided
+    locus = ""
+    if variant_ctx:
+        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=ref_genome.accession)
+
+    # Build tracks
+    tracks = [
+        _to_igv_track(tr)
+        for tr in itertools.chain(
+            ref_genome.reference_tracks, genomec_resouces
+        )
+    ]
+
+    return IgvConfig(
+        locus=locus,
+        reference=IgvReferenceGenome(
+            name=ref_genome.name,
+            fasta_url=ref_genome.fasta_url,
+            index_url=ref_genome.fasta_index_url,
+        ),
+        tracks=tracks,
+    )

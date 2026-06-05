@@ -1,3 +1,4 @@
+from bonsai_api.models.analysis import VariantContext
 from bonsai_api.services import genomic_resource_service, sample_service
 from api_client.audit_log import AuditLogClient
 from bonsai_api.db import Database
@@ -11,6 +12,7 @@ from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.reference_genome import AddReferenceGenomeRequest, ReferenceGenomeResponse
 from bonsai_api.models.genomic_resource import GenomicResourceCreate, GenomicResourceResponse
+from bonsai_api.models.igv import IgvConfig
 from bonsai_api.models.user import UserContext, UserOutputDatabase
 from bonsai_api.routers.tags import RouterTags
 from fastapi import (
@@ -31,7 +33,7 @@ router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
 
 @router.post(
     "/samples/{sample_id}/resources",
-    response_model=GenomicResourceResponse,
+    response_model=list[GenomicResourceResponse],
     status_code=status.HTTP_201_CREATED,
     tags=[RouterTags.SAMPLE],
 )
@@ -166,4 +168,42 @@ async def add_reference_genome_to_sample(
         reference_genome_id=body.reference_genome_id,
         request=request,
         ctx=req_ctx, audit=audit_log
+    )
+
+
+@router.get(
+    "/samples/{sample_id}/igv-config",
+    response_model=IgvConfig,
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.SAMPLE, RouterTags.REFERENCE_GENOME],
+)
+async def get_igv_config(
+    request: Request,
+    sample_id: str = Path(..., description="Sample ID"),
+    analysis_id: str | None = None,
+    variant_id: int | None = None,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
+    """Add a reference genome to a sample."""
+    variant_ctx: VariantContext | None = None
+    if analysis_id or variant_id:
+        if not (analysis_id and variant_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Both 'analysis_id' and 'variant_id' must be provided together",
+            )
+
+        variant_ctx = VariantContext(
+            analysis_id=analysis_id,
+            variant_id=variant_id,
+        )
+
+    return await sample_service.get_igv_config(
+        db, 
+        sample_id=sample_id, 
+        variant_ctx=variant_ctx,
+        request=request,
     )
