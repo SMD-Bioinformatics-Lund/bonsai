@@ -97,6 +97,9 @@ services:
       target: development
     environment: 
       NOTIFICATION_SERVICE_API: http://notification_service:8000/
+    volumes:
+      - ./volumes/api/reference_genomes:/reference_genomes:ro
+      - ./volumes/api/annotations:/annotations:ro
     depends_on:
       mongo-init:
         condition: service_completed_successfully
