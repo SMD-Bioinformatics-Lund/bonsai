@@ -1,0 +1,70 @@
+{% from "utils.html" import igv_script %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bonsai: Integrative Genomics Viewer</title>
+
+    <!-- jQuery UI CSS -->
+    <link rel="stylesheet" type="text/css"
+          href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css"/>
+
+    <!-- Font Awesome CSS -->
+    <link rel="stylesheet" type="text/css"
+          href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"/>
+
+    <!-- jQuery JS -->
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript"
+            src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+
+    <link rel="shortcut icon" href="//igv.org/web/img/favicon.ico">
+    <!-- IGV JS-->
+    <script src="https://cdn.jsdelivr.net/npm/igv@3.0.2/dist/igv.min.js"></script>
+</head>
+
+<body>
+  <div class="igv-container container-fluid" style="padding:5px; border:1px solid lightgray">
+    Loading IGV...
+  </div>
+</body>
+
+<script type="text/javascript">
+  $(document).ready(() => {
+      const accessToken = "{{ access_token }}";
+      const apiUrl = "{{ api_url }}";
+      const sampleId = "{{ sample_id }}";
+      const analysisId = "{{ analysis_id }}";
+      const variantid = "{{ variant_id }}";
+      const igvContainer = document.querySelector('igv-container');
+      fetch(
+        `${apiUrl}/samples/${sampleId}/igv-config`, {
+          method: "GET",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${ accessToken }`,
+          },
+        })
+        .then( resp  => {
+          if (! resp.ok ) {
+            console.error('IGV failed to fetch the config', resp)
+            throw new Error("Failed to fetch IGV config")
+          }
+          return resp.json()
+      })
+      .then( config => {
+        console.log("IGV config:", config);
+        igv.createBrowser(igvContainer, config);
+      })
+      .catch(err => {
+        console.error("IGV load error:", err);
+      })
+  });
+</script>
+
+</html>
