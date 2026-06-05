@@ -38,7 +38,7 @@ async def get_file(
     try:
         file_path = resolve_resource_path(path, base_path)
 
-        return build_file_response(file_path, range)
+        return build_file_response(file_path, range_header=range)
 
     except GenomeResourceError as e:
         raise HTTPException(
