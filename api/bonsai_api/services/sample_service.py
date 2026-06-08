@@ -320,7 +320,7 @@ async def add_reference_genome_service(
     session: ClientSession | None = None,
 ) -> ReferenceGenomeResponse:
     """Add reference genome to a sample."""
-    if not sample_exists(db, sample_id=sample_id, session=session):
+    if not await sample_exists(db, sample_id=sample_id, session=session):
         LOG.error("Sample %s not found when adding reference genome", sample_id)
         raise EntryNotFound(sample_id)
 
