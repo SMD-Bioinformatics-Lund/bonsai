@@ -446,7 +446,7 @@ async def get_igv_config(
     db: Database,
     *,
     sample_id: str,
-    variant_ctx: VariantContext | None,
+    variant_ctx: VariantContext | None = None,
     request: Request,
 ) -> IgvConfig:
     """Build a IGV configuration for a sample."""
