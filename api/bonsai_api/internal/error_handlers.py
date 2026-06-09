@@ -7,6 +7,7 @@ from typing import Any
 from bonsai_api.exceptions import (
     AuditLogError,
     ConflictError,
+    GenomeResourceError,
     NotChangedError,
     ParserError,
     EntryNotFound,
@@ -126,3 +127,13 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(NotImplementedError)
     async def _not_implemented(_: Request, exc: NotImplementedError):
         return problem_details(501, "Not Implemented", str(exc), type_=NOT_IMPLEMENTED)
+
+    
+    @app.exception_handler(GenomeResourceError)
+    async def _genome_resource_error(_: Request, exc: GenomeResourceError):
+        return problem_details(
+            422,
+            "Invalid genomic resource",
+            str(exc),
+            type_=INVALID_DATA,
+        )
