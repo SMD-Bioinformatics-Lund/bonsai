@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from .base import RWModel, UUIDMixin, TimestampsMixin
+from .base import RWModel, UUIDMixin
 from .enums import Visibility
 
 

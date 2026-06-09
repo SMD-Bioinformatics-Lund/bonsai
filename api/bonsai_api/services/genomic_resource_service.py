@@ -45,10 +45,13 @@ async def create_genomic_resource_service(
     resource: GenomicResourceCreate,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
-) -> GenomicResourceResponse:
+) -> list[GenomicResourceResponse]:
     """Create a genomic resource set for a sample."""
     if not await sample_exists(db, sample_id=sample_id):
         raise EntryNotFound(f"Sample with ID {sample_id} not found")
+    
+    if resource.pipeline_run_id is None:
+        raise ValueError("Resource dont have a pipeline run id!")
 
     has_resource_for_pipeline = await sample_has_resource(
         db, pipeline_id=resource.pipeline_run_id
@@ -86,6 +89,7 @@ async def create_genomic_resource_service(
     except ValidationError as ve:
         LOG.error("Validation error while creating group: %s", str(ve))
         raise ValueError(f"Invalid data provided for creating group: {str(ve)}") from ve
+
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     with audit_event_context(audit, "add_genomic_resource", ctx, event_subject):
         try:
@@ -94,7 +98,7 @@ async def create_genomic_resource_service(
                 sample_id=sample_id,
                 resource_data=[p.model_dump(mode="json") for p in payload],
             )
-            output_resource = [
+            output_resources = [
                 GenomicResourceResponse(
                     **p.model_dump(mode="json"),
                     url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, p.path),
@@ -107,7 +111,7 @@ async def create_genomic_resource_service(
                 f"Database error inserting a new genomic resource: {str(pme)}"
             ) from pme
 
-    return output_resource
+    return output_resources
 
 
 async def get_genomic_resource_service(
