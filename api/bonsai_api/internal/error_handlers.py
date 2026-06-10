@@ -136,4 +136,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             "Invalid genomic resource",
             str(exc),
             type_=INVALID_DATA,
+            extra={
+                "path": str(exc.path) if exc.path else None
+            },
         )

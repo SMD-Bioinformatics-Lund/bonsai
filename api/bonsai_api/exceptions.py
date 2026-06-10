@@ -1,5 +1,7 @@
 """Custom exceptions for the Bonsai API."""
 
+from pathlib import Path
+
 from prp.parse.exceptions import ParserError, UnsupportedVersionError, UnsupportedSoftwareError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError
 
 
@@ -46,6 +48,10 @@ class AnalysisExistsError(Exception):
 
 class GenomeResourceError(DomainError):
     """Raised when there is an error resolving a genome resource."""
+
+    def __init__(self, message: str, path: Path | None = None):
+        super().__init__(message)
+        self.path = path
 
 
 class InvalidRangeError(Exception):
