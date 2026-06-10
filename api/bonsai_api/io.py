@@ -134,11 +134,13 @@ def validate_resource_identifier(resource: str) -> Path:
 
     requested = Path(resource)
 
-    if requested.is_absolute() or ".." in requested.parts:
-        raise GenomeResourceError("Invalid genome resource identifier")
+    if requested.is_absolute():
+        raise GenomeResourceError("Resource path can't be absolute", requested)
+
+    if ".." in requested.parts:
+        raise GenomeResourceError("Resource path cant contain '..'", requested)
 
     return requested
-
 
 
 def resolve_resource_path(resource: str, base_dir: Path) -> Path:
@@ -149,13 +151,13 @@ def resolve_resource_path(resource: str, base_dir: Path) -> Path:
     resolved = (base_dir / requested).resolve()
 
     if base_dir not in resolved.parents:
-        raise GenomeResourceError("Outside allowed directory")
+        raise GenomeResourceError("Outside allowed directory", resolved)
 
     if not resolved.is_file():
-        raise GenomeResourceError(f"{resolved} not found")
+        raise GenomeResourceError(f"{resolved} not found", resolved)
 
     if not os.access(resolved, os.R_OK):
-        raise GenomeResourceError(f"{resolved} not readable")
+        raise GenomeResourceError(f"{resolved} not readable", resolved)
 
     return resolved
 
