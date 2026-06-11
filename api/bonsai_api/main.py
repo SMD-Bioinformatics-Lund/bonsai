@@ -10,6 +10,7 @@ routers, middleware, and exception handlers.
 import logging
 import logging.config as logging_config
 from contextlib import asynccontextmanager
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from api_client.audit_log import AuditLogClient
 from api_client.notification import NotificationClient
@@ -59,6 +60,18 @@ logging_config.dictConfig(
     }
 )
 LOG = logging.getLogger(__name__)
+
+
+class PrefixMiddleware(BaseHTTPMiddleware):
+    """Allows to set root_path using x-forwarded-prefix."""
+
+    async def dispatch(self, request, call_next):
+        prefix = request.headers.get("x-forwarded-prefix")
+
+        if prefix:
+            request.scope["root_path"] = prefix
+
+        return await call_next(request)
 
 
 async def ensure_database_setup(db):
@@ -141,9 +154,13 @@ def create_app(settings: Settings) -> FastAPI:
     # configure CORS
     configure_cors(app)
 
+
     # check if api authentication is disabled
     if not settings.api_authentication:
         LOG.warning("API authentication disabled!")
+
+    # set middlewares
+    app.add_middleware(PrefixMiddleware)
     
     # admin user bootstrap is handled during lifespan startup
     
