@@ -27,7 +27,7 @@
 </head>
 
 <body>
-  <div class="igv-container container-fluid" style="padding:5px; border:1px solid lightgray">
+  <div id="igv-container" class="container-fluid" style="padding:5px; border:1px solid lightgray">
     Loading IGV...
   </div>
 </body>
@@ -39,7 +39,6 @@
       const sampleId = "{{ sample_id }}";
       const analysisId = "{{ analysis_id }}";
       const variantid = "{{ variant_id }}";
-      const igvContainer = document.querySelector('igv-container');
       fetch(
         `${apiUrl}/samples/${sampleId}/igv-config`, {
           method: "GET",
@@ -56,7 +55,11 @@
           return resp.json()
       })
       .then( config => {
-        console.log("IGV config:", config);
+        const igvContainer = document.getElementById('igv-container');
+        if (!igvContainer) {
+          console.error("Cannot open IGV: container not found");
+          return
+        }
         igv.createBrowser(igvContainer, config);
       })
       .catch(err => {
