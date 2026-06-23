@@ -13,8 +13,8 @@ from bonsai_api.models.analysis import (
     PRPParserOutput,
 )
 from bonsai_api.models.sample import AnalysisViewEntryDb
-from api_client.audit_log.models import Subject, SourceType
-from api_client.audit_log import AuditLogClient, EventCreate
+from bonsai_libs.api_client.audit_log.models import Subject, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
 from bonsai_api.crud.analysis import analysis_exists, create_analysis, get_analysis
 from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
@@ -25,7 +25,7 @@ from bonsai_api.exceptions import (
     ParserError,
     InvalidDataFormat,
 )
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiRequestError
 
 from prp.parse import run_parser
 

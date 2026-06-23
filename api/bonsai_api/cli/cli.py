@@ -6,8 +6,8 @@ from logging import getLogger
 from typing import Literal
 
 import click
-from api_client.audit_log import AuditLogClient
-from api_client.notification import EmailCreate, NotificationClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.notification import EmailCreate, NotificationClient
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES, settings

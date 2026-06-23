@@ -12,8 +12,8 @@ import logging.config as logging_config
 from contextlib import asynccontextmanager
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from api_client.audit_log import AuditLogClient
-from api_client.notification import NotificationClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.notification import NotificationClient
 from bonsai_api.db.db import setup_db_connection
 from bonsai_api.services.user_service import create_user_on_startup
 from fastapi import FastAPI

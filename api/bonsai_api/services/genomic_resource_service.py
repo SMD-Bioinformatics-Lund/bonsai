@@ -6,8 +6,8 @@ from pymongo.errors import PyMongoError
 from fastapi import Request
 from pathlib import Path
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.genomic_resource import (
     insert_genomic_resource,
     sample_has_resource,

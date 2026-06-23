@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database

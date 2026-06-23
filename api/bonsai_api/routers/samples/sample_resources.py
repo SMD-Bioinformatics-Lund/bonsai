@@ -1,6 +1,6 @@
 from bonsai_api.models.analysis import VariantContext
 from bonsai_api.services import genomic_resource_service, sample_service
-from api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
     get_audit_log,
