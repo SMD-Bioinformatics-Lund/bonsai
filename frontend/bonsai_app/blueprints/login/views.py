@@ -81,7 +81,7 @@ def login():
     """Login a user."""
     if "next" in request.args:
         session["next_url"] = request.args["next"]
-    
+
     if request.method == "GET":
         return render_template("login.html", ...)
 
@@ -92,24 +92,23 @@ def login():
     client = BonsaiApiClient(
         base_url=current_app.config["API_INTERNAL_URL"],
     )
-
+    client.authenticate_user(username, password)
     try:
         client.authenticate_user(username, password)
+        user_obj = client.get_current_user()
+        user = LoginUser(user_obj.model_dump(mode="json"), token=client.auth.token)
     except UnauthorizedError:
         # if invalid credentials
         flash("Invalid login credentials", "danger")
         return redirect(url_for("public.index"))
-    except Exception:
+    except Exception as err:
+        LOG.warning("An unexpected error during login: %s", err)
         flash("Sorry, you could not log in due to an internal error", "warning")
         return redirect(url_for("public.index"))
 
     # set token in session
-    token = client.token.access_token
-    session["access_token"] = token
+    session["access_token"] = client.auth.token
 
-    # create user object
-    user_obj = client.get_current_user()
-    user = LoginUser(user_obj.model_dump(mode="json"), token)
     return perform_login(user)
 
 
@@ -126,7 +125,12 @@ def load_user(user_id: str) -> LoginUser:
         base_url=current_app.config["API_INTERNAL_URL"],
         auth=BearerTokenAuth(token),
     )
-    user_data = client.get_current_user()
+    try:
+        user_data = client.get_current_user()
+    except UnauthorizedError:
+        # Clear bad token from session
+        session.clear()
+        return redirect(url_for("public.index"))
 
     return LoginUser(user_data.model_dump(mode="json"), token)
 
