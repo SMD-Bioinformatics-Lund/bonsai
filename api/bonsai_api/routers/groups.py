@@ -3,7 +3,7 @@
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.services.group_service as service_gr
 import bonsai_api.services.membership_service as service_mem
-from api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -12,7 +12,7 @@ from bonsai_api.dependencies import (
     get_database,
     get_request_context,
 )
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import (
     ColumnOut,
@@ -37,7 +37,6 @@ from fastapi import (
     Security,
     status,
 )
-from pymongo.errors import DuplicateKeyError
 
 from .tags import RouterTags
 

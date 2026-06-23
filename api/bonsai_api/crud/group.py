@@ -3,8 +3,8 @@
 import logging
 from typing import Any, Literal
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
