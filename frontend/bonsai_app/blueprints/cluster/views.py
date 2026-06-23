@@ -6,12 +6,12 @@ import logging
 from enum import Enum
 from typing import Any
 
-from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries, get_valid_summary_columns
-from bonsai_app.custom_filters import get_json_path
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
+
+from bonsai_app.bonsai_api import get_api_client
 
 LOG = logging.getLogger(__name__)
 
@@ -71,11 +71,9 @@ def _fmt_object(col_id: str, *, data: Any):
     if col_id == "groups":
         return ", ".join([group for group in data])
     if col_id == "comments":
-        return ", ".join([
-            comment_obj["comment"]
-            for comment_obj in data
-            if comment_obj["displayed"]
-        ])
+        return ", ".join(
+            [comment_obj["comment"] for comment_obj in data if comment_obj["displayed"]]
+        )
     if col_id == "tags":
         return ", ".join([point["label"] for point in data])
     if col_id == "postalignqc_pct_above_x":
@@ -87,7 +85,7 @@ def fmt_metadata(
     sample_obj: dict[str, str | int | list[str | dict[str, Any]]],
     column: dict[str, Any],
 ) -> str:
-    data = sample_obj.get(column['id'])
+    data = sample_obj.get(column["id"])
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
@@ -136,10 +134,11 @@ def gather_metadata(
     # Get which metadata points to display
     # skip column with sample button
     columns = [
-        col for col in column_definition.get('columns', [])
+        col
+        for col in column_definition.get("columns", [])
         if col.get("label", "") != ""
     ]
-    
+
     # create metadata structure
     metadata: dict[str, dict[str, str | int | float | None]] = {}
     for sample in samples:
@@ -195,18 +194,18 @@ def tree():
         column_info = request.form.get("metadata", "{}")
         column_info = None if column_info == "" else json.loads(column_info)
         # query for sample metadata
-        if samples_obj == {}:
-            metadata = {}
-        else:
-            token = TokenObject(**current_user.get_id())
-            sample_summary = get_sample_summaries(
-                token, sample_ids=samples_obj["sample_id"], offset=0
+        metadata = {}
+        if samples_obj:
+            client = get_api_client()
+            sample_summary = client.get_sample_summaries(
+                sample_ids=samples_obj["sample_id"], offset=0
             )
             # get column info
             if column_info is None:
-                column_info = get_valid_summary_columns(token_obj=token)
+                column_info = client.get_valid_summary_columns()
             metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
         data: dict[str, str] = {"nwk": newick, **metadata}
+
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
@@ -225,11 +224,11 @@ def cluster():
         sample_ids = [sample["sample_id"] for sample in body["sample_ids"]]
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
-        token = TokenObject(**current_user.get_id())
+
+        client = get_api_client()
         # trigger clustering on api
         try:
-            job = cluster_samples(
-                token,
+            job = client.cluster_samples(
                 sample_ids=sample_ids,
                 typing_method=typing_method,
                 method=cluster_method,

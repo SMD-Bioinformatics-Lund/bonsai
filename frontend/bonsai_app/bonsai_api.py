@@ -14,11 +14,8 @@ def get_api_client():
     """Get API client instance using token from logged in user."""
 
     if "api_client" not in g:
-        # get token from current user
-        token = current_user.token.access_token
-
         g.api_client = BonsaiApiClient(
             base_url=current_app.config["API_INTERNAL_URL"],
-            auth=BearerTokenAuth(token),
+            auth=BearerTokenAuth(current_user.token),
         )
     return g.api_client

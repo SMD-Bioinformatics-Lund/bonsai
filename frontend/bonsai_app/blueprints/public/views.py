@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, send_from_directory
 
-from ... import __version__ as VERSION
+from bonsai_app import __version__ as VERSION
 
 public_bp = Blueprint(
     "public",
