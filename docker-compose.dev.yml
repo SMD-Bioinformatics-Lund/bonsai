@@ -112,11 +112,6 @@ services:
         - path: ./api/bonsai_api
           target: /app/api/bonsai_api
           action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
-          action: sync
 
   minhash_service:
     build: 
@@ -130,11 +125,6 @@ services:
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
           action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
-          action: sync
 
   minhash_cron_service:
     build: 
@@ -147,11 +137,6 @@ services:
           action: rebuild
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
-          action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
           action: sync
   
   allele_cluster_service:
