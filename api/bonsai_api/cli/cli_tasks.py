@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from bonsai_api.services.sample_service import get_sample_service
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import Actor, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
 from bonsai_api.crud.sample import get_samples_full
 from bonsai_api.crud.tags import compute_phenotype_tags

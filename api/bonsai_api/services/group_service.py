@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.builder.summary_manifest import MANIFEST, Manifest
 from bonsai_api.crud.builder.types import PipelineStages
 from bonsai_api.crud.group import (

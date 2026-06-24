@@ -4,27 +4,18 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from bonsai_app.bonsai import (
-    TokenObject,
-    create_group,
-    delete_group,
-    get_group_by_id,
-    get_groups,
-    get_sample_summaries,
-    get_valid_group_columns,
-    get_valid_summary_columns,
-    update_group_core_info,
-    update_group_presets,
-    update_sample_qc_classification,
-)
+from bonsai_libs.api_client.bonsai.models import CreateGroupInput
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
+from pydantic import ValidationError
+from requests.exceptions import HTTPError
+
+from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import (
     BadSampleQualityAction,
     PhenotypeType,
     QualityControlResult,
 )
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
 
 from .controller import build_updated_presets, format_tablular_data
 
@@ -54,20 +45,20 @@ def groups() -> str:
         )
         return redirect(url_for("public.index"))
 
-    token = TokenObject(**current_user.get_id())
-    samples_info = get_sample_summaries(token, limit=0, offset=0)
+    client = get_api_client()
+    samples_info = client.get_sample_summaries(limit=0, offset=0)
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    manifest = get_valid_summary_columns(token)
+    manifest = client.get_valid_summary_columns()
     table_data = format_tablular_data(samples_info["data"], manifest["columns"])
 
     return render_template(
         "groups.html",
         title="Groups",
         table_data=table_data,
-        token=current_user.get_id().get("token"),
+        token=current_user.token,
         bad_qc_actions=bad_qc_actions,
     )
 
@@ -87,15 +78,15 @@ def edit_groups(group_id: str | None = None):
     if current_user.get_id() is None or not current_user.is_admin:
         return redirect(url_for("public.index"))
 
-    token = TokenObject(**current_user.get_id())
-    all_groups = get_groups(token)
+    client = get_api_client()
+    all_groups = client.get_groups()
 
     # remove group from database
     if request.method == "POST":
         # if a group should be removed
         if "input-remove-group" in request.form:
             try:
-                delete_group(token, group_id=request.form.get("input-remove-group"))
+                client.delete_group(group_id=request.form.get("input-remove-group"))
                 flash("Group updated", "success")
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
@@ -103,28 +94,32 @@ def edit_groups(group_id: str | None = None):
         elif "input-update-group" in request.form:
             updated_data = json.loads(request.form.get("input-update-group"))
             try:
-                update_group_core_info(
-                    token,
+                client.update_group_core_info(
                     group_id=group_id,
                     name=updated_data.get("display_name", None),
                     description=updated_data.get("description", None),
                 )
                 preset = build_updated_presets(updated_data)
-                update_group_presets(
-                    token, group_id=group_id, set_default=True, preset=preset
+                client.update_group_presets(
+                    group_id=group_id, set_default=True, preset=preset
                 )
                 flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
         elif "input-create-group" in request.form:
-            input_data = json.loads(request.form.get("input-create-group", {}))
+            raw_data = json.loads(request.form.get("input-create-group", {}))
             try:
-                group_id = input_data["group_id"]
-                create_group(token, data=input_data)
+                # cast as input object
+                input_data = CreateGroupInput.model_validate(raw_data)
+
+                client.create_group(data=input_data.group_id)
                 flash("Group updated", "success")
                 return redirect(url_for("groups.edit_groups", group_id=group_id))
             except HTTPError as err:
+                flash(f"An error occurred when updating group, {err}", "danger")
+            except ValidationError as err:
+                LOG.error("Invalid group format: %s", err)
                 flash(f"An error occurred when updating group, {err}", "danger")
 
     # get valid phenotypes
@@ -135,11 +130,11 @@ def edit_groups(group_id: str | None = None):
 
     # annotate if column previously have been selected
     if group_id is not None:
-        columns = get_valid_group_columns(
-            token, group_id=group_id, include_invisible=True
+        columns = client.get_valid_group_columns(
+            group_id=group_id, include_invisible=True
         )
     else:
-        manifest_cols = get_valid_summary_columns(token)
+        manifest_cols = client.get_valid_summary_columns()
         columns = manifest_cols["columns"]
 
     valid_cols_idx = {col["id"]: col for col in columns}
@@ -169,14 +164,11 @@ def group(group_id: str) -> str:
     )
 
     # query API for sample info
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
     try:
-        samples_info = get_sample_summaries(
-            token,
-            group_id=group_id,
-        )
+        samples_info = client.get_sample_summaries(group_id=group_id)
         # get column definition to use
-        group_info = get_group_by_id(token, group_id=group_id)
+        group_info = client.get_group(group_id=group_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -187,11 +179,10 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-
-    if (column_info := group_info.get("table_columns", [])) and len(column_info) > 0:
-        column_info = get_valid_group_columns(token, group_id=group_id)
+    if column_info := (group_info.table_columns and len(column_info) > 0):
+        column_info = client.get_valid_group_columns(group_id=group_id)
     else:  # get default columns
-        column_info = get_valid_summary_columns(token)
+        column_info = client.get_valid_summary_columns()
     table_data = format_tablular_data(samples_info["data"], column_info["columns"])
 
     # indicate view in title, used for testing
@@ -202,15 +193,15 @@ def group(group_id: str) -> str:
         "group.html",
         title=title,
         group_id=group_id,
-        group_name=group_info["display_name"],
+        group_name=group_info.display_name,
         bad_qc_actions=bad_qc_actions,
         selected_samples=selected_samples,
-        group_desc=group_info["description"],
+        group_desc=group_info.description,
         table_data=table_data,
-        table_definition=group_info["table_columns"],
-        modified=group_info["modified_at"],
+        table_definition=group_info.table_columns,
+        modified=group_info.modified_at,
         display_qc=display_qc,
-        token=current_user.get_id().get("token"),
+        token=current_user.token,
     )
 
 
@@ -233,7 +224,7 @@ def update_qc_classification():
             "warning",
         )
 
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
@@ -248,8 +239,7 @@ def update_qc_classification():
 
     for sample_id in selected_samples:
         try:
-            update_sample_qc_classification(
-                token,
+            client.update_sample_qc_classification(
                 sample_id=sample_id,
                 status=result,
                 action=action,
