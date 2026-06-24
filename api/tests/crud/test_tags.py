@@ -4,9 +4,9 @@ import pytest
 from bonsai_api.crud.tags import flag_uncertain_spp_prediction
 from bonsai_api.models.tags import Tag
 from bonsai_api.models.sample import AnalysisViewEntryDb
-from prp.models.enums import AnalysisSoftware
-from prp.parse.models.bracken import BrackenSpeciesPrediction
-from prp.parse.models.mykrobe import MykrobeSpeciesPrediction
+from bonsai_libs.models.enums import AnalysisSoftware
+from bonsai_libs.parse.models.bracken import BrackenSpeciesPrediction
+from bonsai_libs.parse.models.mykrobe import MykrobeSpeciesPrediction
 from pydantic import BaseModel
 
 

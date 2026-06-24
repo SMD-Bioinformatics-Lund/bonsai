@@ -5,9 +5,9 @@ from pydantic import BaseModel, Discriminator, Field
 
 from .base import RWModel, UUIDMixin, TimestampsMixin, AllowExtraModelMixin
 
-from prp.parse.models.base import ParserOutput as PRPParserOutput
-from prp.parse.models.enums import AnalysisType as PrpAnalysisType
-from prp.parse.models.enums import AnalysisSoftware as PrpAnalysisSoftware
+from bonsai_libs.parse.models.base import ParserOutput as PRPParserOutput
+from bonsai_libs.parse.models.enums import AnalysisType as PrpAnalysisType
+from bonsai_libs.parse.models.enums import AnalysisSoftware as PrpAnalysisSoftware
 
 
 class ResultStatus(StrEnum):
