@@ -5,9 +5,9 @@ from contextlib import asynccontextmanager, contextmanager
 from typing import Any
 
 import bonsai_api
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import EventCreate, EventSeverity, Subject
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import EventCreate, EventSeverity, Subject
+from bonsai_libs.api_client.core.exceptions import ApiRequestError
 from bonsai_api.db import Database
 from bonsai_api.exceptions import AuditLogError
 from bonsai_api.models.context import ApiRequestContext

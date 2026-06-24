@@ -2,9 +2,9 @@
 
 import logging
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import EventCreate, SourceType, Subject
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import EventCreate, SourceType, Subject
+from bonsai_libs.api_client.core.exceptions import ApiRequestError
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
 from bonsai_api.crud.sample import get_samples_full
