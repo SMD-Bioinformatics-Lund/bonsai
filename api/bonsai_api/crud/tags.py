@@ -19,8 +19,8 @@ from bonsai_api.models.tags import (
     TagType,
     VirulenceTag,
 )
-from prp.parse.models.enums import AnalysisType, ElementType
-from prp.parse.models.base import ElementTypeResult, BaseSpeciesPrediction
+from bonsai_libs.parse.models.enums import AnalysisType, ElementType
+from bonsai_libs.parse.models.base import ElementTypeResult, BaseSpeciesPrediction
 
 LOG = logging.getLogger(__name__)
 
