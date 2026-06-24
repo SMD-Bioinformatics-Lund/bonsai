@@ -7,8 +7,8 @@ from bonsai_api.models.analysis import CurationRecord
 from bonsai_api.models.qc import SampleQcClassification
 from bonsai_api.models.sample import SampleRecordDb
 
-from prp.parse.models.enums import AnalysisSoftware, AnalysisType
-from prp.parse.models.typing import TypingResultEmm
+from bonsai_libs.parse.models.enums import AnalysisSoftware, AnalysisType
+from bonsai_libs.parse.models.typing import TypingResultEmm
 
 from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 

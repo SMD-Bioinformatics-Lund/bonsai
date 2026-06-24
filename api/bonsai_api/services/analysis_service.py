@@ -25,9 +25,9 @@ from bonsai_api.exceptions import (
     ParserError,
     InvalidDataFormat,
 )
-from bonsai_libs.api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 
-from prp.parse import run_parser
+from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ async def ingest_analysis_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for analysis ingest on sample {sample_id}: {exc}"
             ) from exc

@@ -7,7 +7,7 @@ from typing import Any
 import bonsai_api
 from bonsai_libs.api_client.audit_log import AuditLogClient
 from bonsai_libs.api_client.audit_log.models import EventCreate, EventSeverity, Subject
-from bonsai_libs.api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.db import Database
 from bonsai_api.exceptions import AuditLogError
 from bonsai_api.models.context import ApiRequestContext
@@ -64,7 +64,7 @@ def audit_event_context(
             )
             try:
                 audit.post_event(event)
-            except ApiRequestError as exc:
+            except ApiError as exc:
                 raise AuditLogError(
                     f"Audit log event failed for {event_type}: {exc}"
                 ) from exc
