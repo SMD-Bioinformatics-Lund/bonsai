@@ -45,18 +45,10 @@
         {{ sample_table(table_data) }}
     </div>
 </div>
+<script src="{{ url_for('public.static', filename='group-view.min.js') }}"></script>
 <script>
-    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
-    const accessToken = "{{ token }}"
-    const groupId = null
-    // template code for adding to basket
-    // template code for searching similar samples
-
-    </script>
-    <script src="{{ url_for('public.static', filename='group-view.min.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', () => {
+        GroupView.initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
+    });
+</script>
 {% endblock content %}

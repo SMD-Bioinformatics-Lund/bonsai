@@ -16,6 +16,7 @@
 {% block css %}
 {{ super() }}
 <link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 {% endblock css %}
 
 {% macro sv_variants(variants) %}
@@ -26,7 +27,7 @@
             <thead>
                 <tr>
                     <th>
-                        <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'sv-variant-table')">
+                        <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                     </th>
                     <th>Info</th>
                     <th>Subtype</th>
@@ -41,7 +42,7 @@
             <tbody id="sv-variant-table">
                 {% for variant in variants %}
                     <tr class=\"{{ variant.row_class }}\">
-                        <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
+                        <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}"></td>
                         <td>
                             {% if variant.verified == "failed" and variant.reason %}
                                 <span class="ms-2 badge text-bg-warning"
@@ -77,12 +78,6 @@
         </table>
     </div>
 </div>
-<script src="{{ url_for('public.static', filename='variants-table.min.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tbl = initVariantsTable('#sv-variant-tbl', false)
-    });
-</script>
 {% endmacro %}
 
 {% macro variant_filters(form_data) %}
@@ -259,74 +254,10 @@
         </div>
     </main>
 </div>
+<script src="{{ url_for('public.static', filename='variants-table.min.js') }}"></script>
 <script>
-    $(document).ready(() => { 
-        // ready select2
-        $("#antibiotic-group").select2()
-        $("#filter-genes").select2()
-        $("#filter-who-class").select2()
-        $("#filter-variant-type").select2()
-        // 
-        $("#accept-variant-btn").click(() => {
-            // disable rejection reason
-            $("#rejection-reason-group").prop('disabled', true)
-            // enable antibiotic resistance annotation
-            $("#antibiotic-group").prop('disabled', false)
-            $("#high-res-btn").prop('disabled', false)
-            $("#low-res-btn").prop('disabled', false)
-        })
-        $("#reject-variant-btn").click(() => {
-            // enable rejection reason
-            $("#rejection-reason-group").prop('disabled', false)
-            // disable antibiotic resistance annotation
-            $("#antibiotic-group").prop('disabled', true)
-            $("#high-res-btn").prop('disabled', true)
-            $("#low-res-btn").prop('disabled', true)
-        })
-    })
-    window.addEventListener("load", () => {
-        // reset selected variants on page load and reload
-        checkedVariants = Array.from(
-            document.querySelectorAll('.br-content input[type="checkbox"]')
-            ).filter(input => input.checked).map(input => input.id)
-        window.localStorage.setItem("selectedVariants", JSON.stringify(checkedVariants))
-    })
-
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
-    const selectVariant = (element) => {
-        const selected = new Set(JSON.parse(localStorage.getItem("selectedVariants") || "[]"));
-
-        const item = {
-            variant_id: element.dataset.variantId,
-            analysis_id: element.dataset.analysisId,
-            analysis_type: element.dataset.analysisType,
-        };
-        const key = `${item.analysis_id}:${item.analysis_type}:${item.variant_id}`;
-
-        if (element.checked) {
-            selected.add(key);
-        } else {
-            selected.delete(key);
-        }
-
-        const payload = Array.from(selected).map(key => {
-            const [analysis_id, analysis_type, variant_id] = key.split(':');
-            return { analysis_id, analysis_type, variant_id };
-        });
-
-        document.getElementById("curations-input").value = JSON.stringify(payload);
-        localStorage.setItem("selectedVariants", JSON.stringify(Array.from(selected)));
-        // update counter on page
-        document.getElementById("selected-variants-counter").innerHTML = selected.size
-    }
-    // reset selected varants on page load
-    const selectAllVariants = (elem, tableId) => {
-        document.getElementById(tableId).querySelectorAll("input[type=checkbox]").forEach(el => {
-            el.checked = elem.checked; 
-            selectVariant(el);
-        });
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbl = initVariantsView('#sv-variant-tbl', false)
+    });
 </script>
 {% endblock content %}
