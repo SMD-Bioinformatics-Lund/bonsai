@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
+from bonsai_app.config import settings
 from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import (
     BadSampleQualityAction,
@@ -67,16 +68,16 @@ def groups() -> str:
 @groups_bp.route("/groups/<group_id>/edit", methods=["GET"])
 @login_required
 def group_editor_view(group_id: str | None = None):
-    token = TokenObject(**current_user.get_id())
-    groups = get_groups(token)
+    client = get_api_client()
+    groups = client.get_groups()
 
     return render_template(
         "edit_groups.html",
         mode="create" if group_id is None else "edit",
         group_id=group_id,
-        groups=groups["data"],
+        groups=groups,
         api_base_url=settings.api_external_url,
-        access_token=token.token,
+        access_token=current_user.token,
         refresh_token="",
     )
 
