@@ -11,8 +11,8 @@ import {
   ApiSampleQcStatus,
 } from "../types";
 import { ClusterMethod, TypingMethod } from "../types/enums";
-import SpinnerElement from "../../components/spinner-element";
 import { hideSpinner, showSpinner } from "./spinner-actions";
+import "../../components/spinner-element";
 
 export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,

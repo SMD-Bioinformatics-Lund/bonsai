@@ -11,7 +11,6 @@ from requests import HTTPError
 
 from bonsai_libs.api_client.bonsai.models import PhenotypeAnnotation, VariantCurationRecord
 
-from bonsai_app.bonsai_api import BonsaiApiClient
 from bonsai_app.custom_filters import get_who_group_from_tbprofiler_comment
 from bonsai_app.models import ElementType, PredictionSoftware, QualityControlResult
 
@@ -501,6 +500,11 @@ def submit_curations_batch(
         analysis_id = rec["analysis_id"]
         analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
+        resp = create_curation_fn(
+            analysis_type=analysis_type,
+            analysis_id=analysis_id,
+            record=curation_record,
+        )
         try:
             resp = create_curation_fn(
                 analysis_type=analysis_type,

@@ -700,7 +700,7 @@
                     <tr>
                         {% if extended %}
                             <td scope="col">
-                                <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'tbprofiler-variant-table')">
+                                <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                             </td>
                         {% endif %}
                         <td scope="col">Status</td>
@@ -733,7 +733,7 @@
                                            data-variant-id="{{ variant.id }}"
                                            data-analysis-type="{{ analysis.analysis_type }}"
                                            data-analysis-id="{{ analysis.analysis_id }}"
-                                           onclick="selectVariant(this)">
+                                    >
                                 </td>
                             {% endif %}
                             <td>
@@ -882,11 +882,6 @@
         </div>
     {% endif %}
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tbl = bonsai.initVariantsTable('tb-profiler-variant-tbl')
-    });
-</script>
 {% endmacro %}
 
 

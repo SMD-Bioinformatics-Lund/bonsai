@@ -160,20 +160,18 @@
         </div>
     </main>
 </div>
+<script src="{{ url_for('public.static', filename='sample-view.min.js') }}"></script>
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
     const sampleId = getSampleId()
     const rawGroupId = "{{ group_id|tojson }}"
-    const groupId = "null" ? null : rawGroupId 
+    const groupId = "null" ? null : rawGroupId
 
-    <script src="{{ url_for('public.static', filename='sample-view.min.js') }}"></script>
-    <script>
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
         initSampleView("{{ config.API_EXTERNAL_URL }}", "{{ token }}", "", sampleId, groupId)
     });
-    </script>
 
     function getSampleId() {
         // get sample id from the URL

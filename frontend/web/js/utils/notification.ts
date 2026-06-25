@@ -48,7 +48,7 @@ export const throwSmallToast = (message: string, type: string = "info") => {
       btn.classList.add("btn-close-white");
   }
 
-  const errorMessage = toast._element.querySelector(".toast-message");
+  const errorMessage = toast._element.querySelector("#toast-error-message");
   // add custom error message
   errorMessage.innerText = message;
   toast.show();
