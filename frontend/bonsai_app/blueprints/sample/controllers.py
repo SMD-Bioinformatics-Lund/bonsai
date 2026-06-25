@@ -4,17 +4,14 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import chain, groupby
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 from requests import HTTPError
 
-from bonsai_app.bonsai import (
-    PhenotypeAnnotation,
-    TokenObject,
-    VariantCurationRecord,
-    create_curation,
-)
+from bonsai_libs.api_client.bonsai.models import PhenotypeAnnotation, VariantCurationRecord
+
+from bonsai_app.bonsai_api import BonsaiApiClient
 from bonsai_app.custom_filters import get_who_group_from_tbprofiler_comment
 from bonsai_app.models import ElementType, PredictionSoftware, QualityControlResult
 
@@ -490,8 +487,8 @@ def build_curation_records(
 
 
 def submit_curations_batch(
-    token: TokenObject,
     records: list[dict[str, str | VariantCurationRecord]],
+    *, create_curation_fn: Callable[..., dict[str, Any]]
 ) -> list[CurationResult]:
     """Submit multiple curation records and aggregate results.
 
@@ -505,8 +502,7 @@ def submit_curations_batch(
         analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
         try:
-            resp = create_curation(
-                token,
+            resp = create_curation_fn(
                 analysis_type=analysis_type,
                 analysis_id=analysis_id,
                 record=curation_record,
