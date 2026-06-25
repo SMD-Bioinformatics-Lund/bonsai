@@ -28,7 +28,6 @@
         {% endblock css_style %}
 
         {% block scripts %}
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <!-- vendor bundle (shared libs) emitted by webpack splitChunks -->
         <script src="{{ url_for('public.static', filename='vendor.min.js') }}"></script>
         <script src="{{ url_for('public.static', filename='runtime.min.js') }}"></script>
