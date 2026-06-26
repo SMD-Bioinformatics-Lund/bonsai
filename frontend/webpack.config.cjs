@@ -1,5 +1,8 @@
 const webpack = require('webpack');
+const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const { resolve } = require('path');
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 module.exports = {
   devtool: 'inline-source-map',
@@ -16,8 +19,8 @@ module.exports = {
   },
 
   output: {
-    path: resolve(__dirname, 'build/js'),
-    filename: '[name].min.js',
+    path: resolve(__dirname, 'build'),
+    filename: '[name].[contenthash].bundle.js',
     clean: true,
   },
 
@@ -75,7 +78,8 @@ module.exports = {
     new webpack.ProvidePlugin({
       process: 'process/browser',
     }),
+    new WebpackManifestPlugin(),
   ],
 
-  mode: 'development',
+  mode: isProduction ? 'production' : 'development',
 };

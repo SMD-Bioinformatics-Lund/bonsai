@@ -31,6 +31,10 @@ FROM base AS development
 
 # Development convenience: local editable install
 COPY frontend/ ./frontend
+
+# Copy built JS to the python-builder context
+COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
+
 RUN pip install --upgrade setuptools setuptools-scm wheel \
  && pip install --editable ./frontend
 
@@ -45,17 +49,7 @@ FROM base AS python-builder
 COPY frontend/ ./frontend
 
 # Copy built JS to the python-builder context
-COPY --from=node-builder /app/frontend/build/js ./frontend/build/js
-
-# Copy required JS bundles into static directories (ignore missing files)
-RUN mkdir -p ./frontend/bonsai_app/blueprints/public/static/ \
-    && cp -v ./frontend/build/js/vendor.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
-    && cp -v ./frontend/build/js/group-view.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
-    && cp -v ./frontend/build/js/sample-view.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
-    && cp -v ./frontend/build/js/variants-table.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
-    && mkdir -p ./frontend/bonsai_app/blueprints/groups/static/ \
-    && cp -v ./frontend/build/js/group-editor.min.js ./frontend/bonsai_app/blueprints/groups/static/ || true
-
+COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
 
 ### Production layer ###
 FROM base AS production
