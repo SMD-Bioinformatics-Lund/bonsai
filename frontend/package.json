@@ -33,12 +33,13 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
     "webpack": "^5.99.8",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "webpack-manifest-plugin": "^6.0.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
-    "buildcp": "webpack && cp -v build/js/*.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-view.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/sample-view.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/variants-table.min.js bonsai_app/blueprints/public/static/ && cp -v build/js/group-editor.min.js bonsai_app/blueprints/groups/static",
+    "buildcp": "webpack && cp -v -r build/ bonsai_app/static",
     "lint": "eslint web",
     "lint:fix": "npm run lint -- --fix",
     "prettier": "npx prettier web",
