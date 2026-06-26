@@ -8,7 +8,7 @@
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('groups.static', filename='group-editor.min.js') }}"></script>
+  <script src="{{ asset_url('group-editor.js') }}"></script>
 {% endblock scripts %}
 
 {% block content %}

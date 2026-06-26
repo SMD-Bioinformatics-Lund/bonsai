@@ -45,7 +45,7 @@
         {{ sample_table(table_data) }}
     </div>
 </div>
-<script src="{{ url_for('public.static', filename='group-view.min.js') }}"></script>
+<script src="{{ asset_url('group-view.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         GroupView.initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
