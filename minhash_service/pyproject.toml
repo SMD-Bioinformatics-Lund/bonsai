@@ -32,7 +32,10 @@ dependencies = [
 "minhash-service" = "minhash_service.cli.main:main"
 
 [project.optional-dependencies]
-test = [ ]
+test = [ 
+  "pytest",
+  "pytest-mock",
+]
 
 [tool.isort]
 profile = "black"

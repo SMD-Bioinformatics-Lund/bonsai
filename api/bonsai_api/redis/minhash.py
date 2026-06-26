@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from rq import Queue, Retry
 from rq.job import Dependency
 
-from ..models.cluster import TypingMethod
+from bonsai_api.models.enums import TypingMethod
 from .models import ClusterMethod, SubmittedJob
 from .queue import redis
 

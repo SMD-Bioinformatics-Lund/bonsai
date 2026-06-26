@@ -7,19 +7,81 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
-  mongodb:
-    ports:
-      - "27017:27017"
+  # ─────────────────────────────────────────────
+  # Initialisation
+  # ─────────────────────────────────────────────
+
+
+  mongo-init:
+    image: mongo:4.4.22
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: |
+      mongo mongodb:27017 --eval "
+        try {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
+          print('Replica set initialized');
+        } catch (e) {
+          if (e.code === 23) {
+            print('Replica set already initialized');
+          } else {
+            throw e;
+          }
+        }
+      "
+    networks: [bonsai]
+    restart: on-failure
+
+  bootstrap:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["init", "e2e"]
+    env_file: docker-compose.env
+    depends_on:
+      api:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017?replicaSet=rs0
+      BONSAI_API: http://api:8000
+    volumes:
+      - ./bootstrap/default.yml:/bootstrap/default.yml:ro
+    command: prp bonsai bootstrap /bootstrap/default.yml
+    restart: "no"
+    networks: [bonsai]
+  
+  # ─────────────────────────────────────────────
+  # Data seeder
+  # ─────────────────────────────────────────────
+
+  test-data-seeder:
+    image: clinicalgenomicslund/bonsai-prp:dev
+    profiles: ["init", "e2e"]
+    env_file: docker-compose.env
+    depends_on:
+      api:
+        condition: service_healthy
+      mongo-init:
+        condition: service_completed_successfully
+    environment:
+      BONSAI_API: http://api:8000
+    volumes:
+      - ./e2e_tests/fixtures/samples:/data:ro
+    command: prp bonsai upload /data/tb_sample_1/tb_sample_1.manifest.yml
+    restart: "no"
+    networks: [bonsai]
+
+  # ─────────────────────────────────────────────
+  # Development conveniences
+  # ─────────────────────────────────────────────
 
   frontend:
     build: 
       target: development
     environment:
-      - FLASK_ENV=development 
-      - API_INTERNAL_URL=http://api:8000
-      - API_EXTERNAL_URL=http://localhost:8001
-    depends_on:
-      - api
+      API_INTERNAL_URL: http://api:8000
+      API_EXTERNAL_URL: http://localhost:8001
     develop:
       watch: 
         - path: ./frontend/setup.cfg
@@ -34,7 +96,13 @@ services:
     build: 
       target: development
     environment: 
-      - notification_service_api=http://notification_service:8000/
+      NOTIFICATION_SERVICE_API: http://notification_service:8000/
+    volumes:
+      - ./volumes/api/reference_genomes:/reference_genomes:ro
+      - ./volumes/api/annotations:/annotations:ro
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
     develop:
       watch: 
         - path: ./api/Dockerfile
@@ -43,11 +111,6 @@ services:
           action: rebuild
         - path: ./api/bonsai_api
           target: /app/api/bonsai_api
-          action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
           action: sync
 
   minhash_service:
@@ -62,16 +125,8 @@ services:
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
           action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
-          action: sync
 
   minhash_cron_service:
-    environment:
-      - INTEGRITY_TASK_CRON=* * * * *
-      - PURGE_FILES_TASK_CRON=* * * * *
     build: 
       target: development
     develop:
@@ -82,11 +137,6 @@ services:
           action: rebuild
         - path: ./minhash_service/minhash_service
           target: /app/minhash_service/minhash_service
-          action: sync
-        - path: ./libs/api_client/pyproject.toml
-          action: rebuild
-        - path: ./libs/api_client/api_client
-          target: /app/api_client/api_client
           action: sync
   
   allele_cluster_service:
@@ -106,7 +156,7 @@ services:
     build:
       target: development
     environment:
-      - log_level=debug
+      LOG_LEVEL: debug
     develop:
       watch: 
         - path: ./ska_service/setup.cfg
@@ -121,8 +171,8 @@ services:
     build: 
       target: development
     environment:
-      - SMTP_HOST=mailhog
-      - SMTP_PORT=1025
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
     ports: 
       - "8005:8000"
     develop:
@@ -159,46 +209,32 @@ services:
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
-    networks:
-      - bonsai-net
+    networks: [bonsai]
 
-  seed:
-    build: 
-      context: .
-      dockerfile: api/Dockerfile
-      network: host
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      api:
-        condition: service_healthy
-      mongo-init-replica:
-        condition: service_completed_successfully
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017?replicaSet=rs0
-    volumes:
-      - ./scripts/seed_db.py:/seed_db.py:ro
-    command: "python /seed_db.py"
-    restart: no
-    networks:
-      - bonsai-net
+  # ─────────────────────────────────────────────
+  # End‑to‑end testing
+  # ─────────────────────────────────────────────
   
-  db_upload:
-    container_name: db-upload
-    build: 
-      context: e2e_tests
-      network: host
+  chrome:
+    image: selenium/standalone-chrome
+    profiles: ["e2e"]
+    shm_size: 2gb
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    networks: [bonsai]
+
+  e2e-tests:
+    build: e2e_tests
+    profiles: ["e2e"]
     depends_on:
-      mongodb:
-        condition: service_healthy
+      chrome:
+        condition: service_started
+      frontend:
+        condition: service_started
       api:
         condition: service_healthy
-      seed:
-        condition: service_completed_successfully
     volumes:
-     - ./scripts/upload_sample.py:/app/upload_sample.py:ro
-     - ./scripts/upload_test_samples.sh:/app/upload_test_samples.sh:ro
-    command: bash /app/upload_test_samples.sh
-    restart: no
-    networks:
-      - bonsai-net
+      - ./reports:/app/reports
+    restart: "no"
+    networks: [bonsai]

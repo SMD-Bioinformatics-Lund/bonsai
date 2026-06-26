@@ -3,15 +3,15 @@
 from typing import Any
 
 from bonsai_api.db import Database
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.io import parse_metadata_table
-from bonsai_api.models.group import SampleTableColumnInput
-from bonsai_api.models.metadata import (InputMetaEntry, MetaEntriesInDb,
-                                        MetaEntryInDb)
+
+# from bonsai_api.models.group import SampleTableColumnInput
+from bonsai_api.models.metadata import InputMetaEntry, MetaEntriesInDb, MetaEntryInDb
 from pydantic import TypeAdapter
 from pymongo.results import UpdateResult
 
-from .errors import EntryNotFound
-from .sample import get_sample
+from .sample import get_sample_by_id
 
 
 async def add_metadata_to_sample(
@@ -20,9 +20,10 @@ async def add_metadata_to_sample(
     """Add one or more metadata records to a sample in the database."""
 
     # 1. verify that fieldname does not already exist
-    sample_obj = await get_sample(sample_id=sample_id, db=db)
+    sample_obj = await get_sample_by_id(db, sample_id=sample_id)
     input_fieldnames = {met.fieldname for met in metadata}
-    db_fieldnames = {meta.fieldname for meta in sample_obj.metadata}
+    sample_meta = sample_obj['metadata']
+    db_fieldnames = {meta.fieldname for meta in sample_meta}
     if len(input_fieldnames & db_fieldnames) > 0:
         raise FileExistsError(
             f"Metadata field '{metadata.fieldname}' already exist for sample {sample_id}"
@@ -30,8 +31,8 @@ async def add_metadata_to_sample(
 
     # 2. push new metadata entry to existing metadata
     meta_info: list[MetaEntryInDb] = []
-    for meta in sample_obj.metadata:
-        if meta.fieldname not in input_fieldnames:
+    for meta in sample_meta:
+        if meta['fieldname'] not in input_fieldnames:
             meta_info.append(meta)
     # if entry is a table, serialize and reformat
     for record in metadata:
@@ -68,13 +69,14 @@ async def get_metadata_fields_for_samples(
         if meta.fieldname not in uniq_obj:
             uniq_obj[meta.fieldname] = meta
 
-    cols = [
-        SampleTableColumnInput(
-            id=entry.fieldname.lower().replace(" ", "-"),
-            label=entry.fieldname,
-            path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
-            type=entry.type,
-        )
-        for entry in uniq_obj.values()
-    ]
+    # cols = [
+    #     SampleTableColumnInput(
+    #         id=entry.fieldname.lower().replace(" ", "-"),
+    #         label=entry.fieldname,
+    #         path=f'$.metadata[*][?(@.fieldname = "{entry.fieldname}")].value',
+    #         type=entry.type,
+    #     )
+    #     for entry in uniq_obj.values()
+    # ]
+    cols = []
     return cols

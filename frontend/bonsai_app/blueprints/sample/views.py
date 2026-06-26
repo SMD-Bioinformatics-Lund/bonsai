@@ -6,22 +6,37 @@ from datetime import date
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
-from flask import (Blueprint, abort, current_app, flash, make_response,
-                   redirect, render_template, request, url_for)
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user, login_required
 from requests import HTTPError
 
-from ...bonsai import (TokenObject, cgmlst_cluster_samples, delete_samples,
-                       find_samples_similar_to_reference, get_antibiotics,
-                       get_group_by_id, get_lims_export_response,
-                       get_sample_by_id, get_variant_rejection_reasons,
-                       post_comment_to_sample, remove_comment_from_sample,
-                       update_sample_qc_classification, update_variant_info)
-from ...models import BadSampleQualityAction, QualityControlResult
-from .controllers import (filter_variants, filter_variants_if_processed,
-                          get_all_variant_types, get_all_who_classifications,
-                          get_variant_genes, kw_metadata_to_table,
-                          sort_variants, split_metadata)
+from bonsai_app.bonsai_api import get_api_client
+from bonsai_app.models import BadSampleQualityAction, QualityControlResult
+
+from .controllers import (
+    build_curation_records,
+    filter_variants,
+    filter_variants_if_processed,
+    get_all_variant_types,
+    get_all_who_classifications,
+    get_results_by,
+    get_variant_genes,
+    kw_metadata_to_table,
+    merge_variants_with_curations,
+    sort_variants,
+    split_metadata,
+    submit_curations_batch,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -46,11 +61,11 @@ def samples():
 def remove_samples():
     """Remove samples."""
     if current_user.is_admin:
-        token = TokenObject(**current_user.get_id())
+        client = get_api_client()
 
         sample_ids = json.loads(request.form.get("sample-ids", "[]"))
         if len(sample_ids) > 0:
-            result = delete_samples(token, sample_ids=sample_ids)
+            result = client.delete_samples(sample_ids=sample_ids)
             current_app.logger.info(
                 "removed %d samples, removed from %d groups",
                 result["n_deleted"],
@@ -65,11 +80,11 @@ def remove_samples():
 @login_required
 def cluster(sample_id: str) -> str:
     """Samples view."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     if request.method == "POST":
         samples_info = request.body["samples"]
-        cgmlst_cluster_samples(token, samples=samples_info)
+        client.cluster_samples(samples_info, typing_method="cgmlst")
     return render_template("sample.html", sample_id=sample_id)
 
 
@@ -86,10 +101,10 @@ def sample(sample_id: str) -> str:
     :rtype: str
     """
     current_app.logger.debug("Removing non-validated genes from input")
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
     # get sample
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -109,28 +124,36 @@ def sample(sample_id: str) -> str:
     )
 
     # filter tbprofiler results and sort variants
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
     sample_info = filter_variants_if_processed(sample_info)
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
-    sample_info = sort_variants(sample_info)
-    LOG.warning(len(sample_info["element_type_result"][0]["result"]["variants"]))
+
+    # Sort variants within all prediction results
+    for pred_res in sample_info.get("element_type_result", []):
+        if "variants" in pred_res.get("result", {}):
+            pred_res["result"]["variants"] = sort_variants(
+                pred_res["result"]["variants"]
+            )
 
     # get all actions if sample fail qc
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
+    # Filter AMR results and merge curation data into variants for each AMR result
+    for result in sample_info.get("element_type_result", []):
+        if result.get("analysis_type") == "amr":
+            merge_variants_with_curations(result)
+
     return render_template(
         "sample.html",
         sample=sample_info,
         group_id=group_id,
-        title=sample_id,
+        title=sample_info["sample_name"],
         is_filtered=bool(group_id),
         bad_qc_actions=bad_qc_actions,
         extended=extended,
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
-        token=token.token,
+        token=current_user.token,
     )
 
 
@@ -138,12 +161,13 @@ def sample(sample_id: str) -> str:
 @login_required
 def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
     """Find samples that are similar."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     limit = request.json.get("limit", 10)
     similarity = request.json.get("similarity", 0.5)
     try:
-        resp = find_samples_similar_to_reference(
-            token, sample_id=sample_id, limit=limit, similarity=similarity
+        resp = client.find_samples_similar_to_reference(
+            sample_id=sample_id, limit=limit, similarity=similarity
         )
     except HTTPError as error:
         return {"status": 500, "details": str(error)}, 500
@@ -154,12 +178,13 @@ def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
 @login_required
 def add_comment(sample_id: str) -> str:
     """Post sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     # post comment
     data = request.form["comment"]
     try:
-        post_comment_to_sample(
-            token, sample_id=sample_id, user_name=current_user.username, comment=data
+        client.post_comment_to_sample(
+            sample_id=sample_id, user_name=current_user.username, comment=data
         )
     except HTTPError:
         flash("Error posting commment", "danger")
@@ -170,10 +195,10 @@ def add_comment(sample_id: str) -> str:
 @login_required
 def hide_comment(sample_id: str, comment_id: str) -> str:
     """Hist comment for sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
     # hide comment
     try:
-        remove_comment_from_sample(token, sample_id=sample_id, comment_id=comment_id)
+        client.remove_comment_from_sample(sample_id=sample_id, comment_id=comment_id)
     except HTTPError as error:
         flash(str(error), "danger")
     return redirect(url_for("samples.sample", sample_id=sample_id))
@@ -183,7 +208,7 @@ def hide_comment(sample_id: str, comment_id: str) -> str:
 @login_required
 def update_qc_classification(sample_id: str) -> str:
     """Update the quality control report of a sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
@@ -197,8 +222,8 @@ def update_qc_classification(sample_id: str) -> str:
         raise ValueError(f"Unknown value of qc classification, {result}")
 
     try:
-        update_sample_qc_classification(
-            token, sample_id=sample_id, status=result, action=action, comment=comment
+        client.update_sample_qc_classification(
+            sample_id=sample_id, status=result, action=action, comment=comment
         )
     except HTTPError as error:
         flash(str(error), "danger")
@@ -211,8 +236,7 @@ def update_qc_classification(sample_id: str) -> str:
 @login_required
 def download_lims(sample_id: str):
     """Download a LIMS compatible file with UTF-8 encoding."""
-    # get user auth token
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     # default file name
     fmt = request.args.get("fmt", "tsv")
@@ -223,20 +247,22 @@ def download_lims(sample_id: str):
 
     # Fetch from API
     try:
-        api_resp = get_lims_export_response(token, sample_id=sample_id, fmt=fmt)
+        api_resp = client.get_lims_export_response(sample_id=sample_id, fmt=fmt)
     except HTTPError as error:
         # log errors
+        status_code = error.response.status_code
         status = error.response.status_code == 401
         if status:
             current_app.logger.warning(
                 "LIMS export error - no permissoin %s", current_user.username
             )
             flash("You dont have permission to export the result to LIMS", "warning")
-        elif status == 404:
+        elif status_code == 404:
             flash("Sample not found", "warning")
-        elif status == 422:
-            flash("Export is not supported for this assay", "warning")
-        elif status == 501:
+        elif status_code == 422:
+            default_msg = "Export is not supported for this assay"
+            flash(error.response.json().get("detail", default_msg), "warning")
+        elif status_code == 501:
             flash("Export not implemented for this assay", "warning")
         else:
             current_app.logger.error(
@@ -276,27 +302,109 @@ def download_lims(sample_id: str):
 @samples_bp.route("/sample/<sample_id>/resistance/variants", methods=["GET", "POST"])
 @login_required
 def resistance_variants(sample_id: str) -> str:
-    """Samples view."""
-    token = TokenObject(**current_user.get_id())
-    sample_info = get_sample_by_id(token, sample_id=sample_id)
-    sample_info = sort_variants(sample_info)
+    """Display and manage resistance variants for a sample.
 
-    # check if IGV should be enabled
-    display_genome_browser = all(
-        [
-            sample_info["reference_genome"] is not None,
-            sample_info["read_mapping"] is not None,
-        ]
+    Supports filtering and classification of variants from tbprofiler AMR analysis.
+
+    :param sample_id: The sample identifier
+    :type sample_id: str
+    :return: Rendered HTML page
+    :rtype: str
+    """
+    client = get_api_client()
+    sample_info = client.get_sample_by_id(sample_id=sample_id)
+
+    # Handle POST requests for filtering or variant classification
+    if request.method == "POST":
+        if "classify-variant" in request.form:
+            try:
+                records = json.loads(request.form.get("curations", "[]"))
+                resistance = request.form.getlist("amrs")
+                resistance_level = request.form.get("resistance-lvl-btn")
+
+                if len(records) == 0:
+                    flash("No variants selected for curation", "info")
+                    return redirect(
+                        url_for("samples.resistance_variants", sample_id=sample_id)
+                    )
+
+                # resolve rejection reason
+                rej_reason = None
+                if request.form.get("verify-variant-btn") == "reject":
+                    rej_reason_label = request.form.get("rejection-reason")
+                    rejection_reasons = client.get_variant_rejection_reasons()
+                    rej_reason = next(
+                        (
+                            r
+                            for r in rejection_reasons
+                            if r["label"] == rej_reason_label
+                        ),
+                        None,
+                    )
+                    if not rej_reason:
+                        flash("Invalid rejection reason", "danger")
+                        return redirect(
+                            url_for("samples.resistance_variants", sample_id=sample_id)
+                        )
+
+                # Build and submit curations
+                batch_records = build_curation_records(
+                    records=records,
+                    decision=request.form.get("verify-variant-btn"),
+                    rejection_reason=rej_reason,
+                    phenotypes=resistance,
+                    resistance_level=resistance_level,
+                )
+                results = submit_curations_batch(batch_records, create_curation_fn=client.create_curation)
+
+                # Report results to user
+                successes = sum(1 for r in results if r.success)
+                failures = sum(1 for r in results if not r.success)
+
+                if successes > 0:
+                    flash(f"Successfully created {successes} curation(s)", "success")
+                if failures > 0:
+                    error_details = "; ".join(r.error for r in results if not r.success)
+                    flash(
+                        f"Failed to create {failures} curation(s): {error_details}",
+                        "danger",
+                    )
+
+            except (json.JSONDecodeError, ValueError) as err:
+                LOG.error("Invalid form data: %s", err)
+                flash("Invalid form data submitted", "danger")
+
+        else:
+            # Apply variant filters from form
+            sample_info = filter_variants(sample_info, form=request.form)
+
+    # Sort variants within all tbprofiler AMR results
+    tbprofiler_results = get_results_by(
+        sample_info, software="tbprofiler", analysis_type="amr"
     )
+    for pred_res in tbprofiler_results:
+        pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
-    # populate form for filter varaints
+    # Sort top-level structural and SNV variants if present
+    for variant_key in ("sv_variants", "snv_variants"):
+        if variant_key in sample_info and sample_info[variant_key]:
+            sample_info[variant_key] = sort_variants(sample_info[variant_key])
+
+    # Check if IGV genome browser should be enabled
+    display_genome_browser = sample_info.get("reference_genome_id") is not None
+
+    # Prepare antibiotics grouped by family for filter form
     antibiotics = {
         fam: list(amrs)
-        for fam, amrs in groupby(get_antibiotics(), key=lambda ant: ant["family"])
+        for fam, amrs in groupby(
+            client.get_antibiotics(), key=lambda ant: ant["family"]
+        )
     }
-    rejection_reasons = get_variant_rejection_reasons()
 
-    # populate form for filter varaints
+    # Get rejection reasons for form
+    rejection_reasons = client.get_variant_rejection_reasons()
+
+    # Prepare filter form data
     form_data = {
         "filter_genes": get_variant_genes(sample_info, software="tbprofiler"),
         "filter_who_class": get_all_who_classifications(
@@ -307,39 +415,51 @@ def resistance_variants(sample_id: str) -> str:
         ),
     }
 
-    if request.method == "POST":
-        # check if which form deposited data
-        if "classify-variant" in request.form:
-            token = TokenObject(**current_user.get_id())
-            variant_ids = json.loads(request.form.get("variant-ids", "[]"))
-            resistance: list[str] = request.form.getlist("amrs")
-            # expand rejection reason label to full db object
-            rej_reason = None
-            for reason in rejection_reasons:
-                if reason["label"] == request.form.get("rejection-reason"):
-                    rej_reason = reason
-            # parse updated variant classification
-            status: dict[str, str | list[str] | None] = {
-                "verified": request.form.get("verify-variant-btn"),
-                "reason": rej_reason,
-                "phenotypes": resistance,
-                "resistance_lvl": request.form.get("resistance-lvl-btn"),
-            }
-            sample_info = update_variant_info(
-                token, sample_id=sample_id, variant_ids=variant_ids, status=status
-            )
-        else:
-            sample_info = filter_variants(sample_info, form=request.form)
-        # resort variants after processing
-        sample_info = sort_variants(sample_info)
+    # Filter AMR results to only display tbprofiler non-virulence results
+    amr_results = [
+        elem
+        for elem in sample_info.get("element_type_result", [])
+        if elem.get("software") == "tbprofiler" and elem.get("type") != "VIRULENCE"
+    ]
 
+    # Merge curation data into variants for each AMR result
+    for result in amr_results:
+        merge_variants_with_curations(result)
+
+    # Prepare form state with user selections
+    form_state = {
+        "freq_operator": request.form.get("freq-operator", "gte"),
+        "min_frequency": request.form.get("min-frequency", ""),
+        "depth_operator": request.form.get("depth-operator", "gte"),
+        "min_depth": request.form.get("min-depth", ""),
+        "selected_genes": set(request.form.getlist("filter-genes")),
+        "selected_types": set(request.form.getlist("filter-variant-type")),
+        "selected_who_classes": set(request.form.getlist("filter-who-class")),
+        "yield_resistance": bool(request.form.get("yeild-resistance")),
+        "hide_dismissed": bool(request.form.get("hide-dismissed")),
+    }
+
+    # Enhance structural variants with computed data
+    for variant in sample_info.get("sv_variants", []):
+        # Determine row styling based on verification status
+        variant["row_class"] = (
+            "table-success"
+            if variant.get("verified") == "passed"
+            else "table-danger" if variant.get("verified") == "failed" else ""
+        )
+        # Prepare display ID for IGV links
+        variant["display_id"] = f"sv_variants-{variant.get('id', '')}"
+
+    # Split metadata into key-value and table formats
     _, meta_tbls = split_metadata(sample_info)
 
     return render_template(
         "resistance_variants.html",
         title=f"{sample_id} resistance",
         sample=sample_info,
+        amr_results=amr_results,
         form_data=form_data,
+        form_state=form_state,
         antibiotics=antibiotics,
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
@@ -351,11 +471,10 @@ def resistance_variants(sample_id: str) -> str:
 @login_required
 def metadata(sample_id: str) -> str:
     """Open a metadata table."""
+    client = get_api_client()
 
-    token = TokenObject(**current_user.get_id())
-    # get sample
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -382,10 +501,9 @@ def metadata(sample_id: str) -> str:
 def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     """Open a metadata table."""
 
-    token = TokenObject(**current_user.get_id())
-    # get sample
+    client = get_api_client()
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)

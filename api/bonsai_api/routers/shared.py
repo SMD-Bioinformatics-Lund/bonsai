@@ -3,17 +3,11 @@
 import gzip
 import json
 import logging
-from enum import StrEnum
-from typing import Any, Literal
+from typing import Literal
 
-from api_client.audit_log.models import Actor, SourceType
-from bonsai_api.dependencies import get_current_active_user
-from bonsai_api.models.user import UserOutputDatabase
-from fastapi import Depends, File, HTTPException, Path, Request, UploadFile
-from pydantic import BaseModel, Field
+from fastapi import File, HTTPException, Path, UploadFile
 
-from ..models.sample import (SAMPLE_ID_PATTERN, QcClassification,
-                             SampleQcClassification)
+from bonsai_api.models.qc import QcClassification, SampleQcClassification
 
 LOG = logging.getLogger(__name__)
 
@@ -45,19 +39,7 @@ SAMPLE_ID_PATH: str = Path(
     title="ID of the sample to get",
     min_length=3,
     max_length=100,
-    pattern=SAMPLE_ID_PATTERN,
 )
-
-
-class RouterTags(StrEnum):
-    """Tag names for API routes."""
-
-    SAMPLE = "sample"
-    GROUP = "groups"
-    MEM = "memberships"
-    META = "metadata"
-    USR = "user"
-    JOB = "jobs"
 
 
 Action = Literal["include", "exclude"]

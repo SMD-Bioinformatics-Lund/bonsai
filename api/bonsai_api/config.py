@@ -7,10 +7,17 @@ import tomllib
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import (AfterValidator, BaseModel, ConfigDict, Field, FilePath,
-                      HttpUrl, ValidationError, model_validator)
-from pydantic_settings import (BaseSettings, SettingsConfigDict,
-                               TomlConfigSettingsSource)
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    FilePath,
+    HttpUrl,
+    ValidationError,
+    model_validator,
+)
+from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 
 ssl_defaults = ssl.get_default_verify_paths()
 
@@ -127,6 +134,12 @@ class QCConfig(BaseModel):
 class Settings(BaseSettings):
     """API configuration."""
 
+    # Options for creating a admin user on first startup.
+    # Its useful when running Bonsai in a containerized environment
+    bonsai_admin_user: str | None = None
+    bonsai_admin_password: str | None = None
+    bonsai_admin_mail: str | None = None
+
     # Configure allowed origins (CORS) for development. Origins are a comma seperated list.
     # https://fastapi.tiangolo.com/tutorial/cors/
     allowed_origins: list[str] = []
@@ -146,8 +159,8 @@ class Settings(BaseSettings):
     redis_port: str = "6379"
 
     # Reference genome and annotations for IGV
-    reference_genomes_dir: str = "/tmp/reference_genomes"
-    annotations_dir: str = "/tmp/annotations"
+    reference_genomes_dir: str = "/reference_genomes"
+    annotations_dir: str = "/annotations"
     # authentication options
     secret_key: str = "not-so-secret"  # openssl rand -hex 32
     access_token_expire_minutes: int = 180  # expiration time for accesst token
@@ -249,6 +262,7 @@ USER_ROLES = {
         "samples:update",
         "locations:read",
         "locations:write",
+        "reference_genomes:write"
     ],
     "user": [
         "users:me",
@@ -259,8 +273,8 @@ USER_ROLES = {
         "locations:write",
     ],
     "uploader": [
-        "groups:write" "samples:write",
-    ],
+        "groups:write", "samples:write", "reference_genomes:write"
+    ]
 }
 
 # load raw thresholds
