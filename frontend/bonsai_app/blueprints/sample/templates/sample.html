@@ -160,7 +160,7 @@
         </div>
     </main>
 </div>
-<script src="{{ url_for('public.static', filename='sample-view.min.js') }}"></script>
+<script src="{{ asset_url('sample-view.js') }}"></script>
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
