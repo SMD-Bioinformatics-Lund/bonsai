@@ -6,8 +6,8 @@ from typing import Any
 
 from .genomic_resource_service import list_genomic_resources_for_sample_service
 import uuid_utils as uuid
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.group import check_groups_exists
 from bonsai_api.crud.sample import (
     add_pipeline_run,

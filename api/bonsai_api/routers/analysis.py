@@ -17,7 +17,7 @@ from bonsai_api.dependencies import (
     get_request_context,
     get_audit_log,
 )
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)

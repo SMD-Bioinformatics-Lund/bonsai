@@ -15,12 +15,9 @@ FROM base AS python-builder
 
 WORKDIR /src
 
-COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
 
-RUN pip wheel --wheel-dir /wheels \
-    ./api_client \
-    ./minhash_service
+RUN pip wheel --wheel-dir /wheels ./minhash_service
 
 
 # Development layer
@@ -31,10 +28,9 @@ WORKDIR /app
 
 RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
-COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
 
-RUN pip install -e ./api_client -e ./minhash_service
+RUN pip install -e ./minhash_service
 
 # Dev-only runtime convenience
 RUN mkdir -p /data/signature_db

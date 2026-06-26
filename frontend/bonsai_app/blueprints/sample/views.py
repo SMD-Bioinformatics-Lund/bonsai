@@ -20,20 +20,9 @@ from flask import (
 from flask_login import current_user, login_required
 from requests import HTTPError
 
-from bonsai_app.bonsai import (
-    TokenObject,
-    cgmlst_cluster_samples,
-    delete_samples,
-    find_samples_similar_to_reference,
-    get_antibiotics,
-    get_lims_export_response,
-    get_sample_by_id,
-    get_variant_rejection_reasons,
-    post_comment_to_sample,
-    remove_comment_from_sample,
-    update_sample_qc_classification,
-)
+from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
+
 from .controllers import (
     build_curation_records,
     filter_variants,
@@ -72,11 +61,11 @@ def samples():
 def remove_samples():
     """Remove samples."""
     if current_user.is_admin:
-        token = TokenObject(**current_user.get_id())
+        client = get_api_client()
 
         sample_ids = json.loads(request.form.get("sample-ids", "[]"))
         if len(sample_ids) > 0:
-            result = delete_samples(token, sample_ids=sample_ids)
+            result = client.delete_samples(sample_ids=sample_ids)
             current_app.logger.info(
                 "removed %d samples, removed from %d groups",
                 result["n_deleted"],
@@ -91,11 +80,11 @@ def remove_samples():
 @login_required
 def cluster(sample_id: str) -> str:
     """Samples view."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     if request.method == "POST":
         samples_info = request.body["samples"]
-        cgmlst_cluster_samples(token, samples=samples_info)
+        client.cluster_samples(samples_info, typing_method="cgmlst")
     return render_template("sample.html", sample_id=sample_id)
 
 
@@ -112,10 +101,10 @@ def sample(sample_id: str) -> str:
     :rtype: str
     """
     current_app.logger.debug("Removing non-validated genes from input")
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
     # get sample
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -136,7 +125,7 @@ def sample(sample_id: str) -> str:
 
     # filter tbprofiler results and sort variants
     sample_info = filter_variants_if_processed(sample_info)
-    
+
     # Sort variants within all prediction results
     for pred_res in sample_info.get("element_type_result", []):
         if "variants" in pred_res.get("result", {}):
@@ -158,13 +147,13 @@ def sample(sample_id: str) -> str:
         "sample.html",
         sample=sample_info,
         group_id=group_id,
-        title=sample_info['sample_name'],
+        title=sample_info["sample_name"],
         is_filtered=bool(group_id),
         bad_qc_actions=bad_qc_actions,
         extended=extended,
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
-        token=token.token,
+        token=current_user.token,
     )
 
 
@@ -172,12 +161,13 @@ def sample(sample_id: str) -> str:
 @login_required
 def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
     """Find samples that are similar."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     limit = request.json.get("limit", 10)
     similarity = request.json.get("similarity", 0.5)
     try:
-        resp = find_samples_similar_to_reference(
-            token, sample_id=sample_id, limit=limit, similarity=similarity
+        resp = client.find_samples_similar_to_reference(
+            sample_id=sample_id, limit=limit, similarity=similarity
         )
     except HTTPError as error:
         return {"status": 500, "details": str(error)}, 500
@@ -188,12 +178,13 @@ def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
 @login_required
 def add_comment(sample_id: str) -> str:
     """Post sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     # post comment
     data = request.form["comment"]
     try:
-        post_comment_to_sample(
-            token, sample_id=sample_id, user_name=current_user.username, comment=data
+        client.post_comment_to_sample(
+            sample_id=sample_id, user_name=current_user.username, comment=data
         )
     except HTTPError:
         flash("Error posting commment", "danger")
@@ -204,10 +195,10 @@ def add_comment(sample_id: str) -> str:
 @login_required
 def hide_comment(sample_id: str, comment_id: str) -> str:
     """Hist comment for sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
     # hide comment
     try:
-        remove_comment_from_sample(token, sample_id=sample_id, comment_id=comment_id)
+        client.remove_comment_from_sample(sample_id=sample_id, comment_id=comment_id)
     except HTTPError as error:
         flash(str(error), "danger")
     return redirect(url_for("samples.sample", sample_id=sample_id))
@@ -217,7 +208,7 @@ def hide_comment(sample_id: str, comment_id: str) -> str:
 @login_required
 def update_qc_classification(sample_id: str) -> str:
     """Update the quality control report of a sample."""
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
@@ -231,8 +222,8 @@ def update_qc_classification(sample_id: str) -> str:
         raise ValueError(f"Unknown value of qc classification, {result}")
 
     try:
-        update_sample_qc_classification(
-            token, sample_id=sample_id, status=result, action=action, comment=comment
+        client.update_sample_qc_classification(
+            sample_id=sample_id, status=result, action=action, comment=comment
         )
     except HTTPError as error:
         flash(str(error), "danger")
@@ -245,8 +236,7 @@ def update_qc_classification(sample_id: str) -> str:
 @login_required
 def download_lims(sample_id: str):
     """Download a LIMS compatible file with UTF-8 encoding."""
-    # get user auth token
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
 
     # default file name
     fmt = request.args.get("fmt", "tsv")
@@ -257,7 +247,7 @@ def download_lims(sample_id: str):
 
     # Fetch from API
     try:
-        api_resp = get_lims_export_response(token, sample_id=sample_id, fmt=fmt)
+        api_resp = client.get_lims_export_response(sample_id=sample_id, fmt=fmt)
     except HTTPError as error:
         # log errors
         status_code = error.response.status_code
@@ -321,8 +311,8 @@ def resistance_variants(sample_id: str) -> str:
     :return: Rendered HTML page
     :rtype: str
     """
-    token = TokenObject(**current_user.get_id())
-    sample_info = get_sample_by_id(token, sample_id=sample_id)
+    client = get_api_client()
+    sample_info = client.get_sample_by_id(sample_id=sample_id)
 
     # Handle POST requests for filtering or variant classification
     if request.method == "POST":
@@ -334,23 +324,29 @@ def resistance_variants(sample_id: str) -> str:
 
                 if len(records) == 0:
                     flash("No variants selected for curation", "info")
-                    return redirect(url_for("samples.resistance_variants", sample_id=sample_id))
-                
+                    return redirect(
+                        url_for("samples.resistance_variants", sample_id=sample_id)
+                    )
+
                 # resolve rejection reason
                 rej_reason = None
                 if request.form.get("verify-variant-btn") == "reject":
                     rej_reason_label = request.form.get("rejection-reason")
-                    rejection_reasons = get_variant_rejection_reasons()
+                    rejection_reasons = client.get_variant_rejection_reasons()
                     rej_reason = next(
-                        (r for r in rejection_reasons 
-                         if r["label"] == rej_reason_label),
-                        None
+                        (
+                            r
+                            for r in rejection_reasons
+                            if r["label"] == rej_reason_label
+                        ),
+                        None,
                     )
                     if not rej_reason:
                         flash("Invalid rejection reason", "danger")
-                        return redirect(url_for("samples.resistance_variants",
-                                               sample_id=sample_id))
-                    
+                        return redirect(
+                            url_for("samples.resistance_variants", sample_id=sample_id)
+                        )
+
                 # Build and submit curations
                 batch_records = build_curation_records(
                     records=records,
@@ -359,23 +355,25 @@ def resistance_variants(sample_id: str) -> str:
                     phenotypes=resistance,
                     resistance_level=resistance_level,
                 )
-                results = submit_curations_batch(token, batch_records)
-            
+                results = submit_curations_batch(batch_records, create_curation_fn=client.create_curation)
+
                 # Report results to user
                 successes = sum(1 for r in results if r.success)
                 failures = sum(1 for r in results if not r.success)
-                
+
                 if successes > 0:
                     flash(f"Successfully created {successes} curation(s)", "success")
                 if failures > 0:
                     error_details = "; ".join(r.error for r in results if not r.success)
-                    flash(f"Failed to create {failures} curation(s): {error_details}", 
-                          "danger")
+                    flash(
+                        f"Failed to create {failures} curation(s): {error_details}",
+                        "danger",
+                    )
 
             except (json.JSONDecodeError, ValueError) as err:
                 LOG.error("Invalid form data: %s", err)
                 flash("Invalid form data submitted", "danger")
-            
+
         else:
             # Apply variant filters from form
             sample_info = filter_variants(sample_info, form=request.form)
@@ -385,9 +383,7 @@ def resistance_variants(sample_id: str) -> str:
         sample_info, software="tbprofiler", analysis_type="amr"
     )
     for pred_res in tbprofiler_results:
-        pred_res["result"]["variants"] = sort_variants(
-            pred_res["result"]["variants"]
-        )
+        pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
     # Sort top-level structural and SNV variants if present
     for variant_key in ("sv_variants", "snv_variants"):
@@ -400,11 +396,13 @@ def resistance_variants(sample_id: str) -> str:
     # Prepare antibiotics grouped by family for filter form
     antibiotics = {
         fam: list(amrs)
-        for fam, amrs in groupby(get_antibiotics(), key=lambda ant: ant["family"])
+        for fam, amrs in groupby(
+            client.get_antibiotics(), key=lambda ant: ant["family"]
+        )
     }
-    
+
     # Get rejection reasons for form
-    rejection_reasons = get_variant_rejection_reasons()
+    rejection_reasons = client.get_variant_rejection_reasons()
 
     # Prepare filter form data
     form_data = {
@@ -419,7 +417,8 @@ def resistance_variants(sample_id: str) -> str:
 
     # Filter AMR results to only display tbprofiler non-virulence results
     amr_results = [
-        elem for elem in sample_info.get("element_type_result", [])
+        elem
+        for elem in sample_info.get("element_type_result", [])
         if elem.get("software") == "tbprofiler" and elem.get("type") != "VIRULENCE"
     ]
 
@@ -444,9 +443,9 @@ def resistance_variants(sample_id: str) -> str:
     for variant in sample_info.get("sv_variants", []):
         # Determine row styling based on verification status
         variant["row_class"] = (
-            "table-success" if variant.get("verified") == "passed"
-            else "table-danger" if variant.get("verified") == "failed"
-            else ""
+            "table-success"
+            if variant.get("verified") == "passed"
+            else "table-danger" if variant.get("verified") == "failed" else ""
         )
         # Prepare display ID for IGV links
         variant["display_id"] = f"sv_variants-{variant.get('id', '')}"
@@ -472,11 +471,10 @@ def resistance_variants(sample_id: str) -> str:
 @login_required
 def metadata(sample_id: str) -> str:
     """Open a metadata table."""
+    client = get_api_client()
 
-    token = TokenObject(**current_user.get_id())
-    # get sample
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -503,10 +501,9 @@ def metadata(sample_id: str) -> str:
 def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     """Open a metadata table."""
 
-    token = TokenObject(**current_user.get_id())
-    # get sample
+    client = get_api_client()
     try:
-        sample_info = get_sample_by_id(token, sample_id=sample_id)
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)

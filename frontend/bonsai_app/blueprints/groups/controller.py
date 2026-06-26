@@ -3,8 +3,9 @@
 import logging
 from typing import Any
 
-from bonsai_app.models import TableCell, TableColumn, TableData
 from jsonpath2.path import Path as jsonPath
+
+from bonsai_app.models import TableCell, TableColumn, TableData
 
 LOG = logging.getLogger(__name__)
 
@@ -25,7 +26,6 @@ COLUMN_RENDERERS = {
 }
 
 
-
 def _get_renderer(column: dict[str, Any]) -> str:
     """Get the renderer for a given column type."""
     if override := COLUMN_RENDERERS.get(column.get("id")):
@@ -34,7 +34,7 @@ def _get_renderer(column: dict[str, Any]) -> str:
     col_type = column["type"]
     if renderer := DEFAULT_RENDERERS.get(col_type):
         return renderer
-    
+
     if col_type == "object":
         return f"{column['id']}_renderer"
 
