@@ -2,6 +2,7 @@
 
 import logging
 from typing import Any
+import uuid_utils as uuid
 
 from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from bonsai_libs.api_client.audit_log.models import SourceType, Subject
@@ -13,9 +14,11 @@ from bonsai_api.crud.group import (
     find_group_owner_id,
     get_groups_crud,
     insert_group_document,
+    update_allowed_columns,
     update_group_core_doc,
     upsert_preset_doc,
 )
+from bonsai_api.crud.group import get_group as get_group_crud
 from bonsai_api.crud.user import user_exists
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
@@ -125,8 +128,9 @@ def _build_group_payload(
     group_record: GroupInfoCreate, owner_id: str | None
 ) -> GroupRecordDb:
     """Build GroupRecordDb representation from create payload."""
+    group_id = str(uuid.uuid7())
     core = GroupCore(
-        group_id=group_record.group_id,
+        group_id=group_id,
         display_name=group_record.display_name,
         description=group_record.description,
         visibility=group_record.visibility,
@@ -206,7 +210,7 @@ async def create_group_service(
     # Build database document
     payload = _build_group_payload(group_record, creator.user_id)
 
-    event_subject = Subject(id=group_record.group_id, type=SourceType.USR)
+    event_subject = Subject(id=payload.core.group_id, type=SourceType.USR)
     with audit_event_context(audit, "create_group", ctx, event_subject):
         try:
             await insert_group_document(
@@ -215,7 +219,7 @@ async def create_group_service(
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
             raise ConflictError(
-                f"Group with id {group_record.group_id} already exists."
+                f"Group with id {payload.core.group_id} already exists."
             ) from dke
         except PyMongoError as pme:
             LOG.error("MongoDB error while creating group: %s", str(pme))
@@ -340,25 +344,11 @@ async def get_group(
         )
 
     try:
-        data_pipeline: PipelineStages = [
-            {"$match": {"core.group_id": group_id}},
-        ]
-        if user_id is not None and "admin" not in (user_roles or []):
-            # non-admin users only see public groups, or those they own / are invited to
-            data_pipeline.append(build_group_visibility_match_stage(user_id))
-
-        # add data fields
-        data_pipeline.append(group_project_stage(include_presets=True))
-
-        agg_cursor = await db.sample_group_collection.aggregate(
-            data_pipeline, session=session
+        doc = await get_group_crud(
+            db=db, group_id=group_id, user_id=user_id, 
+            user_roles=user_roles, session=session
         )
-        docs = await agg_cursor.to_list(1)
-        if not docs:
-            # Either the group doesn't exist OR the caller isn't allowed to see it.
-            raise EntryNotFound(group_id)
-
-        return GroupInfoOut.model_validate(docs[0])
+        return GroupInfoOut.model_validate(doc)
     except PyMongoError as pme:
         LOG.error("MongoDB error while retrieving group: %s", str(pme))
         raise DatabaseOperationError(
@@ -533,6 +523,39 @@ async def upsert_column_preset(
         if not doc:
             raise EntryNotFound(group_id)
 
+    try:
+        return _build_group_output(doc)
+    except ValidationError as exc:
+        LOG.error(
+            "Failed to validate pydantic model '%s': %s", GroupInfoOut.__name__, doc
+        )
+        raise RuntimeError(
+            f"Failed to cast document as GroupInfoOut: {str(exc)}"
+        ) from exc
+
+
+async def set_allowed_columns(
+        db: Database,
+        *,
+        group_id: str,
+        column_ids: list[str],
+        ctx: ApiRequestContext,
+        audit: AuditLogClient | None = None,
+        session: Any = None
+        ) -> GroupInfoOut:
+    """Set allowed columns for a group. This will restrict which columns are available for selection in the UI."""
+    event_subject = Subject(id=group_id, type=SourceType.USR)
+    with audit_event_context(audit, "set_allowed_columns", ctx, event_subject):
+        try:
+            doc = await update_allowed_columns(db, group_id=group_id, column_ids=column_ids, session=session)
+        except PyMongoError as pme:
+            LOG.error("MongoDB error upserting allowed columns: %s", str(pme))
+            raise DatabaseOperationError(
+                f"MongoDB error upserting allowed columns: {str(pme)}"
+            ) from pme
+
+        if not doc:
+            raise EntryNotFound(group_id)
     try:
         return _build_group_output(doc)
     except ValidationError as exc:

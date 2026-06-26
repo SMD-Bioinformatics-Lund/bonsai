@@ -74,7 +74,7 @@ def test_create_group_success(monkeypatch):
     runner = CliRunner()
 
     async def fake_create_group(group, user_id):
-        return SimpleNamespace(group_id=group.group_id)
+        return SimpleNamespace(display_name=group.display_name)
 
     monkeypatch.setattr(
         "bonsai_api.cli.cli.run_create_group",

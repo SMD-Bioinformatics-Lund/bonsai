@@ -160,16 +160,17 @@
         </div>
     </main>
 </div>
+<script src="{{ url_for('public.static', filename='sample-view.min.js') }}"></script>
 <script>
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
     const sampleId = getSampleId()
     const rawGroupId = "{{ group_id|tojson }}"
-    const groupId = "null" ? null : rawGroupId 
+    const groupId = "null" ? null : rawGroupId
 
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick
-        bonsai.initSampleView(apiUrl, accessToken, "", sampleId, groupId)
+        initSampleView("{{ config.API_EXTERNAL_URL }}", "{{ token }}", "", sampleId, groupId)
     });
 
     function getSampleId() {
