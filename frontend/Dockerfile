@@ -44,25 +44,17 @@ FROM base AS python-builder
 # Copy source
 COPY frontend/ ./frontend
 
-# Copy built JS artefact
-COPY --from=node-builder /app/frontend/build/js/bonsai.min.js \
-    ./frontend/bonsai_app/blueprints/public/static/
+# Copy built JS to the python-builder context
+COPY --from=node-builder /app/frontend/build/js ./frontend/build/js
 
-# Remove node artefacts
-RUN rm -rf ./frontend/node_modules
-
-# --------------------------------------------------------------------
-# IMPORTANT:
-# Build-system dependencies MUST be present in the wheelhouse
-# because pip will use PEP‑517 build isolation.
-# --------------------------------------------------------------------
-RUN pip wheel --wheel-dir /wheels \
-    "setuptools>=61" \
-    wheel \
-    setuptools-scm
-
-# Build application wheel(s)
-RUN pip wheel --wheel-dir /wheels ./frontend
+# Copy required JS bundles into static directories (ignore missing files)
+RUN mkdir -p ./frontend/bonsai_app/blueprints/public/static/ \
+    && cp -v ./frontend/build/js/vendor.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
+    && cp -v ./frontend/build/js/group-view.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
+    && cp -v ./frontend/build/js/sample-view.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
+    && cp -v ./frontend/build/js/variants-table.min.js ./frontend/bonsai_app/blueprints/public/static/ || true \
+    && mkdir -p ./frontend/bonsai_app/blueprints/groups/static/ \
+    && cp -v ./frontend/build/js/group-editor.min.js ./frontend/bonsai_app/blueprints/groups/static/ || true
 
 
 ### Production layer ###

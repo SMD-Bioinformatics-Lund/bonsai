@@ -10,6 +10,7 @@ from flask_login import current_user, login_required
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
 
+from bonsai_app.config import settings
 from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import (
     BadSampleQualityAction,
@@ -63,10 +64,28 @@ def groups() -> str:
     )
 
 
-@groups_bp.route("/groups/edit", methods=["GET", "POST"])
-@groups_bp.route("/groups/edit/<group_id>", methods=["GET", "POST"])
+@groups_bp.route("/groups/create", methods=["GET"])
+@groups_bp.route("/groups/<group_id>/edit", methods=["GET"])
 @login_required
-def edit_groups(group_id: str | None = None):
+def group_editor_view(group_id: str | None = None):
+    client = get_api_client()
+    groups = client.get_groups()
+
+    return render_template(
+        "edit_groups.html",
+        mode="create" if group_id is None else "edit",
+        group_id=group_id,
+        groups=groups,
+        api_base_url=settings.api_external_url,
+        access_token=current_user.token,
+        refresh_token="",
+    )
+
+
+@groups_bp.route("/groups/edit_old", methods=["GET", "POST"])
+@groups_bp.route("/groups/edit_old/<group_id>", methods=["GET", "POST"])
+@login_required
+def edit_groups_old(group_id: str | None = None):
     """Generate edit groups view
 
     :param group_id: Group id, defaults to None
@@ -90,7 +109,7 @@ def edit_groups(group_id: str | None = None):
                 flash("Group updated", "success")
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
-            return redirect(url_for("groups.edit_groups"))
+            return redirect(url_for("groups.group_editor_view"))
         elif "input-update-group" in request.form:
             updated_data = json.loads(request.form.get("input-update-group"))
             try:
@@ -104,7 +123,7 @@ def edit_groups(group_id: str | None = None):
                     group_id=group_id, set_default=True, preset=preset
                 )
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups", group_id=group_id))
+                return redirect(url_for("groups.group_editor_view", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
         elif "input-create-group" in request.form:
@@ -115,7 +134,7 @@ def edit_groups(group_id: str | None = None):
 
                 client.create_group(data=input_data.group_id)
                 flash("Group updated", "success")
-                return redirect(url_for("groups.edit_groups", group_id=group_id))
+                return redirect(url_for("groups.group_editor_view", group_id=group_id))
             except HTTPError as err:
                 flash(f"An error occurred when updating group, {err}", "danger")
             except ValidationError as err:
