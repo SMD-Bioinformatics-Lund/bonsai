@@ -3,18 +3,23 @@
 import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, Sequence
+from typing import Sequence
 
 from Bio import AlignIO
 
 from . import ska
 from .config import settings
-from .ska.cluster import ClusterMethod, calc_snv_distance
+from .ska.cluster import ClusterMethod, calc_snv_distance, to_newick
 
 LOG = logging.getLogger(__name__)
 
 
-def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -> str:
+def get_index_name(index_path: str) -> str:
+    """Get the name of the index from the file path."""
+    return Path(index_path).stem.replace('_ska_index', '')
+
+
+def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their SNVs using SKA indexes.
 
@@ -28,6 +33,11 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
     """
     # validate input samples and cast to path
     idx_paths = [Path(settings.index_dir) / idx["ska_index"] for idx in indexes]
+
+    sample_id_lookup = {
+        get_index_name(idx["ska_index"]): idx["sample_id"] 
+        for idx in indexes
+    }
 
     # validate cluster method
     try:
@@ -48,8 +58,11 @@ def cluster(indexes: Sequence[Dict[str, str]], cluster_method: str = "single") -
         with open(aln_file) as inpt:
             aln = AlignIO.read(inpt, "fasta")
         dm = calc_snv_distance(aln)
-        nwk = ska.cluster_distances(dm, method)
-    return nwk
+        tree, index_names = ska.cluster_distances(dm, method)
+        # lookup sample ids from index names and return newick tree with sample ids as leaf names
+        sample_ids = [sample_id_lookup.get(idx, idx) for idx in index_names]
+        newick_tree = to_newick(tree, "", tree.dist, sample_ids)
+    return newick_tree
 
 
 def check_index(file_name: str) -> str | None:

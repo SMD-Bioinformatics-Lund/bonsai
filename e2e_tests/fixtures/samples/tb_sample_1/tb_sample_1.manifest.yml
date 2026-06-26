@@ -1,0 +1,37 @@
+sample_id: tb_test_001
+sample_name: tb_test_one
+lims_id: longLIMSid
+groups:
+  - mtuberculosis
+metadata:
+  - fieldname: isoalation date
+    value: 2024-03-24
+    type: datetime
+    category: general
+  - fieldname: region
+    value: skane
+    category: general
+    type: string
+
+# sequencing and pipeline run info
+nextflow_run_info: analysis_meta.json
+
+# prediction results
+analysis_result:
+  - software: bracken
+    software_version: 2.8.0
+    database: bracken_full
+    uri: bracken.out
+  - software: quast
+    software_version: 5.2.0
+    uri: quast.tsv
+  - software: mykrobe
+    software_version: 0.12.2
+    uri: mykrobe.csv
+  - software: tbprofiler
+    software_version: 6.3.0
+    uri: tbprofiler.json
+
+index_artifacts:
+  sourmash_signature: sourmash.sig
+  ska_index: ska_index.skf

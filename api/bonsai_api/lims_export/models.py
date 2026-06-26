@@ -3,7 +3,7 @@
 from enum import StrEnum
 from typing import Any, Literal, Mapping, Protocol
 
-from bonsai_api.models.sample import SampleInDatabase
+from bonsai_api.models.sample import SampleRecordDb
 from pydantic import BaseModel, ConfigDict, Field
 
 LimsAtomic = str | int | float | Literal["novel"]
@@ -68,5 +68,5 @@ class LimsRsResult(BaseModel):
 
 class Formatter(Protocol):
     def __call__(
-        self, sample: SampleInDatabase, *, options: Mapping[str, Any] | None = None
+        self, sample: SampleRecordDb, *, options: Mapping[str, Any] | None = None
     ) -> tuple[LimsValue, str]: ...

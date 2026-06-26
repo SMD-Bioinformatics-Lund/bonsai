@@ -1,6 +1,6 @@
 from typing import Any
-
-from api_client.audit_log.models import Actor
+    
+from bonsai_libs.api_client.audit_log.models import Actor
 from pydantic import BaseModel, Field
 
 

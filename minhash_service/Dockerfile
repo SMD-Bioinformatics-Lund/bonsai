@@ -1,4 +1,4 @@
-### Base layer ###
+# Base image
 FROM python:3.11.3-slim AS base
 
 # Set build variables
@@ -9,39 +9,58 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-### Development layer ###
-FROM base AS development
+# Build application wheels
 
-COPY libs/api_client/ ./api_client
-COPY minhash_service/ ./minhash_service
-
-RUN pip install -e ./api_client -e ./minhash_service
-
-# Dev-only: create default signature directory (owned by root in dev; bind mount in practice)
-RUN mkdir -p /data/signature_db
-
-### Build wheels ###
 FROM base AS python-builder
 
-COPY libs/api_client/ ./api_client
-COPY minhash_service/ ./minhash_service
+WORKDIR /src
 
-RUN pip wheel --wheel-dir /wheels ./api_client ./minhash_service
+COPY minhash_service ./minhash_service
 
-### Production layer ###
-FROM base AS production
+RUN pip wheel --wheel-dir /wheels ./minhash_service
 
+
+# Development layer
+
+FROM continuumio/miniconda3 AS development
+
+WORKDIR /app
+
+RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
+
+COPY minhash_service ./minhash_service
+
+RUN pip install -e ./minhash_service
+
+# Dev-only runtime convenience
+RUN mkdir -p /data/signature_db
+
+CMD ["bash"]
+
+# Production layer
+
+FROM continuumio/miniconda3 AS production
+
+RUN opt/conda/bin/conda init \
+    && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
+
+# Create non-root user early
 RUN addgroup --system --gid 1000 worker && \
-    adduser --system --uid 1000 --ingroup worker --home /home/worker \
-    --shell /usr/sbin/nologin worker
+    adduser --system --uid 1000 --ingroup worker \
+    --home /home/worker --shell /usr/sbin/nologin worker
 
+# Install wheels only
 COPY --from=python-builder /wheels /wheels
 
-RUN pip install --no-index --find-links=/wheels minhash_service && rm -rf /wheels
+RUN pip install --no-index \
+        --find-links=/wheels \
+        minhash_service \
+    && rm -rf /wheels
 
-# create default signature directory
-RUN mkdir -p /data/signature_db && chown -R 1000:1000 /data/signature_db
+# Runtime directories
+RUN mkdir -p /data/signature_db && \
+    chown -R worker:worker /data/signature_db
 
-USER 1000:1000
+USER worker
 
 CMD ["minhash-service", "--version"]

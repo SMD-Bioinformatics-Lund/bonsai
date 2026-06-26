@@ -9,7 +9,7 @@ IndexDefinition = Dict[str, Any]
 INDEXES: dict[str, list[IndexDefinition]] = {
     "sample_group": [
         {
-            "definition": [("group_id", ASCENDING)],
+            "definition": [("core.group_id", ASCENDING)],
             "options": {
                 "name": "sample_group",
                 "background": True,
@@ -55,4 +55,46 @@ INDEXES: dict[str, list[IndexDefinition]] = {
             },
         },
     ],
+    "analysis": [
+        {
+            "definition": [
+                ("sample_id", ASCENDING),
+                ("software", ASCENDING),
+                ("software_version", ASCENDING),
+                ("pipeline_run_id", ASCENDING)
+            ],
+            "options": {
+                "name": "analysis_sample_id",
+                "background": True,
+                "unique": False,
+            },
+        },
+    ],
+    "curations": [
+        {
+            "definition": [
+                ("analysis_id", ASCENDING),
+                ("annotation_type", ASCENDING),
+                ("target_index", ASCENDING),
+            ],
+            "options": {
+                "name": "uniq_item_level_curation",
+                "background": True,
+                "unique": True,
+                "partialFilterExpression": {"target_index": {"$exists": True}}
+            },
+        },
+        {
+            "definition": [
+                ("analysis_id", ASCENDING),
+                ("annotation_type", ASCENDING),
+            ],
+            "options": {
+                "name": "uniq_analysis_level_curation",
+                "background": True,
+                "unique": True,
+                "partialFilterExpression": {"target_index": {"$exists": True}}
+            },
+        }
+    ]
 }

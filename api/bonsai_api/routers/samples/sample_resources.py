@@ -1,0 +1,209 @@
+from bonsai_api.models.analysis import VariantContext
+from bonsai_api.services import genomic_resource_service, sample_service
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_api.db import Database
+from bonsai_api.dependencies import (
+    get_audit_log,
+    get_current_active_user,
+    get_database,
+    get_request_context,
+)
+from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.models.context import ApiRequestContext
+from bonsai_api.models.reference_genome import AddReferenceGenomeRequest, ReferenceGenomeResponse
+from bonsai_api.models.genomic_resource import GenomicResourceCreate, GenomicResourceResponse
+from bonsai_api.models.igv import IgvConfig
+from bonsai_api.models.user import UserContext, UserOutputDatabase
+from bonsai_api.routers.tags import RouterTags
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    HTTPException,
+    Path,
+    Request,
+    Security,
+    status,
+)
+
+from .permissions import READ_PERMISSION, WRITE_PERMISSION
+
+router = APIRouter(tags=[RouterTags.GENOMIC_RESOURCE])
+
+
+@router.post(
+    "/samples/{sample_id}/resources",
+    response_model=list[GenomicResourceResponse],
+    status_code=status.HTTP_201_CREATED,
+    tags=[RouterTags.SAMPLE],
+)
+async def create_genomic_resource(
+    payload: GenomicResourceCreate,
+    request: Request,
+    sample_id: str = Path(..., description="Sample ID"),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Create a genomic resource set for a sample."""
+    try:
+        return await genomic_resource_service.create_genomic_resource_service(
+            db=db,
+            sample_id=sample_id,
+            resource=payload,
+            request=request,
+            ctx=req_ctx,
+            audit=audit_log,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error),
+        ) from error
+
+
+@router.get(
+    "/resources/{resource_id}",
+    response_model=GenomicResourceResponse,
+)
+async def get_genomic_resource(
+    resource_id: str,
+    request: Request,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
+    """Fetch a genomic resource by ID."""
+    try:
+        return await genomic_resource_service.get_genomic_resource_service(
+            db,
+            resource_id=resource_id,
+            request=request,
+        )
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@router.get(
+    "/samples/{sample_id}/resources",
+    response_model=list[GenomicResourceResponse],
+    tags=[RouterTags.SAMPLE],
+)
+async def list_genomic_resources_for_sample(
+    sample_id: str,
+    request: Request,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
+    """List all genomic resources associated with a sample."""
+    return await genomic_resource_service.list_genomic_resources_for_sample_service(
+        db=db,
+        sample_id=sample_id,
+        request=request
+    )
+
+
+@router.delete(
+    "/resources/{resource_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_genomic_resource(
+    resource_id: str,
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Delete a genomic resource."""
+    try:
+        user = UserContext(
+            user_id=current_user.username,
+            roles=current_user.roles,
+        )
+        return await genomic_resource_service.delete_genomic_resource_service(
+            db=db,
+            resource_id=resource_id,
+            ctx=req_ctx,
+            audit=audit_log,
+            user=user,
+        )
+    except EntryNotFound as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@router.put(
+    "/samples/{sample_id}/reference-genome",
+    response_model=ReferenceGenomeResponse,
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.SAMPLE, RouterTags.REFERENCE_GENOME],
+)
+async def add_reference_genome_to_sample(
+    request: Request,
+    sample_id: str = Path(..., description="Sample ID"),
+    body: AddReferenceGenomeRequest = Body(...),
+    db: Database = Depends(get_database),
+    audit_log: AuditLogClient = Depends(get_audit_log),
+    req_ctx: ApiRequestContext = Depends(get_request_context),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
+):
+    """Add a reference genome to a sample."""
+    return await sample_service.add_reference_genome_service(
+        db, sample_id=sample_id, 
+        reference_genome_id=body.reference_genome_id,
+        request=request,
+        ctx=req_ctx, audit=audit_log
+    )
+
+
+@router.get(
+    "/samples/{sample_id}/igv-config",
+    response_model=IgvConfig,
+    status_code=status.HTTP_200_OK,
+    tags=[RouterTags.SAMPLE, RouterTags.REFERENCE_GENOME],
+)
+async def get_igv_config(
+    request: Request,
+    sample_id: str = Path(..., description="Sample ID"),
+    analysis_id: str | None = None,
+    variant_id: int | None = None,
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+):
+    """Add a reference genome to a sample."""
+    variant_ctx: VariantContext | None = None
+    if analysis_id or variant_id:
+        if not (analysis_id and variant_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Both 'analysis_id' and 'variant_id' must be provided together",
+            )
+
+        variant_ctx = VariantContext(
+            analysis_id=analysis_id,
+            variant_id=variant_id,
+        )
+
+    return await sample_service.get_igv_config(
+        db, 
+        sample_id=sample_id, 
+        variant_ctx=variant_ctx,
+        request=request,
+    )

@@ -2,29 +2,30 @@
 
 from typing import List
 
+from bonsai_api.crud.location import create_location as create_location_from_db
+from bonsai_api.crud.location import get_location as get_location_from_db
+from bonsai_api.crud.location import get_locations as get_locations_from_db
+from bonsai_api.crud.location import get_locations_within_bbox
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.models.location import (
+    GeoJSONPolygon,
+    LocationInputCreate,
+    LocationOutputDatabase,
+)
+from bonsai_api.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 
-from ..crud.errors import EntryNotFound
-from ..crud.location import create_location as create_location_from_db
-from ..crud.location import get_location as get_location_from_db
-from ..crud.location import get_locations as get_locations_from_db
-from ..crud.location import get_locations_within_bbox
-from ..models.location import (GeoJSONPolygon, LocationInputCreate,
-                               LocationOutputDatabase)
-from ..models.user import UserOutputDatabase
+from .tags import RouterTags
 
-router = APIRouter()
+router = APIRouter(tags=[RouterTags.LOCATION])
 
-DEFAULT_TAGS = [
-    "locations",
-]
 READ_PERMISSION = "locations:read"
 WRITE_PERMISSION = "locations:write"
 
 
-@router.get("/locations/", tags=DEFAULT_TAGS)
+@router.get("/locations/")
 async def get_locations(
     limit: int = Query(10, gt=0),
     skip: int = Query(0, gt=-1),
@@ -48,7 +49,7 @@ async def get_locations(
     return result
 
 
-@router.post("/locations/", tags=DEFAULT_TAGS)
+@router.post("/locations/")
 async def create_location(
     location: LocationInputCreate,
     db: Database = Depends(get_database),
@@ -69,7 +70,7 @@ async def create_location(
     return loc
 
 
-@router.get("/locations/bbox", tags=DEFAULT_TAGS)
+@router.get("/locations/bbox")
 async def get_location_bbox(
     left: float,
     bottom: float,
@@ -106,7 +107,7 @@ async def get_location_bbox(
     return loc
 
 
-@router.get("/locations/{location_id}", tags=DEFAULT_TAGS)
+@router.get("/locations/{location_id}")
 async def get_location(
     location_id: str,
     db: Database = Depends(get_database),
@@ -124,11 +125,4 @@ async def get_location(
     :return: Location info
     :rtype: LocationOutputDatabase
     """
-    try:
-        loc = await get_location_from_db(db, location_id)
-    except EntryNotFound as error:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=error,
-        ) from error
-    return loc
+    return await get_location_from_db(db, location_id)

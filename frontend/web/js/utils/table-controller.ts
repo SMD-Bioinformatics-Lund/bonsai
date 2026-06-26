@@ -1,11 +1,15 @@
 import DataTable from "datatables.net-bs5";
-import "datatables.net-datetime";
 import "datatables.net-buttons-bs5";
 import "datatables.net-buttons/js/buttons.html5.mjs";
-import "datatables.net-select-bs5";
+import "datatables.net-buttons/js/buttons.colVis.mjs";
+import "datatables.net-datetime";
+import "datatables.net-columncontrol-bs5";
+import "datatables.net-datetime";
 import "datatables.net-searchbuilder-bs5";
+import "datatables.net-searchpanes-bs5";
+import "datatables.net-select-bs5";
 
-import { TblStateCallbackFunc } from "../types";
+import { TblStateCallbackFunc } from "../core/types";
 
 export class TableController {
   private table: any;

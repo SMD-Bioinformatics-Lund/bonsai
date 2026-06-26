@@ -18,6 +18,7 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP",
 ]
 dependencies = [
+  "bonsai-libs @ git+https://github.com/mhkc/bonsai-libs.git@master",
   "Flask<=2.3.3",
   "werkzeug<=2.3.7",
   "wtforms[email]",
@@ -49,6 +50,7 @@ include = ["bonsai_app*"]
 
 [tool.setuptools.package-data]
 "bonsai_app" = ["templates/**/*.html", "static/**/*", "*.toml"]
+"bonsai_app.blueprints" = ["**/*.html", "**/static/**/*"]
 
 [tool.isort]
 profile = "black"

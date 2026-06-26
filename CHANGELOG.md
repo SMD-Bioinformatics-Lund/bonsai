@@ -2,12 +2,15 @@
 
 ### Added
 
+- API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
+- Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
 - Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
 
 ### Fixed
 
+- Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
 
@@ -18,6 +21,8 @@
 - Improved seeding of a development Bonsai database with a new `seed_db.py` script.
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
+- Improved frontend API error handling by parsing structured problem-details responses for delete, group removal, QC update, and similar-sample operations.
+- Improved API error handling if audit log service became unreachable after startup.
 
 ## [v2.1.0]
 

@@ -1,24 +1,19 @@
 """File IO operations."""
 
-import itertools
 import logging
 import mimetypes
 import os
 import pathlib
 import re
-from collections import defaultdict
-from enum import Enum
+from enum import StrEnum
 from io import StringIO
-from typing import List, Tuple
+from pathlib import Path
 
 import pandas as pd
 from fastapi.responses import Response
-from prp.models.phenotype import GeneBase, PredictionSoftware, VariantBase
-from prp.models.typing import TypingMethod
 
 from .models.metadata import InputTableMetadata, TableMetadataInDb
-from .models.qc import SampleQcClassification
-from .models.sample import SampleInDatabase
+from .exceptions import GenomeResourceError, InvalidRangeError, RangeOutOfBoundsError
 
 LOG = logging.getLogger(__name__)
 BYTE_RANGE_RE = re.compile(r"bytes=(\d+)-(\d+)?$")
@@ -33,20 +28,12 @@ TARGETED_ANTIBIOTICS = {
 }
 
 
-class TBResponses(Enum):
+class TBResponses(StrEnum):
     """Valid responses for M. tuberculosis results."""
 
     resistant = "Mutation pavisad"
     susceptible = "Mutation ej pavisad"
     sample_failed = "Ej bedombart"
-
-
-class InvalidRangeError(Exception):
-    """Exception for retrieving invalid file ranges."""
-
-
-class RangeOutOfBoundsError(Exception):
-    """Exception if range is out of bounds."""
 
 
 def is_file_readable(file_path: str) -> bool:
@@ -69,7 +56,7 @@ def is_file_readable(file_path: str) -> bool:
     return True
 
 
-def parse_byte_range(byte_range: str) -> Tuple[int, int]:
+def parse_byte_range(byte_range: str) -> tuple[int, int]:
     """Returns the two numbers in 'bytes=123-456' or throws ValueError.
     The last number or both numbers may be None.
     """
@@ -86,11 +73,11 @@ def parse_byte_range(byte_range: str) -> Tuple[int, int]:
     return first, last
 
 
-def send_partial_file(path: str, range_header: str) -> Response:
+def send_partial_file(path: Path, range_header: str) -> Response:
     """Send partial file as a response.
 
     :param path: File path
-    :type path: str
+    :type path: Path
     :param range_header: byte range, ie bytes=123-456
     :type range_header: str
     :raises RangeOutOfBoundsError: Error if the byte range is out of bounds.
@@ -101,7 +88,7 @@ def send_partial_file(path: str, range_header: str) -> Response:
     first, last = byte_range
 
     data = None
-    with open(path, "rb") as file_handle:
+    with path.open("rb") as file_handle:
         fs = os.fstat(file_handle.fileno())
         file_len = fs[6]
         if first >= file_len:
@@ -137,3 +124,47 @@ def parse_metadata_table(
     return TableMetadataInDb.model_validate(
         {"fieldname": entry.fieldname, "category": entry.category, **df_json}
     )
+
+
+def validate_resource_identifier(resource: str) -> Path:
+    """Validate a genome resource identifier to prevent path traversal and ensure it is not empty."""
+
+    if not resource:
+        raise GenomeResourceError("Empty genome resource identifier")
+
+    requested = Path(resource)
+
+    if requested.is_absolute():
+        raise GenomeResourceError("Resource path can't be absolute", requested)
+
+    if ".." in requested.parts:
+        raise GenomeResourceError("Resource path cant contain '..'", requested)
+
+    return requested
+
+
+def resolve_resource_path(resource: str, base_dir: Path) -> Path:
+    """Resolve and validate a resource path."""
+
+    base_dir = base_dir.resolve()
+    requested = validate_resource_identifier(resource)
+    resolved = (base_dir / requested).resolve()
+
+    if base_dir not in resolved.parents:
+        raise GenomeResourceError("Outside allowed directory", resolved)
+
+    if not resolved.is_file():
+        raise GenomeResourceError(f"{resolved} not found", resolved)
+
+    if not os.access(resolved, os.R_OK):
+        raise GenomeResourceError(f"{resolved} not readable", resolved)
+
+    return resolved
+
+
+def to_relative_resource(resource: str | None, base_dir: Path) -> str | None:
+    """Convert an absolute resource path to a relative one, validating it in the process."""
+
+    if not resource:
+        return None
+    return str(resolve_resource_path(resource, base_dir).relative_to(base_dir))

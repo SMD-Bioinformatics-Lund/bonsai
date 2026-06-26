@@ -29,7 +29,7 @@ async def test_run_lims_export_success(monkeypatch):
     async def fake_get_sample(db, sample_id):
         return sample
 
-    monkeypatch.setattr(cli_tasks, "get_sample", fake_get_sample)
+    monkeypatch.setattr(cli_tasks, "get_sample_service", fake_get_sample)
 
     # config object list with matching assay
     monkeypatch.setattr(
@@ -55,7 +55,7 @@ async def test_run_lims_export_no_config(monkeypatch):
     async def fake_get_sample(db, sample_id):
         return sample
 
-    monkeypatch.setattr(cli_tasks, "get_sample", fake_get_sample)
+    monkeypatch.setattr(cli_tasks, "get_sample_service", fake_get_sample)
     monkeypatch.setattr(cli_tasks, "load_export_config", lambda path: [])
 
     with pytest.raises(ValueError):
@@ -73,7 +73,7 @@ async def test_run_check_paths_no_missing(monkeypatch):
             data=[SimpleNamespace(sample_id="s1")], records_filtered=1
         )
 
-    monkeypatch.setattr(cli_tasks, "get_samples", fake_get_samples)
+    monkeypatch.setattr(cli_tasks, "get_samples_full", fake_get_samples)
 
     # patch verify functions to return no missing files
     monkeypatch.setattr(cli_tasks.verify, "verify_reference_genome", lambda s: [])
@@ -102,7 +102,7 @@ async def test_run_check_paths_with_missing(monkeypatch):
     async def fake_get_samples(db):
         return SimpleNamespace(data=[sample_obj], records_filtered=1)
 
-    monkeypatch.setattr(cli_tasks, "get_samples", fake_get_samples)
+    monkeypatch.setattr(cli_tasks, "get_samples_full", fake_get_samples)
 
     # create a MissingFile instance
     mf = cli_tasks.MissingFile(
