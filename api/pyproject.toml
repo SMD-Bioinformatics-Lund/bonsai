@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
   "bcrypt==4.1.1",
-  "bonsai-prp[all] @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-prp.git@release/2.0.0",
+  "bonsai-libs @ git+https://github.com/mhkc/bonsai-libs.git@master",
   "click==8.1.7",
   "fastapi[all]==0.115.0",
   "python-jose[cryptography]==3.3.0",

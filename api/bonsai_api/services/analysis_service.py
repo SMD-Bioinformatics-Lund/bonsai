@@ -13,8 +13,8 @@ from bonsai_api.models.analysis import (
     PRPParserOutput,
 )
 from bonsai_api.models.sample import AnalysisViewEntryDb
-from api_client.audit_log.models import Subject, SourceType
-from api_client.audit_log import AuditLogClient, EventCreate
+from bonsai_libs.api_client.audit_log.models import Subject, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
 from bonsai_api.crud.analysis import analysis_exists, create_analysis, get_analysis
 from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
@@ -25,9 +25,9 @@ from bonsai_api.exceptions import (
     ParserError,
     InvalidDataFormat,
 )
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 
-from prp.parse import run_parser
+from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ async def ingest_analysis_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for analysis ingest on sample {sample_id}: {exc}"
             ) from exc

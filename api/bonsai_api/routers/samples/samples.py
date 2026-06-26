@@ -2,9 +2,9 @@
 
 import logging
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import EventCreate, SourceType, Subject
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import EventCreate, SourceType, Subject
+from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
 from bonsai_api.crud.sample import get_samples_full
@@ -184,7 +184,7 @@ async def delete_many_samples(
         for event in audit_events:
             try:
                 audit_log.post_event(event)
-            except ApiRequestError as exc:
+            except ApiError as exc:
                 raise AuditLogError(
                     f"Audit log event failed for sample {event.subject.id}: {exc}"
                 ) from exc
@@ -248,7 +248,7 @@ async def delete_sample(
         )
         try:
             audit_log.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for sample {sample_id}: {exc}"
             ) from exc

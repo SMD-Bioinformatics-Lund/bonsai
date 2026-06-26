@@ -3,7 +3,7 @@
 import bonsai_api.crud.group as crud_gr
 import bonsai_api.services.group_service as service_gr
 import bonsai_api.services.membership_service as service_mem
-from api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (
@@ -12,7 +12,7 @@ from bonsai_api.dependencies import (
     get_database,
     get_request_context,
 )
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import DatabaseOperationError
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.group import (
     ColumnOut,
@@ -37,7 +37,6 @@ from fastapi import (
     Security,
     status,
 )
-from pymongo.errors import DuplicateKeyError
 
 from .tags import RouterTags
 
@@ -107,8 +106,11 @@ async def get_group_in_db(
     ),
 ):
     """Get information of the number of samples per group loaded into the database."""
-    group = await crud_gr.get_group(db, group_id)
-    return group
+    return await group_service.get_group(
+        db, group_id, 
+        user_id=current_user.username,
+        user_roles=current_user.roles,
+    )
 
 
 @router.delete(
@@ -166,8 +168,10 @@ async def set_allowed_columns_for_group(
     ),
 ):
     """Set allowed table columns for a group."""
-    return await crud_gr.set_allowed_columns(
-        db, group_id, payload, req_ctx, audit_log
+    return await service_gr.set_allowed_columns(
+        db, group_id=group_id,
+        column_ids=payload.column_ids, 
+        ctx=req_ctx, audit=audit_log
     )
 
 

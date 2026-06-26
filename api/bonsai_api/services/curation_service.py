@@ -12,13 +12,13 @@ from pymongo.errors import DuplicateKeyError
 from bonsai_api.utils import get_timestamp
 from bonsai_api.crud.curation import create_curation, delete_curation_crud, get_curation_by_id_crud, get_curations_crud, update_curation_crud
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, AuditLogError
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.analysis import CurationRecord, CurationCreateRecord
 from bonsai_api.db import Database
-from api_client.audit_log.models import Subject, SourceType
-from api_client.audit_log import AuditLogClient, EventCreate
+from bonsai_libs.api_client.audit_log.models import Subject, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
 
 from .analysis_service import group_for, get_analysis_service
 
@@ -83,7 +83,7 @@ async def create_curation_service(
                 )
                 try:
                     audit.post_event(event)
-                except ApiRequestError as exc:
+                except ApiError as exc:
                     raise AuditLogError(
                         f"Audit log event failed for curation create {curation_id}: {exc}"
                     ) from exc
@@ -168,7 +168,7 @@ async def approve_curation_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for curation approve {curation_id}: {exc}"
             ) from exc
@@ -207,7 +207,7 @@ async def delete_curation_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for curation delete {curation_id}: {exc}"
             ) from exc

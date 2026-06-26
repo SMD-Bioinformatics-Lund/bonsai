@@ -6,12 +6,12 @@ import logging
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-# from prp.parse.models.base import VariantBase
-from prp.parse import hydrate_result
-from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
+# from bonsai_libs.parse.models.base import VariantBase
+from bonsai_libs.parse import hydrate_result
+from bonsai_libs.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 from pydantic_core import ValidationError
 
-from bonsai_api.models.genomic_resource import GenomicResourceDb, GenomicResourceResponse
+from bonsai_api.models.genomic_resource import GenomicResourceDb
 from bonsai_api.utils import get_timestamp
 
 from .enums import Visibility, ExportStatus, SequencingPlatforms, TypingMethod, ClusterMethod
@@ -46,9 +46,6 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
-# class VariantInDb(VariantBase):
-#     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-#     reason: VaraintRejectionReason | None = None
 class SampleBase(TimestampsMixin, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base model for all sample representations.
     
