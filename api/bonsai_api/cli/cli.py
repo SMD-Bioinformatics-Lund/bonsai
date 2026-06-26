@@ -14,7 +14,6 @@ from bonsai_api.config import USER_ROLES, settings
 from bonsai_api.db.index import INDEXES
 from bonsai_api.exceptions import ConflictError, EntryNotFound, UserNotFound
 from bonsai_api.lims_export.config import InvalidFormatError
-from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInfoCreate, Visibility
 from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
@@ -299,10 +298,6 @@ def migrate_database(backup_path: pathlib.Path | None):
     click.secho(
         f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database..."
     )
-    try:
-        run_async(run_migrate_database(backup_path))
-    except MigrationError as err:
-        LOG.error(str(err))
-        raise click.Abort()
-    finally:
-        click.secho("Finished migrating the database", fg="green")
+    run_async(run_migrate_database(backup_path))
+
+    click.secho("Finished migrating the database", fg="green")
