@@ -4,8 +4,9 @@ import logging
 
 import click
 from redis import Redis
-from rq import Queue
 from rq.cron import CronScheduler
+
+from bonsai_libs.jobs import JobRequest, configure_worker, configure_queue
 
 from minhash_service.core.config import Settings, cnf, configure_logging
 from minhash_service.core.factories import (create_audit_trail_repo,
@@ -15,9 +16,7 @@ from minhash_service.core.models import Event, EventType
 from minhash_service.db import MongoDB
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.tasks import dispatch_job
-from minhash_service.tasks.handlers import add_to_index
-from minhash_service.tasks.dispatch import SimpleWhitelistWorker
+from minhash_service.tasks import tasks_registry, execute_service_task
 
 from .utils import format_startup_banner
 
@@ -50,10 +49,27 @@ def run_minhash_worker():
 
     # setup redis connection
     redis = Redis(host=cnf.redis.host, port=cnf.redis.port)
-    queue = Queue(cnf.redis.queue, connection=redis)
-    app = SimpleWhitelistWorker([queue], connection=redis)
-    log.info("Starting worker...")
-    app.work()
+    queue = configure_queue(name=cnf.redis.queue, connection=redis)
+
+    worker = configure_worker(
+        queues=[queue],
+        connection=redis,
+        name="minhash_service_worker",
+        allowed_entrypoints=[
+            "minhash_service.tasks.execute_service_task",
+        ],
+    )
+
+    log.info(
+        "Starting worker",
+        extra={
+            "worker_name": "minhash_service_worker",
+            "queue": cnf.redis.queue,
+            "redis_host": cnf.redis.host,
+            "redis_port": cnf.redis.port,
+        },
+    )
+    worker.work()
 
 
 @main.command()
@@ -70,8 +86,8 @@ def run_cron_scheduler():
     if cnf.periodic_integrity_check.enabled:
         cron_string = cnf.periodic_integrity_check.cron
         cron.register(
-            dispatch_job,
-            kwargs={"task": "get_integrity_report"},
+            execute_service_task,
+            kwargs={"request": JobRequest(task="get_integrity_report")},
             queue_name=cnf.periodic_integrity_check.queue,
             cron=cron_string,
         )
@@ -80,8 +96,8 @@ def run_cron_scheduler():
     if cnf.cleanup_removed_files.enabled:
         cron_string = cnf.cleanup_removed_files.cron
         cron.register(
-            dispatch_job,
-            kwargs={"task": "cleanup_removed_files"},
+            execute_service_task,
+            kwargs={"request": JobRequest(task="cleanup_removed_files")},
             queue_name=cnf.cleanup_removed_files.queue,
             cron=cron_string,
         )
@@ -177,7 +193,9 @@ def recreate_index(kmer_size: int, include_excluded: bool, dry_run: bool, force:
             return
 
     try:
-        add_to_index(sample_ids=sample_ids)
+        execute_service_task(
+            JobRequest(task="add_to_index", payload={"sample_ids": sample_ids})
+        )
         log.info("Index recreated successfully with %d signatures.", len(signatures))
         click.secho("Index recreated successfully.", fg="green")
     except Exception as e:
