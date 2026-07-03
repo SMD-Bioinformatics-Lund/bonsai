@@ -2,10 +2,11 @@
 
 import datetime as dt
 import json
-import logging
 import tempfile
 from pathlib import Path
 from typing import Any, Iterable, cast
+
+from bonsai_libs.jobs import TaskRegistry, TaskContext
 
 from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
@@ -28,10 +29,10 @@ from minhash_service.signatures.storage import SignatureStorage
 
 from .notify import EmailApiInput, dispatch_email
 
-LOG = logging.getLogger(__name__)
+registry = TaskRegistry()
 
-
-def add_signature(sample_id: str, signature: str) -> str:
+@registry.register("add_signature")
+def add_signature(sample_id: str, signature: str, context: TaskContext) -> str:
     """
     Find signatures similar to reference signature.
 
@@ -45,7 +46,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     try:
         json.loads(signature)
     except json.JSONDecodeError as err:
-        LOG.debug("Malformed JSON file format: %s", signature)
+        context.logger.debug("Malformed JSON file format: %s", signature)
         raise ValueError("signature is not a valid JSON string") from err
 
     # setup repositories
@@ -54,7 +55,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     repo = create_signature_repo()
     records = repo.get_by_sample_id_or_checksum(sample_id=sample_id)
     if len(records) > 0:
-        LOG.warning("Signature with sample_id %s already exists", sample_id)
+        context.logger.warning("Signature with sample_id %s already exists", sample_id)
         raise FileExistsError(f"Signature with sample_id {sample_id} already exists")
 
     # write signature to disk
@@ -82,7 +83,7 @@ def add_signature(sample_id: str, signature: str) -> str:
         try:
             repo.add_signature(record)
         except Exception as err:
-            LOG.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
+            context.logger.error("Failed to add signature record for sample_id %s: %s", sample_id, err)
             # create audit trail event
             event = Event(event_type=EventType.ERROR, sample_id=sample_id, details=str(err))
             at.log_event(event)
@@ -98,7 +99,8 @@ def add_signature(sample_id: str, signature: str) -> str:
     return str(sharded_path)
 
 
-def remove_signature(sample_id: str) -> dict[str, str | bool]:
+@registry.register("remove_signature")
+def remove_signature(sample_id: str, context: TaskContext) -> dict[str, str | bool]:
     """
     Remove a signature from the database and index.
 
@@ -116,7 +118,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     # mark sample for deletion in db
     was_marked = repo.marked_for_deletion(sample_id)
     if not was_marked:
-        LOG.error(
+        context.logger.error(
             "Signature with sample_id %s could not be marked for deletion", sample_id
         )
         raise FileRemovalError(
@@ -126,7 +128,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     # stage file for removal
     records = repo.get_by_sample_id_or_checksum(sample_id)
     if records is None or len(records) == 0:
-        LOG.error("No record found for sample_id %s", sample_id)
+        context.logger.error("No record found for sample_id %s", sample_id)
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     metadata: dict[str, str] = {}
@@ -143,7 +145,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
         result = index.remove_signatures(set([rec.signature_checksum]))
 
     except Exception as err:
-        LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
+        context.logger.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
         # log audit trail event
         e = Event(
             event_type=EventType.ERROR,
@@ -156,7 +158,7 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
             filepath=str(rec.signature_path), reason=str(err)
         ) from err
 
-    LOG.info("Signature with sample_id %s was removed", sample_id)
+    context.logger.info("Signature with sample_id %s was removed", sample_id)
     e = Event(
         event_type=EventType.DELETE,
         sample_id=sample_id,
@@ -167,7 +169,8 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     return result.model_dump(mode="json")
 
 
-def check_signature(sample_id: str) -> dict[str, str | bool]:
+@registry.register("check_signature")
+def check_signature(sample_id: str, context: TaskContext) -> dict[str, str | bool]:
     """Check if signature exist."""
 
     repo = create_signature_repo()
@@ -188,7 +191,8 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     }
 
 
-def add_to_index(sample_ids: list[str]) -> str:
+@registry.register("add_to_index")
+def add_to_index(sample_ids: list[str], context: TaskContext) -> str:
     """
     Add signatures to sourmash index.
 
@@ -198,7 +202,9 @@ def add_to_index(sample_ids: list[str]) -> str:
     :rtype: str
     """
     kmer_size = cnf.kmer_size
-    LOG.info("Adding %d signatures to index...", len(sample_ids))
+    context.logger.info(
+        "add_to_index.start", sample_count=len(sample_ids), kmer_size=kmer_size
+    )
     repo = create_signature_repo()
 
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
@@ -208,8 +214,8 @@ def add_to_index(sample_ids: list[str]) -> str:
     index = create_index_store(idx_path, index_format=cnf.index_format)
     result = index.add_signatures(signatures)
 
-    LOG.info(
-        "Updating index status in the database for %d samples.", result.added_count
+    context.logger.info(
+        "add_to_index.complete", added_count=result.added_count, skipped_count=result.skipped_count
     )
     update_status: dict[str, bool] = {}
     for checksum in result.added_md5s:
@@ -221,18 +227,21 @@ def add_to_index(sample_ids: list[str]) -> str:
     all_updated: bool = all(status for status in update_status.values())
     if not all_updated:
         failed_update = [name for name, status in update_status.items() if not status]
-        LOG.error(
-            "Failed to mark %d samples as indexed; %s",
-            len(failed_update),
-            ", ".join(failed_update),
+        context.logger.error(
+            "add_to_index.failed_update",
+            n_failed_samples=len(failed_update),
+            errors=failed_update,
         )
     else:
-        LOG.debug("Marked %d samples as indexed", len(update_status))
+        context.logger.debug(
+            "add_to_index.complete", update_status=update_status, message="Marked samples as indexed"
+        )
 
     return result.model_dump(mode="json")
 
 
-def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
+@registry.register("remove_from_index")
+def remove_from_index(sample_ids: list[str], context: TaskContext) -> dict[str, Any]:
     """
     Remove signatures from a sourmash index.
 
@@ -241,7 +250,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     :return: result message
     :rtype: str
     """
-    LOG.info("Removing signatures from index.")
+    context.logger.info("remove_from_index.start", sample_count=len(sample_ids))
     # get index store
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
     index = create_index_store(idx_path, index_format=cnf.index_format)
@@ -261,7 +270,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     result = index.remove_signatures(set(checksums_to_remove))
     if not result.ok:
         n_remaining = len(checksums_to_remove) - result.removed_count
-        LOG.error("Failed to remove %d checksum from index", n_remaining)
+        context.logger.error("remove_from_index.failed", sample_count=n_remaining)
 
     # unmark indexed status in db
     repo = create_signature_repo()
@@ -270,7 +279,8 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     return result.model_dump()
 
 
-def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
+@registry.register("exclude_from_analysis")
+def exclude_from_analysis(sample_ids: list[str], context: TaskContext) -> dict[str, bool | list[str]]:
     """
     Exclude signatures from being included in analysis without removing them.
 
@@ -279,7 +289,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     :return: result message
     :rtype: str
     """
-    LOG.info("Excluding %d signatures from future analysis.", len(sample_ids))
+    context.logger.info("exclude_from_analysis.start", sample_count=len(sample_ids))
     # unmark indexed status in db
     excluded_samples: list[str] = []
     repo = create_signature_repo()
@@ -292,7 +302,8 @@ def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     return {"ok": all_ok, "excluded": excluded_samples, "to_exclude": sample_ids}
 
 
-def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[str]]:
+@registry.register("include_in_analysis")
+def include_in_analysis(sample_ids: list[str], context: TaskContext) -> dict[str, str | bool | list[str]]:
     """
     Include signatures in downstream analysis.
 
@@ -301,7 +312,7 @@ def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[st
     :return: result message
     :rtype: str
     """
-    LOG.info("Including %d signatures in future analysis.", len(sample_ids))
+    context.logger.info("include_in_analysis.start", sample_count=len(sample_ids))
     # unmark indexed status in db
     repo = create_signature_repo()
 
@@ -316,7 +327,9 @@ def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[st
 
 
 def _lookup_checksums_from_sample_ids(
-    sample_ids: Iterable[str] | None, repo: SignatureRepository
+    sample_ids: Iterable[str] | None, 
+    *,
+    repo: SignatureRepository,
 ) -> list[str] | None:
     """Lookup checksums for sample ids."""
     if sample_ids is None:
@@ -329,44 +342,46 @@ def _lookup_checksums_from_sample_ids(
     ]
 
 
-def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None = None) -> SourmashSignatures:
+def _load_signatures_from_sample_id(
+    sample_ids: list[str],
+    kmer_size: int | None = None,
+) -> SourmashSignatures:
     """Load signatures from sample ids."""
-    LOG.debug("Load signatures to memory")
     repo = create_signature_repo()
 
     signatures: SourmashSignatures = []
+
     for sample_id in sample_ids:
-        records = repo.get_by_sample_id_or_checksum(sample_id=sample_id, kmer_size=kmer_size)
+        records = repo.get_by_sample_id_or_checksum(
+            sample_id=sample_id,
+            kmer_size=kmer_size,
+        )
 
         if not records:
-            LOG.error("No signature found for sample_id=%s", sample_id)
-            continue
+            continue  # caller decides how to log
 
         if len(records) > 1:
-            LOG.error(
-                "Multiple signature records for sample_id=%s; kmer_size=%s",
-                sample_id,
-                kmer_size,
-            )
             continue
 
         record = records[0]
 
         if record.exclude_from_analysis:
-            LOG.info("Skipping excluded signature %s", sample_id)
             continue
 
         sigs = read_signatures(record.signature_path, kmer_size=kmer_size)
-        signatures.extend(sigs)  # append to all signatures
+        signatures.extend(sigs)
+
     return signatures
 
 
+@registry.register("find_similar_and_cluster")
 def search_similar(
     sample_id: str,
     estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
     min_similarity: float = 0.5,
     limit: int | None = None,
     subset_sample_ids: list[str] | None = None,
+    context: TaskContext = None
 ) -> list[dict[str, Any]]:
     """
     Find signatures similar to reference signature.
@@ -378,6 +393,8 @@ def search_similar(
     :return: list of the similar signatures
     :rtype: SimilarSignatures
     """
+
+
     kmer_size = cnf.kmer_size
     repo = create_signature_repo()
     records = repo.get_by_sample_id_or_checksum(sample_id=sample_id, kmer_size=kmer_size)
@@ -392,7 +409,7 @@ def search_similar(
     )
 
     # build search config
-    subset_checksums = _lookup_checksums_from_sample_ids(subset_sample_ids, repo)
+    subset_checksums = _lookup_checksums_from_sample_ids(subset_sample_ids, repo=repo)
     search_cnf = SimilaritySearchConfig(
         min_similarity=min_similarity,
         limit=limit,
@@ -402,17 +419,25 @@ def search_similar(
     )
 
     # lookup sample ids from matches
+    context.logger.info(
+        "similarity.search.start",
+        sample_id=sample_id,
+        min_similarity=min_similarity,
+        limit=limit,
+    )
+
     result = get_similar_signatures(record.signature_path, index, search_cnf)
-    LOG.info(
-        "Finding samples similar to %s with min similarity %s; limit %s",
-        sample_id,
-        min_similarity,
-        limit,
+
+    context.logger.info(
+        "similarity.search.complete",
+        matches=len(result.matches),
+        duration=result.search_time,
     )
     return result.model_dump(mode="json")
 
 
-def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
+@registry.register("cluster_samples")
+def cluster_samples(sample_ids: list[str], context: TaskContext, cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their sourmash signatures.
 
@@ -424,37 +449,81 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
     :return: clustering result in newick format
     :rtype: str
     """
-    LOG.info("Prepare to cluster %d signatures", len(sample_ids))
+    context.logger.info(
+        "cluster_samples.start",
+        sample_count=len(sample_ids),
+        cluster_method=cluster_method,
+    )
+
     try:
         method = ClusterMethod(cluster_method)
     except ValueError as error:
         msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
+        context.logger.error(
+            "cluster_samples.invalid_method",
+            cluster_method=cluster_method,
+        )
         raise ValueError(msg) from error
 
     # load sequence signatures to memory
-    signatures = _load_signatures_from_sample_id(sample_ids)
+    signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=cnf.kmer_size)
 
-    LOG.info("Cluster %d signatures", len(sample_ids))
+    context.logger.info(
+        "cluster_samples.signatures_loaded",
+        requested=len(sample_ids),
+        loaded=len(signatures),
+    )
+
+    if not signatures:
+        context.logger.warning(
+            "cluster_samples.no_signatures_loaded",
+            sample_ids=sample_ids,
+        )
+        raise ValueError("No valid signatures found for clustering")
+
     tree, checksums  = cluster_signatures(signatures, method)
+
+    context.logger.info(
+        "cluster_samples.cluster_complete",
+        cluster_size=len(checksums),
+    )
 
     repo = create_signature_repo()
     kmer_size = cnf.kmer_size
-    sample_ids = []
+
+    resolved_sample_ids = []
+    missing_records = 0
+
     for checksum in checksums:
         records = repo.get_by_sample_id_or_checksum(checksum=checksum, kmer_size=kmer_size)
+
         record = records[0]
         if record is None:
+            missing_records += 1
             continue
-        sample_ids.append(record.sample_id)
 
-    LOG.debug("Creating newick tree; checksums: %s; leaf names: %s", checksums, sample_ids)
+        resolved_sample_ids.append(record.sample_id)
+    
+    if missing_records:
+        context.logger.warning(
+            "cluster_samples.missing_records",
+            missing_count=missing_records,
+        )
+
     newick = tree_to_newick(node=tree, newick="", parentdist=tree.dist, leaf_names=sample_ids)
+
+    context.logger.info(
+        "cluster_samples.complete",
+        output_size=len(newick),
+    )
+
     return newick
 
 
+@registry.register("find_similar_and_cluster")
 def find_similar_and_cluster(
     sample_id: str,
+    context: TaskContext,
     min_similarity: float = 0.5,
     limit: int | None = None,
     subset_sample_ids: list[str] | None = None,
@@ -474,30 +543,38 @@ def find_similar_and_cluster(
     :return: clustering result in newick format
     :rtype: str
     """
-    # validate input
+    context.logger.info(
+        "find_similar_and_cluster.start",
+        sampleid=sample_id,
+        min_similarity=min_similarity,
+        limit=limit,
+        subset_sample_ids=subset_sample_ids,
+        cluster_method=cluster_method,
+    )
+
     try:
         method = ClusterMethod(cluster_method)
     except ValueError as error:
         msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
+        context.logger.error(
+            "find_similar_and_cluster.invalid_method",
+            cluster_method=cluster_method,
+        )
         raise ValueError(msg) from error
-    LOG.info(
-        "Finding samples similar to %s with min similarity %s; limit %s",
-        sample_id,
-        min_similarity,
-        limit,
-    )
+
     results = search_similar(
         sample_id=sample_id,
         min_similarity=min_similarity,
         limit=limit,
         subset_sample_ids=subset_sample_ids,
     )
-    LOG.info("Found %d similar samples", len(results))
 
     # if 1 or 0 samples were found, return emtpy newick
     if len(results) < 2:
-        LOG.warning("Invalid number of samples found, %d", len(results))
+        context.logger.warning(
+            "find_similar_and_cluster.invalid_sample_count",
+            sample_count=len(results)
+        )
         return "()"
 
     # load sequence signatures to memory
@@ -509,15 +586,29 @@ def find_similar_and_cluster(
         records = repo.get_by_sample_id_or_checksum(checksum=match["md5"], kmer_size=kmer_size)
         record = records[0]
         if record is None:
+            context.logger.warning(
+                "find_similar_and_cluster.invalid_signature",
+                checksum=match["md5"]
+            )
             continue
         sample_ids.append(record.sample_id)
         checksums_lookup[record.signature_checksum] = record.sample_id
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
 
     # cluster samples
-    LOG.info("Cluster samples...")
+    context.logger.info(
+        "find_similar_and_cluster.cluster_samples", 
+        sample_count=len(signatures)
+    )
+
     tree, checksums  = cluster_signatures(signatures, method)
     newick = tree_to_newick(tree, "", tree.dist, [checksums_lookup.get(c, c) for c in checksums])
+
+    context.logger.info(
+        "find_similar_and_cluster.cluster_samples.complete",
+        output_size=len(newick),
+    )
+
     return newick
 
 
@@ -526,7 +617,7 @@ def run_data_integrity_check() -> None:
 
     report = check_signature_integrity(InitiatorType.SYSTEM, cnf)
     repo = create_report_repo()
-    LOG.info("Saving report to database")
+
     repo.save(report)
 
     report_error = (
@@ -547,21 +638,25 @@ def run_data_integrity_check() -> None:
         dispatch_email(str(cnf.notification.api_url), message)
 
 
-def get_data_integrity_report() -> dict[str, Any] | None:
+@registry.register("get_integrity_report")
+def get_data_integrity_report(context: TaskContext) -> dict[str, Any] | None:
     """Check integrity of the minhash service and save report to db."""
 
-    LOG.info("Get last integrity report from the database")
+    context.logger.info("get_data_integrity_report.start")
     repo = create_report_repo()
     report = repo.get_latest()
+    context.logger.info("get_data_integrity_report.success", report_exists=report is not None)
     if report is not None:
         return report.model_dump(mode="json")
     return None
 
 
-def cleanup_removed_files() -> None:
+@registry.register("cleanup_removed_files")
+def cleanup_removed_files(context: TaskContext) -> None:
     """Cleanup files marked for removal."""
+    context.logger.info("cleanup_removed_files.start")
     two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
 
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
     n_removed = store.purge_older_than(cutoff=two_weeks_ago)
-    LOG.info("Cleanup removed %d files", n_removed)
+    context.logger.info("cleanup_removed_files.complete", n_removed=n_removed)
