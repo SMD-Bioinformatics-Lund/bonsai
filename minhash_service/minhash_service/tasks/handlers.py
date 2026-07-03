@@ -29,9 +29,9 @@ from minhash_service.signatures.storage import SignatureStorage
 
 from .notify import EmailApiInput, dispatch_email
 
-registry = TaskRegistry()
+tasks_registry = TaskRegistry()
 
-@registry.register("add_signature")
+@tasks_registry.register("add_signature")
 def add_signature(sample_id: str, signature: str, context: TaskContext) -> str:
     """
     Find signatures similar to reference signature.
@@ -99,7 +99,7 @@ def add_signature(sample_id: str, signature: str, context: TaskContext) -> str:
     return str(sharded_path)
 
 
-@registry.register("remove_signature")
+@tasks_registry.register("remove_signature")
 def remove_signature(sample_id: str, context: TaskContext) -> dict[str, str | bool]:
     """
     Remove a signature from the database and index.
@@ -169,7 +169,7 @@ def remove_signature(sample_id: str, context: TaskContext) -> dict[str, str | bo
     return result.model_dump(mode="json")
 
 
-@registry.register("check_signature")
+@tasks_registry.register("check_signature")
 def check_signature(sample_id: str, context: TaskContext) -> dict[str, str | bool]:
     """Check if signature exist."""
 
@@ -191,7 +191,7 @@ def check_signature(sample_id: str, context: TaskContext) -> dict[str, str | boo
     }
 
 
-@registry.register("add_to_index")
+@tasks_registry.register("add_to_index")
 def add_to_index(sample_ids: list[str], context: TaskContext) -> str:
     """
     Add signatures to sourmash index.
@@ -240,7 +240,7 @@ def add_to_index(sample_ids: list[str], context: TaskContext) -> str:
     return result.model_dump(mode="json")
 
 
-@registry.register("remove_from_index")
+@tasks_registry.register("remove_from_index")
 def remove_from_index(sample_ids: list[str], context: TaskContext) -> dict[str, Any]:
     """
     Remove signatures from a sourmash index.
@@ -279,7 +279,7 @@ def remove_from_index(sample_ids: list[str], context: TaskContext) -> dict[str, 
     return result.model_dump()
 
 
-@registry.register("exclude_from_analysis")
+@tasks_registry.register("exclude_from_analysis")
 def exclude_from_analysis(sample_ids: list[str], context: TaskContext) -> dict[str, bool | list[str]]:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -302,7 +302,7 @@ def exclude_from_analysis(sample_ids: list[str], context: TaskContext) -> dict[s
     return {"ok": all_ok, "excluded": excluded_samples, "to_exclude": sample_ids}
 
 
-@registry.register("include_in_analysis")
+@tasks_registry.register("include_in_analysis")
 def include_in_analysis(sample_ids: list[str], context: TaskContext) -> dict[str, str | bool | list[str]]:
     """
     Include signatures in downstream analysis.
@@ -374,7 +374,7 @@ def _load_signatures_from_sample_id(
     return signatures
 
 
-@registry.register("find_similar_and_cluster")
+@tasks_registry.register("find_similar_and_cluster")
 def search_similar(
     sample_id: str,
     estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
@@ -436,7 +436,7 @@ def search_similar(
     return result.model_dump(mode="json")
 
 
-@registry.register("cluster_samples")
+@tasks_registry.register("cluster_samples")
 def cluster_samples(sample_ids: list[str], context: TaskContext, cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their sourmash signatures.
@@ -520,7 +520,7 @@ def cluster_samples(sample_ids: list[str], context: TaskContext, cluster_method:
     return newick
 
 
-@registry.register("find_similar_and_cluster")
+@tasks_registry.register("find_similar_and_cluster")
 def find_similar_and_cluster(
     sample_id: str,
     context: TaskContext,
@@ -638,7 +638,7 @@ def run_data_integrity_check() -> None:
         dispatch_email(str(cnf.notification.api_url), message)
 
 
-@registry.register("get_integrity_report")
+@tasks_registry.register("get_integrity_report")
 def get_data_integrity_report(context: TaskContext) -> dict[str, Any] | None:
     """Check integrity of the minhash service and save report to db."""
 
@@ -651,7 +651,7 @@ def get_data_integrity_report(context: TaskContext) -> dict[str, Any] | None:
     return None
 
 
-@registry.register("cleanup_removed_files")
+@tasks_registry.register("cleanup_removed_files")
 def cleanup_removed_files(context: TaskContext) -> None:
     """Cleanup files marked for removal."""
     context.logger.info("cleanup_removed_files.start")
