@@ -73,13 +73,6 @@ def get_similar_signatures(
     config: SimilaritySearchConfig,
 ) -> SimilarSearchResult:
     """WIP verion which uses branchwater multisearch to find similar signatures."""
-    LOG.info(
-        "Finding similar samples - query: %s; similarity: %f, limit: %s",
-        query_sig.name,
-        config.min_similarity,
-        config.limit,
-    )
-    # output all and then do filtering in python
     output_all = True
 
     # do multisearch
