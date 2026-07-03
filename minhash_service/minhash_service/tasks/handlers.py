@@ -374,7 +374,7 @@ def _load_signatures_from_sample_id(
     return signatures
 
 
-@tasks_registry.register("find_similar_and_cluster")
+@tasks_registry.register("search_similar")
 def search_similar(
     sample_id: str,
     estimate_ani: AniEstimateOptions = AniEstimateOptions.JACCARD,
