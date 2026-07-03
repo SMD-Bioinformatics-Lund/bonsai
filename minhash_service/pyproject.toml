@@ -18,6 +18,7 @@ classifiers = [
 ]
 # NOTE: Removed build tools from runtime deps
 dependencies = [
+  "bonsai-libs @ git+https://github.com/mhkc/bonsai-sdk.git@feature/job-framework",
   "redis",
   "pydantic-settings",
   "requests",
