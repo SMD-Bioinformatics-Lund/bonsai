@@ -25,14 +25,15 @@ dependencies = [
   "pydantic==2.9.0",
   "redis",
   "rq==2.5.0",
-  "scipy==1.14.1",
 ]
 
 [project.scripts]
 ska_service = "ska_service.worker:create_app"
 
 [project.optional-dependencies]
-test = [ ]
+test = [
+  "pytest-cov",
+]
 
 [tool.setuptools.dynamic]
 version = { attr = "ska_service.__version__" }
