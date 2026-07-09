@@ -6,10 +6,11 @@ from tempfile import TemporaryDirectory
 from typing import Sequence
 
 from Bio import AlignIO
+from bonsai_libs.clustering import LinkageMethod, hierarchical_clustering, minimum_spanning_tree_clustering
 
 from . import ska
 from .config import settings
-from .ska.cluster import ClusterMethod, calc_snv_distance, to_newick
+from .ska.cluster import calc_snv_distance
 
 LOG = logging.getLogger(__name__)
 
@@ -19,12 +20,17 @@ def get_index_name(index_path: str) -> str:
     return Path(index_path).stem.replace('_ska_index', '')
 
 
-def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -> str:
+def cluster(
+        indexes: Sequence[dict[str, str]], 
+        cluster_method: str = "single",
+        algorithm: str = "hierarchical",
+    ) -> str:
     """
     Cluster multiple sample on their SNVs using SKA indexes.
 
     :param indexes List[str]: Paths to one or more SKA indexes.
     :param cluster_method str: The linkage or clustering method to use, default to single
+    :param algorithm str: The clustering algorithm to use
 
     :raises ValueError: raises an exception if the method is not a valid scipy clustering method.
 
@@ -41,10 +47,13 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
 
     # validate cluster method
     try:
-        method = ClusterMethod(cluster_method)
+        method = LinkageMethod(cluster_method)
     except ValueError as error:
         msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
+        LOG.error(
+            "cluster.invalid_method",
+            extra={"cluster_method": cluster_method}
+        )
         raise ValueError(msg) from error
 
     with TemporaryDirectory() as tmp_dir:
@@ -55,14 +64,32 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
         aln_file = ska.align(merged_index, filter_ambig=True, filter_constant=True)
 
         # calculate distance between samples from alignment and cluster
-        with open(aln_file) as inpt:
+        with open(aln_file, encoding="utf-8") as inpt:
             aln = AlignIO.read(inpt, "fasta")
+
         dm = calc_snv_distance(aln)
-        tree, index_names = ska.cluster_distances(dm, method)
-        # lookup sample ids from index names and return newick tree with sample ids as leaf names
-        sample_ids = [sample_id_lookup.get(idx, idx) for idx in index_names]
-        newick_tree = to_newick(tree, "", tree.dist, sample_ids)
-    return newick_tree
+        condensed = dm.to_condensed()
+        names: list[str] = dm.names
+        sample_ids = [sample_id_lookup.get(idx, idx) for idx in names]
+
+        # cluster samples
+        if algorithm == "hierarchical":
+            result = hierarchical_clustering(
+                condensed,
+                sample_ids,
+                method=method,
+            )
+
+        elif algorithm == "mst":
+            result = minimum_spanning_tree_clustering(
+                condensed,
+                sample_ids,
+            )
+
+        else:
+            raise ValueError(f"Unknown clustering algorithm: {algorithm}")
+
+    return result.to_newick()
 
 
 def check_index(file_name: str) -> str | None:

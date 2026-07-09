@@ -2,16 +2,14 @@
 
 import itertools
 import logging
-from enum import Enum
-from typing import Sequence, Any
+from typing import Any, Sequence
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Phylo.TreeConstruction import DistanceMatrix as BioDistanceMatrix
-from scipy.cluster import hierarchy
 
 LOG = logging.getLogger(__name__)
 
-TreeObj = (tuple[None, Any] | Any | None)
+TreeObj = tuple[None, Any] | Any | None
 
 
 class DistanceMatrix(BioDistanceMatrix):
@@ -24,39 +22,9 @@ class DistanceMatrix(BioDistanceMatrix):
             for seq1, seq2 in itertools.combinations(self.names, 2)
         ]
 
-
-class ClusterMethod(str, Enum):
-    """Index of methods for hierarchical clustering of samples."""
-
-    SINGLE = "single"
-    COMPLETE = "complete"
-    AVERAGE = "average"
-    WEIGHTED = "weighted"
-    CENTROID = "centroid"
-
-
-def to_newick(
-    node: hierarchy.ClusterNode,
-    newick: str,
-    parent_dist: float,
-    leaf_names: Sequence[str],
-) -> str:
-    """Convert hierarcical tree representation to newick format."""
-
-    if node.is_leaf():
-        return f"{leaf_names[node.id]}:{parent_dist - node.dist:.2f}{newick}"
-
-    if len(newick) > 0:
-        newick = f"):{parent_dist - node.dist:.2f}{newick}"
-    else:
-        newick = ");"
-    newick = to_newick(node.get_left(), newick, node.dist, leaf_names)
-    newick = to_newick(node.get_right(), f",{newick}", node.dist, leaf_names)
-    newick = f"({newick}"
-    return newick
-
-
-def calc_snv_distance(aln: MultipleSeqAlignment, *, ignore_gaps: bool = False) -> DistanceMatrix:
+def calc_snv_distance(
+    aln: MultipleSeqAlignment, *, ignore_gaps: bool = False
+) -> DistanceMatrix:
     """Calculate pair-wise sample distance from aligned fasta sequences."""
 
     def _valid_pair(a: str, b: str, *, ignore_gaps: bool) -> bool:
@@ -71,11 +39,3 @@ def calc_snv_distance(aln: MultipleSeqAlignment, *, ignore_gaps: bool = False) -
         )
         dm[seq1.name, seq2.name] = n_different
     return dm
-
-
-def cluster_distances(dm: DistanceMatrix, method: ClusterMethod) -> tuple[TreeObj, list[str]]:
-    """Cluster two or more samples from a distance matrix."""
-
-    linkage = hierarchy.linkage(dm.to_condensed(), method=method.value)
-    tree = hierarchy.to_tree(linkage, False)
-    return tree, dm.names
