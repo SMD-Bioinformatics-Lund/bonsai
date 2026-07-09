@@ -56,16 +56,20 @@ def to_newick(
     return newick
 
 
-def calc_snv_distance(aln: MultipleSeqAlignment) -> DistanceMatrix:
+def calc_snv_distance(aln: MultipleSeqAlignment, *, ignore_gaps: bool = False) -> DistanceMatrix:
     """Calculate pair-wise sample distance from aligned fasta sequences."""
+
+    def _valid_pair(a: str, b: str, *, ignore_gaps: bool) -> bool:
+        return not ignore_gaps or (a != "-" and b != "-")
+
     dm = DistanceMatrix(names=[al.name for al in aln])
     for seq1, seq2 in itertools.combinations(aln, 2):
-        n_missing = sum(
-            a_seq != b_seq
-            for a_seq, b_seq in zip(seq1, seq2)
-            if not any([a_seq == "-", b_seq == "-"])
+        n_different = sum(
+            seq_a != seq_b
+            for seq_a, seq_b in zip(seq1, seq2)
+            if _valid_pair(seq_a, seq_b, ignore_gaps=ignore_gaps)
         )
-        dm[seq1.name, seq2.name] = n_missing
+        dm[seq1.name, seq2.name] = n_different
     return dm
 
 
