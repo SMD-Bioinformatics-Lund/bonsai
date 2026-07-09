@@ -6,11 +6,10 @@ from tempfile import TemporaryDirectory
 from typing import Sequence
 
 from Bio import AlignIO
-from bonsai_libs.clustering import LinkageMethod, hierarchical_clustering, minimum_spanning_tree_clustering
+from bonsai_libs.clustering import LinkageMethod
 
 from . import ska
 from .config import settings
-from .ska.cluster import calc_snv_distance
 
 LOG = logging.getLogger(__name__)
 
@@ -26,70 +25,61 @@ def cluster(
         algorithm: str = "hierarchical",
     ) -> str:
     """
-    Cluster multiple sample on their SNVs using SKA indexes.
-
-    :param indexes List[str]: Paths to one or more SKA indexes.
-    :param cluster_method str: The linkage or clustering method to use, default to single
-    :param algorithm str: The clustering algorithm to use
-
-    :raises ValueError: raises an exception if the method is not a valid scipy clustering method.
-
-    :return: clustering result in newick format
-    :rtype: str
+    Cluster samples using SKA indexes and return Newick tree.
     """
+
     # validate input samples and cast to path
     idx_paths = [Path(settings.index_dir) / idx["ska_index"] for idx in indexes]
 
+    # Map index name → sample_id
     sample_id_lookup = {
         get_index_name(idx["ska_index"]): idx["sample_id"] 
         for idx in indexes
     }
 
-    # validate cluster method
-    try:
-        method = LinkageMethod(cluster_method)
-    except ValueError as error:
-        msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(
-            "cluster.invalid_method",
-            extra={"cluster_method": cluster_method}
-        )
-        raise ValueError(msg) from error
+    # Validate clustering method (only needed for hierarchical)
+    method: LinkageMethod | None = None
+    if algorithm == "hierarchical":
+        try:
+            method = LinkageMethod(cluster_method)
+        except ValueError as error:
+            LOG.error(
+                "cluster.invalid_method",
+                extra={"cluster_method": cluster_method},
+            )
+            raise ValueError(f'"{cluster_method}" is not a valid cluster method') from error
 
+    elif algorithm != "mst":
+        raise ValueError(f"Unknown clustering algorithm: {algorithm}")
+    
+    # Core pipeline
     with TemporaryDirectory() as tmp_dir:
-        # merge indexes into a single file
-        merged_index = ska.merge(idx_paths, output=Path(tmp_dir).joinpath("merged.skf"))
+        merged_index = ska.merge(
+            idx_paths,
+            output=Path(tmp_dir) / "merged.skf",
+        )
 
-        # align variants and return as multi fasta
-        aln_file = ska.align(merged_index, filter_ambig=True, filter_constant=True)
+        aln_file = ska.align(
+            merged_index,
+            filter_ambig=True,
+            filter_constant=True,
+        )
 
-        # calculate distance between samples from alignment and cluster
-        with open(aln_file, encoding="utf-8") as inpt:
-            aln = AlignIO.read(inpt, "fasta")
+        with open(aln_file, encoding="utf-8") as handle:
+            aln = AlignIO.read(handle, "fasta")
 
-        dm = calc_snv_distance(aln)
-        condensed = dm.to_condensed()
-        names: list[str] = dm.names
-        sample_ids = [sample_id_lookup.get(idx, idx) for idx in names]
+    # Map names after alignment
+    sample_ids = [
+        sample_id_lookup.get(name, name)
+        for name in (aln_i.name for aln_i in aln)
+    ]
 
-        # cluster samples
-        if algorithm == "hierarchical":
-            result = hierarchical_clustering(
-                condensed,
-                sample_ids,
-                method=method,
-            )
-
-        elif algorithm == "mst":
-            result = minimum_spanning_tree_clustering(
-                condensed,
-                sample_ids,
-            )
-
-        else:
-            raise ValueError(f"Unknown clustering algorithm: {algorithm}")
-
-    return result.to_newick()
+    return ska.cluster_alignment(
+        aln,
+        sample_ids,
+        algorithm=algorithm,
+        method=method,
+    )
 
 
 def check_index(file_name: str) -> str | None:

@@ -6,6 +6,7 @@ from typing import Any, Sequence
 
 from Bio.Align import MultipleSeqAlignment
 from Bio.Phylo.TreeConstruction import DistanceMatrix as BioDistanceMatrix
+from bonsai_libs.clustering import hierarchical_clustering, minimum_spanning_tree_clustering, LinkageMethod
 
 LOG = logging.getLogger(__name__)
 
@@ -39,3 +40,30 @@ def calc_snv_distance(
         )
         dm[seq1.name, seq2.name] = n_different
     return dm
+
+
+def cluster_alignment(
+    aln: MultipleSeqAlignment,
+    sample_ids: Sequence[str],
+    *,
+    algorithm: str,
+    method: LinkageMethod | None = None,
+) -> str:
+    dm = calc_snv_distance(aln)
+    condensed = dm.to_condensed()
+
+    if algorithm == "hierarchical":
+        result = hierarchical_clustering(
+            condensed,
+            sample_ids,
+            method=method,
+        )
+    elif algorithm == "mst":
+        result = minimum_spanning_tree_clustering(
+            condensed,
+            sample_ids,
+        )
+    else:
+        raise ValueError(f"Unknown clustering algorithm: {algorithm}")
+
+    return result.to_newick()
