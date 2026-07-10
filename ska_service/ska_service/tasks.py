@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import Sequence
 
 from Bio import AlignIO
-from bonsai_libs.clustering import LinkageMethod
+from bonsai_libs.clustering import LinkageMethod, ClusteringAlgorithm
 
 from . import ska
 from .config import settings
@@ -37,9 +37,18 @@ def cluster(
         for idx in indexes
     }
 
-    # Validate clustering method (only needed for hierarchical)
+    # Validate clustering algorithm and method (only needed for hierarchical)
+    try:
+        algorithm = ClusteringAlgorithm(algorithm)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_algorithm",
+            extra={"algorithm": algorithm},
+        )
+        raise ValueError(f'"{algorithm}" is not a valid cluster algorithm') from error
+
     method: LinkageMethod | None = None
-    if algorithm == "hierarchical":
+    if algorithm == ClusteringAlgorithm.HIERARCHICAL:
         try:
             method = LinkageMethod(cluster_method)
         except ValueError as error:
@@ -49,9 +58,6 @@ def cluster(
             )
             raise ValueError(f'"{cluster_method}" is not a valid cluster method') from error
 
-    elif algorithm != "mst":
-        raise ValueError(f"Unknown clustering algorithm: {algorithm}")
-    
     # Core pipeline
     with TemporaryDirectory() as tmp_dir:
         merged_index = ska.merge(
