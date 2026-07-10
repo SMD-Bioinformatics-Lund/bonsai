@@ -7,9 +7,10 @@ import tempfile
 from pathlib import Path
 from typing import Any, Iterable, cast
 
-from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
-from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
-                                             SimilaritySearchConfig)
+from bonsai_libs.clustering import ClusterResult, ClusteringAlgorithm, LinkageMethod
+
+from minhash_service.analysis.cluster import cluster_signatures
+from minhash_service.analysis.models import AniEstimateOptions, SimilaritySearchConfig
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError
@@ -29,6 +30,32 @@ from minhash_service.signatures.storage import SignatureStorage
 from .notify import EmailApiInput, dispatch_email
 
 LOG = logging.getLogger(__name__)
+
+
+def _parse_cluster_algorithm(algorithm: str) -> ClusteringAlgorithm:
+    """Parse cluster algorithm."""
+
+    try:
+        return ClusteringAlgorithm(algorithm)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_algorithm",
+            extra={"algorithm": algorithm},
+        )
+        raise ValueError(f'"{algorithm}" is not a valid cluster algorithm') from error
+
+
+def _parse_linkage_method(method: str) -> LinkageMethod:
+    """Parse linkate method."""
+
+    try:
+        return LinkageMethod(method)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_method",
+            extra={"cluster_method": method},
+        )
+        raise ValueError(f'"{method}" is not a valid cluster method') from error
 
 
 def add_signature(sample_id: str, signature: str) -> str:
@@ -412,32 +439,21 @@ def search_similar(
     return result.model_dump(mode="json")
 
 
-def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
+def cluster_samples(sample_ids: list[str], *, algorithm: str = "mst", cluster_method: str | None = None) -> str:
     """
     Cluster multiple sample on their sourmash signatures.
-
-    :param sample_ids list[str]: The sample ids to cluster
-    :param cluster_method int: The linkage or clustering method to use, default to single
-
-    :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
-
-    :return: clustering result in newick format
-    :rtype: str
     """
     LOG.info("Prepare to cluster %d signatures", len(sample_ids))
-    try:
-        method = ClusterMethod(cluster_method)
-    except ValueError as error:
-        msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
-        raise ValueError(msg) from error
+    algorithm = _parse_cluster_algorithm(algorithm)
+    method = _parse_linkage_method(cluster_method) if cluster_method else None
 
     # load sequence signatures to memory
     signatures = _load_signatures_from_sample_id(sample_ids)
 
     LOG.info("Cluster %d signatures", len(sample_ids))
-    tree, checksums  = cluster_signatures(signatures, method)
+    result, checksums  = cluster_signatures(signatures, algorithm=algorithm, method=method)
 
+    # Lookup sample ids from checksums
     repo = create_signature_repo()
     kmer_size = cnf.kmer_size
     sample_ids = []
@@ -447,46 +463,30 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
         if record is None:
             continue
         sample_ids.append(record.sample_id)
-
-    LOG.debug("Creating newick tree; checksums: %s; leaf names: %s", checksums, sample_ids)
-    newick = tree_to_newick(node=tree, newick="", parentdist=tree.dist, leaf_names=sample_ids)
-    return newick
+    
+    # replace labels in cluster result
+    upd_result = ClusterResult(root=result.root, labels=sample_ids)
+    return upd_result.to_newick()
 
 
 def find_similar_and_cluster(
     sample_id: str,
+    *,
     min_similarity: float = 0.5,
     limit: int | None = None,
     subset_sample_ids: list[str] | None = None,
+    algorithm: str = "hierarchical",
     cluster_method: str = "single",
 ) -> str:
-    """
-    Find similar samples and cluster them on their minhash profile.
-
-    :param sample_id str: The id of reference sample
-    :param min_similarity float: Minimum similarity score
-    :param limit int | None: Limit the result to x samples, default to None
-    :param cluster_method int: The linkage or clustering method to use, default to single
-    :param subset_sample_ids list[str] | None: Narrow the search to the following ids
-
-    :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
-
-    :return: clustering result in newick format
-    :rtype: str
-    """
-    # validate input
-    try:
-        method = ClusterMethod(cluster_method)
-    except ValueError as error:
-        msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
-        raise ValueError(msg) from error
+    """Find similar samples and cluster them on their minhash profile."""
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
+
+    # Search similar signatures
     results = search_similar(
         sample_id=sample_id,
         min_similarity=min_similarity,
@@ -515,10 +515,13 @@ def find_similar_and_cluster(
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
 
     # cluster samples
-    LOG.info("Cluster samples...")
-    tree, checksums  = cluster_signatures(signatures, method)
-    newick = tree_to_newick(tree, "", tree.dist, [checksums_lookup.get(c, c) for c in checksums])
-    return newick
+    LOG.info("Prepare to cluster %d signatures", len(signatures))
+    algorithm = _parse_cluster_algorithm(algorithm)
+    method = _parse_linkage_method(cluster_method) if cluster_method else None
+
+    result, checksums  = cluster_signatures(signatures, algorithm=algorithm, method=method)
+    upd_result = ClusterResult(root=result.root, labels=[checksums_lookup.get(c, c) for c in checksums])
+    return upd_result.to_newick()
 
 
 def run_data_integrity_check() -> None:
