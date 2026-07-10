@@ -14,6 +14,32 @@ from .config import settings
 LOG = logging.getLogger(__name__)
 
 
+def _parse_cluster_algorithm(algorithm: str) -> ClusteringAlgorithm:
+    """Parse cluster algorithm."""
+
+    try:
+        return ClusteringAlgorithm(algorithm)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_algorithm",
+            extra={"algorithm": algorithm},
+        )
+        raise ValueError(f'"{algorithm}" is not a valid cluster algorithm') from error
+
+
+def _parse_linkage_method(method: str) -> LinkageMethod:
+    """Parse linkate method."""
+
+    try:
+        return LinkageMethod(method)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_method",
+            extra={"cluster_method": method},
+        )
+        raise ValueError(f'"{method}" is not a valid cluster method') from error
+
+
 def get_index_name(index_path: str) -> str:
     """Get the name of the index from the file path."""
     return Path(index_path).stem.replace('_ska_index', '')
@@ -38,25 +64,8 @@ def cluster(
     }
 
     # Validate clustering algorithm and method (only needed for hierarchical)
-    try:
-        algorithm = ClusteringAlgorithm(algorithm)
-    except ValueError as error:
-        LOG.error(
-            "cluster.invalid_algorithm",
-            extra={"algorithm": algorithm},
-        )
-        raise ValueError(f'"{algorithm}" is not a valid cluster algorithm') from error
-
-    method: LinkageMethod | None = None
-    if algorithm == ClusteringAlgorithm.HIERARCHICAL:
-        try:
-            method = LinkageMethod(cluster_method)
-        except ValueError as error:
-            LOG.error(
-                "cluster.invalid_method",
-                extra={"cluster_method": cluster_method},
-            )
-            raise ValueError(f'"{cluster_method}" is not a valid cluster method') from error
+    algorithm = _parse_cluster_algorithm(algorithm)
+    method = _parse_linkage_method(cluster_method) if cluster_method else None
 
     # Core pipeline
     with TemporaryDirectory() as tmp_dir:
