@@ -3,6 +3,8 @@
 import asyncio
 import logging
 
+from bonsai_libs.clustering import LinkageMethod
+
 from .models import SubmittedJob
 from .queue import JobStatus, JobStatusCodes, check_redis_job_status
 
@@ -41,3 +43,16 @@ async def wait_for_job(
         )
         raise error
     return job_status
+
+
+def _parse_linkage_method(method: str) -> LinkageMethod:
+    """Parse linkate method."""
+
+    try:
+        return LinkageMethod(method)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_method",
+            extra={"cluster_method": method},
+        )
+        raise ValueError(f'"{method}" is not a valid cluster method') from error

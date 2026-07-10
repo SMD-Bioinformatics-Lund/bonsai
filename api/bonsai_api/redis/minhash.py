@@ -7,9 +7,12 @@ from typing import Any, Iterable
 from rq import Queue, Retry
 from rq.job import Dependency
 
-from bonsai_api.models.enums import TypingMethod
-from .models import ClusterMethod, SubmittedJob
+from bonsai_libs.clustering import ClusteringAlgorithm
+
+from bonsai_api.models.enums import TypingMethod, ClusterStrategy
+from .models import SubmittedJob
 from .queue import redis
+from .utils import _parse_linkage_method
 
 LOG = logging.getLogger(__name__)
 
@@ -185,9 +188,16 @@ def schedule_find_similar_samples(
 
 def schedule_cluster_samples(
     sample_ids: list[str],
-    cluster_method: ClusterMethod,
+    cluster_method: ClusterStrategy,
 ) -> SubmittedJob:
     """Schedule a job to cluster the given samples (no retries by default)."""
+    if ClusterStrategy == ClusterStrategy.MST:
+        algorithm = ClusteringAlgorithm.MST
+        method = None
+    else:
+        algorithm = ClusteringAlgorithm.HIERARCHICAL
+        method = str(_parse_linkage_method(str(cluster_method)))
+
     task = str(TaskName.CLUSTER_SAMPLES)
     job = enqueue_job(
         queue=redis.minhash,
@@ -195,7 +205,8 @@ def schedule_cluster_samples(
         task=task,
         retry=None,
         sample_ids=sample_ids,
-        cluster_method=cluster_method.value,
+        algorithm=str(algorithm),
+        cluster_method=method,
     )
     return SubmittedJob(id=job.id, task=task)
 
@@ -204,7 +215,7 @@ def schedule_find_similar_and_cluster(
     sample_id: str,
     min_similarity: float,
     typing_method: TypingMethod,
-    cluster_method: ClusterMethod,
+    cluster_method: ClusterStrategy,
     limit: int | None = None,
     narrow_to_sample_ids: list[str] | None = None,
 ) -> SubmittedJob:
@@ -214,8 +225,16 @@ def schedule_find_similar_and_cluster(
     min_similarity - minimum similarity score to be included
     typing_method - what data the samples should be clustered on
     """
+    # Verify input before submitting job
     if typing_method != TypingMethod.MINHASH:
         raise NotImplementedError(f"{typing_method} is not implemented yet")
+    
+    if ClusterStrategy == ClusterStrategy.MST:
+        algorithm = ClusteringAlgorithm.MST
+        method = None
+    else:
+        algorithm = ClusteringAlgorithm.HIERARCHICAL
+        method = str(_parse_linkage_method(str(cluster_method)))
 
     task = str(TaskName.SIMILAR_N_CLUSTER)
     job = enqueue_job(
@@ -227,7 +246,8 @@ def schedule_find_similar_and_cluster(
         min_similarity=min_similarity,
         limit=limit,
         subset_sample_ids=narrow_to_sample_ids,
-        cluster_method=cluster_method.value,
+        algorithm=str(algorithm),
+        cluster_method=method,
     )
     return SubmittedJob(id=job.id, task=task)
 

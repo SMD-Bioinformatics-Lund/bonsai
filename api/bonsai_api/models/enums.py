@@ -29,11 +29,34 @@ class ExportStatus(StrEnum):
     FAILED = "failed"
 
 
-class DistanceMethod(StrEnum):  # pylint: disable=too-few-public-methods
-    """Valid distance methods for hierarchical clustering of samples."""
+class TypingMethod(StrEnum):  # pylint: disable=too-few-public-methods
+    """Supported typing methods."""
 
-    JACCARD = "jaccard"
-    HAMMING = "hamming"
+    MLST = "mlst"
+    CGMLST = "cgmlst"
+    SKA = "ska"
+    MINHASH = "minhash"
+
+
+class ClusterStrategy(StrEnum):
+    """Supported clustering strategies."""
+
+    # SDK hierarchical clustering
+    SINGLE = "single"
+    COMPLETE = "complete"
+    AVERAGE = "average"
+    WEIGHTED = "weighted"
+    CENTROID = "centroid"
+
+    # SDK MST
+    MST = "mst"
+
+    # GrapeTree
+    MSTREE_V1 = "MSTree"
+    MSTREE_V2 = "MSTreeV2"
+    NJ = "NJ"
+    RAPID_NJ = "RapidNJ"
+    NINJA = "ninja"
 
 
 class ClusterMethod(StrEnum):  # pylint: disable=too-few-public-methods
@@ -43,15 +66,6 @@ class ClusterMethod(StrEnum):  # pylint: disable=too-few-public-methods
     COMPLETE = "complete"
     AVERAGE = "average"
     NJ = "neighbor_joining"
-
-
-class TypingMethod(StrEnum):  # pylint: disable=too-few-public-methods
-    """Supported typing methods."""
-
-    MLST = "mlst"
-    CGMLST = "cgmlst"
-    SKA = "ska"
-    MINHASH = "minhash"
 
 
 class FileSources(StrEnum):

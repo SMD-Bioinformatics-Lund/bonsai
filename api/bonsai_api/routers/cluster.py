@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 from typing import Dict
 
+from bonsai_libs.clustering import ClusteringAlgorithm, LinkageMethod
+
 from bonsai_api.crud.cluster import (
     TypingProfileOutput,
     get_signature_path_for_samples,
@@ -13,8 +15,8 @@ from bonsai_api.crud.cluster import (
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel
-from bonsai_api.models.enums import DistanceMethod, TypingMethod
-from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
+from bonsai_api.models.enums import TypingMethod, ClusterStrategy
+from bonsai_api.redis import SubmittedJob
 from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
 )
@@ -40,15 +42,11 @@ WRITE_PERMISSION = "cluster:write"
 
 
 class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
-    """Input data model for cluster entrypoint
-
-    :param RWModel: Generic read write base model
-    :type RWModel: Generic basemodel for read/ write
-    """
+    """Input data model for cluster entrypoint."""
 
     sample_ids: list[str] = Field(..., min_length=2, alias="sampleIds")
-    distance: DistanceMethod | None = None
-    method: ClusterMethod | MsTreeMethods
+
+    strategy: ClusterStrategy = ClusterStrategy.SINGLE
 
     model_config = ConfigDict(use_enum_values=False)
 
