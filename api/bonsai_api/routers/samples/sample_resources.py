@@ -21,6 +21,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Path,
+    Query,
     Request,
     Security,
     status,
@@ -41,6 +42,7 @@ async def create_genomic_resource(
     payload: GenomicResourceCreate,
     request: Request,
     sample_id: str = Path(..., description="Sample ID"),
+    force: bool = Query(False, description="Overwrite existing resources for this pipeline run"),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -55,6 +57,7 @@ async def create_genomic_resource(
             sample_id=sample_id,
             resource=payload,
             request=request,
+            force=force,
             ctx=req_ctx,
             audit=audit_log,
         )
