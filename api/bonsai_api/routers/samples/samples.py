@@ -31,6 +31,7 @@ from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.services.sample_service import (
     create_sample_service,
     delete_sample_service,
+    get_sample_by_external_id_service,
     get_sample_service,
 )
 from fastapi import (
@@ -193,6 +194,23 @@ async def delete_many_samples(
         "n_deleted": len(removed),
         "remove_signature_jobs": jobs,
     }
+
+
+@router.get("/samples/external/{external_sample_id}", response_model_by_alias=False)
+async def read_sample_by_external_id(
+    external_sample_id: str = Path(...),
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+) -> SampleRecordOut:
+    """Read sample by the external id assigned by the calling system.
+
+    Lets callers (e.g. bonsai-prp) check whether a sample already exists for
+    their own identifier before creating a new one, since sample_id is a
+    server-generated id that a caller can't know in advance.
+    """
+    return await get_sample_by_external_id_service(db, external_sample_id=external_sample_id)
 
 
 @router.get("/samples/{sample_id}", response_model_by_alias=False)

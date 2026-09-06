@@ -15,6 +15,7 @@ from bonsai_api.crud.sample import (
     add_ska_index,
     add_sourmash_sketch,
     delete_sample_crud,
+    get_sample_by_external_id,
     get_sample_by_id,
     insert_sample_document,
     pipeline_run_exists_for_sample,
@@ -218,14 +219,8 @@ async def add_pipeline_run_service(
         raise DatabaseOperationError(str(exc)) from exc
 
 
-async def get_sample_service(
-    db: Database, *, sample_id: str, session: ClientSession | None = None
-) -> SampleRecordOut:
-    """Retrieve a sample by its sample id."""
-    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
-
-    if raw_sample is None:
-        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+def _to_sample_record_out(raw_sample: dict[str, Any], *, sample_id: str) -> SampleRecordOut:
+    """Merge in last pipeline run and validate a raw DB document for API output."""
     try:
         # get last pipeline run if set
         last_pipeline_run = None
@@ -244,6 +239,32 @@ async def get_sample_service(
         raise DatabaseOperationError(
             f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
         ) from ve
+
+
+async def get_sample_service(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> SampleRecordOut:
+    """Retrieve a sample by its sample id."""
+    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
+
+    if raw_sample is None:
+        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+    return _to_sample_record_out(raw_sample, sample_id=sample_id)
+
+
+async def get_sample_by_external_id_service(
+    db: Database, *, external_sample_id: str, session: ClientSession | None = None
+) -> SampleRecordOut:
+    """Retrieve a sample by the external id assigned by the calling system."""
+    raw_sample = await get_sample_by_external_id(
+        db, external_sample_id=external_sample_id, session=session
+    )
+
+    if raw_sample is None:
+        raise EntryNotFound(
+            f"Sample with external id '{external_sample_id}' not found"
+        )
+    return _to_sample_record_out(raw_sample, sample_id=raw_sample.get("sample_id", external_sample_id))
 
 
 async def add_ska_index_service(
