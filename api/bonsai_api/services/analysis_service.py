@@ -27,7 +27,7 @@ from bonsai_api.exceptions import (
 )
 from api_client.core.exceptions import ApiRequestError
 
-from prp.parse import run_parser
+from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
