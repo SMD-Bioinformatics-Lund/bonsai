@@ -108,6 +108,16 @@ async def get_sample_by_id(
     return None if db_obj is None else db_obj
 
 
+async def get_sample_by_external_id(
+    db: Database, *, external_sample_id: str, session: ClientSession | None = None
+) -> dict[str, Any] | None:
+    """Get sample with external_sample_id (the id assigned by the calling system)."""
+    db_obj: SampleRecordDb = await db.sample_collection.find_one(
+        {"external_sample_id": external_sample_id}, session=session
+    )
+    return None if db_obj is None else db_obj
+
+
 async def add_comment(
     db: Database,
     sample_id: str,

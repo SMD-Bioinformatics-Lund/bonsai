@@ -34,6 +34,16 @@ INDEXES: dict[str, list[IndexDefinition]] = {
                 "unique": False,
             },
         },
+        {
+            "definition": [("external_sample_id", ASCENDING)],
+            "options": {
+                "name": "sample_external_sample_id",
+                "background": True,
+                # Not unique: existing data may already contain duplicate
+                # external_sample_id values, so this can't be enforced yet.
+                "unique": False,
+            },
+        },
     ],
     "location": [
         {
