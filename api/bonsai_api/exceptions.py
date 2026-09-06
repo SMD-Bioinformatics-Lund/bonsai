@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from prp.parse.exceptions import ParserError, UnsupportedVersionError, UnsupportedSoftwareError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError
+from bonsai_libs.parse.exceptions import ParserError, UnsupportedVersionError, UnsupportedSoftwareError, UnsupportedAnalysisTypeError, InvalidDataFormat, SchemaMismatchError
 
 
 class DomainError(Exception):

@@ -21,8 +21,8 @@ from bonsai_api.models.sample import (
 from bonsai_api.utils import get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from prp.parse.models.base import PhenotypeInfo
-from prp.parse.models.enums import AnnotationType, ElementType
+from bonsai_libs.parse.models.base import PhenotypeInfo
+from bonsai_libs.parse.models.enums import AnnotationType, ElementType
 from pymongo import ASCENDING, DESCENDING
 from pymongo.client_session import ClientSession
 from pymongo.results import UpdateResult
