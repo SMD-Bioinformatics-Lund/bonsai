@@ -1,5 +1,5 @@
 ### Base layer ###
-FROM python:3.11.3-slim AS base
+FROM python:3.11-slim-bookworm AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -50,6 +50,17 @@ COPY frontend/ ./frontend
 
 # Copy built JS to the python-builder context
 COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
+
+# Include the build backend in the wheelhouse because the production stage
+# installs exclusively from this directory.
+RUN pip wheel --wheel-dir /wheels \
+    "setuptools>=69" \
+    wheel \
+    setuptools-scm
+
+# Build the application and all of its runtime dependencies for the offline
+# production install below.
+RUN pip wheel --wheel-dir /wheels ./frontend
 
 ### Production layer ###
 FROM base AS production
