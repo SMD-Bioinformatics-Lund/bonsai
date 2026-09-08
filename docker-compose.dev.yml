@@ -7,6 +7,10 @@
 # (sudo) docker-compose -f docker-compose.yml -f docker-compose.dev.yml down
 services: 
 
+  mongodb:
+    volumes:
+      - ./volumes/mongodb:/data/db
+
   # ─────────────────────────────────────────────
   # Initialisation
   # ─────────────────────────────────────────────
