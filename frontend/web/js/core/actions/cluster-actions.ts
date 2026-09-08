@@ -1,8 +1,12 @@
-import { ApiService, pollJob } from "../api";
+import { ApiError, ApiService, pollJob } from "../api";
 import { throwSmallToast } from "../../utils/notification";
 import { ApiJobStatusNewick, ApiClusterInput } from "../types";
 import { ClusterMethod, DistanceMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
+
+type ApiProblemDetails = {
+  detail?: unknown;
+};
 
 async function openGrapeTree(
   newick: string,
@@ -71,22 +75,28 @@ export async function clusterSamples(
       };
       break;
   }
-  // submit job to API
+
   showSpinner(btn);
-  const jobInfo = await api.clusterSamples(typingMethodEnum, body);
-  throwSmallToast(`Clustering samples: ${sampleIds.length}`, "info");
-  // start polling for updates
   try {
+    // Submit the job and poll for updates.
+    const jobInfo = await api.clusterSamples(typingMethodEnum, body);
+    throwSmallToast(`Clustering samples: ${sampleIds.length}`, "info");
     const result = (await pollJob(
       () => api.checkJobStatus(jobInfo.id),
       3000,
     )) as ApiJobStatusNewick;
-    hideSpinner(btn);
-    // open dendrogram
+
     openGrapeTree(result.result, sampleIds, typingMethodEnum);
   } catch (error) {
-    throwSmallToast("A problem occurred during clustering", "error");
+    let message = "A problem occurred during clustering";
+    if (error instanceof ApiError && error.data) {
+      const detail = (error.data as ApiProblemDetails).detail;
+      if (typeof detail === "string") message = detail;
+    }
+
+    throwSmallToast(message, "error");
+    console.error("A problem occurred during clustering:", error);
+  } finally {
     hideSpinner(btn);
-    console.log(`A problem occurred during clustering, ${error}`);
   }
 }
