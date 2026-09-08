@@ -1,23 +1,30 @@
 """Flask and jinja helper functions."""
 
 import json
+from pathlib import Path
 from flask import current_app, url_for
 
 _MANIFEST_CACHE = None
+_MANIFEST_CACHE_KEY = None
 
 
 def load_manifest():
-    """Cache manifest content."""
-    global _MANIFEST_CACHE
+    """Cache manifest content until the asset build changes."""
+    global _MANIFEST_CACHE, _MANIFEST_CACHE_KEY
 
-    if _MANIFEST_CACHE is None:
-        manifest_path = current_app.static_folder + "/build/manifest.json"
+    manifest_path = Path(current_app.static_folder) / "build" / "manifest.json"
+    try:
+        stat = manifest_path.stat()
+    except FileNotFoundError:
+        _MANIFEST_CACHE = None
+        _MANIFEST_CACHE_KEY = None
+        return {}
 
-        try:
-            with open(manifest_path, encoding="utf-8") as f:
-                _MANIFEST_CACHE = json.load(f)
-        except FileNotFoundError:
-            _MANIFEST_CACHE = {}
+    cache_key = (manifest_path, stat.st_mtime_ns, stat.st_size)
+    if _MANIFEST_CACHE is None or _MANIFEST_CACHE_KEY != cache_key:
+        with manifest_path.open(encoding="utf-8") as f:
+            _MANIFEST_CACHE = json.load(f)
+        _MANIFEST_CACHE_KEY = cache_key
     
     return _MANIFEST_CACHE
 
