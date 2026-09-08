@@ -1,5 +1,6 @@
 import { HttpClient } from "../http/HttpClient";
 import { GroupInfo, ApiGroupInfoResponse, InputCoreGroupInfo } from "../../types";
+import { objectToQueryParams } from "../utils/queryParams";
 
 export class GroupApi {
   constructor(private http: HttpClient) {}
