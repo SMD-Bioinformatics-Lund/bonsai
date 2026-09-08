@@ -153,7 +153,7 @@ export async function initGroupView(
     addToGroupSelector.addEventListener("apply:error", (ev: Event) => {
       const { error } = (ev as CustomEvent).detail;
       console.error("Apply error:", error);
-      throwSmallToast(`An error occured: ${ev.detail}`, "error");
+      throwSmallToast(`An error occurred: ${String(error)}`, "error");
     });
 
     addToGroupSelector.addEventListener("apply:skipped", (ev: Event) => {
@@ -172,7 +172,7 @@ export async function initGroupView(
     groupSelectorContainer.appendChild(addToGroupSelector);
     table.getTable().on("select deselect", (e, dt, type, indexes) => {
       const selected: string[] = dt.rows(".selected").ids().toArray();
-      addToGroupSelector.preselectGroupsForSamples(selected);
+      addToGroupSelector.onSelectedSamplesChange();
     });
   }
 
