@@ -25,6 +25,11 @@ RUN pip wheel --wheel-dir /wheels ./minhash_service
 
 FROM continuumio/miniconda3 AS development
 
+ENV CONDA_NUMBER_CHANNEL_NOTICES=0 \
+    CONDA_DEFAULT_THREADS=1 \
+    CONDA_FETCH_THREADS=1 \
+    CONDA_REPODATA_THREADS=1
+
 WORKDIR /app
 
 RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
@@ -41,6 +46,11 @@ CMD ["bash"]
 # Production layer
 
 FROM continuumio/miniconda3 AS production
+
+ENV CONDA_NUMBER_CHANNEL_NOTICES=0 \
+    CONDA_DEFAULT_THREADS=1 \
+    CONDA_FETCH_THREADS=1 \
+    CONDA_REPODATA_THREADS=1
 
 RUN opt/conda/bin/conda init \
     && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
