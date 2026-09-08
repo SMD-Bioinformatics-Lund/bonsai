@@ -134,18 +134,32 @@ async def get_signature_path_for_samples(
 
 async def get_ska_index_path_for_samples(
     db: Database, sample_ids: Sequence[str]
-) -> Sequence[str]:
-    """Get genome signature paths for a samples stored in the database."""
+) -> Sequence[dict[str, str]]:
+    """Get SKA indexes for samples, rejecting samples without an index."""
     LOG.info("Get ska indexes for samples")
-    query = {
-        "$and": [  # query for documents with
-            {"sample_id": {"$in": sample_ids}},  # matching sample ids
-            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
-        ]
+    query = {"sample_id": {"$in": sample_ids}}
+    projection = {
+        "_id": 0,
+        "sample_id": 1,
+        "sample_name": 1,
+        "ska_index": 1,
     }
-    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
     LOG.debug("Query: %s; projection: %s", query, projection)
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
     LOG.debug("Found %d ska indexes", len(results))
+
+    samples = {sample["sample_id"]: sample for sample in results}
+    missing = [
+        samples.get(sample_id, {}).get("sample_name", sample_id)
+        for sample_id in sample_ids
+        if not samples.get(sample_id, {}).get("ska_index")
+    ]
+    if missing:
+        sample_labels = ", ".join(sorted(missing))
+        raise EntryNotFound(
+            "No SKA index is available for the following samples: "
+            f"{sample_labels}"
+        )
+
     return results

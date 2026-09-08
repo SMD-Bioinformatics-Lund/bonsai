@@ -99,6 +99,8 @@ services:
       context: .
       dockerfile: minhash_service/Dockerfile
       network: host
+      args:
+        BONSAI_LEGACY_CONDA_BUILD: "${BONSAI_LEGACY_CONDA_BUILD:-false}"
     depends_on:
       mongodb:
         condition: service_healthy
@@ -113,6 +115,8 @@ services:
       context: .
       dockerfile: minhash_service/Dockerfile
       network: host
+      args:
+        BONSAI_LEGACY_CONDA_BUILD: "${BONSAI_LEGACY_CONDA_BUILD:-false}"
     depends_on:
       redis:
         condition: service_healthy
