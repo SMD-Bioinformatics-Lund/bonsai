@@ -16,7 +16,8 @@ export function renderColumns(
     selector.items = availbleColumns.map( col => {
         return {id: col.id, label: col.label, enabled: false || model.allowedColumnIds.includes(col.id)}});
 
-    selector.addEventListener("column-selector:change", (e: any) => {
-      model.allowedColumnIds = e.detail.items;
+    selector.addEventListener("column-selector:change", (event: Event) => {
+      const { items } = (event as CustomEvent<{ items: ColumnItem[] }>).detail;
+      model.allowedColumnIds = items.filter((item) => item.enabled).map((item) => item.id);
     })
 }

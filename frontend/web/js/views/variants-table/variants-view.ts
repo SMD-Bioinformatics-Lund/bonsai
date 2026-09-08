@@ -106,7 +106,11 @@ function selectVariant(element: HTMLInputElement): void {
 
   const key = `${item.analysis_id}:${item.analysis_type}:${item.variant_id}`;
 
-  element.checked ? selected.add(key) : selected.delete(key);
+  if (element.checked) {
+    selected.add(key);
+  } else {
+    selected.delete(key);
+  }
 
   const payload = Array.from(selected).map(key => {
     const [analysis_id, analysis_type, variant_id] = key.split(":");

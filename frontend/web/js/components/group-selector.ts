@@ -164,7 +164,7 @@ export class GroupSelector extends HTMLElement {
 
       // Select only groups that ALL selected samples are members of (intersection)
       const groupNameIntersect = [...counts.entries()]
-        .filter(([_, cnt]) => cnt === nSamples)
+        .filter(([, count]) => count === nSamples)
         .map(([gid]) => gid);
 
       groupNameIntersect.sort();
@@ -181,7 +181,7 @@ type MembershipBySample = Record<string, string[]>;
 
 function groupMemberships(
   edges: MembershipEdges,
-  { dedupe = true, sort = true } = {}
+  { sort = true } = {}
 ): MembershipBySample {
   const map = new Map<string, Set<string>>();
 
