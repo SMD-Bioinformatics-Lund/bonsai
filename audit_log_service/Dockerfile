@@ -1,5 +1,5 @@
 ### Base layer ###
-FROM python:3.11.3-slim AS base
+FROM python:3.11-slim-bookworm AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
