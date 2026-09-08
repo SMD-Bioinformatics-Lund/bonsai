@@ -1,9 +1,10 @@
 import { ApiService, GroupApi } from "../../core/api";
+import { ApiGroupInfoResponse, GroupInfo } from "../../core/types";
 import createApiWithAuth from "../../core/api/factory";
 
 export type GroupViewApi = ApiService & {
-  getGroup: (groupId: string) => Promise<any>;
-  getGroups: () => Promise<any>;
+  getGroup: (groupId: string) => Promise<GroupInfo>;
+  getGroups: () => Promise<ApiGroupInfoResponse>;
   addSamplesToGroup: (groupId: string, sampleIds: string[]) => Promise<void>;
   removeSamplesFromGroup: (groupId: string, sampleIds: string[]) => Promise<void>;
 };

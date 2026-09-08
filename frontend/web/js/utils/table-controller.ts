@@ -1,4 +1,4 @@
-import DataTable from "datatables.net-bs5";
+import DataTable, { Api, Config } from "datatables.net-bs5";
 import "datatables.net-buttons-bs5";
 import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-buttons/js/buttons.colVis.mjs";
@@ -12,13 +12,13 @@ import "datatables.net-select-bs5";
 import { TblStateCallbackFunc } from "../core/types";
 
 export class TableController {
-  private table: any;
+  private table: Api<string>;
 
-  constructor(tableId: string, tableConfig: any) {
+  constructor(tableId: string, tableConfig: Config) {
     this.table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
   }
 
-  getTable(): any {
+  getTable(): Api<string> {
     return this.table;
   }
 
@@ -66,7 +66,7 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(tableId: string, tableConfig: any): TableController {
+export function initSamplesTable(tableId: string, tableConfig: Config): TableController {
   const controller = new TableController(tableId, tableConfig);
 
   // add callback functions
@@ -77,9 +77,8 @@ export function initSamplesTable(tableId: string, tableConfig: any): TableContro
     manageAnnotateQcBtn,
   ];
   for (const callback of funcs) {
-    controller.getTable().on("select deselect", (e, dt, type, indexes) => {
-      const selected: string[] = dt.rows(".selected").ids();
-      callback(selected);
+    controller.getTable().on("select deselect", () => {
+      callback(controller.getSelectedRows());
     });
   }
 
