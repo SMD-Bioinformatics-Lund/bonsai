@@ -20,6 +20,22 @@ type RemoveSamplesFromGroupApi = {
   removeSamplesFromGroup(groupId: string, sampleIds: string[]): Promise<void>;
 };
 
+type TidyTreeSelection = {
+  selectAll(selector: string): TidyTreeSelection;
+  style(name: string, value: string): TidyTreeSelection;
+  attr(name: string, value: number): TidyTreeSelection;
+};
+
+type TidyTreeInstance = {
+  search(predicate: (node: { data: { id: string } }) => boolean): TidyTreeSelection;
+  eachLeafLabel(callback: (label: HTMLElement) => void): void;
+};
+
+type TidyTreeConstructor = new (
+  newick: string,
+  options: Record<string, unknown>,
+) => TidyTreeInstance;
+
 export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,
   dt: TableController,
@@ -275,12 +291,12 @@ export function drawDendrogram(containerSelector: string, newick: string, sample
     console.error(`Container element not found: ${containerSelector}`);
     return;
   }
-  if (!(window as any).TidyTree) {
+  const TidyTree = (window as Window & { TidyTree?: TidyTreeConstructor }).TidyTree;
+  if (!TidyTree) {
     console.error("TidyTree library is not loaded");
     return;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tree = new (window as any).TidyTree(newick, {
+  const tree = new TidyTree(newick, {
     parent: container,
     layout: "vertical",
     type: "dendrogram",

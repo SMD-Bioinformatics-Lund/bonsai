@@ -5,13 +5,11 @@ import {
   ApiClusterInput,
   ApiJobSubmission,
   ApiFindSimilarInput,
-  GroupInfo,
   ApiUserInfo,
   ApiSampleQcStatus,
   MembershipEdges,
-  ApiGroupInfoResponse,
 } from "../types";
-import { JobStatusEnum, TypingMethod } from "../types/enums";
+import { TypingMethod } from "../types/enums";
 import { ApiError } from "./http/ApiError";
 import { HttpClient } from "./http/HttpClient";
 import { objectToQueryParams } from "./utils/queryParams";
@@ -109,29 +107,6 @@ export class ApiService {
   };
 }
 
-// export async function pollJob<T extends ApiJobStatus>(
-//   checkJobFn: () => Promise<T>,
-//   waitTime: number,
-//   maxRetries: number = 100,
-// ): Promise<T> {
-//   let retries = 0;
-//   let result = await checkJobFn();
-//   console.log(`Initial job status: ${result.status}`);
-
-//   while (validateJobStatus(result)) {
-//     if (retries >= maxRetries) {
-//       throw new Error(`Polling exceeded maximum retries (${maxRetries})`);
-//     }
-//     console.log(`Retry ${retries + 1}/${maxRetries} - Status: ${result.status}`);
-//     await wait(waitTime);
-//     result = await checkJobFn();
-//     retries++;
-//   }
-
-//   console.log(`Job finished with status: ${result.status}`);
-//   return result;
-// }
-
 /**
  * Pauses execution for a specified duration.
  *
@@ -146,22 +121,6 @@ export function wait(ms: number = 2000) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-}
-
-function validateJobStatus(job: ApiJobStatus): boolean {
-  // check job status
-  // returns true if run is valid
-  if (job.status === JobStatusEnum.FINISHED) {
-    // if job has finished report result
-    console.log(`Job is finished.`);
-    return false;
-  } else if (job.status === JobStatusEnum.FAILED) {
-    console.error(`Job failed: ${job.result}`);
-    throw new Error(`Job failed: ${job.result}`);
-  } else {
-    console.log(`Job status: ${job.status}, continuing polling...`);
-    return true;
-  }
 }
 
 export * from "./http/ApiError";

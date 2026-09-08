@@ -19,4 +19,3 @@ export function renderActions(
   resetBtn.addEventListener("click", handlers.onReset);
   saveBtn.addEventListener("click", handlers.onSave);
 }
-``
