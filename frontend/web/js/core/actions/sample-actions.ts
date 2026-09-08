@@ -232,7 +232,7 @@ export async function findAndClusterSimilarSamples(
   sampleId: string,
   narrow_to_sample_ids: string[] | null,
   api: ApiService,
-) {
+): Promise<string | null> {
   let jobResult: ApiJobStatusNewick | undefined;
   const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
@@ -257,10 +257,10 @@ export async function findAndClusterSimilarSamples(
     drawDendrogram("#tree-body", jobResult.result, sampleId);
   } catch (error) {
     container.hidden = true;
-    console.error("Error while checking job status:", error);
 
     // Parse API error response for user-friendly message
     let message = "Error while finding similar samples. Please try again.";
+    let notificationType = "error";
     if (error instanceof ApiError && error.data) {
       const data = error.data as ApiProblemDetails;
       if (data.title && typeof data.title === "string") {
@@ -269,10 +269,21 @@ export async function findAndClusterSimilarSamples(
       if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
         message = "Service temporarily unavailable due to logging issues. Please try again later.";
       }
+    } else if (error instanceof Error) {
+      if (error.message.includes("No record found for sample_id")) {
+        message = "Similarity data is not available for this sample.";
+        notificationType = "warning";
+      } else {
+        message = error.message;
+      }
     }
 
-    throwSmallToast(message);
-    throw error;
+    if (notificationType === "error") {
+      console.error("Error while checking job status:", error);
+    }
+
+    throwSmallToast(message, notificationType);
+    return null;
   } finally {
     spinner?.hide();
   }

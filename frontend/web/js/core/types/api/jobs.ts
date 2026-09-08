@@ -8,7 +8,7 @@ interface ApiSampleSimilarity {
 export interface ApiJobStatusBase {
   status: JobStatusEnum;
   queue: string;
-  error: string;
+  error: string | null;
   submitted_at: string;
   started_at: string | null;
   finished_at: string | null;
