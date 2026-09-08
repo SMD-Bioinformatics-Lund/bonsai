@@ -1,8 +1,9 @@
 import { ApiService, GroupApi } from "../../core/api";
+import { GroupInfo } from "../../core/types";
 import createApiWithAuth from "../../core/api/factory";
 
 export type SampleViewApi = ApiService & {
-  getGroup: (groupId: string) => Promise<any>;
+  getGroup: (groupId: string) => Promise<GroupInfo>;
 };
 
 export function createSampleViewApi(

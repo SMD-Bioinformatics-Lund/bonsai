@@ -1,4 +1,4 @@
-export function objectToQueryParams(query: Record<string, any>): string {
+export function objectToQueryParams(query: Record<string, unknown>): string {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
     if (Array.isArray(value)) {

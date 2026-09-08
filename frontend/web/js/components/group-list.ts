@@ -38,7 +38,7 @@ export class GroupList extends HTMLElement {
     this.setupEventListeners();
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  attributeChangedCallback(name: string) {
     if (name === "is-admin") {
       this.isAdmin = this.hasAttribute("is-admin");
       this.render();
