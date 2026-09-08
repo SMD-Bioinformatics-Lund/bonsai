@@ -3,7 +3,8 @@
   "description": "",
   "version": "1.0.0",
   "sideEffects": [
-    "web/js/components/**/*.ts"
+    "web/js/components/**/*.ts",
+    "web/js/utils/choice-select.ts"
   ],
   "main": "index.js",
   "directories": {
