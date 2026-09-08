@@ -146,7 +146,7 @@ export class ColumnSelector extends HTMLElement {
   }
 
   private initSortable() {
-    const colList = this.querySelector(".ge-columns-list");
+    const colList = this.querySelector(".ge-columns-list") as HTMLElement;
     if (!colList) return;
 
     if (this.sortable) {
