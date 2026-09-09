@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 from bonsai_api.cli.cli import cli
+from bonsai_api.exceptions import ConflictError
 from click.testing import CliRunner
 from mongomock import DuplicateKeyError
 
@@ -70,11 +71,17 @@ def test_create_user_duplicate(monkeypatch):
 
 
 def test_create_group_success(monkeypatch):
-    """Test creating a user successfully."""
+    """Test creating a group with a service-generated ID."""
     runner = CliRunner()
 
     async def fake_create_group(group, user_id):
-        return SimpleNamespace(display_name=group.display_name)
+        assert group.display_name == "testgroup"
+        assert group.description == "Test group"
+        assert user_id == "admin"
+        return SimpleNamespace(
+            group_id="01234567-89ab-7def-8123-456789abcdef",
+            display_name=group.display_name,
+        )
 
     monkeypatch.setattr(
         "bonsai_api.cli.cli.run_create_group",
@@ -85,8 +92,6 @@ def test_create_group_success(monkeypatch):
         cli,
         [
             "create-group",
-            "--id",
-            "testgroup",
             "--name",
             "testgroup",
             "--description",
@@ -95,15 +100,18 @@ def test_create_group_success(monkeypatch):
     )
 
     assert result.exit_code == 0
-    assert 'Successfully created the group "testgroup"' in result.output
+    assert (
+        'Successfully created the group "testgroup" with ID '
+        '"01234567-89ab-7def-8123-456789abcdef"' in result.output
+    )
 
 
 def test_create_group_duplicate(monkeypatch):
-    """Test creating a user that already exists."""
+    """Test handling a group creation conflict."""
     runner = CliRunner()
 
     async def fake_create_group(group, user_id):
-        raise DuplicateKeyError("Group ID already exists.")
+        raise ConflictError("Group already exists.")
 
     monkeypatch.setattr(
         "bonsai_api.cli.cli.run_create_group",
@@ -114,8 +122,6 @@ def test_create_group_duplicate(monkeypatch):
         cli,
         [
             "create-group",
-            "--id",
-            "testgroup",
             "--name",
             "testgroup",
             "--description",
@@ -124,4 +130,4 @@ def test_create_group_duplicate(monkeypatch):
     )
 
     assert result.exit_code != 0
-    assert isinstance(result.exception, DuplicateKeyError)
+    assert 'Error: Group already exists.' in result.output
