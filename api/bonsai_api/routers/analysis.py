@@ -32,6 +32,7 @@ UPDATE_PERMISSION = "samples:update"
 async def upload_analysis(
     sample_id: str = Form(...),
     software: str = Form(...),
+    subcommand: str | None = Form(None, description="Software subcommand, e.g. 'coverage' for samtools"),
     software_version: str | None = Form(None),
     pipeline_run_id: str | None = Form(None),
     force: bool = Form(False, description="Overwrite existing analysis if present"),
@@ -48,6 +49,7 @@ async def upload_analysis(
         sample_id=sample_id,
         pipeline_run=pipeline_run_id,
         software=software,
+        subcommand=subcommand,
         software_version=software_version,
         force=force,
         file=file,
