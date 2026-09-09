@@ -21,3 +21,58 @@ groups:
   - group_id: saureus
     display_name: "S. aureus"
     description: "Staphylococcus test samples"
+  - group_id: kpneumoniae
+    display_name: "K. pneumoniae"
+    description: "Klebsiella test samples"
+  - group_id: streptococcus
+    display_name: "Streptococcus"
+    description: "Streptococcus test samples"
+reference_genomes:
+  - name: Escherichia coli K-12 substr. MG1655
+    accession: GCF_000005845.2
+    organism: Escherichia coli
+    sequence_accessions:
+      - NC_000913.3
+    fasta_resource: GCF_000005845.2.fasta
+    fasta_index_resource: GCF_000005845.2.fasta.fai
+    reference_tracks:
+      - name: Genes
+        format: gff
+        type: annotation
+        path: GCF_000005845.2.gff
+  - name: Staphylococcus aureus subsp. aureus COL
+    accession: GCF_000012045.1
+    organism: Staphylococcus aureus
+    sequence_accessions:
+      - NC_002951.2
+    fasta_resource: GCF_000012045.1.fasta
+    fasta_index_resource: GCF_000012045.1.fasta.fai
+    reference_tracks:
+      - name: Genes
+        format: gff
+        type: annotation
+        path: GCF_000012045.1.gff
+  - name: Mycobacterium tuberculosis H37Rv
+    accession: GCF_000195955.2
+    organism: Mycobacterium tuberculosis
+    sequence_accessions:
+      - NC_000962.3
+    fasta_resource: GCF_000195955.2.fasta
+    fasta_index_resource: GCF_000195955.2.fasta.fai
+    reference_tracks:
+      - name: Genes
+        format: gff
+        type: annotation
+        path: GCF_000195955.2.gff
+  - name: Klebsiella pneumoniae subsp. pneumoniae HS11286
+    accession: GCF_000240185.1
+    organism: Klebsiella pneumoniae
+    sequence_accessions:
+      - NC_016845.1
+    fasta_resource: GCF_000240185.1.fasta
+    fasta_index_resource: GCF_000240185.1.fasta.fai
+    reference_tracks:
+      - name: Genes
+        format: gff
+        type: annotation
+        path: GCF_000240185.1.gff
