@@ -12,9 +12,13 @@ from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES, settings
 from bonsai_api.db.index import INDEXES
-from bonsai_api.exceptions import ConflictError, EntryNotFound, UserNotFound
+from bonsai_api.exceptions import (
+    ConflictError,
+    EntryNotFound,
+    MigrationError,
+    UserNotFound,
+)
 from bonsai_api.lims_export.config import InvalidFormatError
-from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInfoCreate, Visibility
 from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
