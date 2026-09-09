@@ -305,7 +305,7 @@ class SampleRecordDb(SampleBase):
     element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
 
     # Reference and annotation
-    reference_genome_id: str | None = None
+    reference_genome_accession: str | None = None
     genomic_resources: list[GenomicResourceDb] = Field(
         default_factory=list,
         description="Associated genomic resource sets"
@@ -345,7 +345,7 @@ class SampleRecordOut(SampleBase):
     element_type_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
     
     # Reference and annotation
-    reference_genome_id: str | None = None
+    reference_genome_accession: str | None = None
     genomic_resources: list[GenomicResourceDb] = Field(
         default_factory=list,
         description="Associated genomic resource sets"

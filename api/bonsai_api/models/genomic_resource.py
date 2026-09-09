@@ -36,7 +36,7 @@ class ResourceOutput(GenomicResourceBase):
 class GenomicResourceCreate(RWModel):
     """Genomic analysis artefacts for a sample."""
 
-    reference_genome_id: str
+    reference_genome_accession: str
     pipeline_run_id: str | None
     resource_data: list[ResourceInput] = Field(default_factory=list, description="List of genomic resources")
     visibility: Visibility = Visibility.PRIVATE
@@ -49,8 +49,8 @@ class GenomicResourceDb(ResourceInput, UUIDMixin):
     pipeline_run_id: str | None = Field(
         None, description="Pipeline run that produced these assets"
     )
-    reference_genome_id: str = Field(
-        ..., description="Reference genome used for alignment and variant calling"
+    reference_genome_accession: str = Field(
+        ..., description="Assembly accession of the reference genome used for alignment"
     )
 
     # Access control
@@ -64,8 +64,8 @@ class GenomicResourceResponse(ResourceOutput, UUIDMixin):
     pipeline_run_id: str | None = Field(
         None, description="Pipeline run that produced these assets"
     )
-    reference_genome_id: str = Field(
-        ..., description="Reference genome used for alignment and variant calling"
+    reference_genome_accession: str = Field(
+        ..., description="Assembly accession of the reference genome used for alignment"
     )
 
     # Access control

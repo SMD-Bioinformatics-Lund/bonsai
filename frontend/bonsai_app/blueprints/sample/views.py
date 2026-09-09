@@ -395,7 +395,7 @@ def resistance_variants(sample_id: str) -> str:
             sample_info[variant_key] = sort_variants(sample_info[variant_key])
 
     # Check if IGV genome browser should be enabled
-    display_genome_browser = sample_info.get("reference_genome_id") is not None
+    display_genome_browser = sample_info.get("reference_genome_accession") is not None
 
     # Prepare antibiotics grouped by family for filter form
     antibiotics = {

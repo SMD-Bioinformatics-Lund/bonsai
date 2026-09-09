@@ -168,7 +168,7 @@ async def add_reference_genome_to_sample(
     """Add a reference genome to a sample."""
     return await sample_service.add_reference_genome_service(
         db, sample_id=sample_id, 
-        reference_genome_id=body.reference_genome_id,
+        reference_genome_accession=body.reference_genome_accession,
         request=request,
         ctx=req_ctx, audit=audit_log
     )

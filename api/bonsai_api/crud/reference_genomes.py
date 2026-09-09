@@ -11,14 +11,28 @@ from bonsai_api.db import Database
 LOG = logging.getLogger(__name__)
 
 
-async def get_reference_genome_by_id(
+async def get_reference_genome_by_accession(
     db: Database,
     *,
-    resource_id: str,
+    accession: str,
     session: ClientSession | None = None,
 ) -> dict[str, Any] | None:
-    """Get a reference genome by ID."""
-    return await db.reference_genome_collection.find_one({"id": resource_id}, session=session)
+    """Get a reference genome by its assembly accession."""
+    return await db.reference_genome_collection.find_one(
+        {"accession": accession}, session=session
+    )
+
+
+async def get_reference_genome_by_sequence_accession(
+    db: Database,
+    *,
+    sequence_accession: str,
+    session: ClientSession | None = None,
+) -> dict[str, Any] | None:
+    """Get a reference genome containing the given sequence accession."""
+    return await db.reference_genome_collection.find_one(
+        {"sequence_accessions": sequence_accession}, session=session
+    )
 
 
 async def list_reference_genomes_service(db: Database):

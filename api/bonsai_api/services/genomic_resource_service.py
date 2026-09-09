@@ -64,10 +64,12 @@ async def create_genomic_resource_service(
     
     try:
         # Validate reference genome exists
-        await get_reference_genome_service(db, resource_id=resource.reference_genome_id, request=request)
+        await get_reference_genome_service(
+            db, accession=resource.reference_genome_accession, request=request
+        )
     except EntryNotFound as exc:
         raise EntryNotFound(
-            f"Reference genome with ID {resource.reference_genome_id} not found"
+            f"Reference genome with accession {resource.reference_genome_accession} not found"
         ) from exc
 
     # Create payload
@@ -82,7 +84,7 @@ async def create_genomic_resource_service(
                 path=to_relative_resource(r.path, base_dir=base_dir),
                 index_path=to_relative_resource(r.index_path, base_dir=base_dir) if r.index_path else None,
                 pipeline_id=resource.pipeline_run_id,
-                reference_genome_id=resource.reference_genome_id,
+                reference_genome_accession=resource.reference_genome_accession,
                 visibility=resource.visibility,
             ) for r in resource.resource_data
         ]
@@ -134,7 +136,7 @@ async def get_genomic_resource_service(
             url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, resource["path"]),
             index_url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, resource["index_path"]) if resource.get("index_path") else None,
             pipeline_run_id=resource.get("pipeline_id"),
-            reference_genome_id=resource["reference_genome_id"],
+            reference_genome_accession=resource["reference_genome_accession"],
             visibility=resource["visibility"],
         )
     except ValidationError as ve:
@@ -165,7 +167,7 @@ async def list_genomic_resources_for_sample_service(
                 url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, r["path"]),
                 index_url=resolve_resource_url(request, FileSources.GENOMIC_RESOURCES, r["index_path"]) if r.get("index_path") else None,
                 pipeline_run_id=r.get("pipeline_id"),
-                reference_genome_id=r["reference_genome_id"],
+                reference_genome_accession=r["reference_genome_accession"],
                 visibility=r["visibility"],
             )
             for r in resources]

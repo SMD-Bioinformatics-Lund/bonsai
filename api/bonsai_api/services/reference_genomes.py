@@ -40,6 +40,7 @@ def _to_ref_genome_output(request: Request, doc: dict[str, Any]) -> ReferenceGen
             name=doc["name"],
             accession=doc["accession"],
             organism=doc["organism"],
+            sequence_accessions=doc.get("sequence_accessions", []),
             fasta_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_resource"]),
             fasta_index_url=resolve_resource_url(request, FileSources.REFERENCE_GENOMES, doc["fasta_index_resource"]),
             reference_tracks=tracks,
@@ -50,15 +51,27 @@ def _to_ref_genome_output(request: Request, doc: dict[str, Any]) -> ReferenceGen
 async def get_reference_genome_service(
     db: Database,
     *,
-    resource_id: str,
+    accession: str,
     request: Request,
 ) -> ReferenceGenomeResponse:
-    """Get a reference genome by ID."""
+    """Get a reference genome by its assembly accession.
+
+    Falls back to matching a contained sequence accession so that a
+    chromosome accession (e.g. NC_002951.2) also resolves.
+    """
     try:
-        doc = await reference_genome_crud.get_reference_genome_by_id(db, resource_id=resource_id)
+        doc = await reference_genome_crud.get_reference_genome_by_accession(
+            db, accession=accession
+        )
+        if not doc:
+            doc = await reference_genome_crud.get_reference_genome_by_sequence_accession(
+                db, sequence_accession=accession
+            )
 
         if not doc:
-            raise EntryNotFound(f"Reference genome with ID {resource_id} not found")
+            raise EntryNotFound(
+                f"Reference genome with accession {accession} not found"
+            )
         return _to_ref_genome_output(request, doc)
     except PyMongoError as pme:
         LOG.error("MongoDB error while fetching reference genome: %s", str(pme))
@@ -127,6 +140,7 @@ async def create_reference_genome_service(
                 name=reference_genome.name,
                 accession=reference_genome.accession,
                 organism=reference_genome.organism,
+                sequence_accessions=reference_genome.sequence_accessions,
                 fasta_resource=str(to_relative_resource(reference_genome.fasta_resource, base_path)),
                 fasta_index_resource=str(to_relative_resource(reference_genome.fasta_index_resource, base_path)),
                 reference_tracks=reference_genome.reference_tracks,
