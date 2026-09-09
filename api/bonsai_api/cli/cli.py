@@ -111,7 +111,6 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
-@click.option("-i", "--id", "group_id", help="Group id")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
 @click.option("-o", "--owner", help="User id for the group owner", default="admin")
@@ -124,34 +123,28 @@ def create_user(
 )
 def create_group(
     _ctx: click.Context,
-    group_id: str | None,
     name: str,
     description: str | None,
     owner: str | None,
     visibility: Visibility,
 ):  # pylint: disable=unused-argument
-    """Create a user account"""
-    if group_id is None:
-        click.secho("Generating group id from name", fg="yellow")
-        group_id = name.lower().replace(" ", "-")
-
-    if len(group_id) < 5:
-        raise click.UsageError("Group id must be at least 5 characters long")
-
-    # create collections
+    """Create a group."""
     group_obj = GroupInfoCreate(
-        group_id=group_id,
         display_name=name,
         description=description,
         visibility=visibility,
     )
     try:
-        run_async(run_create_group(group_obj, user_id=owner))
+        created_group = run_async(run_create_group(group_obj, user_id=owner))
     except ConflictError as error:
-        raise click.UsageError(f'Group with ID "{group_id}" already exists') from error
+        raise click.UsageError(str(error)) from error
     except UserNotFound as error:
         raise click.UsageError(str(error)) from error
-    click.secho(f'Successfully created the group "{group_id}"', fg="green")
+    click.secho(
+        f'Successfully created the group "{created_group.display_name}" '
+        f'with ID "{created_group.group_id}"',
+        fg="green",
+    )
 
 
 @cli.command()
