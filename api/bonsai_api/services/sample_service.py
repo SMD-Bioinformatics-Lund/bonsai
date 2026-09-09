@@ -334,7 +334,7 @@ async def add_reference_genome_service(
     db: Database,
     *,
     sample_id: str,
-    reference_genome_id: str,
+    reference_genome_accession: str,
     ctx: ApiRequestContext,
     request: Request,
     audit: AuditLogClient | None = None,
@@ -347,16 +347,16 @@ async def add_reference_genome_service(
 
     # check that reference genome exist
     ref_genome = await get_reference_genome_service(
-        db, resource_id=reference_genome_id, request=request
+        db, accession=reference_genome_accession, request=request
     )
 
-    event_subject = Subject(id=reference_genome_id, type=SourceType.USR)
+    event_subject = Subject(id=reference_genome_accession, type=SourceType.USR)
     with audit_event_context(audit, "add_reference_genome", ctx, event_subject):
         try:
             update_obj = await add_reference_genome_to_sample(
                 db,
                 sample_id=sample_id,
-                reference_genome_id=reference_genome_id,
+                reference_genome_accession=reference_genome_accession,
                 session=session,
             )
         except PyMongoError as pme:
@@ -474,11 +474,11 @@ async def get_igv_config(
 
     # fetch needed resources
     sample_info = await get_sample_service(db, sample_id=sample_id)
-    if sample_info.reference_genome_id is None:
+    if sample_info.reference_genome_accession is None:
         raise EntryNotFound(f"No reference genome associated with sample: {sample_id}")
 
     ref_genome = await get_reference_genome_service(
-        db, resource_id=sample_info.reference_genome_id, request=request
+        db, accession=sample_info.reference_genome_accession, request=request
     )
 
     genomec_resouces = await list_genomic_resources_for_sample_service(db, sample_id=sample_id, request=request)
@@ -486,7 +486,14 @@ async def get_igv_config(
     # get locus for a variant if variant id was provided
     locus = ""
     if variant_ctx:
-        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=ref_genome.accession)
+        # IGV loci are addressed by sequence name as it appears in the FASTA/BAM,
+        # i.e. the chromosome accession - not the assembly accession.
+        reference_name = (
+            ref_genome.sequence_accessions[0]
+            if ref_genome.sequence_accessions
+            else ref_genome.accession
+        )
+        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=reference_name)
 
     # Build tracks
     tracks = [

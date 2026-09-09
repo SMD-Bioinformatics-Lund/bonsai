@@ -477,12 +477,16 @@ async def add_sourmash_sketch(
 
 
 async def add_reference_genome_to_sample(
-    db: Database, *, sample_id: str, reference_genome_id: str, session: ClientSession
+    db: Database,
+    *,
+    sample_id: str,
+    reference_genome_accession: str,
+    session: ClientSession,
 ) -> UpdateResult:
-    """Add a reference genome id to a existing sample."""
+    """Associate an existing sample with a reference genome accession."""
 
     return await db.sample_collection.update_one(
         {"sample_id": sample_id},
-        {"$set": {"reference_genome_id": reference_genome_id}},
+        {"$set": {"reference_genome_accession": reference_genome_accession}},
         session=session,
     )
