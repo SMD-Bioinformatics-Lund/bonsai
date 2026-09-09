@@ -70,6 +70,7 @@ INDEXES: dict[str, list[IndexDefinition]] = {
             "definition": [
                 ("sample_id", ASCENDING),
                 ("software", ASCENDING),
+                ("subcommand", ASCENDING),
                 ("software_version", ASCENDING),
                 ("pipeline_run_id", ASCENDING)
             ],

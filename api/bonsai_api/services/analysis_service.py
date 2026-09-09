@@ -78,7 +78,11 @@ def group_for(
 
 
 def to_result_storage(
-    sample_id: str, out: PRPParserOutput, *, pipeline_run_id: str | None
+    sample_id: str,
+    out: PRPParserOutput,
+    *,
+    pipeline_run_id: str | None,
+    subcommand: str | None = None,
 ) -> AnalysisResult:
     """Convert parser ouptput to storage format."""
     envelopes = {
@@ -93,6 +97,7 @@ def to_result_storage(
     return AnalysisResult(
         sample_id=sample_id,
         software=out.software,
+        subcommand=subcommand,
         software_version=out.software_version,
         pipeline_run_id=pipeline_run_id,
         envelopes=envelopes,
@@ -109,6 +114,7 @@ async def ingest_analysis_service(
     *,
     sample_id: str,
     software: str,
+    subcommand: str | None = None,
     file: UploadFile,
     force: bool = False,
     pipeline_run: str | None = None,
@@ -132,12 +138,14 @@ async def ingest_analysis_service(
         db,
         sample_id=sample_id,
         software=software,
+        subcommand=subcommand,
         software_version=software_version,
         pipeline_run=pipeline_run,
     )
     if exists and not force:
+        sw_desc = f"{software}.{subcommand}" if subcommand else software
         raise AnalysisExistsError(
-            f"Analysis for sample {sample_id} with software {software} "
+            f"Analysis for sample {sample_id} with software {sw_desc} "
             f"version {software_version} and pipeline run {pipeline_run} already exists."
         )
 
@@ -145,11 +153,19 @@ async def ingest_analysis_service(
     try:
         binary_stream = file.file  # SpooledTemporaryFile object
         text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
-        out = run_parser(software=software, version=software_version, data=text_stream)
+        out = run_parser(
+            software=software,
+            subcommand=subcommand,
+            version=software_version,
+            data=text_stream,
+        )
 
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
-            sample_id=sample_id, out=out, pipeline_run_id=pipeline_run
+            sample_id=sample_id,
+            out=out,
+            pipeline_run_id=pipeline_run,
+            subcommand=subcommand,
         )
     except ParserError as exc:
         LOG.error(

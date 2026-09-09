@@ -33,6 +33,7 @@ class AnalysisResult(UUIDMixin, TimestampsMixin, AllowExtraModelMixin):
     schema_version: int = 1
     sample_id: str
     software: str
+    subcommand: str | None = None
     software_version: str
     pipeline_run_id: str | None = None
     database: str | None = None  # e.g., for AMR databases, cgMLST schemas or kraken DBs
