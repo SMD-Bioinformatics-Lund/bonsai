@@ -161,6 +161,8 @@ services:
       target: development
     environment:
       LOG_LEVEL: debug
+    volumes:
+      - ./e2e_tests/fixtures/local/samples:/data/index_files:ro
     develop:
       watch: 
         - path: ./ska_service/setup.cfg

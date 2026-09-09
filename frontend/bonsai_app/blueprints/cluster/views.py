@@ -69,7 +69,12 @@ def _fmt_object(col_id: str, *, data: Any):
     if col_id == "qc_status":
         return f"{data.get('status', 'unknown')} - {data.get('comment', 'No comment')}"
     if col_id == "groups":
-        return ", ".join([group for group in data])
+        return ", ".join(
+            str(group.get("display_name") or group.get("id", ""))
+            if isinstance(group, dict)
+            else str(group)
+            for group in data
+        )
     if col_id == "comments":
         return ", ".join(
             [comment_obj["comment"] for comment_obj in data if comment_obj["displayed"]]
@@ -86,6 +91,9 @@ def fmt_metadata(
     column: dict[str, Any],
 ) -> str:
     data = sample_obj.get(column["id"])
+    if data is None:
+        return "-"
+
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])

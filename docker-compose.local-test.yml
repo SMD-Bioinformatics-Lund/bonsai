@@ -1,0 +1,130 @@
+# Isolated storage and deterministic synthetic fixtures for local testing.
+# Use together with docker-compose.yml and docker-compose.dev.yml.
+name: bonsai-local-test
+
+services:
+  mongodb:
+    container_name: !reset null
+    volumes:
+      - bonsai_test_mongodb:/data/db
+
+  redis:
+    container_name: !reset null
+
+  api:
+    container_name: !reset null
+    environment:
+      API_EXTERNAL_URL: http://localhost:18001
+    ports: !override
+      - "18001:8000"
+
+  frontend:
+    container_name: !reset null
+    environment:
+      API_EXTERNAL_URL: http://localhost:18001
+    ports: !override
+      - "18000:8000"
+
+  # Selenium needs a browser-facing API URL resolvable from the Docker network.
+  # Keep this separate so the normal local UI can continue using localhost:18001.
+  frontend-e2e:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: development
+    profiles: ["e2e"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      FLASK_APP: bonsai_app.app:create_app
+      API_INTERNAL_URL: http://api:8000
+      API_EXTERNAL_URL: http://api:8000
+    env_file: docker-compose.env
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=2)"
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [bonsai]
+
+  notification_service:
+    ports: !override
+      - "18005:8000"
+
+  audit_log_service:
+    ports: !override
+      - "18004:8000"
+
+  mailhog:
+    ports: !override
+      - "11025:1025"
+      - "18025:8025"
+
+  minhash_service:
+    volumes:
+      - bonsai_test_minhash:/data/signature_db
+
+  minhash_cron_service:
+    volumes:
+      - bonsai_test_minhash:/data/signature_db
+
+  ska_service:
+    container_name: !reset null
+    volumes:
+      - ./e2e_tests/fixtures/local/samples:/data/index_files:ro
+
+  allele_cluster_service:
+    container_name: !reset null
+
+  chrome:
+    ports: !override
+      - "14444:4444"
+      - "17900:7900"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  test-data-seeder:
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes:
+      - ./e2e_tests/fixtures/local:/data:ro
+    entrypoint: ["/bin/sh", "/data/seed.sh"]
+    command: []
+
+  test-data-groups:
+    image: mongo:4.4.22
+    profiles: ["init", "e2e"]
+    depends_on:
+      test-data-seeder:
+        condition: service_completed_successfully
+    volumes:
+      - ./e2e_tests/fixtures/local/assign_test_groups.js:/data/assign_test_groups.js:ro
+    entrypoint:
+      - mongo
+      - mongodb:27017/bonsai
+      - /data/assign_test_groups.js
+    restart: "no"
+    networks: [bonsai]
+
+  e2e-tests:
+    depends_on:
+      chrome:
+        condition: service_healthy
+      test-data-groups:
+        condition: service_completed_successfully
+      frontend-e2e:
+        condition: service_healthy
+    networks: [bonsai]
+
+volumes:
+  bonsai_test_mongodb:
+  bonsai_test_minhash:
