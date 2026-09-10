@@ -7,6 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
+# The APT cleanup hook in Trixie images fails under older Docker engines.
+# Clean the package cache explicitly after installation instead.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+    && apt-get update && apt-get install -y --no-install-recommends \
+      curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
 WORKDIR /app
 
 ### Development layer ###
@@ -38,7 +45,7 @@ COPY --from=python-builder /wheels /wheels
 RUN pip install --no-index --find-links=/wheels audit_log_service && rm -rf /wheels
 
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/', timeout=5)"
+  CMD curl --fail http://localhost:8000/
 
 # run app as non-root user
 USER 1000:1000
