@@ -7,10 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# Minimal packages + curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# The APT cleanup hook in Trixie images fails under older Docker engines.
+# Clean the package cache explicitly after installation instead.
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
+    && apt-get update && apt-get install -y --no-install-recommends \
       curl ca-certificates git \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 WORKDIR /app
 
