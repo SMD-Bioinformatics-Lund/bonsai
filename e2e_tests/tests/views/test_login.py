@@ -43,9 +43,10 @@ def test_log_out_user(logged_in_admin):
     alert = get_bootstrap_alert(logged_in_admin, severity="warning")
     assert alert is None
 
-    # Check that login was redirected to the landing page
-    assert urlparse(logged_in_admin.current_url).path == "/"
+    # Check that logout was confirmed without showing an error page
+    assert urlparse(logged_in_admin.current_url).path == "/logged-out"
+    assert "You have been logged out" in logged_in_admin.page_source
 
-    # Ensure that a restricted view is non-accessable
-    get_element_by_test_id(logged_in_admin, "groups-view-btn").click()
+    # The confirmation page should offer a clear route back to login
+    get_element_by_test_id(logged_in_admin, "login-again-btn").click()
     assert urlparse(logged_in_admin.current_url).path == "/login"
