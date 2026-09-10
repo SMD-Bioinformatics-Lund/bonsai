@@ -29,10 +29,11 @@ so artifacts are created with the same versions used by the application. It
 does not overwrite existing `.sig` or `.skf` files. Remove an individual
 derived artifact before regenerating that artifact.
 
-## Start a clean local-test instance
+## Load fixtures into the development instance
 
-The overlay uses named volumes instead of the normal development MongoDB bind
-mount and gives the SKA worker read-only access to the generated indexes.
+The overlay adds persistent MinHash storage and loads the fixtures into the
+normal development MongoDB instance. The development configuration already
+gives the SKA worker read-only access to the generated indexes.
 
 ```bash
 docker compose \
@@ -72,10 +73,8 @@ results, and live MinHash, SKA, MLST, and cgMLST clustering:
 python3 e2e_tests/fixtures/local/smoke_test.py
 ```
 
-The UI is available at <http://localhost:18000> and the API at
-<http://localhost:18001>. The alternate ports and Compose project name allow
-the local-test stack to run alongside the normal development stack. Local
-credentials are:
+The UI is available at <http://localhost:8000> and the API at
+<http://localhost:8001>. Local credentials are:
 
 | Role | Username | Password |
 | --- | --- | --- |
@@ -95,5 +94,6 @@ docker compose \
   down -v
 ```
 
-The named volumes, network, container names, and host ports are isolated from
-the normal development stack.
+This removes the MinHash volume, but the samples remain in the normal
+development MongoDB bind mount. Remove them through Bonsai or reset the
+development database separately if a completely clean instance is required.

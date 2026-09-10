@@ -14,6 +14,8 @@ from .models import Formatter, LimsAtomic, LimsComment, LimsValue
 
 LOG = logging.getLogger(__name__)
 
+MUTATION_DETECTED = "Mutation pavisad"
+
 _FORMATTERS: dict[str, Formatter] = {}
 
 
@@ -214,11 +216,12 @@ def amr_prediction_for_antibiotic(
             elif curr.annotation_type == "gene":
                 # TODO implement gene serialization
                 pass
-        
-        # Step 4: return if anything was found
+
+        # Step 4: return the LIMS result and keep the mutations in the
+        # dedicated comment/variants column.
         if accepted_variants or accepted_genes:
-            return ", ".join(accepted_variants + accepted_genes), ""
-        
+            return MUTATION_DETECTED, ", ".join(accepted_variants + accepted_genes)
+
         # If curations existed but nothing was resolved, treat as no result
         raise AnalysisNoResultError()
     raise AnalysisNoResultError(

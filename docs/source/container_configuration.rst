@@ -144,7 +144,10 @@ The API can serve reference genome sequences and annotation files to the integra
 Minhash service volumes
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The genome signatures sent to the minhash service container and written to disk. The directory should be mounted to the host file system for the data to be persistant. For more information see :ref:`data persistance<Data persistance>`.
+The genome signatures sent to the MinHash worker and its search index are
+written to disk. The directory must use persistent storage so that its files
+remain consistent with the records stored in MongoDB. For more information see
+:ref:`data-persistence`.
 
 .. table:: Minhash service volume mounts.
    :widths: auto
@@ -154,6 +157,25 @@ The genome signatures sent to the minhash service container and written to disk.
    +====================+==================================+
    | /data/signature_db | Directory for genome signatures. |
    +--------------------+----------------------------------+
+
+
+SKA service volumes
+^^^^^^^^^^^^^^^^^^^
+
+SKA indexes are generated outside Bonsai and are not copied into the worker.
+Mount their shared host directory read-only at ``/data/index_files``. Paths
+stored in sample metadata are resolved within this directory; if an original
+path is not directly available, the worker also searches it recursively by
+filename.
+
+.. table:: SKA service volume mounts.
+   :widths: auto
+
+   +-------------------+----------------------------------+
+   | Volume            | Function                         |
+   +===================+==================================+
+   | /data/index_files | Directory containing SKA indexes. |
+   +-------------------+----------------------------------+
 
 
 Specific configuration files

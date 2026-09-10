@@ -16,12 +16,12 @@ Installing Bonsai using docker-compose and setup involves the following steps.
 
 Please note that your ``docker-compose.yml`` file might be different from the minimal example in the documentaiton depending on your network and server environment. You can configure the different services using environmental variables (defined in the docker-compose file). See advanced :ref:`container configuration<Container configuration>` for the available options. In rare instances you might need to  or by editing the related config files (`frontend config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/frontend/app/config.py>`_ and `api config <https://github.com/Clinical-Genomics-Lund/bonsai/blob/master/api/app/config.py>`_) and mount these to the container using `volume mounts <https://docs.docker.com/storage/volumes/>`_.
 
-Some containers requires access to directories or files the host file system in order for all features to function or for data to be persistant accros updates to container images. These can be made available using using `docker volumes <https://docs.docker.com/storage/volumes/>`_. For more information see the sections on :ref:`data persistance<Data persistance>`, :ref:`setup IGV<Setup IGV integration>`, and the documentaiton of volume mounts in the :ref:`advanced container configuration<Container configuration>`.
+Some containers requires access to directories or files the host file system in order for all features to function or for data to be persistant accros updates to container images. These can be made available using using `docker volumes <https://docs.docker.com/storage/volumes/>`_. For more information see the sections on :ref:`data-persistence`, :ref:`setup IGV<Setup IGV integration>`, and the documentaiton of volume mounts in the :ref:`advanced container configuration<Container configuration>`.
 
 Setup Bonsai with docker-compose
 --------------------------------
 
-Use docker-compose to get started creating the Bonsai containers and configure their access to a mongo database. Some containers must be configured using a combination of environmental variables and volume mounts to either function properly or for data to be :ref:`persistant<Data persistance>`. See :ref:`container configuration<Container configuration>` for more information on how to configure docker containers.
+Use docker-compose to get started creating the Bonsai containers and configure their access to a mongo database. Some containers must be configured using a combination of environmental variables and volume mounts to either function properly or for data to be :ref:`persistent <data-persistence>`. See :ref:`container configuration<Container configuration>` for more information on how to configure docker containers.
 
 .. code-block:: yaml
 
@@ -64,7 +64,16 @@ Use docker-compose to get started creating the Bonsai containers and configure t
          depends_on:
             - redis
          volumes:
-            - "./volumes/api/genome_signatures:/data/signature_db"
+            - "minhash_data:/data/signature_db"
+         networks:
+            - bonsai-net
+
+      ska_service:
+         image: clinicalgenomicslund/bonsai-ska-clustering:latest
+         depends_on:
+            - redis
+         volumes:
+            - "${SKA_INDEX_HOST_DIR:-./volumes/ska/index_files}:/data/index_files:ro"
          networks:
             - bonsai-net
 
@@ -78,6 +87,9 @@ Use docker-compose to get started creating the Bonsai containers and configure t
    networks:
       bonsai-net:
          driver: bridge
+
+   volumes:
+      minhash_data:
 
 Start the services with ``docker-compose up -d`` 
 
@@ -192,10 +204,31 @@ Use the `upload_sample.py <https://github.com/Clinical-Genomics-Lund/bonsai/blob
       --input /path/to/input.json
 
 
-Data persistance
+.. _data-persistence:
+
+Data persistence
 ----------------
 
-The data is not persitant between docker container updates by default as all data is kept in the container. You have to mount the mongo database and the API genome signature database to the host OS to make the data persitant. The volume mounts can be configured in the ``docker-compose.yaml`` file. If you mount the databases to the host OS you have to ensure that they have correct permissions so the container have read and write access to these files.
+MongoDB data and the MinHash worker's signature files and search index must be
+stored in volumes to survive container replacement. The shipped Compose file
+uses the ``minhash_data`` named volume for ``/data/signature_db``. A host bind
+mount can be used instead when the files need to live at a known host path.
+
+.. warning::
+
+   When upgrading an existing deployment that stored MinHash data only in the
+   container layer, copy ``/data/signature_db`` into the new volume before
+   recreating the worker. Mounting an empty volume hides the old container
+   directory, and removing the old container deletes its only copy.
+
+SKA indexes are generated outside Bonsai. They are not copied into the SKA
+worker, so the directory containing them must be mounted read-only at
+``/data/index_files``. In the shipped Compose file, set
+``SKA_INDEX_HOST_DIR`` in the shell or Compose ``.env`` file to select that
+host directory.
+
+If you use host bind mounts, ensure that the containers have the required read
+or write permissions.
 
 Use the following command to get the user and group id of the user in the container.
 
@@ -217,6 +250,10 @@ documentation for more information on volume mounts.
          volumes:
             - "./volumes/mongodb:/data/db"
 
-      api:
+      minhash_service:
          volumes:
-            - "./volumes/api/genome_signatures:/data/signature_db"
+            - "./volumes/minhash:/data/signature_db"
+
+      ska_service:
+         volumes:
+            - "./volumes/ska/index_files:/data/index_files:ro"

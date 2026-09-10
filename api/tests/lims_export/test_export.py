@@ -62,6 +62,12 @@ def test_lims_rs_formatter(mtuberculosis_sample):
     # TEST parameter names are correctly assigned
     assert result[0].parameter_name == assay_config.fields[0].parameter_name
 
+    # AMR calls belong in the result column and the mutations in the
+    # comment/variants column expected by LIMS RS.
+    rifampicin = result[2]
+    assert rifampicin.parameter_value == "Mutation pavisad"
+    assert rifampicin.comment == "Rv1129c.c.-28T>C WHO-5"
+
 
 def test_lims_rs_formatter_failures(mtuberculosis_sample):
     """Test that required is propegated"""
@@ -108,7 +114,7 @@ def test_serialize_lims_result():
         )
     ]
 
-    expected_header = "sample_id,parameter_name,parameter_value,comment"
+    expected_header = "sample_id,parameter,result,variants"
     output = serialize_lims_results(results, delimiter="csv")
 
     assert expected_header in output
