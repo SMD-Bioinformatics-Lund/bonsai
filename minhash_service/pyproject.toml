@@ -18,14 +18,15 @@ classifiers = [
 ]
 # NOTE: Removed build tools from runtime deps
 dependencies = [
-  "redis",
-  "pydantic-settings",
-  "requests",
+  "bonsai-libs @ git+https://github.com/mhkc/bonsai-sdk.git@master",
   "click==8.1.7",
+  "fasteners==0.19",
+  "pydantic-settings",
+  "pymongo==4.15.4",
+  "redis",
+  "requests",
   "rq==2.5.0",
   "sourmash==4.9.4",
-  "fasteners==0.19",
-  "pymongo==4.15.4",
 ]
 
 [project.scripts]

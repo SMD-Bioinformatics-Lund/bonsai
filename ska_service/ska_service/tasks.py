@@ -6,12 +6,38 @@ from tempfile import TemporaryDirectory
 from typing import Sequence
 
 from Bio import AlignIO
+from bonsai_libs.clustering import LinkageMethod, ClusteringAlgorithm
 
 from . import ska
 from .config import settings
-from .ska.cluster import ClusterMethod, calc_snv_distance, to_newick
 
 LOG = logging.getLogger(__name__)
+
+
+def _parse_cluster_algorithm(algorithm: str) -> ClusteringAlgorithm:
+    """Parse cluster algorithm."""
+
+    try:
+        return ClusteringAlgorithm(algorithm)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_algorithm",
+            extra={"algorithm": algorithm},
+        )
+        raise ValueError(f'"{algorithm}" is not a valid cluster algorithm') from error
+
+
+def _parse_linkage_method(method: str) -> LinkageMethod:
+    """Parse linkate method."""
+
+    try:
+        return LinkageMethod(method)
+    except ValueError as error:
+        LOG.error(
+            "cluster.invalid_method",
+            extra={"cluster_method": method},
+        )
+        raise ValueError(f'"{method}" is not a valid cluster method') from error
 
 
 def get_index_name(index_path: str) -> str:
@@ -19,50 +45,56 @@ def get_index_name(index_path: str) -> str:
     return Path(index_path).stem.replace('_ska_index', '')
 
 
-def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -> str:
+def cluster(
+        indexes: Sequence[dict[str, str]], 
+        cluster_method: str = "single",
+        algorithm: str = "hierarchical",
+    ) -> str:
     """
-    Cluster multiple sample on their SNVs using SKA indexes.
-
-    :param indexes List[str]: Paths to one or more SKA indexes.
-    :param cluster_method str: The linkage or clustering method to use, default to single
-
-    :raises ValueError: raises an exception if the method is not a valid scipy clustering method.
-
-    :return: clustering result in newick format
-    :rtype: str
+    Cluster samples using SKA indexes and return Newick tree.
     """
+
     # validate input samples and cast to path
     idx_paths = [Path(settings.index_dir) / idx["ska_index"] for idx in indexes]
 
+    # Map index name → sample_id
     sample_id_lookup = {
         get_index_name(idx["ska_index"]): idx["sample_id"] 
         for idx in indexes
     }
 
-    # validate cluster method
-    try:
-        method = ClusterMethod(cluster_method)
-    except ValueError as error:
-        msg = f'"{cluster_method}" is not a valid cluster method'
-        LOG.error(msg)
-        raise ValueError(msg) from error
+    # Validate clustering algorithm and method (only needed for hierarchical)
+    algorithm = _parse_cluster_algorithm(algorithm)
+    method = _parse_linkage_method(cluster_method) if cluster_method else None
 
+    # Core pipeline
     with TemporaryDirectory() as tmp_dir:
-        # merge indexes into a single file
-        merged_index = ska.merge(idx_paths, output=Path(tmp_dir).joinpath("merged.skf"))
+        merged_index = ska.merge(
+            idx_paths,
+            output=Path(tmp_dir) / "merged.skf",
+        )
 
-        # align variants and return as multi fasta
-        aln_file = ska.align(merged_index, filter_ambig=True, filter_constant=True)
+        aln_file = ska.align(
+            merged_index,
+            filter_ambig=True,
+            filter_constant=True,
+        )
 
-        # calculate distance between samples from alignment and cluster
-        with open(aln_file) as inpt:
-            aln = AlignIO.read(inpt, "fasta")
-        dm = calc_snv_distance(aln)
-        tree, index_names = ska.cluster_distances(dm, method)
-        # lookup sample ids from index names and return newick tree with sample ids as leaf names
-        sample_ids = [sample_id_lookup.get(idx, idx) for idx in index_names]
-        newick_tree = to_newick(tree, "", tree.dist, sample_ids)
-    return newick_tree
+        with open(aln_file, encoding="utf-8") as handle:
+            aln = AlignIO.read(handle, "fasta")
+
+    # Map names after alignment
+    sample_ids = [
+        sample_id_lookup.get(name, name)
+        for name in (aln_i.name for aln_i in aln)
+    ]
+
+    return ska.cluster_alignment(
+        aln,
+        sample_ids,
+        algorithm=algorithm,
+        method=method,
+    )
 
 
 def check_index(file_name: str) -> str | None:
