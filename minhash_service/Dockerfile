@@ -5,7 +5,6 @@ FROM python:3.11-slim-trixie AS base
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_PROGRESS_BAR=off \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
@@ -25,23 +24,9 @@ RUN pip wheel --wheel-dir /wheels ./minhash_service
 
 FROM continuumio/miniconda3 AS development
 
-ARG BONSAI_LEGACY_CONDA_BUILD=false
-
 WORKDIR /app
 
-RUN if [ "${BONSAI_LEGACY_CONDA_BUILD}" = "true" ]; then \
-      env CONDA_NO_PLUGINS=true \
-        CONDA_NUMBER_CHANNEL_NOTICES=0 \
-        CONDA_DEFAULT_THREADS=1 \
-        CONDA_FETCH_THREADS=1 \
-        CONDA_REPODATA_THREADS=1 \
-        /opt/conda/bin/conda --no-plugins install --solver classic \
-          --override-channels -c conda-forge -y \
-          python=3.11.3 pip sourmash_plugin_branchwater; \
-    else \
-      /opt/conda/bin/conda install -c conda-forge -y \
-        python=3.11.3 pip sourmash_plugin_branchwater; \
-    fi
+RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
 COPY minhash_service ./minhash_service
 
@@ -56,22 +41,8 @@ CMD ["bash"]
 
 FROM continuumio/miniconda3 AS production
 
-ARG BONSAI_LEGACY_CONDA_BUILD=false
-
 RUN opt/conda/bin/conda init \
-    && if [ "${BONSAI_LEGACY_CONDA_BUILD}" = "true" ]; then \
-      env CONDA_NO_PLUGINS=true \
-        CONDA_NUMBER_CHANNEL_NOTICES=0 \
-        CONDA_DEFAULT_THREADS=1 \
-        CONDA_FETCH_THREADS=1 \
-        CONDA_REPODATA_THREADS=1 \
-        /opt/conda/bin/conda --no-plugins install --solver classic \
-          --override-channels -c conda-forge -y \
-          python=3.11.3 pip sourmash_plugin_branchwater; \
-    else \
-      /opt/conda/bin/conda install -c conda-forge -y \
-        python=3.11.3 pip sourmash_plugin_branchwater; \
-    fi
+    && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
 # Create non-root user early
 RUN addgroup --system --gid 1000 worker && \
