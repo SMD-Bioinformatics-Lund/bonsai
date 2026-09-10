@@ -30,7 +30,6 @@ services:
     build: 
       context: .
       dockerfile: api/Dockerfile
-      network: host
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:8000/ | grep -q 'Welcome to the Bonsai API'"]
       interval: 10s
@@ -64,7 +63,6 @@ services:
     build: 
       context: .
       dockerfile: frontend/Dockerfile
-      network: host
     depends_on:
       api:
         condition: service_healthy
@@ -79,7 +77,6 @@ services:
     build: 
       context: .
       dockerfile: notification_service/Dockerfile
-      network: host
     restart: unless-stopped
     networks: [bonsai]
 
@@ -87,7 +84,6 @@ services:
     build: 
       context: .
       dockerfile: audit_log_service/Dockerfile
-      network: host
     depends_on:
       mongodb:
         condition: service_healthy
@@ -98,7 +94,6 @@ services:
     build: 
       context: .
       dockerfile: minhash_service/Dockerfile
-      network: host
       args:
         BONSAI_LEGACY_CONDA_BUILD: "${BONSAI_LEGACY_CONDA_BUILD:-false}"
     depends_on:
@@ -116,7 +111,6 @@ services:
     build: 
       context: .
       dockerfile: minhash_service/Dockerfile
-      network: host
       args:
         BONSAI_LEGACY_CONDA_BUILD: "${BONSAI_LEGACY_CONDA_BUILD:-false}"
     depends_on:
@@ -132,7 +126,6 @@ services:
     build: 
       context: .
       dockerfile: ska_service/Dockerfile
-      network: host
     depends_on:
       redis:
         condition: service_healthy
@@ -147,7 +140,6 @@ services:
     build: 
       context: .
       dockerfile: allele_cluster_service/Dockerfile
-      network: host
     depends_on:
       redis:
         condition: service_healthy
