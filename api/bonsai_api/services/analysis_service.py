@@ -2,6 +2,7 @@
 
 import logging
 import io
+from typing import Any
 
 from fastapi import UploadFile
 from pydantic import ValidationError
@@ -116,6 +117,8 @@ async def ingest_analysis_service(
     software: str,
     subcommand: str | None = None,
     file: UploadFile,
+    coverage_file: UploadFile | None = None,
+    bedcov_file: UploadFile | None = None,
     force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
@@ -153,11 +156,18 @@ async def ingest_analysis_service(
     try:
         binary_stream = file.file  # SpooledTemporaryFile object
         text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
+        aux: dict[str, Any] = {}
+        if coverage_file is not None:
+            aux["coverage_path"] = io.TextIOWrapper(coverage_file.file, encoding="utf-8")
+        if bedcov_file is not None:
+            aux["bedcov_path"] = io.TextIOWrapper(bedcov_file.file, encoding="utf-8")
+
         out = run_parser(
             software=software,
             subcommand=subcommand,
             version=software_version,
             data=text_stream,
+            **aux,
         )
 
         # cast to storage format
