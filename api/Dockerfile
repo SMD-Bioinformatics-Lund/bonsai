@@ -1,5 +1,5 @@
 ### Base layer ###
-FROM python:3.11.3-slim AS base
+FROM python:3.11-slim-trixie AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -7,7 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# Minimal packages + curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
