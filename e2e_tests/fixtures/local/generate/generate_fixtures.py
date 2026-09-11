@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
-"""Generate deterministic, entirely synthetic Bonsai local-test fixtures."""
+"""
+Generate deterministic, entirely synthetic Bonsai local-test fixtures. 
+Intended as a more elaborate local test dataset with support for multi-sample groups,
+minimal clustering and such.
+"""
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
+import shutil
 from pathlib import Path
 
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_ROOT = FIXTURE_ROOT / "samples"
 GENOME_LENGTH = 100_000
-SAMPLE_COUNT = 5
-MUTATION_COUNTS = (0, 3, 8, 30, 100)
+# Adjust this value to change the number of generated samples per species.
+SAMPLE_COUNT = 10
+MUTATION_PROFILE = (0, 3, 8, 30, 100)
 DNA = "ACGT"
+GENERATED_SAMPLE_PATTERN = re.compile(r"synthetic_(?:tb|sa)_\d+")
 
 
 def deterministic_dna(label: str, length: int) -> str:
@@ -34,6 +42,45 @@ def mutate(sequence: str, count: int) -> str:
         position = 1_000 + index * 811
         result[position] = DNA[(DNA.index(result[position]) + 1) % len(DNA)]
     return "".join(result)
+
+
+def mutation_count(sample_number: int) -> int:
+    """Interpolate a mutation count across the fixed distance profile."""
+    if not 1 <= sample_number <= SAMPLE_COUNT:
+        raise ValueError(f"sample_number must be between 1 and {SAMPLE_COUNT}")
+    if SAMPLE_COUNT == 1:
+        return MUTATION_PROFILE[0]
+
+    profile_position = (
+        (sample_number - 1) * (len(MUTATION_PROFILE) - 1) / (SAMPLE_COUNT - 1)
+    )
+    lower_index = int(profile_position)
+    upper_index = min(lower_index + 1, len(MUTATION_PROFILE) - 1)
+    fraction = profile_position - lower_index
+    return round(
+        MUTATION_PROFILE[lower_index]
+        + fraction
+        * (MUTATION_PROFILE[upper_index] - MUTATION_PROFILE[lower_index])
+    )
+
+
+def remove_stale_sample_dirs() -> None:
+    """Remove generated sample directories outside the configured range."""
+    expected = {
+        f"synthetic_{prefix}_{sample_number:03d}"
+        for prefix in ("tb", "sa")
+        for sample_number in range(1, SAMPLE_COUNT + 1)
+    }
+    if not SAMPLE_ROOT.exists():
+        return
+
+    for sample_dir in SAMPLE_ROOT.iterdir():
+        if (
+            sample_dir.is_dir()
+            and GENERATED_SAMPLE_PATTERN.fullmatch(sample_dir.name)
+            and sample_dir.name not in expected
+        ):
+            shutil.rmtree(sample_dir)
 
 
 def write_text(path: Path, content: str) -> None:
@@ -107,9 +154,11 @@ def write_mlst(path: Path, sample_id: str, sample_number: int) -> None:
     write_text(path, json.dumps(result, indent=2) + "\n")
 
 
-def write_chewbbaca(path: Path, sample_id: str, sample_number: int) -> None:
+def write_chewbbaca(
+    path: Path, sample_id: str, sample_number: int, mutations: int
+) -> None:
     loci = [f"SYNLOC{index:04d}" for index in range(1, 31)]
-    changed_loci = MUTATION_COUNTS[sample_number - 1] // 3
+    changed_loci = mutations // 3
     alleles = [
         str(1 + sample_number) if index < changed_loci else "1"
         for index, _ in enumerate(loci)
@@ -183,7 +232,8 @@ def generate_species(prefix: str, group_id: str, assay: str, organism: str, taxo
         sample_id = f"synthetic_{prefix}_{sample_number:03d}"
         sample_dir = SAMPLE_ROOT / sample_id
         sample_dir.mkdir(parents=True, exist_ok=True)
-        sequence = mutate(base_sequence, MUTATION_COUNTS[sample_number - 1])
+        mutations = mutation_count(sample_number)
+        sequence = mutate(base_sequence, mutations)
         write_fasta(sample_dir / f"{sample_id}.fasta", sample_id, sequence)
         write_analysis_meta(sample_dir / "analysis_meta.json", sample_id, assay, sample_number)
         write_bracken(sample_dir / "bracken.out", organism, taxonomy_id, sample_number)
@@ -191,7 +241,9 @@ def generate_species(prefix: str, group_id: str, assay: str, organism: str, taxo
         include_allele_profiles = group_id == "saureus"
         if include_allele_profiles:
             write_mlst(sample_dir / "mlst.json", sample_id, sample_number)
-            write_chewbbaca(sample_dir / "chewbbaca.out", sample_id, sample_number)
+            write_chewbbaca(
+                sample_dir / "chewbbaca.out", sample_id, sample_number, mutations
+            )
         write_manifest(
             sample_dir / f"{sample_id}.manifest.yml",
             sample_id,
@@ -203,6 +255,9 @@ def generate_species(prefix: str, group_id: str, assay: str, organism: str, taxo
 
 
 def main() -> None:
+    if SAMPLE_COUNT < 1:
+        raise ValueError("SAMPLE_COUNT must be at least 1")
+    remove_stale_sample_dirs()
     generate_species(
         prefix="tb",
         group_id="mtuberculosis",

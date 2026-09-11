@@ -145,6 +145,10 @@ volumes/e2e_tests/*
 volumes/minhash_service/*
 data/*
 reports/*
+e2e_tests/fixtures/local/samples/*
+local_notes/
+bonsai-sdk/
+tmp/
 
 # editor related files
 *~
@@ -152,6 +156,4 @@ reports/*
 
 # Bonsai specific
 *.lock
-bonsai-sdk/
-tmp/
-private_notes/
+
