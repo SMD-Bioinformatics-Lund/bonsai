@@ -12,6 +12,8 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from generate.generate_fixtures import SAMPLE_COUNT
+
 
 TERMINAL_JOB_STATES = {"finished", "failed", "stopped", "canceled"}
 
@@ -79,8 +81,11 @@ def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str
         for sample in samples
         if sample.get("external_sample_id", "").startswith("synthetic_")
     ]
-    if len(synthetic) != 10:
-        raise RuntimeError(f"Expected 10 synthetic samples, found {len(synthetic)}")
+    expected_total = SAMPLE_COUNT * 2
+    if len(synthetic) != expected_total:
+        raise RuntimeError(
+            f"Expected {expected_total} synthetic samples, found {len(synthetic)}"
+        )
 
     tb = sorted(
         (
@@ -98,8 +103,11 @@ def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str
         ),
         key=lambda sample: sample["external_sample_id"],
     )
-    if len(tb) != 5 or len(sa) != 5:
-        raise RuntimeError(f"Expected 5 TB and 5 SA samples, found {len(tb)} and {len(sa)}")
+    if len(tb) != SAMPLE_COUNT or len(sa) != SAMPLE_COUNT:
+        raise RuntimeError(
+            f"Expected {SAMPLE_COUNT} TB and {SAMPLE_COUNT} SA samples, "
+            f"found {len(tb)} and {len(sa)}"
+        )
 
     for sample in synthetic:
         expected_group = (
@@ -160,9 +168,14 @@ def main() -> None:
         form={"username": args.username, "password": args.password},
     )
     token = token_response["access_token"]
-    response = api_request(args.api, "/samples?limit=20", token=token)
+    response = api_request(
+        args.api, f"/samples?limit={SAMPLE_COUNT * 2}", token=token
+    )
     tb_ids, sa_ids = validate_samples(response["data"])
-    print("PASS samples: 5 synthetic TB + 5 synthetic SA with expected analyses")
+    print(
+        f"PASS samples: {SAMPLE_COUNT} synthetic TB + {SAMPLE_COUNT} synthetic SA "
+        "with expected analyses"
+    )
 
     submitted = api_request(
         args.api,

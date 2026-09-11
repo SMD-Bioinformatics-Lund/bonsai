@@ -4,8 +4,8 @@ This directory contains deterministic test data generated entirely from
 pseudo-random DNA. It contains no patient, clinical, or production data and is
 not intended to be biologically meaningful.
 
-The dataset has five synthetic `mtuberculosis` samples and five synthetic
-`saureus` samples. It exercises:
+By default, the dataset has five synthetic `mtuberculosis` samples and five
+synthetic `saureus` samples. It exercises:
 
 - sourmash MinHash signatures (`k=31`, `scaled=1000`, no abundance tracking)
 - SKA2 split-kmer indexes (`k=31`)
@@ -18,6 +18,11 @@ services a stable range of distances while keeping the data easy to regenerate.
 
 ## Generate or regenerate artifacts
 
+Set `SAMPLE_COUNT` near the top of
+`generate/generate_fixtures.py` to change the number of samples generated for
+each species. Mutation distances are distributed automatically across the
+configured sample count.
+
 From the repository root:
 
 ```bash
@@ -25,9 +30,10 @@ bash e2e_tests/fixtures/local/generate_artifacts.sh
 ```
 
 The script builds and uses the repository's MinHash and SKA development images,
-so artifacts are created with the same versions used by the application. It
-does not overwrite existing `.sig` or `.skf` files. Remove an individual
-derived artifact before regenerating that artifact.
+so artifacts are created with the same versions used by the application.
+Generated `.sig` and `.skf` files are rebuilt on every run, and sample
+directories above the configured count are removed. This prevents stale
+artifacts when `SAMPLE_COUNT` changes.
 
 ## Start a clean local-test instance
 

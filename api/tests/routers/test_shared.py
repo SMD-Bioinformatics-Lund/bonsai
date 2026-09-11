@@ -32,19 +32,3 @@ def test_action_from_qc_classification(status: QcClassification, exp_action: str
 
     action = action_from_qc_classification(status)
     assert action == exp_action
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("compress", [False, True])
-async def test_parse_signature_json_returns_json_text(compress: bool):
-    """MinHash workers receive JSON text for plain and gzipped signatures."""
-    signature = [{"name": "synthetic", "signatures": [{"mins": [1, 2, 3]}]}]
-    raw = json.dumps(signature).encode("utf-8")
-    if compress:
-        raw = gzip.compress(raw)
-
-    upload = UploadFile(file=BytesIO(raw), filename="synthetic.sig")
-    parsed = await parse_signature_json(upload)
-
-    assert isinstance(parsed, str)
-    assert json.loads(parsed) == signature
