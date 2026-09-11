@@ -57,7 +57,7 @@ GROUP_FOR: dict[str, str] = {
     "species_prediction": SPP_RESULT,
     "stress": ELEMENT_TYPE_RESULT,
     "stx": TYPING_RESULT,
-    "virulence": TYPING_RESULT,
+    "virulence": ELEMENT_TYPE_RESULT,
     "ybst": TYPING_RESULT,
 }
 
