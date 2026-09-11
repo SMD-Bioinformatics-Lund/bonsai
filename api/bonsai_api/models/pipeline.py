@@ -29,12 +29,21 @@ class PipelineRunConfig(BaseModel):
     configuration_files: list[str] = Field(default_factory=list)
 
 
+class DatabaseInfo(BaseModel):
+    """Describe a reference database used by the pipeline."""
+
+    name: str
+    version: str
+    type: str = "database"
+
+
 class PipelineInfo(BaseModel):
     """Full description of the pipeline and its execution."""
 
     definition: PipelineDefinition
     run_config: PipelineRunConfig
     artifacts: list[PipelineArtifact] = Field(default_factory=list)
+    databases: list[DatabaseInfo] = Field(default_factory=list)
 
 
 class PipelineRun(ForbidExtraModelMixin):

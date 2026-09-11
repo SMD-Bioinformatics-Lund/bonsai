@@ -1016,6 +1016,30 @@
 {% endmacro %}
 
 
+{% macro analysis_meta_databases(sample_info) %}
+{% set databases = sample_info.pipeline.pipeline_info.databases %}
+{% if databases %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in databases %}
+                <tr>
+                    <th>{{ db.name | capitalize }}</th>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+
 {% macro analysis_meta_pipeline(sample_info) %}
 <div class="card">
     <div class="card-body">
