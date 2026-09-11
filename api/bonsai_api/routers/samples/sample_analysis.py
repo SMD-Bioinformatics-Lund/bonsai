@@ -28,37 +28,28 @@ from fastapi import (
     Path,
     Security,
     status,
+    UploadFile,
+    File
 )
 
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 from .permissions import READ_PERMISSION
-
-
-def parse_signature_json(signature: str = Body(..., embed=True)) -> dict:
-    """Parse and validate signature JSON."""
-    import json
-
-    try:
-        return json.loads(signature)
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid JSON in signature: {str(e)}",
-        ) from e
+from ..shared import parse_signature_json
 
 
 @router.post("/samples/{sample_id}/signature")
 async def create_genome_signatures_sample(
     sample_id: str = Path(...),
-    signature: str = Depends(parse_signature_json),
+    signature: UploadFile = File(...),
     db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
+    signature_json = await parse_signature_json(signature)
 
     job_ids = await add_sourmash_index_service(
-        db, sample_id=sample_id, sketch=signature
+        db, sample_id=sample_id, sketch=signature_json
     )
     return {
         "id": sample_id,

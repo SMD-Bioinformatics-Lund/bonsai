@@ -1,5 +1,5 @@
 ### Base layer ###
-FROM python:3.11.3-slim AS base
+FROM python:3.11-slim-trixie AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -7,7 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-# Minimal packages + curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
@@ -17,10 +16,9 @@ WORKDIR /app
 ### Development layer ###
 FROM base AS development
 
-COPY libs/api_client/ ./api_client
 COPY api/ ./api
 
-RUN pip install -e ./api_client -e ./api
+RUN pip install -e ./api
 
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
   CMD curl --fail http://localhost:8000/
@@ -35,10 +33,9 @@ RUN pip wheel --wheel-dir /wheels \
     setuptools-scm>=8 \
     wheel
 
-COPY libs/api_client/ ./api_client
 COPY api/ ./api
 
-RUN pip wheel --wheel-dir /wheels ./api_client ./api
+RUN pip wheel --wheel-dir /wheels ./api
 
 ### Production layer ###
 FROM base AS production
@@ -50,7 +47,7 @@ RUN addgroup --system --gid 1000 worker && \
 
 # Install pre-built python wheels
 COPY --from=python-builder /wheels /wheels
-RUN pip install --no-index --find-links=/wheels api_client bonsai_api && rm -rf /wheels
+RUN pip install --no-index --find-links=/wheels bonsai_api && rm -rf /wheels
 
 HEALTHCHECK --interval=10s --timeout=10s --start-period=30s --retries=3 \
   CMD curl --fail http://localhost:8000/

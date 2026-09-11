@@ -1,12 +1,12 @@
 import { onEvent } from "../utils/event-bus";
-import { GroupInfo, ApiGroupInfoResponse } from "../types";
+import { GroupInfo, ApiGroupInfoResponse } from "../core/types";
 
 // Helper to create group card HTML
 function groupCardHTML(group: GroupInfo, isAdmin: boolean): string {
   return String.raw`
     <div class="col-sm-6 col-md-4 col-lg-auto py-2">
       <div class="card group-card position-relative">
-        ${isAdmin ? `<a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle" role="button" href="${baseUrl}/groups/edit/${group.group_id}"><i class="bi bi-pencil"></i></a>` : ""}
+        ${isAdmin ? `<a class="d-inline-block badge bage-pill bg-secondary edit-button position-absolute top-0 start-100 translate-middle" role="button" href="${baseUrl}/groups/${group.group_id}/edit"><i class="bi bi-pencil"></i></a>` : ""}
         <a href="${baseUrl}/groups/${group.group_id}" class="text-decoration-none text-dark">
           <div class="card-body">
             <h5 class="card-title">${group.display_name}</h5>
@@ -38,7 +38,7 @@ export class GroupList extends HTMLElement {
     this.setupEventListeners();
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  attributeChangedCallback(name: string) {
     if (name === "is-admin") {
       this.isAdmin = this.hasAttribute("is-admin");
       this.render();
@@ -69,7 +69,7 @@ export class GroupList extends HTMLElement {
     if (this.isAdmin) {
       html += String.raw`
         <div class="col-sm-6 col-md-4 col-lg-auto py-2">
-          <a class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center" href="${baseUrl}/groups/edit">
+          <a class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center" href="${baseUrl}/groups/create">
             <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center" style="width: 3.75rem; height: 3.75rem; font-size: 2.5rem; line-height: 0;">
               <i class="bi bi-plus-lg"></i>
             </div>

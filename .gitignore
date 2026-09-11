@@ -134,8 +134,6 @@ dmypy.json
 # javascript and node related files
 node_modules
 .npm
-frontend/build/
-frontend/bonsai_app/blueprints/public/static/bonsai.min.js
 
 # directory tree
 volumes/mongodb/*
@@ -147,11 +145,15 @@ volumes/e2e_tests/*
 volumes/minhash_service/*
 data/*
 reports/*
+e2e_tests/fixtures/local/samples/*
+local_notes/
+bonsai-sdk/
+tmp/
 
 # editor related files
 *~
 .vscode
 
 # Bonsai specific
-bonsai.min.js
 *.lock
+

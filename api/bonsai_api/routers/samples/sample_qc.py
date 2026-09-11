@@ -2,7 +2,7 @@
 
 import logging
 
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.sample import update_sample_qc_classification
 from bonsai_api.db import Database
 from bonsai_api.dependencies import (

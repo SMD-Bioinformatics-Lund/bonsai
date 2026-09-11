@@ -1,5 +1,5 @@
 ### Base layer ###
-FROM python:3.11.3-slim AS base
+FROM python:3.11-slim-trixie AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -31,6 +31,10 @@ FROM base AS development
 
 # Development convenience: local editable install
 COPY frontend/ ./frontend
+
+# Copy built JS to the python-builder context
+COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
+
 RUN pip install --upgrade setuptools setuptools-scm wheel \
  && pip install --editable ./frontend
 
@@ -44,26 +48,8 @@ FROM base AS python-builder
 # Copy source
 COPY frontend/ ./frontend
 
-# Copy built JS artefact
-COPY --from=node-builder /app/frontend/build/js/bonsai.min.js \
-    ./frontend/bonsai_app/blueprints/public/static/
-
-# Remove node artefacts
-RUN rm -rf ./frontend/node_modules
-
-# --------------------------------------------------------------------
-# IMPORTANT:
-# Build-system dependencies MUST be present in the wheelhouse
-# because pip will use PEP‑517 build isolation.
-# --------------------------------------------------------------------
-RUN pip wheel --wheel-dir /wheels \
-    "setuptools>=61" \
-    wheel \
-    setuptools-scm
-
-# Build application wheel(s)
-RUN pip wheel --wheel-dir /wheels ./frontend
-
+# Copy built JS to the python-builder context
+COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
 
 ### Production layer ###
 FROM base AS production
