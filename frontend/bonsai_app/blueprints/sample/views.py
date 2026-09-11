@@ -199,8 +199,8 @@ def hide_comment(sample_id: str, comment_id: str) -> str:
     # hide comment
     try:
         client.remove_comment_from_sample(sample_id=sample_id, comment_id=comment_id)
-    except HTTPError as error:
-        flash(str(error), "danger")
+    except HTTPError:
+        flash("Error hiding comment", "danger")
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
@@ -225,8 +225,8 @@ def update_qc_classification(sample_id: str) -> str:
         client.update_sample_qc_classification(
             sample_id=sample_id, status=result, action=action, comment=comment
         )
-    except HTTPError as error:
-        flash(str(error), "danger")
+    except HTTPError:
+        flash("Error updating sample QC", "danger")
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
@@ -242,7 +242,7 @@ def download_lims(sample_id: str):
     fmt = request.args.get("fmt", "tsv")
     today = date.today()
     fallback_fname = request.args.get(
-        "filename", f"bonsai-lims-export_{sample_id}_{today.isoformat()}"
+        "filename", f"bonsai-lims-export_{today.isoformat()}"
     )
 
     # Fetch from API
@@ -455,7 +455,7 @@ def resistance_variants(sample_id: str) -> str:
 
     return render_template(
         "resistance_variants.html",
-        title=f"{sample_id} resistance",
+        title=f"{sample_info['external_sample_id']} resistance",
         sample=sample_info,
         amr_results=amr_results,
         form_data=form_data,
@@ -488,7 +488,7 @@ def metadata(sample_id: str) -> str:
 
     return render_template(
         "metadata.html",
-        title=f"{sample_id} metadata",
+        title=f"{sample_info['external_sample_id']} metadata",
         sample=sample_info,
         kw_tbl=kw_tbl,
         metadata_tbls=metadata_tbls,
@@ -514,7 +514,7 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
 
     return render_template(
         "metadata_table.html",
-        title=f"{sample_id} metadata",
+        title=f"{sample_info['external_sample_id']} metadata",
         sample=sample_info,
         table=table,
     )

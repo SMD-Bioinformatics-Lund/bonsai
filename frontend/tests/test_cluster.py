@@ -64,3 +64,26 @@ def test_gather_metadata_formats_missing_object_as_placeholder():
         "10x: 99.5, 30x: 95.0"
     )
     assert metadata.metadata["sample-2"]["Coverage breadth above x"] == "-"
+
+
+def test_gather_metadata_uses_lab_id_without_exposing_internal_id():
+    """The UUID remains the join key but is not offered as display metadata."""
+    samples = [
+        {
+            "sample_id": "01991d8e-5d6d-7000-8000-000000000001",
+            "external_sample_id": "LAB-123",
+        }
+    ]
+    columns = {
+        "columns": [
+            {"id": "sample_id", "label": "Id", "type": "string"},
+            {"id": "external_sample_id", "label": "Lab ID", "type": "string"},
+        ]
+    }
+
+    metadata = gather_metadata(samples, columns)
+
+    assert metadata.metadata == {
+        "01991d8e-5d6d-7000-8000-000000000001": {"Lab ID": "LAB-123"}
+    }
+    assert "Id" not in metadata.metadata_list

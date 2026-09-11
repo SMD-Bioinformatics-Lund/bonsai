@@ -43,7 +43,7 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
                 )
             )
         except FileNotFoundError:
-            missing_samples.append(index.get("sample_name") or index["sample_id"])
+            missing_samples.append(index.get("external_sample_id") or "Unknown sample")
 
     if missing_samples:
         sample_labels = ", ".join(sorted(missing_samples))

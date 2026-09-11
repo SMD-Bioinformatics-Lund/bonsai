@@ -31,6 +31,11 @@ type TidyTreeInstance = {
   eachLeafLabel(callback: (label: HTMLElement) => void): void;
 };
 
+type DendrogramLeaf = {
+  element: HTMLElement;
+  sampleId: string;
+};
+
 type TidyTreeConstructor = new (
   newick: string,
   options: Record<string, unknown>,
@@ -223,7 +228,7 @@ export function initSetSampleQc(
         console.error(`Error updating QC of sample: ${sampleId}`, error);
 
         // Parse API error response for user-friendly message
-        let message = `Failed to update QC of sample ${sampleId}. Please try again.`;
+        let message = "Failed to update sample QC. Please try again.";
         if (error instanceof ApiError && error.data) {
           const data = error.data as ApiProblemDetails;
           if (data.title && typeof data.title === "string") {
@@ -274,7 +279,8 @@ export async function findAndClusterSimilarSamples(
     console.log("Here is the find similar result:", jobResult.result);
 
     // draw dendrogam in container element
-    drawDendrogram("#tree-body", jobResult.result, sampleId);
+    const leaves = drawDendrogram("#tree-body", jobResult.result, sampleId);
+    await showLabIds(leaves, api);
   } catch (error) {
     container.hidden = true;
 
@@ -316,16 +322,20 @@ export async function findAndClusterSimilarSamples(
 }
 
 /* Draw dendrogram from Newick string */
-export function drawDendrogram(containerSelector: string, newick: string, sampleId: string): void {
+export function drawDendrogram(
+  containerSelector: string,
+  newick: string,
+  sampleId: string,
+): DendrogramLeaf[] {
   const container = document.querySelector(containerSelector);
   if (!container) {
     console.error(`Container element not found: ${containerSelector}`);
-    return;
+    return [];
   }
   const TidyTree = (window as Window & { TidyTree?: TidyTreeConstructor }).TidyTree;
   if (!TidyTree) {
     console.error("TidyTree library is not loaded");
-    return;
+    return [];
   }
   const tree = new TidyTree(newick, {
     parent: container,
@@ -343,9 +353,31 @@ export function drawDendrogram(containerSelector: string, newick: string, sample
     .style("fill", "steelblue")
     .attr("r", 5);
 
+  const leaves: DendrogramLeaf[] = [];
   tree.eachLeafLabel((label: HTMLElement) => {
+    const leafSampleId = label.textContent ?? "";
+    leaves.push({ element: label, sampleId: leafSampleId });
     label.style.cursor = "pointer";
-    label.onclick = () => openSamplePage(label.innerHTML);
+    label.onclick = () => openSamplePage(leafSampleId);
+  });
+  return leaves;
+}
+
+async function showLabIds(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
+  const sampleIds = leaves.map((leaf) => leaf.sampleId).filter(Boolean);
+  if (sampleIds.length === 0) return;
+
+  const response = await api.getSamplesDetails({
+    sid: sampleIds,
+    fields: ["sample_id", "external_sample_id"],
+    limit: sampleIds.length,
+    offset: 0,
+  });
+  const labIds = new Map(
+    response.data.map((sample) => [sample.sample_id, sample.external_sample_id]),
+  );
+  leaves.forEach(({ element, sampleId: internalSampleId }) => {
+    element.textContent = labIds.get(internalSampleId) || "Lab ID unavailable";
   });
 }
 

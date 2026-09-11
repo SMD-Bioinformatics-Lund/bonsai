@@ -2,14 +2,18 @@ import { PaginatedResponse } from "../pagination";
 
 export interface ApiGetSamplesDetailsInput {
   sid: string[];
-  limit: number;
-  skip: number;
-  prediction_result: boolean;
-  qc: boolean;
+  fields?: string[];
+  limit: number | null;
+  offset?: number;
+  // Kept while older callers are migrated to the current summary API.
+  skip?: number;
+  prediction_result?: boolean;
+  qc?: boolean;
 }
 
 export interface SamplesDetails {
   sample_id: string;
+  external_sample_id?: string;
   sample_name: string;
   lims_id: string;
   assay: string;

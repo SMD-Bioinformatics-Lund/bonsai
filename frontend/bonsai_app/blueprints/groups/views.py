@@ -319,11 +319,11 @@ def update_qc_classification():
                 action=action,
                 comment=comment,
             )
-        except Exception as error:
+        except Exception:
             LOG.exception(
                 "Encountered error when updating QC status for sample %s:", sample_id
             )
-            flash(str(error), "danger")
+            flash("Error updating QC status for one or more samples", "danger")
 
     # add sample ids as params to referrer url
     url = urlparse(request.referrer)
