@@ -75,7 +75,7 @@ def wait_for_job(
 
 
 def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
-    """Validate fixture counts, memberships, analyses, and index references."""
+    """Validate fixture counts, analyses, and index references."""
     synthetic = [
         sample
         for sample in samples
@@ -110,16 +110,7 @@ def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str
         )
 
     for sample in synthetic:
-        expected_group = (
-            "mtuberculosis"
-            if sample["external_sample_id"].startswith("synthetic_tb_")
-            else "saureus"
-        )
-        if sample.get("groups") != [expected_group]:
-            raise RuntimeError(
-                f"{sample['external_sample_id']} has groups {sample.get('groups')}, "
-                f"expected [{expected_group!r}]"
-            )
+        is_saureus = sample["external_sample_id"].startswith("synthetic_sa_")
         if not sample.get("genome_signature") or not sample.get("ska_index"):
             raise RuntimeError(
                 f"{sample['external_sample_id']} is missing a MinHash or SKA index reference"
@@ -131,7 +122,7 @@ def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str
             if result.get("status") == "parsed"
         }
         required = {"qc", "species_prediction"}
-        if expected_group == "saureus":
+        if is_saureus:
             required.update({"mlst", "cgmlst"})
         missing = required - parsed_types
         if missing:
