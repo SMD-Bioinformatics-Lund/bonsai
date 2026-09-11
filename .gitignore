@@ -145,6 +145,7 @@ volumes/e2e_tests/*
 volumes/minhash_service/*
 data/*
 reports/*
+e2e_tests/fixtures/local/samples/*
 
 # editor related files
 *~

@@ -86,6 +86,9 @@ def fmt_metadata(
     column: dict[str, Any],
 ) -> str:
     data = sample_obj.get(column["id"])
+    if data is None:
+        return "-"
+
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
