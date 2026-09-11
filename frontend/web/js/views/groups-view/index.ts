@@ -1,5 +1,7 @@
-export { initGroupView } from "./init";
+import { initGroupView } from "./init";
 
-(window as any).GroupView = {
+export { initGroupView };
+
+Object.assign(window, { GroupView: {
   initGroupView
-};
+} });

@@ -5,14 +5,36 @@ import { emitEvent } from "../../utils/event-bus";
 import { throwSmallToast } from "../../utils/notification";
 import { TableController } from "../../utils/table-controller";
 import { ApiFindSimilarInput } from "../types";
-import {
-  ApiJobStatusNewick,
-  ApiJobStatusSimilarity,
-  ApiSampleQcStatus,
-} from "../types";
+import { ApiJobStatusNewick, ApiJobStatusSimilarity, ApiSampleQcStatus } from "../types";
 import { ClusterMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
+import SpinnerElement from "../../components/spinner-element";
 import "../../components/spinner-element";
+
+type ApiProblemDetails = {
+  title?: unknown;
+  type?: unknown;
+};
+
+type RemoveSamplesFromGroupApi = {
+  removeSamplesFromGroup(groupId: string, sampleIds: string[]): Promise<void>;
+};
+
+type TidyTreeSelection = {
+  selectAll(selector: string): TidyTreeSelection;
+  style(name: string, value: string): TidyTreeSelection;
+  attr(name: string, value: number): TidyTreeSelection;
+};
+
+type TidyTreeInstance = {
+  search(predicate: (node: { data: { id: string } }) => boolean): TidyTreeSelection;
+  eachLeafLabel(callback: (label: HTMLElement) => void): void;
+};
+
+type TidyTreeConstructor = new (
+  newick: string,
+  options: Record<string, unknown>,
+) => TidyTreeInstance;
 
 export async function getSimilarSamplesAndCheckRows(
   btn: HTMLButtonElement,
@@ -46,19 +68,19 @@ export async function getSimilarSamplesAndCheckRows(
     );
   } catch (error) {
     console.error("Error while checking job status:", error);
-    
+
     // Parse API error response for user-friendly message
     let message = "Error while finding similar samples. Please try again.";
     if (error instanceof ApiError && error.data) {
-      const data = error.data;
-      if (data.title && typeof data.title === 'string') {
+      const data = error.data as ApiProblemDetails;
+      if (data.title && typeof data.title === "string") {
         message = data.title;
       }
       if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
         message = "Service temporarily unavailable due to logging issues. Please try again later.";
       }
     }
-    
+
     throwSmallToast(message, "error");
   }
   hideSpinner(container);
@@ -67,7 +89,7 @@ export async function getSimilarSamplesAndCheckRows(
 export function removeSamplesFromGroup(
   groupId: string,
   table: TableController,
-  api: ApiService,
+  api: RemoveSamplesFromGroupApi,
 ): void {
   const selectedSamples = table.getSelectedRows();
   if (selectedSamples.length === 0) {
@@ -84,19 +106,20 @@ export function removeSamplesFromGroup(
     })
     .catch((error) => {
       console.error(`Error removing ${selectedSamples.length} from group:`, error);
-      
+
       // Parse API error response for user-friendly message
       let message = `Failed to remove ${selectedSamples.length} samples from group. Please try again.`;
       if (error instanceof ApiError && error.data) {
-        const data = error.data;
-        if (data.title && typeof data.title === 'string') {
+        const data = error.data as ApiProblemDetails;
+        if (data.title && typeof data.title === "string") {
           message = data.title;
         }
         if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
-          message = "Service temporarily unavailable due to logging issues. Please try again later.";
+          message =
+            "Service temporarily unavailable due to logging issues. Please try again later.";
         }
       }
-      
+
       throwSmallToast(message, "error");
     });
 }
@@ -114,21 +137,22 @@ export function deleteSelectedSamples(table: TableController, api: ApiService): 
     })
     .catch((error) => {
       console.error("Error removing samples from database", error);
-      
+
       // Parse API error response for user-friendly message
       let message = "Failed to delete samples. Please try again.";
       if (error instanceof ApiError && error.data) {
-        const data = error.data;
+        const data = error.data as ApiProblemDetails;
         // Use the API's problem-details title if available and safe
-        if (data.title && typeof data.title === 'string') {
+        if (data.title && typeof data.title === "string") {
           message = data.title;
         }
         // Optionally map specific types to custom messages
         if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
-          message = "Service temporarily unavailable due to logging issues. Please try again later.";
+          message =
+            "Service temporarily unavailable due to logging issues. Please try again later.";
         }
       }
-      
+
       throwSmallToast(message, "error");
     });
 }
@@ -180,19 +204,20 @@ export function initSetSampleQc(
     sampleIds.forEach((sampleId) => {
       submitQc(sampleId, qcStatus).catch((e: Error) => {
         console.error(`Error updating QC of sample: ${sampleId}`, e);
-        
+
         // Parse API error response for user-friendly message
         let message = `Failed to update QC of sample ${sampleId}. Please try again.`;
         if (e instanceof ApiError && e.data) {
-          const data = e.data;
-          if (data.title && typeof data.title === 'string') {
+          const data = e.data as ApiProblemDetails;
+          if (data.title && typeof data.title === "string") {
             message = data.title;
           }
           if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
-            message = "Service temporarily unavailable due to logging issues. Please try again later.";
+            message =
+              "Service temporarily unavailable due to logging issues. Please try again later.";
           }
         }
-        
+
         throwSmallToast(message, "error");
       });
       wait(100);
@@ -233,19 +258,19 @@ export async function findAndClusterSimilarSamples(
   } catch (error) {
     container.hidden = true;
     console.error("Error while checking job status:", error);
-    
+
     // Parse API error response for user-friendly message
     let message = "Error while finding similar samples. Please try again.";
     if (error instanceof ApiError && error.data) {
-      const data = error.data;
-      if (data.title && typeof data.title === 'string') {
+      const data = error.data as ApiProblemDetails;
+      if (data.title && typeof data.title === "string") {
         message = data.title;
       }
       if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
         message = "Service temporarily unavailable due to logging issues. Please try again later.";
       }
     }
-    
+
     throwSmallToast(message);
     throw error;
   } finally {
@@ -266,12 +291,12 @@ export function drawDendrogram(containerSelector: string, newick: string, sample
     console.error(`Container element not found: ${containerSelector}`);
     return;
   }
-  if (!(window as any).TidyTree) {
+  const TidyTree = (window as Window & { TidyTree?: TidyTreeConstructor }).TidyTree;
+  if (!TidyTree) {
     console.error("TidyTree library is not loaded");
     return;
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tree = new (window as any).TidyTree(newick, {
+  const tree = new TidyTree(newick, {
     parent: container,
     layout: "vertical",
     type: "dendrogram",

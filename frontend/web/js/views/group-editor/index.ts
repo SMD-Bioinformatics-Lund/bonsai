@@ -74,7 +74,7 @@ export class GroupEditor extends HTMLElement {
 
     try {
       // post updates to group
-      let groupId;
+      let groupId: string;
 
       // create or update core info
       const corePayload = {
@@ -83,7 +83,8 @@ export class GroupEditor extends HTMLElement {
       }
       if ( this.mode == "create" ) {
         const groupObj = await this._api.createGroup(corePayload)
-        this.model.groupId = groupObj.group_id;
+        groupId = groupObj.group_id;
+        this.model.groupId = groupId;
         this.mode = "edit";
       } else {
         groupId = this.model.groupId!;
