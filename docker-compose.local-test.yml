@@ -49,7 +49,7 @@ services:
   ska_service:
     container_name: !reset null
     volumes: !override
-      - ./e2e_tests/fixtures/local/samples:/data/index_files:ro
+      - ./e2e_tests/fixtures/local/samples:/data/samples:ro
 
   allele_cluster_service:
     container_name: !reset null
@@ -62,21 +62,6 @@ services:
       - ./e2e_tests/fixtures/local:/data:ro
     entrypoint: ["/bin/sh", "/data/seed.sh"]
     command: []
-
-  test-data-groups:
-    image: mongo:4.4.22
-    profiles: ["init"]
-    depends_on:
-      test-data-seeder:
-        condition: service_completed_successfully
-    volumes:
-      - ./e2e_tests/fixtures/local/assign_test_groups.js:/data/assign_test_groups.js:ro
-    entrypoint:
-      - mongo
-      - mongodb:27017/bonsai
-      - /data/assign_test_groups.js
-    restart: "no"
-    networks: [bonsai]
 
 volumes:
   bonsai_test_mongodb:

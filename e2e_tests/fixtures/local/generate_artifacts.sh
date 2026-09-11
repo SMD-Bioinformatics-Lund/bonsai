@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Used together with synthetic dataset to generate sourmash and SKA outputs
+
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/../../.." && pwd)"
 FIXTURE_ROOT="${REPO_ROOT}/e2e_tests/fixtures/local"
@@ -9,6 +11,11 @@ COMPOSE_FILES=(-f "${REPO_ROOT}/docker-compose.yml" -f "${REPO_ROOT}/docker-comp
 python3 "${SCRIPT_DIR}/generate/generate_fixtures.py"
 
 docker compose "${COMPOSE_FILES[@]}" build minhash_service ska_service
+
+# Mutation distances may change when SAMPLE_COUNT changes, so rebuild derived
+# artifacts instead of retaining indexes generated from older FASTA content.
+find "${FIXTURE_ROOT}/samples" -type f \
+    \( -name '*.sig' -o -name '*_ska_index.skf' \) -delete
 
 while IFS= read -r fasta; do
     sample_dir="$(dirname -- "${fasta}")"
@@ -43,11 +50,4 @@ while IFS= read -r fasta; do
     fi
 done < <(find "${FIXTURE_ROOT}/samples" -type f -name 'synthetic_*.fasta' | sort)
 
-(
-    cd "${FIXTURE_ROOT}"
-    find samples -type f ! -name checksums.sha256 -print0 \
-        | sort -z \
-        | xargs -0 sha256sum > checksums.sha256
-)
-
-echo "Generated synthetic genomes, sourmash signatures, SKA indexes, and checksums."
+echo "Generated synthetic genomes, sourmash signatures, and SKA indexes."
