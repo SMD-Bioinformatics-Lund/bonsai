@@ -40,6 +40,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
+    "watch": "webpack --mode development --watch --output-path bonsai_app/static/build",
     "buildcp": "webpack && cp -v -r build/ bonsai_app/static",
     "lint": "eslint web",
     "lint:fix": "npm run lint -- --fix",

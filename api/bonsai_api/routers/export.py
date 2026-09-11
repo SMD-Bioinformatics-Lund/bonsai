@@ -1,6 +1,7 @@
 import logging
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import quote
 
 from bonsai_api.config import settings
 from bonsai_api.services.sample_service import get_sample_service
@@ -111,6 +112,6 @@ async def export_to_lims(
         media_type = "text/csv; charset=utf-8"
     body = serialize_lims_results(lims_data, delimiter=fmt)
 
-    filename = f"{sample_obj.sample_id}_lims.txt"
-    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+    filename = quote(f"{sample_obj.external_sample_id}_lims.txt", safe="")
+    headers = {"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"}
     return PlainTextResponse(content=body, media_type=media_type, headers=headers)

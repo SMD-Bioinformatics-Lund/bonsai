@@ -72,7 +72,7 @@ async def get_typing_profiles(
             "$project": {
                 "_id": 0,
                 "sample_id": 1,
-                "sample_name": 1,
+                "external_sample_id": 1,
                 "typing_result": 1,
             }
         }
@@ -80,10 +80,12 @@ async def get_typing_profiles(
 
     # Query database
     results: list[TypingProfileAggregate] = []
-    sample_names: dict[str, str] = {}
+    sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
-        sample_names[raw["sample_id"]] = raw.get("sample_name") or raw["sample_id"]
+        sample_labels[raw["sample_id"]] = (
+            raw.get("external_sample_id") or "Unknown sample"
+        )
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
@@ -102,13 +104,16 @@ async def get_typing_profiles(
     found_ids = {sample.sample_id for sample in results if sample.typing_result}
     missing = set(sample_idx) - found_ids
     if missing:
-        sample_labels = ", ".join(
-            sorted(sample_names.get(sample_id, sample_id) for sample_id in missing)
+        missing_labels = ", ".join(
+            sorted(
+                sample_labels.get(sample_id, "Unknown sample")
+                for sample_id in missing
+            )
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
             f"No {profile_name} typing profile is available for the following samples: "
-            f"{sample_labels}"
+            f"{missing_labels}"
         )
     return results
 
@@ -141,7 +146,7 @@ async def get_ska_index_path_for_samples(
     projection = {
         "_id": 0,
         "sample_id": 1,
-        "sample_name": 1,
+        "external_sample_id": 1,
         "ska_index": 1,
     }
     LOG.debug("Query: %s; projection: %s", query, projection)
@@ -151,7 +156,7 @@ async def get_ska_index_path_for_samples(
 
     samples = {sample["sample_id"]: sample for sample in results}
     missing = [
-        samples.get(sample_id, {}).get("sample_name", sample_id)
+        samples.get(sample_id, {}).get("external_sample_id") or "Unknown sample"
         for sample_id in sample_ids
         if not samples.get(sample_id, {}).get("ska_index")
     ]

@@ -294,6 +294,7 @@
           return a.localeCompare(b);
         });
         sortedFields.forEach((fieldKey) => {
+          if (fieldKey === "ID") return;
           const fieldData = options[fieldKey];
           const label =
             typeof fieldData === "object" ? fieldData.label : fieldData;
@@ -521,7 +522,9 @@
           const selectedField = document.querySelector("#tooltip-text").value;
 
           if (metadata) {
-            return metadata[selectedField] || metadata.ID || "";
+            return (
+              metadata[selectedField] || metadata["Lab ID"] || metadata.Name || ""
+            );
           }
           return "";
         };
@@ -561,7 +564,10 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
-        $("#node-label-text").val("ID");
+        const sampleLabelField = "Lab ID";
+        $("#node-label-text").val(sampleLabelField);
+        $("#tooltip-text").val(sampleLabelField);
+        the_tree.setNodeText(sampleLabelField);
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);

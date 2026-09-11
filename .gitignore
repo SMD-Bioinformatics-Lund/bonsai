@@ -154,3 +154,4 @@ reports/*
 *.lock
 bonsai-sdk/
 tmp/
+private_notes/
