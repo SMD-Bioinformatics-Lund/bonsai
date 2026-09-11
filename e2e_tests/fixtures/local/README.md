@@ -69,12 +69,12 @@ docker compose \
   -f docker-compose.yml \
   -f docker-compose.dev.yml \
   -f docker-compose.local-test.yml \
-  logs test-data-seeder test-data-groups minhash_service ska_service
+  logs test-data-seeder minhash_service ska_service
 ```
 
-Run the API smoke test after `test-data-seeder` and `test-data-groups` have
-exited successfully. It verifies sample counts, group membership, parsed
-results, and live MinHash, SKA, MLST, and cgMLST clustering:
+Run the API smoke test after `test-data-seeder` has exited successfully. It
+verifies sample counts, parsed results, and live MinHash, SKA, MLST, and cgMLST
+clustering:
 
 ```bash
 python3 e2e_tests/fixtures/local/smoke_test.py
@@ -99,8 +99,11 @@ docker compose \
   -f docker-compose.yml \
   -f docker-compose.dev.yml \
   -f docker-compose.local-test.yml \
-  down -v
+  --profile init down -v --remove-orphans
 ```
 
+Enabling the profile also removes its completed `bootstrap` and
+`test-data-seeder` containers, ensuring they run again on the next start.
+`--remove-orphans` cleans up one-shot services removed from the Compose files.
 This removes the local-test MongoDB and MinHash volumes. The normal development
 containers, network, and data are not part of the `bonsai-local-test` project.

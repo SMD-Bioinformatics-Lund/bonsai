@@ -18,7 +18,7 @@ FIXTURE_ROOT = Path(__file__).resolve().parents[1]
 SAMPLE_ROOT = FIXTURE_ROOT / "samples"
 GENOME_LENGTH = 100_000
 # Adjust this value to change the number of generated samples per species.
-SAMPLE_COUNT = 5
+SAMPLE_COUNT = 10
 MUTATION_PROFILE = (0, 3, 8, 30, 100)
 DNA = "ACGT"
 GENERATED_SAMPLE_PATTERN = re.compile(r"synthetic_(?:tb|sa)_\d+")
