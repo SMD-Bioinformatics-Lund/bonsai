@@ -1,0 +1,17 @@
+[
+  {
+    "alleles": {
+      "arcC": "1",
+      "aroE": "1",
+      "glpF": "1",
+      "gmk": "1",
+      "pta": "1",
+      "tpi": "1",
+      "yqiL": "1"
+    },
+    "id": "synthetic_sa_001.fasta",
+    "scheme": "saureus",
+    "filename": "synthetic_sa_001.fasta",
+    "sequence_type": "101"
+  }
+]

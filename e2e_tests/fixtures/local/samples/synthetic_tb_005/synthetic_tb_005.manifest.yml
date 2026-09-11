@@ -1,0 +1,34 @@
+# Generated test data only. It does not describe a biological isolate.
+sample_id: synthetic_tb_005
+sample_name: Synthetic mtuberculosis sample 005
+lims_id: SYNTHETIC-LIMS-MTUBERCULOSIS-005
+groups:
+  - mtuberculosis
+metadata:
+  - fieldname: data classification
+    value: synthetic
+    type: string
+    category: general
+  - fieldname: isolation date
+    value: 2025-01-05
+    type: datetime
+    category: general
+  - fieldname: region
+    value: synthetic-region-2
+    type: string
+    category: general
+
+nextflow_run_info: analysis_meta.json
+
+analysis_result:
+  - software: bracken
+    software_version: 1.0.0
+    database: synthetic
+    uri: bracken.out
+  - software: quast
+    software_version: 1.0.0
+    uri: quast.tsv
+
+index_artifacts:
+  sourmash_signature: synthetic_tb_005.sig
+  ska_index: synthetic_tb_005_ska_index.skf
