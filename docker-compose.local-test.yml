@@ -1,0 +1,83 @@
+# Isolated storage and deterministic synthetic fixtures for local testing.
+# Use together with docker-compose.yml and docker-compose.dev.yml.
+name: bonsai-local-test
+
+services:
+  mongodb:
+    container_name: !reset null
+    volumes: !override
+      - bonsai_test_mongodb:/data/db
+
+  redis:
+    container_name: !reset null
+
+  api:
+    container_name: !reset null
+    environment:
+      API_EXTERNAL_URL: http://localhost:18001
+    ports: !override
+      - "18001:8000"
+
+  frontend:
+    container_name: !reset null
+    environment:
+      API_EXTERNAL_URL: http://localhost:18001
+    ports: !override
+      - "18000:8000"
+
+  notification_service:
+    ports: !override
+      - "18005:8000"
+
+  audit_log_service:
+    ports: !override
+      - "18004:8000"
+
+  mailhog:
+    ports: !override
+      - "11025:1025"
+      - "18025:8025"
+
+  minhash_service:
+    volumes: !override
+      - bonsai_test_minhash:/data/signature_db
+
+  minhash_cron_service:
+    volumes: !override
+      - bonsai_test_minhash:/data/signature_db
+
+  ska_service:
+    container_name: !reset null
+    volumes: !override
+      - ./e2e_tests/fixtures/local/samples:/data/samples:ro
+
+  allele_cluster_service:
+    container_name: !reset null
+
+  test-data-seeder:
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes:
+      - ./e2e_tests/fixtures/local:/data:ro
+    entrypoint: ["/bin/sh", "/data/seed.sh"]
+    command: []
+
+  test-data-groups:
+    image: mongo:4.4.22
+    profiles: ["init"]
+    depends_on:
+      test-data-seeder:
+        condition: service_completed_successfully
+    volumes:
+      - ./e2e_tests/fixtures/local/assign_test_groups.js:/data/assign_test_groups.js:ro
+    entrypoint:
+      - mongo
+      - mongodb:27017/bonsai
+      - /data/assign_test_groups.js
+    restart: "no"
+    networks: [bonsai]
+
+volumes:
+  bonsai_test_mongodb:
+  bonsai_test_minhash:
