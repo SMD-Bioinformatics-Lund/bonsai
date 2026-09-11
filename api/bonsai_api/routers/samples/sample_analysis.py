@@ -35,7 +35,7 @@ from fastapi import (
 LOG = logging.getLogger(__name__)
 router = APIRouter()
 
-from .permissions import READ_PERMISSION, WRITE_PERMISSION
+from .permissions import READ_PERMISSION
 from ..shared import parse_signature_json
 
 
@@ -44,9 +44,6 @@ async def create_genome_signatures_sample(
     sample_id: str = Path(...),
     signature: UploadFile = File(...),
     db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    ),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
     signature_json = await parse_signature_json(signature)
@@ -67,9 +64,6 @@ async def add_ska_index_to_sample(
     index: str = Body(..., embed=True),
     force: bool = Body(False, embed=True),
     db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
-    ),
 ) -> dict[str, str]:
     """Entrypoint for associating a SKA index with the sample."""
     await add_ska_index_service(db, sample_id=sample_id, index_uri=index, force=force)

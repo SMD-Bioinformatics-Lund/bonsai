@@ -142,7 +142,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--api",
-        default=os.environ.get("BONSAI_API", "http://localhost:18001"),
+        default=os.environ.get("BONSAI_API", "http://localhost:8001"),
         help="Bonsai API base URL (default: %(default)s)",
     )
     parser.add_argument(
