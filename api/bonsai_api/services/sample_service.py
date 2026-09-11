@@ -15,6 +15,7 @@ from bonsai_api.crud.sample import (
     add_ska_index,
     add_sourmash_sketch,
     delete_sample_crud,
+    get_sample_by_external_id,
     get_sample_by_id,
     insert_sample_document,
     pipeline_run_exists_for_sample,
@@ -218,14 +219,8 @@ async def add_pipeline_run_service(
         raise DatabaseOperationError(str(exc)) from exc
 
 
-async def get_sample_service(
-    db: Database, *, sample_id: str, session: ClientSession | None = None
-) -> SampleRecordOut:
-    """Retrieve a sample by its sample id."""
-    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
-
-    if raw_sample is None:
-        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+def _to_sample_record_out(raw_sample: dict[str, Any], *, sample_id: str) -> SampleRecordOut:
+    """Merge in last pipeline run and validate a raw DB document for API output."""
     try:
         # get last pipeline run if set
         last_pipeline_run = None
@@ -244,6 +239,32 @@ async def get_sample_service(
         raise DatabaseOperationError(
             f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
         ) from ve
+
+
+async def get_sample_service(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> SampleRecordOut:
+    """Retrieve a sample by its sample id."""
+    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
+
+    if raw_sample is None:
+        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+    return _to_sample_record_out(raw_sample, sample_id=sample_id)
+
+
+async def get_sample_by_external_id_service(
+    db: Database, *, external_sample_id: str, session: ClientSession | None = None
+) -> SampleRecordOut:
+    """Retrieve a sample by the external id assigned by the calling system."""
+    raw_sample = await get_sample_by_external_id(
+        db, external_sample_id=external_sample_id, session=session
+    )
+
+    if raw_sample is None:
+        raise EntryNotFound(
+            f"Sample with external id '{external_sample_id}' not found"
+        )
+    return _to_sample_record_out(raw_sample, sample_id=raw_sample.get("sample_id", external_sample_id))
 
 
 async def add_ska_index_service(
@@ -313,7 +334,7 @@ async def add_reference_genome_service(
     db: Database,
     *,
     sample_id: str,
-    reference_genome_id: str,
+    reference_genome_accession: str,
     ctx: ApiRequestContext,
     request: Request,
     audit: AuditLogClient | None = None,
@@ -326,16 +347,16 @@ async def add_reference_genome_service(
 
     # check that reference genome exist
     ref_genome = await get_reference_genome_service(
-        db, resource_id=reference_genome_id, request=request
+        db, accession=reference_genome_accession, request=request
     )
 
-    event_subject = Subject(id=reference_genome_id, type=SourceType.USR)
+    event_subject = Subject(id=reference_genome_accession, type=SourceType.USR)
     with audit_event_context(audit, "add_reference_genome", ctx, event_subject):
         try:
             update_obj = await add_reference_genome_to_sample(
                 db,
                 sample_id=sample_id,
-                reference_genome_id=reference_genome_id,
+                reference_genome_accession=reference_genome_accession,
                 session=session,
             )
         except PyMongoError as pme:
@@ -453,11 +474,11 @@ async def get_igv_config(
 
     # fetch needed resources
     sample_info = await get_sample_service(db, sample_id=sample_id)
-    if sample_info.reference_genome_id is None:
+    if sample_info.reference_genome_accession is None:
         raise EntryNotFound(f"No reference genome associated with sample: {sample_id}")
 
     ref_genome = await get_reference_genome_service(
-        db, resource_id=sample_info.reference_genome_id, request=request
+        db, accession=sample_info.reference_genome_accession, request=request
     )
 
     genomec_resouces = await list_genomic_resources_for_sample_service(db, sample_id=sample_id, request=request)
@@ -465,7 +486,14 @@ async def get_igv_config(
     # get locus for a variant if variant id was provided
     locus = ""
     if variant_ctx:
-        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=ref_genome.accession)
+        # IGV loci are addressed by sequence name as it appears in the FASTA/BAM,
+        # i.e. the chromosome accession - not the assembly accession.
+        reference_name = (
+            ref_genome.sequence_accessions[0]
+            if ref_genome.sequence_accessions
+            else ref_genome.accession
+        )
+        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=reference_name)
 
     # Build tracks
     tracks = [

@@ -6,9 +6,9 @@ import logging
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-# from prp.parse.models.base import VariantBase
-from prp.parse import hydrate_result
-from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
+# from bonsai_libs.parse.models.base import VariantBase
+from bonsai_libs.parse import hydrate_result
+from bonsai_libs.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 from pydantic_core import ValidationError
 
 from bonsai_api.models.genomic_resource import GenomicResourceDb, GenomicResourceResponse
@@ -201,7 +201,7 @@ class AnalysisViewEntryDb(AnalysisViewEntryBase):
     - `analysis_id`: pointer to canonical batch for drill-down.
     """
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list, 
         description="All denormalized curation records for this analysis embedded in the sample view."
@@ -212,7 +212,7 @@ class AnalysisViewEntryOut(AnalysisViewEntryBase):
     """API response model for analysis results."""
 
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list,
         description="All denormalized curation records for this analysis embedded in the sample view."
@@ -305,7 +305,7 @@ class SampleRecordDb(SampleBase):
     element_type_result: list[AnalysisViewEntryDb] = Field(default_factory=list)
 
     # Reference and annotation
-    reference_genome_id: str | None = None
+    reference_genome_accession: str | None = None
     genomic_resources: list[GenomicResourceDb] = Field(
         default_factory=list,
         description="Associated genomic resource sets"
@@ -345,7 +345,7 @@ class SampleRecordOut(SampleBase):
     element_type_result: list[AnalysisViewEntryOut] = Field(default_factory=list)
     
     # Reference and annotation
-    reference_genome_id: str | None = None
+    reference_genome_accession: str | None = None
     genomic_resources: list[GenomicResourceDb] = Field(
         default_factory=list,
         description="Associated genomic resource sets"

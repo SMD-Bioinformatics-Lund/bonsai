@@ -34,6 +34,16 @@ INDEXES: dict[str, list[IndexDefinition]] = {
                 "unique": False,
             },
         },
+        {
+            "definition": [("external_sample_id", ASCENDING)],
+            "options": {
+                "name": "sample_external_sample_id",
+                "background": True,
+                # Not unique: existing data may already contain duplicate
+                # external_sample_id values, so this can't be enforced yet.
+                "unique": False,
+            },
+        },
     ],
     "location": [
         {
@@ -60,6 +70,7 @@ INDEXES: dict[str, list[IndexDefinition]] = {
             "definition": [
                 ("sample_id", ASCENDING),
                 ("software", ASCENDING),
+                ("subcommand", ASCENDING),
                 ("software_version", ASCENDING),
                 ("pipeline_run_id", ASCENDING)
             ],
@@ -67,6 +78,28 @@ INDEXES: dict[str, list[IndexDefinition]] = {
                 "name": "analysis_sample_id",
                 "background": True,
                 "unique": False,
+            },
+        },
+    ],
+    "reference_genome": [
+        {
+            "definition": [("accession", ASCENDING)],
+            "options": {
+                "name": "reference_genome_accession",
+                "background": True,
+                "unique": True,
+            },
+        },
+        {
+            "definition": [("sequence_accessions", ASCENDING)],
+            "options": {
+                "name": "reference_genome_sequence_accessions",
+                "background": True,
+                "unique": True,
+                # Multikey unique index: a sequence accession may only belong to
+                # one reference genome. Partial filter keeps documents with no
+                # sequence accessions from colliding on the empty-array key.
+                "partialFilterExpression": {"sequence_accessions.0": {"$exists": True}},
             },
         },
     ],

@@ -2,6 +2,7 @@
 
 import logging
 import io
+from typing import Any
 
 from fastapi import UploadFile
 from pydantic import ValidationError
@@ -27,7 +28,7 @@ from bonsai_api.exceptions import (
 )
 from api_client.core.exceptions import ApiRequestError
 
-from prp.parse import run_parser
+from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ GROUP_FOR: dict[str, str] = {
     "species_prediction": SPP_RESULT,
     "stress": ELEMENT_TYPE_RESULT,
     "stx": TYPING_RESULT,
-    "virulence": TYPING_RESULT,
+    "virulence": ELEMENT_TYPE_RESULT,
     "ybst": TYPING_RESULT,
 }
 
@@ -78,7 +79,11 @@ def group_for(
 
 
 def to_result_storage(
-    sample_id: str, out: PRPParserOutput, *, pipeline_run_id: str | None
+    sample_id: str,
+    out: PRPParserOutput,
+    *,
+    pipeline_run_id: str | None,
+    subcommand: str | None = None,
 ) -> AnalysisResult:
     """Convert parser ouptput to storage format."""
     envelopes = {
@@ -93,6 +98,7 @@ def to_result_storage(
     return AnalysisResult(
         sample_id=sample_id,
         software=out.software,
+        subcommand=subcommand,
         software_version=out.software_version,
         pipeline_run_id=pipeline_run_id,
         envelopes=envelopes,
@@ -109,7 +115,10 @@ async def ingest_analysis_service(
     *,
     sample_id: str,
     software: str,
+    subcommand: str | None = None,
     file: UploadFile,
+    coverage_file: UploadFile | None = None,
+    bedcov_file: UploadFile | None = None,
     force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
@@ -132,12 +141,14 @@ async def ingest_analysis_service(
         db,
         sample_id=sample_id,
         software=software,
+        subcommand=subcommand,
         software_version=software_version,
         pipeline_run=pipeline_run,
     )
     if exists and not force:
+        sw_desc = f"{software}.{subcommand}" if subcommand else software
         raise AnalysisExistsError(
-            f"Analysis for sample {sample_id} with software {software} "
+            f"Analysis for sample {sample_id} with software {sw_desc} "
             f"version {software_version} and pipeline run {pipeline_run} already exists."
         )
 
@@ -145,11 +156,26 @@ async def ingest_analysis_service(
     try:
         binary_stream = file.file  # SpooledTemporaryFile object
         text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
-        out = run_parser(software=software, version=software_version, data=text_stream)
+        aux: dict[str, Any] = {}
+        if coverage_file is not None:
+            aux["coverage_path"] = io.TextIOWrapper(coverage_file.file, encoding="utf-8")
+        if bedcov_file is not None:
+            aux["bedcov_path"] = io.TextIOWrapper(bedcov_file.file, encoding="utf-8")
+
+        out = run_parser(
+            software=software,
+            subcommand=subcommand,
+            version=software_version,
+            data=text_stream,
+            **aux,
+        )
 
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
-            sample_id=sample_id, out=out, pipeline_run_id=pipeline_run
+            sample_id=sample_id,
+            out=out,
+            pipeline_run_id=pipeline_run,
+            subcommand=subcommand,
         )
     except ParserError as exc:
         LOG.error(

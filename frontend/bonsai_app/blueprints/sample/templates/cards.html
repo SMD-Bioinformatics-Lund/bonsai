@@ -204,13 +204,13 @@
 
 {% macro virulence_card(pred) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
         <p class="card-text fst-italic">No  identified virulence factors.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
-    {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
+    {% elif pred.software == "amrfinder" and pred.analysis_type == "virulence" %}
         {{ amrfinder_virulence_prediction(pred.result) }}
     {% endif %}
     </div>
@@ -893,7 +893,7 @@
 {% macro stx_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -921,7 +921,7 @@
 {% macro oh_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -1003,7 +1003,7 @@
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         {% if pred.software == "tbprofiler" %}
@@ -1013,6 +1013,30 @@
         {% endif %}
     </div>
 </div>
+{% endmacro %}
+
+
+{% macro analysis_meta_databases(sample_info) %}
+{% set databases = sample_info.pipeline.pipeline_info.databases %}
+{% if databases %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in databases %}
+                <tr>
+                    <th>{{ db.name | capitalize }}</th>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 {% endmacro %}
 
 
@@ -1090,7 +1114,7 @@
 {% macro shigella_typing_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <div>
@@ -1228,7 +1252,7 @@
             <tbody>
             {% for name, value in qc_info.result.items() %}
                 {# skip data that should be plotted #}
-                {% if name != "pct_above_x" %}
+                {% if name != "pct_above_x" and not (name == "restricted_mean_cov" and value is none) %}
                     <tr>
                         <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
                         <td>{{ value | fmt_number(sig_digits=2) }}</td>

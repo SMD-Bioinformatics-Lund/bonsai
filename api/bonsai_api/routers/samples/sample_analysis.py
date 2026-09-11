@@ -16,6 +16,7 @@ from bonsai_api.redis.minhash import (
     schedule_find_similar_samples,
 )
 from bonsai_api.redis.models import SubmittedJob
+from bonsai_api.routers.shared import parse_signature_json
 from bonsai_api.services.sample_service import (
     add_ska_index_service,
     add_sourmash_index_service,
@@ -34,19 +35,6 @@ LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 from .permissions import READ_PERMISSION
-
-
-def parse_signature_json(signature: str = Body(..., embed=True)) -> dict:
-    """Parse and validate signature JSON."""
-    import json
-
-    try:
-        return json.loads(signature)
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid JSON in signature: {str(e)}",
-        ) from e
 
 
 @router.post("/samples/{sample_id}/signature")
