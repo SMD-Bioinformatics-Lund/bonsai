@@ -60,11 +60,11 @@
                         <div class="col-md-auto">
                         {{ emm_card(res.result) }}
                         </div>
-                    {% elif res.analysis_type == "stx" %}
+                    {% elif res.analysis_type == "stx" and res.result %}
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
                         </div>
-                    {% elif res.analysis_type == "H_type" or res.type == "O_type"%}
+                    {% elif res.analysis_type == "H_type" or res.analysis_type == "O_type" %}
                         <div class="col-md-auto">
                         {{ oh_card(res) }}
                         </div>
@@ -82,7 +82,7 @@
             <h5>Phenotype prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
-                {% set n_res=sample.element_type_result | count_results("AMR") %}
+                {% set n_res=sample.element_type_result | count_results("amr") %}
                 {% if is_filtered and n_res == 0 %}
                     <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
                 {% elif n_res == 0 %}
@@ -116,7 +116,7 @@
                 {# controll function for messages if no factors was predicted #}
                 {% set msg_printed = False %}
 
-                {% set n_virulence_pred=sample.element_type_result | count_results("VIRULENCE") %}
+                {% set n_virulence_pred=sample.element_type_result | count_results("virulence") %}
                 {% for res in sample.element_type_result %}
                     {% if res.analysis_type == "virulence" %}
                         {% set n_genes=res.result.genes | length %}
