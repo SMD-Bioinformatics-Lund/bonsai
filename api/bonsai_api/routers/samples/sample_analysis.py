@@ -1,7 +1,6 @@
 """File handling operations for samples (alignment, VCF, signatures)."""
 
 import logging
-import json
 from typing import cast
 
 from bonsai_api.db import Database
@@ -37,6 +36,7 @@ LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 from .permissions import READ_PERMISSION
+from ..shared import parse_signature_json
 
 
 @router.post("/samples/{sample_id}/signature")
@@ -46,17 +46,10 @@ async def create_genome_signatures_sample(
     db: Database = Depends(get_database),
 ) -> dict[str, str]:
     """Entrypoint for uploading a genome signature to the database."""
-    content = await signature.read()
-    try:
-        parsed_signature = json.loads(content)
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid JSON in signature: {str(e)}",
-        ) from e
+    signature_json = await parse_signature_json(signature)
 
     job_ids = await add_sourmash_index_service(
-        db, sample_id=sample_id, sketch=parsed_signature
+        db, sample_id=sample_id, sketch=signature_json
     )
     return {
         "id": sample_id,
