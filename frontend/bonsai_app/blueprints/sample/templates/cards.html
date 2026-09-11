@@ -1252,7 +1252,7 @@
             <tbody>
             {% for name, value in qc_info.result.items() %}
                 {# skip data that should be plotted #}
-                {% if name != "pct_above_x" %}
+                {% if name != "pct_above_x" and not (name == "restricted_mean_cov" and value is none) %}
                     <tr>
                         <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
                         <td>{{ value | fmt_number(sig_digits=2) }}</td>
