@@ -1,13 +1,8 @@
 """Test functions in routers/shared.py"""
 
-import gzip
-import json
-from io import BytesIO
-
 import pytest
 from bonsai_api.models.qc import QcClassification, SampleQcClassification
-from bonsai_api.routers.shared import action_from_qc_classification, parse_signature_json
-from fastapi import UploadFile
+from bonsai_api.routers.shared import action_from_qc_classification
 
 qc_unprocessed = QcClassification(status=SampleQcClassification.UNPROCESSED)
 qc_passed = QcClassification(status=SampleQcClassification.PASSED)
