@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate deterministic, entirely synthetic Bonsai local-test fixtures."""
+"""
+Generate deterministic, entirely synthetic Bonsai local-test fixtures. 
+Intended as a more elaborate local test dataset with support for multi-sample groups,
+minimal clustering and such.
+"""
 
 from __future__ import annotations
 
