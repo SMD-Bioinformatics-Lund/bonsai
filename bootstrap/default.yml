@@ -2,15 +2,15 @@ users:
   - username: user_one
     email: user_one@mail.com
     password: user123
-    role: [user]
+    roles: [user]
   - username: user_two
     email: user_two@mail.com
     password: user123
-    role: [user]
+    roles: [user]
   - username: uploader
     email: uploader@mail.com
     password: user123
-    role: [creator]
+    roles: [uploader]
 groups:
   - group_id: mtuberculosis
     display_name: "M. tuberculosis"
