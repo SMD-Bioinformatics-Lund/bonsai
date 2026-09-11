@@ -4,7 +4,7 @@ This directory contains deterministic test data generated entirely from
 pseudo-random DNA. It contains no patient, clinical, or production data and is
 not intended to be biologically meaningful.
 
-By default, the dataset has five synthetic `mtuberculosis` samples and five
+By default, the dataset has ten synthetic `mtuberculosis` samples and ten
 synthetic `saureus` samples. It exercises:
 
 - sourmash MinHash signatures (`k=31`, `scaled=1000`, no abundance tracking)

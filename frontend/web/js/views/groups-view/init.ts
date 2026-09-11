@@ -5,7 +5,6 @@ import {
   getSimilarSamplesAndCheckRows,
   initSetSampleQc,
   removeSamplesFromGroup,
-  updateQcStatus,
 } from "../../core/actions/sample-actions";
 import { clusterSamples } from "../../core/actions/cluster-actions";
 import { GroupList } from "../../components/group-list";
@@ -32,7 +31,10 @@ const sampleTableConfig = {
     },
     top2Start: "searchBuilder",
   },
-  lengthMenu: [10, 25, 50, 100, { label: "All", value: -1 }],
+  lengthMenu: [
+    [10, 25, 50, 100, -1],
+    [10, 25, 50, 100, "All"],
+  ],
   scrollX: true,
   pageLength: 50,
 };
@@ -153,7 +155,7 @@ export async function initGroupView(
     addToGroupSelector.addEventListener("apply:error", (ev: Event) => {
       const { error } = (ev as CustomEvent).detail;
       console.error("Apply error:", error);
-      throwSmallToast(`An error occured: ${ev.detail}`, "error");
+      throwSmallToast(`An error occurred: ${String(error)}`, "error");
     });
 
     addToGroupSelector.addEventListener("apply:skipped", (ev: Event) => {
@@ -170,9 +172,8 @@ export async function initGroupView(
     });
 
     groupSelectorContainer.appendChild(addToGroupSelector);
-    table.getTable().on("select deselect", (e, dt, type, indexes) => {
-      const selected: string[] = dt.rows(".selected").ids().toArray();
-      addToGroupSelector.preselectGroupsForSamples(selected);
+    table.getTable().on("select deselect", () => {
+      addToGroupSelector.onSelectedSamplesChange();
     });
   }
 
@@ -196,4 +197,4 @@ export async function initGroupView(
 }
 
 // Expose for template-level initialization (backwards-compatible global)
-(window as any).initGroupView = initGroupView;
+Object.assign(window, { initGroupView });

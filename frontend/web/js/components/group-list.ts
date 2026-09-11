@@ -38,7 +38,7 @@ export class GroupList extends HTMLElement {
     this.setupEventListeners();
   }
 
-  attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+  attributeChangedCallback(name: string) {
     if (name === "is-admin") {
       this.isAdmin = this.hasAttribute("is-admin");
       this.render();
@@ -69,7 +69,7 @@ export class GroupList extends HTMLElement {
     if (this.isAdmin) {
       html += String.raw`
         <div class="col-sm-6 col-md-4 col-lg-auto py-2">
-          <a class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center" href="${baseUrl}/groups/edit">
+          <a class="card group-card position-relative text-center border-secondary h-100 d-flex align-items-center justify-content-center" href="${baseUrl}/groups/create">
             <div class="rounded-circle bg-secondary text-white fw-bold d-flex align-items-center justify-content-center" style="width: 3.75rem; height: 3.75rem; font-size: 2.5rem; line-height: 0;">
               <i class="bi bi-plus-lg"></i>
             </div>

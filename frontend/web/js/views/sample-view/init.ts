@@ -18,14 +18,18 @@ export async function initSampleView(
     initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), updateQcStatus, qcStatusForm);
   }
 
-  let narrow_search_to = null;
+  let narrow_search_to: string[] | null = null;
   if (groupId !== null) {
     const group = await api.getGroup(groupId);
-    narrow_search_to = group.included_samples.length > 0 ? group.included_samples : null;
+    if (group.sample_count > 0) {
+      const memberships = await api.getMembershipByGroups([groupId]);
+      const sampleIds = Array.from(new Set(memberships.map((edge) => edge.sample_id)));
+      narrow_search_to = sampleIds.length > 0 ? sampleIds : null;
+    }
   }
 
   return await findAndClusterSimilarSamples(sampleId, narrow_search_to, api);
 }
 
 // Backwards-compatible global for templates
-(window as any).initSampleView = initSampleView;
+Object.assign(window, { initSampleView });

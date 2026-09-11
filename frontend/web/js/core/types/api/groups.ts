@@ -1,4 +1,3 @@
-import { ColumnDefinition } from "../table";
 import { PaginatedResponse } from "../pagination";
 
 export interface InputCoreGroupInfo {

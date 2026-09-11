@@ -63,8 +63,9 @@ export function initGroupEditor() {
       throwSmallToast("Group saved successfully", "success")
     });
 
-    editor.addEventListener("group-editor:error", (e: any) => {
-      throwSmallToast(e.detail.message, "danger");
+    editor.addEventListener("group-editor:error", (event: Event) => {
+      const { message } = (event as CustomEvent<{ message: string }>).detail;
+      throwSmallToast(message, "danger");
     });
 
   })
