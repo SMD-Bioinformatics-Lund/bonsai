@@ -62,7 +62,9 @@ export function initToast() {
   });
 }
 
-export function initTooltip() {
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  [...tooltipTriggerList].map((tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl));
+export function initTooltip(container: ParentNode = document) {
+  const tooltipTriggerList = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+  [...tooltipTriggerList].map((tooltipTriggerEl) =>
+    bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl),
+  );
 }

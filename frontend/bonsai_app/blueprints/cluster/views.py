@@ -69,7 +69,12 @@ def _fmt_object(col_id: str, *, data: Any):
     if col_id == "qc_status":
         return f"{data.get('status', 'unknown')} - {data.get('comment', 'No comment')}"
     if col_id == "groups":
-        return ", ".join([group for group in data])
+        return ", ".join(
+            str(group.get("display_name") or group.get("id", ""))
+            if isinstance(group, dict)
+            else str(group)
+            for group in data
+        )
     if col_id == "comments":
         return ", ".join(
             [comment_obj["comment"] for comment_obj in data if comment_obj["displayed"]]
@@ -135,11 +140,12 @@ def gather_metadata(
     - colorscheme
     """
     # Get which metadata points to display
-    # skip column with sample button
+    # Keep the internal sample ID as the metadata join key, but do not expose it
+    # as a selectable/displayed metadata field.
     columns = [
         col
         for col in column_definition.get("columns", [])
-        if col.get("label", "") != ""
+        if col.get("id") != "sample_id" and col.get("label", "") != ""
     ]
 
     # create metadata structure

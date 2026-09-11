@@ -2,6 +2,7 @@
 
 import json
 import logging
+from typing import Any
 from urllib.parse import urlparse
 
 from bonsai_libs.api_client.bonsai.models import CreateGroupInput
@@ -29,6 +30,39 @@ groups_bp = Blueprint(
     static_folder="static",
     static_url_path="/groups/static",
 )
+
+
+def _extract_columns(column_info: Any) -> list[dict[str, Any]]:
+    """Extract and validate columns from an API client response."""
+    columns = (
+        column_info
+        if isinstance(column_info, list)
+        else (
+            column_info.get("columns")
+            if isinstance(column_info, dict)
+            else getattr(column_info, "columns", None)
+        )
+    )
+    if not isinstance(columns, list) or not columns:
+        raise ValueError("Column configuration did not contain any valid columns")
+    return columns
+
+
+def _get_group_table_columns(
+    client: Any, group_info: Any, group_id: str
+) -> list[dict[str, Any]]:
+    """Resolve the effective columns for a group table."""
+    if group_info.table_columns:
+        # The endpoint returns a bare list, while the current SDK method expects
+        # an object containing a ``columns`` field. Read the raw response until
+        # that client contract is aligned with the API.
+        response = client.request_json(
+            "GET", f"groups/{group_id}/columns", expected_status=(200,)
+        )
+        column_info = response.data
+    else:
+        column_info = client.get_valid_summary_columns()
+    return _extract_columns(column_info)
 
 
 @groups_bp.route("/groups")
@@ -189,8 +223,33 @@ def group(group_id: str) -> str:
         # get column definition to use
         group_info = client.get_group(group_id=group_id)
     except HTTPError as error:
-        # throw proper error page
-        abort(error.response.status_code)
+        status_code = error.response.status_code if error.response is not None else 502
+        LOG.exception("Unable to load group %s from the API", group_id)
+        abort(status_code, description=f"Unable to load group {group_id}")
+
+    try:
+        columns = _get_group_table_columns(client, group_info, group_id)
+    except HTTPError as error:
+        status_code = error.response.status_code if error.response is not None else 502
+        LOG.exception("Unable to load column configuration for group %s", group_id)
+        abort(
+            status_code,
+            description=(
+                f"The column configuration for group {group_id} could not be loaded"
+            ),
+        )
+    except (AttributeError, TypeError, ValueError, ValidationError):
+        LOG.exception(
+            "Invalid column configuration for group %s: %s",
+            group_id,
+            group_info.table_columns,
+        )
+        abort(
+            500,
+            description=(
+                f"The column configuration for group {group_id} could not be loaded"
+            ),
+        )
 
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
@@ -198,11 +257,7 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    if column_info := (group_info.table_columns and len(column_info) > 0):
-        column_info = client.get_valid_group_columns(group_id=group_id)
-    else:  # get default columns
-        column_info = client.get_valid_summary_columns()
-    table_data = format_tablular_data(samples_info["data"], column_info["columns"])
+    table_data = format_tablular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"
@@ -264,11 +319,11 @@ def update_qc_classification():
                 action=action,
                 comment=comment,
             )
-        except Exception as error:
+        except Exception:
             LOG.exception(
                 "Encountered error when updating QC status for sample %s:", sample_id
             )
-            flash(str(error), "danger")
+            flash("Error updating QC status for one or more samples", "danger")
 
     # add sample ids as params to referrer url
     url = urlparse(request.referrer)

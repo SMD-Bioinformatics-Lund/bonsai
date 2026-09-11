@@ -84,7 +84,7 @@ def serialize_lims_results(
     )
 
     # Write header
-    writer.writerow(["sample_id", "parameter_name", "parameter_value", "comment"])
+    writer.writerow(["sample_id", "parameter", "result", "variants"])
 
     # Write rows
     for result in results:
