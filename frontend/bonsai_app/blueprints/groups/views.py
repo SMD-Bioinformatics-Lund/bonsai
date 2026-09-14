@@ -2,7 +2,6 @@
 
 import json
 import logging
-from collections.abc import Mapping
 from typing import Any
 from urllib.parse import urlparse
 
@@ -34,56 +33,19 @@ groups_bp = Blueprint(
 )
 
 
-REQUIRED_COLUMN_FIELDS = {"id", "label", "type", "sortable"}
-
-
-def _extract_columns(column_info: Any) -> list[dict[str, Any]]:
-    """Normalize and validate columns returned by the API client.
-
-    Group columns are currently returned as a bare list by the API, while the
-    SDK expects an object with a ``columns`` field. Summary-manifest columns
-    also use the wrapped form. Accept both contracts until the SDK is aligned
-    with the group endpoint.
-    """
-    if isinstance(column_info, list):
-        raw_columns = column_info
-    elif isinstance(column_info, Mapping):
-        raw_columns = column_info.get("columns")
-    else:
-        raw_columns = getattr(column_info, "columns", None)
-
-    if not isinstance(raw_columns, list) or not raw_columns:
-        raise ValueError("Column configuration did not contain any columns")
-
-    columns: list[dict[str, Any]] = []
-    for column in raw_columns:
-        if hasattr(column, "model_dump"):
-            column = column.model_dump()
-        if not isinstance(column, Mapping):
-            raise ValueError("Column configuration contained an invalid column")
-
-        missing_fields = REQUIRED_COLUMN_FIELDS.difference(column)
-        if missing_fields:
-            missing = ", ".join(sorted(missing_fields))
-            raise ValueError(f"Column configuration is missing fields: {missing}")
-        columns.append(dict(column))
-    return columns
-
-
 def _get_group_table_columns(
     client: Any, group_info: Any, group_id: str
 ) -> list[dict[str, Any]]:
     """Resolve the effective column configuration for a group table."""
     if group_info.table_columns:
-        # Temporary compatibility path: the endpoint returns a bare list, but
-        # get_valid_group_columns() currently validates a wrapped SDK model.
-        response = client.request_json(
-            "GET", f"groups/{group_id}/columns", expected_status=(200,)
-        )
-        column_info = response.data
-    else:
-        column_info = client.get_valid_summary_columns()
-    return _extract_columns(column_info)
+        columns = client.get_valid_group_columns(group_id=group_id)
+        return [column.model_dump(mode="json") for column in columns]
+
+    column_info = client.get_valid_summary_columns()
+    columns = column_info.get("columns")
+    if not isinstance(columns, list) or not columns:
+        raise ValueError("Summary column configuration did not contain any columns")
+    return columns
 
 
 def _api_error_status(error: ApiError) -> int:
@@ -211,9 +173,12 @@ def edit_groups_old(group_id: str | None = None):
 
     # annotate if column previously have been selected
     if group_id is not None:
-        columns = client.get_valid_group_columns(
-            group_id=group_id, include_invisible=True
-        )
+        columns = [
+            column.model_dump(mode="json")
+            for column in client.get_valid_group_columns(
+                group_id=group_id, include_invisible=True
+            )
+        ]
     else:
         manifest_cols = client.get_valid_summary_columns()
         columns = manifest_cols["columns"]
