@@ -250,12 +250,12 @@ class TestGetByQuery:
         assert query["kmer_size"] == 21
 
     def test_get_not_found_returns_none(self, repo):
-        """Query returns None when no match."""
+        """Query returns an empty list when no match."""
         repo._col.find.return_value.alive = False
 
         results = repo.get_by_sample_id_or_checksum(sample_id="nonexistent")
 
-        assert results is None
+        assert results == []
 
     def test_get_requires_sample_id_or_checksum(self, repo):
         """Query must specify either sample_id or checksum."""
