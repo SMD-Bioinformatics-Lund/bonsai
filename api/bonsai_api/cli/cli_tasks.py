@@ -74,7 +74,7 @@ async def run_create_group(group_obj: GroupInfoCreate, user_id: str) -> GroupInf
             actor=Actor(id="cli_user", type=SourceType.USR), metadata={}
         )
         audit_log = _get_audit_log_client()
-        LOG.info("Creating group: %s", group_obj.group_id)
+        LOG.info("Creating group: %s", group_obj.display_name)
         group_owner = UserContext(user_id=user_id)
         return await create_group_service(
             db, group_record=group_obj, ctx=ctx, creator=group_owner, audit=audit_log
