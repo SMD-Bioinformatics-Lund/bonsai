@@ -4,6 +4,10 @@ from pathlib import Path
 
 import pytest
 
+# Installed from conda-forge in the service image; PyPI ships only a source
+# tarball needing a Rust toolchain, so pip-based CI cannot provide it.
+pytest.importorskip("sourmash_plugin_branchwater")
+
 from minhash_service.analysis.models import SimilaritySearchConfig, SimilarResult
 from minhash_service.analysis.similarity import (
     filter_search_results,
