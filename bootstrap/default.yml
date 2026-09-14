@@ -27,6 +27,9 @@ groups:
   - group_id: streptococcus
     display_name: "Streptococcus"
     description: "Streptococcus test samples"
+  - group_id: spyogenes
+    display_name: "S. pyogenes"
+    description: "Streptococcus pyogenes test samples"
 reference_genomes:
   - name: Escherichia coli K-12 substr. MG1655
     accession: GCF_000005845.2
@@ -76,3 +79,15 @@ reference_genomes:
         format: gff
         type: annotation
         path: GCF_000240185.1.gff
+  - name: Streptococcus pyogenes emm1
+    accession: GCF_005164585.1
+    organism: Streptococcus pyogenes
+    sequence_accessions:
+      - NZ_CP035441.1
+    fasta_resource: GCF_005164585.1.fasta
+    fasta_index_resource: GCF_005164585.1.fasta.fai
+    reference_tracks:
+      - name: Genes
+        format: gff
+        type: annotation
+        path: GCF_005164585.1.gff
