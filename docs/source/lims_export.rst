@@ -12,15 +12,17 @@ covering both the **HTTP API** and the **CLI**.
 Overview
 --------
 
-The LIMS export produces a tabular file (TSV or CSV) composed of **rows** with the columns:
+The LIMS export produces a tabular file (TSV or CSV) composed of **rows** with the
+LIMS RS columns:
 
 - ``sample_id``
-- ``parameter_name``
-- ``parameter_value``
-- ``comment``
+- ``parameter``
+- ``result``
+- ``variants``
 
 For a given ``sample_id``, the system looks up an **assay-specific configuration** and then,
-for each configured field, calls a **formatter** by its ``data_type`` to compute the value and comment.
+for each configured field, calls a **formatter** by its ``data_type`` to compute the result and
+the value for the variants column.
 
 A **single field produces exactly one row**. The total number of rows equals the number
 of fields in the matched ``AssayConfig``. If you want to export resistance to multiple antibiotics
@@ -107,27 +109,27 @@ How the Export Works
    - For each ``FieldDefinition`` in ``config.fields``:
      - Resolve the formatter with ``get_formatter(field.data_type)``.
      - Invoke it as ``formatter(sample, options=field.options)``.
-     - The formatter returns a tuple: ``(value, comment)``.
+     - The formatter returns the internal tuple ``(value, comment)``. These values are
+       serialized as the LIMS RS columns ``result`` and ``variants`` respectively.
 
 3. **Error semantics (per field)**:
    - If the formatter raises:
      - ``AnalysisNotPresentError`` → treat as **not present**:
        - If ``required=True`` → **abort** the export by raising ``ValueError``.
-       - If ``required=False`` → include a row with ``parameter_value = "-"`` (see below),
-         ``comment = "not_present"``.
+       - If ``required=False`` → include a row with the configured missing-analysis value.
      - ``AnalysisNoResultError`` → analysis present but **no result**:
-       - Include a row with ``parameter_value = "-"``, ``comment = "no_result"`` (even if required).
+       - Include a row with the configured no-result value (even if required).
      - Any other exception → **propagate** (logged as unexpected error).
    - If the formatter returns a value of ``None`` or empty string, the system serializes it as ``"-"``.
 
 4. **Row construction**:
-   - Each field yields one ``LimsRsResult`` row with:
+   - Each field yields one internal ``LimsRsResult`` row with:
      - ``sample_id``: from the sample
-     - ``parameter_name``: from the field
-     - ``parameter_value``: passed through an internal sanitizer:
+     - ``parameter_name``: from the field; serialized as ``parameter``
+     - ``parameter_value``: serialized as ``result`` and passed through a sanitizer:
        - ``None`` or ``""`` → ``"-"``
        - otherwise → ``str(value)``
-     - ``comment``: formatter comment or one of ``"not_present"`` / ``"no_result"``
+     - ``comment``: serialized as ``variants``
 
 5. **Serialization**:
    - ``serialize_lims_results(results, delimiter)`` writes a **header row** followed by data rows.
@@ -202,7 +204,8 @@ The following formatter names are available by default:
   - ``resistance_level``: ``"all"`` (default) or a specific level
 
   **Behavior**:
-  - Returns a comma-separated list of resistance variants (genes currently **TODO**).
+  - Returns ``"Mutation pavisad"`` as the result and a comma-separated list of
+    resistance variants in the variants column (genes currently **TODO**).
   - If no variants match → ``AnalysisNoResultError``.
 
 .. note::
@@ -305,8 +308,8 @@ Serialization Details
 - **Delimiter selection**: pass a **token**:
   - ``"csv"`` → comma (``","``)
   - ``"tsv"`` → tab (``"\t"``)
-- **Header**: Always included with columns:
-  ``sample_id, parameter_name, parameter_value, comment``.
+- **Header**: Always included with the LIMS RS columns:
+  ``sample_id, parameter, result, variants``.
 - **Missing values**: Rendered as a single hyphen ``"-"``.
 - **Quoting**: ``csv.QUOTE_MINIMAL``.
 - **Encoding**: The function returns a Python ``str``. When writing to files or over HTTP,
@@ -321,9 +324,9 @@ Per field (inside ``lims_rs_formatter``):
 
 - ``AnalysisNotPresentError``:
   - If field ``required=True`` → abort whole export.
-  - If field ``required=False`` → include row with ``parameter_value="-"``, ``comment="not_present"``.
+  - If field ``required=False`` → use the configured missing-analysis value.
 - ``AnalysisNoResultError``:
-  - Include row with ``parameter_value="-"``, ``comment="no_result"`` (does **not** abort).
+  - Use the configured no-result value (does **not** abort).
 - Any other exception:
   - Logged and re-raised.
 

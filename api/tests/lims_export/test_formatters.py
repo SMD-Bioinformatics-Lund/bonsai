@@ -76,12 +76,12 @@ def test_get_tbprofiler_amr_all(mtuberculosis_sample):
         "antibiotic_name": "rifampicin",
         "resistance_level": "all",
     }
-    species, comment = amr_prediction_for_antibiotic(
+    result, variants = amr_prediction_for_antibiotic(
         sample=mtuberculosis_sample, options=opts
     )
 
-    assert species == "Rv1129c.c.-28T>C WHO-5"
-    assert comment == ""
+    assert result == "Mutation pavisad"
+    assert variants == "Rv1129c.c.-28T>C WHO-5"
 
     # Test that  resistance levels filter work
     # The sample dont carry a resistance with low grade resistance
@@ -99,12 +99,12 @@ def test_get_tbprofiler_amr_all(mtuberculosis_sample):
         "antibiotic_name": "isoniazid",
         "resistance_level": "high",
     }
-    species, comment = amr_prediction_for_antibiotic(
+    result, variants = amr_prediction_for_antibiotic(
         sample=mtuberculosis_sample, options=opts
     )
 
-    assert species == "Rv1129c.c.-28T>C WHO-5"
-    assert comment == ""
+    assert result == "Mutation pavisad"
+    assert variants == "Rv1129c.c.-28T>C WHO-5"
 
 
 def test_get_tbprofiler_amr_no_antibiotic(mtuberculosis_sample):
