@@ -186,7 +186,7 @@ class TestSBTIndexStore:
             with patch.object(store, "_atomic_save") as mock_atomic_save:
                 result = store.add_signatures([mock_signature])
 
-            assert result.ok is True
+            assert result.is_successful is True
             assert result.added_count == 1
             mock_index.add_node.assert_called_once()
             mock_atomic_save.assert_called_once()
@@ -212,7 +212,7 @@ class TestSBTIndexStore:
                     [mock_signature_kmer21, mock_signature_kmer51]
                 )
 
-            assert result.ok is True
+            assert result.is_successful is True
             assert result.added_count == 2
             mock_atomic_save.assert_called_once()
             assert mock_index.add_node.call_count == 2
@@ -224,7 +224,7 @@ class TestSBTIndexStore:
         store = SBTIndexStore(index_path)
         result = store.add_signatures([])
 
-        assert result.ok is False
+        assert result.is_successful is False
         assert result.added_count == 0
 
     def test_sbt_remove_signatures(self, tmp_index_dir: Path, mock_signature):
@@ -260,7 +260,7 @@ class TestSBTIndexStore:
             with patch.object(store, "_atomic_save") as mock_atomic_save:
                 result = store.remove_signatures({"nonexistent_md5"})
 
-            assert result.ok is False
+            assert result.is_successful is False
             assert result.removed_count == 0
             mock_atomic_save.assert_called_once()
 
@@ -283,6 +283,11 @@ class TestSBTIndexStore:
 
 class TestRocksDBIndexStore:
     """Test RocksDB index store."""
+
+    @pytest.fixture(autouse=True)
+    def require_branchwater(self):
+        """RocksDB support is provided by the conda-installed sourmash stack."""
+        pytest.importorskip("sourmash_plugin_branchwater")
 
     def test_rocksdb_load_creates_if_missing(self, tmp_index_dir: Path):
         """Loading creates index if missing."""
@@ -335,7 +340,7 @@ class TestRocksDBIndexStore:
         sigs = [sig for sig in read_signatures(tmp_dupl_signature) if sig.minhash.ksize == 31]
         status = store.add_signatures(sigs)
 
-        assert status.ok
+        assert status.is_successful
 
         assert len(store.list_signatures()) == start_n_sigs + 1
 
@@ -359,7 +364,7 @@ class TestRocksDBIndexStore:
         assert md5_to_remove is not None
         status = store.remove_signatures({md5_to_remove})
 
-        assert status.ok
+        assert status.is_successful
         assert len(store.list_signatures()) == start_n_sigs - 1 
 
 
@@ -431,5 +436,5 @@ class TestErrorHandling:
             store = RocksDBIndexStore(index_path)
             result = store.add_signatures([mock_signature])
 
-            assert result.ok is False
+            assert result.is_successful is False
             assert len(result.warnings) > 0
