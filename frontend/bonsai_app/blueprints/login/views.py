@@ -22,6 +22,7 @@ from bonsai_app.bonsai_api import BonsaiApiClient
 from bonsai_app.extensions import login_manager
 
 LOG = logging.getLogger(__name__)
+SESSION_ENDED_KEY = "session_ended"
 
 login_bp = Blueprint(
     "login",
@@ -73,7 +74,13 @@ def logout():
     """Logout user."""
     logout_user()
     session.clear()
-    return redirect(url_for("public.index"))
+    return redirect(url_for("login.logged_out"))
+
+
+@login_bp.route("/logged-out")
+def logged_out():
+    """Confirm that the user's session has ended."""
+    return render_template("logged_out.html", title="Logged out", version=VERSION)
 
 
 @login_bp.route("/login", methods=["GET", "POST"])
@@ -92,7 +99,6 @@ def login():
     client = BonsaiApiClient(
         base_url=current_app.config["API_INTERNAL_URL"],
     )
-    client.authenticate_user(username, password)
     try:
         client.authenticate_user(username, password)
         user_obj = client.get_current_user()
@@ -113,7 +119,7 @@ def login():
 
 
 @login_manager.user_loader
-def load_user(user_id: str) -> LoginUser:
+def load_user(user_id: str) -> LoginUser | None:
     """Reconstruct user from session.
 
     :param user_id: Identifier stored in session
@@ -128,9 +134,12 @@ def load_user(user_id: str) -> LoginUser:
     try:
         user_data = client.get_current_user()
     except UnauthorizedError:
-        # Clear bad token from session
+        # Flask-Login requires a missing user to be represented by None. Remember
+        # that this was an expired authenticated session so the unauthorized
+        # handler can distinguish it from a first-time visitor.
         session.clear()
-        return redirect(url_for("public.index"))
+        session[SESSION_ENDED_KEY] = True
+        return None
 
     return LoginUser(user_data.model_dump(mode="json"), token)
 
@@ -162,4 +171,6 @@ def unauthorized_handler() -> Response:
     :return: redirect failed auth attempt to login page
     :rtype: Response
     """
+    if session.pop(SESSION_ENDED_KEY, False):
+        return redirect(url_for("login.logged_out"))
     return redirect(url_for("login.login_page"))
