@@ -2,9 +2,11 @@
 
 import json
 import logging
+from typing import Any
 from urllib.parse import urlparse
 
 from bonsai_libs.api_client.bonsai.models import CreateGroupInput
+from bonsai_libs.api_client.core.exceptions import ApiError
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import ValidationError
@@ -29,6 +31,28 @@ groups_bp = Blueprint(
     static_folder="static",
     static_url_path="/groups/static",
 )
+
+
+def _get_group_table_columns(
+    client: Any, group_info: Any, group_id: str
+) -> list[dict[str, Any]]:
+    """Resolve the effective column configuration for a group table."""
+    if group_info.table_columns:
+        columns = client.get_valid_group_columns(group_id=group_id)
+        return [column.model_dump(mode="json") for column in columns]
+
+    column_info = client.get_valid_summary_columns()
+    columns = column_info.get("columns")
+    if not isinstance(columns, list) or not columns:
+        raise ValueError("Summary column configuration did not contain any columns")
+    return columns
+
+
+def _api_error_status(error: ApiError) -> int:
+    """Return an HTTP status suitable for a failed upstream API request."""
+    if isinstance(error.status, int) and 400 <= error.status <= 599:
+        return error.status
+    return 502
 
 
 @groups_bp.route("/groups")
@@ -149,9 +173,12 @@ def edit_groups_old(group_id: str | None = None):
 
     # annotate if column previously have been selected
     if group_id is not None:
-        columns = client.get_valid_group_columns(
-            group_id=group_id, include_invisible=True
-        )
+        columns = [
+            column.model_dump(mode="json")
+            for column in client.get_valid_group_columns(
+                group_id=group_id, include_invisible=True
+            )
+        ]
     else:
         manifest_cols = client.get_valid_summary_columns()
         columns = manifest_cols["columns"]
@@ -188,9 +215,27 @@ def group(group_id: str) -> str:
         samples_info = client.get_sample_summaries(group_id=group_id)
         # get column definition to use
         group_info = client.get_group(group_id=group_id)
-    except HTTPError as error:
-        # throw proper error page
-        abort(error.response.status_code)
+    except ApiError as error:
+        LOG.exception("Unable to load group %s from the API", group_id)
+        abort(
+            _api_error_status(error),
+            description=f"Unable to load group {group_id}",
+        )
+
+    try:
+        columns = _get_group_table_columns(client, group_info, group_id)
+    except ApiError as error:
+        LOG.exception("Unable to load column configuration for group %s", group_id)
+        abort(
+            _api_error_status(error),
+            description=f"Unable to load column configuration for group {group_id}",
+        )
+    except (AttributeError, TypeError, ValueError, ValidationError):
+        LOG.exception("Invalid column configuration for group %s", group_id)
+        abort(
+            502,
+            description=f"Invalid column configuration for group {group_id}",
+        )
 
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
@@ -198,11 +243,7 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    if column_info := (group_info.table_columns and len(column_info) > 0):
-        column_info = client.get_valid_group_columns(group_id=group_id)
-    else:  # get default columns
-        column_info = client.get_valid_summary_columns()
-    table_data = format_tablular_data(samples_info["data"], column_info["columns"])
+    table_data = format_tablular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"
