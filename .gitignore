@@ -157,3 +157,5 @@ tmp/
 # Bonsai specific
 *.lock
 
+# Agent specific
+AGENTS.md
