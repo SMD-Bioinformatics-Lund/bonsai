@@ -1,12 +1,9 @@
 """Test signature index operations."""
-import importlib.util
 import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-
-_HAS_BRANCHWATER = importlib.util.find_spec("sourmash_plugin_branchwater") is not None
 
 from minhash_service.signatures.index import (
     RocksDBIndexStore,
@@ -284,11 +281,13 @@ class TestSBTIndexStore:
             assert sigs[0].name == "test_sample"
 
 
-@pytest.mark.skipif(
-    not _HAS_BRANCHWATER, reason="requires conda-installed sourmash with RocksDB support"
-)
 class TestRocksDBIndexStore:
     """Test RocksDB index store."""
+
+    @pytest.fixture(autouse=True)
+    def require_branchwater(self):
+        """RocksDB support is provided by the conda-installed sourmash stack."""
+        pytest.importorskip("sourmash_plugin_branchwater")
 
     def test_rocksdb_load_creates_if_missing(self, tmp_index_dir: Path):
         """Loading creates index if missing."""
