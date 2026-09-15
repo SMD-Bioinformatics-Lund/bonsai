@@ -111,7 +111,9 @@
                 {% for column in table_data.columns %}
                     {% if column.label is not none %}
                         <th 
-                            data-orderable="{{ column.sortable | lower }}" data-searchable="{{ column.searchable | lower }}"
+                            data-column-id="{{ column.id }}"
+                            data-orderable="{{ column.sortable | lower }}"
+                            data-searchable="{{ column.searchable | lower }}"
                             data-visible="{{ column.visible | lower }}"
                             >
                             {{ column.label }}

@@ -22,6 +22,7 @@
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 - Improved frontend API error handling by parsing structured problem-details responses for delete, group removal, QC update, and similar-sample operations.
+- Batch sample QC updates now report partial failures and immediately refresh successfully updated table rows.
 - Improved API error handling if audit log service became unreachable after startup.
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
 
