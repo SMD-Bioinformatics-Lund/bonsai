@@ -9,6 +9,7 @@
 - Added button for showing only selected rows in the sample table
 - Added an isolated local test environment with generated synthetic samples and MinHash and SKA artifacts. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
 - Added an `npm run watch` command for rebuilding frontend assets during development. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Added a manual UI testing checklist for core Bonsai workflows. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 
 ### Fixed
 
@@ -29,6 +30,7 @@
 - Reject clustering requests when selected samples lack the requested typing profile or SKA index, and identify affected samples by Lab ID. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Show clustering API validation details in frontend notifications and reliably clear loading indicators after failures. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Preserve concise background-job errors and surface them in the sample dendrogram view. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Use the current API client argument when posting sample comments. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 - Surface queued clustering worker errors in basket notifications. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
 - Return valid status details when MinHash signatures are removed from RocksDB indexes. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
 
