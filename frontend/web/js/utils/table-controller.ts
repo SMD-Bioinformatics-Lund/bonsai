@@ -41,7 +41,9 @@ export class TableController {
       .draw();
   }
 
-  /* Update cells backed by the existing DOM and redraw without changing page. */
+  // Update cells backed by the existing DOM and redraw without changing page.
+  // Temporary solution to get this up and running. Not carefully integrated in the
+  // existing systems so might not be the best way to do it. / JW 260915
   updateCells(
     rowIds: string[],
     columnId: string,

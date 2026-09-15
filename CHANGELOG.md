@@ -24,6 +24,7 @@
 - Let the API generate group UUIDs when groups are created through the CLI. [#451](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/451)
 - Fixed group tables failing to load their configured columns after the API response format changed. [#452](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/452)
 - Return a valid QC classification when an update does not change the sample status. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Apply the correct analysis-index action after QC updates: include passed and unprocessed samples, and exclude failed samples. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 - Immediately refresh QC status cells and tooltips after successful updates. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 
 ### Changed
