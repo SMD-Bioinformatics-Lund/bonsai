@@ -104,7 +104,7 @@ export function removeSamplesFromGroup(
   api
     .removeSamplesFromGroup(groupId, selectedSamples)
     .then(() => {
-      emitEvent("samples:removed-from-group", {}); // Notify other components or update UI as needed
+      emitEvent("samples:group-memberships-changed", { sampleIds: selectedSamples });
       table.removeSamples(selectedSamples);
       table.selectedRows = []; // clear selection after deletion
       throwSmallToast(`Removed ${selectedSamples.length} samples from group`, "success");
