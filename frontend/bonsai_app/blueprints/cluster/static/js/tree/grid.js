@@ -427,7 +427,10 @@ D3MSMetadataTable.prototype.setAddColumnFunction = function (callback) {
   this.addColumnFunction = callback;
 };
 
-D3MSMetadataTable.prototype.meta2tsv = function (excluded = []) {
+D3MSMetadataTable.prototype.meta2tsv = function (
+  excluded = [],
+  includeInternalId = false,
+) {
   var header_map = {};
   var headers = this.grid
     .getColumns()
@@ -442,6 +445,13 @@ D3MSMetadataTable.prototype.meta2tsv = function (excluded = []) {
       header_map[col.field] = Object.keys(header_map).length;
       return col.id;
     });
+
+  // MicroReact still needs the internal ID to join metadata to Newick leaves.
+  // User-facing metadata downloads omit it.
+  if (includeInternalId && !("ID" in header_map)) {
+    header_map.ID = Object.keys(header_map).length;
+    headers.push("ID");
+  }
 
   var data = this.grid.getData().getFilteredItems();
 
@@ -495,8 +505,8 @@ D3MSMetadataTable.prototype.updateMetadataTable = function () {
   cc = Object.keys(cols).sort();
   for (var c_id in cc) {
     var c = cc[c_id];
-    if (c != "nothing") {
-      if (c == "barcode" || c == "ID") {
+    if (c != "nothing" && c != "ID") {
+      if (c == "barcode") {
         curr_cols.push({
           id: cols[c],
           name: cols[c],
@@ -567,7 +577,7 @@ D3MSMetadataTable.prototype.sendToMicroReact = function (
     : "https://enterobase.warwick.ac.uk/sendToMicroReact";
   var data = {};
   data.tree = this.tree.newickTree;
-  data.metadata = this.meta2tsv(["Selected", "index"]);
+  data.metadata = this.meta2tsv(["Selected", "index"], true);
   var colors = {};
   var display_field = this.tree.display_category;
   var display_field = this.grid.getColumns().filter(function (d) {
