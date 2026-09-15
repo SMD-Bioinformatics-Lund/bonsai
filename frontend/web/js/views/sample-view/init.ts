@@ -8,7 +8,7 @@ export async function initSampleView(
   refreshToken: string,
   sampleId: string,
   groupId: string | null,
-): Promise<string> {
+): Promise<string | null> {
   const api = createSampleViewApi(bonsaiApiUrl, accessToken, refreshToken);
   initToast();
   initTooltip();

@@ -455,7 +455,7 @@ def resistance_variants(sample_id: str) -> str:
 
     return render_template(
         "resistance_variants.html",
-        title=f"{sample_id} resistance",
+        title=f"{sample_info['external_sample_id']} resistance",
         sample=sample_info,
         amr_results=amr_results,
         form_data=form_data,
@@ -488,7 +488,7 @@ def metadata(sample_id: str) -> str:
 
     return render_template(
         "metadata.html",
-        title=f"{sample_id} metadata",
+        title=f"{sample_info['external_sample_id']} metadata",
         sample=sample_info,
         kw_tbl=kw_tbl,
         metadata_tbls=metadata_tbls,
@@ -514,7 +514,7 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
 
     return render_template(
         "metadata_table.html",
-        title=f"{sample_id} metadata",
+        title=f"{sample_info['external_sample_id']} metadata",
         sample=sample_info,
         table=table,
     )

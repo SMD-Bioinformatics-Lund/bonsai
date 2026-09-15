@@ -67,12 +67,25 @@ async def get_typing_profiles(
     pipeline.append({"$match": {"sample_id": {"$in": sample_idx}}})
     pipeline.extend(build_summary_entry_stages(spec))
     pipeline.append({"$addFields": {"typing_result": "$typing_result.alleles"}})
-    pipeline.append({"$project": {"_id": 0, "sample_id": 1, "typing_result": 1}})
+    pipeline.append(
+        {
+            "$project": {
+                "_id": 0,
+                "sample_id": 1,
+                "external_sample_id": 1,
+                "typing_result": 1,
+            }
+        }
+    )
 
     # Query database
     results: list[TypingProfileAggregate] = []
+    sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
+        sample_labels[raw["sample_id"]] = (
+            raw.get("external_sample_id") or "Unknown sample"
+        )
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
@@ -86,13 +99,21 @@ async def get_typing_profiles(
             )
         )
 
-    # Missing samples check (same semantics as before)
-    found_ids = {s.sample_id for s in results}
+    # Reject missing samples and samples for which the requested typing result
+    # was not found. The aggregation emits an empty profile for the latter.
+    found_ids = {sample.sample_id for sample in results if sample.typing_result}
     missing = set(sample_idx) - found_ids
     if missing:
-        sample_ids = ", ".join(sorted(missing))
+        missing_labels = ", ".join(
+            sorted(
+                sample_labels.get(sample_id, "Unknown sample")
+                for sample_id in missing
+            )
+        )
+        profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
-            f'The samples "{sample_ids}" didnt have {typing_method} typing result.'
+            f"No {profile_name} typing profile is available for the following samples: "
+            f"{missing_labels}"
         )
     return results
 
@@ -118,18 +139,32 @@ async def get_signature_path_for_samples(
 
 async def get_ska_index_path_for_samples(
     db: Database, sample_ids: Sequence[str]
-) -> Sequence[str]:
-    """Get genome signature paths for a samples stored in the database."""
+) -> Sequence[dict[str, str]]:
+    """Get SKA indexes for samples, rejecting samples without an index."""
     LOG.info("Get ska indexes for samples")
-    query = {
-        "$and": [  # query for documents with
-            {"sample_id": {"$in": sample_ids}},  # matching sample ids
-            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
-        ]
+    query = {"sample_id": {"$in": sample_ids}}
+    projection = {
+        "_id": 0,
+        "sample_id": 1,
+        "external_sample_id": 1,
+        "ska_index": 1,
     }
-    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
     LOG.debug("Query: %s; projection: %s", query, projection)
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
     LOG.debug("Found %d ska indexes", len(results))
+
+    samples = {sample["sample_id"]: sample for sample in results}
+    missing = [
+        samples.get(sample_id, {}).get("external_sample_id") or "Unknown sample"
+        for sample_id in sample_ids
+        if not samples.get(sample_id, {}).get("ska_index")
+    ]
+    if missing:
+        sample_labels = ", ".join(sorted(missing))
+        raise EntryNotFound(
+            "No SKA index is available for the following samples: "
+            f"{sample_labels}"
+        )
+
     return results

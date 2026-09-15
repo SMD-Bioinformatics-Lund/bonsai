@@ -31,6 +31,11 @@ type TidyTreeInstance = {
   eachLeafLabel(callback: (label: HTMLElement) => void): void;
 };
 
+type DendrogramLeaf = {
+  element: HTMLElement;
+  sampleId: string;
+};
+
 type TidyTreeConstructor = new (
   newick: string,
   options: Record<string, unknown>,
@@ -257,7 +262,7 @@ export async function findAndClusterSimilarSamples(
   sampleId: string,
   narrow_to_sample_ids: string[] | null,
   api: ApiService,
-) {
+): Promise<string | null> {
   let jobResult: ApiJobStatusNewick | undefined;
   const container = document.getElementById("similar-samples-card");
   const spinner = container.querySelector("spinner-element") as SpinnerElement;
@@ -279,13 +284,14 @@ export async function findAndClusterSimilarSamples(
     console.log("Here is the find similar result:", jobResult.result);
 
     // draw dendrogam in container element
-    drawDendrogram("#tree-body", jobResult.result, sampleId);
+    const leaves = drawDendrogram("#tree-body", jobResult.result, sampleId);
+    await showLabIds(leaves, api);
   } catch (error) {
     container.hidden = true;
-    console.error("Error while checking job status:", error);
 
     // Parse API error response for user-friendly message
     let message = "Error while finding similar samples. Please try again.";
+    let notificationType = "error";
     if (error instanceof ApiError && error.data) {
       const data = error.data as ApiProblemDetails;
       if (data.title && typeof data.title === "string") {
@@ -294,10 +300,21 @@ export async function findAndClusterSimilarSamples(
       if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
         message = "Service temporarily unavailable due to logging issues. Please try again later.";
       }
+    } else if (error instanceof Error) {
+      if (error.message.includes("No record found for sample_id")) {
+        message = "Similarity data is not available for this sample.";
+        notificationType = "warning";
+      } else {
+        message = error.message;
+      }
     }
 
-    throwSmallToast(message);
-    throw error;
+    if (notificationType === "error") {
+      console.error("Error while checking job status:", error);
+    }
+
+    throwSmallToast(message, notificationType);
+    return null;
   } finally {
     spinner?.hide();
   }
@@ -310,16 +327,20 @@ export async function findAndClusterSimilarSamples(
 }
 
 /* Draw dendrogram from Newick string */
-export function drawDendrogram(containerSelector: string, newick: string, sampleId: string): void {
+export function drawDendrogram(
+  containerSelector: string,
+  newick: string,
+  sampleId: string,
+): DendrogramLeaf[] {
   const container = document.querySelector(containerSelector);
   if (!container) {
     console.error(`Container element not found: ${containerSelector}`);
-    return;
+    return [];
   }
   const TidyTree = (window as Window & { TidyTree?: TidyTreeConstructor }).TidyTree;
   if (!TidyTree) {
     console.error("TidyTree library is not loaded");
-    return;
+    return [];
   }
   const tree = new TidyTree(newick, {
     parent: container,
@@ -337,9 +358,31 @@ export function drawDendrogram(containerSelector: string, newick: string, sample
     .style("fill", "steelblue")
     .attr("r", 5);
 
+  const leaves: DendrogramLeaf[] = [];
   tree.eachLeafLabel((label: HTMLElement) => {
+    const leafSampleId = label.textContent ?? "";
+    leaves.push({ element: label, sampleId: leafSampleId });
     label.style.cursor = "pointer";
-    label.onclick = () => openSamplePage(label.innerHTML);
+    label.onclick = () => openSamplePage(leafSampleId);
+  });
+  return leaves;
+}
+
+async function showLabIds(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
+  const sampleIds = leaves.map((leaf) => leaf.sampleId).filter(Boolean);
+  if (sampleIds.length === 0) return;
+
+  const response = await api.getSamplesDetails({
+    sid: sampleIds,
+    fields: ["sample_id", "external_sample_id"],
+    limit: sampleIds.length,
+    offset: 0,
+  });
+  const labIds = new Map(
+    response.data.map((sample) => [sample.sample_id, sample.external_sample_id]),
+  );
+  leaves.forEach(({ element, sampleId: internalSampleId }) => {
+    element.textContent = labIds.get(internalSampleId) || "Lab ID unavailable";
   });
 }
 
