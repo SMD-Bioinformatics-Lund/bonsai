@@ -26,10 +26,15 @@
 - Return a valid QC classification when an update does not change the sample status. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 - Apply the correct analysis-index action after QC updates: include passed and unprocessed samples, and exclude failed samples. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 - Immediately refresh QC status cells and tooltips after successful updates. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Reject clustering requests when selected samples lack the requested typing profile or SKA index, and identify affected samples by Lab ID. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Show clustering API validation details in frontend notifications and reliably clear loading indicators after failures. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Preserve concise background-job errors and surface them in the sample dendrogram view. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 
 ### Changed
 
-- Use human-readable Lab IDs instead of internal sample UUIDs in clustering views, clustering errors, metadata downloads, and sample page titles. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Exclude internal sample UUIDs from user-facing clustering metadata while retaining them as tree join keys. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Use Lab IDs in resistance and metadata page titles. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Sample collection now keep track of group memberships.
 - An user can now add samples to multiple groups at the same time.
 - Improved seeding of a development Bonsai database with a new `seed_db.py` script.
