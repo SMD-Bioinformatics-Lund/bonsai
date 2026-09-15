@@ -184,7 +184,7 @@ def add_comment(sample_id: str) -> str:
     data = request.form["comment"]
     try:
         client.post_comment_to_sample(
-            sample_id=sample_id, user_name=current_user.username, comment=data
+            sample_id=sample_id, username=current_user.username, comment=data
         )
     except HTTPError:
         flash("Error posting commment", "danger")

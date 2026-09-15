@@ -31,6 +31,7 @@
 - Show clustering API validation details in frontend notifications and reliably clear loading indicators after failures. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Preserve concise background-job errors and surface them in the sample dendrogram view. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Removed the duplicate legacy DataTables script from the group view.
+- Use the current API client argument when posting sample comments.
 
 ### Changed
 
