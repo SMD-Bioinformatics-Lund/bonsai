@@ -29,6 +29,7 @@
 - Reject clustering requests when selected samples lack the requested typing profile or SKA index, and identify affected samples by Lab ID. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Show clustering API validation details in frontend notifications and reliably clear loading indicators after failures. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Preserve concise background-job errors and surface them in the sample dendrogram view. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Surface queued clustering worker errors in basket notifications.
 
 ### Changed
 
@@ -46,6 +47,7 @@
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
 - Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
 - Updated the frontend TypeScript, ESLint, and build-tool dependencies. [#447](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/447)
+- Persist MinHash data and mount a configurable SKA index directory in the default Compose deployment.
 
 ## [v2.1.0]
 
