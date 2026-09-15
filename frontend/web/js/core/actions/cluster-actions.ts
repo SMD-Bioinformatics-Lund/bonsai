@@ -91,6 +91,8 @@ export async function clusterSamples(
     if (error instanceof ApiError && error.data) {
       const detail = (error.data as ApiProblemDetails).detail;
       if (typeof detail === "string") message = detail;
+    } else if (error instanceof Error) {
+      message = error.message;
     }
 
     throwSmallToast(message, "error");
