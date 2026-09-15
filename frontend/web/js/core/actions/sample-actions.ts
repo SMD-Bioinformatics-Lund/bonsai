@@ -207,7 +207,10 @@ export function initSetSampleQc(
       comment: isFailed ? failedQcComment.querySelector("textarea").value : "",
     };
 
+    // Disable submit button while requests are processing
     submitBtn.disabled = true;
+    // allSettled allows proceeding with successful samples even if some failed
+    // The alternative would be Promise.all(...)
     const results = await Promise.allSettled(
       sampleIds.map((sampleId) => submitQc(sampleId, qcStatus)),
     );
