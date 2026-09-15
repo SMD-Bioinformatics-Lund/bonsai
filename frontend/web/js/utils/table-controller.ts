@@ -40,6 +40,39 @@ export class TableController {
       .remove()
       .draw();
   }
+
+  // Update cells backed by the existing DOM and redraw without changing page.
+  // Temporary solution to get this up and running. Not carefully integrated in the
+  // existing systems so might not be the best way to do it. / JW 260915
+  updateCells(
+    rowIds: string[],
+    columnId: string,
+    updateCell: (cell: HTMLTableCellElement) => void,
+  ): HTMLTableCellElement[] {
+    const columnIndex = this.table
+      .columns()
+      .header()
+      .toArray()
+      .findIndex((header) => header.dataset.columnId === columnId);
+    if (columnIndex === -1) {
+      console.error(`Table column not found: ${columnId}`);
+      return [];
+    }
+
+    const updatedCells: HTMLTableCellElement[] = [];
+    rowIds.forEach((rowId) => {
+      const cell = this.table.cell(`#${rowId}`, columnIndex);
+      const node = cell.node();
+      if (node) {
+        updateCell(node);
+        cell.invalidate("dom");
+        updatedCells.push(node);
+      }
+    });
+
+    if (updatedCells.length > 0) this.table.draw(false);
+    return updatedCells;
+  }
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {

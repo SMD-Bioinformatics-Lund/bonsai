@@ -22,6 +22,7 @@ from bonsai_api.redis.minhash import (
     schedule_add_genome_signature_to_index,
     schedule_remove_genome_signature_from_index,
 )
+from bonsai_api.routers.shared import action_from_qc_classification
 from bonsai_api.services.sample_service import (
     add_pipeline_run_service,
     get_sample_service,
@@ -39,12 +40,6 @@ LOG = logging.getLogger(__name__)
 router = APIRouter()
 
 from .permissions import UPDATE_PERMISSION, WRITE_PERMISSION
-
-
-def action_from_qc_classification(classification: QcClassification) -> str:
-    """Determine action based on QC classification."""
-    include_statuses = ["pass", "acceptable"]
-    return "include" if str(classification).lower() in include_statuses else "exclude"
 
 
 @router.post(
@@ -80,16 +75,16 @@ async def update_qc_status(
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
-) -> bool:
+) -> QcClassification:
     """Update sample QC status."""
 
     # dont update if the status dont change
     sample = await get_sample_service(db, sample_id=sample_id)
     if sample.qc_status == classification:
-        return True
+        return classification
 
     # update
-    status_obj: bool = await update_sample_qc_classification(
+    status_obj = await update_sample_qc_classification(
         db, sample_id, classification, ctx=req_ctx, audit=audit_log
     )
 
