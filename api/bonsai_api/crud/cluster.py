@@ -1,16 +1,28 @@
 """Cluster related CRUD operations."""
 
 import logging
-from typing import Any, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
-from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
+from bonsai_api.redis.models import SkaIndexInput
 
 LOG = logging.getLogger(__name__)
+
+
+def _sample_label(sample: Mapping[str, Any] | None, sample_id: str) -> str:
+    """Return the Lab ID when available, falling back to the internal ID."""
+    if sample and isinstance(sample.get("external_sample_id"), str):
+        external_sample_id = sample["external_sample_id"]
+        if external_sample_id:
+            return external_sample_id
+    return sample_id
 
 
 class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
@@ -67,6 +79,7 @@ async def get_typing_profiles(
     pipeline.append({"$match": {"sample_id": {"$in": sample_idx}}})
     pipeline.extend(build_summary_entry_stages(spec))
     pipeline.append({"$addFields": {"typing_result": "$typing_result.alleles"}})
+    # The external ID is projected only for user-facing validation errors.
     pipeline.append(
         {
             "$project": {
@@ -83,9 +96,7 @@ async def get_typing_profiles(
     sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
-        sample_labels[raw["sample_id"]] = (
-            raw.get("external_sample_id") or "Unknown sample"
-        )
+        sample_labels[raw["sample_id"]] = _sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
@@ -105,10 +116,7 @@ async def get_typing_profiles(
     missing = set(sample_idx) - found_ids
     if missing:
         missing_labels = ", ".join(
-            sorted(
-                sample_labels.get(sample_id, "Unknown sample")
-                for sample_id in missing
-            )
+            sorted(sample_labels.get(sample_id, sample_id) for sample_id in missing)
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
@@ -139,7 +147,7 @@ async def get_signature_path_for_samples(
 
 async def get_ska_index_path_for_samples(
     db: Database, sample_ids: Sequence[str]
-) -> Sequence[dict[str, str]]:
+) -> list[SkaIndexInput]:
     """Get SKA indexes for samples, rejecting samples without an index."""
     LOG.info("Get ska indexes for samples")
     query = {"sample_id": {"$in": sample_ids}}
@@ -154,17 +162,29 @@ async def get_ska_index_path_for_samples(
     results = await cursor.to_list(None)
     LOG.debug("Found %d ska indexes", len(results))
 
-    samples = {sample["sample_id"]: sample for sample in results}
-    missing = [
-        samples.get(sample_id, {}).get("external_sample_id") or "Unknown sample"
+    samples_by_id = {sample["sample_id"]: sample for sample in results}
+    missing_ids = [
+        sample_id
         for sample_id in sample_ids
-        if not samples.get(sample_id, {}).get("ska_index")
+        if not samples_by_id.get(sample_id, {}).get("ska_index")
     ]
-    if missing:
-        sample_labels = ", ".join(sorted(missing))
+    if missing_ids:
+        sample_labels = ", ".join(
+            sorted(
+                _sample_label(samples_by_id.get(sample_id), sample_id)
+                for sample_id in missing_ids
+            )
+        )
         raise EntryNotFound(
             "No SKA index is available for the following samples: "
             f"{sample_labels}"
         )
 
-    return results
+    return [
+        SkaIndexInput(
+            sample_id=sample_id,
+            external_sample_id=_sample_label(samples_by_id[sample_id], sample_id),
+            ska_index=samples_by_id[sample_id]["ska_index"],
+        )
+        for sample_id in sample_ids
+    ]
