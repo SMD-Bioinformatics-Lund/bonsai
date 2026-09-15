@@ -1,4 +1,5 @@
 import DataTable, { Api, Config } from "datatables.net-bs5";
+import JSZip from "jszip";
 import "datatables.net-buttons-bs5";
 import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-buttons/js/buttons.colVis.mjs";
@@ -10,6 +11,8 @@ import "datatables.net-searchpanes-bs5";
 import "datatables.net-select-bs5";
 
 import { TblStateCallbackFunc } from "../core/types";
+
+DataTable.Buttons.jszip(JSZip);
 
 export class TableController {
   private table: Api<string>;
