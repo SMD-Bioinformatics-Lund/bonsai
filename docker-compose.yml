@@ -105,8 +105,6 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - minhash_data:/data/signature_db
     networks: [bonsai]
     command: minhash-service run-minhash-worker
 
@@ -133,9 +131,6 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      # SKA indexes are generated outside Bonsai and must be visible to the worker.
-      - ${SKA_INDEX_HOST_DIR:-./volumes/ska/index_files}:/data/index_files:ro
     networks: [bonsai]
 
   allele_cluster_service:
@@ -153,6 +148,3 @@ services:
 networks:
   bonsai:
     driver: bridge
-
-volumes:
-  minhash_data:
