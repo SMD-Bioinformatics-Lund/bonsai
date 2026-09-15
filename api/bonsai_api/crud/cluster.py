@@ -16,7 +16,7 @@ from bonsai_api.redis.models import SkaIndexInput
 LOG = logging.getLogger(__name__)
 
 
-def _sample_label(sample: Mapping[str, Any] | None, sample_id: str) -> str:
+def get_sample_label(sample: Mapping[str, Any] | None, sample_id: str) -> str:
     """Return the Lab ID when available, falling back to the internal ID."""
     if sample and isinstance(sample.get("external_sample_id"), str):
         external_sample_id = sample["external_sample_id"]
@@ -96,7 +96,7 @@ async def get_typing_profiles(
     sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
-        sample_labels[raw["sample_id"]] = _sample_label(raw, raw["sample_id"])
+        sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
@@ -171,7 +171,7 @@ async def get_ska_index_path_for_samples(
     if missing_ids:
         sample_labels = ", ".join(
             sorted(
-                _sample_label(samples_by_id.get(sample_id), sample_id)
+                get_sample_label(samples_by_id.get(sample_id), sample_id)
                 for sample_id in missing_ids
             )
         )
@@ -183,7 +183,7 @@ async def get_ska_index_path_for_samples(
     return [
         SkaIndexInput(
             sample_id=sample_id,
-            external_sample_id=_sample_label(samples_by_id[sample_id], sample_id),
+            external_sample_id=get_sample_label(samples_by_id[sample_id], sample_id),
             ska_index=samples_by_id[sample_id]["ska_index"],
         )
         for sample_id in sample_ids
