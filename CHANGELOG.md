@@ -23,6 +23,8 @@
 - Reload the frontend asset manifest after a rebuild so updated asset filenames take effect. [#449](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/449)
 - Let the API generate group UUIDs when groups are created through the CLI. [#451](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/451)
 - Fixed group tables failing to load their configured columns after the API response format changed. [#452](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/452)
+- Return a valid QC classification when an update does not change the sample status. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Immediately refresh QC status cells and tooltips after successful updates. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 
 ### Changed
 
@@ -32,7 +34,7 @@
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 - Improved frontend API error handling by parsing structured problem-details responses for delete, group removal, QC update, and similar-sample operations.
-- Batch sample QC updates now report partial failures and immediately refresh successfully updated table rows. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Batch sample QC updates now wait for all selected samples, report partial failures, and prevent empty submissions. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 - Improved API error handling if audit log service became unreachable after startup.
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
 - Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
