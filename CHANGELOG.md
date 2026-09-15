@@ -7,12 +7,22 @@
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
 - Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
+- Added an isolated local test environment with generated synthetic samples and MinHash and SKA artifacts. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Added an `npm run watch` command for rebuilding frontend assets during development. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
 
 ### Fixed
 
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
+- Fixed MinHash signature upload serialization. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Display a placeholder instead of crashing when sample metadata is missing from the clustering view. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Fixed group selector preselection and saving allowed columns in the group editor. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Fixed frontend group creation routing and post-creation state, preventing crashes and false failure messages. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Show the underlying error when adding samples to a group fails. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Reload the frontend asset manifest after a rebuild so updated asset filenames take effect. [#449](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/449)
+- Let the API generate group UUIDs when groups are created through the CLI. [#451](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/451)
+- Fixed group tables failing to load their configured columns after the API response format changed. [#452](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/452)
 
 ### Changed
 
@@ -25,6 +35,8 @@
 - Batch sample QC updates now report partial failures and immediately refresh successfully updated table rows.
 - Improved API error handling if audit log service became unreachable after startup.
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
+- Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Updated the frontend TypeScript, ESLint, and build-tool dependencies. [#447](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/447)
 
 ## [v2.1.0]
 
