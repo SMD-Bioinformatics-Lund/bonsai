@@ -561,7 +561,9 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
-        $("#node-label-text").val("ID");
+        const sampleLabelField = "Lab ID";
+        $("#node-label-text").val(sampleLabelField);
+        the_tree.setNodeText(sampleLabelField);
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);

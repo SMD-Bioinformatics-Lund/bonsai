@@ -23,7 +23,7 @@ export async function pollJob<T extends ApiJobStatus>(
 function isJobRunning(job: ApiJobStatus): boolean {
   if (job.status === JobStatusEnum.FINISHED) return false;
   if (job.status === JobStatusEnum.FAILED) {
-    throw new Error(`Job failed`);
+    throw new Error(job.error || "Job failed");
   }
   return true;
 }

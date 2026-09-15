@@ -56,6 +56,9 @@ MANIFEST = Manifest(
     columns=[
         ColumnFull(id="sample_id", label="Id", path="$sample_id", default_visible=True),
         ColumnFull(
+            id="external_sample_id", label="Lab ID", path="$external_sample_id"
+        ),
+        ColumnFull(
             id="sample_name", label="Name", path="$sample_name", default_visible=True
         ),
         ColumnFull(
