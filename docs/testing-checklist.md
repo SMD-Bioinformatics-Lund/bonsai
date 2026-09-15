@@ -1,7 +1,8 @@
-# Bonsai migration functional checklist
+# Bonsai manual UI testing checklist
 
-Use this checklist to verify that the migrated Bonsai instance supports its core
-user workflows. Perform the checks with non-production test data.
+Use this checklist to verify that a Bonsai deployment supports its core user
+workflows after a release or migration. Perform the checks with non-production
+test data.
 
 ## Test setup
 
