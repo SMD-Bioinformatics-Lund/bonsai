@@ -259,7 +259,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
         checksums_to_remove.append(checksum)
 
     result = index.remove_signatures(set(checksums_to_remove))
-    if not result.ok:
+    if not result.is_successful:
         n_remaining = len(checksums_to_remove) - result.removed_count
         LOG.error("Failed to remove %d checksum from index", n_remaining)
 
