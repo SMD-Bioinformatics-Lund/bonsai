@@ -47,7 +47,6 @@
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
 - Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
 - Updated the frontend TypeScript, ESLint, and build-tool dependencies. [#447](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/447)
-- Persist MinHash data and mount a configurable SKA index directory in the default Compose deployment.
 
 ## [v2.1.0]
 
