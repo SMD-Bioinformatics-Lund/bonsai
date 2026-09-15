@@ -160,7 +160,7 @@ export function deleteSelectedSamples(table: TableController, api: ApiService): 
 /* Setup listeners and functionality of set Qc status form */
 export function initSetSampleQc(
   getSampleIds: () => string[],
-  submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<unknown>,
+  submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<ApiSampleQcStatus>,
   onStatusChange: (status: ApiSampleQcStatus, sampleIds: string[]) => void,
   form: HTMLElement,
 ) {
@@ -214,10 +214,12 @@ export function initSetSampleQc(
     submitBtn.disabled = false;
 
     const updatedSampleIds: string[] = [];
+    let confirmedStatus: ApiSampleQcStatus | undefined;
     results.forEach((result, index) => {
       const sampleId = sampleIds[index];
       if (result.status === "fulfilled") {
         updatedSampleIds.push(sampleId);
+        confirmedStatus ??= result.value;
       } else {
         const error = result.reason;
         console.error(`Error updating QC of sample: ${sampleId}`, error);
@@ -239,8 +241,8 @@ export function initSetSampleQc(
       }
     });
 
-    if (updatedSampleIds.length > 0) {
-      onStatusChange(qcStatus, updatedSampleIds);
+    if (updatedSampleIds.length > 0 && confirmedStatus) {
+      onStatusChange(confirmedStatus, updatedSampleIds);
       const sampleLabel = updatedSampleIds.length === 1 ? "sample" : "samples";
       throwSmallToast(`Updated QC of ${updatedSampleIds.length} ${sampleLabel}`, "success");
     }
