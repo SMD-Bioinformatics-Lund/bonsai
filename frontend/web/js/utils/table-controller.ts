@@ -40,6 +40,37 @@ export class TableController {
       .remove()
       .draw();
   }
+
+  /* Update cells backed by the existing DOM and redraw without changing page. */
+  updateCells(
+    rowIds: string[],
+    columnId: string,
+    updateCell: (cell: HTMLTableCellElement) => void,
+  ): HTMLTableCellElement[] {
+    const columnIndex = this.table
+      .columns()
+      .header()
+      .toArray()
+      .findIndex((header) => header.dataset.columnId === columnId);
+    if (columnIndex === -1) {
+      console.error(`Table column not found: ${columnId}`);
+      return [];
+    }
+
+    const updatedCells: HTMLTableCellElement[] = [];
+    rowIds.forEach((rowId) => {
+      const cell = this.table.cell(`#${rowId}`, columnIndex);
+      const node = cell.node();
+      if (node) {
+        updateCell(node);
+        cell.invalidate("dom");
+        updatedCells.push(node);
+      }
+    });
+
+    if (updatedCells.length > 0) this.table.draw(false);
+    return updatedCells;
+  }
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {

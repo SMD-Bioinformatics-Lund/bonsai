@@ -1,6 +1,6 @@
 // Description: Functions to handle sample-related operations such as finding similar samples and adding selected samples to a group.
 
-import { ApiService, pollJob, wait, ApiError } from "../api";
+import { ApiService, pollJob, ApiError } from "../api";
 import { emitEvent } from "../../utils/event-bus";
 import { throwSmallToast } from "../../utils/notification";
 import { TableController } from "../../utils/table-controller";
@@ -160,8 +160,8 @@ export function deleteSelectedSamples(table: TableController, api: ApiService): 
 /* Setup listeners and functionality of set Qc status form */
 export function initSetSampleQc(
   getSampleIds: () => string[],
-  submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<void>,
-  onStatusChange: (status: ApiSampleQcStatus) => void,
+  submitQc: (sampleId: string, data: ApiSampleQcStatus) => Promise<unknown>,
+  onStatusChange: (status: ApiSampleQcStatus, sampleIds: string[]) => void,
   form: HTMLElement,
 ) {
   const passedQcBtn = form.querySelector("#passed-qc-btn") as HTMLButtonElement;
@@ -191,9 +191,14 @@ export function initSetSampleQc(
   };
 
   // add submit function
-  submitBtn.onclick = (e: Event) => {
+  submitBtn.onclick = async (e: Event) => {
     e.preventDefault();
     const sampleIds = getSampleIds();
+    if (sampleIds.length === 0) {
+      throwSmallToast("No samples selected", "warning");
+      return;
+    }
+
     const status = form.querySelector("input[name='qc-validation']:checked") as HTMLInputElement;
     const isFailed: boolean = status.value === "failed";
     const qcStatus: ApiSampleQcStatus = {
@@ -201,14 +206,26 @@ export function initSetSampleQc(
       action: isFailed ? failedQcAction.value : null,
       comment: isFailed ? failedQcComment.querySelector("textarea").value : "",
     };
-    sampleIds.forEach((sampleId) => {
-      submitQc(sampleId, qcStatus).catch((e: Error) => {
-        console.error(`Error updating QC of sample: ${sampleId}`, e);
+
+    submitBtn.disabled = true;
+    const results = await Promise.allSettled(
+      sampleIds.map((sampleId) => submitQc(sampleId, qcStatus)),
+    );
+    submitBtn.disabled = false;
+
+    const updatedSampleIds: string[] = [];
+    results.forEach((result, index) => {
+      const sampleId = sampleIds[index];
+      if (result.status === "fulfilled") {
+        updatedSampleIds.push(sampleId);
+      } else {
+        const error = result.reason;
+        console.error(`Error updating QC of sample: ${sampleId}`, error);
 
         // Parse API error response for user-friendly message
         let message = `Failed to update QC of sample ${sampleId}. Please try again.`;
-        if (e instanceof ApiError && e.data) {
-          const data = e.data as ApiProblemDetails;
+        if (error instanceof ApiError && error.data) {
+          const data = error.data as ApiProblemDetails;
           if (data.title && typeof data.title === "string") {
             message = data.title;
           }
@@ -219,11 +236,14 @@ export function initSetSampleQc(
         }
 
         throwSmallToast(message, "error");
-      });
-      wait(100);
+      }
     });
-    onStatusChange(qcStatus); // update displayed content function
-    throwSmallToast(`Updated Qc of ${sampleIds.length} sample`, "success");
+
+    if (updatedSampleIds.length > 0) {
+      onStatusChange(qcStatus, updatedSampleIds);
+      const sampleLabel = updatedSampleIds.length === 1 ? "sample" : "samples";
+      throwSmallToast(`Updated QC of ${updatedSampleIds.length} ${sampleLabel}`, "success");
+    }
   };
 }
 
