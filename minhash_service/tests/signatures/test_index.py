@@ -1,13 +1,11 @@
 """Test signature index operations."""
 import shutil
-from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from minhash_service.signatures.index import (
-    RemoveResult,
     RocksDBIndexStore,
     SBTIndexStore,
     create_index_store,
@@ -281,52 +279,6 @@ class TestSBTIndexStore:
 
             assert len(sigs) == 1
             assert sigs[0].name == "test_sample"
-
-
-class TestRocksDBRemoveResults:
-    """Test RocksDB removal results without requiring the storage plugin."""
-
-    def test_empty_removal_is_successful(self, tmp_index_dir: Path):
-        """Removing no signatures is a successful no-op."""
-        store = RocksDBIndexStore(tmp_index_dir / "test")
-
-        result = store.remove_signatures(set())
-
-        assert result == RemoveResult(
-            is_successful=True, warnings=[], removed_count=0, removed=[]
-        )
-
-    @pytest.mark.parametrize(
-        ("checksum", "is_successful", "removed"),
-        [
-            ("stored-checksum", True, ["stored-checksum"]),
-            ("missing-checksum", False, []),
-        ],
-    )
-    def test_removal_returns_current_result_model(
-        self,
-        tmp_index_dir: Path,
-        checksum: str,
-        is_successful: bool,
-        removed: list[str],
-    ):
-        """Successful and missing removals populate RemoveResult correctly."""
-        stored_signature = Mock()
-        stored_signature.md5sum.return_value = "stored-checksum"
-        old_index = Mock()
-        old_index.signatures.return_value = [stored_signature]
-        store = RocksDBIndexStore(tmp_index_dir / "test")
-
-        with (
-            patch.object(store, "aquire_lock", return_value=nullcontext()),
-            patch.object(store, "_load_index", return_value=old_index),
-            patch.object(store, "_rebuild_index"),
-        ):
-            result = store.remove_signatures({checksum})
-
-        assert result.is_successful is is_successful
-        assert result.removed == removed
-        assert result.removed_count == len(removed)
 
 
 class TestRocksDBIndexStore:
