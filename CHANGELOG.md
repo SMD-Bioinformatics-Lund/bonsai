@@ -33,6 +33,7 @@
 - Use the current API client argument when posting sample comments. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 - Surface queued clustering worker errors in basket notifications. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
 - Return valid status details when MinHash signatures are removed from RocksDB indexes. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
+- Load DataTables exports through the frontend bundle without requiring global jQuery. (PR #TBD)
 
 ### Changed
 
