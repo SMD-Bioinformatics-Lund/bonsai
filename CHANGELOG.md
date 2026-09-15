@@ -34,6 +34,7 @@
 - Surface queued clustering worker errors in basket notifications. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
 - Return valid status details when MinHash signatures are removed from RocksDB indexes. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
 - Load DataTables exports through the frontend bundle without requiring global jQuery. [#472](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/472)
+- Refresh group-card sample counts after group memberships change. [#468](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/468)
 
 ### Changed
 
