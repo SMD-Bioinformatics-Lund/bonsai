@@ -29,7 +29,7 @@
 
 ### Changed
 
-- Use human-readable Lab IDs instead of internal sample UUIDs in clustering views, clustering errors, metadata downloads, and sample page titles.
+- Use human-readable Lab IDs instead of internal sample UUIDs in clustering views, clustering errors, metadata downloads, and sample page titles. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Sample collection now keep track of group memberships.
 - An user can now add samples to multiple groups at the same time.
 - Improved seeding of a development Bonsai database with a new `seed_db.py` script.
