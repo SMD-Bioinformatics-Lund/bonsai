@@ -1,5 +1,5 @@
 import { initToast, initTooltip, throwSmallToast } from "../../utils/notification";
-import { initSamplesTable } from "../../utils/table-controller";
+import { initSamplesTable, TableController } from "../../utils/table-controller";
 import {
   deleteSelectedSamples,
   getSimilarSamplesAndCheckRows,
@@ -14,6 +14,7 @@ import { BasketState } from "../../core/state/basket-state";
 import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
+import { ApiSampleQcStatus } from "../../core/types";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -38,6 +39,36 @@ const sampleTableConfig = {
   scrollX: true,
   pageLength: 50,
 };
+
+function updateQcTableCells(
+  table: TableController,
+  status: ApiSampleQcStatus,
+  sampleIds: string[],
+): void {
+  const cells = table.updateCells(sampleIds, "qc_status", (cell) => {
+    const statusElement = document.createElement("span");
+    statusElement.classList.add("fw-light");
+    if (status.status === "passed") statusElement.classList.add("text-success");
+    if (status.status === "failed") statusElement.classList.add("text-danger");
+    statusElement.textContent = status.status;
+    cell.replaceChildren(statusElement);
+
+    let tooltipText = status.comment || status.action;
+    if (status.action && status.comment) {
+      tooltipText = `Action: ${status.action} - ${status.comment}`;
+    }
+    if (tooltipText) {
+      const tooltip = document.createElement("i");
+      tooltip.classList.add("bi", "bi-info-circle");
+      tooltip.dataset.bsToggle = "tooltip";
+      tooltip.dataset.bsPlacement = "top";
+      tooltip.dataset.bsTitle = tooltipText;
+      cell.appendChild(document.createTextNode(" "));
+      cell.appendChild(tooltip);
+    }
+  });
+  cells.forEach((cell) => initTooltip(cell));
+}
 
 function initBasket(api: GroupViewApi): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
@@ -182,7 +213,7 @@ export async function initGroupView(
     initSetSampleQc(
       table.getSelectedRows.bind(table),
       api.setSampleQc.bind(api),
-      () => console.log("table needs to be redrawn"),
+      (status, sampleIds) => updateQcTableCells(table, status, sampleIds),
       qcStatusForm,
     );
   }
