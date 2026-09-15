@@ -1,5 +1,6 @@
 import { ApiGroupInfoResponse, MembershipEdges } from "../core/types";
 import { ChoiceSelect } from "../utils/choice-select";
+import { emitEvent } from "../utils/event-bus";
 
 const template = document.createElement("template");
 template.innerHTML = String.raw`
@@ -107,6 +108,7 @@ export class GroupSelector extends HTMLElement {
           }
         }
       }
+      emitEvent("samples:group-memberships-changed", { sampleIds });
       this.dispatchEvent(
         new CustomEvent("apply:success", { detail: { groupIds: selectedGroupIds, sampleIds }, bubbles: true }),
       );

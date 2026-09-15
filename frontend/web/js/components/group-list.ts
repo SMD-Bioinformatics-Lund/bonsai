@@ -47,7 +47,7 @@ export class GroupList extends HTMLElement {
 
   setupEventListeners() {
     onEvent("samples:deleted", () => this.loadGroups());
-    onEvent("samples:added-to-group", () => this.loadGroups());
+    onEvent("samples:group-memberships-changed", () => this.loadGroups());
   }
 
   async loadGroups() {
