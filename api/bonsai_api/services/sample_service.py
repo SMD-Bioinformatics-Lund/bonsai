@@ -74,11 +74,11 @@ async def create_sample_service(
     """Create a new sample document in the database."""
     # verify that groups exists
     if len(sample.groups) > 0 and (
-        missing_groups := check_groups_exists(db, group_ids=sample.groups)
-    ):
-        raise EntryNotFound(
-            "One or more groups are not in the database", detail=missing_groups
+        missing_groups := await check_groups_exists(
+            db, group_ids=sample.groups, session=session
         )
+    ):
+        raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_groups)}")
 
     # build sample payload
     internal_sample_id = str(uuid.uuid7())
