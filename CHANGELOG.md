@@ -13,8 +13,8 @@
 
 ### Fixed
 
-- Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
+- Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#500](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/500)
 - Restrict LIMS AMR exports to AMR results from the requested software, skipping entries with either mismatch. [#499](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/499)
 - Enforce one curation per analysis result or individual variant/gene with a required unique index, and return HTTP 409 for duplicates. [#498](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/498)
