@@ -9,7 +9,9 @@ from typing import Any, Iterable, cast
 
 from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
-                                             SimilaritySearchConfig)
+                                             SimilarResult,
+                                             SimilaritySearchConfig,
+                                             SimilarSampleResult)
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError
@@ -19,7 +21,8 @@ from minhash_service.core.factories import (create_audit_trail_repo,
 from minhash_service.core.models import Event, EventType
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.signatures.index import create_index_store, get_index_path
+from minhash_service.signatures.index import (RemoveResult, create_index_store,
+                                              get_index_path)
 from minhash_service.signatures.io import read_signatures, write_signatures
 from minhash_service.signatures.models import (SignatureRecord,
                                                SourmashSignatures)
@@ -133,14 +136,22 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     rec = records[0]
     try:
         repo.remove_by_sample_id(sample_id)
-        # remove signature file if there are not other records with the same checksum
-        if repo.count_by_checksum(rec.signature_checksum) == 0:
+        remaining_records = repo.count_by_checksum(rec.signature_checksum)
+        # Keep shared files and index entries until the final sample using the
+        # checksum is removed.
+        if remaining_records == 0:
             removed_path = store.move_to_trash(
                 rec.signature_path, rec.signature_checksum
             )
             metadata["staged_path"] = str(removed_path)
-
-        result = index.remove_signatures(set([rec.signature_checksum]))
+            result = index.remove_signatures({rec.signature_checksum})
+        else:
+            result = RemoveResult(
+                is_successful=True,
+                warnings=[],
+                removed_count=0,
+                removed=[],
+            )
 
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
@@ -188,7 +199,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     }
 
 
-def add_to_index(sample_ids: list[str]) -> str:
+def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Add signatures to sourmash index.
 
@@ -201,6 +212,14 @@ def add_to_index(sample_ids: list[str]) -> str:
     LOG.info("Adding %d signatures to index...", len(sample_ids))
     repo = create_signature_repo()
 
+    indexable_sample_ids: list[str] = []
+    for sample_id in sample_ids:
+        records = repo.get_by_sample_id_or_checksum(
+            sample_id=sample_id, kmer_size=kmer_size
+        )
+        if len(records) == 1 and not records[0].exclude_from_analysis:
+            indexable_sample_ids.append(sample_id)
+
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
 
     # add to index
@@ -208,26 +227,17 @@ def add_to_index(sample_ids: list[str]) -> str:
     index = create_index_store(idx_path, index_format=cnf.index_format)
     result = index.add_signatures(signatures)
 
-    LOG.info(
-        "Updating index status in the database for %d samples.", result.added_count
-    )
-    update_status: dict[str, bool] = {}
-    for checksum in result.added_md5s:
-        recs = repo.get_by_sample_id_or_checksum(checksum=checksum, kmer_size=kmer_size)
-        rec = recs[0]
-        status = repo.mark_indexed(rec.sample_id)
-        update_status[rec.sample_id] = status
+    if not result.is_successful:
+        LOG.error("Failed to add signatures to the index: %s", result.warnings)
+        return result.model_dump(mode="json")
 
-    all_updated: bool = all(status for status in update_status.values())
-    if not all_updated:
-        failed_update = [name for name, status in update_status.items() if not status]
-        LOG.error(
-            "Failed to mark %d samples as indexed; %s",
-            len(failed_update),
-            ", ".join(failed_update),
-        )
-    else:
-        LOG.debug("Marked %d samples as indexed", len(update_status))
+    LOG.info(
+        "Updating index status in the database for %d samples.",
+        len(indexable_sample_ids),
+    )
+    for sample_id in indexable_sample_ids:
+        repo.mark_indexed(sample_id)
+    LOG.debug("Marked %d samples as indexed", len(indexable_sample_ids))
 
     return result.model_dump(mode="json")
 
@@ -249,14 +259,11 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     # lookup checksums for sample ids
     repo = create_signature_repo()
     checksums_to_remove: list[str] = []
-    md5_to_sample_id: dict[str, str] = {}
     for sid in sample_ids:
-        sample = repo.get_by_sample_id_or_checksum(sample_id=sid)
-        if sample is None:
+        records = repo.get_by_sample_id_or_checksum(sample_id=sid)
+        if not records:
             continue
-        checksum = sample.signature_checksum
-        md5_to_sample_id[checksum] = sid
-        checksums_to_remove.append(checksum)
+        checksums_to_remove.extend(record.signature_checksum for record in records)
 
     result = index.remove_signatures(set(checksums_to_remove))
     if not result.is_successful:
@@ -322,11 +329,52 @@ def _lookup_checksums_from_sample_ids(
     if sample_ids is None:
         return None
 
-    return [
-        rec.signature_checksum
-        for sid in sample_ids
-        if (rec := repo.get_by_sample_id_or_checksum(sample_id=sid))
-    ]
+    checksums: list[str] = []
+    for sample_id in sample_ids:
+        records = repo.get_by_sample_id_or_checksum(sample_id=sample_id)
+        checksums.extend(record.signature_checksum for record in records)
+    return list(dict.fromkeys(checksums))
+
+
+def _resolve_sample_matches(
+    matches: list[SimilarResult],
+    repo: SignatureRepository,
+    *,
+    kmer_size: int,
+    subset_sample_ids: Iterable[str] | None = None,
+    limit: int | None = None,
+) -> list[SimilarSampleResult]:
+    """Expand signature matches into unique, eligible sample matches."""
+    allowed_sample_ids = set(subset_sample_ids) if subset_sample_ids is not None else None
+    resolved: list[SimilarSampleResult] = []
+    seen_sample_ids: set[str] = set()
+
+    for match in matches:
+        records = repo.get_by_sample_id_or_checksum(
+            checksum=match.md5, kmer_size=kmer_size
+        )
+        for record in sorted(records, key=lambda item: item.sample_id):
+            if record.exclude_from_analysis or record.marked_for_deletion:
+                continue
+            if allowed_sample_ids is not None and record.sample_id not in allowed_sample_ids:
+                continue
+            if record.sample_id in seen_sample_ids:
+                continue
+
+            resolved.append(
+                SimilarSampleResult(
+                    sample_id=record.sample_id,
+                    signature_checksum=match.md5,
+                    containment=match.containment,
+                    jaccard_similarity=match.jaccard_similarity,
+                    max_containment=match.max_containment,
+                )
+            )
+            seen_sample_ids.add(record.sample_id)
+            if limit is not None and len(resolved) >= limit:
+                return resolved
+
+    return resolved
 
 
 def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None = None) -> SourmashSignatures:
@@ -395,7 +443,10 @@ def search_similar(
     subset_checksums = _lookup_checksums_from_sample_ids(subset_sample_ids, repo)
     search_cnf = SimilaritySearchConfig(
         min_similarity=min_similarity,
-        limit=limit,
+        # Limit after resolving checksums to sample IDs. A checksum can belong
+        # to multiple samples and duplicate index entries must not consume the
+        # user-facing sample limit.
+        limit=None,
         ani_estimate=estimate_ani,
         subset_checksums=subset_checksums,
         ksize=kmer_size
@@ -403,13 +454,22 @@ def search_similar(
 
     # lookup sample ids from matches
     result = get_similar_signatures(record.signature_path, index, search_cnf)
+    matches = _resolve_sample_matches(
+        result.matches,
+        repo,
+        kmer_size=kmer_size,
+        subset_sample_ids=subset_sample_ids,
+        limit=limit,
+    )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
-    return result.model_dump(mode="json")
+    response = result.model_dump(mode="json")
+    response["matches"] = [match.model_dump(mode="json") for match in matches]
+    return response
 
 
 def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
@@ -505,20 +565,17 @@ def find_similar_and_cluster(
     repo = create_signature_repo()
     kmer_size = cnf.kmer_size
     sample_ids: list[str] = []
-    checksums_lookup = {}
     for match in matches:
-        records = repo.get_by_sample_id_or_checksum(checksum=match["md5"], kmer_size=kmer_size)
-        record = records[0]
-        if record is None:
-            continue
-        sample_ids.append(record.sample_id)
-        checksums_lookup[record.signature_checksum] = record.sample_id
+        sample_ids.append(match["sample_id"])
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
+
+    if len(signatures) != len(sample_ids):
+        raise ValueError("Could not load one signature for every similar sample")
 
     # cluster samples
     LOG.info("Cluster samples...")
-    tree, checksums  = cluster_signatures(signatures, method)
-    newick = tree_to_newick(tree, "", tree.dist, [checksums_lookup.get(c, c) for c in checksums])
+    tree, _ = cluster_signatures(signatures, method)
+    newick = tree_to_newick(tree, "", tree.dist, sample_ids)
     return newick
 
 

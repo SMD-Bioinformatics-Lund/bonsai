@@ -13,7 +13,8 @@
 
 ### Fixed
 
-- Handle structured MinHash similarity results in sample selection and clustering. This resolves an issue where "Find similar" previously crashed after calculation due to mismatch in the return data format. (PR #TBD)
+- Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. (PR #TBD)
+- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion. (PR #TBD)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.

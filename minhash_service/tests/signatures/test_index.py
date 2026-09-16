@@ -11,7 +11,6 @@ from minhash_service.signatures.index import (
     create_index_store,
     get_index_path,
 )
-from minhash_service.signatures.io import read_signatures
 from minhash_service.signatures.models import IndexFormat
 
 
@@ -20,12 +19,6 @@ def tmp_rocksdb_index(tmp_path: Path, data_dir: Path) -> Path:
     """Create temporary index directory."""
     org = data_dir / "rocksdb31.all"
     return shutil.copytree(org, tmp_path, dirs_exist_ok=True)
-
-
-@pytest.fixture()
-def tmp_dupl_signature(data_dir: Path) -> Path:
-    """Create temporary index directory."""
-    return data_dir / "DRR237260.dupl.sig"
 
 
 @pytest.fixture()
@@ -279,6 +272,7 @@ class TestSBTIndexStore:
 
             assert len(sigs) == 1
             assert sigs[0].name == "test_sample"
+            assert store.list_signature_checksums() == {mock_signature.md5sum()}
 
 
 class TestRocksDBIndexStore:
@@ -329,20 +323,23 @@ class TestRocksDBIndexStore:
 
             assert len(sigs) == 1
 
-    def test_rocksdb_add_signature(self, tmp_rocksdb_index: Path, tmp_dupl_signature: Path):
-        """Use the actual database to test adding a signature."""
+    def test_rocksdb_add_signature_is_idempotent(
+        self, tmp_index_dir: Path, mock_signature
+    ):
+        """Adding an existing checksum also repairs historical duplicates."""
+        store = RocksDBIndexStore(tmp_index_dir / "test")
+        old_index = Mock()
+        old_index.signatures.return_value = [mock_signature, mock_signature]
 
-        store = RocksDBIndexStore(tmp_rocksdb_index)
+        with patch.object(store, "_load_index", return_value=old_index), patch.object(
+            store, "_rebuild_index", return_value=Mock()
+        ) as rebuild:
+            status = store.add_signatures([mock_signature])
 
-        start_n_sigs = len(store.list_signatures())
-
-        # add a signature to the db
-        sigs = [sig for sig in read_signatures(tmp_dupl_signature) if sig.minhash.ksize == 31]
-        status = store.add_signatures(sigs)
-
+        rebuilt_signatures = list(rebuild.call_args.args[0])
         assert status.is_successful
-
-        assert len(store.list_signatures()) == start_n_sigs + 1
+        assert status.added_count == 0
+        assert rebuilt_signatures == [mock_signature]
 
     def test_rocksdb_remove_signature(self, tmp_rocksdb_index: Path):
         """Use the actual database to test removing a signature."""

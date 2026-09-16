@@ -8,7 +8,6 @@ from tempfile import TemporaryDirectory
 
 from sourmash_plugin_branchwater import sourmash_plugin_branchwater
 
-from minhash_service.core.factories import create_signature_repo
 from minhash_service.signatures.index import BaseIndexStore
 
 from .models import AniEstimateOptions, SimilaritySearchConfig, SimilarSearchResult, SimilarResult
@@ -50,21 +49,20 @@ def filter_search_results(
     if subset_checksums is not None:
         results = [r for r in results if r.md5 in subset_checksums]
 
-    if limit is not None:
-        results = results[:limit]
-    return results
-
-
-def annotate_sample_id(results: SimilaritySearchResults, *, kmer_size: int) -> SimilaritySearchResults:
-    """Annotate similarity search results with sample IDs."""
-    repo = create_signature_repo()
-    for i, match in enumerate(results):
-        records = repo.get_by_sample_id_or_checksum(checksum=match.md5, kmer_size=kmer_size)
-        record = records[0]
-        if record is None:
+    # An index can contain the same signature more than once. Similarity is a
+    # property of the signature checksum, so retain only the first (best
+    # ordered) occurrence before applying the result limit.
+    unique_results: SimilaritySearchResults = []
+    seen_checksums: set[str] = set()
+    for result in results:
+        if result.md5 in seen_checksums:
             continue
-        results[i] = match.model_copy(update={"name": record.sample_id})
-    return results
+        seen_checksums.add(result.md5)
+        unique_results.append(result)
+
+    if limit is not None:
+        unique_results = unique_results[:limit]
+    return unique_results
 
 
 def get_similar_signatures(
@@ -105,7 +103,6 @@ def get_similar_signatures(
         try:
             result = parse_manysearch_results(output_path)
             result = filter_search_results(result, min_similarity=config.min_similarity, limit=config.limit)
-            result = annotate_sample_id(result, kmer_size=config.ksize)
         except Exception as exc:
             LOG.error("Error parsing branchwater multisearch results: %s", exc)
             raise
