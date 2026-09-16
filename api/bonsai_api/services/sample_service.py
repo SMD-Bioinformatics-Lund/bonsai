@@ -87,7 +87,7 @@ async def create_sample_service(
         external_sample_id=sample.sample_id,
         sample_name=sample.sample_name,
         lims_id=sample.lims_id,
-        groups=sample.groups,
+        groups=[],
         owners=[ctx.actor.id] or sample.owners,  # default to user that uploaded sample
         owner_organizations=sample.owner_organizations,
         access_groups=sample.access_groups,
@@ -97,39 +97,40 @@ async def create_sample_service(
     )
 
     event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
-    with audit_event_context(audit, "create_sample", ctx, event_subject):
-        try:
-            # create sample object
-            resp = await insert_sample_document(
-                db, doc=payload.model_dump(exclude_none=True), session=session
-            )
-            # create memberships if needed
-            if len(sample.groups) > 0:
-                edges = [
-                    MembershipEdge(sample_id=sample.sample_id, group_id=gr)
-                    for gr in sample.groups
-                ]
-                await add_memberships(db=db, edges=edges, session=session)
-        except DuplicateKeyError as dke:
-            LOG.error("Duplicate key error while creating group: %s", str(dke))
-            raise ConflictError(
-                f"Sample with id {sample.sample_id} already exists."
-            ) from dke
-        except PyMongoError as pme:
-            LOG.error("MongoDB error while creating group: %s", str(pme))
-            raise DatabaseOperationError(
-                f"Database error occurred while creating group: {str(pme)}"
-            ) from pme
-        except ValidationError as ve:
-            LOG.error("Validation error while creating group: %s", str(ve))
-            raise ValueError(
-                f"Invalid data provided for creating group: {str(ve)}"
-            ) from ve
-        return {
-            "inserted_id": str(resp.inserted_id),
-            "internal_sample_id": internal_sample_id,
-            "external_sample_id": sample.sample_id,
-        }
+    try:
+        async with managed_transaction(db.client, session) as sess:
+            with audit_event_context(audit, "create_sample", ctx, event_subject):
+                # create sample object
+                resp = await insert_sample_document(
+                    db, doc=payload.model_dump(exclude_none=True), session=sess
+                )
+                # create memberships if needed
+                if len(sample.groups) > 0:
+                    edges = [
+                        MembershipEdge(sample_id=internal_sample_id, group_id=gr)
+                        for gr in sample.groups
+                    ]
+                    await add_memberships(db=db, edges=edges, session=sess)
+    except DuplicateKeyError as dke:
+        LOG.error("Duplicate key error while creating group: %s", str(dke))
+        raise ConflictError(
+            f"Sample with id {sample.sample_id} already exists."
+        ) from dke
+    except PyMongoError as pme:
+        LOG.error("MongoDB error while creating group: %s", str(pme))
+        raise DatabaseOperationError(
+            f"Database error occurred while creating group: {str(pme)}"
+        ) from pme
+    except ValidationError as ve:
+        LOG.error("Validation error while creating group: %s", str(ve))
+        raise ValueError(
+            f"Invalid data provided for creating group: {str(ve)}"
+        ) from ve
+    return {
+        "inserted_id": str(resp.inserted_id),
+        "internal_sample_id": internal_sample_id,
+        "external_sample_id": sample.sample_id,
+    }
 
 
 async def delete_sample_service(
