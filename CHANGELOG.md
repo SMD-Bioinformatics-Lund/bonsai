@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Handle structured MinHash similarity results in sample selection and clustering. This resolves an issue where "Find similar" previously crashed after calculation due to mismatch in the return data format. (PR #TBD)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
