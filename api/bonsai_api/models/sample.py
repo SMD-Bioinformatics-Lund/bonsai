@@ -32,6 +32,14 @@ LOG = logging.getLogger(__name__)
 
 SAMPLE_SCHEMA_VERSION = 1
 
+
+def normalize_optional_identifier(value: Any) -> Any:
+    """Treat blank identifiers as absent without changing non-blank IDs."""
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 class Comment(CreatedAtModelMixin):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
 
@@ -130,11 +138,16 @@ class UpdateSampleInputModel(BaseModel):
 class SequencingInfo(ForbidExtraModelMixin):
     """Information on the sample was sequenced."""
 
-    sequencing_run_id: str
+    sequencing_run_id: str | None = None
     platform: SequencingPlatforms
     instrument: str | None = None
     method: dict[str, str] = Field(default_factory=dict)
     sequenced_at: datetime | None = None
+
+    @field_validator("sequencing_run_id", mode="before")
+    @classmethod
+    def normalize_run_id(cls, value: Any) -> Any:
+        return normalize_optional_identifier(value)
 
 
 class ReferenceGenome(RWModel):
@@ -269,6 +282,11 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
     owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
     access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
     visibility: Visibility = Visibility.PUBLIC
+
+    @field_validator("lims_id", mode="before")
+    @classmethod
+    def normalize_lims_id(cls, value: Any) -> Any:
+        return normalize_optional_identifier(value)
 
 
 class SampleRecordDb(SampleBase):

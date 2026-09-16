@@ -6,6 +6,22 @@ from pymongo import ASCENDING, GEOSPHERE
 
 # Create indexes for collections
 IndexDefinition = Dict[str, Any]
+SAMPLE_RUN_LIMS_INDEX: IndexDefinition = {
+    "definition": [
+        ("lims_id", ASCENDING),
+        ("sequencing.sequencing_run_id", ASCENDING),
+    ],
+    "required": True,
+    "options": {
+        "name": "sample_lims_id_sequencing_run_id_unique",
+        "unique": True,
+        "partialFilterExpression": {
+            "lims_id": {"$type": "string", "$gt": ""},
+            "sequencing.sequencing_run_id": {"$type": "string", "$gt": ""},
+        },
+    },
+}
+
 INDEXES: dict[str, list[IndexDefinition]] = {
     "sample_group": [
         {
@@ -18,6 +34,7 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         },
     ],
     "sample": [
+        SAMPLE_RUN_LIMS_INDEX,
         {
             "definition": [("sample_id", ASCENDING), ("created_at", ASCENDING)],
             "options": {

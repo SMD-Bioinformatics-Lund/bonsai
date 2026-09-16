@@ -22,6 +22,7 @@ from bonsai_api.crud.sample import (
 )
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
+from bonsai_api.db.index import SAMPLE_RUN_LIMS_INDEX
 from bonsai_api.exceptions import (
     ConflictError,
     DatabaseOperationError,
@@ -117,9 +118,19 @@ async def create_sample_service(
                     ]
                     await add_memberships(db=db, edges=edges, session=sess)
     except DuplicateKeyError as dke:
-        LOG.error("Duplicate key error while creating group: %s", str(dke))
+        LOG.error("Duplicate key error while creating sample: %s", str(dke))
+        if (
+            (dke.details or {}).get("keyPattern")
+            == dict(SAMPLE_RUN_LIMS_INDEX["definition"])
+            or SAMPLE_RUN_LIMS_INDEX["options"]["name"] in str(dke)
+        ):
+            run_id = sample.sequencing.sequencing_run_id if sample.sequencing else None
+            raise ConflictError(
+                f"A sample with Clarity/LIMS ID {sample.lims_id!r} and "
+                f"sequencing run ID {run_id!r} already exists."
+            ) from dke
         raise ConflictError(
-            f"Sample with id {sample.sample_id} already exists."
+            "A sample with the same unique identifier already exists."
         ) from dke
     except PyMongoError as pme:
         LOG.error("MongoDB error while creating group: %s", str(pme))

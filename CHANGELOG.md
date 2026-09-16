@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Enforce unique Clarity/LIMS ID and sequencing-run ID pairs for samples with both identifiers, returning HTTP 409 for duplicate uploads even when a new sample UUID is generated. [#496](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/496)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
