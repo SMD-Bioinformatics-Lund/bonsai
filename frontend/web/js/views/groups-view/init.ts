@@ -25,7 +25,14 @@ const sampleTableConfig = {
   select: true,
   layout: {
     top1Start: {
-      buttons: ["selectAll", "selectNone", "showSelected"],
+      buttons: [
+        {
+          extend: "selectAll" as const,
+          selectorModifier: { search: "applied" as const },
+        },
+        "selectNone",
+        "showSelected",
+      ],
     },
     top1End: {
       buttons: ["copy", "csv", "excel"],
