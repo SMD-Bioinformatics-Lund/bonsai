@@ -11,8 +11,6 @@ SAMPLE_RUN_LIMS_INDEX: IndexDefinition = {
         ("lims_id", ASCENDING),
         ("sequencing.sequencing_run_id", ASCENDING),
     ],
-    # Unlike optional performance indexes, this constraint must exist before
-    # the API can accept uploads safely.
     "required": True,
     "options": {
         "name": "sample_lims_id_sequencing_run_id_unique",
