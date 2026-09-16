@@ -1249,6 +1249,9 @@
 <div class="card">
     <div class="card-header">PostQc Alignment v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         {% set pct_above_hist=qc_info.result.pct_above_x %}
         {# create entries for tabular data #}
         <table class="table table-sm table-striped">
@@ -1312,6 +1315,7 @@
                 font: { size: 12 }}
             Plotly.newPlot('qcPlot', [data], layout, { staticPlot: false} )
         </script>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -1321,6 +1325,9 @@
 <div class="card">
     <div class="card-header">{{qc_info.software | capitalize}} v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         <table class="table table-sm table-striped">
             <thead>
                 <tr>
@@ -1337,6 +1344,7 @@
             {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
