@@ -36,6 +36,8 @@
 - Load DataTables exports through the frontend bundle without requiring global jQuery. [#472](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/472)
 - Refresh group-card sample counts after group memberships change. [#468](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/468)
 - Limit Select all in sample tables to rows matching the active filters. [#473](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/473)
+- Validate and persist initial group memberships using internal sample IDs when creating samples through the API. [#474](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/474)
+- Roll back sample creation and membership counters when required audit logging fails. [#474](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/474)
 
 ### Changed
 
