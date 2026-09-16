@@ -151,7 +151,7 @@ async def delete_many_samples(
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[UPDATE_PERMISSION]
+        get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Delete multiple samples from the database."""
@@ -232,7 +232,7 @@ async def delete_sample(
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[UPDATE_PERMISSION]
+        get_current_active_user, scopes=[WRITE_PERMISSION]
     ),
 ):
     """Delete the specific sample."""

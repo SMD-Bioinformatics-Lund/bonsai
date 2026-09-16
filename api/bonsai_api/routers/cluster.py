@@ -11,9 +11,10 @@ from bonsai_api.crud.cluster import (
     get_typing_profiles,
 )
 from bonsai_api.db import Database
-from bonsai_api.dependencies import get_database
+from bonsai_api.dependencies import get_current_active_user, get_database
 from bonsai_api.models.base import RWModel
 from bonsai_api.models.enums import DistanceMethod, TypingMethod
+from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
@@ -27,7 +28,7 @@ from bonsai_api.redis.minhash import (
 from bonsai_api.redis.ska import (
     schedule_cluster_samples as schedule_ska_cluster_samples,
 )
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from pydantic import ConfigDict, Field
 
 from .tags import RouterTags
@@ -35,8 +36,8 @@ from .tags import RouterTags
 LOG = logging.getLogger(__name__)
 router = APIRouter(tags=[RouterTags.CLUSTER])
 
-READ_PERMISSION = "cluster:read"
-WRITE_PERMISSION = "cluster:write"
+READ_PERMISSION = "samples:read"
+WRITE_PERMISSION = "samples:write"
 
 
 class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
@@ -63,6 +64,9 @@ async def cluster_samples(
     typing_method: TypingMethod,
     cluster_input: ClusterInput,
     db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
 ) -> SubmittedJob:
     """Cluster samples on their cgmlst profile.
 
@@ -107,6 +111,9 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
 async def index_genome_signatures(
     index_input: IndexInput,
     db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[WRITE_PERMISSION]
+    ),
 ) -> Dict[str, str]:
     """Entrypoint for scheduling indexing of sourmash signatures.
 
