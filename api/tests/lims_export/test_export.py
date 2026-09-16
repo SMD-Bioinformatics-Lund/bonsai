@@ -2,6 +2,7 @@
 
 import pytest
 from bonsai_api.lims_export.export import (
+    RequiredAnalysisMissingError,
     _to_str,
     lims_rs_formatter,
     serialize_lims_results,
@@ -93,7 +94,7 @@ def test_lims_rs_formatter_failures(mtuberculosis_sample):
         ],
     )
     # Test a missing required analysis raises an error
-    with pytest.raises(ValueError):
+    with pytest.raises(RequiredAnalysisMissingError, match="MTBC_MLST"):
         result = lims_rs_formatter(mtuberculosis_sample, assay_config)
 
 
