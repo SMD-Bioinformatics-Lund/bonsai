@@ -1,7 +1,7 @@
 {% macro navbar(current_user) %}
 <nav class="navbar navbar-expand-lg navbar-light sticky-top br-navbar">
     <div class="container-fluid">
-    <a href="/" class="navbar-brand">
+    <a href="{{ url_for('groups.groups') }}" class="navbar-brand">
         <div class="rounded-5 d-block p-1" style="background-color: #f7efe5;">
             <img class="m-1" alt="Logo" width="40"
                  src="{{url_for('static', filename='bonsai_logo_sm.png')}}">
@@ -19,9 +19,9 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            {{ navbar_link('Home', 'public.index') }}
             {{ navbar_link('Groups', 'groups.groups', test_id='groups-view-btn') }}
-            {{ navbar_link('Locations', 'groups.groups', True) }}
+            {{ navbar_link('About', 'public.about') }}
+            {# {{ navbar_link('Locations', 'groups.groups', True) }} #}
             {% if current_user.is_admin %}
                 {{ navbar_link('Admin', 'admin.admin_panel', test_id="admin-panel-navbar-btn") }}
             {% endif %}
@@ -157,9 +157,11 @@
         </span>
     </a>
     <ul class="dropdown-menu dropdown-menu-lg-end" aria-labelledby="navbarDropdown">
+        {#
         {{ dropdown_link('Profile', disabled=True) }}
         {{ dropdown_link('Settings', disabled=True) }}
         <li><hr class="dropdown-divider"/></li>
+        #}
         {{ dropdown_link('Log out', 'login.logout', disabled=False, test_id='logout-user-btn') }}
     </ul>
 </li>
