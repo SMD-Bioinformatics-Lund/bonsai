@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Restrict LIMS AMR exports to AMR results from the requested software, skipping entries with either mismatch. [#499](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/499)
 - Enforce one curation per analysis result or individual variant/gene with a required unique index, and return HTTP 409 for duplicates. [#498](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/498)
 - Clear embedded curation summaries when the final curation for an analysis type is deleted. [#497](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/497)
