@@ -91,26 +91,15 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         {
             "definition": [
                 ("analysis_id", ASCENDING),
+                ("analysis_type", ASCENDING),
                 ("annotation_type", ASCENDING),
-                ("target_index", ASCENDING),
+                ("result_key", ASCENDING),
             ],
+            "required": True,
             "options": {
-                "name": "uniq_item_level_curation",
+                "name": "uniq_curation_result",
                 "background": True,
                 "unique": True,
-                "partialFilterExpression": {"target_index": {"$exists": True}}
-            },
-        },
-        {
-            "definition": [
-                ("analysis_id", ASCENDING),
-                ("annotation_type", ASCENDING),
-            ],
-            "options": {
-                "name": "uniq_analysis_level_curation",
-                "background": True,
-                "unique": True,
-                "partialFilterExpression": {"target_index": {"$exists": True}}
             },
         }
     ]
