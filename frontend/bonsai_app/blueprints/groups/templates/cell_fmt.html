@@ -121,7 +121,7 @@
 {% endmacro %}
 
 {% macro date_renderer(cell_info) %}
-    <td>{{ cell_info | strftime }}</td>
+    <td data-order="{{ cell_info or '' }}">{{ cell_info | strftime if cell_info else '-' }}</td>
 {% endmacro %}
 
 {% macro boolean_renderer(cell_info) %}

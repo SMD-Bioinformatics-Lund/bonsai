@@ -24,6 +24,34 @@ from .controller import build_updated_presets, format_tablular_data
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_QC_COLUMN_IDS = (
+    "sample_id",
+    "sample_name",
+    "sequencing_run",
+    "created_at",
+    "analysis_date",
+    "qc_status",
+    "quast_n50",
+    "quast_n_contigs",
+    "quast_total_length",
+    "postalignqc_median_cov",
+    "postalignqc_n_reads",
+    "postalignqc_coverage_10",
+    "postalignqc_coverage_30",
+    "chewbacca_n_missing",
+)
+
+
+def get_qc_table_columns(client: Any) -> list[dict[str, Any]]:
+    """Resolve the default QC view from the API's summary manifest."""
+    columns = client.get_valid_summary_columns()["columns"]
+    by_id = {column["id"]: column for column in columns}
+    return [
+        {**by_id[column_id], "default_visible": True}
+        for column_id in DEFAULT_QC_COLUMN_IDS
+    ]
+
+
 groups_bp = Blueprint(
     "groups",
     __name__,
@@ -212,7 +240,6 @@ def group(group_id: str) -> str:
     # query API for sample info
     client = get_api_client()
     try:
-        samples_info = client.get_sample_summaries(group_id=group_id)
         # get column definition to use
         group_info = client.get_group(group_id=group_id)
     except ApiError as error:
@@ -223,19 +250,42 @@ def group(group_id: str) -> str:
         )
 
     try:
-        columns = _get_group_table_columns(client, group_info, group_id)
+        columns = (
+            get_qc_table_columns(client) if display_qc
+            else _get_group_table_columns(client, group_info, group_id)
+        )
     except ApiError as error:
         LOG.exception("Unable to load column configuration for group %s", group_id)
         abort(
             _api_error_status(error),
             description=f"Unable to load column configuration for group {group_id}",
         )
-    except (AttributeError, TypeError, ValueError, ValidationError):
+    except (AttributeError, KeyError, TypeError, ValueError, ValidationError):
         LOG.exception("Invalid column configuration for group %s", group_id)
         abort(
             502,
             description=f"Invalid column configuration for group {group_id}",
         )
+
+    try:
+        if display_qc:
+            response = client.request_json(
+                "POST", "samples/summary",
+                json={
+                    "group_id": group_id,
+                    "fields": [column["id"] for column in columns],
+                    "sort": "-created_at",
+                    "limit": 0,
+                    "offset": 0,
+                },
+                expected_status=(200,),
+            )
+            samples_info = response.data or {}
+        else:
+            samples_info = client.get_sample_summaries(group_id=group_id)
+    except ApiError as error:
+        LOG.exception("Unable to load samples for group %s", group_id)
+        abort(_api_error_status(error), description=f"Unable to load group {group_id}")
 
     # Pre-select samples in sample table:
     selected_samples = request.args.getlist("samples")
