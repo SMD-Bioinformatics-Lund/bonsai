@@ -217,7 +217,7 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
         records = repo.get_by_sample_id_or_checksum(
             sample_id=sample_id, kmer_size=kmer_size
         )
-        if len(records) == 1 and not records[0].exclude_from_analysis:
+        if len(records) == 1 and not records[0].exclude_from_analysis and not records[0].marked_for_deletion:
             indexable_sample_ids.append(sample_id)
 
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
@@ -228,17 +228,70 @@ def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     result = index.add_signatures(signatures)
 
     if not result.is_successful:
-        LOG.error("Failed to add signatures to the index: %s", result.warnings)
-        return result.model_dump(mode="json")
+        raise RuntimeError(f"Failed to add signatures to the index: {result.warnings}")
 
     LOG.info(
         "Updating index status in the database for %d samples.",
         len(indexable_sample_ids),
     )
-    for sample_id in indexable_sample_ids:
-        repo.mark_indexed(sample_id)
+    _set_index_status(repo, indexable_sample_ids, kmer_size=kmer_size, indexed=True)
     LOG.debug("Marked %d samples as indexed", len(indexable_sample_ids))
 
+    return result.model_dump(mode="json")
+
+
+def _set_index_status(
+    repo: SignatureRepository,
+    sample_ids: Iterable[str],
+    *,
+    kmer_size: int,
+    indexed: bool,
+) -> None:
+    failed = [
+        sid
+        for sid in dict.fromkeys(sample_ids)
+        if not repo.set_indexed(sid, kmer_size, indexed)
+    ]
+    if failed:
+        raise RuntimeError(
+            f"Could not update index status for samples: {', '.join(failed)}"
+        )
+
+
+def rebuild_index(kmer_size: int | None = None) -> dict[str, Any]:
+    """Rebuild from eligible metadata without reading the historical index.
+
+    Run with import/QC/deletion workers paused so metadata remains stable.
+    Validate every input before replacing the index or changing any flags.
+    """
+    kmer_size = kmer_size or cnf.kmer_size
+    if kmer_size != cnf.kmer_size:
+        raise ValueError("The index must use the configured k-mer size")
+    repo = create_signature_repo()
+    records = [r for r in repo.get_all_signatures() if r.kmer_size == kmer_size]
+    eligible = [
+        r for r in records if not r.exclude_from_analysis and not r.marked_for_deletion
+    ]
+    signatures: SourmashSignatures = []
+    for record in eligible:
+        loaded = read_signatures(record.signature_path, kmer_size=kmer_size)
+        if len(loaded) != 1 or loaded[0].md5sum() != record.signature_checksum:
+            raise ValueError(f"Invalid signature for sample {record.sample_id}")
+        signatures.extend(loaded)
+    index = create_index_store(
+        get_index_path(cnf.signature_dir, cnf.index_format), cnf.index_format
+    )
+    result = index.replace_signatures(signatures)
+    if not result.is_successful:
+        raise RuntimeError(f"Failed to rebuild index: {result.warnings}")
+    eligible_ids = {r.sample_id for r in eligible}
+    for indexed in (True, False):
+        _set_index_status(
+            repo,
+            [r.sample_id for r in records if (r.sample_id in eligible_ids) == indexed],
+            kmer_size=kmer_size,
+            indexed=indexed,
+        )
     return result.model_dump(mode="json")
 
 
@@ -258,22 +311,47 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
 
     # lookup checksums for sample ids
     repo = create_signature_repo()
-    checksums_to_remove: list[str] = []
-    for sid in sample_ids:
-        records = repo.get_by_sample_id_or_checksum(sample_id=sid)
-        if not records:
-            continue
-        checksums_to_remove.extend(record.signature_checksum for record in records)
+    removed_ids = set(sample_ids)
+    records = [
+        record
+        for sid in removed_ids
+        for record in repo.get_by_sample_id_or_checksum(
+            sample_id=sid, kmer_size=cnf.kmer_size
+        )
+    ]
+    checksums_to_remove = {r.signature_checksum for r in records}
+    for checksum in list(checksums_to_remove):
+        others = repo.get_by_sample_id_or_checksum(
+            checksum=checksum, kmer_size=cnf.kmer_size
+        )
+        if any(
+            r.sample_id not in removed_ids
+            and not r.exclude_from_analysis
+            and not r.marked_for_deletion
+            for r in others
+        ):
+            checksums_to_remove.remove(checksum)
 
-    result = index.remove_signatures(set(checksums_to_remove))
+    # Retrying after a metadata-update failure must still reconcile flags,
+    # even if the previous attempt already removed the index entry.
+    if checksums_to_remove:
+        if index.index_path.exists():
+            checksums_to_remove.intersection_update(index.list_signature_checksums())
+        else:
+            checksums_to_remove.clear()
+
+    result = (
+        index.remove_signatures(checksums_to_remove)
+        if checksums_to_remove
+        else RemoveResult(is_successful=True, warnings=[], removed_count=0, removed=[])
+    )
     if not result.is_successful:
-        n_remaining = len(checksums_to_remove) - result.removed_count
-        LOG.error("Failed to remove %d checksum from index", n_remaining)
+        raise RuntimeError(f"Failed to remove signatures from index: {result.warnings}")
 
     # unmark indexed status in db
-    repo = create_signature_repo()
-    for sid in sample_ids:
-        repo.unmark_indexed(sid)
+    _set_index_status(
+        repo, [r.sample_id for r in records], kmer_size=cnf.kmer_size, indexed=False
+    )
     return result.model_dump()
 
 
@@ -349,6 +427,9 @@ def _resolve_sample_matches(
     resolved: list[SimilarSampleResult] = []
     seen_sample_ids: set[str] = set()
 
+    if limit is not None and limit <= 0:
+        return []
+
     for match in matches:
         records = repo.get_by_sample_id_or_checksum(
             checksum=match.md5, kmer_size=kmer_size
@@ -400,7 +481,7 @@ def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None
 
         record = records[0]
 
-        if record.exclude_from_analysis:
+        if record.exclude_from_analysis or record.marked_for_deletion:
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
 

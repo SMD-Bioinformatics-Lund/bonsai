@@ -14,7 +14,10 @@
 ### Fixed
 
 - Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. (PR #TBD)
-- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion. (PR #TBD)
+- Sort MinHash matches by similarity before applying limits, with stable ordering for ties. (PR #TBD)
+- Rebuild the MinHash index from eligible metadata to repair missing, stale, or duplicate entries and reconcile index flags; report metadata update failures. Repair omits excluded samples and replaces the old `--include-excluded` option. (PR #TBD)
+- Make MinHash integrity checks account for shared-signature eligibility and use the correct deletion flag. (PR #TBD)
+- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion and QC exclusion. (PR #TBD)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.

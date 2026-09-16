@@ -35,6 +35,7 @@ def _record(
         signature_checksum=checksum,
         exclude_from_analysis=excluded,
         marked_for_deletion=deleted,
+        kmer_size=31,
         signature_path=Mock(),
     )
 
@@ -133,16 +134,17 @@ def test_add_to_index_marks_all_samples_sharing_a_checksum():
     ):
         add_to_index(["sample-a", "sample-b"])
 
-    assert repo.mark_indexed.call_args_list == [call("sample-a"), call("sample-b")]
+    assert repo.set_indexed.call_args_list == [
+        call("sample-a", 31, True),
+        call("sample-b", 31, True),
+    ]
 
 
 def test_remove_signature_keeps_shared_checksum_indexed():
     """Deleting one sample preserves a checksum still used by another sample."""
     repo = Mock()
     repo.marked_for_deletion.return_value = True
-    repo.get_by_sample_id_or_checksum.return_value = [
-        _record("sample-a", "checksum-a")
-    ]
+    repo.get_by_sample_id_or_checksum.return_value = [_record("sample-a", "checksum-a")]
     repo.count_by_checksum.return_value = 1
     index = Mock()
     store = Mock()

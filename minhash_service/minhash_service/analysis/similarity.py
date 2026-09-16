@@ -10,7 +10,12 @@ from sourmash_plugin_branchwater import sourmash_plugin_branchwater
 
 from minhash_service.signatures.index import BaseIndexStore
 
-from .models import AniEstimateOptions, SimilaritySearchConfig, SimilarSearchResult, SimilarResult
+from .models import (
+    AniEstimateOptions,
+    SimilaritySearchConfig,
+    SimilarSearchResult,
+    SimilarResult,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -28,30 +33,48 @@ def parse_manysearch_results(path: Path) -> SimilaritySearchResults:
                 name=row["match_name"],
                 md5=row["match_md5"],
                 containment=float(row["containment"]),
-                jaccard_similarity=None if row["jaccard"] == "" else float(row["jaccard"]),
-                max_containment=None if row["max_containment"] == "" else float(row["max_containment"]),
+                jaccard_similarity=(
+                    None if row["jaccard"] == "" else float(row["jaccard"])
+                ),
+                max_containment=(
+                    None
+                    if row["max_containment"] == ""
+                    else float(row["max_containment"])
+                ),
             )
         )
     return result
 
 
 def filter_search_results(
-        results: SimilaritySearchResults, 
-        *, 
-        min_similarity: float | None = None, 
-        limit: int | None = None,
-        subset_checksums: list[str] | None = None,
-    ) -> SimilaritySearchResults:
+    results: SimilaritySearchResults,
+    *,
+    min_similarity: float | None = None,
+    limit: int | None = None,
+    subset_checksums: list[str] | None = None,
+) -> SimilaritySearchResults:
     """Filter similarity search results based on minimum similarity and limit."""
     if min_similarity is not None:
-        results = [r for r in results if r.jaccard_similarity is not None and r.jaccard_similarity >= min_similarity]
+        results = [
+            r
+            for r in results
+            if r.jaccard_similarity is not None
+            and r.jaccard_similarity >= min_similarity
+        ]
 
     if subset_checksums is not None:
         results = [r for r in results if r.md5 in subset_checksums]
 
-    # An index can contain the same signature more than once. Similarity is a
-    # property of the signature checksum, so retain only the first (best
-    # ordered) occurrence before applying the result limit.
+    # Branchwater emits comparisons concurrently. Sort explicitly so limits
+    # return the closest matches and ties are reproducible.
+    results = sorted(
+        results,
+        key=lambda r: (
+            -(r.jaccard_similarity if r.jaccard_similarity is not None else -1),
+            r.md5,
+            r.name,
+        ),
+    )
     unique_results: SimilaritySearchResults = []
     seen_checksums: set[str] = set()
     for result in results:
@@ -98,11 +121,18 @@ def get_similar_signatures(
             output_path=str(output_path.absolute()),
         )
         if exit_status != 0:
-            raise ValueError(f"Branchwater multisearch failed with status {exit_status}")
-        
+            raise ValueError(
+                f"Branchwater multisearch failed with status {exit_status}"
+            )
+
         try:
             result = parse_manysearch_results(output_path)
-            result = filter_search_results(result, min_similarity=config.min_similarity, limit=config.limit)
+            result = filter_search_results(
+                result,
+                min_similarity=config.min_similarity,
+                limit=config.limit,
+                subset_checksums=config.subset_checksums,
+            )
         except Exception as exc:
             LOG.error("Error parsing branchwater multisearch results: %s", exc)
             raise

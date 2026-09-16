@@ -15,13 +15,14 @@ from minhash_service.analysis.similarity import (
     parse_manysearch_results,
 )
 from minhash_service.signatures.index import RocksDBIndexStore
+from minhash_service.signatures.io import read_signatures
 
 from ..utils import get_data_path
 
 
 @pytest.mark.parametrize("limit,exp_samples", [(None, 4), (4, 4), (2, 2)])
 def test_get_similar_signatures_no_dupl(
-    data_dir: Path, limit: int | None, exp_samples: int
+    data_dir: Path, tmp_path: Path, limit: int | None, exp_samples: int
 ):
     """Test get similar signatures with no duplicates in the index."""
 
@@ -31,8 +32,15 @@ def test_get_similar_signatures_no_dupl(
     query_path = get_data_path(data_dir, "DRR237260.sig")
 
     # get index
-    idx_path = get_data_path(data_dir, "rocksdb31.all")
-    idx = RocksDBIndexStore(idx_path)
+    idx = RocksDBIndexStore(tmp_path / "rocksdb")
+    idx.replace_signatures(
+        [
+            sig
+            for path in sorted(data_dir.glob("*.sig"))
+            if ".dupl." not in path.name
+            for sig in read_signatures(path, kmer_size=31)
+        ]
+    )
 
     # query
     result = get_similar_signatures(query_path, idx, config=cnf)
@@ -41,7 +49,7 @@ def test_get_similar_signatures_no_dupl(
     assert len(result.matches) == exp_samples
 
 
-def test_get_similar_signatures_dupl(data_dir: Path):
+def test_get_similar_signatures_dupl(data_dir: Path, tmp_path: Path):
     """Test get duplicated signatures in the index."""
 
     cnf = SimilaritySearchConfig(min_similarity=0.5, ksize=31)
@@ -50,14 +58,20 @@ def test_get_similar_signatures_dupl(data_dir: Path):
     query_path = get_data_path(data_dir, "DRR237260.sig")
 
     # get index
-    idx_path = get_data_path(data_dir, "rocksdb31.duplicates")
-    idx = RocksDBIndexStore(idx_path)
+    from sourmash.index.revindex import DiskRevIndex
+
+    idx = RocksDBIndexStore(tmp_path / "rocksdb")
+    sigs = [
+        sig
+        for path in sorted(data_dir.glob("*.sig"))
+        for sig in read_signatures(path, kmer_size=31)
+    ]
+    DiskRevIndex.create_from_sigs(sigs, str(idx.index_path))
 
     result = get_similar_signatures(query_path, idx, config=cnf)
 
-    # assert that both the query and duplicate was found
-    matches = [m.name for m in result.matches]
-    assert set(["DRR237260", "DRR237260.dupl"]).issubset(set(matches))
+    # Shared sample signatures are represented once at the checksum level.
+    assert len({m.md5 for m in result.matches}) == len(result.matches)
 
 
 def test_parse_multisearch_results(data_dir: Path):
@@ -110,4 +124,18 @@ def test_filter_search_results_deduplicates_before_limit(data_dir: Path):
 
     filtered = filter_search_results(duplicated, limit=2)
 
-    assert [result.md5 for result in filtered] == [results[0].md5, results[1].md5]
+    assert {result.md5 for result in filtered} == {results[0].md5, results[1].md5}
+
+
+def test_limit_uses_similarity_order_and_stable_ties():
+    def match(checksum, similarity):
+        return SimilarResult(
+            name=checksum,
+            md5=checksum,
+            containment=similarity,
+            jaccard_similarity=similarity,
+            max_containment=similarity,
+        )
+
+    results = [match("low", 0.6), match("b", 0.95), match("a", 0.95), match("a", 0.95)]
+    assert [r.md5 for r in filter_search_results(results, limit=2)] == ["a", "b"]
