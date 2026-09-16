@@ -49,7 +49,7 @@
                 <div class="btn-group ms-2" role="group" aria-label="Three button group">
                     <a type="button"
                             class="btn btn-outline btn-dark btn-sm {% if not display_qc %}active{% endif %}"
-                            data-test-id="open-qc-view-btn"
+                            data-test-id="open-prediction-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show prediction summary"
                             href="{{ url_for('groups.group', group_id=group_id, qc=False) }}">
                         <i class="bi bi-search"></i>
@@ -64,7 +64,7 @@
                 </div>
             </div>
         </nav>
-        {{ sample_table(table_data) }}
+        {{ sample_table(table_data, default_sort="created_at" if display_qc else none) }}
     </div>
 </div>
 <script src="{{ asset_url('group-view.js') }}"></script>
