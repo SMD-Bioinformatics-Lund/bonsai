@@ -319,7 +319,7 @@ def compute_phenotype_tags(sample: SampleRecordDb) -> TagList:
     tags = []
     # iterate over tag functions to build up list of tags
     for tag_func in ALL_TAG_FUNCS:
-        # bracken should always be included regardless of specie.
+        # bracken should always be included regardless of species.
         try:
             spp_res = next(
                 (

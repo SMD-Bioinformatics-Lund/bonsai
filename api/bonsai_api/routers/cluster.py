@@ -66,7 +66,7 @@ async def cluster_samples(
 ) -> SubmittedJob:
     """Cluster samples on their cgmlst profile.
 
-    In order to cluster the samples, all samples need to have a profile and be of the same specie.
+    In order to cluster the samples, all samples need to have a profile and be of the same species.
 
     :param typing_method: clustering typing method
     :type typing_method: TypingMethod
