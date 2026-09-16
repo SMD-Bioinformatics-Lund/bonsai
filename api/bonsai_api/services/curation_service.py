@@ -192,7 +192,11 @@ async def delete_curation_service(
 
         # sync changes to sample object
         await sync_curation_summary_for_analysis(
-            db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
+            db,
+            sample_id=curation['sample_id'],
+            analysis_id=curation['analysis_id'],
+            include_analysis_types={curation['analysis_type']},
+            session=txn,
         )
     
     # Audit log
@@ -220,7 +224,8 @@ async def sync_curation_summary_for_analysis(
     *,
     sample_id: str,
     analysis_id: str,
-    session: ClientSession | None = None
+    include_analysis_types: set[str] | None = None,
+    session: ClientSession | None = None,
 ):
     """Re-sync the the curation summary for one analysis result."""
     # Fetch all curations for this analysis from canonical collection
@@ -242,6 +247,11 @@ async def sync_curation_summary_for_analysis(
         cur_copy.pop("analysis_id", None)
         cur_copy.pop("analysis_type", None)
         items_idx[(field_name, analysis_type)].append(cur_copy)
+
+    # A deleted final curation is absent from the canonical result above. Include
+    # its analysis type explicitly so the stale embedded list is cleared.
+    for analysis_type in include_analysis_types or ():
+        items_idx.setdefault((group_for(analysis_type), analysis_type), [])
     
     ops: list[UpdateOne] = []
     for (field_name, at), items in items_idx.items():
