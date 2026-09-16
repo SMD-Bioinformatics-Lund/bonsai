@@ -10,7 +10,12 @@ The admin user role grants full permission to create, modify, and read all data 
 Index database
 --------------
 
-The database must be indexed for Bonsai to work correctly. The database indexes support and speed up common queries and enforces restriction on the data. For instance, will the indexes prevent duplicated sample IDs and sample group IDs? The indexes are created using the Bonsai API command line interface. Note that if you are running the containerized version of Bonsai, you must execute the commands in the container.
+The database must be indexed for Bonsai to work correctly. Indexes speed up
+common queries and enforce uniqueness constraints. The API ensures indexes
+exist during startup; they can also be created explicitly using the Bonsai API
+command line interface. See the sample-identity section below for the required
+duplicate-upload constraint. If you are running the containerized version of
+Bonsai, execute the CLI commands in the container.
 
 .. code-block::bash
 
@@ -48,6 +53,50 @@ JASEN analysis results are uploaded to Bonsai using HTTP requests to the Bonsai 
       --input /path/to/input.json
 
 The script demonstrates basic sample management using the API routes and these could be included in your automations for sample processing.
+
+Sample identity and duplicate uploads
+-------------------------------------
+
+Bonsai assigns each new sample an internal UUID. Separately, a required unique
+compound index prevents duplicate ``(lims_id, sequencing.sequencing_run_id)``
+pairs. ``lims_id`` is the Clarity/LIMS identifier, not the sample UUID or Lab ID.
+This protection applies equally to CLI and direct API uploads, including
+concurrent requests. Duplicate pairs return HTTP ``409 Conflict`` with both
+identifiers in the error detail.
+
+The index includes only records with both identifiers present as non-empty
+strings. Missing, null, and blank/whitespace-only identifiers are treated as
+absent on input. Non-blank identifiers are preserved exactly (including case).
+Samples without a run ID or without a LIMS ID may be uploaded repeatedly;
+the same LIMS ID on a different run, or a different LIMS ID on the same run,
+is also allowed. Sequencing platform/instrument information can be supplied
+without ``sequencing_run_id``. Clients with older schemas that require this
+field must update those schemas to submit or read such sequencing records.
+
+Before deploying this constraint, run the following read-only query against
+the appropriate Bonsai database to identify existing duplicate pairs:
+
+.. code-block:: javascript
+
+   db.sample.aggregate([
+     {$match: {
+       lims_id: {$type: "string", $gt: ""},
+       "sequencing.sequencing_run_id": {$type: "string", $gt: ""}
+     }},
+     {$group: {
+       _id: {lims_id: "$lims_id", run_id: "$sequencing.sequencing_run_id"},
+       count: {$sum: 1},
+       sample_ids: {$push: "$sample_id"}
+     }},
+     {$match: {count: {$gt: 1}}}
+   ])
+
+Resolve duplicate records deliberately before deployment. Also review legacy
+blank/whitespace-only identifiers, which are not automatically rewritten.
+Bonsai does not delete, merge, or normalize existing sample records during
+startup. If the required index cannot be created, API startup fails rather
+than continuing without duplicate-upload protection. Index-creation failures
+for optional performance indexes still only produce warnings.
 
 Create and manage groups of samples
 -----------------------------------
