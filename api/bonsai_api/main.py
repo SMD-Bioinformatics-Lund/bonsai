@@ -89,6 +89,12 @@ async def ensure_database_setup(db):
                 await collection.create_index(idx["definition"], **idx["options"])
                 LOG.info(f"Created or ensured index {idx['options']['name']} on {col_name}")
             except Exception as e:
+                if idx.get("required", False):
+                    raise RuntimeError(
+                        f"Required database index {idx['options']['name']!r} "
+                        f"on {col_name} could not be created. Resolve conflicting "
+                        "data or index definitions before restarting the API."
+                    ) from e
                 LOG.warning(f"Failed to create index {idx['options']['name']} on {col_name}: {e}")
 
 
