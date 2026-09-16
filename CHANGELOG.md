@@ -41,8 +41,8 @@
 
 ### Changed
 
-- Use Groups as the default landing page and move the previous home content to About. (PR #TBD)
-- Hide inactive Locations, Profile, and Settings navigation entries. (PR #TBD)
+- Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
+- Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Exclude internal sample UUIDs from user-facing clustering metadata while retaining them as tree join keys. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Use Lab IDs in resistance and metadata page titles. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
