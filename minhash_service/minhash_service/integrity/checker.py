@@ -26,7 +26,7 @@ def check_signature_integrity(
     # load index
     idx_path = get_index_path(settings.signature_dir, settings.index_format)
     index = create_index_store(idx_path, settings.index_format)
-    indexed_signatures: list[str] = [sig.name for sig in index.list_signatures()]
+    indexed_checksums = index.list_signature_checksums()
 
     all_records = repo.get_all_signatures()
     n_signatures: int = 0
@@ -46,13 +46,13 @@ def check_signature_integrity(
                 "Signature file for sample_id %s might be corrupted.",
                 record.sample_id,
             )
-        if record.has_been_indexed and record.sample_id not in indexed_signatures:
+        if record.has_been_indexed and record.signature_checksum not in indexed_checksums:
             LOG.error(
                 "Signature file for sample_id %s is marked as indexed but not in index.",
                 record.sample_id,
             )
             should_be_indexed.append(record.sample_id)
-        elif not record.has_been_indexed and record.sample_id in indexed_signatures:
+        elif not record.has_been_indexed and record.signature_checksum in indexed_checksums:
             LOG.error(
                 "Signature file for sample_id %s is not marked as indexed"
                 " but is still in the index.",
@@ -65,7 +65,7 @@ def check_signature_integrity(
         duration=(dt.datetime.now(dt.timezone.utc) - start_time).seconds,
         version=sourmash_version,
         total_records=n_signatures,
-        total_indexed=len(indexed_signatures),
+        total_indexed=len(indexed_checksums),
         missing_files=missing_files,
         corrupted_files=corrupted_files,
         should_be_indexed=should_be_indexed,
