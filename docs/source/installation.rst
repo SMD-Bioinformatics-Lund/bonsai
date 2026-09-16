@@ -151,7 +151,7 @@ Setup IGV integration
 
 Bonsai uses IGV to visualise the read depth for called SNVs and structural variants (SV). This can help interpreting if a called variant is a true or false positive. IGV uses the reference genome sequences with annotated genes, the mapped reads in ``bam`` or ``cram`` format and optionally called variants and regions of interests. These files are either used as assets by Jasen or genreated for the sample and published in the pipeline output directory.
 
-These files are served by the API and therefore needs to be accessable by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR``, ``ANNOTATIONS_DIR`` and the path where Jasen publishes its results. 
+These files are served by the API and therefore needs to be accessable by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR`` and ``ANNOTATIONS_DIR``. Sample BAM and VCF files must be inside ``ANNOTATIONS_DIR``, see :ref:`BAM and VCF files <bam-and-vcf-files>`. 
 
 .. note::
 
@@ -164,10 +164,28 @@ These should be the same as the reference gneomes used by Jasen. You can use the
 
 Reference genomes and the corresponding GFF file should be copied to the directory you mount to the path in ``REFERENCE_GENOMES_DIR``. The BED files describing regions of interests should be copied to the directory you mount to the ``ANNOTATIONS_DIR`` path.
 
+.. _bam-and-vcf-files:
+
 BAM and VCF files
 ~~~~~~~~~~~~~~~~~
 
-The Bonsai API needs access to directory where Jasen publishes its result because the BAM and VCFs are not uploaded to the API. The result directory could me mounted using docker volumes if its accessable by the host machine. The expected path can be found in the analysis result json file under the field name ``read_mapping`` and ``genome_annotation``.
+BAM, BAI and VCF files are not uploaded to the API. The sample manifest records their paths and the API serves the files to IGV from disk. Every track path must be inside ``ANNOTATIONS_DIR``, otherwise the upload fails with ``Outside allowed directory``. Paths can be relative to ``ANNOTATIONS_DIR`` or absolute paths under it, and are stored relative to it.
+
+The simplest setup is to mount the directory Jasen publishes to, or its ``symlink_dir``, into the API container at the same path and point ``ANNOTATIONS_DIR`` at it. The absolute paths in the manifest are then valid inside the container unchanged:
+
+.. code-block:: yaml
+
+   api:
+      environment:
+         - ANNOTATIONS_DIR=/access/jasen
+      volumes:
+         - /access/jasen:/access/jasen:ro
+
+Symlinks inside ``ANNOTATIONS_DIR`` are allowed and may point outside it, but their targets must also be mounted in the container at the same path, otherwise the file is reported as not found. Mount these directories read-only.
+
+.. note::
+
+   Track paths are stored relative to ``ANNOTATIONS_DIR``, so changing it later changes where the tracks of existing samples are looked up.
 
 Accessing the web interface
 ---------------------------
