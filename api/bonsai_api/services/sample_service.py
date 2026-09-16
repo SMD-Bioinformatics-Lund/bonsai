@@ -98,6 +98,11 @@ async def create_sample_service(
 
     event_subject = Subject(id=sample.sample_id, type=SourceType.USR)
     try:
+        # managed_transaction here is used to allow multiple mongo requests to be
+        # grouped together in one session
+        # If one fails, nothing will be commited to the db
+        # Before, a situation was encountered where samples could be inserted before
+        # the auditing failed.
         async with managed_transaction(db.client, session) as sess:
             with audit_event_context(audit, "create_sample", ctx, event_subject):
                 # create sample object
