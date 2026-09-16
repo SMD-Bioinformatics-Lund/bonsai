@@ -32,9 +32,9 @@ class PipelineRunConfig(BaseModel):
 class DatabaseInfo(BaseModel):
     """Describe a reference database used by the pipeline."""
 
+    software: str
     name: str
     version: str
-    type: str = "database"
 
 
 class PipelineInfo(BaseModel):
