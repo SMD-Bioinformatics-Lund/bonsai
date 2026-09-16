@@ -13,6 +13,7 @@
 
 ### Fixed
 
+- Enforce one curation per analysis result or individual variant/gene with a required unique index, and return HTTP 409 for duplicates. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Clear embedded curation summaries when the final curation for an analysis type is deleted. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Enforce unique Clarity/LIMS ID and sequencing-run ID pairs for samples with both identifiers, returning HTTP 409 for duplicate uploads even when a new sample UUID is generated. [#496](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/496)
 - Fixed regression that prevented sampels from being removed
