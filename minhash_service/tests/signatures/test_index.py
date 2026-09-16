@@ -1,5 +1,4 @@
 """Test signature index operations."""
-import shutil
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -16,9 +15,13 @@ from minhash_service.signatures.models import IndexFormat
 
 @pytest.fixture()
 def tmp_rocksdb_index(tmp_path: Path, data_dir: Path) -> Path:
-    """Create temporary index directory."""
-    org = data_dir / "rocksdb31.all"
-    return shutil.copytree(org, tmp_path, dirs_exist_ok=True)
+    """Build with the installed Sourmash version instead of binary fixtures."""
+    from minhash_service.signatures.io import read_signatures
+    store = RocksDBIndexStore(tmp_path / "rocksdb")
+    store.replace_signatures([sig for path in sorted(data_dir.glob("*.sig"))
+                              if ".dupl." not in path.name
+                              for sig in read_signatures(path, kmer_size=31)])
+    return store.index_path
 
 
 @pytest.fixture()
