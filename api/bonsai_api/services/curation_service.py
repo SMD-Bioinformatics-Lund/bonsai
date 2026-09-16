@@ -95,9 +95,12 @@ async def create_curation_service(
 
             return curation_id
         except DuplicateKeyError as dke:
-            LOG.error("Duplicate key error while creating group: %s", str(dke))
+            LOG.error("Duplicate key error while creating curation: %s", str(dke))
             raise ConflictError(
-                f"Curation for field {curation.target_index} already exists."
+                f"Curation already exists for analysis '{analysis_id}', "
+                f"analysis type '{analysis_type}', annotation type "
+                f"'{curation.annotation_type}' and result key "
+                f"{getattr(curation, 'result_key', None)!r}."
             ) from dke
         except ValidationError as ve:
             LOG.error("Curation validation error: %s", ve)

@@ -13,7 +13,8 @@
 
 ### Fixed
 
-- Clear embedded curation summaries when the final curation for an analysis type is deleted. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Enforce one curation per analysis result or individual variant/gene with a required unique index, and return HTTP 409 for duplicates. [#498](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/498)
+- Clear embedded curation summaries when the final curation for an analysis type is deleted. [#497](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/497)
 - Enforce unique Clarity/LIMS ID and sequencing-run ID pairs for samples with both identifiers, returning HTTP 409 for duplicate uploads even when a new sample UUID is generated. [#496](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/496)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
