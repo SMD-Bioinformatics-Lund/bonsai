@@ -144,27 +144,38 @@ def validate_resource_identifier(resource: str) -> Path:
 
 
 def resolve_resource_path(resource: str, base_dir: Path) -> Path:
-    """Resolve and validate a resource path."""
+    """Resolve and validate a resource path under base_dir.
 
-    base_dir = base_dir.resolve()
+    Containment is checked on the path as written, so a symlink inside base_dir
+    may point elsewhere; its target must still exist and be readable.
+    """
+
+    base_dir = Path(os.path.abspath(base_dir))
     requested = validate_resource_identifier(resource)
-    resolved = (base_dir / requested).resolve()
+    candidate = Path(os.path.abspath(base_dir / requested))
 
-    if base_dir not in resolved.parents:
-        raise GenomeResourceError("Outside allowed directory", resolved)
+    if base_dir not in candidate.parents:
+        raise GenomeResourceError("Outside allowed directory", candidate)
 
-    if not resolved.is_file():
-        raise GenomeResourceError(f"{resolved} not found", resolved)
+    if not candidate.is_file():
+        raise GenomeResourceError(f"{candidate} not found", candidate)
 
-    if not os.access(resolved, os.R_OK):
-        raise GenomeResourceError(f"{resolved} not readable", resolved)
+    if not os.access(candidate, os.R_OK):
+        raise GenomeResourceError(f"{candidate} not readable", candidate)
 
-    return resolved
+    return candidate
 
 
 def to_relative_resource(resource: str | None, base_dir: Path) -> str | None:
-    """Convert an absolute resource path to a relative one, validating it in the process."""
+    """Convert a resource path, absolute or relative to base_dir, to a validated relative one."""
 
     if not resource:
         return None
-    return str(resolve_resource_path(resource, base_dir).relative_to(base_dir))
+    base_dir = Path(os.path.abspath(base_dir))
+    path = Path(resource)
+    if path.is_absolute():
+        try:
+            path = path.relative_to(base_dir)
+        except ValueError as exc:
+            raise GenomeResourceError("Outside allowed directory", path) from exc
+    return str(resolve_resource_path(str(path), base_dir).relative_to(base_dir))
