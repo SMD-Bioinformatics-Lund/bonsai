@@ -100,3 +100,14 @@ def test_filter_search_results(data_dir: Path):
 
     filtered = filter_search_results(results, subset_checksums=checksums, limit=1)
     assert len(filtered) == 1
+
+
+def test_filter_search_results_deduplicates_before_limit(data_dir: Path):
+    """Repeated index entries do not consume the checksum result limit."""
+    result_file = get_data_path(data_dir, "multisearch_results.out")
+    results = parse_manysearch_results(result_file)
+    duplicated = [results[0], results[0].model_copy(), results[1]]
+
+    filtered = filter_search_results(duplicated, limit=2)
+
+    assert [result.md5 for result in filtered] == [results[0].md5, results[1].md5]

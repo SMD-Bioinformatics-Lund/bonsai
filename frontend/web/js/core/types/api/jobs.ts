@@ -1,8 +1,8 @@
 import { JobStatusEnum } from "../enums";
 
 interface ApiSimilarityMatch {
-  name: string;
-  md5: string;
+  sample_id: string;
+  signature_checksum: string;
   containment: number;
   jaccard_similarity: number;
   max_containment: number;
