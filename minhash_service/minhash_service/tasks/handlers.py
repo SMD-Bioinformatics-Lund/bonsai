@@ -367,7 +367,7 @@ def search_similar(
     min_similarity: float = 0.5,
     limit: int | None = None,
     subset_sample_ids: list[str] | None = None,
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """
     Find signatures similar to reference signature.
 
@@ -493,11 +493,12 @@ def find_similar_and_cluster(
         limit=limit,
         subset_sample_ids=subset_sample_ids,
     )
-    LOG.info("Found %d similar samples", len(results))
+    matches = results["matches"]
+    LOG.info("Found %d similar samples", len(matches))
 
-    # if 1 or 0 samples were found, return emtpy newick
-    if len(results) < 2:
-        LOG.warning("Invalid number of samples found, %d", len(results))
+    # if 1 or 0 samples were found, return empty newick
+    if len(matches) < 2:
+        LOG.warning("Invalid number of samples found, %d", len(matches))
         return "()"
 
     # load sequence signatures to memory
@@ -505,7 +506,7 @@ def find_similar_and_cluster(
     kmer_size = cnf.kmer_size
     sample_ids: list[str] = []
     checksums_lookup = {}
-    for match in results["matches"]:
+    for match in matches:
         records = repo.get_by_sample_id_or_checksum(checksum=match["md5"], kmer_size=kmer_size)
         record = records[0]
         if record is None:

@@ -1,8 +1,19 @@
 import { JobStatusEnum } from "../enums";
 
-interface ApiSampleSimilarity {
-  sample_id: string;
-  similarity: number;
+interface ApiSimilarityMatch {
+  name: string;
+  md5: string;
+  containment: number;
+  jaccard_similarity: number;
+  max_containment: number;
+}
+
+interface ApiSimilaritySearchResult {
+  query: string;
+  ksize: number;
+  moltype: string;
+  search_time: number;
+  matches: ApiSimilarityMatch[];
 }
 
 export interface ApiJobStatusBase {
@@ -19,7 +30,7 @@ export interface ApiJobStatusNewick extends ApiJobStatusBase {
 }
 
 export interface ApiJobStatusSimilarity extends ApiJobStatusBase {
-  result: ApiSampleSimilarity[];
+  result: ApiSimilaritySearchResult;
 }
 
 export type ApiJobStatus =

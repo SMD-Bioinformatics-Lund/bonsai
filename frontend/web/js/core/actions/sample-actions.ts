@@ -66,9 +66,10 @@ export async function getSimilarSamplesAndCheckRows(
   try {
     const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
-    dt.selectedRows = result.result.map((sample) => sample.sample_id);
+    const matches = result.result.matches;
+    dt.selectedRows = matches.map((sample) => sample.name);
     throwSmallToast(
-      `Search complete: ${result.result.length} similar samples identified`,
+      `Search complete: ${matches.length} similar samples identified`,
       "success",
     );
   } catch (error) {
