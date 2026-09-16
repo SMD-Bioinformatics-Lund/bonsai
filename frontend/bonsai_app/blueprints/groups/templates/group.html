@@ -52,14 +52,14 @@
                             data-test-id="open-prediction-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show prediction summary"
                             href="{{ url_for('groups.group', group_id=group_id, qc=False) }}">
-                        <i class="bi bi-search"></i>
+                        <i class="bi bi-search"></i> Summary
                     </a>
                     <a type="button" 
                             class="btn btn-outline btn-dark btn-sm {% if display_qc %}active{% endif %}"
                             data-test-id="open-qc-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show QC metrics"
                             href="{{ url_for('groups.group', group_id=group_id, qc=True) }}">
-                        <i class="bi bi-bar-chart-line"></i>
+                        <i class="bi bi-bar-chart-line"></i> QC
                     </a>
                 </div>
             </div>
