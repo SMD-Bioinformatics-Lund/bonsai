@@ -177,7 +177,7 @@ def amr_prediction_for_antibiotic(
 
     for pred in sample.element_type_result:
         # Only consider AMR predictions from preferred software
-        if pred.software != preferred_software and pred.analysis_type != AnalysisType.AMR:
+        if pred.software != preferred_software or pred.analysis_type != AnalysisType.AMR:
             continue
 
         # Step 1: Collect relevant curations

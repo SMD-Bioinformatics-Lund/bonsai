@@ -1,6 +1,9 @@
 """Test lims export functions."""
 
+from types import SimpleNamespace
+
 import pytest
+from bonsai_api.lims_export import formatters
 from bonsai_api.lims_export.formatters import (
     AnalysisNoResultError,
     AnalysisNotPresentError,
@@ -105,6 +108,45 @@ def test_get_tbprofiler_amr_all(mtuberculosis_sample):
 
     assert species == "Rv1129c.c.-28T>C WHO-5"
     assert comment == ""
+
+
+@pytest.mark.parametrize(
+    "software,analysis_type",
+    [("mykrobe", "amr"), ("tbprofiler", "virulence")],
+)
+def test_amr_skips_mismatched_entry_before_requested_result(
+    software, analysis_type, monkeypatch
+):
+    """An earlier curated entry must match both software and analysis type."""
+    curation = SimpleNamespace(
+        annotation_type="variant",
+        decision="accept",
+        result_key="variant-1",
+        phenotypes=[SimpleNamespace(name="rifampicin", meta={})],
+    )
+
+    def prediction(software, analysis_type, label):
+        return SimpleNamespace(
+            software=software,
+            analysis_type=analysis_type,
+            curations=[curation],
+            result=SimpleNamespace(
+                variants=[SimpleNamespace(id="variant-1", label=label)]
+            ),
+        )
+
+    sample = SimpleNamespace(
+        sample_name="test-sample",
+        element_type_result=[
+            prediction(software, analysis_type, "wrong-result"),
+            prediction("tbprofiler", "amr", "requested-result"),
+        ],
+    )
+    monkeypatch.setattr(formatters, "_serialize_variant", lambda variant: variant.label)
+
+    assert amr_prediction_for_antibiotic(sample=sample, options={}) == (
+        "requested-result", ""
+    )
 
 
 def test_get_tbprofiler_amr_no_antibiotic(mtuberculosis_sample):
