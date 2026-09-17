@@ -211,7 +211,7 @@ class AnalysisViewEntryDb(AnalysisViewEntryBase):
     - `analysis_id`: pointer to canonical batch for drill-down.
     """
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list, 
         description="All denormalized curation records for this analysis embedded in the sample view."
@@ -222,7 +222,7 @@ class AnalysisViewEntryOut(AnalysisViewEntryBase):
     """API response model for analysis results."""
 
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list,
         description="All denormalized curation records for this analysis embedded in the sample view."

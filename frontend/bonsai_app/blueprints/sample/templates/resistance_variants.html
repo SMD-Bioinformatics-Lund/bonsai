@@ -239,7 +239,7 @@
                 {% elif amr_results | length == 0 %}
                     <p>No predicted resistance determinants.</p>
                 {% else %}
-                    {% for elem in amr_results %}
+                    {% for elem in amr_results if elem.result %}
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=True) }}
                         </div>
