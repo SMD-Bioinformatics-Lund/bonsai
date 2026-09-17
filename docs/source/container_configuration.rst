@@ -70,9 +70,10 @@ Here are the general configuration options for the API service. See the :doc:`do
    +-----------------------------+-----------------------------------------------------+------------------------+
    | REDIS_PORT                  | Port of redis server                                | 6379                   |
    +-----------------------------+-----------------------------------------------------+------------------------+
-   | REFERENCE_GENOMES_DIR       | Path to directory with reference genomes            | /tmp/reference_genomes |
+   | REFERENCE_GENOMES_DIR       | Path to directory with reference genomes            | /reference_genomes     |
    +-----------------------------+-----------------------------------------------------+------------------------+
-   | ANNOTATIONS_DIR             | Path to directory where genome annotation is stored | /tmp/annotations       |
+   | ANNOTATIONS_DIR             | Root directory for IGV tracks. Sample BAM, BAI and  | /annotations           |
+   |                             | VCF paths must be inside it; symlinks are allowed.  |                        |
    +-----------------------------+-----------------------------------------------------+------------------------+
    | SECRET_KEY                  | Authentication token secret key                     |                        |
    +-----------------------------+-----------------------------------------------------+------------------------+
@@ -135,9 +136,9 @@ The API can serve reference genome sequences and annotation files to the integra
    +------------------------+----------------------------+
    | Volume                 | Function                   |
    +========================+============================+
-   | /tmp/reference_genomes | Reference genomes for IGV. |
+   | /reference_genomes     | Reference genomes for IGV. |
    +------------------------+----------------------------+
-   | /tmp/annotations       | IGV annotation files.      |
+   | /annotations           | IGV annotation files.      |
    +------------------------+----------------------------+
 
 
