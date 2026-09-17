@@ -18,7 +18,7 @@
 
 ### Fixed
 
-- Correct analysis-envelope selection for array and object results so summary columns match all requested software/type fields. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Fix selection of analysis results used in sample summaries: match both software and analysis type when specified, and correctly read results stored as a single object or an array. Previously, selection could ignore the analysis type or treat an object field name as literal text instead of reading its data. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Limit group filter criteria to fields populated in the group's samples while preserving configured table columns. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Omit empty summary fields and custom metadata from GrapeTree's input, retaining sample join IDs and partially populated fields without modifying the imported tree code. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Put `Mutation pavisad` in the third LIMS export column and curated mutation details in the fourth column. [#505](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/505)

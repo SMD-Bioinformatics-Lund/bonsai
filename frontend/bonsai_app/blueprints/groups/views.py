@@ -282,7 +282,7 @@ def group(group_id: str) -> str:
             )
             samples_info = response.data or {}
         else:
-            samples_info = client.get_sample_summaries(group_id=group_id, limit=0)
+            samples_info = client.get_sample_summaries(group_id=group_id, limit=None)
     except ApiError as error:
         LOG.exception("Unable to load samples for group %s", group_id)
         abort(_api_error_status(error), description=f"Unable to load group {group_id}")
