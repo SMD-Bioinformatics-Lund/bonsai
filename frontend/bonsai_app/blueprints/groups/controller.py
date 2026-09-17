@@ -6,6 +6,7 @@ from typing import Any
 from jsonpath2.path import Path as jsonPath
 
 from bonsai_app.models import TableCell, TableColumn, TableData
+from bonsai_app.summary_columns import relevant_column_ids
 
 LOG = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ def format_tablular_data(
     data: list[dict[str, Any]], column_defs: list[dict[str, Any]]
 ) -> TableData:
     """Format data for display in a table."""
+    relevant_ids = relevant_column_ids(data, column_defs)
     cols = [
         TableColumn(
             id=col["id"],
@@ -81,6 +83,12 @@ def format_tablular_data(
             renderer=_get_renderer(col),
             sortable=False if col["id"] == "sample_id" else col["sortable"],
             searchable=col["type"] != "object",
+            filterable=(
+                col["id"] != "sample_id"
+                and bool(col["label"])
+                and col.get("filterable", True)
+                and col["id"] in relevant_ids
+            ),
             visible=col.get("default_visible", True),
         )
         for col in column_defs
