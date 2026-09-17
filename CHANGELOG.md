@@ -20,6 +20,8 @@
 
 ### Fixed
 
+- Display identity and reference coverage under the correct headings in resistance and virulence gene tables. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
+- Preserve AMRFinder gene locations and closest-reference names, and keep AMR and stress findings in their correct result categories. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
 - Fix selection of analysis results used in sample summaries: match both software and analysis type when specified, and correctly read results stored as a single object or an array. Previously, selection could ignore the analysis type or treat an object field name as literal text instead of reading its data. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
 - Limit group filter criteria to fields populated in the group's samples while preserving configured table columns. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
 - Omit empty summary fields and custom metadata from GrapeTree's input, retaining sample join IDs and partially populated fields without modifying the imported tree code. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)

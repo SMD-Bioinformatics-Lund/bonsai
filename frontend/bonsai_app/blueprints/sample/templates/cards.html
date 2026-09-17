@@ -167,8 +167,8 @@
                     {% endif %}
                 </td>
                 <td>{{ accession_link(gene.accession) }}</td>
-                <td>{{ gene.coverage }}</td>
                 <td>{{ gene.identity }}</td>
+                <td>{{ gene.coverage }}</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -255,10 +255,10 @@
         </td>
         {% if extended %}
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
-            <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+            <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name  | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -289,8 +289,8 @@
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
             <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -417,8 +417,8 @@
                 <tr>
                     <td>{{ gene.gene_symbol }}</td>
                     <td>{{ accession_link(gene.accession) }}</td>
-                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
+                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.depth | fmt_number }}</td>
                     <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 </tr>
@@ -496,13 +496,13 @@
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
-                    <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+                    <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
-                <td>{{ gene.close_seq_name }}</td>
+                <td>{{ gene.close_seq_name | default(gene.sequence_name, true) }}</td>
                 {% endif  %}
             </tr>
         {% endfor %}
@@ -542,8 +542,8 @@
                         data-bs-html="true"
                         data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.sequence_name | capitalize }}</td>
             </tr>
         {% endfor %}
@@ -609,8 +609,8 @@
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
                     <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
                 <td>{{ gene.close_seq_name }}</td>
