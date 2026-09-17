@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add an indexed API endpoint for retrieving samples by external sample ID. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
 - Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
@@ -13,6 +14,7 @@
 
 ### Fixed
 
+- Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#500](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/500)
