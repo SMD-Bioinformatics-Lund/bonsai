@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.11-slim-trixie AS base
+FROM python:3.11.13-slim-bullseye AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -22,7 +22,7 @@ RUN pip wheel --wheel-dir /wheels ./minhash_service
 
 # Development layer
 
-FROM continuumio/miniconda3 AS development
+FROM continuumio/miniconda3:24.1.2-0 AS development
 
 WORKDIR /app
 
@@ -39,7 +39,7 @@ CMD ["bash"]
 
 # Production layer
 
-FROM continuumio/miniconda3 AS production
+FROM continuumio/miniconda3:24.1.2-0 AS production
 
 RUN opt/conda/bin/conda init \
     && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
