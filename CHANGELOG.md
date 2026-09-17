@@ -2,11 +2,11 @@
 
 ### Added
 
-- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Show pipeline database names, versions, and owning software on sample pages. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Add an indexed API endpoint for retrieving samples by external sample ID. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Show pipeline database names, versions, and owning software on sample pages. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Add an indexed API endpoint for retrieving samples by external sample ID. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
 - Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
@@ -18,8 +18,8 @@
 
 ### Fixed
 
-- Render empty analysis envelopes safely, place virulence results in the correct section, and use the current sequencing-run field. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Render empty analysis envelopes safely, place virulence results in the correct section, and use the current sequencing-run field. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#500](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/500)
@@ -55,7 +55,7 @@
 
 ### Changed
 
-- Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
