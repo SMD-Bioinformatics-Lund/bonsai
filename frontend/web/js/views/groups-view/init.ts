@@ -128,10 +128,11 @@ export async function initGroupView(
     return;
   }
 
-  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead td");
+  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
+  const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
   const tableConfig = { ...sampleTableConfig };
   headers.forEach((cell, idx) => {
-    if (cell.textContent?.trim() === "Date") {
+    if (defaultSort && cell.dataset.columnId === defaultSort) {
       tableConfig["order"] = [[idx, "desc"]];
     }
   });

@@ -102,9 +102,9 @@
     </button>
 {% endmacro %}
 
-{% macro sample_table(table_data) %}
+{% macro sample_table(table_data, default_sort=none) %}
     {# build sample table #}
-    <table id="sample-table" class="display table table-striped">
+    <table id="sample-table" class="display table table-striped" {% if default_sort %}data-default-sort="{{ default_sort }}"{% endif %}>
         <thead>
             <tr>
                 {# build table header #}
