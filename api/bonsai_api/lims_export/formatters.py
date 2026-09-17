@@ -160,7 +160,7 @@ def qc_status(
 def amr_prediction_for_antibiotic(
     sample: SampleRecordDb, *, options: Any
 ) -> tuple[LimsAtomic, LimsComment]:
-    """Get lineage information for a sample.
+    """Return mutation detection status and curated mutation details for an antibiotic.
 
     Supported options:
         antibiotic_name: str
@@ -217,7 +217,7 @@ def amr_prediction_for_antibiotic(
         
         # Step 4: return if anything was found
         if accepted_variants or accepted_genes:
-            return ", ".join(accepted_variants + accepted_genes), ""
+            return "Mutation pavisad", ", ".join(accepted_variants + accepted_genes)
         
         # If curations existed but nothing was resolved, treat as no result
         raise AnalysisNoResultError()

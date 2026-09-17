@@ -8,8 +8,12 @@ class ReferenceGenomeCreate(RWModel):
     """Reference genome definition for creating new reference genomes."""
 
     name: str = Field(..., description="Human-readable name")
-    accession: str = Field(..., description="RefSeq accession")
+    accession: str = Field(..., description="RefSeq assembly accession")
     organism: str = Field(..., description="Scientific name")
+    sequence_accessions: list[str] = Field(
+        default_factory=list,
+        description="Sequence accessions contained in the reference FASTA",
+    )
 
     fasta_resource: str = Field(..., description="Path or URL to FASTA file")
     fasta_index_resource: str = Field(..., description="Path or URL to FASTA index.")
@@ -27,6 +31,10 @@ class ReferenceGenomeResponse(RWModel):
     name: str = Field(..., description="Human-readable name")
     accession: str = Field(..., description="INSDC/RefSeq accession")
     organism: str = Field(..., description="Scientific name")
+    sequence_accessions: list[str] = Field(
+        default_factory=list,
+        description="Sequence accessions contained in the reference FASTA",
+    )
 
     fasta_url: str = Field(..., description="Path or URL to FASTA file")
     fasta_index_url: str = Field(..., description="Path or URL to FASTA .fai index")
