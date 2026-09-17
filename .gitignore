@@ -146,6 +146,8 @@ volumes/minhash_service/*
 data/*
 reports/*
 e2e_tests/fixtures/local/samples/*
+e2e_tests/fixtures/local/cases/
+e2e_tests/fixtures/local/resources/
 local_notes/
 bonsai-sdk/
 tmp/

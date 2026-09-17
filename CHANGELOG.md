@@ -13,6 +13,8 @@
 - Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
 - Added an isolated local test environment with generated synthetic samples and MinHash and SKA artifacts. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Expanded the local synthetic fixtures with TBProfiler and Mykrobe AMR/lineage reports, post-alignment QC inputs, curated LIMS examples, reference and alignment resources, parser edge cases, and genome-distance cases. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
+- Added API scenario tests and offline validators for generated reports and MinHash indexes. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
 - Added an `npm run watch` command for rebuilding frontend assets during development. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
 - Added a manual UI testing checklist for core Bonsai workflows. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 
@@ -76,6 +78,7 @@
 - Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
 - Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
 - Updated the frontend TypeScript, ESLint, and build-tool dependencies. [#447](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/447)
+- Strengthened local smoke tests to validate similarity-search sample IDs and require clustering trees to contain every selected sample. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
 
 ## [v2.1.0]
 
