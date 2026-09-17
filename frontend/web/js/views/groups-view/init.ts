@@ -39,6 +39,8 @@ const sampleTableConfig = {
         {
           extend: "colvis",
           text: "Columns",
+          align: "button-right",
+          collectionLayout: "column-visibility-menu",
           columns: ':not([data-column-id="sample_id"])',
         },
         "copy",
