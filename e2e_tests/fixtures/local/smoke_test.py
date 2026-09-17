@@ -79,7 +79,7 @@ def validate_samples(samples: list[dict[str, Any]]) -> tuple[list[str], list[str
     synthetic = [
         sample
         for sample in samples
-        if sample.get("external_sample_id", "").startswith("synthetic_")
+        if sample.get("external_sample_id", "").startswith(("synthetic_tb_", "synthetic_sa_"))
     ]
     expected_total = SAMPLE_COUNT * 2
     if len(synthetic) != expected_total:
@@ -160,7 +160,7 @@ def main() -> None:
     )
     token = token_response["access_token"]
     response = api_request(
-        args.api, f"/samples?limit={SAMPLE_COUNT * 2}", token=token
+        args.api, "/samples?limit=0", token=token
     )
     tb_ids, sa_ids = validate_samples(response["data"])
     print(
@@ -185,7 +185,15 @@ def main() -> None:
         raise RuntimeError(
             "Branchwater multisearch returned no matches for a synthetic sample"
         )
-    print("PASS Branchwater multisearch: similarity search returned matches")
+    similarity_error = None
+    if any("sample_id" not in match for match in search_result["matches"]):
+        similarity_error = "Similarity matches lack sample_id (the result contract addressed by PR #495)"
+    else:
+        match_ids = [match["sample_id"] for match in search_result["matches"]]
+        if len(match_ids) != len(set(match_ids)) or not set(match_ids) <= set(sa_ids):
+            similarity_error = f"Similarity search returned duplicate or unexpected sample IDs: {match_ids}"
+    print(f"FAIL Branchwater multisearch: {similarity_error}" if similarity_error
+          else "PASS Branchwater multisearch: similarity search returned expected sample IDs")
 
     checks = (
         ("MinHash", "minhash", sa_ids, "average"),
@@ -193,20 +201,30 @@ def main() -> None:
         ("MLST", "mlst", sa_ids, "MSTree"),
         ("cgMLST", "cgmlst", sa_ids, "MSTree"),
     )
+    failures = [similarity_error] if similarity_error else []
     for label, typing_method, sample_ids, method in checks:
-        submitted = api_request(
-            args.api,
-            f"/cluster/{typing_method}",
-            token=token,
-            data={"sampleIds": sample_ids, "method": method},
-        )
-        finished = wait_for_job(
-            args.api, submitted["id"], timeout=args.timeout, label=label
-        )
-        result = finished["result"]
-        if not isinstance(result, str) or not result.endswith(";"):
-            raise RuntimeError(f"{label} returned an invalid Newick tree: {result!r}")
-        print(f"PASS {label}: clustering returned a Newick tree")
+        try:
+            submitted = api_request(
+                args.api,
+                f"/cluster/{typing_method}",
+                token=token,
+                data={"sampleIds": sample_ids, "method": method},
+            )
+            finished = wait_for_job(
+                args.api, submitted["id"], timeout=args.timeout, label=label
+            )
+            result = finished["result"]
+            if not isinstance(result, str) or not result.endswith(";"):
+                raise RuntimeError(f"{label} returned an invalid Newick tree: {result!r}")
+            missing = [sample_id for sample_id in sample_ids if sample_id not in result]
+            if missing:
+                raise RuntimeError(f"{label} tree omitted {len(missing)} selected samples: {missing}")
+            print(f"PASS {label}: clustering returned a tree containing selected samples")
+        except Exception as error:
+            failures.append(str(error))
+            print(f"FAIL {label}: {error}", flush=True)
+    if failures:
+        raise SystemExit("Smoke checks failed: " + "; ".join(failures))
 
 
 if __name__ == "__main__":

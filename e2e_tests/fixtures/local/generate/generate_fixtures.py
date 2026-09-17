@@ -8,6 +8,8 @@ minimal clustering and such.
 from __future__ import annotations
 
 import hashlib
+import csv
+import io
 import json
 import re
 import shutil
@@ -22,6 +24,125 @@ SAMPLE_COUNT = 10
 MUTATION_PROFILE = (0, 3, 8, 30, 100)
 DNA = "ACGT"
 GENERATED_SAMPLE_PATTERN = re.compile(r"synthetic_(?:tb|sa)_\d+")
+REFERENCE_NAME = "SYNTHETIC_TB_CONTIG"
+
+
+def write_json(path: Path, value: object) -> None:
+    write_text(path, json.dumps(value, indent=2) + "\n")
+
+
+def write_extended_results(sample_dir: Path, sample_id: str, number: int) -> None:
+    """Small reports crafted for parser/workflow tests, not biological predictions."""
+    variants = []
+    for pos, gene, drug, change in (
+        (2001, "rpoB", "rifampicin", "p.Ser450Leu"),
+        (4001, "katG", "isoniazid", "p.Ser315Thr"),
+        (6001, "embB", "ethambutol", "p.Met306Val"),
+    ):
+        variants.append({
+            "gene_name": gene, "feature_id": REFERENCE_NAME, "pos": pos,
+            "ref": "C", "alt": "T", "type": "missense_variant",
+            "nucleotide_change": f"c.{pos}C>T", "protein_change": change,
+            "depth": 40, "freq": 0.95, "gene_associated_drugs": [drug],
+            "annotation": [{"drug": drug, "confidence": "synthetic",
+                            "comment": "Synthetic test annotation"}],
+        })
+    # Sample 2 has an explicit no-findings report; sample 10 omits it in its manifest.
+    write_json(sample_dir / "tbprofiler.json", {
+        "dr_variants": variants[:2] if number != 2 else [],
+        "other_variants": [], "qc_fail_variants": variants[2:] if number != 2 else [],
+        "lineage": [{"lineage": "lineage2.2.1", "family": "synthetic",
+                     "rd": "synthetic", "fraction": 1.0, "support": []}],
+        "pipeline": {"software": [{"process": "variant_calling", "software": "synthetic"}]},
+    })
+    stream = io.StringIO()
+    writer = csv.writer(stream, lineterminator="\n")
+    writer.writerow(["sample", "mykrobe_version", "drug", "susceptibility", "genotype_model",
+                     "variants", "species", "species_per_covg", "phylo_group",
+                     "phylo_group_per_covg", "lineage"])
+    writer.writerow([sample_id, "0.12.2", "Rifampicin", "R" if number != 2 else "S",
+                     "kmer_count", "rpoB_S451L-TCG2004TTG:2:38:100" if number != 2 else "",
+                     "Mycobacterium_tuberculosis", "99", "Mycobacterium_tuberculosis_complex",
+                     "99", "lineage2.2.1"])
+    write_text(sample_dir / "mykrobe.csv", stream.getvalue())
+    write_json(sample_dir / "postalignqc.json", {
+        "n_reads": 1000, "n_read_pairs": 500, "n_mapped_reads": 900, "n_dup_reads": 10,
+        "dup_pct": 1.0, "ins_size": 300, "ins_size_dev": 20, "mean_cov": 24.5,
+        "median_cov": 20, "quartile1": 20, "quartile3": 40,
+        "coverage_uniformity": 1.0, "restricted_mean_cov": 35,
+        "pct_above_x": {"1": 90, "10": 80, "30": 40, "100": 0, "250": 0,
+                        "500": 0, "1000": 0},
+    })
+    write_text(sample_dir / "samtools.stats", """SN\traw total sequences:\t1000
+SN\treads mapped:\t900
+SN\treads paired:\t500
+SN\treads duplicated:\t10
+SN\tinsert size average:\t300
+SN\tinsert size standard deviation:\t20
+COV\t[5-5]\t5\t10000
+COV\t[20-20]\t20\t40000
+COV\t[40-40]\t40\t40000
+""")
+    write_text(sample_dir / "samtools.coverage", (
+        "#rname\tstartpos\tendpos\tnumreads\tcovbases\tcoverage\tmeandepth\tmeanbaseq\tmeanmapq\n"
+        f"{REFERENCE_NAME}\t1\t100000\t900\t90000\t90\t24.5\t35\t60\n"
+    ))
+    write_text(sample_dir / "samtools.bedcov", f"{REFERENCE_NAME}\t1000\t2000\t35000\n")
+
+
+def write_typing_cases() -> None:
+    """Unseeded E. coli reports for scenario uploads, without another genome/index."""
+    cases = FIXTURE_ROOT / "cases"
+    hit = {"name": "synthetic_vir", "ref_acc": "SYNTHETIC_VIR", "ref_start_pos": 1,
+           "ref_end_pos": 100, "ref_seq_length": 100, "alignment_length": 100,
+           "identity": 99.0, "coverage": 100.0}
+    stx = {**hit, "name": "stx2a"}
+    write_json(cases / "virulencefinder.json", {
+        "databases": {}, "software_executions": {},
+        "seq_regions": {"vir": hit, "stx": stx},
+        "phenotypes": {
+            "vir": {"function": "Synthetic virulence factor", "ref_database": ["virulence"],
+                    "seq_regions": ["vir"]},
+            "stx2a": {"function": "Synthetic toxin", "ref_database": ["stx"],
+                      "seq_regions": ["stx"]},
+        },
+    })
+    write_json(cases / "virulencefinder-empty.json", {
+        "databases": {}, "software_executions": {}, "seq_regions": {}, "phenotypes": {},
+    })
+    def antigen(gene: str, serotype: str) -> dict:
+        return {"gene": gene, "serotype": serotype, "accession": "NA",
+                "position_in_ref": "1..100", "template_length": 100, "HSP_length": 100,
+                "identity": 99.0, "coverage": 100.0}
+    write_json(cases / "serotypefinder.json", {"serotypefinder": {"results": {
+        "O_type": {"hit1": antigen("wzx", "O157")},
+        "H_type": {"hit1": antigen("fliC", "H7")},
+    }}})
+    write_text(cases / "malformed.json", "{this is deliberately invalid json\n")
+    write_text(cases / "samtools-empty.stats", "# No stats produced\n")
+
+
+def write_resource_inputs() -> None:
+    """One shared reference and a tiny SAM; optional tool step builds BAM/indexes."""
+    resources = FIXTURE_ROOT / "resources"
+    sequence = deterministic_dna("bonsai-local-test:mtuberculosis", GENOME_LENGTH)
+    write_fasta(resources / "reference.fasta", REFERENCE_NAME, sequence)
+    sam = ["@HD\tVN:1.6\tSO:coordinate", f"@SQ\tSN:{REFERENCE_NAME}\tLN:{GENOME_LENGTH}"]
+    for number in range(20):
+        start = 1900 + number * 20
+        read = sequence[start:start + 100]
+        sam.append(f"synthetic-read-{number:03d}\t0\t{REFERENCE_NAME}\t{start + 1}\t60\t100M\t*\t0\t0\t{read}\t{'I' * 100}")
+    write_text(resources / "alignment.sam", "\n".join(sam) + "\n")
+    write_text(resources / "annotation.bed", f"{REFERENCE_NAME}\t1900\t2400\tsynthetic_locus\n")
+    genomes = FIXTURE_ROOT / "cases/genomes"
+    for name, genome in (
+        ("synthetic_identical", sequence),
+        ("synthetic_unrelated", deterministic_dna("bonsai-local-test:unrelated", GENOME_LENGTH)),
+        ("synthetic_deletion", sequence[:20_000] + sequence[24_000:]),
+    ):
+        write_fasta(genomes / f"{name}.fasta", name, genome)
+    write_text(FIXTURE_ROOT / "cases/gap_alignment.fasta", ">reference\nAACCGGTT\n>deletion\nAAC--GTT\n")
+    write_text(FIXTURE_ROOT / "cases/chewbbaca-missing.out", "FILE\tSYNLOC0001\tSYNLOC0002\tSYNLOC0003\nsynthetic_missing\tLNF\tINF-2\t1\n")
 
 
 def deterministic_dna(label: str, length: int) -> str:
@@ -98,7 +219,7 @@ def write_analysis_meta(path: Path, sample_id: str, assay: str, sample_number: i
     metadata = {
         "workflow_name": f"synthetic_fixture_{sample_number:03d}",
         "sample_name": sample_id,
-        "lims_id": f"SYNTHETIC-LIMS-{sample_number:03d}",
+        "lims_id": f"SYNTHETIC-LIMS-{assay.upper()}-{sample_number:03d}",
         "assay": assay,
         "release_life_cycle": "development",
         "sequencing_run": "synthetic-run",
@@ -194,6 +315,19 @@ def write_manifest(
     software_version: 1.0.0
     uri: chewbbaca.out
 """
+    else:
+        analysis += """  - software: mykrobe
+    software_version: 0.12.2
+    uri: mykrobe.csv
+  - software: postalignqc
+    software_version: 1.0.0
+    uri: postalignqc.json
+"""
+        if sample_number != 10:
+            analysis += """  - software: tbprofiler
+    software_version: 6.3.0
+    uri: tbprofiler.json
+"""
 
     manifest = f"""# Generated test data only. It does not describe a biological isolate.
 sample_id: {sample_id}
@@ -239,6 +373,8 @@ def generate_species(prefix: str, group_id: str, assay: str, organism: str, taxo
         write_bracken(sample_dir / "bracken.out", organism, taxonomy_id, sample_number)
         write_quast(sample_dir / "quast.tsv", sample_id, sample_number)
         include_allele_profiles = group_id == "saureus"
+        if not include_allele_profiles:
+            write_extended_results(sample_dir, sample_id, sample_number)
         if include_allele_profiles:
             write_mlst(sample_dir / "mlst.json", sample_id, sample_number)
             write_chewbbaca(
@@ -272,6 +408,8 @@ def main() -> None:
         organism="Synthetic Staphylococcus aureus surrogate",
         taxonomy_id=1280,
     )
+    write_typing_cases()
+    write_resource_inputs()
     print(f"Generated {SAMPLE_COUNT * 2} samples under {SAMPLE_ROOT}")
 
 

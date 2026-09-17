@@ -13,6 +13,9 @@ services:
 
   api:
     container_name: !reset null
+    volumes: !override
+      - ./e2e_tests/fixtures/local/resources:/reference_genomes:ro
+      - ./e2e_tests/fixtures/local/resources:/annotations:ro
     environment:
       API_EXTERNAL_URL: http://localhost:18001
     ports: !override
@@ -48,6 +51,8 @@ services:
 
   ska_service:
     container_name: !reset null
+    environment:
+      INDEX_DIR: /data/samples
     volumes: !override
       - ./e2e_tests/fixtures/local/samples:/data/samples:ro
 
