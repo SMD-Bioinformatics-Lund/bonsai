@@ -38,8 +38,8 @@ Cluster signatures with their minhash profile
 Combination of `similar` and `cluster`. For first finding signatures similar to reference and then cluster in one job.
 ## Repairing the index
 
-After deploying the shared-signature fixes, pause imports, QC changes, sample
-removals, and the MinHash workers. Run these commands in the service environment
+After deploying these fixes to every MinHash worker, pause similarity searches
+and run these commands in the service environment
 with its usual MongoDB connection and signature-volume configuration:
 
 ```sh
@@ -52,7 +52,7 @@ The dry run lists the eligible sample count without changing files or flags.
 The rebuild validates every eligible signature, replaces the collection with one
 entry per checksum, and reconciles index flags for the configured k-mer size.
 It restores missing entries and removes historical duplicates and stale entries.
-An empty eligible collection clears the index. Resume workers after checking the
+An empty eligible collection clears the index. Resume searches after checking the
 report. A metadata update failure is reported as an error; rerunning the rebuild
 reconciles partially updated flags.
 
@@ -63,6 +63,16 @@ first. The command rejects k-mer sizes different from the service configuration.
 
 RocksDB replacement retains the previous directory until the new index has been
 opened successfully and restores it if replacement fails. Replacement is a
-maintenance operation: reads and metadata mutations must be paused while it runs.
+maintenance operation: reads must be paused while it runs. A shared-volume workflow
+lock automatically serializes imports, QC changes, deletions, index updates, and
+cleanup with the rebuild, from metadata snapshot through flag reconciliation.
+All workers must use the same signature volume; direct database edits bypass this lock.
 An empty SBT collection uses a Bonsai marker file because Sourmash cannot reload
 an SBT archive with no leaves; adding signatures replaces it with a normal SBT.
+
+Deletion marks metadata first, removes index entries and stages unshared files,
+then deletes metadata. Failures leave marked records for retry via the same
+remove task. Staged files are verified by file checksum on retry and protected
+from cleanup while metadata still references their original paths. Trash defaults
+to `signature_dir/trash`; an explicit `TRASH_DIR` must also be persistent and shared
+by all workers.
