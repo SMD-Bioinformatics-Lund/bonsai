@@ -2,7 +2,7 @@
 
 ### Added
 
-- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed additional organism groups. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show pipeline database names, versions, and owning software on sample pages. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
