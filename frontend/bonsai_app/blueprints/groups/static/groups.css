@@ -68,4 +68,6 @@
 
 .dt-button-collection.column-visibility-menu .dropdown-menu {
   position: relative;
+  max-height: min(24rem, 60vh);
+  overflow-y: auto;
 }
