@@ -96,6 +96,27 @@ INDEXES: dict[str, list[IndexDefinition]] = {
             },
         },
     ],
+    "reference_genome": [
+        {
+            "definition": [("accession", ASCENDING)],
+            "options": {
+                "name": "reference_genome_accession",
+                "background": True,
+                "unique": True,
+            },
+        },
+        {
+            "definition": [("sequence_accessions", ASCENDING)],
+            "options": {
+                "name": "reference_genome_sequence_accessions",
+                "background": True,
+                "unique": True,
+                "partialFilterExpression": {
+                    "sequence_accessions.0": {"$exists": True}
+                },
+            },
+        },
+    ],
     "curations": [
         {
             "definition": [
