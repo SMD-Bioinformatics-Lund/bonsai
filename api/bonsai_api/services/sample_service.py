@@ -505,7 +505,14 @@ async def get_igv_config(
     # get locus for a variant if variant id was provided
     locus = ""
     if variant_ctx:
-        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=ref_genome.accession)
+        reference_name = (
+            ref_genome.sequence_accessions[0]
+            if ref_genome.sequence_accessions
+            else ref_genome.accession
+        )
+        locus = await _build_locus(
+            db, variant_ctx=variant_ctx, reference_name=reference_name
+        )
 
     # Build tracks
     tracks = [
