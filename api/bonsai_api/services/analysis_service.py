@@ -2,6 +2,7 @@
 
 import logging
 import io
+import inspect
 from typing import Any
 
 from fastapi import UploadFile
@@ -32,6 +33,9 @@ from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
+RUN_PARSER_SUPPORTS_SUBCOMMAND = "subcommand" in inspect.signature(
+    run_parser
+).parameters
 
 TYPING_RESULT = "typing_result"
 ELEMENT_TYPE_RESULT = "element_type_result"
@@ -165,13 +169,20 @@ async def ingest_analysis_service(
             auxiliary_files["bedcov_path"] = io.TextIOWrapper(
                 bedcov_file.file, encoding="utf-8"
             )
-        out = run_parser(
-            software=software,
-            subcommand=subcommand,
-            version=software_version,
-            data=text_stream,
+        parser_args: dict[str, Any] = {
+            "software": software,
+            "version": software_version,
+            "data": text_stream,
             **auxiliary_files,
-        )
+        }
+        if subcommand is not None:
+            if not RUN_PARSER_SUPPORTS_SUBCOMMAND:
+                raise NotImplementedError(
+                    "Analysis subcommands require a Bonsai SDK version that "
+                    "supports subcommand parser selection"
+                )
+            parser_args["subcommand"] = subcommand
+        out = run_parser(**parser_args)
 
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
