@@ -35,7 +35,18 @@ const sampleTableConfig = {
       ],
     },
     top1End: {
-      buttons: ["copy", "csv", "excel"],
+      buttons: [
+        {
+          extend: "colvis",
+          text: "Columns",
+          align: "button-right",
+          collectionLayout: "column-visibility-menu",
+          columns: ':not([data-column-id="sample_id"])',
+        },
+        "copy",
+        "csv",
+        "excel",
+      ],
     },
     top2Start: "searchBuilder",
   },
