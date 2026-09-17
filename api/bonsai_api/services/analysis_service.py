@@ -141,21 +141,6 @@ async def ingest_analysis_service(
     if not await sample_exists(db, sample_id=sample_id):
         raise EntryNotFound(f"Sample with id '{sample_id}' not found")
 
-    exists = await analysis_exists(
-        db,
-        sample_id=sample_id,
-        software=software,
-        subcommand=subcommand,
-        software_version=software_version,
-        pipeline_run=pipeline_run,
-    )
-    if exists and not force:
-        software_label = f"{software}.{subcommand}" if subcommand else software
-        raise AnalysisExistsError(
-            f"Analysis for sample {sample_id} with software {software_label} "
-            f"version {software_version} and pipeline run {pipeline_run} already exists."
-        )
-
     # Execute parser
     try:
         binary_stream = file.file  # SpooledTemporaryFile object
@@ -210,6 +195,26 @@ async def ingest_analysis_service(
         raise InvalidDataFormat(
             f"Validation error when processing parser output: {str(ve)}"
         ) from ve
+
+    # Parser aliases and subcommands can normalize the requested software name.
+    # Check the identity that will actually be persisted, not the submitted alias.
+    exists = await analysis_exists(
+        db,
+        sample_id=sample_id,
+        software=doc.software,
+        subcommand=doc.subcommand,
+        software_version=doc.software_version,
+        pipeline_run=doc.pipeline_run_id,
+    )
+    if exists and not force:
+        software_label = (
+            f"{doc.software}.{doc.subcommand}" if doc.subcommand else doc.software
+        )
+        raise AnalysisExistsError(
+            f"Analysis for sample {sample_id} with software {software_label} "
+            f"version {doc.software_version} and pipeline run "
+            f"{doc.pipeline_run_id} already exists."
+        )
 
     # audit event
     if isinstance(audit, AuditLogClient):
