@@ -154,6 +154,10 @@ class Settings(BaseSettings):
     max_connections: int = 10
     min_connections: int = 10
 
+    # MinHash bookkeeping lives on the same MongoDB server in a separate DB.
+    minhash_database: str = "minhash_db"
+    minhash_signature_collection: str = "signatures"
+
     # Redis connection
     redis_host: str = "redis"
     redis_port: str = "6379"
