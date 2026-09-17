@@ -2,6 +2,11 @@
 
 ### Added
 
+- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed additional organism groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Show pipeline database names, versions, and owning software on sample pages. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Add an indexed API endpoint for retrieving samples by external sample ID. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
 - Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
@@ -15,6 +20,12 @@
 
 ### Fixed
 
+- Fix selection of analysis results used in sample summaries: match both software and analysis type when specified, and correctly read results stored as a single object or an array. Previously, selection could ignore the analysis type or treat an object field name as literal text instead of reading its data. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Limit group filter criteria to fields populated in the group's samples while preserving configured table columns. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Omit empty summary fields and custom metadata from GrapeTree's input, retaining sample join IDs and partially populated fields without modifying the imported tree code. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Put `Mutation pavisad` in the third LIMS export column and curated mutation details in the fourth column. [#505](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/505)
+- Render empty analysis envelopes safely, place virulence results in the correct section, and use the current sequencing-run field. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
 - Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#500](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/500)
@@ -50,6 +61,7 @@
 
 ### Changed
 
+- Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
