@@ -6,13 +6,11 @@ from typing import Any
 
 from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
-from bonsai_api.config import settings
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
-from bonsai_api.models.enums import TypingMethod
 from bonsai_api.redis.models import SkaIndexInput
 
 LOG = logging.getLogger(__name__)
@@ -190,62 +188,3 @@ async def get_ska_index_path_for_samples(
         )
         for sample_id in sample_ids
     ]
-
-
-async def get_available_cluster_methods(
-    db: Database, sample_ids: Sequence[str]
-) -> list[TypingMethod]:
-    """Return methods whose required data is present for every selected sample."""
-    ids = list(dict.fromkeys(sample_ids))
-    if len(ids) < 2:
-        return []
-
-    methods: list[TypingMethod] = []
-    for method in (TypingMethod.CGMLST, TypingMethod.MLST):
-        try:
-            await get_typing_profiles(db, ids, method.value)
-        except EntryNotFound:
-            continue
-        methods.append(method)
-
-    try:
-        await get_ska_index_path_for_samples(db, ids)
-    except EntryNotFound:
-        pass
-    else:
-        methods.append(TypingMethod.SKA)
-
-    # Use the worker's bookkeeping, not the sample's uploaded signature path.
-    # The worker skips missing, excluded, and ambiguous signature records.
-    signatures = db.client.get_database(settings.minhash_database).get_collection(
-        settings.minhash_signature_collection
-    )
-    cursor = signatures.find(
-        {"sample_id": {"$in": ids}},
-        {
-            "_id": 0,
-            "sample_id": 1,
-            "signature_path": 1,
-            "exclude_from_analysis": 1,
-            "kmer_size": 1,
-        },
-    )
-    records_by_id: dict[str, list[dict[str, Any]]] = {sid: [] for sid in ids}
-    async for record in cursor:
-        records_by_id[record["sample_id"]].append(record)
-    if all(
-        len(records) == 1
-        and records[0].get("signature_path")
-        and not records[0].get("exclude_from_analysis", False)
-        for records in records_by_id.values()
-    ):
-        # Signature comparison requires matching k-mer sizes.
-        kmer_sizes = {records[0].get("kmer_size") for records in records_by_id.values()}
-        if len(kmer_sizes) == 1 and None not in kmer_sizes:
-            # All IDs must also refer to samples that still exist in Bonsai.
-            count = await db.sample_collection.count_documents(
-                {"sample_id": {"$in": ids}}
-            )
-            if count == len(ids):
-                methods.append(TypingMethod.MINHASH)
-    return methods
