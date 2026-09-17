@@ -136,9 +136,9 @@ The API can serve reference genome sequences and annotation files to the integra
    +------------------------+----------------------------+
    | Volume                 | Function                   |
    +========================+============================+
-   | /tmp/reference_genomes | Reference genomes for IGV. |
+   | /reference_genomes     | Reference genomes for IGV. |
    +------------------------+----------------------------+
-   | /tmp/annotations       | IGV annotation files.      |
+   | /annotations           | IGV annotation files.      |
    +------------------------+----------------------------+
 
 
