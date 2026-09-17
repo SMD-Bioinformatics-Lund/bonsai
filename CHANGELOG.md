@@ -48,6 +48,7 @@
 
 ### Changed
 
+- Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
