@@ -2,6 +2,7 @@
 
 ### Added
 
+- Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Add an indexed API endpoint for retrieving samples by external sample ID. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
 - Database indexes are now created automatically on API startup.
