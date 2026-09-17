@@ -83,8 +83,8 @@ def test_get_tbprofiler_amr_all(mtuberculosis_sample):
         sample=mtuberculosis_sample, options=opts
     )
 
-    assert species == "Rv1129c.c.-28T>C WHO-5"
-    assert comment == ""
+    assert species == "Mutation pavisad"
+    assert comment == "Rv1129c.c.-28T>C WHO-5"
 
     # Test that  resistance levels filter work
     # The sample dont carry a resistance with low grade resistance
@@ -106,8 +106,8 @@ def test_get_tbprofiler_amr_all(mtuberculosis_sample):
         sample=mtuberculosis_sample, options=opts
     )
 
-    assert species == "Rv1129c.c.-28T>C WHO-5"
-    assert comment == ""
+    assert species == "Mutation pavisad"
+    assert comment == "Rv1129c.c.-28T>C WHO-5"
 
 
 @pytest.mark.parametrize(
@@ -145,7 +145,7 @@ def test_amr_skips_mismatched_entry_before_requested_result(
     monkeypatch.setattr(formatters, "_serialize_variant", lambda variant: variant.label)
 
     assert amr_prediction_for_antibiotic(sample=sample, options={}) == (
-        "requested-result", ""
+        "Mutation pavisad", "requested-result"
     )
 
 
