@@ -10,6 +10,13 @@ def has_value(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip() not in ("", "-")
     if isinstance(value, dict):
+        # Comment records are only rendered when explicitly displayed. Tag
+        # records are represented by their label; other objects use any
+        # meaningful member as their populated value.
+        if "displayed" in value and "comment" in value:
+            return bool(value["displayed"]) and has_value(value["comment"])
+        if "label" in value:
+            return has_value(value["label"])
         return any(has_value(item) for item in value.values())
     if isinstance(value, (list, tuple)):
         return any(has_value(item) for item in value)
@@ -18,15 +25,7 @@ def has_value(value: Any) -> bool:
 
 def has_column_value(sample: dict[str, Any], column_id: str) -> bool:
     """Check the content displayed by a summary column."""
-    value = sample.get(column_id)
-    if column_id == "comments":
-        return any(
-            comment.get("displayed") and has_value(comment.get("comment"))
-            for comment in value or []
-        )
-    if column_id == "tags":
-        return any(has_value(tag.get("label")) for tag in value or [])
-    return has_value(value)
+    return has_value(sample.get(column_id))
 
 
 def relevant_column_ids(
