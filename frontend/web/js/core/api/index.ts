@@ -71,6 +71,14 @@ export class ApiService {
     });
   };
 
+  getClusterMethods = async (sampleIds: string[], signal?: AbortSignal) => {
+    return this.http.request<{ methods: TypingMethod[] }>("/cluster/methods", {
+      method: "POST",
+      body: JSON.stringify({ sampleIds }),
+      signal,
+    });
+  };
+
   findSimilarSamples = async (sampleId: string, params: ApiFindSimilarInput) => {
     return this.http.request<ApiJobSubmission>(`/samples/${sampleId}/similar`, {
       method: "POST",

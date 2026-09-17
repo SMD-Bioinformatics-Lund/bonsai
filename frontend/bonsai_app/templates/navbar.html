@@ -92,6 +92,7 @@
                       class="btn btn-success dropdown-toggle" 
                       type="button" data-bs-toggle="dropdown"
                       data-test-id="cluster-samples-dropdown-btn"
+                      disabled
                     >
                         <span class="content">
                             <i class="bi bi-diagram-3-fill"></i>
@@ -103,27 +104,30 @@
                         </span>
                     </button>
                     <ul class="dropdown-menu">
-                        <li>
+                        <li hidden>
                             <a class="dropdown-item" href="#" 
                                data-test-id="cluster-cgmlst-btn"
                                data-bi-typing-method="cgmlst">cgMLST</a>
                         </li>
-                        <li>
+                        <li hidden>
                             <a class="dropdown-item" href="#" 
                                data-test-id="cluster-minhash-btn"
                                data-bi-typing-method="minhash">MinHash</a>
                         </li>
-                        <li>
+                        <li hidden>
                             <a class="dropdown-item" href="#" 
                                data-test-id="cluster-snv-btn"
                                data-bi-typing-method="ska">SNV</a>
                         </li>
-                        <li>
+                        <li hidden>
                             <a class="dropdown-item" href="#" 
                                data-test-id="cluster-mlst-btn"
                                data-bi-typing-method="mlst">MLST</a>
                         </li>
                     </ul>
+                    <p class="small text-muted mt-2 mb-0" data-cluster-status role="status">
+                        Add at least two samples to cluster.
+                    </p>
                 </div>
             </div>
         </div>

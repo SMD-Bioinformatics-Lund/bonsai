@@ -35,7 +35,7 @@ async function openGrapeTree(
 
 // cluter all samples in basket
 export async function clusterSamples(
-  element: HTMLLinkElement,
+  element: HTMLAnchorElement,
   sampleIds: string[],
   api: ApiService,
 ) {

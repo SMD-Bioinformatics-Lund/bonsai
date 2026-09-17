@@ -6,7 +6,7 @@ import {
   initSetSampleQc,
   removeSamplesFromGroup,
 } from "../../core/actions/sample-actions";
-import { clusterSamples } from "../../core/actions/cluster-actions";
+import { BasketClusterMenu } from "../../components/basket-cluster-menu";
 import { GroupList } from "../../components/group-list";
 import { GroupSelector } from "../../components/group-selector";
 import { User } from "../../core/models/User";
@@ -93,10 +93,10 @@ function initBasket(api: GroupViewApi): BasketState | void {
   const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
   basketElement.appendChild(basketComponent);
 
-  const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
-  clusterBtns.forEach((element) => {
-    element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
-  });
+  const clusterMenuElement = document.getElementById("basket-cluster-samples");
+  const clusterMenu = clusterMenuElement
+    ? new BasketClusterMenu(clusterMenuElement, basketState, api)
+    : null;
 
   const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
   if (clearBasketBtn) {
@@ -109,6 +109,7 @@ function initBasket(api: GroupViewApi): BasketState | void {
   if (offcanvas) {
     offcanvas.addEventListener("show.bs.offcanvas", () => {
       basketComponent.render();
+      void clusterMenu?.refresh();
     });
   }
 
@@ -130,7 +131,14 @@ export async function initGroupView(
 
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
-  const tableConfig = { ...sampleTableConfig };
+  const tableConfig = {
+    ...sampleTableConfig,
+    searchBuilder: {
+      columns: Array.from(headers).flatMap((cell, idx) =>
+        cell.dataset.filterable === "true" ? [idx] : [],
+      ),
+    },
+  };
   headers.forEach((cell, idx) => {
     if (defaultSort && cell.dataset.columnId === defaultSort) {
       tableConfig["order"] = [[idx, "desc"]];
