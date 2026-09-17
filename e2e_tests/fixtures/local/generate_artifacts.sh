@@ -8,13 +8,18 @@ REPO_ROOT="$(CDPATH= cd -- "${SCRIPT_DIR}/../../.." && pwd)"
 FIXTURE_ROOT="${REPO_ROOT}/e2e_tests/fixtures/local"
 COMPOSE_FILES=(-f "${REPO_ROOT}/docker-compose.yml" -f "${REPO_ROOT}/docker-compose.dev.yml")
 
+if [[ $# -gt 1 || (${1:-} != "" && ${1:-} != "--resources") ]]; then
+    echo "Usage: $0 [--resources]" >&2
+    exit 2
+fi
+
 python3 "${SCRIPT_DIR}/generate/generate_fixtures.py"
 
 docker compose "${COMPOSE_FILES[@]}" build minhash_service ska_service
 
 # Mutation distances may change when SAMPLE_COUNT changes, so rebuild derived
 # artifacts instead of retaining indexes generated from older FASTA content.
-find "${FIXTURE_ROOT}/samples" -type f \
+find "${FIXTURE_ROOT}/samples" "${FIXTURE_ROOT}/cases/genomes" -type f \
     \( -name '*.sig' -o -name '*_ska_index.skf' \) -delete
 
 while IFS= read -r fasta; do
@@ -48,6 +53,12 @@ while IFS= read -r fasta; do
                 "/fixtures/${relative_dir}/${sample_id}.fasta" \
                 < /dev/null
     fi
-done < <(find "${FIXTURE_ROOT}/samples" -type f -name 'synthetic_*.fasta' | sort)
+done < <(find "${FIXTURE_ROOT}/samples" "${FIXTURE_ROOT}/cases/genomes" -type f -name 'synthetic_*.fasta' | sort)
+
+if [[ ${1:-} == "--resources" ]]; then
+    docker build -t bonsai-fixture-tools "${SCRIPT_DIR}/generate"
+    docker run --rm --user "$(id -u):$(id -g)" \
+        -v "${FIXTURE_ROOT}:/fixtures" bonsai-fixture-tools
+fi
 
 echo "Generated synthetic genomes, sourmash signatures, and SKA indexes."
