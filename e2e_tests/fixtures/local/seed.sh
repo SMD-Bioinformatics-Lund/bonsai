@@ -13,4 +13,7 @@ while IFS= read -r manifest; do
         "${manifest}"
 done < "${manifest_list}"
 
+python3 /data/scenario_test.py --setup-only \
+    --api "${BONSAI_API}" --username "${BONSAI_USER}" --password "${BONSAI_PASSWD}"
+
 echo "All synthetic local-test fixtures uploaded."
