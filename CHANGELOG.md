@@ -18,6 +18,10 @@
 
 ### Fixed
 
+- Show basket clustering methods only when every selected sample has the required typing profile, SKA index, or available MinHash signature; refresh choices as the basket changes. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Correct analysis-envelope selection for array and object results so summary columns and clustering checks match all requested software/type fields. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Limit group filter criteria to fields populated in the group's samples while preserving configured table columns. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Omit empty summary fields and custom metadata from GrapeTree's input, retaining sample join IDs and partially populated fields without modifying the imported tree code. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Put `Mutation pavisad` in the third LIMS export column and curated mutation details in the fourth column. [#505](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/505)
 - Render empty analysis envelopes safely, place virulence results in the correct section, and use the current sequencing-run field. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
