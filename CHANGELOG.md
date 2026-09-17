@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add a Columns dropdown to group sample tables for showing or hiding columns while keeping sample IDs visible, with a positioned, scrollable menu for long column lists. [#509](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/509)
 - Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed additional organism groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Show pipeline database names, versions, and owning software on sample pages. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
