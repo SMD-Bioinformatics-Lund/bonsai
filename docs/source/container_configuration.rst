@@ -82,14 +82,6 @@ Here are the general configuration options for the API service. See the :doc:`do
 
 .. autopydantic_settings:: bonsai_api.config.Settings
 
-The basket clustering availability check reads MinHash signature bookkeeping
-from the same MongoDB server as the API. ``MINHASH_DATABASE`` (default
-``minhash_db``) and ``MINHASH_SIGNATURE_COLLECTION`` (default ``signatures``)
-must match the MinHash worker's ``MONGODB_DATABASE`` and
-``MONGODB_SIGNATURE_COLLECTION`` settings. Clustering does not require a
-signature to have been added to the similarity-search index; excluded samples
-and samples with multiple signature records are unavailable.
-
 Minhash service
 ^^^^^^^^^^^^^^^
 

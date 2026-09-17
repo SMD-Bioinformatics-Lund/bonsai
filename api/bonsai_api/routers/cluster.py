@@ -6,16 +6,14 @@ from typing import Dict
 
 from bonsai_api.crud.cluster import (
     TypingProfileOutput,
-    get_available_cluster_methods,
     get_signature_path_for_samples,
     get_ska_index_path_for_samples,
     get_typing_profiles,
 )
 from bonsai_api.db import Database
-from bonsai_api.dependencies import get_current_active_user, get_database
+from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel
 from bonsai_api.models.enums import DistanceMethod, TypingMethod
-from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from bonsai_api.redis.allele_cluster import (
     schedule_cluster_samples as schedule_allele_cluster_samples,
@@ -29,7 +27,7 @@ from bonsai_api.redis.minhash import (
 from bonsai_api.redis.ska import (
     schedule_cluster_samples as schedule_ska_cluster_samples,
 )
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ConfigDict, Field
 
 from .tags import RouterTags
@@ -53,32 +51,6 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
     method: ClusterMethod | MsTreeMethods
 
     model_config = ConfigDict(use_enum_values=False)
-
-
-class ClusterMethodsInput(RWModel):
-    """The current basket selection, including an empty or single-sample basket."""
-
-    sample_ids: list[str] = Field(default_factory=list, alias="sampleIds")
-
-
-class ClusterMethodsOutput(RWModel):
-    """Clustering methods available for the entire selection."""
-
-    methods: list[TypingMethod]
-
-
-@router.post("/cluster/methods", response_model=ClusterMethodsOutput)
-async def available_cluster_methods(
-    selection: ClusterMethodsInput,
-    db: Database = Depends(get_database),
-    current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=["samples:read"]
-    ),
-) -> ClusterMethodsOutput:
-    """Inspect required data without submitting clustering jobs."""
-    return ClusterMethodsOutput(
-        methods=await get_available_cluster_methods(db, selection.sample_ids)
-    )
 
 
 @router.post(
