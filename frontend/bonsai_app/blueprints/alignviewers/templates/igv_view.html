@@ -37,10 +37,15 @@
       const accessToken = "{{ access_token }}";
       const apiUrl = "{{ api_url }}";
       const sampleId = "{{ sample_id }}";
-      const analysisId = "{{ analysis_id }}";
-      const variantid = "{{ variant_id }}";
+      const analysisId = {{ analysis_id | tojson }};
+      const variantId = {{ variant_id | tojson }};
+      const configUrl = new URL(`${apiUrl}/samples/${sampleId}/igv-config`, window.location.href);
+      if (analysisId !== null && variantId !== null) {
+        configUrl.searchParams.set("analysis_id", analysisId);
+        configUrl.searchParams.set("variant_id", variantId);
+      }
       fetch(
-        `${apiUrl}/samples/${sampleId}/igv-config`, {
+        configUrl, {
           method: "GET",
           headers: { 
             "Content-Type": "application/json",
