@@ -19,6 +19,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests import HTTPError
+from pydantic import ValidationError
 from bonsai_libs.api_client.core.exceptions import ApiError
 
 from bonsai_app.bonsai_api import get_api_client
@@ -106,6 +107,10 @@ def sample(sample_id: str) -> str:
     # get sample
     try:
         sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except (ApiError, ValidationError):
+        current_app.logger.exception("Failed to load sample %s", sample_id)
+        flash("Something went wrong loading the sample. Please try again.", "toast-warning")
+        return redirect(url_for("samples.samples"))
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -249,6 +254,9 @@ def download_lims(sample_id: str):
     # Fetch from API
     try:
         api_resp = client.get_lims_export_response(sample_id=sample_id, fmt=fmt)
+        # The SDK returns bytes; older clients may return an HTTP response.
+        content = api_resp if isinstance(api_resp, bytes) else api_resp.content
+        api_headers = getattr(api_resp, "headers", {})
     except ApiError as error:
         status_code = error.status
         if status_code in {401, 403}:
@@ -274,9 +282,11 @@ def download_lims(sample_id: str):
             flash("Error when generating export file", "warning")
         return redirect(url_for("samples.sample", sample_id=sample_id))
 
-    # The SDK returns export bytes; older clients may return a response object.
-    content = api_resp if isinstance(api_resp, bytes) else api_resp.content
-    api_headers = getattr(api_resp, "headers", {})
+    except Exception:
+        current_app.logger.exception("Failed to download LIMS export for sample %s", sample_id)
+        flash("Something went wrong downloading the LIMS report. Please try again.", "toast-warning")
+        return redirect(url_for("samples.sample", sample_id=sample_id))
+
     response = make_response(content)
 
     # Forward content type if provided
