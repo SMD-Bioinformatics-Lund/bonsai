@@ -66,7 +66,7 @@
                         </td>
                         {% if display_igv %}
                             <td>
-                                <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=variants, variant_id=variant.display_id) }}"
+                                <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=variant.analysis_id | default(none), variant_id=variant.id if variant.analysis_id else none) }}"
                                    target="_blank" class="btn btn-sm btn-secondary" type="button">
                                    IGV
                                 </a>
