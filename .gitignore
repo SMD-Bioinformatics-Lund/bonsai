@@ -150,6 +150,7 @@ e2e_tests/fixtures/local/cases/
 e2e_tests/fixtures/local/resources/
 local_notes/
 bonsai-sdk/
+bonsai-prp/
 tmp/
 
 # editor related files
