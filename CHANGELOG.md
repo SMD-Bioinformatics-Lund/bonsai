@@ -21,6 +21,7 @@
 
 ### Fixed
 
+- Prefer Lab ID in default GrapeTree hover labels using a shared label-field constant, with name and internal ID fallbacks. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show a dismissible error toast and return to the sample list when sample retrieval fails, including API data-validation errors. [#512](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/512)
 - Show a dismissible error toast for unexpected LIMS download failures instead of crashing the page. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Display identity and reference coverage under the correct headings in resistance and virulence gene tables. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
