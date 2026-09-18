@@ -21,7 +21,7 @@
 
 ### Fixed
 
-- Show a dismissible error toast and return to the sample list when sample retrieval fails, including API data-validation errors. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show a dismissible error toast and return to the sample list when sample retrieval fails, including API data-validation errors. [#512](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/512)
 - Show a dismissible error toast for unexpected LIMS download failures instead of crashing the page. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Display identity and reference coverage under the correct headings in resistance and virulence gene tables. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
 - Preserve AMRFinder gene locations and closest-reference names, and keep AMR and stress findings in their correct result categories. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
