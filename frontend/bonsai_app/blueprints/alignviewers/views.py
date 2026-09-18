@@ -33,7 +33,7 @@ def igv_view(
 
     return render_template(
         "igv_view.html",
-        access_token=current_user.get_id(),
+        access_token=current_user.token,
         api_url=settings.api_external_url,
         sample_id=sample_id,
         analysis_id=analysis_id,
