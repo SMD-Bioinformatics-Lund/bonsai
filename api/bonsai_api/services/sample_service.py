@@ -425,7 +425,7 @@ def _to_igv_track(resouce: GenomicResourceResponse) -> IgvTrack:
 
 
 def _get_variant_positions(
-    variant_id: str, *, analysis_obj: AnalysisResult
+    variant_id: int | str, *, analysis_obj: AnalysisResult
 ) -> tuple[int, int] | None:
     """Get variant with ID from sample object."""
     amr_pred = analysis_obj.envelopes.get("amr")
@@ -434,7 +434,7 @@ def _get_variant_positions(
 
     variants = amr_pred.value.get("variants", [])
     for var in variants:
-        if not var.get("id") == variant_id:
+        if str(var.get("id")) != str(variant_id):
             continue
 
         start = var["start"]
