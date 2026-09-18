@@ -27,6 +27,8 @@
 </head>
 
 <body>
+  <div id="igv-message" role="alert" hidden
+       style="padding:12px; margin:5px; border:1px solid #997404; background:#fff3cd; color:#664d03;"></div>
   <div id="igv-container" class="container-fluid" style="padding:5px; border:1px solid lightgray">
     Loading IGV...
   </div>
@@ -59,16 +61,41 @@
           }
           return resp.json()
       })
-      .then( config => {
+      .then(async config => {
         const igvContainer = document.getElementById('igv-container');
         if (!igvContainer) {
           console.error("Cannot open IGV: container not found");
           return
         }
-        igv.createBrowser(igvContainer, config);
+        igvContainer.textContent = "";
+        try {
+          return await igv.createBrowser(igvContainer, config);
+        } catch (err) {
+          if (!config.locus || !String(err.message).startsWith("Cannot set initial locus")) {
+            throw err;
+          }
+
+          // A failed load still registers a browser; dispose it before retrying.
+          igv.removeAllBrowsers();
+          igvContainer.textContent = "";
+          const message = document.getElementById('igv-message');
+          message.textContent = "Could not locate this variant in the configured reference. Opening IGV without zooming. Check that the reference matches the alignment files.";
+          message.hidden = false;
+          const fallbackConfig = { ...config };
+          delete fallbackConfig.locus;
+          return await igv.createBrowser(igvContainer, fallbackConfig);
+        }
       })
       .catch(err => {
         console.error("IGV load error:", err);
+        igv.removeAllBrowsers();
+        const message = document.getElementById('igv-message');
+        message.textContent = "Could not load IGV. Check that the reference FASTA, its index, and alignment files are available and match, then try again.";
+        message.hidden = false;
+        const igvContainer = document.getElementById('igv-container');
+        if (igvContainer) {
+          igvContainer.textContent = "";
+        }
       })
   });
 </script>
