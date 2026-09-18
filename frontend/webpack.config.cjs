@@ -8,6 +8,7 @@ module.exports = {
   devtool: 'inline-source-map',
 
   entry: {
+    'bootstrap-init': resolve(__dirname, 'web/js/bootstrap-init'),
     // New view-level entries
     'group-editor': resolve(
       __dirname,
