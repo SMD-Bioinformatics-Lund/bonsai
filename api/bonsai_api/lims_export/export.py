@@ -13,6 +13,10 @@ from .models import AssayConfig, LimsRsResult, LimsValue
 LOG = logging.getLogger(__name__)
 
 
+class RequiredAnalysisMissingError(ValueError):
+    """A required analysis is missing for the selected LIMS export."""
+
+
 def _to_str(value: LimsValue) -> str:
     if value is None or value == "":
         return "-"
@@ -60,7 +64,7 @@ def lims_rs_formatter(
 
         # Enforce presence requirement only on 'not present'
         if field.required and not analysis_present:
-            raise ValueError(
+            raise RequiredAnalysisMissingError(
                 f"Required analysis for field '{field.parameter_name}' "
                 f"({field.data_type}) is not present on sample '{sample.sample_name}'."
             )

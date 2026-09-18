@@ -1,4 +1,5 @@
-import DataTable from "datatables.net-bs5";
+import DataTable, { Api, Config } from "datatables.net-bs5";
+import JSZip from "jszip";
 import "datatables.net-buttons-bs5";
 import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-buttons/js/buttons.colVis.mjs";
@@ -9,16 +10,18 @@ import "datatables.net-searchbuilder-bs5";
 import "datatables.net-searchpanes-bs5";
 import "datatables.net-select-bs5";
 
-import { TblStateCallbackFunc } from "../types";
+import { TblStateCallbackFunc } from "../core/types";
+
+DataTable.Buttons.jszip(JSZip);
 
 export class TableController {
-  private table: any;
+  private table: Api<string>;
 
-  constructor(tableId: string, tableConfig: any) {
+  constructor(tableId: string, tableConfig: Config) {
     this.table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
   }
 
-  getTable(): any {
+  getTable(): Api<string> {
     return this.table;
   }
 
@@ -39,6 +42,39 @@ export class TableController {
       .rows(rowIds.map((id) => `#${id}`))
       .remove()
       .draw();
+  }
+
+  // Update cells backed by the existing DOM and redraw without changing page.
+  // Temporary solution to get this up and running. Not carefully integrated in the
+  // existing systems so might not be the best way to do it. / JW 260915
+  updateCells(
+    rowIds: string[],
+    columnId: string,
+    updateCell: (cell: HTMLTableCellElement) => void,
+  ): HTMLTableCellElement[] {
+    const columnIndex = this.table
+      .columns()
+      .header()
+      .toArray()
+      .findIndex((header) => header.dataset.columnId === columnId);
+    if (columnIndex === -1) {
+      console.error(`Table column not found: ${columnId}`);
+      return [];
+    }
+
+    const updatedCells: HTMLTableCellElement[] = [];
+    rowIds.forEach((rowId) => {
+      const cell = this.table.cell(`#${rowId}`, columnIndex);
+      const node = cell.node();
+      if (node) {
+        updateCell(node);
+        cell.invalidate("dom");
+        updatedCells.push(node);
+      }
+    });
+
+    if (updatedCells.length > 0) this.table.draw(false);
+    return updatedCells;
   }
 }
 
@@ -66,7 +102,7 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(tableId: string, tableConfig: any): TableController {
+export function initSamplesTable(tableId: string, tableConfig: Config): TableController {
   const controller = new TableController(tableId, tableConfig);
 
   // add callback functions
@@ -77,9 +113,8 @@ export function initSamplesTable(tableId: string, tableConfig: any): TableContro
     manageAnnotateQcBtn,
   ];
   for (const callback of funcs) {
-    controller.getTable().on("select deselect", (e, dt, type, indexes) => {
-      const selected: string[] = dt.rows(".selected").ids();
-      callback(selected);
+    controller.getTable().on("select deselect", () => {
+      callback(controller.getSelectedRows());
     });
   }
 

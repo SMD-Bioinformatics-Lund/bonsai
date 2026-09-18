@@ -6,15 +6,14 @@ from logging import getLogger
 from typing import Literal
 
 import click
-from api_client.audit_log import AuditLogClient
-from api_client.notification import EmailCreate, NotificationClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.notification import EmailCreate, NotificationClient
 from bonsai_api.__version__ import VERSION as version
 from bonsai_api.auth import generate_random_pwd
 from bonsai_api.config import USER_ROLES, settings
 from bonsai_api.db.index import INDEXES
 from bonsai_api.exceptions import ConflictError, EntryNotFound, UserNotFound
 from bonsai_api.lims_export.config import InvalidFormatError
-from bonsai_api.migrate import MigrationError
 from bonsai_api.models.group import GroupInfoCreate, Visibility
 from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
@@ -112,7 +111,6 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
-@click.option("-i", "--id", "group_id", help="Group id")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
 @click.option("-o", "--owner", help="User id for the group owner", default="admin")
@@ -125,34 +123,28 @@ def create_user(
 )
 def create_group(
     _ctx: click.Context,
-    group_id: str | None,
     name: str,
     description: str | None,
     owner: str | None,
     visibility: Visibility,
 ):  # pylint: disable=unused-argument
-    """Create a user account"""
-    if group_id is None:
-        click.secho("Generating group id from name", fg="yellow")
-        group_id = name.lower().replace(" ", "-")
-
-    if len(group_id) < 5:
-        raise click.UsageError("Group id must be at least 5 characters long")
-
-    # create collections
+    """Create a group."""
     group_obj = GroupInfoCreate(
-        group_id=group_id,
         display_name=name,
         description=description,
         visibility=visibility,
     )
     try:
-        run_async(run_create_group(group_obj, user_id=owner))
+        created_group = run_async(run_create_group(group_obj, user_id=owner))
     except ConflictError as error:
-        raise click.UsageError(f'Group with ID "{group_id}" already exists') from error
+        raise click.UsageError(str(error)) from error
     except UserNotFound as error:
         raise click.UsageError(str(error)) from error
-    click.secho(f'Successfully created the group "{group_id}"', fg="green")
+    click.secho(
+        f'Successfully created the group "{created_group.display_name}" '
+        f'with ID "{created_group.group_id}"',
+        fg="green",
+    )
 
 
 @cli.command()
@@ -299,10 +291,6 @@ def migrate_database(backup_path: pathlib.Path | None):
     click.secho(
         f"Preparing to migrate the {click.style('Bonsai', fg='green', bold=True)} database..."
     )
-    try:
-        run_async(run_migrate_database(backup_path))
-    except MigrationError as err:
-        LOG.error(str(err))
-        raise click.Abort()
-    finally:
-        click.secho("Finished migrating the database", fg="green")
+    run_async(run_migrate_database(backup_path))
+
+    click.secho("Finished migrating the database", fg="green")

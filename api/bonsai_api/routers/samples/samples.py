@@ -2,9 +2,9 @@
 
 import logging
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import EventCreate, SourceType, Subject
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import EventCreate, SourceType, Subject
+from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
 from bonsai_api.crud.sample import get_samples_full
@@ -31,6 +31,7 @@ from bonsai_api.models.user import UserOutputDatabase
 from bonsai_api.services.sample_service import (
     create_sample_service,
     delete_sample_service,
+    get_sample_by_external_id_service,
     get_sample_service,
 )
 from fastapi import (
@@ -184,7 +185,7 @@ async def delete_many_samples(
         for event in audit_events:
             try:
                 audit_log.post_event(event)
-            except ApiRequestError as exc:
+            except ApiError as exc:
                 raise AuditLogError(
                     f"Audit log event failed for sample {event.subject.id}: {exc}"
                 ) from exc
@@ -193,6 +194,20 @@ async def delete_many_samples(
         "n_deleted": len(removed),
         "remove_signature_jobs": jobs,
     }
+
+
+@router.get("/samples/external/{external_sample_id}", response_model_by_alias=False)
+async def read_sample_by_external_id(
+    external_sample_id: str = Path(...),
+    db: Database = Depends(get_database),
+    current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
+        get_current_active_user, scopes=[READ_PERMISSION]
+    ),
+) -> SampleRecordOut:
+    """Read a sample by the identifier assigned by the calling system."""
+    return await get_sample_by_external_id_service(
+        db, external_sample_id=external_sample_id
+    )
 
 
 @router.get("/samples/{sample_id}", response_model_by_alias=False)
@@ -248,7 +263,7 @@ async def delete_sample(
         )
         try:
             audit_log.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for sample {sample_id}: {exc}"
             ) from exc

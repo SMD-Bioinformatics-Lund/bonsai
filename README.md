@@ -7,3 +7,7 @@ Intended to visualize results from [JASEN](https://github.com/genomic-medicine-s
 ## Installation
 
 See the [documentation](https://bonsai-wgs.readthedocs.io/en/latest/) for instructions on how to install and configure Bonsai.
+
+## Testing
+
+Use the [manual UI testing checklist](docs/testing-checklist.md) for functional checks after a release or migration.

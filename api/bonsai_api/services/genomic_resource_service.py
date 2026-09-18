@@ -6,8 +6,8 @@ from pymongo.errors import PyMongoError
 from fastapi import Request
 from pathlib import Path
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.genomic_resource import (
     insert_genomic_resource,
     sample_has_resource,
@@ -54,7 +54,7 @@ async def create_genomic_resource_service(
         raise ValueError("Resource dont have a pipeline run id!")
 
     has_resource_for_pipeline = await sample_has_resource(
-        db, pipeline_id=resource.pipeline_run_id
+        db, sample_id=sample_id, pipeline_id=resource.pipeline_run_id
     )
     if has_resource_for_pipeline and not force:
         raise ConflictError(
@@ -97,6 +97,8 @@ async def create_genomic_resource_service(
                 db,
                 sample_id=sample_id,
                 resource_data=[p.model_dump(mode="json") for p in payload],
+                pipeline_id=resource.pipeline_run_id,
+                replace=force,
             )
             output_resources = [
                 GenomicResourceResponse(

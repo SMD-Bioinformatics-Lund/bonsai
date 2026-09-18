@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.11.3-slim AS base
+FROM python:3.11.13-slim-bullseye AS base
 
 # Set build variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,26 +15,22 @@ FROM base AS python-builder
 
 WORKDIR /src
 
-COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
 
-RUN pip wheel --wheel-dir /wheels \
-    ./api_client \
-    ./minhash_service
+RUN pip wheel --wheel-dir /wheels ./minhash_service
 
 
 # Development layer
 
-FROM continuumio/miniconda3 AS development
+FROM continuumio/miniconda3:24.1.2-0 AS development
 
 WORKDIR /app
 
 RUN /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
 
-COPY libs/api_client ./api_client
 COPY minhash_service ./minhash_service
 
-RUN pip install -e ./api_client -e ./minhash_service
+RUN pip install -e ./minhash_service
 
 # Dev-only runtime convenience
 RUN mkdir -p /data/signature_db
@@ -43,7 +39,7 @@ CMD ["bash"]
 
 # Production layer
 
-FROM continuumio/miniconda3 AS production
+FROM continuumio/miniconda3:24.1.2-0 AS production
 
 RUN opt/conda/bin/conda init \
     && /opt/conda/bin/conda install -c conda-forge -y python=3.11.3 pip sourmash_plugin_branchwater
