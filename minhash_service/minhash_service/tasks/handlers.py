@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import logging
 import tempfile
+from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable, cast
 
@@ -28,12 +29,25 @@ from minhash_service.signatures.models import (SignatureRecord,
                                                SourmashSignatures)
 from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.storage import SignatureStorage
+from minhash_service.signatures.locking import signature_workflow_lock
 
 from .notify import EmailApiInput, dispatch_email
 
 LOG = logging.getLogger(__name__)
 
 
+def _serialized_mutation(func):
+    """Hold the shared-volume lock through metadata and external mutations."""
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        with signature_workflow_lock(cnf.signature_dir):
+            return func(*args, **kwargs)
+
+    return wrapped
+
+
+@_serialized_mutation
 def add_signature(sample_id: str, signature: str) -> str:
     """
     Find signatures similar to reference signature.
@@ -101,6 +115,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     return str(sharded_path)
 
 
+@_serialized_mutation
 def remove_signature(sample_id: str) -> dict[str, str | bool]:
     """
     Remove a signature from the database and index.
@@ -116,55 +131,66 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     # get index store
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
     index = create_index_store(idx_path, cnf.index_format)
-    # mark sample for deletion in db
-    was_marked = repo.marked_for_deletion(sample_id)
-    if not was_marked:
-        LOG.error(
-            "Signature with sample_id %s could not be marked for deletion", sample_id
-        )
-        raise FileRemovalError(
-            filepath=sample_id, reason="Could not be marked for deletion"
-        )
-
-    # stage file for removal
     records = repo.get_by_sample_id_or_checksum(sample_id)
-    if records is None or len(records) == 0:
-        LOG.error("No record found for sample_id %s", sample_id)
+    if not records:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     metadata: dict[str, str] = {}
-    rec = records[0]
+    original_path = records[0].signature_path
     try:
-        repo.remove_by_sample_id(sample_id)
-        remaining_records = repo.count_by_checksum(rec.signature_checksum)
-        # Keep shared files and index entries until the final sample using the
-        # checksum is removed.
-        if remaining_records == 0:
-            removed_path = store.move_to_trash(
-                rec.signature_path, rec.signature_checksum
-            )
-            metadata["staged_path"] = str(removed_path)
-            result = index.remove_signatures({rec.signature_checksum})
-        else:
-            result = RemoveResult(
-                is_successful=True,
-                warnings=[],
-                removed_count=0,
-                removed=[],
-            )
+        # Already marked is valid on retry. Keep authoritative records until all
+        # external operations succeed, including unsuccessful result objects.
+        if not all(r.marked_for_deletion for r in records):
+            repo.marked_for_deletion(sample_id)
+            records = repo.get_by_sample_id_or_checksum(sample_id)
+            if not records or not all(r.marked_for_deletion for r in records):
+                raise RuntimeError("Could not be marked for deletion")
 
+        others = [r for r in repo.get_all_signatures() if r.sample_id != sample_id]
+        checksums = {
+            r.signature_checksum for r in records
+            if r.kmer_size == cnf.kmer_size
+            and not any(
+                o.signature_checksum == r.signature_checksum
+                and o.kmer_size == cnf.kmer_size
+                and not o.exclude_from_analysis and not o.marked_for_deletion
+                for o in others
+            )
+        }
+        # Removal is idempotent, even after a previous attempt removed entries.
+        if checksums and index.index_path.exists():
+            checksums.intersection_update(index.list_signature_checksums())
+        else:
+            checksums.clear()
+        result = (
+            index.remove_signatures(checksums) if checksums else
+            RemoveResult(is_successful=True, warnings=[], removed_count=0, removed=[])
+        )
+        if not result.is_successful:
+            raise RuntimeError(f"Failed to remove signatures from index: {result.warnings}")
+        if any(r.kmer_size == cnf.kmer_size for r in records):
+            _set_index_status(repo, [sample_id], kmer_size=cnf.kmer_size, indexed=False)
+
+        staged_paths: set[Path] = set()
+        for rec in records:
+            if rec.signature_path in staged_paths:
+                continue
+            if not any(o.signature_path == rec.signature_path for o in others):
+                removed_path = store.move_to_trash(
+                    rec.signature_path, rec.signature_checksum,
+                    expected_checksum=rec.file_checksum,
+                )
+                metadata["staged_path"] = str(removed_path)
+                staged_paths.add(rec.signature_path)
+        repo.remove_by_sample_id(sample_id)
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
-        # log audit trail event
-        e = Event(
-            event_type=EventType.ERROR,
-            sample_id=sample_id,
-            details=str(err),
-            metadata=metadata,
-        )
-        at.log_event(e)
+        at.log_event(Event(
+            event_type=EventType.ERROR, sample_id=sample_id,
+            details=str(err), metadata=metadata,
+        ))
         raise FileRemovalError(
-            filepath=str(rec.signature_path), reason=str(err)
+            filepath=str(original_path), reason=str(err)
         ) from err
 
     LOG.info("Signature with sample_id %s was removed", sample_id)
@@ -199,6 +225,7 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     }
 
 
+@_serialized_mutation
 def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Add signatures to sourmash index.
@@ -258,10 +285,11 @@ def _set_index_status(
         )
 
 
+@_serialized_mutation
 def rebuild_index(kmer_size: int | None = None) -> dict[str, Any]:
     """Rebuild from eligible metadata without reading the historical index.
 
-    Run with import/QC/deletion workers paused so metadata remains stable.
+    The workflow lock keeps import/QC/deletion metadata stable through flag updates.
     Validate every input before replacing the index or changing any flags.
     """
     kmer_size = kmer_size or cnf.kmer_size
@@ -295,6 +323,7 @@ def rebuild_index(kmer_size: int | None = None) -> dict[str, Any]:
     return result.model_dump(mode="json")
 
 
+@_serialized_mutation
 def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Remove signatures from a sourmash index.
@@ -355,6 +384,7 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     return result.model_dump()
 
 
+@_serialized_mutation
 def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -377,6 +407,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     return {"ok": all_ok, "excluded": excluded_samples, "to_exclude": sample_ids}
 
 
+@_serialized_mutation
 def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[str]]:
     """
     Include signatures in downstream analysis.
@@ -697,10 +728,15 @@ def get_data_integrity_report() -> dict[str, Any] | None:
     return None
 
 
+@_serialized_mutation
 def cleanup_removed_files() -> None:
     """Cleanup files marked for removal."""
     two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
 
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
-    n_removed = store.purge_older_than(cutoff=two_weeks_ago)
+    repo = create_signature_repo()
+    protected_paths = {str(r.signature_path) for r in repo.get_all_signatures()}
+    n_removed = store.purge_older_than(
+        cutoff=two_weeks_ago, protected_paths=protected_paths
+    )
     LOG.info("Cleanup removed %d files", n_removed)

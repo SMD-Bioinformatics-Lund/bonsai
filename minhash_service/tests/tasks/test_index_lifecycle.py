@@ -240,3 +240,157 @@ def test_repair_cli_reports_failure(collection, monkeypatch):
     assert result.exit_code != 0
     assert "metadata update failed" in result.output
     assert "successfully" not in result.output
+
+
+@pytest.mark.parametrize("failure", ["index", "file", "metadata"])
+def test_deletion_failure_retains_metadata_and_can_retry(collection, monkeypatch, failure):
+    from minhash_service.core.exceptions import FileRemovalError
+    from minhash_service.signatures.index import RemoveResult
+    from minhash_service.signatures.storage import SignatureStorage
+
+    settings, records, repo, index, signatures = collection
+    handlers.rebuild_index()
+    handlers.remove_signature("sample-0-0")
+    sid = "sample-0-1"
+    path = records[sid].signature_path
+    with monkeypatch.context() as patch:
+        if failure == "index":
+            failed_index = create_index_store(index.index_path, settings.index_format)
+            patch.setattr(failed_index, "remove_signatures", lambda _: RemoveResult(
+                is_successful=False, warnings=["failed"], removed_count=0, removed=[]
+            ))
+            patch.setattr(handlers, "create_index_store", lambda *a, **kw: failed_index)
+        elif failure == "file":
+            patch.setattr(SignatureStorage, "move_to_trash", Mock(side_effect=OSError("failed")))
+        else:
+            repo.remove_by_sample_id.side_effect = OSError("failed")
+        with pytest.raises(FileRemovalError):
+            handlers.remove_signature(sid)
+    assert sid in records
+    assert records[sid].marked_for_deletion
+    if failure == "metadata":
+        assert not path.exists()
+        # Cleanup must retain the staged file even beyond its normal retention.
+        import datetime as dt
+        store = SignatureStorage(settings.signature_dir, settings.trash_dir)
+        assert store.purge_older_than(
+            dt.datetime.now(dt.UTC) + dt.timedelta(days=30),
+            protected_paths={str(path)},
+        ) == 0
+    repo.remove_by_sample_id.side_effect = lambda sid: records.pop(sid)
+    handlers.remove_signature(sid)
+    assert sid not in records
+    assert not path.exists()
+    assert signatures[0].md5sum() not in create_index_store(
+        index.index_path, settings.index_format
+    ).list_signature_checksums()
+
+
+@pytest.mark.parametrize("mutation", ["import", "qc", "delete"])
+def test_rebuild_serializes_concurrent_mutations(collection, monkeypatch, mutation):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    settings, records, repo, index, signatures = collection
+    snapshot = Event()
+    resume = Event()
+    started = Event()
+    original_read = handlers.read_signatures
+
+    def paused_read(*args, **kwargs):
+        if not snapshot.is_set():
+            snapshot.set()
+            assert resume.wait(10)
+        return original_read(*args, **kwargs)
+
+    monkeypatch.setattr(handlers, "read_signatures", paused_read)
+    repo.exclude_from_analysis.side_effect = lambda sid: setattr(
+        records[sid], "exclude_from_analysis", True
+    ) or True
+
+    def mutate():
+        started.set()
+        if mutation == "import":
+            handlers.add_signature("new-sample", sourmash.signature.save_signatures_to_json([signatures[0]]).decode())
+            handlers.add_to_index(["new-sample"])
+        elif mutation == "qc":
+            handlers.exclude_from_analysis(["sample-0-0", "sample-0-1"])
+            handlers.remove_from_index(["sample-0-0", "sample-0-1"])
+        else:
+            handlers.remove_signature("sample-0-0")
+            handlers.remove_signature("sample-0-1")
+
+    repo.add_signature.side_effect = lambda rec: records.setdefault(rec.sample_id, rec)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        rebuild = pool.submit(handlers.rebuild_index)
+        assert snapshot.wait(10)
+        update = pool.submit(mutate)
+        assert started.wait(10)
+        try:
+            with pytest.raises(TimeoutError):
+                update.result(timeout=0.1)
+            assert "new-sample" not in records
+            assert not records["sample-0-0"].exclude_from_analysis
+            assert not records["sample-0-0"].marked_for_deletion
+        finally:
+            resume.set()
+        rebuild.result(timeout=20)
+        update.result(timeout=20)
+    assert not checker.check_signature_integrity(InitiatorType.USER, settings).has_warnings
+
+
+def test_workflow_lock_excludes_other_processes(tmp_path):
+    import subprocess
+    import sys
+    from minhash_service.signatures.locking import signature_workflow_lock
+
+    script = (
+        "import fasteners, sys; "
+        "lock = fasteners.InterProcessLock(sys.argv[1]); "
+        "acquired = lock.acquire(blocking=False); "
+        "print(acquired); "
+        "lock.release() if acquired else None"
+    )
+    args = [sys.executable, "-c", script, str(tmp_path / ".signature-workflow.lock")]
+    with signature_workflow_lock(tmp_path):
+        assert subprocess.check_output(args, text=True).strip() == "False"
+    assert subprocess.check_output(args, text=True).strip() == "True"
+
+
+def test_default_trash_is_shared_and_persistent(tmp_path):
+    first = Settings(signature_dir=tmp_path)
+    second = Settings(signature_dir=tmp_path)
+    assert first.trash_dir == second.trash_dir == tmp_path / "trash"
+
+
+def test_deletion_stages_file_shared_by_multiple_sketches_once(collection):
+    from minhash_service.core.exceptions import FileRemovalError
+
+    settings, records, repo, index, signatures = collection
+    handlers.rebuild_index()
+    handlers.remove_signature("sample-0-0")
+    sid = "sample-0-1"
+    extra = records[sid].model_copy(update={"kmer_size": 51, "signature_checksum": "other-sketch"})
+    def mark_all(sample_id):
+        records[sample_id].marked_for_deletion = True
+        extra.marked_for_deletion = True
+        return True
+
+    repo.marked_for_deletion.side_effect = mark_all
+    lookup = repo.get_by_sample_id_or_checksum.side_effect
+    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id=None, checksum=None, kmer_size=None: (
+        [records[sid], extra] if sample_id == sid and kmer_size is None
+        else lookup(sample_id, checksum, kmer_size)
+    )
+    repo.remove_by_sample_id.side_effect = OSError("metadata unavailable")
+    with pytest.raises(FileRemovalError):
+        handlers.remove_signature(sid)
+    # MongoDB may return the sketches in a different order on retry.
+    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id=None, checksum=None, kmer_size=None: (
+        [extra, records[sid]] if sample_id == sid and kmer_size is None
+        else lookup(sample_id, checksum, kmer_size)
+    )
+    repo.remove_by_sample_id.side_effect = lambda sample_id: records.pop(sample_id)
+    handlers.remove_signature(sid)
+    assert sid not in records
+    assert not extra.signature_path.exists()

@@ -151,8 +151,12 @@ class SignatureRepository:
         return self._set_flag(sample_id, flag="exclude_from_analysis", status=False)
 
     def marked_for_deletion(self, sample_id: str) -> bool:
-        """Mark a signature for deletion. Returns True if a document was modified."""
-        return self._set_flag(sample_id, flag="marked_for_deletion", status=True)
+        """Stage all sketches for deletion; already marked is success on retry."""
+        result = self._col.update_many(
+            {"sample_id": sample_id},
+            {"$set": {"marked_for_deletion": True}},
+        )
+        return result.matched_count > 0
 
     # ---- delete -------------------------------------------------------------
     def remove_by_sample_id(self, sample_id: str, kmer_size: int | None = None) -> int:
