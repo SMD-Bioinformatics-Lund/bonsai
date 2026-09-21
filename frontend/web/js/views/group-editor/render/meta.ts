@@ -18,11 +18,11 @@ export function renderMeta(
       />
     </div>
     <div class="mb-3">
-      <label class="form-label fw-semibold mb-1 text-start" for="group-slug">
+      <label class="form-label fw-semibold mb-1 text-start" for="group-key">
         Group key<span class="text-danger">*</span>
       </label>
       <input
-        id="group-slug"
+        id="group-key"
         type="text"
         class="form-control"
         value="${model.group}"
@@ -48,14 +48,14 @@ export function renderMeta(
   `;
 
   const nameInput = container.querySelector<HTMLInputElement>("#group-name")!;
-  const slugInput = container.querySelector<HTMLInputElement>("#group-slug")!;
+  const keyInput = container.querySelector<HTMLInputElement>("#group-key")!;
   const descInput = container.querySelector("textarea")!;
 
   nameInput.addEventListener("input", e => {
     model.displayName = (e.target as HTMLInputElement).value;
   });
 
-  slugInput.addEventListener("input", e => {
+  keyInput.addEventListener("input", e => {
     model.group = (e.target as HTMLInputElement).value;
   });
 

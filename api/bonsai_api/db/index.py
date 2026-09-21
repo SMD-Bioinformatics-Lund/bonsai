@@ -35,10 +35,10 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         {
             "definition": [("core.group", ASCENDING)],
             "options": {
-                "name": "sample_group_slug",
+                "name": "sample_group_key",
                 "background": True,
                 "unique": True,
-                # Groups created before slugs existed have no core.group.
+                # Groups created before group keys existed have no core.group.
                 "partialFilterExpression": {"core.group": {"$type": "string"}},
             },
         },
