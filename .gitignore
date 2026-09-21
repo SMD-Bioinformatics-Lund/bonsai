@@ -162,6 +162,3 @@ tmp/
 
 # Agent specific
 AGENTS.md
-
-# Development
-docker-compose.env
