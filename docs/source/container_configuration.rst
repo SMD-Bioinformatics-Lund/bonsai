@@ -1,7 +1,7 @@
 Configuring Bonsai
 ==================
 
-Bonsai is primarily configured through environment variables. The configuration can be set in a ``.env`` file in the same directory as the ``docker-compose.yml`` file or passed directly to the Docker container. See the `docker compose reference <https://docs.docker.com/reference/compose-file/>`_ for information on how to set environment varialbes.
+Bonsai is primarily configured through environment variables. For Docker Compose deployments, the configuration can be set in the ``docker-compose.env`` file referenced by ``docker-compose.yml`` or passed directly to the Docker container. See the `docker compose reference <https://docs.docker.com/reference/compose-file/>`_ for information on how to set environment varialbes.
 
 Some services have additional configuration files if environment variables are not enough. These are described in the relevant sections below.
 
