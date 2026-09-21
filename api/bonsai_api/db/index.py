@@ -32,6 +32,16 @@ INDEXES: dict[str, list[IndexDefinition]] = {
                 "unique": True,
             },
         },
+        {
+            "definition": [("core.group", ASCENDING)],
+            "options": {
+                "name": "sample_group_slug",
+                "background": True,
+                "unique": True,
+                # Groups created before slugs existed have no core.group.
+                "partialFilterExpression": {"core.group": {"$type": "string"}},
+            },
+        },
     ],
     "sample": [
         SAMPLE_RUN_LIMS_INDEX,
