@@ -21,6 +21,11 @@
 
 ### Fixed
 
+- Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. (PR #TBD)
+- Sort MinHash matches by similarity before applying limits, with stable ordering for ties. (PR #TBD)
+- Rebuild the MinHash index from eligible metadata to repair missing, stale, or duplicate entries and reconcile index flags; report metadata update failures. Repair omits excluded samples and replaces the old `--include-excluded` option. (PR #TBD)
+- Make MinHash integrity checks account for shared-signature eligibility and use the correct deletion flag. (PR #TBD)
+- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion and QC exclusion. (PR #TBD)
 - Allow each frontend deployment to configure a unique session cookie name, preventing collisions between Bonsai instances on the same hostname. [#518](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/518)
 - Retry IGV without variant zoom when its initial locus cannot be found, show a reference-mismatch warning, and display load failures instead of leaving the viewer stuck loading. [#516](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/516)
 - Forward stored variant IDs and analysis context to the IGV configuration endpoint so variant links open at their genomic locus; support numeric and string variant IDs. [#515](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/515)
