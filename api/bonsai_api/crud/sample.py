@@ -3,8 +3,8 @@
 import logging
 from typing import Any
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.location import get_location
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
@@ -21,8 +21,8 @@ from bonsai_api.models.sample import (
 from bonsai_api.utils import get_timestamp
 from bson.objectid import ObjectId
 from fastapi.encoders import jsonable_encoder
-from prp.parse.models.base import PhenotypeInfo
-from prp.parse.models.enums import AnnotationType, ElementType
+from bonsai_libs.parse.models.base import PhenotypeInfo
+from bonsai_libs.parse.models.enums import AnnotationType, ElementType
 from pymongo import ASCENDING, DESCENDING
 from pymongo.client_session import ClientSession
 from pymongo.results import UpdateResult
@@ -104,6 +104,19 @@ async def get_sample_by_id(
     """Get sample with sample_id."""
     db_obj: SampleRecordDb = await db.sample_collection.find_one(
         {"sample_id": sample_id}, session=session
+    )
+    return None if db_obj is None else db_obj
+
+
+async def get_sample_by_external_id(
+    db: Database,
+    *,
+    external_sample_id: str,
+    session: ClientSession | None = None,
+) -> dict[str, Any] | None:
+    """Get a sample by the identifier assigned by the calling system."""
+    db_obj: SampleRecordDb = await db.sample_collection.find_one(
+        {"external_sample_id": external_sample_id}, session=session
     )
     return None if db_obj is None else db_obj
 

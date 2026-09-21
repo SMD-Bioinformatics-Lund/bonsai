@@ -6,12 +6,12 @@ import logging
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
 
-# from prp.parse.models.base import VariantBase
-from prp.parse import hydrate_result
-from prp.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
+# from bonsai_libs.parse.models.base import VariantBase
+from bonsai_libs.parse import hydrate_result
+from bonsai_libs.parse.core.registry import get_result_model, _RESULT_MODEL_REGISTRY
 from pydantic_core import ValidationError
 
-from bonsai_api.models.genomic_resource import GenomicResourceDb, GenomicResourceResponse
+from bonsai_api.models.genomic_resource import GenomicResourceDb
 from bonsai_api.utils import get_timestamp
 
 from .enums import Visibility, ExportStatus, SequencingPlatforms, TypingMethod, ClusterMethod
@@ -32,6 +32,14 @@ LOG = logging.getLogger(__name__)
 
 SAMPLE_SCHEMA_VERSION = 1
 
+
+def normalize_optional_identifier(value: Any) -> Any:
+    """Treat blank identifiers as absent without changing non-blank IDs."""
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 class Comment(CreatedAtModelMixin):  # pylint: disable=too-few-public-methods
     """Contianer for comments."""
 
@@ -46,9 +54,6 @@ class CommentInDatabase(Comment):  # pylint: disable=too-few-public-methods
     id: int = Field(..., alias="id")
 
 
-# class VariantInDb(VariantBase):
-#     verified: SampleQcClassification = SampleQcClassification.UNPROCESSED
-#     reason: VaraintRejectionReason | None = None
 class SampleBase(TimestampsMixin, ForbidExtraModelMixin):  # pylint: disable=too-few-public-methods
     """Base model for all sample representations.
     
@@ -133,11 +138,16 @@ class UpdateSampleInputModel(BaseModel):
 class SequencingInfo(ForbidExtraModelMixin):
     """Information on the sample was sequenced."""
 
-    sequencing_run_id: str
+    sequencing_run_id: str | None = None
     platform: SequencingPlatforms
     instrument: str | None = None
     method: dict[str, str] = Field(default_factory=dict)
     sequenced_at: datetime | None = None
+
+    @field_validator("sequencing_run_id", mode="before")
+    @classmethod
+    def normalize_run_id(cls, value: Any) -> Any:
+        return normalize_optional_identifier(value)
 
 
 class ReferenceGenome(RWModel):
@@ -201,7 +211,7 @@ class AnalysisViewEntryDb(AnalysisViewEntryBase):
     - `analysis_id`: pointer to canonical batch for drill-down.
     """
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list, 
         description="All denormalized curation records for this analysis embedded in the sample view."
@@ -212,7 +222,7 @@ class AnalysisViewEntryOut(AnalysisViewEntryBase):
     """API response model for analysis results."""
 
     # curation flags
-    result: Any
+    result: Any = None
     curations: list[EmbeddedCurationRecord] = Field(
         default_factory=list,
         description="All denormalized curation records for this analysis embedded in the sample view."
@@ -272,6 +282,11 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
     owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
     access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
     visibility: Visibility = Visibility.PUBLIC
+
+    @field_validator("lims_id", mode="before")
+    @classmethod
+    def normalize_lims_id(cls, value: Any) -> Any:
+        return normalize_optional_identifier(value)
 
 
 class SampleRecordDb(SampleBase):
