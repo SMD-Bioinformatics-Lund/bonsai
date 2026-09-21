@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     secret_key: bytes = Field(
         b"not-so-secret", description="Secret key for encrypting session."
     )
+    session_cookie_name: str = Field(
+        "session",
+        description="Name of the Flask session cookie.",
+    )
 
     # parameters for finding similar samples
     sample_view_similarity_limit: int = Field(

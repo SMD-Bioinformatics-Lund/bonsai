@@ -15,6 +15,7 @@ from bonsai_api.crud.sample import (
     add_ska_index,
     add_sourmash_sketch,
     delete_sample_crud,
+    get_sample_by_external_id,
     get_sample_by_id,
     insert_sample_document,
     pipeline_run_exists_for_sample,
@@ -22,6 +23,7 @@ from bonsai_api.crud.sample import (
 )
 from bonsai_api.crud.utils import audit_event_context, managed_transaction
 from bonsai_api.db import Database
+from bonsai_api.db.index import SAMPLE_RUN_LIMS_INDEX
 from bonsai_api.exceptions import (
     ConflictError,
     DatabaseOperationError,
@@ -117,9 +119,19 @@ async def create_sample_service(
                     ]
                     await add_memberships(db=db, edges=edges, session=sess)
     except DuplicateKeyError as dke:
-        LOG.error("Duplicate key error while creating group: %s", str(dke))
+        LOG.error("Duplicate key error while creating sample: %s", str(dke))
+        if (
+            (dke.details or {}).get("keyPattern")
+            == dict(SAMPLE_RUN_LIMS_INDEX["definition"])
+            or SAMPLE_RUN_LIMS_INDEX["options"]["name"] in str(dke)
+        ):
+            run_id = sample.sequencing.sequencing_run_id if sample.sequencing else None
+            raise ConflictError(
+                f"A sample with Clarity/LIMS ID {sample.lims_id!r} and "
+                f"sequencing run ID {run_id!r} already exists."
+            ) from dke
         raise ConflictError(
-            f"Sample with id {sample.sample_id} already exists."
+            "A sample with the same unique identifier already exists."
         ) from dke
     except PyMongoError as pme:
         LOG.error("MongoDB error while creating group: %s", str(pme))
@@ -224,14 +236,8 @@ async def add_pipeline_run_service(
         raise DatabaseOperationError(str(exc)) from exc
 
 
-async def get_sample_service(
-    db: Database, *, sample_id: str, session: ClientSession | None = None
-) -> SampleRecordOut:
-    """Retrieve a sample by its sample id."""
-    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
-
-    if raw_sample is None:
-        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+def _to_sample_record_out(raw_sample: dict[str, Any], *, identifier: str) -> SampleRecordOut:
+    """Validate a raw sample document and attach its latest pipeline run."""
     try:
         # get last pipeline run if set
         last_pipeline_run = None
@@ -246,10 +252,38 @@ async def get_sample_service(
             {**raw_sample, "pipeline": last_pipeline_run}
         )
     except ValidationError as ve:
-        LOG.error("Validation error when retrieving sample %s: %s", sample_id, str(ve))
+        LOG.error("Validation error when retrieving sample %s: %s", identifier, str(ve))
         raise DatabaseOperationError(
-            f"Data integrity error when retrieving sample {sample_id}: {str(ve)}"
+            f"Data integrity error when retrieving sample {identifier}: {str(ve)}"
         ) from ve
+
+
+async def get_sample_service(
+    db: Database, *, sample_id: str, session: ClientSession | None = None
+) -> SampleRecordOut:
+    """Retrieve a sample by its sample id."""
+    raw_sample = await get_sample_by_id(db, sample_id=sample_id, session=session)
+
+    if raw_sample is None:
+        raise EntryNotFound(f"Sample with id '{sample_id}' not found")
+    return _to_sample_record_out(raw_sample, identifier=sample_id)
+
+
+async def get_sample_by_external_id_service(
+    db: Database,
+    *,
+    external_sample_id: str,
+    session: ClientSession | None = None,
+) -> SampleRecordOut:
+    """Retrieve a sample by the identifier assigned by the calling system."""
+    raw_sample = await get_sample_by_external_id(
+        db, external_sample_id=external_sample_id, session=session
+    )
+    if raw_sample is None:
+        raise EntryNotFound(
+            f"Sample with external id '{external_sample_id}' not found"
+        )
+    return _to_sample_record_out(raw_sample, identifier=external_sample_id)
 
 
 async def add_ska_index_service(
@@ -391,7 +425,7 @@ def _to_igv_track(resouce: GenomicResourceResponse) -> IgvTrack:
 
 
 def _get_variant_positions(
-    variant_id: str, *, analysis_obj: AnalysisResult
+    variant_id: int | str, *, analysis_obj: AnalysisResult
 ) -> tuple[int, int] | None:
     """Get variant with ID from sample object."""
     amr_pred = analysis_obj.envelopes.get("amr")
@@ -400,7 +434,7 @@ def _get_variant_positions(
 
     variants = amr_pred.value.get("variants", [])
     for var in variants:
-        if not var.get("id") == variant_id:
+        if str(var.get("id")) != str(variant_id):
             continue
 
         start = var["start"]
@@ -471,7 +505,14 @@ async def get_igv_config(
     # get locus for a variant if variant id was provided
     locus = ""
     if variant_ctx:
-        locus = await _build_locus(db, variant_ctx=variant_ctx, reference_name=ref_genome.accession)
+        reference_name = (
+            ref_genome.sequence_accessions[0]
+            if ref_genome.sequence_accessions
+            else ref_genome.accession
+        )
+        locus = await _build_locus(
+            db, variant_ctx=variant_ctx, reference_name=reference_name
+        )
 
     # Build tracks
     tracks = [

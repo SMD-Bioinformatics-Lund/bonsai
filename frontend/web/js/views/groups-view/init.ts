@@ -35,7 +35,18 @@ const sampleTableConfig = {
       ],
     },
     top1End: {
-      buttons: ["copy", "csv", "excel"],
+      buttons: [
+        {
+          extend: "colvis",
+          text: "Columns",
+          align: "button-right",
+          collectionLayout: "column-visibility-menu",
+          columns: ':not([data-column-id="sample_id"])',
+        },
+        "copy",
+        "csv",
+        "excel",
+      ],
     },
     top2Start: "searchBuilder",
   },
@@ -128,10 +139,18 @@ export async function initGroupView(
     return;
   }
 
-  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead td");
-  const tableConfig = { ...sampleTableConfig };
+  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
+  const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
+  const tableConfig = {
+    ...sampleTableConfig,
+    searchBuilder: {
+      columns: Array.from(headers).flatMap((cell, idx) =>
+        cell.dataset.filterable === "true" ? [idx] : [],
+      ),
+    },
+  };
   headers.forEach((cell, idx) => {
-    if (cell.textContent?.trim() === "Date") {
+    if (defaultSort && cell.dataset.columnId === defaultSort) {
       tableConfig["order"] = [[idx, "desc"]];
     }
   });

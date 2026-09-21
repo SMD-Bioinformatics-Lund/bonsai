@@ -1,14 +1,13 @@
 ### Base layer ###
-FROM python:3.11-slim-trixie AS base
+FROM python:3.11.13-bullseye AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      git \
-    && rm -rf /var/lib/apt/lists/*
+# git and ca-certificates ship with the non-slim image. Avoid apt here:
+# the legacy host requires Bullseye, whose archived repositories are unreliable.
 
 # Keep base tooling up to date
 RUN pip install --upgrade pip
