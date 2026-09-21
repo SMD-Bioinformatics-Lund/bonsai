@@ -19,6 +19,8 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests import HTTPError
+from pydantic import ValidationError
+from bonsai_libs.api_client.core.exceptions import ApiError
 
 from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
@@ -105,6 +107,10 @@ def sample(sample_id: str) -> str:
     # get sample
     try:
         sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except (ApiError, ValidationError):
+        current_app.logger.exception("Failed to load sample %s", sample_id)
+        flash("Something went wrong loading the sample. Please try again.", "toast-warning")
+        return redirect(url_for("samples.samples"))
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -248,35 +254,43 @@ def download_lims(sample_id: str):
     # Fetch from API
     try:
         api_resp = client.get_lims_export_response(sample_id=sample_id, fmt=fmt)
-    except HTTPError as error:
-        # log errors
-        status_code = error.response.status_code
-        status = error.response.status_code == 401
-        if status:
+        # The SDK returns bytes; older clients may return an HTTP response.
+        content = api_resp if isinstance(api_resp, bytes) else api_resp.content
+        api_headers = getattr(api_resp, "headers", {})
+    except ApiError as error:
+        status_code = error.status
+        if status_code in {401, 403}:
             current_app.logger.warning(
                 "LIMS export error - no permissoin %s", current_user.username
             )
-            flash("You dont have permission to export the result to LIMS", "warning")
+            flash("You don't have permission to export the result to LIMS", "warning")
         elif status_code == 404:
             flash("Sample not found", "warning")
         elif status_code == 422:
             default_msg = "Export is not supported for this assay"
-            flash(error.response.json().get("detail", default_msg), "warning")
+            try:
+                detail = json.loads(error.body or "{}").get("detail", default_msg)
+            except (ValueError, AttributeError):
+                detail = default_msg
+            flash(detail if isinstance(detail, str) else default_msg, "warning")
         elif status_code == 501:
             flash("Export not implemented for this assay", "warning")
         else:
             current_app.logger.error(
-                "LIMS export error - generic error: %s", error.response
+                "LIMS export error - generic error: %s", error
             )
             flash("Error when generating export file", "warning")
-        return redirect(request.referrer)
+        return redirect(url_for("samples.sample", sample_id=sample_id))
 
-    # build Flask response using the API headers and bytes
-    content = api_resp.content  # bytes
+    except Exception:
+        current_app.logger.exception("Failed to download LIMS export for sample %s", sample_id)
+        flash("Something went wrong downloading the LIMS report. Please try again.", "toast-warning")
+        return redirect(url_for("samples.sample", sample_id=sample_id))
+
     response = make_response(content)
 
     # Forward content type if provided
-    content_type = api_resp.headers.get("Content-Type")
+    content_type = api_headers.get("Content-Type")
     if content_type:
         response.headers["Content-Type"] = content_type
     else:
@@ -287,7 +301,7 @@ def download_lims(sample_id: str):
             else "text/csv; charset=utf-8"
         )
     # Forward filename if provided; else build default one
-    dispo = api_resp.headers.get("Content-Disposition")
+    dispo = api_headers.get("Content-Disposition")
     if not dispo:
         response.headers["Content-Disposition"] = (
             f"attachment; filename={fallback_fname}.txt"

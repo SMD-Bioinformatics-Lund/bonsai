@@ -21,6 +21,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Path,
+    Query,
     Request,
     Security,
     status,
@@ -41,6 +42,9 @@ async def create_genomic_resource(
     payload: GenomicResourceCreate,
     request: Request,
     sample_id: str = Path(..., description="Sample ID"),
+    force: bool = Query(
+        False, description="Overwrite existing resources for this pipeline run"
+    ),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -55,6 +59,7 @@ async def create_genomic_resource(
             sample_id=sample_id,
             resource=payload,
             request=request,
+            force=force,
             ctx=req_ctx,
             audit=audit_log,
         )
@@ -181,7 +186,7 @@ async def get_igv_config(
     request: Request,
     sample_id: str = Path(..., description="Sample ID"),
     analysis_id: str | None = None,
-    variant_id: int | None = None,
+    variant_id: str | None = None,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
         get_current_active_user, scopes=[READ_PERMISSION]
@@ -189,8 +194,8 @@ async def get_igv_config(
 ):
     """Add a reference genome to a sample."""
     variant_ctx: VariantContext | None = None
-    if analysis_id or variant_id:
-        if not (analysis_id and variant_id):
+    if analysis_id is not None or variant_id is not None:
+        if not analysis_id or variant_id is None or variant_id == "":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Both 'analysis_id' and 'variant_id' must be provided together",

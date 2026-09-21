@@ -10,12 +10,18 @@ from pymongo.results import UpdateResult
 async def sample_has_resource(
     db: Database,
     *,
+    sample_id: str,
     pipeline_id: str,
-    session: ClientSession | None = None
+    session: ClientSession | None = None,
 ) -> bool:
-    """Return True if a sample with id exists."""
+    """Return whether a sample has resources for a pipeline run."""
     doc = await db.sample_collection.find_one(
-        {"genomic_resources.pipeline_id": pipeline_id}, {"_id": 1}, session=session
+        {
+            "sample_id": sample_id,
+            "genomic_resources.pipeline_id": pipeline_id,
+        },
+        {"_id": 1},
+        session=session,
     )
     return bool(doc)
 
@@ -25,18 +31,47 @@ async def insert_genomic_resource(
     *,
     sample_id: str,
     resource_data: list[dict[str, Any]],
-    session: ClientSession | None = None
+    pipeline_id: str,
+    replace: bool = False,
+    session: ClientSession | None = None,
 ):
-    """Insert a genomic resource for a sample."""
-    await db.sample_collection.update_one( 
-        {"sample_id": sample_id},
-        {
-            "$push": {
-                "genomic_resources": {
-                    "$each": resource_data
+    """Insert resources, optionally replacing those from the same pipeline run."""
+    if replace:
+        update = [
+            {
+                "$set": {
+                    "genomic_resources": {
+                        "$concatArrays": [
+                            {
+                                "$filter": {
+                                    "input": {"$ifNull": ["$genomic_resources", []]},
+                                    "as": "resource",
+                                    "cond": {
+                                        "$ne": [
+                                            "$$resource.pipeline_id",
+                                            pipeline_id,
+                                        ]
+                                    },
+                                }
+                            },
+                            resource_data,
+                        ]
+                    }
                 }
             }
-        },
+        ]
+    else:
+        update = {
+            "$push": {
+                "genomic_resources": {
+                    "$each": resource_data,
+                }
+            }
+        }
+
+    await db.sample_collection.update_one(
+        {"sample_id": sample_id},
+        update,
         session=session,
     )
 

@@ -7,8 +7,16 @@
     {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
 {% elif db.name == 'serotypefinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/serotypefinder_db/commits" %}
+{% elif db.name == 'plasmidfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/plasmidfinder_db/commits" %}
+{% elif db.name == 'tbdb' %}
+    {% set base_url="github.com/jodyphelan/tbdb/commit" %}
 {% endif %}
+{% if base_url is defined %}
 <a class="br-card-link" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+{% else %}
+{{ db.version }}
+{% endif %}
 {% endmacro %}
 
 
@@ -61,7 +69,7 @@
             <div class="pb-1">SAMPLE ID: <span class="fst-italic">{{ sample.external_sample_id }}</span></div>
             <div class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></div>
             <div class="pb-1">ASSAY: <span class="fst-italic">{{ sample.pipeline.assay }}</span></div>
-            <div class="pb-4">SEQRUN ID: <span class="fst-italic">{{ sample.sequencing.run_id }}</span></div>
+            <div class="pb-4">SEQRUN ID: <span class="fst-italic">{{ sample.sequencing.sequencing_run_id }}</span></div>
             <div class="row gx-5">
                 <div class="col-md-auto">
                     {{ qc_status_info(sample.qc_status.status, sample.qc_status.action, sample.qc_status.comment) }}
@@ -159,8 +167,8 @@
                     {% endif %}
                 </td>
                 <td>{{ accession_link(gene.accession) }}</td>
-                <td>{{ gene.coverage }}</td>
                 <td>{{ gene.identity }}</td>
+                <td>{{ gene.coverage }}</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -204,13 +212,13 @@
 
 {% macro virulence_card(pred) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
         <p class="card-text fst-italic">No  identified virulence factors.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
-    {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
+    {% elif pred.software == "amrfinder" and pred.analysis_type == "virulence" %}
         {{ amrfinder_virulence_prediction(pred.result) }}
     {% endif %}
     </div>
@@ -247,10 +255,10 @@
         </td>
         {% if extended %}
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
-            <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+            <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name  | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -281,8 +289,8 @@
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
             <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -409,8 +417,8 @@
                 <tr>
                     <td>{{ gene.gene_symbol }}</td>
                     <td>{{ accession_link(gene.accession) }}</td>
-                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
+                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.depth | fmt_number }}</td>
                     <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 </tr>
@@ -488,13 +496,13 @@
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
-                    <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+                    <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
-                <td>{{ gene.close_seq_name }}</td>
+                <td>{{ gene.close_seq_name | default(gene.sequence_name, true) }}</td>
                 {% endif  %}
             </tr>
         {% endfor %}
@@ -534,8 +542,8 @@
                         data-bs-html="true"
                         data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.sequence_name | capitalize }}</td>
             </tr>
         {% endfor %}
@@ -601,8 +609,8 @@
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
                     <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
                 <td>{{ gene.close_seq_name }}</td>
@@ -860,13 +868,12 @@
                             </td>
                             {% if extended %}
                                 <td>
-                                    {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
                                     <span class="d-inline-block" tabindex="0"
                                     {% if not display_igv %}
                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                         data-bs-title="Either no reference genome or BAM assigned to the sample."
                                     {% endif %}>
-                                        <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=analysis.analysis_id, variant_id=variant_id) }}"
+                                        <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=analysis.analysis_id, variant_id=variant.id) }}"
                                         type="button" target="_blank" 
                                         class="btn btn-sm btn-secondary {% if not display_igv %}disabled{% endif %}">
                                         IGV
@@ -888,7 +895,7 @@
 {% macro stx_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -916,7 +923,7 @@
 {% macro oh_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -998,7 +1005,7 @@
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         {% if pred.software == "tbprofiler" %}
@@ -1008,6 +1015,31 @@
         {% endif %}
     </div>
 </div>
+{% endmacro %}
+
+
+{% macro analysis_meta_databases(sample_info) %}
+{% set databases = sample_info.pipeline.pipeline_info.databases %}
+{% if databases %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in databases %}
+                <tr>
+                    <th>{{ db.name | capitalize }}</th>
+                    <td class="text-muted">{{ db.software }}</td>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 {% endmacro %}
 
 
@@ -1085,7 +1117,7 @@
 {% macro shigella_typing_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <div>
@@ -1211,6 +1243,9 @@
 <div class="card">
     <div class="card-header">PostQc Alignment v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         {% set pct_above_hist=qc_info.result.pct_above_x %}
         {# create entries for tabular data #}
         <table class="table table-sm table-striped">
@@ -1223,7 +1258,7 @@
             <tbody>
             {% for name, value in qc_info.result.items() %}
                 {# skip data that should be plotted #}
-                {% if name != "pct_above_x" %}
+                {% if name != "pct_above_x" and not (name == "restricted_mean_cov" and value is none) %}
                     <tr>
                         <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
                         <td>{{ value | fmt_number(sig_digits=2) }}</td>
@@ -1274,6 +1309,7 @@
                 font: { size: 12 }}
             Plotly.newPlot('qcPlot', [data], layout, { staticPlot: false} )
         </script>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -1283,6 +1319,9 @@
 <div class="card">
     <div class="card-header">{{qc_info.software | capitalize}} v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         <table class="table table-sm table-striped">
             <thead>
                 <tr>
@@ -1299,6 +1338,7 @@
             {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}

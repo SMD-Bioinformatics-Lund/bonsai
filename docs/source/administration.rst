@@ -10,7 +10,12 @@ The admin user role grants full permission to create, modify, and read all data 
 Index database
 --------------
 
-The database must be indexed for Bonsai to work correctly. The database indexes support and speed up common queries and enforces restriction on the data. For instance, will the indexes prevent duplicated sample IDs and sample group IDs? The indexes are created using the Bonsai API command line interface. Note that if you are running the containerized version of Bonsai, you must execute the commands in the container.
+The database must be indexed for Bonsai to work correctly. Indexes speed up
+common queries and enforce uniqueness constraints. The API ensures indexes
+exist during startup; they can also be created explicitly using the Bonsai API
+command line interface. See the sample-identity section below for the required
+duplicate-upload constraint. If you are running the containerized version of
+Bonsai, execute the CLI commands in the container.
 
 .. code-block::bash
 
