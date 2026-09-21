@@ -72,7 +72,6 @@ services:
       - "8000:8000"
     environment:
       FLASK_APP: bonsai_app.app:create_app
-      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-session}
     env_file: docker-compose.env
     networks: [bonsai]
 
