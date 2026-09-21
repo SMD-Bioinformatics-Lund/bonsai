@@ -144,8 +144,11 @@ def test_remove_signature_keeps_shared_checksum_indexed():
     """Deleting one sample preserves a checksum still used by another sample."""
     repo = Mock()
     repo.marked_for_deletion.return_value = True
-    repo.get_by_sample_id_or_checksum.return_value = [_record("sample-a", "checksum-a")]
-    repo.count_by_checksum.return_value = 1
+    record = _record("sample-a", "checksum-a", deleted=True)
+    other = _record("sample-b", "checksum-a")
+    other.signature_path = record.signature_path
+    repo.get_by_sample_id_or_checksum.return_value = [record]
+    repo.get_all_signatures.return_value = [other]
     index = Mock()
     store = Mock()
     audit = Mock()
