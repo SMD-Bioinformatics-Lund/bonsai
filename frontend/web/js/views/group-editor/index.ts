@@ -82,7 +82,7 @@ export class GroupEditor extends HTMLElement {
         description: this.model.description,
       }
       if ( this.mode == "create" ) {
-        // The slug is the group's stable key and cannot be changed afterwards.
+        // The group key is stable and cannot be changed afterwards.
         const groupObj = await this._api.createGroup({ ...corePayload, group: this.model.group })
         groupId = groupObj.group_id;
         this.model.groupId = groupId;

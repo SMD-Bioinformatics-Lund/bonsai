@@ -22,7 +22,7 @@ GROUP_SCHEMA_VERSION = 1
 DEFAULT_PRESET_NAME = "default"
 
 
-GROUP_SLUG_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
+GROUP_KEY_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
 
 
 class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
@@ -33,7 +33,7 @@ class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
         ...,
         min_length=2,
         max_length=45,
-        pattern=GROUP_SLUG_PATTERN,
+        pattern=GROUP_KEY_PATTERN,
         description="Stable key used to reference the group, e.g. when uploading samples",
     )
     display_name: str = Field(..., min_length=1, max_length=45)
@@ -202,7 +202,7 @@ class GroupInfoCreate(BaseModel):  # pylint: disable=too-few-public-methods
         ...,
         min_length=2,
         max_length=45,
-        pattern=GROUP_SLUG_PATTERN,
+        pattern=GROUP_KEY_PATTERN,
         description="Stable key used to reference the group, e.g. when uploading samples",
     )
     display_name: str

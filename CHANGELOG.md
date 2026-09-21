@@ -2,7 +2,7 @@
 
 ### Added
 
-- Groups carry a `group` slug, a stable key such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The slug is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
+- Groups carry a `group` key, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample.
 - Add a Columns dropdown to group sample tables for showing or hiding columns while keeping sample IDs visible, with a positioned, scrollable menu for long column lists. [#509](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/509)
 - Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
