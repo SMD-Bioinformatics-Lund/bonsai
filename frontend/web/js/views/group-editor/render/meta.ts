@@ -18,6 +18,24 @@ export function renderMeta(
       />
     </div>
     <div class="mb-3">
+      <label class="form-label fw-semibold mb-1 text-start" for="group-slug">
+        Group key<span class="text-danger">*</span>
+      </label>
+      <input
+        id="group-slug"
+        type="text"
+        class="form-control"
+        value="${model.group}"
+        placeholder="saureus"
+        pattern="[a-z0-9][a-z0-9_-]*"
+        ${model.mode === "edit" ? "disabled" : ""}
+      />
+      <div class="form-text">
+        Used to reference the group when uploading samples. Lowercase letters, digits,
+        dashes and underscores; it cannot be changed later.
+      </div>
+    </div>
+    <div class="mb-3">
       <label for="group-description" class="form-label fw-semibold text-start">
         Description
       </label>
@@ -29,11 +47,16 @@ export function renderMeta(
     </div>
   `;
 
-  const nameInput = container.querySelector("input")!;
+  const nameInput = container.querySelector<HTMLInputElement>("#group-name")!;
+  const slugInput = container.querySelector<HTMLInputElement>("#group-slug")!;
   const descInput = container.querySelector("textarea")!;
 
   nameInput.addEventListener("input", e => {
     model.displayName = (e.target as HTMLInputElement).value;
+  });
+
+  slugInput.addEventListener("input", e => {
+    model.group = (e.target as HTMLInputElement).value;
   });
 
   descInput.addEventListener("input", e => {
