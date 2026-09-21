@@ -2,8 +2,10 @@
 
 ### Added
 
+- Groups carry a `group` slug, a stable key such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The slug is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
+- Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample.
 - Add a Columns dropdown to group sample tables for showing or hiding columns while keeping sample IDs visible, with a positioned, scrollable menu for long column lists. [#509](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/509)
-- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed additional organism groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Show pipeline database names, versions, and owning software on sample pages. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
@@ -20,6 +22,8 @@
 - Added a manual UI testing checklist for core Bonsai workflows. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 
 ### Fixed
+
+- Creating a group from the legacy group editor no longer fails on a missing attribute.
 
 - Forward stored variant IDs and analysis context to the IGV configuration endpoint so variant links open at their genomic locus; support numeric and string variant IDs. [#515](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/515)
 - Authenticate IGV configuration requests with the user's API token instead of their username, fixing unauthorized responses when opening IGV. [#514](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/514)
