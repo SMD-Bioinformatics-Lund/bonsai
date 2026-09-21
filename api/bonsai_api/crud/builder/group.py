@@ -14,6 +14,7 @@ def group_project_stage(
     projection = {
         "_id": 0,
         "group_id": "$core.group_id",
+        "group": "$core.group",
         "display_name": "$core.display_name",
         "description": "$core.description",
         "sample_count": "$core.sample_count",
