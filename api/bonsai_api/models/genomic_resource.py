@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import AliasChoices, Field
 
 from .base import RWModel, UUIDMixin
 from .enums import Visibility
@@ -36,7 +36,10 @@ class ResourceOutput(GenomicResourceBase):
 class GenomicResourceCreate(RWModel):
     """Genomic analysis artefacts for a sample."""
 
-    reference_genome_id: str
+    reference_genome_id: str = Field(
+        ...,
+        validation_alias=AliasChoices("reference_genome_accession", "reference_genome_id"),
+    )
     pipeline_run_id: str | None
     resource_data: list[ResourceInput] = Field(default_factory=list, description="List of genomic resources")
     visibility: Visibility = Visibility.PRIVATE

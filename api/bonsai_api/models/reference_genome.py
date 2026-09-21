@@ -1,4 +1,4 @@
-from pydantic import Field, BaseModel
+from pydantic import AliasChoices, BaseModel, Field
 
 from .base import CreatedAtModelMixin, RWModel, UUIDMixin
 from .genomic_resource import ResourceInput, ResourceOutput
@@ -46,4 +46,8 @@ class ReferenceGenomeResponse(RWModel):
 class AddReferenceGenomeRequest(BaseModel):
     """Inut for adding a reference gnome."""
 
-    reference_genome_id: str
+    reference_genome_id: str = Field(
+        ...,
+        validation_alias=AliasChoices("reference_genome_accession", "reference_genome_id"),
+        description="Reference genome assembly accession, sequence accession or internal id",
+    )
