@@ -26,6 +26,10 @@ export class GroupApi {
     });
   }
 
+  deleteGroup(groupId: string): Promise<void> {
+    return this.http.request<void>(`/groups/${groupId}`, { method: 'DELETE' });
+  }
+
   getGroup(groupId: string) {
     return this.http.request<GroupInfo>(`/groups/${groupId}`);
   }
