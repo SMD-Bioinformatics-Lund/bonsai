@@ -50,6 +50,18 @@ COPY frontend/ ./frontend
 # Copy built JS to the python-builder context
 COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
 
+# Remove node artefacts
+RUN rm -rf ./frontend/node_modules
+
+# pip builds with PEP 517 isolation, so the build backend has to be in the
+# wheelhouse too.
+RUN pip wheel --wheel-dir /wheels \
+    "setuptools>=61" \
+    setuptools-scm>=8 \
+    wheel
+
+RUN pip wheel --wheel-dir /wheels ./frontend
+
 ### Production layer ###
 FROM base AS production
 
