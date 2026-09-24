@@ -14,22 +14,25 @@ users:
 groups:
   - group: mtuberculosis
     display_name: "M. tuberculosis"
-    description: "Tuberculosis test samples"
+    description: "Mycobacterium tuberculosis samples"
   - group: ecoli
     display_name: "E. coli"
-    description: "Escherichia test samples"
+    description: "Escherichia coli samples"
   - group: saureus
     display_name: "S. aureus"
-    description: "Staphylococcus test samples"
+    description: "Staphylococcus aureus samples"
   - group: kpneumoniae
     display_name: "K. pneumoniae"
-    description: "Klebsiella test samples"
-  - group: streptococcus
-    display_name: "Streptococcus"
-    description: "Streptococcus test samples"
+    description: "Klebsiella samples"
   - group: spyogenes
     display_name: "S. pyogenes"
-    description: "Streptococcus pyogenes test samples"
+    description: "Streptococcus pyogenes samples"
+  - group: streptococcus
+    display_name: "Streptococcus spp."
+    description: "Streptococcus spp. samples"
+  - group: staphylococcus
+    display_name: "Staphylococcus spp."
+    description: "Staphylococcus spp. samples"
 reference_genomes:
   - name: Escherichia coli K-12 substr. MG1655
     accession: GCF_000005845.2
