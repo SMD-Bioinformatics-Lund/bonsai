@@ -25,7 +25,7 @@ export function renderMeta(
         id="group-key"
         type="text"
         class="form-control"
-        value="${model.group}"
+        value="${model.groupKey}"
         placeholder="saureus"
         pattern="[a-z0-9][a-z0-9_-]*"
         ${model.mode === "edit" ? "disabled" : ""}
@@ -56,7 +56,7 @@ export function renderMeta(
   });
 
   keyInput.addEventListener("input", e => {
-    model.group = (e.target as HTMLInputElement).value;
+    model.groupKey = (e.target as HTMLInputElement).value;
   });
 
   descInput.addEventListener("input", e => {

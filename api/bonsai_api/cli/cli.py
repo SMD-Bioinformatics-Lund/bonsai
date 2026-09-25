@@ -111,7 +111,7 @@ def create_user(
 
 @cli.command()
 @click.pass_obj
-@click.option("-g", "--group", required=True, help="Group key used when uploading, e.g. saureus")
+@click.option("-g", "--group-key", required=True, help="Group key used when uploading, e.g. saureus")
 @click.option("-n", "--name", required=True, help="Group name")
 @click.option("-d", "--description", help="Group description")
 @click.option("-o", "--owner", help="User id for the group owner", default="admin")
@@ -124,7 +124,7 @@ def create_user(
 )
 def create_group(
     _ctx: click.Context,
-    group: str,
+    group_key: str,
     name: str,
     description: str | None,
     owner: str | None,
@@ -132,7 +132,7 @@ def create_group(
 ):  # pylint: disable=unused-argument
     """Create a group."""
     group_obj = GroupInfoCreate(
-        group=group,
+        group_key=group_key,
         display_name=name,
         description=description,
         visibility=visibility,
