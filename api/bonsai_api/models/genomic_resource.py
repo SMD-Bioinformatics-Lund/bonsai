@@ -39,6 +39,7 @@ class GenomicResourceCreate(RWModel):
     reference_genome_id: str = Field(
         ...,
         validation_alias=AliasChoices("reference_genome_accession", "reference_genome_id"),
+        description="Reference genome assembly accession, sequence accession or internal id",
     )
     pipeline_run_id: str | None
     resource_data: list[ResourceInput] = Field(default_factory=list, description="List of genomic resources")
