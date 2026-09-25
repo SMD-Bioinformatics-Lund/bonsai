@@ -27,7 +27,7 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         {
             "definition": [("core.group_id", ASCENDING)],
             "options": {
-                "name": "sample_group",
+                "name": "sample_group_id",
                 "background": True,
                 "unique": True,
             },
