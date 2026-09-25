@@ -1,14 +1,14 @@
 import { PaginatedResponse } from "../pagination";
 
 export interface InputCoreGroupInfo {
-  group?: string;
+  group_key?: string;
   display_name: string;
   description: string;
 }
 
 export interface GroupInfo {
   group_id: string;
-  group?: string;
+  group_key?: string;
   display_name: string;
   description: string;
   sample_count: number;

@@ -84,7 +84,7 @@ export class GroupEditor extends HTMLElement {
       }
       if ( this.mode == "create" ) {
         // The group key is stable and cannot be changed afterwards.
-        const groupObj = await this._api.createGroup({ ...corePayload, group: this.model.group })
+        const groupObj = await this._api.createGroup({ ...corePayload, group_key: this.model.groupKey })
         groupId = groupObj.group_id;
         this.model.groupId = groupId;
         this.mode = "edit";
@@ -159,7 +159,7 @@ export class GroupEditor extends HTMLElement {
     if (this.mode === "edit" && this.model.groupId) {
       this.load(this.model.groupId);
     } else {
-      this.model.group = "";
+      this.model.groupKey = "";
       this.model.displayName = "";
       this.model.description = "";
       this.model.samples = [];

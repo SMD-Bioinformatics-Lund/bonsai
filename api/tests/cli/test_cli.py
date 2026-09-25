@@ -75,7 +75,7 @@ def test_create_group_success(monkeypatch):
     runner = CliRunner()
 
     async def fake_create_group(group, user_id):
-        assert group.group == "testgroup"
+        assert group.group_key == "testgroup"
         assert group.display_name == "testgroup"
         assert group.description == "Test group"
         assert user_id == "admin"
@@ -93,7 +93,7 @@ def test_create_group_success(monkeypatch):
         cli,
         [
             "create-group",
-            "--group",
+            "--group-key",
             "testgroup",
             "--name",
             "testgroup",
@@ -125,7 +125,7 @@ def test_create_group_duplicate(monkeypatch):
         cli,
         [
             "create-group",
-            "--group",
+            "--group-key",
             "testgroup",
             "--name",
             "testgroup",

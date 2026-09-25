@@ -29,7 +29,7 @@ class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
     """Basic group core information."""
 
     group_id: str = Field(..., min_length=5)
-    group: str = Field(
+    group_key: str = Field(
         ...,
         min_length=2,
         max_length=45,
@@ -139,7 +139,7 @@ class GroupInfoOut(TimestampsMixin):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
     group_id: str
-    group: str | None = None
+    group_key: str | None = None
     display_name: str
     description: str | None = None
     sample_count: int
@@ -198,7 +198,7 @@ class GroupListResponse(MultipleRecordsResponseModel):
 class GroupInfoCreate(BaseModel):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info used for creation."""
 
-    group: str = Field(
+    group_key: str = Field(
         ...,
         min_length=2,
         max_length=45,

@@ -12,25 +12,25 @@ users:
     password: user123
     roles: [uploader]
 groups:
-  - group: mtuberculosis
+  - group_key: mtuberculosis
     display_name: "M. tuberculosis"
     description: "Mycobacterium tuberculosis samples"
-  - group: ecoli
+  - group_key: ecoli
     display_name: "E. coli"
     description: "Escherichia coli samples"
-  - group: saureus
+  - group_key: saureus
     display_name: "S. aureus"
     description: "Staphylococcus aureus samples"
-  - group: kpneumoniae
+  - group_key: kpneumoniae
     display_name: "K. pneumoniae"
     description: "Klebsiella samples"
-  - group: spyogenes
+  - group_key: spyogenes
     display_name: "S. pyogenes"
     description: "Streptococcus pyogenes samples"
-  - group: streptococcus
+  - group_key: streptococcus
     display_name: "Streptococcus spp."
     description: "Streptococcus spp. samples"
-  - group: staphylococcus
+  - group_key: staphylococcus
     display_name: "Staphylococcus spp."
     description: "Staphylococcus spp. samples"
 reference_genomes:
