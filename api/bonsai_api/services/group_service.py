@@ -131,6 +131,7 @@ def _build_group_payload(
     group_id = str(uuid.uuid7())
     core = GroupCore(
         group_id=group_id,
+        group_key=group_record.group_key,
         display_name=group_record.display_name,
         description=group_record.description,
         visibility=group_record.visibility,
@@ -166,6 +167,7 @@ def _build_group_output(group_record: dict[str, Any] | GroupRecordDb) -> GroupIn
     )
     return GroupInfoOut(
         group_id=group_record.core.group_id,
+        group_key=group_record.core.group_key,
         display_name=group_record.core.display_name,
         description=group_record.core.description,
         sample_count=0,
@@ -219,7 +221,7 @@ async def create_group_service(
         except DuplicateKeyError as dke:
             LOG.error("Duplicate key error while creating group: %s", str(dke))
             raise ConflictError(
-                f"Group with id {payload.core.group_id} already exists."
+                f"Group '{payload.core.group_key}' already exists."
             ) from dke
         except PyMongoError as pme:
             LOG.error("MongoDB error while creating group: %s", str(pme))

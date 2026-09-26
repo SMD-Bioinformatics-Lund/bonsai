@@ -63,8 +63,11 @@ async def create_genomic_resource_service(
         )
     
     try:
-        # Validate reference genome exists
-        await get_reference_genome_service(db, resource_id=resource.reference_genome_id, request=request)
+        # Validate reference genome exists, and resolve whichever identifier the
+        # caller used to the reference genome's own id.
+        ref_genome = await get_reference_genome_service(
+            db, resource_id=resource.reference_genome_id, request=request
+        )
     except EntryNotFound as exc:
         raise EntryNotFound(
             f"Reference genome with ID {resource.reference_genome_id} not found"
@@ -82,7 +85,7 @@ async def create_genomic_resource_service(
                 path=to_relative_resource(r.path, base_dir=base_dir),
                 index_path=to_relative_resource(r.index_path, base_dir=base_dir) if r.index_path else None,
                 pipeline_id=resource.pipeline_run_id,
-                reference_genome_id=resource.reference_genome_id,
+                reference_genome_id=ref_genome.id,
                 visibility=resource.visibility,
             ) for r in resource.resource_data
         ]

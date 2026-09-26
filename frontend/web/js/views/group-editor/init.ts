@@ -26,6 +26,9 @@ function createGroupEditorApi(apiBaseUrl: string, accessToken: string, refreshTo
     getGroup: (id: string) =>
       groupApi.getGroup(id),
 
+    deleteGroup: (id: string) =>
+      groupApi.deleteGroup(id),
+
     updateAllowedColumns: (id: string, columnIds: string[]) =>
       groupApi.updateAllowedColumns(id, columnIds),
 
@@ -48,6 +51,7 @@ export function initGroupEditor() {
       accessToken,
       refreshToken,
       redirectTemplate,
+      groupsUrl,
     } = editor.dataset;
 
     editor.api = createGroupEditorApi(apiBaseUrl, accessToken, refreshToken);
@@ -55,12 +59,17 @@ export function initGroupEditor() {
     // Setup optional redirects
     editor.config = {
       redirectOnSuccess: (groupId: string) => redirectTemplate!.replace("__GROUP_ID__", groupId),
+      redirectOnDelete: groupsUrl,
       presentation: "page"
     }
 
     // View specific
     editor.addEventListener("group-editor:saved", () => {
       throwSmallToast("Group saved successfully", "success")
+    });
+
+    editor.addEventListener("group-editor:deleted", () => {
+      throwSmallToast("Group deleted", "success")
     });
 
     editor.addEventListener("group-editor:error", (event: Event) => {

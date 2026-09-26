@@ -301,7 +301,6 @@ def write_manifest(
 ) -> None:
     analysis = """  - software: bracken
     software_version: 1.0.0
-    database: synthetic
     uri: bracken.out
   - software: quast
     software_version: 1.0.0
