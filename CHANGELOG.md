@@ -27,6 +27,7 @@
 - Allow each frontend deployment to configure a unique session cookie name, preventing collisions between Bonsai instances on the same hostname. [#518](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/518)
 - Retry IGV without variant zoom when its initial locus cannot be found, show a reference-mismatch warning, and display load failures instead of leaving the viewer stuck loading. [#516](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/516)
 - Creating a group from the legacy group editor no longer fails on a missing attribute.
+- Deleting samples from the sample list no longer fails on a field the API stopped returning.
 - Forward stored variant IDs and analysis context to the IGV configuration endpoint so variant links open at their genomic locus; support numeric and string variant IDs. [#515](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/515)
 - Authenticate IGV configuration requests with the user's API token instead of their username, fixing unauthorized responses when opening IGV. [#514](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/514)
 - Prefer Lab ID in default GrapeTree hover labels using a shared label-field constant, with name and internal ID fallbacks. [#513](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/513)

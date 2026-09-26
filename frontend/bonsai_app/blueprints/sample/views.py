@@ -68,11 +68,7 @@ def remove_samples():
         sample_ids = json.loads(request.form.get("sample-ids", "[]"))
         if len(sample_ids) > 0:
             result = client.delete_samples(sample_ids=sample_ids)
-            current_app.logger.info(
-                "removed %d samples, removed from %d groups",
-                result["n_deleted"],
-                result["removed_from_n_groups"],
-            )
+            current_app.logger.info("removed %d samples", result.get("n_deleted", 0))
     else:
         flash("You dont have permission to remove samples", "warning")
     return redirect(request.referrer)
