@@ -7,7 +7,7 @@ from bonsai_libs.api_client.audit_log.models import EventCreate, SourceType, Sub
 from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
 from bonsai_api.crud.builder.types import ManifestOutput
-from bonsai_api.crud.sample import get_samples_full
+from bonsai_api.crud.sample import check_samples_exists, get_samples_full
 from bonsai_api.crud.summary import get_samples_summary
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.db import Database
@@ -155,7 +155,13 @@ async def delete_many_samples(
         get_current_active_user, scopes=[UPDATE_PERMISSION]
     ),
 ):
-    """Delete multiple samples from the database."""
+    """Delete multiple samples from the database.
+
+    Ids that no longer exist are skipped and reported, so one stale id does not
+    prevent the rest of the batch from being deleted.
+    """
+
+    missing = await check_samples_exists(db, sample_ids=sample_ids)
 
     async with managed_transaction(db.client) as sess:
         removed = []
@@ -163,6 +169,9 @@ async def delete_many_samples(
         audit_events: list[EventCreate] = []
 
         for sample_id in sample_ids:
+            if sample_id in missing:
+                continue
+
             job_status = await delete_sample_service(
                 db, sample_id=sample_id, session=sess
             )
@@ -192,6 +201,7 @@ async def delete_many_samples(
     return {
         "sample_ids": sample_ids,
         "n_deleted": len(removed),
+        "missing_sample_ids": sorted(missing),
         "remove_signature_jobs": jobs,
     }
 
