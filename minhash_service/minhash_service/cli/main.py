@@ -8,15 +8,18 @@ from rq import Queue
 from rq.cron import CronScheduler
 
 from minhash_service.core.config import Settings, cnf, configure_logging
-from minhash_service.core.factories import (create_audit_trail_repo,
-                                            create_report_repo, create_signature_repo,
-                                            initialize_indexes)
+from minhash_service.core.factories import (
+    create_audit_trail_repo,
+    create_report_repo,
+    create_signature_repo,
+    initialize_indexes,
+)
 from minhash_service.core.models import Event, EventType
 from minhash_service.db import MongoDB
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
 from minhash_service.tasks import dispatch_job
-from minhash_service.tasks.handlers import add_to_index
+from minhash_service.tasks.handlers import rebuild_index
 from minhash_service.tasks.dispatch import SimpleWhitelistWorker
 
 from .utils import format_startup_banner
@@ -121,14 +124,21 @@ def check_integrity(store_report: bool):
 
 
 @main.command()
-@click.option("--kmer_size", type=int, help="Specify the k-mer size for filtering signatures (default: from config)")
-@click.option("--include-excluded", is_flag=True, help="Include signatures that have been excluded from analysis")
-@click.option("--dry-run", is_flag=True, help="Show what would be done without actually recreating the index")
+@click.option(
+    "--kmer_size",
+    type=int,
+    help="Specify the k-mer size for filtering signatures (default: from config)",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be done without actually recreating the index",
+)
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def recreate_index(kmer_size: int, include_excluded: bool, dry_run: bool, force: bool):
-    """Recreate index from records in the database."""
+def recreate_index(kmer_size: int, dry_run: bool, force: bool):
+    """Repair the index from eligible metadata. Pause import/QC/deletion workers first."""
     log = logging.getLogger(__name__)
-    
+
     try:
         MongoDB.setup(
             host=cnf.mongodb.host, port=cnf.mongodb.port, db_name=cnf.mongodb.database
@@ -150,46 +160,48 @@ def recreate_index(kmer_size: int, include_excluded: bool, dry_run: bool, force:
         raise click.BadParameter("kmer_size must be a positive integer.")
 
     kmer_size = kmer_size or cnf.kmer_size
+    if kmer_size != cnf.kmer_size:
+        raise click.BadParameter("Use the configured k-mer size for this index.")
     log.info("Using k-mer size: %d", kmer_size)
 
     # Filter signatures
     try:
-        signatures = _filter_signatures_for_index(repo, kmer_size, include_excluded)
+        signatures = _filter_signatures_for_index(repo, kmer_size)
         log.info("Filtered %d signatures for indexing.", len(signatures))
     except Exception as e:
         log.error("Failed to filter signatures: %s", e)
         raise click.ClickException("Signature filtering failed.")
 
-    if not signatures:
-        log.warning("No signatures found to index.")
-        return
-
     sample_ids = [s.sample_id for s in signatures]
 
     if dry_run:
         log.info("Dry run: Would recreate index with %d signatures.", len(signatures))
-        click.echo(f"Dry run: Would index {len(signatures)} signatures with sample IDs: {sample_ids[:10]}{'...' if len(sample_ids) > 10 else ''}")
+        click.echo(
+            f"Dry run: Would index {len(signatures)} signatures with sample IDs: {sample_ids[:10]}{'...' if len(sample_ids) > 10 else ''}"
+        )
         return
 
     if not force:
-        if not click.confirm(f"This will recreate the index with {len(signatures)} signatures. Continue?"):
+        if not click.confirm(
+            f"This will recreate the index with {len(signatures)} signatures. Continue?"
+        ):
             log.info("Index recreation cancelled by user.")
             return
 
     try:
-        add_to_index(sample_ids=sample_ids)
+        rebuild_index(kmer_size=kmer_size)
         log.info("Index recreated successfully with %d signatures.", len(signatures))
         click.secho("Index recreated successfully.", fg="green")
     except Exception as e:
         log.error("Failed to recreate index: %s", e)
-        raise click.ClickException("Index recreation failed.")
+        raise click.ClickException(f"Index recreation failed: {e}")
 
 
-def _filter_signatures_for_index(repo, kmer_size: int, include_excluded: bool):
+def _filter_signatures_for_index(repo, kmer_size: int):
     """Filter signatures for indexing based on kmer_size and exclusion status."""
     signatures = []
     for sig in repo.get_all_signatures():
-        if sig.exclude_from_analysis and not include_excluded:
+        if sig.exclude_from_analysis or sig.marked_for_deletion:
             continue
         if sig.kmer_size == kmer_size:
             signatures.append(sig)

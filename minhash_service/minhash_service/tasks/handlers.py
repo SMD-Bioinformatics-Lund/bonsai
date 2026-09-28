@@ -4,12 +4,15 @@ import datetime as dt
 import json
 import logging
 import tempfile
+from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable, cast
 
 from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
-                                             SimilaritySearchConfig)
+                                             SimilarResult,
+                                             SimilaritySearchConfig,
+                                             SimilarSampleResult)
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
 from minhash_service.core.exceptions import FileRemovalError
@@ -19,18 +22,32 @@ from minhash_service.core.factories import (create_audit_trail_repo,
 from minhash_service.core.models import Event, EventType
 from minhash_service.integrity.checker import check_signature_integrity
 from minhash_service.integrity.report_model import InitiatorType
-from minhash_service.signatures.index import create_index_store, get_index_path
+from minhash_service.signatures.index import (RemoveResult, create_index_store,
+                                              get_index_path)
 from minhash_service.signatures.io import read_signatures, write_signatures
 from minhash_service.signatures.models import (SignatureRecord,
                                                SourmashSignatures)
 from minhash_service.signatures.repository import SignatureRepository
 from minhash_service.signatures.storage import SignatureStorage
+from minhash_service.signatures.locking import signature_workflow_lock
 
 from .notify import EmailApiInput, dispatch_email
 
 LOG = logging.getLogger(__name__)
 
 
+def _serialized_mutation(func):
+    """Hold the shared-volume lock through metadata and external mutations."""
+
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        with signature_workflow_lock(cnf.signature_dir):
+            return func(*args, **kwargs)
+
+    return wrapped
+
+
+@_serialized_mutation
 def add_signature(sample_id: str, signature: str) -> str:
     """
     Find signatures similar to reference signature.
@@ -98,6 +115,7 @@ def add_signature(sample_id: str, signature: str) -> str:
     return str(sharded_path)
 
 
+@_serialized_mutation
 def remove_signature(sample_id: str) -> dict[str, str | bool]:
     """
     Remove a signature from the database and index.
@@ -113,47 +131,66 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     # get index store
     idx_path = get_index_path(cnf.signature_dir, cnf.index_format)
     index = create_index_store(idx_path, cnf.index_format)
-    # mark sample for deletion in db
-    was_marked = repo.marked_for_deletion(sample_id)
-    if not was_marked:
-        LOG.error(
-            "Signature with sample_id %s could not be marked for deletion", sample_id
-        )
-        raise FileRemovalError(
-            filepath=sample_id, reason="Could not be marked for deletion"
-        )
-
-    # stage file for removal
     records = repo.get_by_sample_id_or_checksum(sample_id)
-    if records is None or len(records) == 0:
-        LOG.error("No record found for sample_id %s", sample_id)
+    if not records:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     metadata: dict[str, str] = {}
-    rec = records[0]
+    original_path = records[0].signature_path
     try:
-        repo.remove_by_sample_id(sample_id)
-        # remove signature file if there are not other records with the same checksum
-        if repo.count_by_checksum(rec.signature_checksum) == 0:
-            removed_path = store.move_to_trash(
-                rec.signature_path, rec.signature_checksum
+        # Already marked is valid on retry. Keep authoritative records until all
+        # external operations succeed, including unsuccessful result objects.
+        if not all(r.marked_for_deletion for r in records):
+            repo.marked_for_deletion(sample_id)
+            records = repo.get_by_sample_id_or_checksum(sample_id)
+            if not records or not all(r.marked_for_deletion for r in records):
+                raise RuntimeError("Could not be marked for deletion")
+
+        others = [r for r in repo.get_all_signatures() if r.sample_id != sample_id]
+        checksums = {
+            r.signature_checksum for r in records
+            if r.kmer_size == cnf.kmer_size
+            and not any(
+                o.signature_checksum == r.signature_checksum
+                and o.kmer_size == cnf.kmer_size
+                and not o.exclude_from_analysis and not o.marked_for_deletion
+                for o in others
             )
-            metadata["staged_path"] = str(removed_path)
+        }
+        # Removal is idempotent, even after a previous attempt removed entries.
+        if checksums and index.index_path.exists():
+            checksums.intersection_update(index.list_signature_checksums())
+        else:
+            checksums.clear()
+        result = (
+            index.remove_signatures(checksums) if checksums else
+            RemoveResult(is_successful=True, warnings=[], removed_count=0, removed=[])
+        )
+        if not result.is_successful:
+            raise RuntimeError(f"Failed to remove signatures from index: {result.warnings}")
+        if any(r.kmer_size == cnf.kmer_size for r in records):
+            _set_index_status(repo, [sample_id], kmer_size=cnf.kmer_size, indexed=False)
 
-        result = index.remove_signatures(set([rec.signature_checksum]))
-
+        staged_paths: set[Path] = set()
+        for rec in records:
+            if rec.signature_path in staged_paths:
+                continue
+            if not any(o.signature_path == rec.signature_path for o in others):
+                removed_path = store.move_to_trash(
+                    rec.signature_path, rec.signature_checksum,
+                    expected_checksum=rec.file_checksum,
+                )
+                metadata["staged_path"] = str(removed_path)
+                staged_paths.add(rec.signature_path)
+        repo.remove_by_sample_id(sample_id)
     except Exception as err:
         LOG.error("Failed to remove signature for sample_id %s: %s", sample_id, err)
-        # log audit trail event
-        e = Event(
-            event_type=EventType.ERROR,
-            sample_id=sample_id,
-            details=str(err),
-            metadata=metadata,
-        )
-        at.log_event(e)
+        at.log_event(Event(
+            event_type=EventType.ERROR, sample_id=sample_id,
+            details=str(err), metadata=metadata,
+        ))
         raise FileRemovalError(
-            filepath=str(rec.signature_path), reason=str(err)
+            filepath=str(original_path), reason=str(err)
         ) from err
 
     LOG.info("Signature with sample_id %s was removed", sample_id)
@@ -188,7 +225,8 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
     }
 
 
-def add_to_index(sample_ids: list[str]) -> str:
+@_serialized_mutation
+def add_to_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Add signatures to sourmash index.
 
@@ -201,6 +239,14 @@ def add_to_index(sample_ids: list[str]) -> str:
     LOG.info("Adding %d signatures to index...", len(sample_ids))
     repo = create_signature_repo()
 
+    indexable_sample_ids: list[str] = []
+    for sample_id in sample_ids:
+        records = repo.get_by_sample_id_or_checksum(
+            sample_id=sample_id, kmer_size=kmer_size
+        )
+        if len(records) == 1 and not records[0].exclude_from_analysis and not records[0].marked_for_deletion:
+            indexable_sample_ids.append(sample_id)
+
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
 
     # add to index
@@ -208,30 +254,76 @@ def add_to_index(sample_ids: list[str]) -> str:
     index = create_index_store(idx_path, index_format=cnf.index_format)
     result = index.add_signatures(signatures)
 
-    LOG.info(
-        "Updating index status in the database for %d samples.", result.added_count
-    )
-    update_status: dict[str, bool] = {}
-    for checksum in result.added_md5s:
-        recs = repo.get_by_sample_id_or_checksum(checksum=checksum, kmer_size=kmer_size)
-        rec = recs[0]
-        status = repo.mark_indexed(rec.sample_id)
-        update_status[rec.sample_id] = status
+    if not result.is_successful:
+        raise RuntimeError(f"Failed to add signatures to the index: {result.warnings}")
 
-    all_updated: bool = all(status for status in update_status.values())
-    if not all_updated:
-        failed_update = [name for name, status in update_status.items() if not status]
-        LOG.error(
-            "Failed to mark %d samples as indexed; %s",
-            len(failed_update),
-            ", ".join(failed_update),
-        )
-    else:
-        LOG.debug("Marked %d samples as indexed", len(update_status))
+    LOG.info(
+        "Updating index status in the database for %d samples.",
+        len(indexable_sample_ids),
+    )
+    _set_index_status(repo, indexable_sample_ids, kmer_size=kmer_size, indexed=True)
+    LOG.debug("Marked %d samples as indexed", len(indexable_sample_ids))
 
     return result.model_dump(mode="json")
 
 
+def _set_index_status(
+    repo: SignatureRepository,
+    sample_ids: Iterable[str],
+    *,
+    kmer_size: int,
+    indexed: bool,
+) -> None:
+    failed = [
+        sid
+        for sid in dict.fromkeys(sample_ids)
+        if not repo.set_indexed(sid, kmer_size, indexed)
+    ]
+    if failed:
+        raise RuntimeError(
+            f"Could not update index status for samples: {', '.join(failed)}"
+        )
+
+
+@_serialized_mutation
+def rebuild_index(kmer_size: int | None = None) -> dict[str, Any]:
+    """Rebuild from eligible metadata without reading the historical index.
+
+    The workflow lock keeps import/QC/deletion metadata stable through flag updates.
+    Validate every input before replacing the index or changing any flags.
+    """
+    kmer_size = kmer_size or cnf.kmer_size
+    if kmer_size != cnf.kmer_size:
+        raise ValueError("The index must use the configured k-mer size")
+    repo = create_signature_repo()
+    records = [r for r in repo.get_all_signatures() if r.kmer_size == kmer_size]
+    eligible = [
+        r for r in records if not r.exclude_from_analysis and not r.marked_for_deletion
+    ]
+    signatures: SourmashSignatures = []
+    for record in eligible:
+        loaded = read_signatures(record.signature_path, kmer_size=kmer_size)
+        if len(loaded) != 1 or loaded[0].md5sum() != record.signature_checksum:
+            raise ValueError(f"Invalid signature for sample {record.sample_id}")
+        signatures.extend(loaded)
+    index = create_index_store(
+        get_index_path(cnf.signature_dir, cnf.index_format), cnf.index_format
+    )
+    result = index.replace_signatures(signatures)
+    if not result.is_successful:
+        raise RuntimeError(f"Failed to rebuild index: {result.warnings}")
+    eligible_ids = {r.sample_id for r in eligible}
+    for indexed in (True, False):
+        _set_index_status(
+            repo,
+            [r.sample_id for r in records if (r.sample_id in eligible_ids) == indexed],
+            kmer_size=kmer_size,
+            indexed=indexed,
+        )
+    return result.model_dump(mode="json")
+
+
+@_serialized_mutation
 def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
     """
     Remove signatures from a sourmash index.
@@ -248,28 +340,51 @@ def remove_from_index(sample_ids: list[str]) -> dict[str, Any]:
 
     # lookup checksums for sample ids
     repo = create_signature_repo()
-    checksums_to_remove: list[str] = []
-    md5_to_sample_id: dict[str, str] = {}
-    for sid in sample_ids:
-        sample = repo.get_by_sample_id_or_checksum(sample_id=sid)
-        if sample is None:
-            continue
-        checksum = sample.signature_checksum
-        md5_to_sample_id[checksum] = sid
-        checksums_to_remove.append(checksum)
+    removed_ids = set(sample_ids)
+    records = [
+        record
+        for sid in removed_ids
+        for record in repo.get_by_sample_id_or_checksum(
+            sample_id=sid, kmer_size=cnf.kmer_size
+        )
+    ]
+    checksums_to_remove = {r.signature_checksum for r in records}
+    for checksum in list(checksums_to_remove):
+        others = repo.get_by_sample_id_or_checksum(
+            checksum=checksum, kmer_size=cnf.kmer_size
+        )
+        if any(
+            r.sample_id not in removed_ids
+            and not r.exclude_from_analysis
+            and not r.marked_for_deletion
+            for r in others
+        ):
+            checksums_to_remove.remove(checksum)
 
-    result = index.remove_signatures(set(checksums_to_remove))
+    # Retrying after a metadata-update failure must still reconcile flags,
+    # even if the previous attempt already removed the index entry.
+    if checksums_to_remove:
+        if index.index_path.exists():
+            checksums_to_remove.intersection_update(index.list_signature_checksums())
+        else:
+            checksums_to_remove.clear()
+
+    result = (
+        index.remove_signatures(checksums_to_remove)
+        if checksums_to_remove
+        else RemoveResult(is_successful=True, warnings=[], removed_count=0, removed=[])
+    )
     if not result.is_successful:
-        n_remaining = len(checksums_to_remove) - result.removed_count
-        LOG.error("Failed to remove %d checksum from index", n_remaining)
+        raise RuntimeError(f"Failed to remove signatures from index: {result.warnings}")
 
     # unmark indexed status in db
-    repo = create_signature_repo()
-    for sid in sample_ids:
-        repo.unmark_indexed(sid)
+    _set_index_status(
+        repo, [r.sample_id for r in records], kmer_size=cnf.kmer_size, indexed=False
+    )
     return result.model_dump()
 
 
+@_serialized_mutation
 def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     """
     Exclude signatures from being included in analysis without removing them.
@@ -292,6 +407,7 @@ def exclude_from_analysis(sample_ids: list[str]) -> dict[str, bool | list[str]]:
     return {"ok": all_ok, "excluded": excluded_samples, "to_exclude": sample_ids}
 
 
+@_serialized_mutation
 def include_in_analysis(sample_ids: list[str]) -> dict[str, str | bool | list[str]]:
     """
     Include signatures in downstream analysis.
@@ -322,11 +438,55 @@ def _lookup_checksums_from_sample_ids(
     if sample_ids is None:
         return None
 
-    return [
-        rec.signature_checksum
-        for sid in sample_ids
-        if (rec := repo.get_by_sample_id_or_checksum(sample_id=sid))
-    ]
+    checksums: list[str] = []
+    for sample_id in sample_ids:
+        records = repo.get_by_sample_id_or_checksum(sample_id=sample_id)
+        checksums.extend(record.signature_checksum for record in records)
+    return list(dict.fromkeys(checksums))
+
+
+def _resolve_sample_matches(
+    matches: list[SimilarResult],
+    repo: SignatureRepository,
+    *,
+    kmer_size: int,
+    subset_sample_ids: Iterable[str] | None = None,
+    limit: int | None = None,
+) -> list[SimilarSampleResult]:
+    """Expand signature matches into unique, eligible sample matches."""
+    allowed_sample_ids = set(subset_sample_ids) if subset_sample_ids is not None else None
+    resolved: list[SimilarSampleResult] = []
+    seen_sample_ids: set[str] = set()
+
+    if limit is not None and limit <= 0:
+        return []
+
+    for match in matches:
+        records = repo.get_by_sample_id_or_checksum(
+            checksum=match.md5, kmer_size=kmer_size
+        )
+        for record in sorted(records, key=lambda item: item.sample_id):
+            if record.exclude_from_analysis or record.marked_for_deletion:
+                continue
+            if allowed_sample_ids is not None and record.sample_id not in allowed_sample_ids:
+                continue
+            if record.sample_id in seen_sample_ids:
+                continue
+
+            resolved.append(
+                SimilarSampleResult(
+                    sample_id=record.sample_id,
+                    signature_checksum=match.md5,
+                    containment=match.containment,
+                    jaccard_similarity=match.jaccard_similarity,
+                    max_containment=match.max_containment,
+                )
+            )
+            seen_sample_ids.add(record.sample_id)
+            if limit is not None and len(resolved) >= limit:
+                return resolved
+
+    return resolved
 
 
 def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None = None) -> SourmashSignatures:
@@ -352,7 +512,7 @@ def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None
 
         record = records[0]
 
-        if record.exclude_from_analysis:
+        if record.exclude_from_analysis or record.marked_for_deletion:
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
 
@@ -367,7 +527,7 @@ def search_similar(
     min_similarity: float = 0.5,
     limit: int | None = None,
     subset_sample_ids: list[str] | None = None,
-) -> list[dict[str, Any]]:
+) -> dict[str, Any]:
     """
     Find signatures similar to reference signature.
 
@@ -395,7 +555,10 @@ def search_similar(
     subset_checksums = _lookup_checksums_from_sample_ids(subset_sample_ids, repo)
     search_cnf = SimilaritySearchConfig(
         min_similarity=min_similarity,
-        limit=limit,
+        # Limit after resolving checksums to sample IDs. A checksum can belong
+        # to multiple samples and duplicate index entries must not consume the
+        # user-facing sample limit.
+        limit=None,
         ani_estimate=estimate_ani,
         subset_checksums=subset_checksums,
         ksize=kmer_size
@@ -403,13 +566,22 @@ def search_similar(
 
     # lookup sample ids from matches
     result = get_similar_signatures(record.signature_path, index, search_cnf)
+    matches = _resolve_sample_matches(
+        result.matches,
+        repo,
+        kmer_size=kmer_size,
+        subset_sample_ids=subset_sample_ids,
+        limit=limit,
+    )
     LOG.info(
         "Finding samples similar to %s with min similarity %s; limit %s",
         sample_id,
         min_similarity,
         limit,
     )
-    return result.model_dump(mode="json")
+    response = result.model_dump(mode="json")
+    response["matches"] = [match.model_dump(mode="json") for match in matches]
+    return response
 
 
 def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
@@ -493,31 +665,29 @@ def find_similar_and_cluster(
         limit=limit,
         subset_sample_ids=subset_sample_ids,
     )
-    LOG.info("Found %d similar samples", len(results))
+    matches = results["matches"]
+    LOG.info("Found %d similar samples", len(matches))
 
-    # if 1 or 0 samples were found, return emtpy newick
-    if len(results) < 2:
-        LOG.warning("Invalid number of samples found, %d", len(results))
+    # if 1 or 0 samples were found, return empty newick
+    if len(matches) < 2:
+        LOG.warning("Invalid number of samples found, %d", len(matches))
         return "()"
 
     # load sequence signatures to memory
     repo = create_signature_repo()
     kmer_size = cnf.kmer_size
     sample_ids: list[str] = []
-    checksums_lookup = {}
-    for match in results["matches"]:
-        records = repo.get_by_sample_id_or_checksum(checksum=match["md5"], kmer_size=kmer_size)
-        record = records[0]
-        if record is None:
-            continue
-        sample_ids.append(record.sample_id)
-        checksums_lookup[record.signature_checksum] = record.sample_id
+    for match in matches:
+        sample_ids.append(match["sample_id"])
     signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
+
+    if len(signatures) != len(sample_ids):
+        raise ValueError("Could not load one signature for every similar sample")
 
     # cluster samples
     LOG.info("Cluster samples...")
-    tree, checksums  = cluster_signatures(signatures, method)
-    newick = tree_to_newick(tree, "", tree.dist, [checksums_lookup.get(c, c) for c in checksums])
+    tree, _ = cluster_signatures(signatures, method)
+    newick = tree_to_newick(tree, "", tree.dist, sample_ids)
     return newick
 
 
@@ -558,10 +728,15 @@ def get_data_integrity_report() -> dict[str, Any] | None:
     return None
 
 
+@_serialized_mutation
 def cleanup_removed_files() -> None:
     """Cleanup files marked for removal."""
     two_weeks_ago: dt.datetime = dt.datetime.now(dt.UTC) - dt.timedelta(weeks=2)
 
     store = SignatureStorage(base_dir=cnf.signature_dir, trash_dir=cnf.trash_dir)
-    n_removed = store.purge_older_than(cutoff=two_weeks_ago)
+    repo = create_signature_repo()
+    protected_paths = {str(r.signature_path) for r in repo.get_all_signatures()}
+    n_removed = store.purge_older_than(
+        cutoff=two_weeks_ago, protected_paths=protected_paths
+    )
     LOG.info("Cleanup removed %d files", n_removed)
