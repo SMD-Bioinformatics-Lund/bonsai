@@ -22,10 +22,20 @@ GROUP_SCHEMA_VERSION = 1
 DEFAULT_PRESET_NAME = "default"
 
 
+GROUP_KEY_PATTERN = r"^[a-z0-9][a-z0-9_-]*$"
+
+
 class GroupCore(RWModel):  # pylint: disable=too-few-public-methods
     """Basic group core information."""
 
     group_id: str = Field(..., min_length=5)
+    group_key: str = Field(
+        ...,
+        min_length=2,
+        max_length=45,
+        pattern=GROUP_KEY_PATTERN,
+        description="Stable key used to reference the group, e.g. when uploading samples",
+    )
     display_name: str = Field(..., min_length=1, max_length=45)
     description: str | None = None
     sample_count: int = Field(default=0, ge=0)
@@ -129,6 +139,7 @@ class GroupInfoOut(TimestampsMixin):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info."""
 
     group_id: str
+    group_key: str | None = None
     display_name: str
     description: str | None = None
     sample_count: int
@@ -187,6 +198,13 @@ class GroupListResponse(MultipleRecordsResponseModel):
 class GroupInfoCreate(BaseModel):  # pylint: disable=too-few-public-methods
     """Defines output structure of group info used for creation."""
 
+    group_key: str = Field(
+        ...,
+        min_length=2,
+        max_length=45,
+        pattern=GROUP_KEY_PATTERN,
+        description="Stable key used to reference the group, e.g. when uploading samples",
+    )
     display_name: str
     description: str | None = None
     visibility: Visibility = Visibility.PUBLIC
