@@ -2,7 +2,7 @@
 
 import logging
 
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.metadata import add_metadata_to_sample
 from bonsai_api.crud.sample import (
     add_comment,

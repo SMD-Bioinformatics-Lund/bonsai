@@ -1,7 +1,7 @@
 """Service layer for creating and modifying user info."""
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import Actor, SourceType, Subject
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import Actor, SourceType, Subject
 
 from bonsai_api.auth import get_password_hash
 from bonsai_api.crud.user import create_user as insert_user

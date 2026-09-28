@@ -71,7 +71,7 @@ class SignatureRepository:
         self, sample_id: str | None = None, checksum: str | None = None,
         kmer_size: int | None = None
     ) -> list[SignatureRecord]:
-        """Get a signature by either sample_id or checksum. Returns None if not found."""
+        """Get a signature by either sample_id or checksum. Empty list if not found."""
         # input validation
         if sample_id is None and checksum is None:
             raise ValueError("Either sample_id or checksum must be defined.")

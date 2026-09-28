@@ -12,13 +12,13 @@ from pymongo.errors import DuplicateKeyError
 from bonsai_api.utils import get_timestamp
 from bonsai_api.crud.curation import create_curation, delete_curation_crud, get_curation_by_id_crud, get_curations_crud, update_curation_crud
 from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound, AuditLogError
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.analysis import CurationRecord, CurationCreateRecord
 from bonsai_api.db import Database
-from api_client.audit_log.models import Subject, SourceType
-from api_client.audit_log import AuditLogClient, EventCreate
+from bonsai_libs.api_client.audit_log.models import Subject, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
 
 from .analysis_service import group_for, get_analysis_service
 
@@ -83,7 +83,7 @@ async def create_curation_service(
                 )
                 try:
                     audit.post_event(event)
-                except ApiRequestError as exc:
+                except ApiError as exc:
                     raise AuditLogError(
                         f"Audit log event failed for curation create {curation_id}: {exc}"
                     ) from exc
@@ -95,9 +95,12 @@ async def create_curation_service(
 
             return curation_id
         except DuplicateKeyError as dke:
-            LOG.error("Duplicate key error while creating group: %s", str(dke))
+            LOG.error("Duplicate key error while creating curation: %s", str(dke))
             raise ConflictError(
-                f"Curation for field {curation.target_index} already exists."
+                f"Curation already exists for analysis '{analysis_id}', "
+                f"analysis type '{analysis_type}', annotation type "
+                f"'{curation.annotation_type}' and result key "
+                f"{getattr(curation, 'result_key', None)!r}."
             ) from dke
         except ValidationError as ve:
             LOG.error("Curation validation error: %s", ve)
@@ -168,7 +171,7 @@ async def approve_curation_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for curation approve {curation_id}: {exc}"
             ) from exc
@@ -192,7 +195,11 @@ async def delete_curation_service(
 
         # sync changes to sample object
         await sync_curation_summary_for_analysis(
-            db, sample_id=curation['sample_id'], analysis_id=curation['analysis_id'], session=txn
+            db,
+            sample_id=curation['sample_id'],
+            analysis_id=curation['analysis_id'],
+            include_analysis_types={curation['analysis_type']},
+            session=txn,
         )
     
     # Audit log
@@ -207,7 +214,7 @@ async def delete_curation_service(
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for curation delete {curation_id}: {exc}"
             ) from exc
@@ -220,7 +227,8 @@ async def sync_curation_summary_for_analysis(
     *,
     sample_id: str,
     analysis_id: str,
-    session: ClientSession | None = None
+    include_analysis_types: set[str] | None = None,
+    session: ClientSession | None = None,
 ):
     """Re-sync the the curation summary for one analysis result."""
     # Fetch all curations for this analysis from canonical collection
@@ -242,6 +250,11 @@ async def sync_curation_summary_for_analysis(
         cur_copy.pop("analysis_id", None)
         cur_copy.pop("analysis_type", None)
         items_idx[(field_name, analysis_type)].append(cur_copy)
+
+    # A deleted final curation is absent from the canonical result above. Include
+    # its analysis type explicitly so the stale embedded list is cleared.
+    for analysis_type in include_analysis_types or ():
+        items_idx.setdefault((group_for(analysis_type), analysis_type), [])
     
     ops: list[UpdateOne] = []
     for (field_name, at), items in items_idx.items():

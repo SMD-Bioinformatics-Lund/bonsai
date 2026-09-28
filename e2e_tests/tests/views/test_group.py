@@ -1,6 +1,7 @@
 """Test functions related to sample groups."""
 
 import pytest
+from selenium.webdriver.common.by import By
 from pages.groups_page import GroupPage
 
 
@@ -33,6 +34,14 @@ def test_open_qc_view(logged_in_user, config, group_id: str):
 
     # TEST that the page could load
     assert "QC results" in logged_in_user.title
+    for column_id in ("quast_n50", "quast_n_contigs", "created_at"):
+        header = logged_in_user.find_element(
+            By.CSS_SELECTOR, f'#sample-table thead th[data-column-id="{column_id}"]'
+        )
+        assert header.is_displayed()
+    assert logged_in_user.find_element(By.ID, "sample-table").get_attribute(
+        "data-default-sort"
+    ) == "created_at"
 
 
 @pytest.mark.parametrize("group_id", ["mtuberculosis", "saureus"])

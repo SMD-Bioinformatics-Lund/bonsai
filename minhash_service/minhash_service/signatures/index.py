@@ -283,7 +283,9 @@ class RocksDBIndexStore(BaseIndexStore):
         """Remove signatures by name."""
         sigs = list(checksums_to_remove)
         if not sigs:
-            return AddResult(is_successful=False, warnings=[], added_count=0, added_md5s=[])
+            return RemoveResult(
+                is_successful=True, warnings=[], removed_count=0, removed=[]
+            )
 
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
@@ -299,11 +301,14 @@ class RocksDBIndexStore(BaseIndexStore):
         not_removed = checksums_to_remove - removed_checksums
         if not_removed:
             return RemoveResult(
-                ok=False,
+                is_successful=False,
                 warnings=[f"could not remove {', '.join(not_removed)}"],
                 removed=[s.md5sum() for s in removed],
                 removed_count=len(removed),
             )
         return RemoveResult(
-            ok=True, warnings=[], removed_count=len(removed), removed=list(removed_checksums)
+            is_successful=True,
+            warnings=[],
+            removed_count=len(removed),
+            removed=list(removed_checksums),
         )

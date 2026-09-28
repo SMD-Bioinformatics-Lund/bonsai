@@ -21,6 +21,30 @@ async def get_reference_genome_by_id(
     return await db.reference_genome_collection.find_one({"id": resource_id}, session=session)
 
 
+async def get_reference_genome_by_accession(
+    db: Database,
+    *,
+    accession: str,
+    session: ClientSession | None = None,
+) -> dict[str, Any] | None:
+    """Get a reference genome by its assembly accession."""
+    return await db.reference_genome_collection.find_one(
+        {"accession": accession}, session=session
+    )
+
+
+async def get_reference_genome_by_sequence_accession(
+    db: Database,
+    *,
+    sequence_accession: str,
+    session: ClientSession | None = None,
+) -> dict[str, Any] | None:
+    """Get a reference genome containing a sequence accession."""
+    return await db.reference_genome_collection.find_one(
+        {"sequence_accessions": sequence_accession}, session=session
+    )
+
+
 async def list_reference_genomes_service(db: Database):
     """List available reference genomes."""
     return await db.reference_genome_collection.find().to_list(length=None)

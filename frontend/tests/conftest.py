@@ -1,7 +1,6 @@
 import pytest
 from bonsai_app.app import create_app
 from bonsai_app.blueprints.login.views import LoginUser
-from bonsai_app.bonsai import TokenObject
 from flask_login import FlaskLoginClient
 
 
@@ -72,6 +71,4 @@ def parsed_user():
 def user_obj(parsed_user):
     """Return a User object"""
 
-    token_obj = TokenObject(token="secret-token", type="Bearer")
-    user_obj = LoginUser(parsed_user, token_obj)
-    return user_obj
+    return LoginUser(parsed_user, token="secret-token")

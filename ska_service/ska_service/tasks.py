@@ -31,11 +31,29 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
     :return: clustering result in newick format
     :rtype: str
     """
-    # validate input samples and cast to path
-    idx_paths = [Path(settings.index_dir) / idx["ska_index"] for idx in indexes]
+    # Resolve indexes inside the worker's mounted data directory. Stored paths
+    # may refer to their original host location, so also search by filename.
+    idx_paths: list[Path] = []
+    missing_samples: list[str] = []
+    for index in indexes:
+        try:
+            idx_paths.append(
+                ska.resolve_index_path(
+                    index["ska_index"], settings, find_missing=True
+                )
+            )
+        except FileNotFoundError:
+            missing_samples.append(index.get("external_sample_id") or "Unknown sample")
+
+    if missing_samples:
+        sample_labels = ", ".join(sorted(missing_samples))
+        raise FileNotFoundError(
+            "No SKA index file is available for the following samples: "
+            f"{sample_labels}"
+        )
 
     sample_id_lookup = {
-        get_index_name(idx["ska_index"]): idx["sample_id"] 
+        get_index_name(idx["ska_index"]): idx["sample_id"]
         for idx in indexes
     }
 

@@ -1,7 +1,7 @@
 """Test functions in routers/shared.py"""
 
 import pytest
-from bonsai_api.models.sample import QcClassification, SampleQcClassification
+from bonsai_api.models.qc import QcClassification, SampleQcClassification
 from bonsai_api.routers.shared import action_from_qc_classification
 
 qc_unprocessed = QcClassification(status=SampleQcClassification.UNPROCESSED)

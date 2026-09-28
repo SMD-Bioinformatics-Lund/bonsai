@@ -71,6 +71,9 @@ export class ChoiceSelect extends HTMLElement {
     }));
 
     this.choiceElement.setChoices(data, "value", "label", false);
+    if (preselected !== undefined) {
+      this.setSelected(preselected);
+    }
   }
 
   /*

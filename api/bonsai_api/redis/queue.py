@@ -61,11 +61,18 @@ class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
 def check_redis_job_status(job_id: str, raise_on_exception: bool = False) -> JobStatus:
     """Check status of a job."""
     job = Job.fetch(job_id, connection=redis.connection)
+    error = None
+    if job.exc_info:
+        # RQ stores the complete traceback. Return only the exception summary to
+        # clients so they receive a useful error without exposing server paths.
+        error = job.exc_info.rstrip().splitlines()[-1]
+
     job_info = JobStatus(
         status=job.get_status(refresh=True),
         queue=job.origin,
         task=job.func_name,
         result=job.return_value(),
+        error=error,
         submitted_at=job.enqueued_at,
         started_at=job.started_at,
         finished_at=job.ended_at,

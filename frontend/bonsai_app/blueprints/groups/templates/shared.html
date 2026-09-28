@@ -102,16 +102,19 @@
     </button>
 {% endmacro %}
 
-{% macro sample_table(table_data) %}
+{% macro sample_table(table_data, default_sort=none) %}
     {# build sample table #}
-    <table id="sample-table" class="display table table-striped">
+    <table id="sample-table" class="display table table-striped" {% if default_sort %}data-default-sort="{{ default_sort }}"{% endif %}>
         <thead>
             <tr>
                 {# build table header #}
                 {% for column in table_data.columns %}
                     {% if column.label is not none %}
                         <th 
-                            data-orderable="{{ column.sortable | lower }}" data-searchable="{{ column.searchable | lower }}"
+                            data-column-id="{{ column.id }}"
+                            data-orderable="{{ column.sortable | lower }}"
+                            data-searchable="{{ column.searchable | lower }}"
+                            data-filterable="{{ column.filterable | lower }}"
                             data-visible="{{ column.visible | lower }}"
                             >
                             {{ column.label }}

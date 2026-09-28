@@ -1,4 +1,4 @@
-import { BasketState } from "../state/basket-state";
+import { BasketState } from "../core/state/basket-state";
 
 export class SampleBasketCounter extends HTMLElement {
   private state: BasketState | null = null;

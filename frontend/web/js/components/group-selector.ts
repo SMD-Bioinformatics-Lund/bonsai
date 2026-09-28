@@ -1,6 +1,6 @@
-import { emitEvent } from "../utils/event-bus";
-import { GroupInfo, MembershipEdges } from "../types";
+import { ApiGroupInfoResponse, MembershipEdges } from "../core/types";
 import { ChoiceSelect } from "../utils/choice-select";
+import { emitEvent } from "../utils/event-bus";
 
 const template = document.createElement("template");
 template.innerHTML = String.raw`
@@ -84,6 +84,8 @@ export class GroupSelector extends HTMLElement {
       return;
     }
 
+    let membershipChanged = false;
+
     try {
       // For each sample, compute which groups to add/remove
       // A sample should be in ALL selected groups and in NO deselected groups
@@ -99,12 +101,14 @@ export class GroupSelector extends HTMLElement {
         if (toAdd.length > 0) {
           for (const gid of toAdd) {
             await this.addToGroup!(gid, [sampleId]);
+            membershipChanged = true;
           }
         }
 
         if (toRemove.length > 0) {
           for (const gid of toRemove) {
             await this.removeFromGroup!(gid, [sampleId]);
+            membershipChanged = true;
           }
         }
       }
@@ -114,6 +118,10 @@ export class GroupSelector extends HTMLElement {
     } catch (err) {
       console.error("Updating sample group memberships failed", err);
       this.dispatchEvent(new CustomEvent("apply:error", { detail: { error: err }, bubbles: true }));
+    } finally {
+      if (membershipChanged) {
+        emitEvent("samples:group-memberships-changed", { sampleIds });
+      }
     }
   };
 
@@ -165,7 +173,7 @@ export class GroupSelector extends HTMLElement {
 
       // Select only groups that ALL selected samples are members of (intersection)
       const groupNameIntersect = [...counts.entries()]
-        .filter(([_, cnt]) => cnt === nSamples)
+        .filter(([, count]) => count === nSamples)
         .map(([gid]) => gid);
 
       groupNameIntersect.sort();
@@ -182,7 +190,7 @@ type MembershipBySample = Record<string, string[]>;
 
 function groupMemberships(
   edges: MembershipEdges,
-  { dedupe = true, sort = true } = {}
+  { sort = true } = {}
 ): MembershipBySample {
   const map = new Map<string, Set<string>>();
 

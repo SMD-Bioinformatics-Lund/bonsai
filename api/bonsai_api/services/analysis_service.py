@@ -2,6 +2,8 @@
 
 import logging
 import io
+import inspect
+from typing import Any
 
 from fastapi import UploadFile
 from pydantic import ValidationError
@@ -13,8 +15,8 @@ from bonsai_api.models.analysis import (
     PRPParserOutput,
 )
 from bonsai_api.models.sample import AnalysisViewEntryDb
-from api_client.audit_log.models import Subject, SourceType
-from api_client.audit_log import AuditLogClient, EventCreate
+from bonsai_libs.api_client.audit_log.models import Subject, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
 from bonsai_api.crud.analysis import analysis_exists, create_analysis, get_analysis
 from bonsai_api.crud.sample import sample_exists, upsert_analysis_results
 from bonsai_api.dependencies import ApiRequestContext
@@ -25,12 +27,15 @@ from bonsai_api.exceptions import (
     ParserError,
     InvalidDataFormat,
 )
-from api_client.core.exceptions import ApiRequestError
+from bonsai_libs.api_client.core.exceptions import ApiError
 
-from prp.parse import run_parser
+from bonsai_libs.parse import run_parser
 
 
 LOG = logging.getLogger(__name__)
+RUN_PARSER_SUPPORTS_SUBCOMMAND = "subcommand" in inspect.signature(
+    run_parser
+).parameters
 
 TYPING_RESULT = "typing_result"
 ELEMENT_TYPE_RESULT = "element_type_result"
@@ -56,7 +61,7 @@ GROUP_FOR: dict[str, str] = {
     "species_prediction": SPP_RESULT,
     "stress": ELEMENT_TYPE_RESULT,
     "stx": TYPING_RESULT,
-    "virulence": TYPING_RESULT,
+    "virulence": ELEMENT_TYPE_RESULT,
     "ybst": TYPING_RESULT,
 }
 
@@ -78,7 +83,11 @@ def group_for(
 
 
 def to_result_storage(
-    sample_id: str, out: PRPParserOutput, *, pipeline_run_id: str | None
+    sample_id: str,
+    out: PRPParserOutput,
+    *,
+    pipeline_run_id: str | None,
+    subcommand: str | None = None,
 ) -> AnalysisResult:
     """Convert parser ouptput to storage format."""
     envelopes = {
@@ -93,6 +102,7 @@ def to_result_storage(
     return AnalysisResult(
         sample_id=sample_id,
         software=out.software,
+        subcommand=subcommand,
         software_version=out.software_version,
         pipeline_run_id=pipeline_run_id,
         envelopes=envelopes,
@@ -109,7 +119,10 @@ async def ingest_analysis_service(
     *,
     sample_id: str,
     software: str,
+    subcommand: str | None = None,
     file: UploadFile,
+    coverage_file: UploadFile | None = None,
+    bedcov_file: UploadFile | None = None,
     force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
@@ -128,28 +141,40 @@ async def ingest_analysis_service(
     if not await sample_exists(db, sample_id=sample_id):
         raise EntryNotFound(f"Sample with id '{sample_id}' not found")
 
-    exists = await analysis_exists(
-        db,
-        sample_id=sample_id,
-        software=software,
-        software_version=software_version,
-        pipeline_run=pipeline_run,
-    )
-    if exists and not force:
-        raise AnalysisExistsError(
-            f"Analysis for sample {sample_id} with software {software} "
-            f"version {software_version} and pipeline run {pipeline_run} already exists."
-        )
-
     # Execute parser
     try:
         binary_stream = file.file  # SpooledTemporaryFile object
         text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
-        out = run_parser(software=software, version=software_version, data=text_stream)
+        auxiliary_files: dict[str, Any] = {}
+        if coverage_file is not None:
+            auxiliary_files["coverage_path"] = io.TextIOWrapper(
+                coverage_file.file, encoding="utf-8"
+            )
+        if bedcov_file is not None:
+            auxiliary_files["bedcov_path"] = io.TextIOWrapper(
+                bedcov_file.file, encoding="utf-8"
+            )
+        parser_args: dict[str, Any] = {
+            "software": software,
+            "version": software_version,
+            "data": text_stream,
+            **auxiliary_files,
+        }
+        if subcommand is not None:
+            if not RUN_PARSER_SUPPORTS_SUBCOMMAND:
+                raise NotImplementedError(
+                    "Analysis subcommands require a Bonsai SDK version that "
+                    "supports subcommand parser selection"
+                )
+            parser_args["subcommand"] = subcommand
+        out = run_parser(**parser_args)
 
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
-            sample_id=sample_id, out=out, pipeline_run_id=pipeline_run
+            sample_id=sample_id,
+            out=out,
+            pipeline_run_id=pipeline_run,
+            subcommand=subcommand,
         )
     except ParserError as exc:
         LOG.error(
@@ -171,6 +196,26 @@ async def ingest_analysis_service(
             f"Validation error when processing parser output: {str(ve)}"
         ) from ve
 
+    # Parser aliases and subcommands can normalize the requested software name.
+    # Check the identity that will actually be persisted, not the submitted alias.
+    exists = await analysis_exists(
+        db,
+        sample_id=sample_id,
+        software=doc.software,
+        subcommand=doc.subcommand,
+        software_version=doc.software_version,
+        pipeline_run=doc.pipeline_run_id,
+    )
+    if exists and not force:
+        software_label = (
+            f"{doc.software}.{doc.subcommand}" if doc.subcommand else doc.software
+        )
+        raise AnalysisExistsError(
+            f"Analysis for sample {sample_id} with software {software_label} "
+            f"version {doc.software_version} and pipeline run "
+            f"{doc.pipeline_run_id} already exists."
+        )
+
     # audit event
     if isinstance(audit, AuditLogClient):
         subject = Subject(id=sample_id, type=SourceType.USR)
@@ -181,13 +226,14 @@ async def ingest_analysis_service(
             subject=subject,
             metadata={
                 "software": software,
+                "subcommand": subcommand,
                 "version": software_version,
                 "pipeline_run": pipeline_run,
             },
         )
         try:
             audit.post_event(event)
-        except ApiRequestError as exc:
+        except ApiError as exc:
             raise AuditLogError(
                 f"Audit log event failed for analysis ingest on sample {sample_id}: {exc}"
             ) from exc
