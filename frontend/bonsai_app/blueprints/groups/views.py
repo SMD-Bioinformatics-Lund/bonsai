@@ -184,7 +184,7 @@ def edit_groups_old(group_id: str | None = None):
                 # cast as input object
                 input_data = CreateGroupInput.model_validate(raw_data)
 
-                client.create_group(data=input_data.group_id)
+                client.create_group(input_data)
                 flash("Group updated", "success")
                 return redirect(url_for("groups.group_editor_view", group_id=group_id))
             except HTTPError as err:

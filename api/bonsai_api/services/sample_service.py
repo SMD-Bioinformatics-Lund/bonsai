@@ -369,13 +369,14 @@ async def add_reference_genome_service(
         db, resource_id=reference_genome_id, request=request
     )
 
-    event_subject = Subject(id=reference_genome_id, type=SourceType.USR)
+    # Store the reference genome's own id, whichever identifier the caller used.
+    event_subject = Subject(id=ref_genome.id, type=SourceType.USR)
     with audit_event_context(audit, "add_reference_genome", ctx, event_subject):
         try:
             update_obj = await add_reference_genome_to_sample(
                 db,
                 sample_id=sample_id,
-                reference_genome_id=reference_genome_id,
+                reference_genome_id=ref_genome.id,
                 session=session,
             )
         except PyMongoError as pme:

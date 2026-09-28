@@ -14,6 +14,8 @@ export interface GroupEditorApi {
     columnIds: string[]
   ): Promise<GroupInfo>;
 
+  deleteGroup(groupId: string): Promise<void>;
+
   getGroup(groupId: string): Promise<GroupInfo>;
 
   getAvailableColumns(): Promise<ApiSummaryManifestResponse>

@@ -32,6 +32,7 @@ export class GroupEditor extends HTMLElement {
 
   public config = {
     redirectOnSuccess: undefined as undefined | ((id: string) => string),
+    redirectOnDelete: undefined as undefined | string,
     presentation: "page" as "page" | "modal",
   };
 
@@ -82,7 +83,8 @@ export class GroupEditor extends HTMLElement {
         description: this.model.description,
       }
       if ( this.mode == "create" ) {
-        const groupObj = await this._api.createGroup(corePayload)
+        // The group key is stable and cannot be changed afterwards.
+        const groupObj = await this._api.createGroup({ ...corePayload, group_key: this.model.groupKey })
         groupId = groupObj.group_id;
         this.model.groupId = groupId;
         this.mode = "edit";
@@ -124,10 +126,40 @@ export class GroupEditor extends HTMLElement {
     };
   }
 
+  private async delete() {
+    const groupId = this.model.groupId;
+    if (this.mode !== "edit" || !groupId) return;
+
+    const samples = this.model.sampleCount
+      ? ` Its ${this.model.sampleCount} sample(s) will stay in Bonsai but leave the group.`
+      : "";
+    if (!window.confirm(`Delete the group "${this.model.displayName}"?${samples}`)) return;
+
+    try {
+      await this.api.deleteGroup(groupId);
+    } catch (err) {
+      this.dispatchEvent(
+        new CustomEvent("group-editor:error", {
+          detail: { message: "Failed to delete group", cause: err },
+        }),
+      );
+      return;
+    }
+
+    this.dispatchEvent(
+      new CustomEvent("group-editor:deleted", { detail: { groupId } }),
+    );
+
+    if (this.config.redirectOnDelete) {
+      window.location.href = this.config.redirectOnDelete;
+    }
+  }
+
   private reset() {
     if (this.mode === "edit" && this.model.groupId) {
       this.load(this.model.groupId);
     } else {
+      this.model.groupKey = "";
       this.model.displayName = "";
       this.model.description = "";
       this.model.samples = [];
@@ -181,6 +213,7 @@ export class GroupEditor extends HTMLElement {
       {
         onSave: () => this.save(),
         onReset: () => this.reset(),
+        onDelete: () => this.delete(),
       }
     );
   }

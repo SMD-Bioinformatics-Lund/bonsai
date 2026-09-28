@@ -27,9 +27,21 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         {
             "definition": [("core.group_id", ASCENDING)],
             "options": {
-                "name": "sample_group",
+                "name": "sample_group_id",
                 "background": True,
                 "unique": True,
+            },
+        },
+        {
+            "definition": [("core.group_key", ASCENDING)],
+            # Uploads reference groups by key, so uniqueness must not silently fail.
+            "required": True,
+            "options": {
+                "name": "sample_group_key",
+                "background": True,
+                "unique": True,
+                # Groups created before group keys existed have no core.group_key.
+                "partialFilterExpression": {"core.group_key": {"$type": "string"}},
             },
         },
     ],
@@ -97,6 +109,14 @@ INDEXES: dict[str, list[IndexDefinition]] = {
         },
     ],
     "reference_genome": [
+        {
+            "definition": [("id", ASCENDING)],
+            "options": {
+                "name": "reference_genome_id",
+                "background": True,
+                "unique": True,
+            },
+        },
         {
             "definition": [("accession", ASCENDING)],
             "options": {
