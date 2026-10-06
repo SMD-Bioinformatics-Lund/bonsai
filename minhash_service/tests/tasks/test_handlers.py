@@ -176,3 +176,24 @@ def test_remove_signature_keeps_shared_checksum_indexed():
     assert result["is_successful"] is True
     index.remove_signatures.assert_not_called()
     store.move_to_trash.assert_not_called()
+
+
+def test_cron_schedules_the_integrity_check(settings, monkeypatch):
+    """The periodic task must run the check, not only read the last report."""
+    import importlib
+
+    from click.testing import CliRunner
+
+    cli = importlib.import_module("minhash_service.cli.main")
+    cron = Mock()
+    monkeypatch.setattr(cli, "cnf", settings)
+    monkeypatch.setattr(cli, "Redis", Mock())
+    monkeypatch.setattr(cli, "CronScheduler", Mock(return_value=cron))
+
+    result = CliRunner().invoke(cli.main, ["run-cron-scheduler"])
+
+    assert result.exit_code == 0, result.output
+    tasks = [c.kwargs["kwargs"]["task"] for c in cron.register.call_args_list]
+    assert "check_data_integrity" in tasks
+    assert "get_integrity_report" not in tasks
+    cron.start.assert_called_once()
