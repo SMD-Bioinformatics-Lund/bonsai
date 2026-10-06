@@ -133,7 +133,10 @@ def remove_signature(sample_id: str) -> dict[str, str | bool]:
     index = create_index_store(idx_path, cnf.index_format)
     records = repo.get_by_sample_id_or_checksum(sample_id)
     if not records:
-        raise FileNotFoundError(f"No record found for sample_id {sample_id}")
+        LOG.info("Sample %s has no signature to remove", sample_id)
+        return RemoveResult(
+            is_successful=True, warnings=[], removed_count=0, removed=[]
+        ).model_dump(mode="json")
 
     metadata: dict[str, str] = {}
     original_path = records[0].signature_path
