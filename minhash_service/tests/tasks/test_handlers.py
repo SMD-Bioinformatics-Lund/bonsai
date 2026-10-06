@@ -178,6 +178,26 @@ def test_remove_signature_keeps_shared_checksum_indexed():
     store.move_to_trash.assert_not_called()
 
 
+def test_remove_signature_without_a_signature_is_a_no_op():
+    """A sample uploaded without a signature can still be deleted."""
+    repo = Mock()
+    repo.get_by_sample_id_or_checksum.return_value = []
+    index = Mock()
+
+    with (
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
+        patch("minhash_service.tasks.handlers.create_index_store", return_value=index),
+        patch("minhash_service.tasks.handlers.SignatureStorage"),
+        patch("minhash_service.tasks.handlers.create_audit_trail_repo"),
+    ):
+        result = remove_signature("sample-without-signature")
+
+    assert result["is_successful"] is True
+    assert result["removed_count"] == 0
+    index.remove_signatures.assert_not_called()
+    repo.marked_for_deletion.assert_not_called()
+
+
 def test_cron_schedules_the_integrity_check(settings, monkeypatch):
     """The periodic task must run the check, not only read the last report."""
     import importlib
