@@ -24,6 +24,13 @@
 
 ### Fixed
 
+- Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Sort MinHash matches by similarity before applying limits, with stable ordering for ties. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Rebuild the MinHash index from eligible metadata to repair missing, stale, or duplicate entries and reconcile index flags; report metadata update failures. Repair omits excluded samples and replaces the old `--include-excluded` option. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Make MinHash integrity checks account for shared-signature eligibility and use the correct deletion flag. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion and QC exclusion. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Run the scheduled MinHash integrity check instead of only reading the last report. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Deleting a sample without a MinHash signature no longer leaves a failed job. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
 - Allow each frontend deployment to configure a unique session cookie name, preventing collisions between Bonsai instances on the same hostname. [#518](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/518)
 - Retry IGV without variant zoom when its initial locus cannot be found, show a reference-mismatch warning, and display load failures instead of leaving the viewer stuck loading. [#516](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/516)
 - Creating a group from the legacy group editor no longer fails on a missing attribute.

@@ -408,12 +408,16 @@ class TestFlagOperations:
         assert result is True
 
     def test_marked_for_deletion(self, repo):
-        """Mark sample for deletion."""
-        repo._col.update_one.return_value.modified_count = 1
+        """Stage every sketch, including records already marked on retry."""
+        repo._col.update_many.return_value.matched_count = 2
+        repo._col.update_many.return_value.modified_count = 0
 
         result = repo.marked_for_deletion("sample_1")
 
         assert result is True
+        repo._col.update_many.assert_called_once_with(
+            {"sample_id": "sample_1"}, {"$set": {"marked_for_deletion": True}}
+        )
 
 
 class TestRemoveOperations:
@@ -509,3 +513,11 @@ class TestIntegrationScenarios:
         call_args = repo._col.find.call_args
         query = call_args[0][0]
         assert "kmer_size" not in query
+
+
+def test_set_indexed_accepts_already_correct_status(repo):
+    repo._col.update_one.return_value.matched_count = 1
+    repo._col.update_one.return_value.modified_count = 0
+    assert repo.set_indexed("sample", 31, True)
+    repo._col.update_one.return_value.matched_count = 0
+    assert not repo.set_indexed("missing", 31, True)
