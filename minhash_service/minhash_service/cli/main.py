@@ -74,7 +74,7 @@ def run_cron_scheduler():
         cron_string = cnf.periodic_integrity_check.cron
         cron.register(
             dispatch_job,
-            kwargs={"task": "get_integrity_report"},
+            kwargs={"task": "check_data_integrity"},
             queue_name=cnf.periodic_integrity_check.queue,
             cron=cron_string,
         )
