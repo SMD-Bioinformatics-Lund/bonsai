@@ -5,10 +5,12 @@ from unittest.mock import Mock, call, patch
 
 from minhash_service.analysis.models import SimilarResult
 from minhash_service.signatures.index import AddResult
+from minhash_service.signatures.io import read_signatures
 from minhash_service.tasks.handlers import (
     _lookup_checksums_from_sample_ids,
     _resolve_sample_matches,
     add_to_index,
+    check_signature,
     cluster_samples,
     remove_signature,
 )
@@ -245,6 +247,24 @@ def test_cluster_samples_leaves_out_excluded_samples(data_dir):
     assert "DRR237261" not in newick
     for sample_id in ("DRR237260", "DRR237262", "DRR237263"):
         assert newick.count(f"{sample_id}:") == 1
+
+
+def test_check_signature_reports_the_signature_checksum(data_dir):
+    path = data_dir / "DRR237260.sig"
+    checksum = read_signatures(path)[0].md5sum()
+    repo = Mock()
+    repo.get_by_sample_id_or_checksum.return_value = [
+        SimpleNamespace(
+            signature_path=path, signature_checksum=checksum, has_been_indexed=True
+        )
+    ]
+
+    with patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo):
+        result = check_signature("sample-a")
+
+    assert result["records"] == [
+        {"exists": True, "checksum": checksum, "indexed": True}
+    ]
 
 
 def test_cron_schedules_the_integrity_check(settings, monkeypatch):

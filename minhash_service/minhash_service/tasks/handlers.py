@@ -214,14 +214,14 @@ def check_signature(sample_id: str) -> dict[str, str | bool]:
 
     repo = create_signature_repo()
     records = repo.get_by_sample_id_or_checksum(sample_id=sample_id)
-    if records is None:
+    if not records:
         raise FileNotFoundError(f"No record found for sample_id {sample_id}")
 
     rec_info = []
     for r in records:
         rec_info.append({
             "exists": r.signature_path.exists(),
-            "checksum": r.checksum,
+            "checksum": r.signature_checksum,
             "indexed": r.has_been_indexed,
         })
     return {
