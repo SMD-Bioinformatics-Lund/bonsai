@@ -9,6 +9,7 @@ from minhash_service.tasks.handlers import (
     _lookup_checksums_from_sample_ids,
     _resolve_sample_matches,
     add_to_index,
+    cluster_samples,
     remove_signature,
 )
 
@@ -196,6 +197,54 @@ def test_remove_signature_without_a_signature_is_a_no_op():
     assert result["removed_count"] == 0
     index.remove_signatures.assert_not_called()
     repo.marked_for_deletion.assert_not_called()
+
+
+def test_cluster_samples_labels_samples_sharing_a_signature(data_dir):
+    """Samples with an identical sketch each keep their own leaf label."""
+    paths = {
+        "sample-a": data_dir / "DRR237260.sig",
+        "sample-b": data_dir / "DRR237260.sig",
+        "sample-c": data_dir / "DRR237261.sig",
+    }
+    repo = Mock()
+    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: [
+        SimpleNamespace(
+            signature_path=paths[sample_id],
+            exclude_from_analysis=False,
+            marked_for_deletion=False,
+        )
+    ]
+
+    with (
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
+        patch("minhash_service.tasks.handlers.signature_workflow_lock"),
+    ):
+        newick = cluster_samples(list(paths))
+
+    for sample_id in paths:
+        assert newick.count(f"{sample_id}:") == 1
+
+
+def test_cluster_samples_leaves_out_excluded_samples(data_dir):
+    """An excluded sample is skipped without shifting the other labels."""
+    repo = Mock()
+    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: [
+        SimpleNamespace(
+            signature_path=data_dir / f"{sample_id}.sig",
+            exclude_from_analysis=sample_id == "DRR237261",
+            marked_for_deletion=False,
+        )
+    ]
+
+    with (
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
+        patch("minhash_service.tasks.handlers.signature_workflow_lock"),
+    ):
+        newick = cluster_samples(["DRR237260", "DRR237261", "DRR237262", "DRR237263"])
+
+    assert "DRR237261" not in newick
+    for sample_id in ("DRR237260", "DRR237262", "DRR237263"):
+        assert newick.count(f"{sample_id}:") == 1
 
 
 def test_cron_schedules_the_integrity_check(settings, monkeypatch):
