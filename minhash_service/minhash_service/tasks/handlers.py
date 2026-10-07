@@ -8,6 +8,8 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable, cast
 
+from sourmash.signature import SourmashSignature
+
 from minhash_service.analysis.cluster import cluster_signatures, tree_to_newick
 from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
                                              SimilarResult,
@@ -494,10 +496,17 @@ def _resolve_sample_matches(
 
 def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None = None) -> SourmashSignatures:
     """Load signatures from sample ids."""
+    return [signature for _, signature in _load_sample_signatures(sample_ids, kmer_size)]
+
+
+def _load_sample_signatures(
+    sample_ids: list[str], kmer_size: int | None = None
+) -> list[tuple[str, SourmashSignature]]:
+    """Load signatures paired with the sample id they were loaded for."""
     LOG.debug("Load signatures to memory")
     repo = create_signature_repo()
 
-    signatures: SourmashSignatures = []
+    signatures: list[tuple[str, SourmashSignature]] = []
     for sample_id in sample_ids:
         records = repo.get_by_sample_id_or_checksum(sample_id=sample_id, kmer_size=kmer_size)
 
@@ -520,7 +529,7 @@ def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None
             continue
 
         sigs = read_signatures(record.signature_path, kmer_size=kmer_size)
-        signatures.extend(sigs)  # append to all signatures
+        signatures.extend((sample_id, sig) for sig in sigs)
     return signatures
 
 
@@ -607,24 +616,14 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
         LOG.error(msg)
         raise ValueError(msg) from error
 
-    # load sequence signatures to memory
-    signatures = _load_signatures_from_sample_id(sample_ids)
+    loaded = _load_sample_signatures(sample_ids, kmer_size=cnf.kmer_size)
+    leaf_names = [sample_id for sample_id, _ in loaded]
 
-    LOG.info("Cluster %d signatures", len(sample_ids))
-    tree, checksums  = cluster_signatures(signatures, method)
+    LOG.info("Cluster %d signatures", len(loaded))
+    tree, _ = cluster_signatures([signature for _, signature in loaded], method)
 
-    repo = create_signature_repo()
-    kmer_size = cnf.kmer_size
-    sample_ids = []
-    for checksum in checksums:
-        records = repo.get_by_sample_id_or_checksum(checksum=checksum, kmer_size=kmer_size)
-        record = records[0]
-        if record is None:
-            continue
-        sample_ids.append(record.sample_id)
-
-    LOG.debug("Creating newick tree; checksums: %s; leaf names: %s", checksums, sample_ids)
-    newick = tree_to_newick(node=tree, newick="", parentdist=tree.dist, leaf_names=sample_ids)
+    LOG.debug("Creating newick tree; leaf names: %s", leaf_names)
+    newick = tree_to_newick(node=tree, newick="", parentdist=tree.dist, leaf_names=leaf_names)
     return newick
 
 
