@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
+- Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Allow each frontend deployment to configure a unique session cookie name, preventing collisions between Bonsai instances on the same hostname. [#518](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/518)
 - Retry IGV without variant zoom when its initial locus cannot be found, show a reference-mismatch warning, and display load failures instead of leaving the viewer stuck loading. [#516](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/516)
 - Creating a group from the legacy group editor no longer fails on a missing attribute.
