@@ -20,6 +20,17 @@ LOG = logging.getLogger(__name__)
 
 SBTIndex = sourmash.sbtmh.SBT
 RocksDBIndex = DiskRevIndex
+EMPTY_SBT = b'{"bonsai_empty_sbt": 1}\n'
+
+
+def _unique_signatures(
+    signatures: Iterable[sourmash.SourmashSignature],
+) -> dict[str, sourmash.SourmashSignature]:
+    """Return one signature per checksum while preserving input order."""
+    unique: dict[str, sourmash.SourmashSignature] = {}
+    for signature in signatures:
+        unique.setdefault(cast(str, signature.md5sum()), signature)
+    return unique
 
 
 def get_index_path(signature_dir: Path, fmt: IndexFormat) -> Path:
@@ -99,6 +110,11 @@ class BaseIndexStore(ABC):
             for sig in index.signatures()
         ]
 
+    def list_signature_checksums(self) -> set[str]:
+        """List the unique signature checksums represented by the index."""
+        index = self._load_index(create_if_missing=False)
+        return {cast(str, signature.md5sum()) for signature in index.signatures()}
+
     @abstractmethod
     def add_signatures(
         self,
@@ -109,6 +125,12 @@ class BaseIndexStore(ABC):
     @abstractmethod
     def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
         """Remove signatures by name."""
+
+    @abstractmethod
+    def replace_signatures(
+        self, signatures: Iterable[sourmash.SourmashSignature]
+    ) -> AddResult:
+        """Replace the entire collection, including when the input is empty."""
 
     @property
     def index(self) -> SBTIndex | RocksDBIndex:
@@ -129,8 +151,19 @@ class SBTIndexStore(BaseIndexStore):
         try:
             index = cast(SBTIndex, sourmash.load_file_as_index(str(self.index_path)))
         except (FileNotFoundError, ValueError) as err:
+            # Sourmash cannot reload an SBT archive without leaves. Persist an
+            # explicit marker for this case so empty and missing stay distinct.
+            if (
+                self.index_path.is_file()
+                and self.index_path.stat().st_size == len(EMPTY_SBT)
+                and self.index_path.read_bytes() == EMPTY_SBT
+            ):
+                self._index = sourmash.create_sbt_index()
+                return self._index
             if not create_if_missing:
-                raise FileNotFoundError(f"SBT index not found at {self.index_path}") from err
+                raise FileNotFoundError(
+                    f"SBT index not found at {self.index_path}"
+                ) from err
             LOG.warning("Invalid index: %s, creating new index", self.index_path)
             index = sourmash.create_sbt_index()
         self._index = index
@@ -141,6 +174,10 @@ class SBTIndexStore(BaseIndexStore):
 
         with tempfile.TemporaryDirectory(prefix=self.index_path.name) as tmp_dir:
             temp_path = Path(tmp_dir) / "index"
+            if not any(self._index.signatures()):
+                temp_path.write_bytes(EMPTY_SBT)
+                temp_path.replace(self.index_path)
+                return
             LOG.info("Temporarily save the signature to: %s", temp_path)
             tmp_idx_path = self._index.save(str(temp_path))
             tmp_idx_path = Path(tmp_idx_path)  # str -> Path
@@ -160,22 +197,50 @@ class SBTIndexStore(BaseIndexStore):
         warnings, added_md5s = [], []
         sigs = list(signatures)
         if not sigs:
-            return AddResult(is_successful=False, warnings=warnings, added_count=0, added_md5s=[])
+            return AddResult(
+                is_successful=False, warnings=warnings, added_count=0, added_md5s=[]
+            )
 
         with self.aquire_lock():
-            self._load_index(create_if_missing=True)
-            existing_md5: set[str] = set()
-            added: int = 0
-            for sig in sigs:
-                md5 = cast(str, sig.md5sum())
-                leaf = sourmash.sbtmh.SigLeaf(md5, sig)
-                self._index.add_node(leaf)
-                added_md5s.append(md5)
-                added += 1
-                existing_md5.add(md5)
+            old_index = self._load_index(create_if_missing=True)
+            existing = list(old_index.signatures())
+            existing_md5 = {cast(str, sig.md5sum()) for sig in existing}
+            combined = _unique_signatures([*existing, *sigs])
+            added_md5s = list(
+                dict.fromkeys(
+                    cast(str, sig.md5sum())
+                    for sig in sigs
+                    if sig.md5sum() not in existing_md5
+                )
+            )
+
+            # Rebuild to remove any historical duplicate checksums as well as
+            # add new signatures.
+            self._index = sourmash.create_sbt_index()
+            for md5, sig in combined.items():
+                self._index.add_node(sourmash.sbtmh.SigLeaf(md5, sig))
             self._atomic_save()
         return AddResult(
-            is_successful=True, warnings=warnings, added_count=added, added_md5s=added_md5s
+            is_successful=True,
+            warnings=warnings,
+            added_count=len(added_md5s),
+            added_md5s=added_md5s,
+        )
+
+    def replace_signatures(
+        self, signatures: Iterable[sourmash.SourmashSignature]
+    ) -> AddResult:
+        unique = _unique_signatures(signatures)
+        with self.aquire_lock():
+            self._index = sourmash.create_sbt_index()
+            for md5, sig in unique.items():
+                self._index.add_node(sourmash.sbtmh.SigLeaf(md5, sig))
+            self._atomic_save()
+        return AddResult(
+            is_successful=True,
+            warnings=[],
+            added_count=len(unique),
+            added_md5s=list(unique),
         )
 
     def remove_signatures(self, checksums_to_remove: set[str]) -> RemoveResult:
@@ -186,7 +251,7 @@ class SBTIndexStore(BaseIndexStore):
         with self.aquire_lock():
             old_index = self._load_index(create_if_missing=False)
             kept: SourmashSignatures = []
-            removed: list[str] = []
+            removed: SourmashSignatures = []
             for sig in old_index.signatures():
                 checksum = sig.md5sum()
                 (removed if checksum in checksums_to_remove else kept).append(sig)
@@ -196,7 +261,8 @@ class SBTIndexStore(BaseIndexStore):
 
             self._index = new_index  # replace in-memory cache
             self._atomic_save()
-        not_removed = checksums_to_remove - set(removed)
+        removed_md5s = {cast(str, sig.md5sum()) for sig in removed}
+        not_removed = checksums_to_remove - removed_md5s
         if not_removed:
             return RemoveResult(
                 is_successful=False,
@@ -205,7 +271,10 @@ class SBTIndexStore(BaseIndexStore):
                 removed_count=len(removed),
             )
         return RemoveResult(
-            is_successful=True, warnings=[], removed_count=len(removed), removed=removed
+            is_successful=True,
+            warnings=[],
+            removed_count=len(removed),
+            removed=list(removed_md5s),
         )
 
 
@@ -244,10 +313,34 @@ class RocksDBIndexStore(BaseIndexStore):
         ) as tmp_dir:
             tmp_path = Path(tmp_dir) / "index.tmp"
             index = DiskRevIndex.create_from_sigs(signatures, str(tmp_path))
+            del index
+            self._index = None
+            backup_path = Path(tmp_dir) / "previous"
             if self.index_path.exists():
-                shutil.rmtree(self.index_path)
-            tmp_path.replace(self.index_path)  # atomic save
+                self.index_path.replace(backup_path)
+            try:
+                tmp_path.replace(self.index_path)
+                index = DiskRevIndex(str(self.index_path))
+            except Exception:
+                if self.index_path.exists():
+                    shutil.rmtree(self.index_path)
+                if backup_path.exists():
+                    backup_path.replace(self.index_path)
+                raise
         return index
+
+    def replace_signatures(
+        self, signatures: Iterable[sourmash.SourmashSignature]
+    ) -> AddResult:
+        unique = _unique_signatures(signatures)
+        with self.aquire_lock():
+            self._index = self._rebuild_index(unique.values())
+        return AddResult(
+            is_successful=True,
+            warnings=[],
+            added_count=len(unique),
+            added_md5s=list(unique),
+        )
 
     def add_signatures(
         self,
@@ -256,26 +349,35 @@ class RocksDBIndexStore(BaseIndexStore):
         """Add one or more signatures to index."""
         sigs = list(signatures)
         if not sigs:
-            return AddResult(is_successful=False, warnings=[], added_count=0, added_md5s=[])
+            return AddResult(
+                is_successful=False, warnings=[], added_count=0, added_md5s=[]
+            )
 
         try:
             with self.aquire_lock():
                 old_index = self._load_index(create_if_missing=True)
                 existing: SourmashSignatures = list(old_index.signatures())
-                # Combine existing and new signatures
-                combined = existing + sigs
-                # Rebuild index while holding lock for atomicity
-                self._index = self._rebuild_index(combined)
+                existing_md5 = {cast(str, sig.md5sum()) for sig in existing}
+                combined = _unique_signatures([*existing, *sigs])
+                # Rebuild while holding the lock. Deduplicating the complete
+                # collection also repairs historical repeated index entries.
+                self._index = self._rebuild_index(combined.values())
         except Exception as error:
             LOG.error("Got a error when rebuilding index: %s", error)
             return AddResult(
                 is_successful=False, warnings=[str(error)], added_count=0, added_md5s=[]
             )
-        added_md5s: list[str] = [sig.md5sum() for sig in sigs]
+        added_md5s = list(
+            dict.fromkeys(
+                cast(str, sig.md5sum())
+                for sig in sigs
+                if sig.md5sum() not in existing_md5
+            )
+        )
         return AddResult(
             is_successful=True,
             warnings=[],
-            added_count=len(sigs),
+            added_count=len(added_md5s),
             added_md5s=added_md5s,
         )
 
