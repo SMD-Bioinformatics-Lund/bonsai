@@ -166,8 +166,7 @@
     const apiUrl = "{{ config.API_EXTERNAL_URL }}"
     const accessToken = "{{ token }}"
     const sampleId = getSampleId()
-    const rawGroupId = "{{ group_id|tojson }}"
-    const groupId = "null" ? null : rawGroupId
+    const groupId = {{ group_id|tojson }}
 
     document.addEventListener('DOMContentLoaded', () => {
         // get similar samples newick

@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
+- Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
 - Sort MinHash matches by similarity before applying limits, with stable ordering for ties. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
 - Rebuild the MinHash index from eligible metadata to repair missing, stale, or duplicate entries and reconcile index flags; report metadata update failures. Repair omits excluded samples and replaces the old `--include-excluded` option. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
