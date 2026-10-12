@@ -6,6 +6,7 @@ export class GroupEditModel {
   mode: EditorMode;
   groupId: string | null;
 
+  groupKey: string;
   displayName: string;
   description: string;
 
@@ -19,6 +20,7 @@ export class GroupEditModel {
   private constructor(mode: EditorMode) {
     this.mode = mode;
     this.groupId = null;
+    this.groupKey = "";
     this.displayName = "";
     this.description = "";
     this.samples = [];
@@ -33,6 +35,7 @@ export class GroupEditModel {
   /* Populate an existing model from API data */
   loadFromApi(data: GroupInfo): void {
     this.groupId = data.group_id;
+    this.groupKey = data.group_key ?? "";
     this.displayName = data.display_name;
     this.description = data.description;
     this.createdAt = data.created_at;
