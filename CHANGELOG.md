@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add an optional `BONSAI_NUMPY_VERSION` frontend build setting for older CPUs and virtual machines, applied to both development installs and production wheels. Document rebuilding with NumPy 2.3.5 and diagnosing the `X86_V2` baseline error. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
