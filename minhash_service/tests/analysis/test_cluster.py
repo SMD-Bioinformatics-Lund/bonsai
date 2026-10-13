@@ -1,13 +1,38 @@
 """Test functions for clustering."""
 
+import re
 from pathlib import Path
 
 import pytest
+from scipy.cluster.hierarchy import ClusterNode
 
-from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
+from minhash_service.analysis.cluster import (
+    ClusterMethod,
+    cluster_signatures,
+    tree_to_newick,
+)
 from minhash_service.signatures.io import read_signatures
 
 from ..utils import get_data_path
+
+
+@pytest.mark.parametrize("distance", [0.0, 0.004, 0.123456, 1.75, 12.875, 1e-10])
+def test_newick_preserves_leaf_and_internal_branch_lengths(distance: float):
+    """Small nonzero branches and fractional distances must survive export."""
+    subtree = ClusterNode(3, ClusterNode(0), ClusterNode(1), distance)
+    tree = ClusterNode(4, subtree, ClusterNode(2), 2 * distance)
+
+    newick = tree_to_newick(tree, "", tree.dist, ["A", "B", "C"])
+
+    leaves = {
+        name: float(length)
+        for name, length in re.findall(r"([ABC]):([^,();]+)", newick)
+    }
+    internal_lengths = [
+        float(length) for length in re.findall(r"\):([^,();]+)", newick)
+    ]
+    assert leaves == {"A": distance, "B": distance, "C": 2 * distance}
+    assert internal_lengths == [distance]
 
 
 @pytest.mark.parametrize(
