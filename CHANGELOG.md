@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Use condensed Jaccard distances for MinHash clustering in GrapeTree and the sample similarity dendrogram, correcting merge heights and clustering based on Euclidean distances between similarity rows. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
