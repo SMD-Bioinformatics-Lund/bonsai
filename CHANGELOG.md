@@ -24,7 +24,7 @@
 
 ### Fixed
 
-- Use condensed Jaccard distances for MinHash clustering in GrapeTree and the sample similarity dendrogram, correcting merge heights and clustering based on Euclidean distances between similarity rows. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Fix such that correct input is passed to MinHash clustering in GrapeTree and to the sample dendrogram. Previously, the pairwise sample Jaccard similarities were passed as a matrix, which SciPy linkage function interpreted as observations. The fix calculates a vector of the sample distances (i.e. 1 - Jaccard similarity) as described in the documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage [#532](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/532)
 - Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
