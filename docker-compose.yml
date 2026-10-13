@@ -65,6 +65,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       network: host
+      args:
+        BONSAI_NUMPY_VERSION: ${BONSAI_NUMPY_VERSION:-}
     depends_on:
       api:
         condition: service_healthy

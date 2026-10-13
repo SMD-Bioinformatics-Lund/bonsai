@@ -28,6 +28,9 @@ RUN cd frontend && npm install && npm run build
 ### Development layer ###
 FROM base AS development
 
+# Optional dependency pin for CPUs that cannot run NumPy 2.4+ wheels.
+ARG BONSAI_NUMPY_VERSION=""
+
 # Development convenience: local editable install
 COPY frontend/ ./frontend
 
@@ -35,7 +38,7 @@ COPY frontend/ ./frontend
 COPY --from=node-builder /app/frontend/build/ ./frontend/bonsai_app/static/build/
 
 RUN pip install --upgrade setuptools setuptools-scm wheel \
- && pip install --editable ./frontend
+ && pip install --editable ./frontend ${BONSAI_NUMPY_VERSION:+"numpy==${BONSAI_NUMPY_VERSION}"}
 
 EXPOSE 8000
 CMD ["flask", "run", "--reload", "--debug", "--host", "0.0.0.0", "--port", "8000"]
@@ -43,6 +46,8 @@ CMD ["flask", "run", "--reload", "--debug", "--host", "0.0.0.0", "--port", "8000
 
 ### Build python wheels (hermetic) ###
 FROM base AS python-builder
+
+ARG BONSAI_NUMPY_VERSION=""
 
 # Copy source
 COPY frontend/ ./frontend
@@ -60,7 +65,7 @@ RUN pip wheel --wheel-dir /wheels \
     setuptools-scm>=8 \
     wheel
 
-RUN pip wheel --wheel-dir /wheels ./frontend
+RUN pip wheel --wheel-dir /wheels ./frontend ${BONSAI_NUMPY_VERSION:+"numpy==${BONSAI_NUMPY_VERSION}"}
 
 ### Production layer ###
 FROM base AS production
