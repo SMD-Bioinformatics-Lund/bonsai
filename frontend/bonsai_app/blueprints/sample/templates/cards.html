@@ -379,7 +379,15 @@
 <div class="card">
     <div class="card-header">{{ analysis.software | capitalize }} v{{ analysis.software_version }} [ <i>{{analysis.analysis_type | upper }}</i> ]</div>
     <div class="card-body">
-    {% if analysis.software == "resfinder" %}
+    {% if analysis.status == "error" %}
+        <p class="alert alert-danger" role="alert">Analysis failed. Results unavailable.</p>
+        {% if analysis.reason %}<p>{{ analysis.reason }}</p>{% endif %}
+    {% elif analysis.status not in ["parsed", "empty"] or (not analysis.result and analysis.status != "empty") %}
+        <p class="alert alert-warning" role="alert">Analysis results unavailable.</p>
+        {% if analysis.reason %}<p>{{ analysis.reason }}</p>{% endif %}
+    {% elif not analysis.result %}
+        <p class="fw-light fst-italic">No findings.</p>
+    {% elif analysis.software == "resfinder" %}
         {{ resfinder_prediction(analysis, extended=extended) }}
     {% elif analysis.software == "amrfinder" and analysis.analysis_type == "amr" %}
         {{ amrfinder_amr_prediction(analysis, extended=extended) }}
@@ -400,7 +408,7 @@
     {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
         <table class="table table-striped">
             <caption>Database: {{result.genes[0].ref_database}}</caption>

@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add a standalone read-only JSON dump inspection script for the Bonsai 2.x migration investigation, reporting document counts and top-level field presence, types, nulls, and empty values without external dependencies. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
@@ -24,6 +25,8 @@
 
 ### Fixed
 
+- Show missing AMR analyses as unavailable and display failed, absent, or skipped analysis status instead of hiding these results on sample and TBProfiler resistance pages. Prevent page preparation from crashing on analyses without result data. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Correct the ResFinder empty-gene message to refer to genes. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Display Samtools coverage results as a table with one row per contig and labeled coverage, depth, read-count, and quality metrics instead of a single serialized array. [#537](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/537)
 - Accept existing group keys as well as group IDs when creating samples through `POST /samples`; resolve both to internal IDs and deduplicate initial memberships. [#536](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/536)
 - Fix such that correct input is passed to MinHash clustering in GrapeTree and to the sample dendrogram. Previously, the pairwise sample Jaccard similarities were passed as a matrix, which SciPy linkage function interpreted as observations. The fix calculates a vector of the sample distances (i.e. 1 - Jaccard similarity) as described in the documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage [#532](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/532)

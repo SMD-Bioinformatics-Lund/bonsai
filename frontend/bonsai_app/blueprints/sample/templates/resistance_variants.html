@@ -234,12 +234,10 @@
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
-                {% if is_filtered and amr_results | length == 0 %}
-                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
-                {% elif amr_results | length == 0 %}
-                    <p>No predicted resistance determinants.</p>
+                {% if amr_results | length == 0 %}
+                    <p>TBProfiler AMR prediction unavailable: no TBProfiler AMR results are available.</p>
                 {% else %}
-                    {% for elem in amr_results if elem.result %}
+                    {% for elem in amr_results %}
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=True) }}
                         </div>
