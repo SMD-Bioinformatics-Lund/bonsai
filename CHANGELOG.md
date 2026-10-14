@@ -24,8 +24,8 @@
 
 ### Fixed
 
-- Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Display GrapeTree distance labels with two decimal places instead of truncating to integers, using two significant digits for nonzero distances below 0.01. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
+- Display GrapeTree distance labels with two decimal places instead of truncating to integers, using two significant digits for nonzero distances below 0.01. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
 - Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
 - Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
