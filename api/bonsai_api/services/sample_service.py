@@ -28,7 +28,6 @@ from bonsai_api.exceptions import (
     ConflictError,
     DatabaseOperationError,
     EntryNotFound,
-    NotChangedError,
 )
 from bonsai_api.models.analysis import AnalysisResult, VariantContext
 from bonsai_api.models.context import ApiRequestContext
@@ -385,9 +384,23 @@ async def add_reference_genome_service(
             LOG.exception("Unexpected error while adding a reference genome: %s", exc)
             raise DatabaseOperationError(str(exc)) from exc
 
-        # Ensure update actually modified the document
-        if update_obj.modified_count != 1:
-            raise NotChangedError("Reference genome was not changed.")
+        # Setting an existing reference is successful even if nothing changed.
+        # The sample may have been deleted since the existence check above.
+        if update_obj.matched_count != 1:
+            LOG.error(
+                "Sample %s not found when assigning reference genome %s",
+                sample_id,
+                ref_genome.id,
+            )
+            raise EntryNotFound(sample_id)
+        LOG.info(
+            "Reference genome assignment: sample_id=%s reference_genome_id=%s "
+            "matched_count=%s modified_count=%s",
+            sample_id,
+            ref_genome.id,
+            update_obj.matched_count,
+            update_obj.modified_count,
+        )
     return ref_genome
 
 
