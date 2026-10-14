@@ -2,7 +2,6 @@
 
 ### Added
 
-- Add a standalone read-only JSON dump inspection script for the Bonsai 2.x migration investigation, reporting document counts and top-level field presence, types, nulls, and empty values without external dependencies. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
