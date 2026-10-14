@@ -272,7 +272,7 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
     sample_name: str
     lims_id: str | None = None
 
-    groups: list[str] = Field(default_factory=list, description="Group ids")
+    groups: list[str] = Field(default_factory=list, description="Existing group IDs or group keys")
 
     sequencing: SequencingInfo | None = None
     metadata: list[InputMetaEntry] = Field(default_factory=list)
