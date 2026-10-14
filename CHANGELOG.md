@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Return HTTP 200 with the reference-genome details when a sample already has the requested genome, preventing invalid 304 responses and upload JSON parsing errors. Log the sample ID, reference-genome ID, and matched and modified counts explicitly. [#546](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/546)
 - Display Samtools coverage results as a table with one row per contig and labeled coverage, depth, read-count, and quality metrics instead of a single serialized array. [#537](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/537)
 - Accept existing group keys as well as group IDs when creating samples through `POST /samples`; resolve both to internal IDs and deduplicate initial memberships. [#536](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/536)
 - Fix such that correct input is passed to MinHash clustering in GrapeTree and to the sample dendrogram. Previously, the pairwise sample Jaccard similarities were passed as a matrix, which SciPy linkage function interpreted as observations. The fix calculates a vector of the sample distances (i.e. 1 - Jaccard similarity) as described in the documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage [#532](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/532)
