@@ -130,7 +130,7 @@ def sample(sample_id: str) -> str:
 
     # Sort variants within all prediction results
     for pred_res in sample_info.get("element_type_result", []):
-        if "variants" in pred_res.get("result", {}):
+        if "variants" in (pred_res.get("result") or {}):
             pred_res["result"]["variants"] = sort_variants(
                 pred_res["result"]["variants"]
             )
@@ -393,6 +393,8 @@ def resistance_variants(sample_id: str) -> str:
         sample_info, software="tbprofiler", analysis_type="amr"
     )
     for pred_res in tbprofiler_results:
+        if not pred_res.get("result"):
+            continue
         pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
     # Sort top-level structural and SNV variants if present

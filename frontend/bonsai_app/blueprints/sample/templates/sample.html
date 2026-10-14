@@ -83,18 +83,11 @@
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
                 {% set n_res=sample.element_type_result | count_results("amr") %}
-                {% if is_filtered and n_res == 0 %}
-                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
-                {% elif n_res == 0 %}
-                    <p>No predicted resistance determinants.</p>
-                {% else %}
-                    <div class="col-md-auto">
-                        {# {{ resistance_summary_card(summary=amr_summary, resistance=resistance_info) }} #}
-                        
-                    </div>
+                {% if n_res == 0 %}
+                    <p>AMR prediction unavailable: no AMR analysis is available.</p>
                 {% endif %}
                 {% for elem in sample.element_type_result %}
-                    {% if elem.analysis_type != 'virulence' and elem.result %}
+                    {% if elem.analysis_type in ['amr', 'stress'] %}
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=extended) }}
                         </div>
