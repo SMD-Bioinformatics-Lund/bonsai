@@ -15,6 +15,7 @@ import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
 import { ApiSampleQcStatus } from "../../core/types";
+import { loadOverviewTable } from "./sample-table-data";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -63,6 +64,9 @@ function updateQcTableCells(
   status: ApiSampleQcStatus,
   sampleIds: string[],
 ): void {
+  // Data-backed rows may not have DOM cells yet (including selected rows on
+  // unvisited pages). Update their source data so future draws stay correct.
+  if (table.updateRowData(sampleIds, { qc_status: status })) return;
   const cells = table.updateCells(sampleIds, "qc_status", (cell) => {
     const statusElement = document.createElement("span");
     statusElement.classList.add("fw-light");
@@ -146,10 +150,33 @@ export async function initGroupView(
     return;
   }
 
+  // FIXME: Looks ugly, let's investigate
+  const tableElement = document.getElementById("sample-table") as HTMLTableElement;
+  let dataConfig = {};
+  if (tableElement?.dataset.source) {
+    try {
+      dataConfig = await loadOverviewTable(tableElement);
+    } catch (error) {
+      console.error("Unable to load overview samples", error);
+      const loading = document.getElementById("sample-table-loading");
+      if (loading) {
+        loading.replaceChildren();
+        const message = document.createElement("span");
+        message.textContent = "Unable to load samples. ";
+        const retry = document.createElement("button");
+        retry.className = "btn btn-sm btn-outline-secondary ms-2";
+        retry.textContent = "Retry";
+        retry.onclick = () => window.location.reload();
+        loading.append(message, retry);
+      }
+      return;
+    }
+  }
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
   const tableConfig = {
     ...sampleTableConfig,
+    ...dataConfig,
     searchBuilder: {
       columns: Array.from(headers).flatMap((cell, idx) =>
         cell.dataset.filterable === "true" ? [idx] : [],
@@ -170,6 +197,7 @@ export async function initGroupView(
     throw error;
   }
   showSampleTable(table);
+  table.getTable().on("draw", () => initTooltip(tableElement));
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
   initToast();

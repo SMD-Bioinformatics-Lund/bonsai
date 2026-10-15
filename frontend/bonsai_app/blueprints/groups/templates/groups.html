@@ -42,7 +42,9 @@
                 {{ qc_bulk_toggle(bad_qc_actions) }}
             </div>
         </nav>
-        {{ sample_table(table_data) }}
+        {{ sample_table(table_data, default_sort='created_at',
+                        data_url=url_for('groups.overview_samples'),
+                        sample_url=url_for('samples.sample', sample_id='__sample_id__')) }}
     </div>
 </div>
 <script src="{{ asset_url('group-view.js') }}"></script>
