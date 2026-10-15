@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Use the group ID index for sample-summary group lookups instead of a correlated scan for each sample. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Load the all-samples overview as compact JSON and create table rows as pages are displayed, reducing HTML size and initial browser work while keeping filtering, exports, and selection across samples. Show loading failures with a retry button. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show a loading spinner until the sample table is initialized, then reveal the table and adjust column widths to prevent an unformatted table from flashing during page load. [#549](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/549)
 - Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)

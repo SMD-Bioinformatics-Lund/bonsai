@@ -44,11 +44,22 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
     "groups": LookupSpec(
         from_collection="sample_group_collection",
         as_field="groups_info",
-        let={"group_ids": {"$ifNull": ["$groups", []]}},
-        pipeline=[
-            {"$match": {"$expr": {"$in": ["$core.group_id", "$$group_ids"]}}},
-            {"$project": {"_id": 0, "id": "$core.group_id", "display_name": "$core.display_name"}},
-        ],
+        # Equality joins can use the core.group_id index, including when the
+        # local field is an array. Avoid a correlated $expr/$in scan per sample.
+        local_field="groups",
+        foreign_field="core.group_id",
+        add_fields={
+            "groups_info": {
+                "$map": {
+                    "input": "$groups_info",
+                    "as": "group",
+                    "in": {
+                        "id": "$$group.core.group_id",
+                        "display_name": "$$group.core.display_name",
+                    },
+                }
+            }
+        },
     ),
 }
 
