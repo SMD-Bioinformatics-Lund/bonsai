@@ -2,6 +2,7 @@
 
 ### Added
 
+- Display the current Bonsai version below the tree logo in the navigation bar. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
@@ -95,6 +96,7 @@
 
 ### Changed
 
+- Bump the frontend and API versions from `3.0.0-rc3` to `3.0.0-rc4`. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
