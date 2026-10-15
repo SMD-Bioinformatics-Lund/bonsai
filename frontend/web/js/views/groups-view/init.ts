@@ -15,6 +15,7 @@ import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
 import { ApiSampleQcStatus } from "../../core/types";
+import { loadOverviewTable } from "./overview-data";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -146,10 +147,28 @@ export async function initGroupView(
     return;
   }
 
+  const tableElement = document.getElementById("sample-table") as HTMLTableElement;
+  let dataConfig = {};
+  if (tableElement.dataset.source) {
+    try {
+      dataConfig = await loadOverviewTable(tableElement);
+    } catch (error) {
+      console.error("Unable to load overview samples", error);
+      const loading = document.getElementById("sample-table-loading");
+      const retry = document.createElement("button");
+      retry.className = "btn btn-sm btn-outline-secondary ms-2";
+      retry.textContent = "Retry";
+      retry.onclick = () => window.location.reload();
+      loading.textContent = "Unable to load samples. ";
+      loading.appendChild(retry);
+      return;
+    }
+  }
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
   const tableConfig = {
     ...sampleTableConfig,
+    ...dataConfig,
     searchBuilder: {
       columns: Array.from(headers).flatMap((cell, idx) =>
         cell.dataset.filterable === "true" ? [idx] : [],
@@ -170,6 +189,7 @@ export async function initGroupView(
     throw error;
   }
   showSampleTable(table);
+  table.getTable().on("draw", () => initTooltip(tableElement));
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
   initToast();
