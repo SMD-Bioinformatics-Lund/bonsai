@@ -24,6 +24,23 @@ from .controller import build_updated_presets, format_tablular_data
 
 LOG = logging.getLogger(__name__)
 
+# Keep the all-samples overview focused; detailed metrics belong in the QC view.
+DEFAULT_OVERVIEW_COLUMN_IDS = (
+    "sample_id",
+    "sample_name",
+    "lims_id",
+    "assay",
+    "release_life_cycle",
+    "sequencing_run",
+    "bracken_scientific_name",
+    "qc_status",
+    "comments",
+    "tags",
+    "mlst_sequence_type",
+    "stx",
+    "created_at",
+)
+
 DEFAULT_QC_COLUMN_IDS = (
     "sample_id",
     "sample_name",
@@ -99,13 +116,28 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     client = get_api_client()
-    samples_info = client.get_sample_summaries(limit=0, offset=0)
+    manifest = client.get_valid_summary_columns()
+    by_id = {column["id"]: column for column in manifest["columns"]}
+    columns = [
+        {**by_id[column_id], "default_visible": True}
+        for column_id in DEFAULT_OVERVIEW_COLUMN_IDS
+    ]
+    response = client.request_json(
+        "POST", "samples/summary",
+        json={
+            "fields": list(DEFAULT_OVERVIEW_COLUMN_IDS),
+            "sort": "-created_at",
+            "limit": 0,
+            "offset": 0,
+        },
+        expected_status=(200,),
+    )
+    samples_info = response.data or {}
 
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    manifest = client.get_valid_summary_columns()
-    table_data = format_tablular_data(samples_info["data"], manifest["columns"])
+    table_data = format_tablular_data(samples_info["data"], columns)
 
     return render_template(
         "groups.html",
