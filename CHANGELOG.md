@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add Chromium regression checks for selection and QC updates across unvisited table pages, filtered bulk selection, exports, and retrying failed overview loads. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
