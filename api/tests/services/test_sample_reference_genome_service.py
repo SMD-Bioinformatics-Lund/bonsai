@@ -4,8 +4,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
-from bonsai_api.exceptions import EntryNotFound, NotChangedError
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.services import sample_service
+from pymongo.results import UpdateResult
 
 GENOME_ID = "01a0c39b-9440-7ce2-8188-08d85f0c5ecb"
 ACCESSION = "GCF_000012045.1"
@@ -28,7 +29,9 @@ def request_stub_fixture():
     return SimpleNamespace(url_for=lambda *args, **kwargs: "http://testserver/files/x")
 
 
-def _attach(monkeypatch, *, genome=GENOME, sample_found=True, modified_count=1):
+def _attach(
+    monkeypatch, *, genome=GENOME, sample_found=True, matched_count=1, modified_count=1
+):
     """Patch the collaborators of add_reference_genome_service and return the writer."""
     monkeypatch.setattr(
         sample_service, "sample_exists", AsyncMock(return_value=sample_found)
@@ -38,7 +41,9 @@ def _attach(monkeypatch, *, genome=GENOME, sample_found=True, modified_count=1):
         resolve = AsyncMock(side_effect=genome)
     monkeypatch.setattr(sample_service, "get_reference_genome_service", resolve)
     writer = AsyncMock(
-        return_value=SimpleNamespace(modified_count=modified_count)
+        return_value=UpdateResult(
+            {"n": matched_count, "nModified": modified_count}, acknowledged=True
+        )
     )
     monkeypatch.setattr(sample_service, "add_reference_genome_to_sample", writer)
     return writer
@@ -81,22 +86,34 @@ async def test_an_unknown_reference_genome_is_rejected_without_writing(
 
 
 @pytest.mark.asyncio
-async def test_a_missing_sample_is_rejected_before_resolution(monkeypatch, request_stub):
-    writer = _attach(monkeypatch, sample_found=False)
+@pytest.mark.parametrize("sample_found", [False, True])
+async def test_a_missing_sample_is_rejected(monkeypatch, request_stub, sample_found):
+    """Reject a missing sample, including one deleted before the update."""
+    writer = _attach(
+        monkeypatch, sample_found=sample_found, matched_count=0, modified_count=0
+    )
 
     with pytest.raises(EntryNotFound):
         await _run(request_stub, ACCESSION)
 
-    writer.assert_not_awaited()
+    if sample_found:
+        writer.assert_awaited_once()
+    else:
+        writer.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_reattaching_the_same_genome_is_not_a_change(monkeypatch, request_stub):
-    """Attaching a genome the sample already has leaves the document untouched."""
+async def test_reattaching_the_same_genome_succeeds(monkeypatch, request_stub, caplog):
+    """An unchanged assignment returns the genome and logs the zero modification count."""
     _attach(monkeypatch, modified_count=0)
 
-    with pytest.raises(NotChangedError):
-        await _run(request_stub, ACCESSION)
+    with caplog.at_level("INFO", logger=sample_service.__name__):
+        result = await _run(request_stub, ACCESSION)
+
+    assert result is GENOME
+    assert f"sample_id={SAMPLE_ID}" in caplog.text
+    assert f"reference_genome_id={GENOME_ID}" in caplog.text
+    assert "matched_count=1 modified_count=0" in caplog.text
 
 
 @pytest.mark.asyncio
