@@ -1,3 +1,5 @@
+// FIXME: Is this strictly needed?
+
 import { Config } from "datatables.net-bs5";
 
 export interface SummaryRow {

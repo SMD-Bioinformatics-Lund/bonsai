@@ -20,7 +20,7 @@ from bonsai_app.models import (
     QualityControlResult,
 )
 
-from .controller import build_updated_presets, format_tablular_data
+from .controller import build_updated_presets, format_tabular_data
 
 LOG = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ def groups() -> str:
     manifest = client.get_valid_summary_columns()
     # Send only the table shell. Rows are fetched as compact data and rendered
     # by DataTables when displayed, rather than emitting every hidden cell.
-    table_data = format_tablular_data([], manifest["columns"])
+    table_data = format_tabular_data([], manifest["columns"])
 
     return render_template(
         "groups.html",
@@ -128,7 +128,7 @@ def overview_samples() -> Response:
         LOG.exception("Unable to load overview samples from the API")
         abort(_api_error_status(error), description="Unable to load samples")
 
-    table = format_tablular_data(samples["data"], manifest["columns"])
+    table = format_tabular_data(samples["data"], manifest["columns"])
     column_ids = {column.id for column in table.columns}
     rows = [
         {key: value for key, value in row.items() if key in column_ids and value is not None}
@@ -321,7 +321,7 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    table_data = format_tablular_data(samples_info["data"], columns)
+    table_data = format_tabular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"
