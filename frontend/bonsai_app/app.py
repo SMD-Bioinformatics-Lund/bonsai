@@ -5,6 +5,7 @@ from itertools import zip_longest
 
 from flask import Flask
 
+from . import __version__
 from .blueprints import admin, alignviewers, cluster, groups, login, public, sample
 from .config import settings
 from .custom_filters import FILTERS as JINJA_FILTERS
@@ -30,7 +31,7 @@ def create_app():
 
     # import jinja2 extensions
     app.jinja_env.add_extension("jinja2.ext.do")
-    app.jinja_env.globals.update(zip_longest=zip_longest)
+    app.jinja_env.globals.update(zip_longest=zip_longest, bonsai_version=__version__)
 
     # whitespace control:
     app.jinja_env.trim_blocks = True
