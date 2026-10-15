@@ -2,7 +2,7 @@
 
 ### Added
 
-- Display the current Bonsai version below the tree logo in the navigation bar. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
 - Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
