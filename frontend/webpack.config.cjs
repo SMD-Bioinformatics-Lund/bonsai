@@ -4,8 +4,10 @@ const { resolve } = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-module.exports = {
-  devtool: 'inline-source-map',
+module.exports = (_env, argv = {}) => ({
+  // Keep debugging information out of downloaded production bundles. The
+  // CLI --mode flag does not set NODE_ENV while this config is evaluated.
+  devtool: argv.mode === 'production' || isProduction ? 'source-map' : 'inline-source-map',
 
   entry: {
     'bootstrap-init': resolve(__dirname, 'web/js/bootstrap-init'),
@@ -83,4 +85,4 @@ module.exports = {
   ],
 
   mode: isProduction ? 'production' : 'development',
-};
+});
