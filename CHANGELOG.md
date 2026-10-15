@@ -97,6 +97,7 @@
 
 ### Changed
 
+- Use the server's renderer definitions for the JSON sample overview and share QC formatting with existing Jinja tables. Make row data types explicit and isolate table initialization and loading errors. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)

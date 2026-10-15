@@ -1,5 +1,4 @@
 import { initToast, initTooltip, throwSmallToast } from "../../utils/notification";
-import { initSamplesTable, TableController } from "../../utils/table-controller";
 import {
   deleteSelectedSamples,
   getSimilarSamplesAndCheckRows,
@@ -14,8 +13,7 @@ import { BasketState } from "../../core/state/basket-state";
 import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
-import { ApiSampleQcStatus } from "../../core/types";
-import { loadOverviewTable } from "./sample-table-data";
+import { initSampleTable, showSampleTable, updateSampleQc } from "./sample-table";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -58,45 +56,6 @@ const sampleTableConfig = {
   scrollX: true,
   pageLength: 50,
 };
-
-function updateQcTableCells(
-  table: TableController,
-  status: ApiSampleQcStatus,
-  sampleIds: string[],
-): void {
-  // Data-backed rows may not have DOM cells yet (including selected rows on
-  // unvisited pages). Update their source data so future draws stay correct.
-  if (table.updateRowData(sampleIds, { qc_status: status })) return;
-  const cells = table.updateCells(sampleIds, "qc_status", (cell) => {
-    const statusElement = document.createElement("span");
-    statusElement.classList.add("fw-light");
-    if (status.status === "passed") statusElement.classList.add("text-success");
-    if (status.status === "failed") statusElement.classList.add("text-danger");
-    statusElement.textContent = status.status;
-    cell.replaceChildren(statusElement);
-
-    let tooltipText = status.comment || status.action;
-    if (status.action && status.comment) {
-      tooltipText = `Action: ${status.action} - ${status.comment}`;
-    }
-    if (tooltipText) {
-      const tooltip = document.createElement("i");
-      tooltip.classList.add("bi", "bi-info-circle");
-      tooltip.dataset.bsToggle = "tooltip";
-      tooltip.dataset.bsPlacement = "top";
-      tooltip.dataset.bsTitle = tooltipText;
-      cell.appendChild(document.createTextNode(" "));
-      cell.appendChild(tooltip);
-    }
-  });
-  cells.forEach((cell) => initTooltip(cell));
-}
-
-function showSampleTable(table?: TableController): void {
-  document.getElementById("sample-table-loading")?.remove();
-  document.getElementById("sample-table-container")?.classList.remove("d-none");
-  table?.getTable().columns.adjust();
-}
 
 function initBasket(api: GroupViewApi): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
@@ -151,52 +110,8 @@ export async function initGroupView(
   }
 
   const tableElement = document.getElementById("sample-table") as HTMLTableElement;
-  let dataConfig = {};
-  if (tableElement?.dataset.source) {
-    try {
-      dataConfig = await loadOverviewTable(tableElement);
-    } catch (error) {
-      console.error("Unable to load overview samples", error);
-      const loading = document.getElementById("sample-table-loading");
-      if (loading) {
-        loading.replaceChildren();
-        const message = document.createElement("span");
-        message.textContent = "Unable to load samples. ";
-        const retry = document.createElement("button");
-        retry.className = "btn btn-sm btn-outline-secondary ms-2";
-        retry.textContent = "Retry";
-        retry.onclick = () => window.location.reload();
-        loading.append(message, retry);
-      }
-      return;
-    }
-  }
-  const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
-  const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
-  const tableConfig = {
-    ...sampleTableConfig,
-    ...dataConfig,
-    searchBuilder: {
-      columns: Array.from(headers).flatMap((cell, idx) =>
-        cell.dataset.filterable === "true" ? [idx] : [],
-      ),
-    },
-  };
-  headers.forEach((cell, idx) => {
-    if (defaultSort && cell.dataset.columnId === defaultSort) {
-      tableConfig["order"] = [[idx, "desc"]];
-    }
-  });
-
-  let table: TableController;
-  try {
-    table = initSamplesTable("sample-table", tableConfig);
-  } catch (error) {
-    showSampleTable();
-    throw error;
-  }
-  showSampleTable(table);
-  table.getTable().on("draw", () => initTooltip(tableElement));
+  const table = await initSampleTable(tableElement, sampleTableConfig);
+  if (!table) return;
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
   initToast();
@@ -280,7 +195,7 @@ export async function initGroupView(
     initSetSampleQc(
       table.getSelectedRows.bind(table),
       api.setSampleQc.bind(api),
-      (status, sampleIds) => updateQcTableCells(table, status, sampleIds),
+      (status, sampleIds) => updateSampleQc(table, status, sampleIds),
       qcStatusForm,
     );
   }

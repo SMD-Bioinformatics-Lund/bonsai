@@ -15,7 +15,7 @@ new Function("exports", compiled.outputText)(moduleExports);
 const { renderSummaryCell: render, loadOverviewTable } = moduleExports;
 
 test("sample values are text in display cells and plain data in exports", () => {
-  const column = { id: "sample_name", type: "string" };
+  const column = { renderer: "text_renderer" };
   const value = '<img src=x onerror="alert(1)">';
   assert.equal(
     render(column, value, "display", ""),
@@ -25,10 +25,34 @@ test("sample values are text in display cells and plain data in exports", () => 
   assert.equal(render(column, value, "sort", ""), value);
 });
 
+test("server renderer metadata controls formatting independently of column ID and type", () => {
+  assert.equal(
+    render(
+      { id: "sample_id", type: "number", renderer: "text_renderer" },
+      "<sample>",
+      "display",
+      "/sample/__sample_id__",
+    ),
+    "&lt;sample&gt;",
+  );
+  assert.ok(
+    render(
+      { id: "custom_qc_column", type: "string", renderer: "qc_status_renderer" },
+      { status: "failed" },
+      "display",
+      "",
+    ).includes("text-danger"),
+  );
+  assert.equal(
+    render({ renderer: "unknown_renderer" }, "<sample>", "display", ""),
+    "&lt;sample&gt;",
+  );
+});
+
 test("sample links retain the deployment prefix and encode the ID", () => {
   assert.equal(
     render(
-      { id: "sample_id", type: "string" },
+      { renderer: "sample_btn_renderer" },
       "a/b",
       "display",
       "/staging/bonsai/sample/__sample_id__",
@@ -38,12 +62,12 @@ test("sample links retain the deployment prefix and encode the ID", () => {
 });
 
 test("numbers and dates keep sortable values while formatting display values", () => {
-  const number = { id: "n50", type: "number" };
+  const number = { renderer: "number_renderer" };
   assert.equal(render(number, 2000000, "display", ""), "2,000,000");
   assert.equal(render(number, 2000000, "sort", ""), 2000000);
   assert.equal(render(number, 0, "sort", ""), 0);
   assert.equal(render(number, null, "sort", ""), "");
-  const date = { id: "created_at", type: "date" };
+  const date = { renderer: "date_renderer" };
   assert.equal(render(date, "2026-10-15T12:00:00Z", "display", ""), "2026-10-15");
   assert.equal(render(date, "2026-10-15T12:00:00Z", "sort", ""), "2026-10-15T12:00:00Z");
   assert.equal(render(date, "2026-10-15T12:00:00Z", "filter", ""), "2026-10-15");
@@ -51,7 +75,7 @@ test("numbers and dates keep sortable values while formatting display values", (
 
 test("QC, group and tag markup escapes text and tooltip attributes", () => {
   const qc = render(
-    { id: "qc_status", type: "object" },
+    { renderer: "qc_status_renderer" },
     {
       status: "failed",
       action: "resequence",
@@ -63,7 +87,7 @@ test("QC, group and tag markup escapes text and tooltip attributes", () => {
   assert.ok(qc.includes("text-danger"));
   assert.ok(qc.includes("Action: resequence - &quot;&gt;&lt;script&gt;"));
   const groups = render(
-    { id: "groups", type: "object" },
+    { renderer: "groups_renderer" },
     [{ id: '" onmouseover="alert(1)', display_name: "<script>" }],
     "display",
     "",
@@ -72,7 +96,7 @@ test("QC, group and tag markup escapes text and tooltip attributes", () => {
   assert.ok(groups.includes("&quot; onmouseover=&quot;"));
   assert.equal(
     render(
-      { id: "tags", type: "object" },
+      { renderer: "tags_renderer" },
       [{ label: "Flag", severity: "warning", description: "<script>" }],
       "filter",
       "",
@@ -82,7 +106,7 @@ test("QC, group and tag markup escapes text and tooltip attributes", () => {
 });
 
 test("HTML comment tooltips escape content at both nesting levels", () => {
-  const column = { id: "comments", type: "object" };
+  const column = { renderer: "comments_renderer" };
   const comments = [
     { comment: "<img src=x>", username: '"<script>', displayed: true },
     { comment: "hidden", username: "author", displayed: false },
@@ -107,8 +131,8 @@ test("overview loading uses IDs to align columns and enables deferred rendering"
       ok: true,
       json: async () => ({
         columns: [
-          { id: "sample_name", type: "string", filterable: true },
-          { id: "sample_id", type: "string", filterable: false },
+          { id: "sample_name", type: "string", renderer: "text_renderer", filterable: true },
+          { id: "sample_id", type: "string", renderer: "sample_btn_renderer", filterable: false },
         ],
         rows: [{ sample_id: "a", sample_name: "Isolate" }],
       }),
