@@ -85,6 +85,25 @@ def test_five_thousand_samples_stay_compact(overview_client):
     assert len(data.data) < 600_000
 
 
+def test_overview_supplies_renderer_names_used_by_jinja(overview_client):
+    client, api = overview_client
+    api.get_valid_summary_columns.return_value["columns"].extend(
+        {"id": key, "label": key, "type": "object", "sortable": True}
+        for key in ("qc_status", "groups", "tags", "comments")
+    )
+    columns = client.get("/groups/samples-data").get_json()["columns"]
+    assert {column["id"]: column["renderer"] for column in columns} == {
+        "sample_id": "sample_btn_renderer",
+        "sample_name": "text_renderer",
+        "created_at": "date_renderer",
+        "measurement": "number_renderer",
+        "qc_status": "qc_status_renderer",
+        "groups": "groups_renderer",
+        "tags": "tags_renderer",
+        "comments": "comments_renderer",
+    }
+
+
 def test_overview_data_requires_login(app):
     assert app.test_client().get("/groups/samples-data").status_code == 302
 

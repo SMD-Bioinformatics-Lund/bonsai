@@ -1,20 +1,12 @@
-// FIXME: Is this strictly needed?
-
-import { Config } from "datatables.net-bs5";
-
-export interface SummaryRow {
-  sample_id: string;
-  [column: string]: unknown;
-}
-
-interface SummaryColumn {
-  id: string;
-  type: string;
-  sortable: boolean;
-  searchable: boolean;
-  filterable: boolean;
-  visible: boolean;
-}
+import type { Config } from "datatables.net-bs5";
+import type {
+  ApiSampleQcStatus,
+  SummaryColumn,
+  SummaryComment,
+  SummaryGroup,
+  SummaryRow,
+  SummaryTag,
+} from "../../core/types";
 
 interface OverviewData {
   columns: SummaryColumn[];
@@ -48,32 +40,33 @@ function tooltip(content: string, html = false): string {
 // Non-display values stay plain text/numbers for sorting, filtering and export.
 // Only the rows DataTables displays need presentation markup and DOM nodes.
 export function renderSummaryCell(
-  column: Pick<SummaryColumn, "id" | "type">,
-  value: any,
+  column: Pick<SummaryColumn, "renderer">,
+  value: unknown,
   type: string,
   sampleUrl: string,
 ): string | number {
   const display = type === "display";
-  if (column.id === "sample_id") {
+  if (column.renderer === "sample_btn_renderer") {
     return display
-      ? `<a href="${escapeHtml(sampleUrl.replace("__sample_id__", encodeURIComponent(value)))}">Open</a>`
+      ? `<a href="${escapeHtml(sampleUrl.replace("__sample_id__", encodeURIComponent(text(value))))}">Open</a>`
       : text(value);
   }
-  if (column.id === "qc_status") {
-    const status = value?.status ?? "";
+  if (column.renderer === "qc_status_renderer") {
+    const qc = value as ApiSampleQcStatus | null;
+    const status = qc?.status ?? "";
     if (!display) return status;
     const color = status === "passed" ? "text-success" : status === "failed" ? "text-danger" : "";
     const hint =
-      value?.action && value?.comment
-        ? `Action: ${value.action} - ${value.comment}`
-        : value?.action || value?.comment;
+      qc?.action && qc?.comment
+        ? `Action: ${qc.action} - ${qc.comment}`
+        : qc?.action || qc?.comment;
     return (
       `<span class="fw-light ${color}">${escapeHtml(status)}</span>` +
       (hint ? ` <i class="bi bi-info-circle" ${tooltip(hint)}></i>` : "")
     );
   }
-  if (column.id === "groups") {
-    const groups = value ?? [];
+  if (column.renderer === "groups_renderer") {
+    const groups = (value ?? []) as SummaryGroup[];
     return display
       ? groups
           .map(
@@ -83,8 +76,8 @@ export function renderSummaryCell(
           .join("")
       : groups.map((group) => group.display_name).join(", ");
   }
-  if (column.id === "tags") {
-    const tags = value ?? [];
+  if (column.renderer === "tags_renderer") {
+    const tags = (value ?? []) as SummaryTag[];
     return display
       ? tags
           .map(
@@ -94,8 +87,8 @@ export function renderSummaryCell(
           .join("")
       : tags.map((tag) => tag.label).join(" ");
   }
-  if (column.id === "comments") {
-    const comments = value ?? [];
+  if (column.renderer === "comments_renderer") {
+    const comments = (value ?? []) as SummaryComment[];
     const shown = comments.filter((comment) => comment.displayed);
     if (!display) return shown.map((comment) => `${comment.comment} ${comment.username}`).join(" ");
     if (!comments.length) return "";
@@ -107,20 +100,20 @@ export function renderSummaryCell(
       .join("");
     return `<span class="badge text-bg-primary" ${tooltip(hint, true)}><i class="bi bi-chat-right"></i> ${comments.length}</span>`;
   }
-  if (column.type === "date") {
+  if (column.renderer === "date_renderer") {
     // Date criteria compare the displayed day, while sorting retains the full
     // timestamp so uploads on the same day remain in chronological order.
-    if (type === "sort" || type === "type") return value || "";
+    if (type === "sort" || type === "type") return text(value);
     const date = value ? String(value).slice(0, 10) : "";
     return display ? escapeHtml(date || "-") : date;
   }
-  if (column.type === "number" || column.type === "integer") {
-    if (!display) return value ?? "";
+  if (column.renderer === "number_renderer") {
+    if (!display) return typeof value === "number" ? value : text(value);
     return typeof value === "number"
       ? value.toLocaleString("en-US", { maximumFractionDigits: 20 })
       : escapeHtml(text(value));
   }
-  if (column.type === "boolean" && display) {
+  if (column.renderer === "boolean_renderer" && display) {
     return `<i class="bi bi-${value ? "check-lg" : "x"}"></i>`;
   }
   return display ? escapeHtml(text(value)) : text(value);

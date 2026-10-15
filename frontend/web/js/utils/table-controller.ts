@@ -5,23 +5,31 @@ import "datatables.net-buttons/js/buttons.html5.mjs";
 import "datatables.net-buttons/js/buttons.colVis.mjs";
 import "datatables.net-datetime";
 import "datatables.net-columncontrol-bs5";
-import "datatables.net-datetime";
 import "datatables.net-searchbuilder-bs5";
 import "datatables.net-searchpanes-bs5";
 import "datatables.net-select-bs5";
 
-import { TblStateCallbackFunc } from "../core/types";
+import type {
+  SampleTableRow,
+  SampleTableSource,
+  SummaryRow,
+  TblStateCallbackFunc,
+} from "../core/types";
 
 DataTable.Buttons.jszip(JSZip);
 
 export class TableController {
-  private table: Api<any>;
+  private table: Api<SampleTableRow>;
 
-  constructor(tableId: string, tableConfig: Config) {
-    this.table = new DataTable<any>(`#${tableId}`, { ...tableConfig });
+  constructor(
+    tableId: string,
+    tableConfig: Config,
+    private readonly source: SampleTableSource = "dom",
+  ) {
+    this.table = new DataTable<SampleTableRow>(`#${tableId}`, { ...tableConfig });
   }
 
-  getTable(): Api<any> {
+  getTable(): Api<SampleTableRow> {
     return this.table;
   }
 
@@ -44,28 +52,25 @@ export class TableController {
       .draw();
   }
 
-  // Return false for legacy tables backed by DOM arrays, which still need the
-  // cell-update path. Object-backed tables retain updates before rendering.
-  updateRowData(rowIds: string[], values: Record<string, unknown>): boolean {
+  // Summary updates survive deferred rendering; DOM tables use updateCells.
+  updateRowData(rowIds: string[], values: Partial<SummaryRow>): boolean {
+    if (this.source !== "summary") return false;
     const rows = this.table.rows(rowIds.map((id) => `#${id}`));
-    const data = rows.data().toArray();
-    if (!data.length || data.some((row) => Array.isArray(row))) return false;
     rows.every(function () {
-      this.data({ ...this.data(), ...values });
+      this.data({ ...(this.data() as SummaryRow), ...values });
     });
     this.table.draw(false);
     return true;
   }
 
-  // Update cells backed by the existing DOM and redraw without changing page.
-  // Temporary solution to get this up and running. Not carefully integrated in the
-  // existing systems so might not be the best way to do it. / JW 260915
+  // Update cells in server-rendered group tables without changing the page.
   updateCells(
     rowIds: string[],
     columnId: string,
     updateCell: (cell: HTMLTableCellElement) => void,
   ): HTMLTableCellElement[] {
-    const columnIndex = this.table
+    const table = this.table;
+    const columnIndex = table
       .columns()
       .header()
       .toArray()
@@ -77,7 +82,7 @@ export class TableController {
 
     const updatedCells: HTMLTableCellElement[] = [];
     rowIds.forEach((rowId) => {
-      const cell = this.table.cell(`#${rowId}`, columnIndex);
+      const cell = table.cell(`#${rowId}`, columnIndex);
       const node = cell.node();
       if (node) {
         updateCell(node);
@@ -86,7 +91,7 @@ export class TableController {
       }
     });
 
-    if (updatedCells.length > 0) this.table.draw(false);
+    if (updatedCells.length > 0) table.draw(false);
     return updatedCells;
   }
 }
@@ -115,8 +120,12 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
   if (btn !== null) btn.disabled = 1 !== selectedRows.length;
 }
 
-export function initSamplesTable(tableId: string, tableConfig: Config): TableController {
-  const controller = new TableController(tableId, tableConfig);
+export function initSamplesTable(
+  tableId: string,
+  tableConfig: Config,
+  source: SampleTableSource = "dom",
+): TableController {
+  const controller = new TableController(tableId, tableConfig, source);
 
   // add callback functions
   const funcs: TblStateCallbackFunc[] = [
