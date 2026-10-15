@@ -339,6 +339,38 @@ async def group_exists(db: Database, *, group_id: str, session: Any = None) -> b
     return bool(doc)
 
 
+async def resolve_group_ids(
+    db: Database, *, references: list[str], session: Any = None
+) -> list[str]:
+    """Resolve group IDs or keys to unique internal IDs, preferring ID matches."""
+    if not references:
+        return []
+
+    input_refs = list(dict.fromkeys(references))
+    cursor = db.sample_group_collection.find(
+        {
+            "$or": [
+                {"core.group_id": {"$in": input_refs}},
+                {"core.group_key": {"$in": input_refs}},
+            ]
+        },
+        {"core.group_id": 1, "core.group_key": 1, "_id": 0},
+        session=session,
+    )
+    docs = await cursor.to_list(None)
+    by_id = {doc["core"]["group_id"]: doc["core"]["group_id"] for doc in docs}
+    by_key = {
+        doc["core"]["group_key"]: doc["core"]["group_id"]
+        for doc in docs
+        if doc["core"].get("group_key")
+    }
+    missing = set(input_refs) - by_id.keys() - by_key.keys()
+    if missing:
+        raise EntryNotFound(f"Unknown group ID(s) or key(s): {sorted(missing)}")
+
+    return list(dict.fromkeys(by_id.get(ref) or by_key[ref] for ref in input_refs))
+
+
 async def check_groups_exists(
     db: Database, *, group_ids: list[str], session: Any = None
 ) -> list[str]:

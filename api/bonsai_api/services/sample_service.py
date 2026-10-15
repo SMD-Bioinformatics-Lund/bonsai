@@ -8,7 +8,7 @@ from .genomic_resource_service import list_genomic_resources_for_sample_service
 import uuid_utils as uuid
 from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from bonsai_libs.api_client.audit_log.models import SourceType, Subject
-from bonsai_api.crud.group import check_groups_exists
+from bonsai_api.crud.group import resolve_group_ids
 from bonsai_api.crud.sample import (
     add_pipeline_run,
     add_reference_genome_to_sample,
@@ -28,7 +28,6 @@ from bonsai_api.exceptions import (
     ConflictError,
     DatabaseOperationError,
     EntryNotFound,
-    NotChangedError,
 )
 from bonsai_api.models.analysis import AnalysisResult, VariantContext
 from bonsai_api.models.context import ApiRequestContext
@@ -74,13 +73,8 @@ async def create_sample_service(
     session: ClientSession | None = None,
 ) -> dict[str, Any] | None:
     """Create a new sample document in the database."""
-    # verify that groups exists
-    if len(sample.groups) > 0 and (
-        missing_groups := await check_groups_exists(
-            db, group_ids=sample.groups, session=session
-        )
-    ):
-        raise EntryNotFound(f"Unknown group_id(s): {sorted(missing_groups)}")
+    # Resolve upload references before inserting; memberships store internal IDs.
+    group_ids = await resolve_group_ids(db, references=sample.groups, session=session)
 
     # build sample payload
     internal_sample_id = str(uuid.uuid7())
@@ -112,10 +106,10 @@ async def create_sample_service(
                     db, doc=payload.model_dump(exclude_none=True), session=sess
                 )
                 # create memberships if needed
-                if len(sample.groups) > 0:
+                if group_ids:
                     edges = [
                         MembershipEdge(sample_id=internal_sample_id, group_id=gr)
-                        for gr in sample.groups
+                        for gr in group_ids
                     ]
                     await add_memberships(db=db, edges=edges, session=sess)
     except DuplicateKeyError as dke:
@@ -390,9 +384,23 @@ async def add_reference_genome_service(
             LOG.exception("Unexpected error while adding a reference genome: %s", exc)
             raise DatabaseOperationError(str(exc)) from exc
 
-        # Ensure update actually modified the document
-        if update_obj.modified_count != 1:
-            raise NotChangedError("Reference genome was not changed.")
+        # Setting an existing reference is successful even if nothing changed.
+        # The sample may have been deleted since the existence check above.
+        if update_obj.matched_count != 1:
+            LOG.error(
+                "Sample %s not found when assigning reference genome %s",
+                sample_id,
+                ref_genome.id,
+            )
+            raise EntryNotFound(sample_id)
+        LOG.info(
+            "Reference genome assignment: sample_id=%s reference_genome_id=%s "
+            "matched_count=%s modified_count=%s",
+            sample_id,
+            ref_genome.id,
+            update_obj.matched_count,
+            update_obj.modified_count,
+        )
     return ref_genome
 
 

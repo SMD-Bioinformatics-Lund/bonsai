@@ -1315,6 +1315,51 @@
 {% endmacro %}
 
 
+{% macro qc_card_samtools_coverage(qc_info) %}
+<div class="card">
+    <div class="card-header">Samtools coverage v{{ qc_info.software_version }}</div>
+    <div class="card-body">
+        {% if not qc_info.result or not qc_info.result.contigs %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No coverage result", true) }}</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Contig</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">Reads</th>
+                        <th scope="col">Covered bases</th>
+                        <th scope="col">Coverage (%)</th>
+                        <th scope="col">Mean depth (×)</th>
+                        <th scope="col">Mean base quality</th>
+                        <th scope="col">Mean mapping quality</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contig in qc_info.result.contigs %}
+                    <tr>
+                        <th scope="row">{{ contig.contig_name }}</th>
+                        <td>{{ contig.start_pos | fmt_number }}</td>
+                        <td>{{ contig.end_pos | fmt_number }}</td>
+                        <td>{{ contig.n_reads | fmt_number }}</td>
+                        <td>{{ contig.cov_bases | fmt_number }}</td>
+                        <td>{{ contig.coverage | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_depth | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_base_quality | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_map_quality | fmt_number(sig_digits=2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro qc_card_generic(qc_info) %}
 <div class="card">
     <div class="card-header">{{qc_info.software | capitalize}} v{{ qc_info.software_version }}</div>
