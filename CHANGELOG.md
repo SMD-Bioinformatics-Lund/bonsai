@@ -24,7 +24,7 @@
 
 ### Fixed
 
-- Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading. [#552](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/552)
 - Show a loading spinner until the sample table is initialized, then reveal the table and adjust column widths to prevent an unformatted table from flashing during page load. [#549](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/549)
 - Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
 - Display GrapeTree distance labels with two decimal places instead of truncating to integers, using two significant digits for nonzero distances below 0.01. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
