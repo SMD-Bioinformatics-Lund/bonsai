@@ -88,6 +88,12 @@ function updateQcTableCells(
   cells.forEach((cell) => initTooltip(cell));
 }
 
+function showSampleTable(table?: TableController): void {
+  document.getElementById("sample-table-loading")?.remove();
+  document.getElementById("sample-table-container")?.classList.remove("d-none");
+  table?.getTable().columns.adjust();
+}
+
 function initBasket(api: GroupViewApi): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
   const counterElement = document.querySelector("#basket-counter-container") as HTMLElement;
@@ -136,6 +142,7 @@ export async function initGroupView(
   const basket = initBasket(api);
   if (!basket) {
     console.error("Something went wrong when initialize the basket");
+    showSampleTable();
     return;
   }
 
@@ -155,7 +162,14 @@ export async function initGroupView(
     }
   });
 
-  const table = initSamplesTable("sample-table", tableConfig);
+  let table: TableController;
+  try {
+    table = initSamplesTable("sample-table", tableConfig);
+  } catch (error) {
+    showSampleTable();
+    throw error;
+  }
+  showSampleTable(table);
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
   initToast();

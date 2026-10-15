@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Show a loading spinner until the sample table is initialized, then reveal the table and adjust column widths to prevent an unformatted table from flashing during page load. [#549](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/549)
 - Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
 - Display GrapeTree distance labels with two decimal places instead of truncating to integers, using two significant digits for nonzero distances below 0.01. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
 - Return HTTP 200 with the reference-genome details when a sample already has the requested genome, preventing invalid 304 responses and upload JSON parsing errors. Log the sample ID, reference-genome ID, and matched and modified counts explicitly. [#546](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/546)
