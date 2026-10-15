@@ -162,3 +162,4 @@ tmp/
 
 # Agent specific
 AGENTS.md
+frontend/test-results/

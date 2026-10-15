@@ -26,6 +26,7 @@
     "sortablejs": "^1.15.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/sortablejs": "^1.15.9",
     "eslint": "^10.10.0",
     "globals": "^16.1.0",
@@ -39,6 +40,8 @@
     "webpack-manifest-plugin": "^6.0.1"
   },
   "scripts": {
+    "test:table": "node --test tests/test_summary_renderers.cjs",
+    "test:table:browser": "playwright test",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode production",
     "watch": "webpack --mode development --watch --output-path bonsai_app/static/build",
