@@ -15,13 +15,15 @@ LOG = logging.getLogger(__name__)
 
 
 def tree_to_newick(node, newick, parentdist, leaf_names) -> str:
-    """Convert hierarcical tree representation to newick format."""
+    """Convert a hierarchical tree to Newick without rounding branch lengths."""
+
+    branch_length = float(parentdist - node.dist)
 
     if node.is_leaf():
-        return f"{leaf_names[node.id]}:{parentdist - node.dist:.2f}{newick}"
+        return f"{leaf_names[node.id]}:{branch_length}{newick}"
 
     if len(newick) > 0:
-        newick = f"):{parentdist - node.dist:.2f}{newick}"
+        newick = f"):{branch_length}{newick}"
     else:
         newick = ");"
     newick = tree_to_newick(node.get_left(), newick, node.dist, leaf_names)
