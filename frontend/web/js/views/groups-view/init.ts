@@ -150,6 +150,7 @@ export async function initGroupView(
     return;
   }
 
+  // FIXME: Looks ugly, let's investigate
   const tableElement = document.getElementById("sample-table") as HTMLTableElement;
   let dataConfig = {};
   if (tableElement?.dataset.source) {
