@@ -70,7 +70,7 @@ def build_updated_presets(column_info: dict[str, Any]) -> dict[str, Any]:
     return preset
 
 
-def format_tablular_data(
+def format_tabular_data(
     data: list[dict[str, Any]], column_defs: list[dict[str, Any]]
 ) -> TableData:
     """Format data for display in a table."""

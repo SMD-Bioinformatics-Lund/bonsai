@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from bonsai_libs.api_client.bonsai.models import CreateGroupInput
 from bonsai_libs.api_client.core.exceptions import ApiError
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import ValidationError
 from requests.exceptions import HTTPError
@@ -20,7 +20,7 @@ from bonsai_app.models import (
     QualityControlResult,
 )
 
-from .controller import build_updated_presets, format_tablular_data
+from .controller import build_updated_presets, format_tabular_data
 
 LOG = logging.getLogger(__name__)
 
@@ -99,13 +99,13 @@ def groups() -> str:
         return redirect(url_for("public.index"))
 
     client = get_api_client()
-    samples_info = client.get_sample_summaries(limit=0, offset=0)
-
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
     manifest = client.get_valid_summary_columns()
-    table_data = format_tablular_data(samples_info["data"], manifest["columns"])
+    # Send only the table shell. Rows are fetched as compact data and rendered
+    # by DataTables when displayed, rather than emitting every hidden cell.
+    table_data = format_tabular_data([], manifest["columns"])
 
     return render_template(
         "groups.html",
@@ -113,6 +113,34 @@ def groups() -> str:
         table_data=table_data,
         token=current_user.token,
         bad_qc_actions=bad_qc_actions,
+    )
+
+
+@groups_bp.route("/groups/samples-data")
+@login_required
+def overview_samples() -> Response:
+    """Provide overview data without duplicating presentation markup per cell."""
+    client = get_api_client()
+    try:
+        manifest = client.get_valid_summary_columns()
+        samples = client.get_sample_summaries(limit=0, offset=0)
+    except ApiError as error:
+        LOG.exception("Unable to load overview samples from the API")
+        abort(_api_error_status(error), description="Unable to load samples")
+
+    table = format_tabular_data(samples["data"], manifest["columns"])
+    column_ids = {column.id for column in table.columns}
+    rows = [
+        {key: value for key, value in row.items() if key in column_ids and value is not None}
+        for row in table.rows
+    ]
+    return Response(
+        json.dumps(
+            {"columns": [column.model_dump() for column in table.columns], "rows": rows},
+            separators=(",", ":"),
+        ),
+        mimetype="application/json",
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -293,7 +321,7 @@ def group(group_id: str) -> str:
     bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     # generate table data
-    table_data = format_tablular_data(samples_info["data"], columns)
+    table_data = format_tabular_data(samples_info["data"], columns)
 
     # indicate view in title, used for testing
     title = f"Group - {group_id}"
