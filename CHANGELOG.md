@@ -24,7 +24,7 @@
 
 ### Fixed
 
-- Load the all-samples table as existing Jinja-formatted cells and create browser rows as pages are displayed. Preserve date sorting, tag searches, selection and QC updates across pages. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Load the all-samples table as existing Jinja-formatted cells and create browser rows as pages are displayed. Preserve date sorting, tag searches, selection and QC updates across pages. [#554](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/554)
 - Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading. [#552](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/552)
 - Show a loading spinner until the sample table is initialized, then reveal the table and adjust column widths to prevent an unformatted table from flashing during page load. [#549](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/549)
 - Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
