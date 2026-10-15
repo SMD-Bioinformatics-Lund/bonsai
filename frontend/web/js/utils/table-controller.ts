@@ -15,18 +15,18 @@ import { TblStateCallbackFunc } from "../core/types";
 DataTable.Buttons.jszip(JSZip);
 
 export class TableController {
-  private table: Api<string>;
+  private table: Api<any>;
 
   constructor(tableId: string, tableConfig: Config) {
-    this.table = new DataTable<string>(`#${tableId}`, { ...tableConfig });
+    this.table = new DataTable<any>(`#${tableId}`, { ...tableConfig });
   }
 
-  getTable(): Api<string> {
+  getTable(): Api<any> {
     return this.table;
   }
 
   getSelectedRows(): string[] {
-    return this.table.rows(".selected").ids().toArray();
+    return this.table.rows({ selected: true }).ids().toArray();
   }
 
   set selectedRows(rowIds: string[]) {
@@ -42,6 +42,19 @@ export class TableController {
       .rows(rowIds.map((id) => `#${id}`))
       .remove()
       .draw();
+  }
+
+  // Return false for legacy tables backed by DOM arrays, which still need the
+  // cell-update path. Object-backed tables retain updates before rendering.
+  updateRowData(rowIds: string[], values: Record<string, unknown>): boolean {
+    const rows = this.table.rows(rowIds.map((id) => `#${id}`));
+    const data = rows.data().toArray();
+    if (!data.length || data.some((row) => Array.isArray(row))) return false;
+    rows.every(function () {
+      this.data({ ...this.data(), ...values });
+    });
+    this.table.draw(false);
+    return true;
   }
 
   // Update cells backed by the existing DOM and redraw without changing page.
@@ -93,7 +106,7 @@ function manageAnnotateQcBtn(selectedRows: string[]): void {
 function manageRemoveSamplesBtn(selectedRows: string[]): void {
   /* Enable or disable bulk edit qc status button */
   const btn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
-  if (btn !== null) btn.disabled = 0 > selectedRows.length;
+  if (btn !== null) btn.disabled = 1 > selectedRows.length;
 }
 
 function manageSelectSimilarBtn(selectedRows: string[]): void {

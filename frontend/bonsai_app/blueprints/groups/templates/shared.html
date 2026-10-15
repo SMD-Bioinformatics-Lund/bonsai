@@ -102,7 +102,7 @@
     </button>
 {% endmacro %}
 
-{% macro sample_table(table_data, default_sort=none) %}
+{% macro sample_table(table_data, default_sort=none, data_url=none, sample_url=none) %}
     {# build sample table, hidden until the table library has set it up #}
     <div id="sample-table-loading" class="d-flex justify-content-center my-5">
         <div class="spinner-border text-success" role="status">
@@ -110,7 +110,8 @@
         </div>
     </div>
     <div id="sample-table-container" class="d-none">
-    <table id="sample-table" class="display table table-striped" {% if default_sort %}data-default-sort="{{ default_sort }}"{% endif %}>
+    <table id="sample-table" class="display table table-striped" {% if default_sort %}data-default-sort="{{ default_sort }}"{% endif %}
+        {% if data_url %}data-source="{{ data_url }}" data-sample-url="{{ sample_url }}"{% endif %}>
         <thead>
             <tr>
                 {# build table header #}
