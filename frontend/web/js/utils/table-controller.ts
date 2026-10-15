@@ -26,7 +26,7 @@ export class TableController {
   }
 
   getSelectedRows(): string[] {
-    return this.table.rows(".selected").ids().toArray();
+    return this.table.rows({ selected: true }).ids().toArray();
   }
 
   set selectedRows(rowIds: string[]) {
@@ -44,9 +44,7 @@ export class TableController {
       .draw();
   }
 
-  // Update cells backed by the existing DOM and redraw without changing page.
-  // Temporary solution to get this up and running. Not carefully integrated in the
-  // existing systems so might not be the best way to do it. / JW 260915
+  // Deferred rows need their source cells updated even before they have DOM nodes.
   updateCells(
     rowIds: string[],
     columnId: string,
@@ -63,17 +61,22 @@ export class TableController {
     }
 
     const updatedCells: HTMLTableCellElement[] = [];
+    const deferred = !!this.table.table().node().dataset.source;
+    let changed = false;
     rowIds.forEach((rowId) => {
       const cell = this.table.cell(`#${rowId}`, columnIndex);
-      const node = cell.node();
+      if (!cell.any()) return;
+      const node = cell.node() || (deferred ? document.createElement("td") : null);
       if (node) {
         updateCell(node);
-        cell.invalidate("dom");
+        if (deferred) cell.data({ display: node.innerHTML });
+        else cell.invalidate("dom");
         updatedCells.push(node);
+        changed = true;
       }
     });
 
-    if (updatedCells.length > 0) this.table.draw(false);
+    if (changed) this.table.draw(false);
     return updatedCells;
   }
 }
