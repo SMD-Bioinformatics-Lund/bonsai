@@ -2,7 +2,6 @@
 
 ### Fixed
 
-- Set the frontend and Python package version to `2.1.0+patch1`. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading; include the browser bundle and license in the frontend package. [#564](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/564)
 
 ## [v2.1.0]
