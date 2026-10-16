@@ -893,6 +893,12 @@
 
 
 {% macro stx_card(pred) %}
+{# Accept multi-hit results and previously imported single-gene results. #}
+{% if pred.result is mapping %}
+    {% set genes=[pred.result] %}
+{% else %}
+    {% set genes=pred.result or [] %}
+{% endif %}
 <div class="card col-md-auto">
     <div class="card-header">
         {{ pred.analysis_type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
@@ -906,13 +912,16 @@
                 <td>Name</td>
             </thead>
             <tbody class="table-group-divider">
-                {% set gene=pred.result %}
+                {% for gene in genes %}
                 <tr>
                     <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
                     <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
+                {% else %}
+                <tr><td colspan="4">No STX genes identified.</td></tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

@@ -25,6 +25,7 @@
 
 ### Fixed
 
+- Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
 - Limit the all-samples overview to 13 metadata and prediction columns and request only those fields from the API, avoiding hidden QC metrics and group-membership lookups. Detailed QC metrics remain available in the group QC view. [#557](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/557)
 - Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading. [#552](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/552)
