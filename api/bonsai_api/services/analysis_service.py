@@ -169,6 +169,15 @@ async def ingest_analysis_service(
             parser_args["subcommand"] = subcommand
         out = run_parser(**parser_args)
 
+        # Reject the whole upload before any writes, including mixed success/error output.
+        for analysis_type, envelope in out.results.items():
+            if envelope.status == ResultStatus.ERROR:
+                raise InvalidDataFormat(
+                    f"Failed to parse {software} {analysis_type.value}: "
+                    f"{envelope.reason or 'Parser error'}",
+                    context=envelope.meta,
+                )
+
         # cast to storage format
         doc: AnalysisResult = to_result_storage(
             sample_id=sample_id,
