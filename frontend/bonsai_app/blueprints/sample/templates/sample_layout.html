@@ -10,7 +10,7 @@
 {% block scripts %}
 {{ super() }}
 <script src="https://cdn.plot.ly/plotly-2.24.1.min.js" charset="utf-8"></script>
-<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="{{ url_for('public.static', filename='d3.v5.16.0.min.js') }}"></script>
 <script src="https://unpkg.com/tidytree@0.5.9/dist/tidytree.min.js"></script>
 {% endblock scripts %}
 
