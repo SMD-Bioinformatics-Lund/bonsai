@@ -10,6 +10,7 @@
 
 ### Fixed
 
+- Use the full Python Bullseye base image for the frontend so Git is available without the APT install step that fails with package 404s. [#563](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/563)
 - Serve D3 5.16.0 locally on sample pages from the production-compatible static JS path so an unreachable d3js.org does not delay page loading. [#563](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/563)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
