@@ -893,6 +893,12 @@
 
 
 {% macro stx_card(pred) %}
+{# Accept multi-hit results and previously imported single-gene results. #}
+{% if pred.result.hits is defined %}
+    {% set genes=pred.result.hits or [] %}
+{% else %}
+    {% set genes=[pred.result] if pred.result else [] %}
+{% endif %}
 <div class="card col-md-auto">
     <div class="card-header">
         {{ pred.analysis_type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
