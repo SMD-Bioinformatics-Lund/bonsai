@@ -10,6 +10,8 @@
 
 ### Fixed
 
+- Serve D3 5.16.0 locally on sample pages from the production-compatible static JS path so an unreachable d3js.org does not delay page loading. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
