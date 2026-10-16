@@ -1,6 +1,5 @@
 """Configuration for minhash service"""
 
-import tempfile
 from copy import deepcopy
 from enum import StrEnum
 from logging import config as logging_config
@@ -14,11 +13,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from minhash_service.utils import ensure_directory_structure
 from minhash_service.signatures.models import IndexFormat
-
-
-def _get_trash_dir() -> Path:
-    """Create a temporary directory for trash."""
-    return Path(tempfile.mkdtemp(prefix="minhash_trash_"))
 
 
 class IntegrityReportLevel(StrEnum):
@@ -107,7 +101,8 @@ class Settings(BaseSettings):
     signature_dir: Path = Path("/data/signature_db")
     index_format: IndexFormat = IndexFormat.ROCKSDB
     trash_dir: DirectoryPath = Field(
-        default_factory=_get_trash_dir, description="Directory for trashed files"
+        default_factory=lambda data: data["signature_dir"] / "trash",
+        description="Directory for trashed files (must be shared and persistent)",
     )
 
     redis: RedisConfig = RedisConfig()

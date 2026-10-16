@@ -1,3 +1,12 @@
+{#
+================================================================================
+UNUSED LEGACY TEMPLATE
+
+No current route renders this file. The active GrapeTree route renders
+`ms_tree.html`; make application-facing GrapeTree changes there instead.
+================================================================================
+#}
+
 {% extends "layout.html" %}
 {% from "sidebar.html" import sidebar %}
 
@@ -132,6 +141,8 @@
     //getHelpBox('load_files');
     var tree_raw = {};
     var current_metadata_file = null;
+
+    const DEFAULT_NODE_LABEL_FIELD = "Lab ID";
 
     var waiting_spinner = null;
     var metadata_categories = {};
@@ -391,7 +402,10 @@
         if ($("#show-node-tooltip").prop("checked")) {
           if (the_tree.display_category === 'nothing') {
             var node_ids = the_tree.grouped_nodes[d.data.idx];
-            var value = $.map(node_ids, function (idx) { return the_tree.metadata[idx].Name ? the_tree.metadata[idx].Name : the_tree.metadata[idx].ID }).join('<br>');
+            var value = $.map(node_ids, function (idx) {
+              var meta = the_tree.metadata[idx];
+              return meta[DEFAULT_NODE_LABEL_FIELD] || meta.Name || meta.ID;
+            }).join('<br>');
             showToolTip(value);
           } else {
             var display = d.data.type;

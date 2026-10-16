@@ -2,27 +2,120 @@
 
 ### Added
 
+- Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
+- Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
+- Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
+- Accept `reference_genome_accession` as well as `reference_genome_id` when attaching a reference genome or an IGV track to a sample. The reference genome's own id is stored, whichever identifier was supplied.
+- Add a Columns dropdown to group sample tables for showing or hiding columns while keeping sample IDs visible, with a positioned, scrollable menu for long column lists. [#509](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/509)
+- Resolve reference genomes by internal ID, assembly accession, or sequence accession, and seed common organism references and groups. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Accept absolute and symlinked IGV resource paths rooted under the configured annotations directory. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Show pipeline database names, versions, and owning software on sample pages. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Distinguish analysis uploads by software subcommand and accept auxiliary coverage files for post-align QC parsing. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Add an indexed API endpoint for retrieving samples by external sample ID. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - API can automatically create an admin user on first startup if `BONSAI_ADMIN_USER` and `BONSAI_ADMIN_PASSWORD` is set.
 - Database indexes are now created automatically on API startup.
 - Added a GET /memberships router for querying samples belonging to groups and vice versa.
 - Show groups a sample is a member of in the sample table.
 - Added button for showing only selected rows in the sample table
+- Added an isolated local test environment with generated synthetic samples and MinHash and SKA artifacts. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Expanded the local synthetic fixtures with TBProfiler and Mykrobe AMR/lineage reports, post-alignment QC inputs, curated LIMS examples, reference and alignment resources, parser edge cases, and genome-distance cases. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
+- Added API scenario tests and offline validators for generated reports and MinHash indexes. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
+- Added an `npm run watch` command for rebuilding frontend assets during development. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Added a manual UI testing checklist for core Bonsai workflows. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
 
 ### Fixed
 
+- Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
+- Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
+- Limit the all-samples overview to 13 metadata and prediction columns and request only those fields from the API, avoiding hidden QC metrics and group-membership lookups. Detailed QC metrics remain available in the group QC view. [#557](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/557)
+- Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading. [#552](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/552)
+- Show a loading spinner until the sample table is initialized, then reveal the table and adjust column widths to prevent an unformatted table from flashing during page load. [#549](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/549)
+- Preserve full branch-length precision in MinHash and SKA Newick exports so small nonzero distances remain available to GrapeTree. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
+- Display GrapeTree distance labels with two decimal places instead of truncating to integers, using two significant digits for nonzero distances below 0.01. [#533](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/533)
+- Return HTTP 200 with the reference-genome details when a sample already has the requested genome, preventing invalid 304 responses and upload JSON parsing errors. Log the sample ID, reference-genome ID, and matched and modified counts explicitly. [#546](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/546)
+- Display Samtools coverage results as a table with one row per contig and labeled coverage, depth, read-count, and quality metrics instead of a single serialized array. [#537](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/537)
+- Accept existing group keys as well as group IDs when creating samples through `POST /samples`; resolve both to internal IDs and deduplicate initial memberships. [#536](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/536)
+- Fix such that correct input is passed to MinHash clustering in GrapeTree and to the sample dendrogram. Previously, the pairwise sample Jaccard similarities were passed as a matrix, which SciPy linkage function interpreted as observations. The fix calculates a vector of the sample distances (i.e. 1 - Jaccard similarity) as described in the documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html#scipy.cluster.hierarchy.linkage [#532](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/532)
+- Fixes an issue in the similarity tree where string group IDs weren't correctly handled. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
+- Display the correct fraction range rather than a percentage range for sample similarity finder. [#528](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/528)
+- Handle structured MinHash similarity results and expand shared signatures to every eligible sample. This resolves an issue where "Find similar" crashed or selected only one sample per checksum. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Sort MinHash matches by similarity before applying limits, with stable ordering for ties. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Rebuild the MinHash index from eligible metadata to repair missing, stale, or duplicate entries and reconcile index flags; report metadata update failures. Repair omits excluded samples and replaces the old `--include-excluded` option. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Make MinHash integrity checks account for shared-signature eligibility and use the correct deletion flag. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Prevent duplicate MinHash index entries, correctly track samples sharing a checksum, and preserve shared signatures during deletion and QC exclusion. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Run the scheduled MinHash integrity check instead of only reading the last report. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Deleting a sample without a MinHash signature no longer leaves a failed job. [#495](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/495)
+- Allow each frontend deployment to configure a unique session cookie name, preventing collisions between Bonsai instances on the same hostname. [#518](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/518)
+- Retry IGV without variant zoom when its initial locus cannot be found, show a reference-mismatch warning, and display load failures instead of leaving the viewer stuck loading. [#516](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/516)
+- Creating a group from the legacy group editor no longer fails on a missing attribute.
+- Deleting samples from the sample list no longer fails on a field the API stopped returning.
+- Deleting a batch of samples skips ids that no longer exist, and reports them as `missing_sample_ids`, instead of rejecting the whole batch.
+- Forward stored variant IDs and analysis context to the IGV configuration endpoint so variant links open at their genomic locus; support numeric and string variant IDs. [#515](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/515)
+- Authenticate IGV configuration requests with the user's API token instead of their username, fixing unauthorized responses when opening IGV. [#514](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/514)
+- Prefer Lab ID in default GrapeTree hover labels using a shared label-field constant, with name and internal ID fallbacks. [#513](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/513)
+- Show a dismissible error toast and return to the sample list when sample retrieval fails, including API data-validation errors. [#512](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/512)
+- Show a dismissible error toast for unexpected LIMS download failures instead of crashing the page.
+- Display identity and reference coverage under the correct headings in resistance and virulence gene tables. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
+- Preserve AMRFinder gene locations and closest-reference names, and keep AMR and stress findings in their correct result categories. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
+- Fix selection of analysis results used in sample summaries: match both software and analysis type when specified, and correctly read results stored as a single object or an array. Previously, selection could ignore the analysis type or treat an object field name as literal text instead of reading its data. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Limit group filter criteria to fields populated in the group's samples while preserving configured table columns. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Omit empty summary fields and custom metadata from GrapeTree's input, retaining sample join IDs and partially populated fields without modifying the imported tree code. [#506](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/506)
+- Put `Mutation pavisad` in the third LIMS export column and curated mutation details in the fourth column. [#505](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/505)
+- Render empty analysis envelopes safely, place virulence results in the correct section, and use the current sequencing-run field. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Forward the genomic-resource `force` query parameter to the existing overwrite handling. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Restore the group QC table using Bonsai 2.x metrics, including contig count and coverage above 10×/30×, and request the matching summary fields. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
+- Show upload and analysis dates in QC mode and sort newest uploads first using the date column ID. Format sequencing dates as dates. [#501](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/501)
+- Return HTTP 422 when required LIMS export analyses are missing and show SDK export errors as warnings in the UI. [#500](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/500)
+- Restrict LIMS AMR exports to AMR results from the requested software, skipping entries with either mismatch. [#499](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/499)
+- Enforce one curation per analysis result or individual variant/gene with a required unique index, and return HTTP 409 for duplicates. [#498](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/498)
+- Clear embedded curation summaries when the final curation for an analysis type is deleted. [#497](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/497)
+- Enforce unique Clarity/LIMS ID and sequencing-run ID pairs for samples with both identifiers, returning HTTP 409 for duplicate uploads even when a new sample UUID is generated. [#496](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/496)
 - Fixed regression that prevented sampels from being removed
 - Remove sample from group now uses the correct group id in the API call.
 - Ska trying to find missing index files now properly walks results directory.
+- Fixed MinHash signature upload serialization. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Display a placeholder instead of crashing when sample metadata is missing from the clustering view. [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Fixed group selector preselection and saving allowed columns in the group editor. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Fixed frontend group creation routing and post-creation state, preventing crashes and false failure messages. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Show the underlying error when adding samples to a group fails. [#446](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/446)
+- Reload the frontend asset manifest after a rebuild so updated asset filenames take effect. [#449](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/449)
+- Let the API generate group UUIDs when groups are created through the CLI. [#451](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/451)
+- Fixed group tables failing to load their configured columns after the API response format changed. [#452](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/452)
+- Return a valid QC classification when an update does not change the sample status. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Apply the correct analysis-index action after QC updates: include passed and unprocessed samples, and exclude failed samples. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Immediately refresh QC status cells and tooltips after successful updates. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
+- Reject clustering requests when selected samples lack the requested typing profile or SKA index, and identify affected samples by Lab ID. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Show clustering API validation details in frontend notifications and reliably clear loading indicators after failures. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Preserve concise background-job errors and surface them in the sample dendrogram view. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Use the current API client argument when posting sample comments. [#459](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/459)
+- Surface queued clustering worker errors in basket notifications. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
+- Return valid status details when MinHash signatures are removed from RocksDB indexes. [#458](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/458)
+- Load DataTables exports through the frontend bundle without requiring global jQuery. [#472](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/472)
+- Refresh group-card sample counts after group memberships change. [#468](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/468)
+- Limit Select all in sample tables to rows matching the active filters. [#473](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/473)
+- Validate and persist initial group memberships using internal sample IDs when creating samples through the API. [#474](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/474)
+- Roll back sample creation and membership counters when required audit logging fails. [#474](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/474)
 
 ### Changed
 
+- Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
+- Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
+- Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
+- Use Lab IDs as node labels in GrapeTree and sample dendrograms. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Exclude internal sample UUIDs from user-facing clustering metadata while retaining them as tree join keys. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
+- Use Lab IDs in resistance and metadata page titles. [#457](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/457)
 - Sample collection now keep track of group memberships.
 - An user can now add samples to multiple groups at the same time.
 - Improved seeding of a development Bonsai database with a new `seed_db.py` script.
 - TbProfiler and SV variants result  tables in the detailed variants view are now sortable and searchable.
 - Added start position to detailed variants view
 - Improved frontend API error handling by parsing structured problem-details responses for delete, group removal, QC update, and similar-sample operations.
+- Batch sample QC updates now wait for all selected samples, report partial failures, and prevent empty submissions. [#456](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/456)
 - Improved API error handling if audit log service became unreachable after startup.
+- Controlled logout page on logout / session expiry. [#454](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/454)
+- Updated Python service base images to Debian Trixie (bullseye was getting deprecated). [#444](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/444)
+- Updated the frontend TypeScript, ESLint, and build-tool dependencies. [#447](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/447)
+- Strengthened local smoke tests to validate similarity-search sample IDs and require clustering trees to contain every selected sample. [#508](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/508)
 
 ## [v2.1.0]
 

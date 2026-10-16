@@ -151,7 +151,7 @@ Setup IGV integration
 
 Bonsai uses IGV to visualise the read depth for called SNVs and structural variants (SV). This can help interpreting if a called variant is a true or false positive. IGV uses the reference genome sequences with annotated genes, the mapped reads in ``bam`` or ``cram`` format and optionally called variants and regions of interests. These files are either used as assets by Jasen or genreated for the sample and published in the pipeline output directory.
 
-These files are served by the API and therefore needs to be accessable by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR``, ``ANNOTATIONS_DIR`` and the path where Jasen publishes its results. 
+These files are served by the API and therefore need to be accessible by the container at the paths specified by the environmental variables ``REFERENCE_GENOMES_DIR`` and ``ANNOTATIONS_DIR``. Sample BAM and VCF files must be inside ``ANNOTATIONS_DIR``.
 
 .. note::
 
@@ -167,7 +167,23 @@ Reference genomes and the corresponding GFF file should be copied to the directo
 BAM and VCF files
 ~~~~~~~~~~~~~~~~~
 
-The Bonsai API needs access to directory where Jasen publishes its result because the BAM and VCFs are not uploaded to the API. The result directory could me mounted using docker volumes if its accessable by the host machine. The expected path can be found in the analysis result json file under the field name ``read_mapping`` and ``genome_annotation``.
+BAM, BAI and VCF files are not uploaded to the API. The sample manifest records their paths and the API serves the files to IGV from disk. Every track path must be inside ``ANNOTATIONS_DIR``; paths can be relative to that directory or absolute paths under it and are stored relative to it.
+
+The simplest setup is to mount the directory where Jasen publishes its output, or its ``symlink_dir``, into the API container at the same path and point ``ANNOTATIONS_DIR`` at it:
+
+.. code-block:: yaml
+
+   api:
+      environment:
+         - ANNOTATIONS_DIR=/access/jasen
+      volumes:
+         - /access/jasen:/access/jasen:ro
+
+Symlinks inside ``ANNOTATIONS_DIR`` are allowed to point outside it, but their targets must also be mounted in the container at the same path. Mount these directories read-only.
+
+.. note::
+
+   Track paths are stored relative to ``ANNOTATIONS_DIR``, so changing it later changes where existing sample tracks are looked up.
 
 Accessing the web interface
 ---------------------------

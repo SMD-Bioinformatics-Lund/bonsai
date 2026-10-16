@@ -72,9 +72,19 @@ class SignatureStorage:
             / filename
         )
 
-    def move_to_trash(self, cannonical: Path, checksum: str) -> Path:
+    def move_to_trash(
+        self, cannonical: Path, checksum: str, *, expected_checksum: str | None = None
+    ) -> Path:
         """Move a file to the trash directory using its cannonical path."""
         if not cannonical.exists():
+            # Recover a move completed before a crash or metadata-delete failure.
+            for target in self.trash_dir.glob(f"*/*/*/{cannonical.name}"):
+                sidecar = target.with_suffix(target.suffix + ".json")
+                meta = json.loads(sidecar.read_text())
+                if (meta.get("original_path") == str(cannonical)
+                    and expected_checksum is not None
+                    and self.check_file_integrity(target, expected_checksum)):
+                    return target
             raise FileNotFoundError(f"File {cannonical} does not exist, cant trash it.")
 
         when = dt.datetime.now(dt.timezone.utc)
@@ -84,6 +94,7 @@ class SignatureStorage:
         # sidecar metadata for file cleanup
         meta: dict[str, str] = {
             "checksum": checksum,
+            "original_path": str(cannonical),
             "size": str(cannonical.stat().st_size),
             "deleted_at": when.isoformat(),
         }
@@ -117,7 +128,9 @@ class SignatureStorage:
         sidecar = path.with_suffix(path.suffix + ".json")
         sidecar.unlink(missing_ok=True)
 
-    def purge_older_than(self, cutoff: dt.datetime) -> int:
+    def purge_older_than(
+        self, cutoff: dt.datetime, *, protected_paths: set[str] | None = None
+    ) -> int:
         """Permanently delete files older than a timestamp from the trash directory."""
         removed_count: int = 0
         if not self.trash_dir.exists():
@@ -127,6 +140,8 @@ class SignatureStorage:
             try:
                 sidecar = path.with_suffix(path.suffix + ".json")
                 meta = json.loads(sidecar.read_text())
+                if meta.get("original_path") in (protected_paths or set()):
+                    continue
                 deleted_at = dt.datetime.fromisoformat(meta["deleted_at"])
                 if deleted_at < cutoff:
                     self.purge_path(path)

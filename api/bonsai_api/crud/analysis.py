@@ -40,13 +40,15 @@ async def analysis_exists(
     software: str,
     software_version: str,
     pipeline_run: str,
-    session: ClientSession | None = None
+    subcommand: str | None = None,
+    session: ClientSession | None = None,
 ) -> bool:
-    """Check if an analysis record exists from sample id, software, software version, and pipeline run."""
+    """Check whether an analysis with the same source identity exists."""
     doc = await db.analysis_collection.find_one(
         {
             "sample_id": sample_id,
             "software": software,
+            "subcommand": subcommand,
             "software_version": software_version,
             "pipeline_run_id": pipeline_run,
         },

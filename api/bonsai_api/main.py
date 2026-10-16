@@ -12,8 +12,8 @@ import logging.config as logging_config
 from contextlib import asynccontextmanager
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from api_client.audit_log import AuditLogClient
-from api_client.notification import NotificationClient
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.notification import NotificationClient
 from bonsai_api.db.db import setup_db_connection
 from bonsai_api.services.user_service import create_user_on_startup
 from fastapi import FastAPI
@@ -89,6 +89,12 @@ async def ensure_database_setup(db):
                 await collection.create_index(idx["definition"], **idx["options"])
                 LOG.info(f"Created or ensured index {idx['options']['name']} on {col_name}")
             except Exception as e:
+                if idx.get("required", False):
+                    raise RuntimeError(
+                        f"Required database index {idx['options']['name']!r} "
+                        f"on {col_name} could not be created. Resolve conflicting "
+                        "data or index definitions before restarting the API."
+                    ) from e
                 LOG.warning(f"Failed to create index {idx['options']['name']} on {col_name}: {e}")
 
 

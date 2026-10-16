@@ -5,11 +5,13 @@ from itertools import zip_longest
 
 from flask import Flask
 
+from . import __version__
 from .blueprints import admin, alignviewers, cluster, groups, login, public, sample
 from .config import settings
 from .custom_filters import FILTERS as JINJA_FILTERS
 from .custom_filters import TESTS as JINJA_TESTS
 from .extensions import login_manager
+from .helpers import asset_url
 
 
 def create_app():
@@ -29,7 +31,7 @@ def create_app():
 
     # import jinja2 extensions
     app.jinja_env.add_extension("jinja2.ext.do")
-    app.jinja_env.globals.update(zip_longest=zip_longest)
+    app.jinja_env.globals.update(zip_longest=zip_longest, bonsai_version=__version__)
 
     # whitespace control:
     app.jinja_env.trim_blocks = True
@@ -39,6 +41,7 @@ def create_app():
     register_blueprints(app)
     register_filters(app)
     register_tests(app)
+    register_template_helper(app)
 
     return app
 
@@ -66,3 +69,11 @@ def register_tests(app):
         app.jinja_env.tests[name] = func
 
     return app
+
+
+def register_template_helper(app):
+    @app.context_processor
+    def inject_helpers():
+        return {
+            "asset_url": asset_url
+        }

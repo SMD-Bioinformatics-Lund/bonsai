@@ -3,8 +3,8 @@
 import logging
 from typing import Any, Literal
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.db import Database
 from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
 from bonsai_api.models.context import ApiRequestContext
@@ -339,6 +339,38 @@ async def group_exists(db: Database, *, group_id: str, session: Any = None) -> b
     return bool(doc)
 
 
+async def resolve_group_ids(
+    db: Database, *, references: list[str], session: Any = None
+) -> list[str]:
+    """Resolve group IDs or keys to unique internal IDs, preferring ID matches."""
+    if not references:
+        return []
+
+    input_refs = list(dict.fromkeys(references))
+    cursor = db.sample_group_collection.find(
+        {
+            "$or": [
+                {"core.group_id": {"$in": input_refs}},
+                {"core.group_key": {"$in": input_refs}},
+            ]
+        },
+        {"core.group_id": 1, "core.group_key": 1, "_id": 0},
+        session=session,
+    )
+    docs = await cursor.to_list(None)
+    by_id = {doc["core"]["group_id"]: doc["core"]["group_id"] for doc in docs}
+    by_key = {
+        doc["core"]["group_key"]: doc["core"]["group_id"]
+        for doc in docs
+        if doc["core"].get("group_key")
+    }
+    missing = set(input_refs) - by_id.keys() - by_key.keys()
+    if missing:
+        raise EntryNotFound(f"Unknown group ID(s) or key(s): {sorted(missing)}")
+
+    return list(dict.fromkeys(by_id.get(ref) or by_key[ref] for ref in input_refs))
+
+
 async def check_groups_exists(
     db: Database, *, group_ids: list[str], session: Any = None
 ) -> list[str]:
@@ -413,43 +445,35 @@ async def update_group_core_doc(
 ) -> dict[str, Any] | None:
     """Update group core fields."""
     LOG.debug("Updating group.core document", extra={"fields": fields})
+    payload = {
+        "modified_at": get_timestamp(),
+        **{f"core.{key}": val for key, val in fields.items()}
+    }
     return await db.sample_group_collection.find_one_and_update(
         {"core.group_id": group_id},
-        {"$set": {f"core.{key}": val for key, val in fields.items()}},
+        {"$set": payload},
         session=session,
         return_document=ReturnDocument.AFTER,
     )
 
 
-async def set_allowed_columns(
+async def update_allowed_columns(
     db: Database,
+    *,
     group_id: str,
-    allowed: "GroupAllowedUpdate",
-    ctx: ApiRequestContext,
-    audit: AuditLogClient | None = None,
-) -> GroupInfoOut:
+    column_ids: list[str],
+    session: Any = None,
+) -> dict[str, Any] | None:
     """Set allowed columns for a group."""
-    payload = {"allowed_columns": {"column_ids": allowed.column_ids}}
-    payload["modified_at"] = get_timestamp()
-
-    event_subject = Subject(id=group_id, type=SourceType.USR)
-    with audit_event_context(audit, "set_allowed_columns", ctx, event_subject):
-        try:
-            updated = await db.sample_group_collection.find_one_and_update(
-                {"group_id": group_id},
-                {"$set": payload},
-                return_document=ReturnDocument.AFTER,
-            )
-        except PyMongoError as pme:
-            LOG.error("MongoDB error while setting allowed columns: %s", str(pme))
-            raise DatabaseOperationError(
-                f"Database error occurred while setting allowed columns: {str(pme)}"
-            ) from pme
-
-        if not updated:
-            raise EntryNotFound(group_id)
-
-    return GroupInfoOut.model_validate(updated)
+    return await db.sample_group_collection.find_one_and_update(
+        {"core.group_id": group_id},
+        {"$set": {
+            "modified_at": get_timestamp(),
+            "allowed_columns": {"column_ids": column_ids},
+        }},
+        session=session,
+        return_document=ReturnDocument.AFTER,
+    )
 
 
 async def upsert_preset_doc(

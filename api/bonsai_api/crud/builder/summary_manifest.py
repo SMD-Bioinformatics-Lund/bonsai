@@ -56,6 +56,9 @@ MANIFEST = Manifest(
     columns=[
         ColumnFull(id="sample_id", label="Id", path="$sample_id", default_visible=True),
         ColumnFull(
+            id="external_sample_id", label="Lab ID", path="$external_sample_id"
+        ),
+        ColumnFull(
             id="sample_name", label="Name", path="$sample_name", default_visible=True
         ),
         ColumnFull(
@@ -113,6 +116,7 @@ MANIFEST = Manifest(
             id="sequencing_date",
             label="Sequencing date",
             path="$sequencing.sequenced_at",
+            type="date",
         ),
         ColumnFull(
             id="pipeline_version", label="Pipeline version", path="$latest_pipeline_run.pipeline_info.definition.version"
@@ -134,7 +138,11 @@ MANIFEST = Manifest(
             path="$bracken.scientific_name",
             default_visible=True,
         ),
-        ColumnFull(id="quast_n50", requires=["quast"], label="N50", path="$quast.n50"),
+        ColumnFull(id="quast_n50", requires=["quast"], label="N50", path="$quast.n50", type="number"),
+        ColumnFull(
+            id="quast_n_contigs", requires=["quast"], label="# Contigs",
+            path="$quast.n_contigs", type="number",
+        ),
         ColumnFull(
             id="quast_total_length",
             requires=["quast"],
@@ -188,6 +196,14 @@ MANIFEST = Manifest(
             label="Mean coverage",
             path="$postalignqc.mean_cov",
             type="number",
+        ),
+        ColumnFull(
+            id="postalignqc_coverage_10", requires=["postalignqc"],
+            label="Cov > 10", path="$postalignqc.pct_above_x.10", type="number",
+        ),
+        ColumnFull(
+            id="postalignqc_coverage_30", requires=["postalignqc"],
+            label="Cov > 30", path="$postalignqc.pct_above_x.30", type="number",
         ),
         ColumnFull(
             id="postalignqc_median_cov",

@@ -1,0 +1,5 @@
+D3 5.16.0, distributed under the BSD 3-Clause license in LICENSE.
+
+Unmodified browser bundle: https://cdn.jsdelivr.net/npm/d3@5.16.0/dist/d3.min.js
+License: https://cdn.jsdelivr.net/npm/d3@5.16.0/LICENSE
+Upstream: https://github.com/d3/d3/tree/v5.16.0

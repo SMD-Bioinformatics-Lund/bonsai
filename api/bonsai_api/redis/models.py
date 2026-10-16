@@ -1,8 +1,17 @@
 """Functions for handling redis jobs."""
 
 from enum import Enum
+from typing import TypedDict
 
 from ..models.base import RWModel
+
+
+class SkaIndexInput(TypedDict):
+    """Sample identifiers and SKA index passed to the clustering worker."""
+
+    sample_id: str
+    external_sample_id: str
+    ska_index: str
 
 
 class SubmittedJob(RWModel):  # pylint: disable=too-few-public-methods

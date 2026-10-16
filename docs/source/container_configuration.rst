@@ -1,7 +1,7 @@
 Configuring Bonsai
 ==================
 
-Bonsai is primarily configured through environment variables. The configuration can be set in a ``.env`` file in the same directory as the ``docker-compose.yml`` file or passed directly to the Docker container. See the `docker compose reference <https://docs.docker.com/reference/compose-file/>`_ for information on how to set environment varialbes.
+Bonsai is primarily configured through environment variables. For Docker Compose deployments, the configuration can be set in the ``docker-compose.env`` file referenced by ``docker-compose.yml`` or passed directly to the Docker container. See the `docker compose reference <https://docs.docker.com/reference/compose-file/>`_ for information on how to set environment varialbes.
 
 Some services have additional configuration files if environment variables are not enough. These are described in the relevant sections below.
 
@@ -35,15 +35,18 @@ Frontend
 .. table:: Frontend environmental variables
    :widths: auto
 
-   +-------------------+--------------------------------+-----------------------+
-   | Env               | Function                       | Default               |
-   +===================+================================+=======================+
-   | API_INTERNAL_URL  | Container-container URL to API | http://api:8000       |
-   +-------------------+--------------------------------+-----------------------+
-   | API_EXTERNAL_URL  | From browser URL to API        | http://localhost:8001 |
-   +-------------------+--------------------------------+-----------------------+
-   | TZ                | Timezone                       | Etc/UTC               |
-   +-------------------+--------------------------------+-----------------------+
+   +---------------------+------------------------------------------+-----------------------+
+   | Env                 | Function                                 | Default               |
+   +=====================+==========================================+=======================+
+   | API_INTERNAL_URL    | Container-container URL to API           | http://api:8000       |
+   +---------------------+------------------------------------------+-----------------------+
+   | API_EXTERNAL_URL    | From browser URL to API                  | http://localhost:8001 |
+   +---------------------+------------------------------------------+-----------------------+
+   | SESSION_COOKIE_NAME | Flask session cookie name. Use a unique  | session               |
+   |                     | name for instances sharing a hostname.   |                       |
+   +---------------------+------------------------------------------+-----------------------+
+   | TZ                  | Timezone                                 | Etc/UTC               |
+   +---------------------+------------------------------------------+-----------------------+
 
 .. autopydantic_settings:: bonsai_app.config.Settings
 
@@ -70,9 +73,10 @@ Here are the general configuration options for the API service. See the :doc:`do
    +-----------------------------+-----------------------------------------------------+------------------------+
    | REDIS_PORT                  | Port of redis server                                | 6379                   |
    +-----------------------------+-----------------------------------------------------+------------------------+
-   | REFERENCE_GENOMES_DIR       | Path to directory with reference genomes            | /tmp/reference_genomes |
+   | REFERENCE_GENOMES_DIR       | Path to directory with reference genomes            | /reference_genomes     |
    +-----------------------------+-----------------------------------------------------+------------------------+
-   | ANNOTATIONS_DIR             | Path to directory where genome annotation is stored | /tmp/annotations       |
+   | ANNOTATIONS_DIR             | Root directory for IGV tracks. Sample BAM, BAI and  | /annotations           |
+   |                             | VCF paths must be inside it; symlinks are allowed.  |                        |
    +-----------------------------+-----------------------------------------------------+------------------------+
    | SECRET_KEY                  | Authentication token secret key                     |                        |
    +-----------------------------+-----------------------------------------------------+------------------------+
@@ -135,9 +139,9 @@ The API can serve reference genome sequences and annotation files to the integra
    +------------------------+----------------------------+
    | Volume                 | Function                   |
    +========================+============================+
-   | /tmp/reference_genomes | Reference genomes for IGV. |
+   | /reference_genomes     | Reference genomes for IGV. |
    +------------------------+----------------------------+
-   | /tmp/annotations       | IGV annotation files.      |
+   | /annotations           | IGV annotation files.      |
    +------------------------+----------------------------+
 
 
