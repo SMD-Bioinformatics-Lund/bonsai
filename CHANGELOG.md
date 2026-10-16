@@ -5,6 +5,8 @@
 
 ### Fixed
 
+- Serve D3 5.16.0 locally on sample pages so an unreachable d3js.org does not delay page loading; include the browser bundle and license in the frontend package. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+
 
 ### Changed
 
