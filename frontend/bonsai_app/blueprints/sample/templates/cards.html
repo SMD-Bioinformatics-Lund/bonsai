@@ -907,6 +907,7 @@
         <table class="table table-sm">
             <thead>
                 <td>Gene</td>
+                <td>Database</td>
                 <td>Coverage</td>
                 <td>Identity</td>
                 <td>Name</td>
@@ -915,12 +916,13 @@
                 {% for gene in genes %}
                 <tr>
                     <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+                    <td>{{ gene.ref_database or 'Unknown' }}</td>
                     <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4">No STX genes identified.</td></tr>
+                <tr><td colspan="5">No STX genes identified.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
