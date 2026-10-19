@@ -18,7 +18,7 @@ classifiers = [
   "Topic :: Internet :: WWW/HTTP",
 ]
 dependencies = [
-  "bonsai-libs @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk.git@154acaa890b6b35fa7652e1ee9a5bf22a021258c",
+  "bonsai-libs @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk.git@master",
   "Flask<=2.3.3",
   "werkzeug<=2.3.7",
   "wtforms[email]",
