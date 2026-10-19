@@ -25,8 +25,7 @@
 
 ### Fixed
 
-- Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-
+- Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
 - Limit the all-samples overview to 13 metadata and prediction columns and request only those fields from the API, avoiding hidden QC metrics and group-membership lookups. Detailed QC metrics remain available in the group QC view. [#557](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/557)

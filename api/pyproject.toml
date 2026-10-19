@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
   "bcrypt==4.1.1",
-  "bonsai-libs @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk.git@master",
+  "bonsai-libs @ git+https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk.git@154acaa890b6b35fa7652e1ee9a5bf22a021258c",
   "click==8.1.7",
   "fastapi[all]==0.115.0",
   "python-jose[cryptography]==3.3.0",
