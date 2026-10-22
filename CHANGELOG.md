@@ -2,6 +2,8 @@
 
 ### Added
 
+- Add `bonsai-api doctor check` for read-only alignment, SKA, and MinHash integrity reports, with assay/sample/resource filters, sample or file-type grouping, text/JSON output, and distinct problem/incomplete exit codes. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Check SKA and MinHash availability in worker batches, verify MinHash search-index membership with shared-signature/QC exclusion handling, and configure required resource categories per assay. Document the future deep-validation approach. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
