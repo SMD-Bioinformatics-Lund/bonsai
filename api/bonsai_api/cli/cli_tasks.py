@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Literal
 
 from bonsai_api.services.sample_service import get_sample_service
-from bonsai_api.services.analysis_summary import backfill_typing_summaries
 from bonsai_libs.api_client.audit_log import AuditLogClient
 from bonsai_libs.api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
@@ -29,12 +28,6 @@ from bonsai_api.models.user import UserContext, UserInputCreate, UserOutputDatab
 from bonsai_api.services.group_service import create_group_service
 
 LOG = logging.getLogger(__name__)
-
-
-async def run_backfill_typing_summaries(*, dry_run: bool = False) -> dict[str, int]:
-    """Populate STX display values from existing stored hits."""
-    async with get_db_connection() as db:
-        return await backfill_typing_summaries(db, dry_run=dry_run)
 
 
 def _get_audit_log_client() -> AuditLogClient | None:

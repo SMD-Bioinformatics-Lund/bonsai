@@ -19,7 +19,6 @@ from bonsai_api.models.user import UserInputCreate
 from pymongo.errors import DuplicateKeyError
 
 from .cli_tasks import (
-    run_backfill_typing_summaries,
     run_check_paths,
     run_create_group,
     run_create_index,
@@ -39,22 +38,6 @@ LOG = getLogger(__name__)
 @click.pass_context
 def cli(_ctx: click.Context):
     """Bonsai api server"""
-
-
-@cli.command()
-@click.option("--dry-run", is_flag=True, help="Report changes without writing them.")
-def backfill_typing_summaries(dry_run: bool):
-    """Populate STX display values from stored hits without re-importing."""
-    counts = run_async(run_backfill_typing_summaries(dry_run=dry_run))
-    if dry_run:
-        click.echo(f"{counts['pending']} STX typing results would be updated.")
-    else:
-        click.echo(f"Updated {counts['updated']} STX typing results.")
-        if counts["conflicts"]:
-            raise click.ClickException(
-                f"{counts['conflicts']} entries changed concurrently and were skipped; "
-                "rerun the command to refresh them."
-            )
 
 
 @cli.command()

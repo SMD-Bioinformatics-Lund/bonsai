@@ -25,8 +25,7 @@
 
 ### Fixed
 
-- Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field during normal loading, preserving all hits, and read the parser's single selected O and H labels directly. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
-- Add `backfill-typing-summaries`, with a dry-run option, to populate the STX display field for existing multi-hit results without re-importing analysis files. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
+- Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field during normal loading, preserving all hits, and read the parser's single selected O and H labels directly. Existing multi-hit STX records need re-importing to populate the display field. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
