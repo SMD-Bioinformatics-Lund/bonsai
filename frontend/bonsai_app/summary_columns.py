@@ -8,7 +8,7 @@ def has_value(value: Any) -> bool:
     if value is None:
         return False
     if isinstance(value, str):
-        return value.strip() not in ("", "-")
+        return value.strip() not in ("", "-", "-:-")
     if isinstance(value, dict):
         # Comment records are only rendered when explicitly displayed. Tag
         # records are represented by their label; other objects use any

@@ -33,7 +33,7 @@ def case(name, typing_result=None, expected=None, fields=None):
         "name": name,
         "document": document,
         "fields": fields or ["sample_id", "stx", "oh"],
-        "expected": {"sample_id": "sample-1", **(expected or {"stx": "-", "oh": "-"})},
+        "expected": {"sample_id": "sample-1", **(expected or {"stx": "-", "oh": "-:-"})},
     }
 
 
@@ -76,17 +76,17 @@ CASES = [
     case(
         "legacy single hit",
         [entry("stx", {"gene_symbol": "stx2a"})],
-        {"stx": "stx2a", "oh": "-"},
+        {"stx": "stx2a", "oh": "-:-"},
     ),
     case(
         "single object source",
         entry("stx", {"gene_symbol": "stx1a"}),
-        {"stx": "stx1a", "oh": "-"},
+        {"stx": "stx1a", "oh": "-:-"},
     ),
     case(
-        "multiple types and alleles",
+        "multiple types preserve order and deduplicate alleles",
         [MULTI_HIT],
-        {"stx": "stx1a, stx2a, stx2c-O157-FLY16", "oh": "-"},
+        {"stx": "stx2a, stx1a, stx2c-O157-FLY16", "oh": "-:-"},
     ),
     case(
         "O only",
@@ -115,7 +115,7 @@ CASES = [
         "combined summaries",
         TYPING_ENTRIES,
         {
-            "stx": "stx1a, stx2a, stx2c-O157-FLY16",
+            "stx": "stx2a, stx1a, stx2c-O157-FLY16",
             "oh": "O157:H7",
             "mlst_sequence_type": 11,
         },
@@ -124,7 +124,7 @@ CASES = [
     case(
         "STX subset",
         TYPING_ENTRIES,
-        {"stx": "stx1a, stx2a, stx2c-O157-FLY16"},
+        {"stx": "stx2a, stx1a, stx2c-O157-FLY16"},
         ["sample_id", "stx"],
     ),
     case("OH subset", TYPING_ENTRIES, {"oh": "O157:H7"}, ["sample_id", "oh"]),
