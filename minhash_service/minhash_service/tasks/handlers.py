@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import logging
 import tempfile
+from collections import Counter
 from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable, cast
@@ -617,6 +618,17 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
         raise ValueError(msg) from error
 
     loaded = _load_sample_signatures(sample_ids, kmer_size=cnf.kmer_size)
+    loaded_counts = Counter(sample_id for sample_id, _ in loaded)
+    invalid_ids = [
+        sample_id
+        for sample_id, count in Counter(sample_ids).items()
+        if loaded_counts[sample_id] != count
+    ]
+    if invalid_ids:
+        raise ValueError(
+            "Could not load exactly one MinHash signature per selected sample: "
+            + ", ".join(invalid_ids)
+        )
     leaf_names = [sample_id for sample_id, _ in loaded]
 
     LOG.info("Cluster %d signatures", len(loaded))
