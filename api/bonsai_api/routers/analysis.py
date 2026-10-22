@@ -43,6 +43,9 @@ async def upload_analysis(
     bedcov_file: UploadFile | None = File(
         None, description="Optional samtools bedcov output for post-align QC"
     ),
+    hits_file: UploadFile | None = File(
+        None, description="Optional ShigaTyper companion hits TSV"
+    ),
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
     ctx: ApiRequestContext=Depends(get_request_context),
@@ -61,6 +64,7 @@ async def upload_analysis(
         file=file,
         coverage_file=coverage_file,
         bedcov_file=bedcov_file,
+        hits_file=hits_file,
         ctx=ctx,
         audit=audit,
     )
