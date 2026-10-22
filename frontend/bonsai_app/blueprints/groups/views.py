@@ -38,6 +38,7 @@ DEFAULT_OVERVIEW_COLUMN_IDS = (
     "tags",
     "mlst_sequence_type",
     "stx",
+    "oh",
     "created_at",
 )
 
