@@ -2,7 +2,9 @@
 
 import asyncio
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
+from time import monotonic
 
 from pydantic import BaseModel, Field
 from redis import Redis
@@ -90,8 +92,17 @@ def check_alignment(sample: dict) -> list[dict]:
     return findings
 
 
-async def check_worker(queue_name: str, samples: list[dict], timeout: int) -> dict:
+async def check_worker(
+    queue_name: str,
+    samples: list[dict],
+    timeout: int,
+    progress: Callable[[str], None] | None = None,
+) -> dict:
     """Enqueue one batch and wait with a bounded connection and job timeout."""
+    notify = progress or (lambda message: None)
+    label = "SKA" if queue_name == "ska" else "MinHash"
+    unit = "sample" if len(samples) == 1 else "samples"
+    notify(f"Submitting {label} check for {len(samples)} {unit}...")
     connection = Redis(
         settings.redis_host,
         int(settings.redis_port),
@@ -108,9 +119,13 @@ async def check_worker(queue_name: str, samples: list[dict], timeout: int) -> di
             ttl=timeout,
             result_ttl=60,
         )
+        started = monotonic()
+        last_update = started
+        last_status = None
         async with asyncio.timeout(timeout):
             while True:
                 status = await asyncio.to_thread(job.get_status, refresh=True)
+                status = getattr(status, "value", status)
                 if status == "finished":
                     result = await asyncio.to_thread(job.return_value)
                     if (
@@ -118,18 +133,29 @@ async def check_worker(queue_name: str, samples: list[dict], timeout: int) -> di
                         or not {"findings", "errors"} <= result.keys()
                     ):
                         raise ValueError("Worker returned an invalid doctor report")
+                    notify(
+                        f"{label} check {'incomplete' if result['errors'] else 'complete'}."
+                    )
                     return result
                 if status in {"failed", "stopped", "canceled"}:
                     raise RuntimeError(
                         f"Worker job {job.id} {status}; inspect worker logs"
                     )
+                now = monotonic()
+                if status != last_status or now - last_update >= 5:
+                    state = "running" if status == "started" else status
+                    notify(f"{label} check: {state} ({int(now - started)}s elapsed).")
+                    last_status = status
+                    last_update = now
                 await asyncio.sleep(0.25)
     except TimeoutError:
+        notify(f"{label} check timed out after {timeout}s.")
         return {
             "findings": [],
             "errors": [f"{queue_name} check timed out after {timeout}s"],
         }
     except Exception as error:
+        notify(f"{label} check could not complete: {error}")
         return {
             "findings": [],
             "errors": [f"{queue_name} check could not complete: {error}"],
@@ -138,11 +164,14 @@ async def check_worker(queue_name: str, samples: list[dict], timeout: int) -> di
         connection.close()
 
 
-async def run_check() -> DoctorReport:
+async def run_check(progress: Callable[[str], None] | None = None) -> DoctorReport:
     """Check every sample without pagination or full-model hydration."""
     report = DoctorReport()
     selected = {}
     batches = defaultdict(list)
+    notify = progress or (lambda message: None)
+    notify("Scanning samples and checking alignment files...")
+    last_update = monotonic()
     projection = {
         field: 1
         for field in (
@@ -201,8 +230,16 @@ async def run_check() -> DoctorReport:
                             == "failed",
                         }
                     )
+            now = monotonic()
+            if report.checked_samples % 100 == 0 or now - last_update >= 5:
+                notify(f"Scanned {report.checked_samples} samples...")
+                last_update = now
+    notify(f"Sample scan complete: {report.checked_samples} samples.")
     results = await asyncio.gather(
-        *(check_worker(name, samples, timeout=60) for name, samples in batches.items())
+        *(
+            check_worker(name, samples, timeout=60, progress=progress)
+            for name, samples in batches.items()
+        )
     )
     for result in results:
         report.errors.extend(result["errors"])
