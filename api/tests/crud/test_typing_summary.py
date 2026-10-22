@@ -13,15 +13,31 @@ from pymongo import MongoClient
 
 from bonsai_api.crud.builder.summary import compile_summary_pipeline
 from bonsai_api.crud.builder.summary_manifest import MANIFEST
+from bonsai_libs.parse.models.typing import TypingResultStx
 
 
 def entry(analysis_type, result, software=None):
+    software = software or (
+        "virulencefinder" if analysis_type == "stx" else "serotypefinder"
+    )
+    if software == "virulencefinder" and analysis_type == "stx":
+        if isinstance(result, dict) and result.get("hits"):
+            payload = {
+                **result,
+                "hits": [
+                    {"element_type": "VIRULENCE", "element_subtype": "VIRULENCE", **hit}
+                    for hit in result["hits"]
+                ],
+            }
+            result = TypingResultStx.model_validate(payload).model_dump(
+                exclude_none=True
+            )
     return {
-        "software": software
-        or ("virulencefinder" if analysis_type == "stx" else "serotypefinder"),
+        "software": software,
         "analysis_type": analysis_type,
         "status": "parsed" if result else "absent",
         "result": result,
+        "summary": {},
     }
 
 
@@ -33,7 +49,10 @@ def case(name, typing_result=None, expected=None, fields=None):
         "name": name,
         "document": document,
         "fields": fields or ["sample_id", "stx", "oh"],
-        "expected": {"sample_id": "sample-1", **(expected or {"stx": "-", "oh": "-:-"})},
+        "expected": {
+            "sample_id": "sample-1",
+            **(expected or {"stx": "-", "oh": "-:-"}),
+        },
     }
 
 
@@ -62,6 +81,16 @@ TYPING_ENTRIES = [
     entry("mlst", {"sequence_type": 11}, software="mlst"),
 ]
 CASES = [
+    case(
+        "multi-hit result not yet backfilled",
+        [
+            {
+                "software": "virulencefinder",
+                "analysis_type": "stx",
+                "result": {"hits": [{"gene_symbol": "stx2a"}]},
+            }
+        ],
+    ),
     case("missing typing"),
     case("empty typing", []),
     case(

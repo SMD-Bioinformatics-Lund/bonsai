@@ -10,8 +10,105 @@ import pytest
 
 from bonsai_api.exceptions import AnalysisExistsError, InvalidDataFormat
 from bonsai_api.services import analysis_service
-from bonsai_libs.parse.models.base import ParserOutput, ResultEnvelope
+from bonsai_libs.parse.models.base import (
+    GeneWithReference,
+    ParserOutput,
+    ResultEnvelope,
+)
+from bonsai_libs.parse.models.typing import TypingResultStx
+from bonsai_api.models.sample import AnalysisViewEntryOut
 from bonsai_libs.parse.models.enums import AnalysisType, ResultStatus
+
+
+@pytest.mark.parametrize("force", [False, True])
+@pytest.mark.parametrize(
+    "software,results",
+    [
+        (
+            "virulencefinder",
+            {
+                "stx": TypingResultStx(
+                    hits=[
+                        GeneWithReference(
+                            gene_symbol=symbol,
+                            element_type="VIRULENCE",
+                            element_subtype="VIRULENCE",
+                        )
+                        for symbol in ["stx2a", "stx1a", "stx2a"]
+                    ]
+                )
+            },
+        ),
+        (
+            "serotypefinder",
+            {"o_type": {"sequence_name": "O157"}, "h_type": {"sequence_name": "H7"}},
+        ),
+        ("virulencefinder", {"stx": None}),
+        ("mlst", {"mlst": {"sequence_type": 11}}),
+    ],
+)
+def test_ingestion_keeps_sdk_results_through_storage_and_model_roundtrip(
+    monkeypatch, force, software, results
+):
+    output = ParserOutput(
+        software=software,
+        software_version="1.0.0",
+        parser_name="test",
+        parser_version=1,
+        results={
+            AnalysisType(key): ResultEnvelope(
+                status=ResultStatus.PARSED if value else ResultStatus.ABSENT,
+                value=value,
+            )
+            for key, value in results.items()
+        },
+    )
+    create = AsyncMock()
+    upsert = AsyncMock()
+
+    @asynccontextmanager
+    async def transaction(_):
+        yield None
+
+    monkeypatch.setattr(analysis_service, "run_parser", lambda **_: output)
+    monkeypatch.setattr(analysis_service, "sample_exists", AsyncMock(return_value=True))
+    monkeypatch.setattr(
+        analysis_service, "analysis_exists", AsyncMock(return_value=force)
+    )
+    monkeypatch.setattr(analysis_service, "create_analysis", create)
+    monkeypatch.setattr(analysis_service, "upsert_analysis_results", upsert)
+    monkeypatch.setattr(analysis_service, "managed_transaction", transaction)
+    asyncio.run(
+        analysis_service.ingest_analysis_service(
+            SimpleNamespace(client=None),
+            sample_id="sample-1",
+            software=software,
+            software_version="1.0.0",
+            force=force,
+            file=SimpleNamespace(file=BytesIO(b"input"), filename="result.json"),
+        )
+    )
+    expected = {
+        key: (
+            value.model_dump(exclude_none=True)
+            if isinstance(value, TypingResultStx)
+            else value
+        )
+        for key, value in results.items()
+    }
+    assert upsert.await_count == len(results)
+    for call in upsert.await_args_list:
+        item = call.kwargs["item"]
+        assert item["summary"] == {}
+        assert item.get("result") == expected[item["analysis_type"]]
+        if item["analysis_type"] == "stx" and item.get("result"):
+            loaded = AnalysisViewEntryOut.model_validate(item)
+            serialized = loaded.model_dump(exclude_none=True)["result"]
+            assert serialized == expected["stx"]
+            assert serialized["gene_symbol"] == "stx2a, stx1a"
+            assert len(serialized["hits"]) == 3
+    canonical = create.await_args.kwargs["doc"]["envelopes"]
+    assert {key: value.get("value") for key, value in canonical.items()} == expected
 
 
 @pytest.mark.parametrize("software", ["resfinder", "mlst", "mixed"])
