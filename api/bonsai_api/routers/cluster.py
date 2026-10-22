@@ -6,6 +6,7 @@ from typing import Dict
 
 from bonsai_api.crud.cluster import (
     TypingProfileOutput,
+    get_minhash_sample_labels,
     get_signature_path_for_samples,
     get_ska_index_path_for_samples,
     get_typing_profiles,
@@ -64,9 +65,9 @@ async def cluster_samples(
     cluster_input: ClusterInput,
     db: Database = Depends(get_database),
 ) -> SubmittedJob:
-    """Cluster samples on their cgmlst profile.
+    """Cluster samples using the requested typing data.
 
-    In order to cluster the samples, all samples need to have a profile and be of the same species.
+    Every selected sample must have the input required by the typing method.
 
     :param typing_method: clustering typing method
     :type typing_method: TypingMethod
@@ -77,8 +78,9 @@ async def cluster_samples(
     :rtype: SubmittedJob
     """
     if typing_method == TypingMethod.MINHASH:
+        sample_labels = await get_minhash_sample_labels(db, cluster_input.sample_ids)
         job = schedule_minhash_cluster_samples(
-            cluster_input.sample_ids, cluster_input.method
+            list(sample_labels), cluster_input.method, sample_labels=sample_labels
         )
     elif typing_method == TypingMethod.SKA:
         # query database for index file paths using the sample ids and distpatch cluster job to queue

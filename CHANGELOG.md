@@ -25,6 +25,7 @@
 
 ### Fixed
 
+- Reject MinHash clustering when any selected sample lacks a usable signature, is excluded, or is marked for deletion; report affected samples by Lab ID instead of returning a partial tree. Validate signature associations before queuing and signature records and files in the worker, including clustering of similarity-search results. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)

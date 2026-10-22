@@ -9,7 +9,7 @@ from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
-from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat
 from bonsai_api.models.base import RWModel
 from bonsai_api.redis.models import SkaIndexInput
 
@@ -124,6 +124,42 @@ async def get_typing_profiles(
             f"{missing_labels}"
         )
     return results
+
+
+async def get_minhash_sample_labels(
+    db: Database, sample_ids: Sequence[str]
+) -> dict[str, str]:
+    """Validate signature associations and label samples for worker errors.
+
+    The association can be an upload job ID, so the worker must also validate
+    the signature record and file before clustering.
+    """
+    unique_ids = list(dict.fromkeys(sample_ids))
+    if len(unique_ids) < 2:
+        raise InvalidDataFormat(
+            "MinHash clustering requires at least two distinct samples."
+        )
+
+    cursor = db.sample_collection.find(
+        {"sample_id": {"$in": unique_ids}},
+        {"_id": 0, "sample_id": 1, "external_sample_id": 1, "genome_signature": 1},
+    )
+    samples_by_id = {sample["sample_id"]: sample for sample in await cursor.to_list(None)}
+    missing = [
+        get_sample_label(samples_by_id.get(sample_id), sample_id)
+        for sample_id in unique_ids
+        if not samples_by_id.get(sample_id, {}).get("genome_signature")
+    ]
+    if missing:
+        raise EntryNotFound(
+            "No MinHash signature is available for the following samples: "
+            + ", ".join(sorted(missing))
+        )
+
+    return {
+        sample_id: get_sample_label(samples_by_id[sample_id], sample_id)
+        for sample_id in unique_ids
+    }
 
 
 async def get_signature_path_for_samples(
