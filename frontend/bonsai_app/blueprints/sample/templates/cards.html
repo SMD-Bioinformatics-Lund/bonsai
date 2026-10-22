@@ -1131,6 +1131,34 @@
         {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
+        {% if pred.software == "shigatyper" %}
+        <div>
+            <span class="fw-semibold">Prediction:</span>
+            {{ pred.result.prediction }}
+        </div>
+        <div>
+            <span class="fw-semibold">ipaB:</span>
+            {{ pred.result.ipaB | fmt_null_values }}
+        </div>
+        {% if pred.result.hits | default([]) %}
+        <table class="table table-sm table-striped mt-2">
+            <thead>
+                <tr><th>Marker</th><th>Reads</th></tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for hit in pred.result.hits %}
+                <tr><td>{{ hit.name }}</td><td>{{ hit.n_reads }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+        {% if pred.result.notes %}
+        <div class="mt-2">
+            <h6 class="fw-semibold">Notes</h6>
+            <p>{{ pred.result.notes }}</p>
+        </div>
+        {% endif %}
+        {% else %}
         <div>
             <span class="fw-semibold">Serotype:</span>
             {{ pred.result.predicted_serotype }}
@@ -1176,6 +1204,7 @@
                 <p>{{ pred.result.comments }}</p>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
