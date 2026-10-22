@@ -186,8 +186,6 @@ def schedule_find_similar_samples(
 def schedule_cluster_samples(
     sample_ids: list[str],
     cluster_method: ClusterMethod,
-    *,
-    sample_labels: dict[str, str] | None = None,
 ) -> SubmittedJob:
     """Schedule a job to cluster the given samples (no retries by default)."""
     task = str(TaskName.CLUSTER_SAMPLES)
@@ -198,7 +196,6 @@ def schedule_cluster_samples(
         retry=None,
         sample_ids=sample_ids,
         cluster_method=cluster_method.value,
-        sample_labels=sample_labels,
     )
     return SubmittedJob(id=job.id, task=task)
 
