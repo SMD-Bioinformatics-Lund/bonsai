@@ -25,75 +25,31 @@ Bonsai, execute the CLI commands in the container.
 Check sample integrity
 ----------------------
 
-Run ``doctor check`` in the API container to inspect registered samples without
-changing sample records, files, or analysis indexes:
+Run ``doctor`` in the API container to check all samples for potentially missing
+alignment and index data:
 
 .. code-block:: bash
 
-   docker compose exec api bonsai-api doctor check
-   docker compose exec api bonsai-api doctor check --assay my-assay
-   docker compose exec api bonsai-api doctor check --sample LAB_ID --sample SAMPLE_UUID
-   docker compose exec api bonsai-api doctor check --file-type alignment
-   docker compose exec api bonsai-api doctor check --group-by file-type
-   docker compose exec -T api bonsai-api doctor check --format json > doctor-report.json
+   docker compose exec api bonsai-api doctor
 
-The API checks alignments and their indexes under ``annotations_dir`` using the
-same path rules as IGV, including symlinks. Every registered alignment must have
-a nonempty, readable file and index. SKA and MinHash checks run as batches on
-their respective workers, where the files are mounted. Both workers must be
-running the doctor-capable version. Missing resource references are reported
-even when there is no file path to check. The command scans all matching
-records, without the API's normal sample-list pagination.
+The command prints a report grouped by sample, with resource types, reasons,
+and paths where available. If all checks complete without findings, it prints
+``No issues found``. All assays require alignment files and their indexes,
+SKA indexes, and MinHash signatures. The command checks every sample without
+pagination and does not change sample records, files, or analysis indexes.
 
-``--assay`` matches the current pipeline run selected by
-``last_pipeline_run_id``, as in the sample summary; historical assays do not
-match. Assay names are exact and case-sensitive. ``--sample`` accepts internal
-sample IDs, external Lab IDs, or LIMS IDs, and may match multiple records when
-an external ID is shared. Repeat either option to select several values.
-Different filters intersect. Explicit sample IDs that do not match the final
-selection, or an assay selection with no matches, make the report incomplete.
+Alignment paths use the same rules as IGV under ``annotations_dir``, including
+symlinks. Files must be present, readable, and nonempty. SKA and MinHash checks
+run on their respective workers, where the files are mounted; both workers
+must be running the doctor-capable version. MinHash checks inspect search-index
+membership as well as metadata flags and account for intentional QC exclusions
+and shared signatures.
 
-``--file-type`` accepts ``alignment`` (including its index), ``ska``, and
-``minhash`` (including search-index membership), and is repeatable. Findings
-are grouped by sample by default; ``--group-by file-type`` groups alignment
-indexes and MinHash search-index findings separately. Reports include sample
-IDs, Lab/LIMS IDs, assay names, reasons, paths where available, and counts of
-checked and affected samples. ``--format json`` produces a single JSON object
-with ``status``, ``selection``, ``checked_samples``, ``affected_samples``,
-``group_by``, ``groups``, and ``errors``. ``--output PATH`` writes either report
-format to a file inside the container.
-
-MinHash checks use the worker's configured k-mer size, inspect the actual
-search index as well as metadata flags, and retain the requirement for a
-signature file when QC has failed. A failed sample intentionally excluded
-from search is valid; a shared checksum may remain indexed for other eligible
-samples.
-
-By default, all assays require alignment, SKA, and MinHash resources. Override
-this only for assays that intentionally produce fewer resource categories,
-using the API's configuration file:
-
-.. code-block:: toml
-
-   [doctor_assay_requirements]
-   amplicon = ["alignment"]
-   assembly = ["ska", "minhash"]
-
-The equivalent environment variable is
-``DOCTOR_ASSAY_REQUIREMENTS='{"amplicon":["alignment"]}'``. Unlisted assays
-and records without a current assay use all three requirements. A file-type
-filter narrows the required categories; it does not override assay exemptions.
-
-Exit codes are ``0`` for a completed check with no findings, ``1`` for detected
-problems, and ``2`` for incomplete checks, even if some problems were also
-found. An empty database reports zero checked samples explicitly. Worker
-failures, unavailable services, and timeouts are reported as incomplete,
-not as missing files or a clean result. ``--timeout SECONDS`` controls the
-wait and execution limit per worker batch (default: 60). Pending jobs expire
-after the same interval. Increase the timeout for large datasets or busy
-queues. No repairs or email notifications are performed. Reports reflect the
-data observed during the scan; uploads or deletions in progress may warrant
-a repeat check after they finish.
+Unavailable services, worker failures, and timeouts are reported as incomplete
+checks. Exit codes are ``0`` for no issues, ``1`` for potential problems, and
+``2`` for incomplete checks. Each worker batch has a 60-second timeout. The
+report reflects data observed during the scan; uploads or deletions in progress
+may warrant a repeat check after they finish.
 
 Future deep validation
 ~~~~~~~~~~~~~~~~~~~~~~
