@@ -1,5 +1,6 @@
 """Doctor checks all samples and never reports a partial check as clean."""
 
+import csv
 import importlib
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
@@ -8,6 +9,7 @@ from unittest.mock import AsyncMock
 import pytest
 from click.testing import CliRunner
 from mongomock_motor import AsyncMongoMockClient
+from rq.job import JobStatus
 
 from bonsai_api import doctor
 from bonsai_api.cli.cli import cli
@@ -46,10 +48,13 @@ def sample(sid, assay="wgs"):
 @pytest.mark.asyncio
 async def test_all_records_are_checked_without_pagination(database):
     await database.insert_many([sample(str(i)) for i in range(125)])
-    report = await doctor.run_check()
+    progress = []
+    report = await doctor.run_check(progress=progress.append)
     assert report.checked_samples == report.affected_samples == 125
     assert report.exit_code == 1
     assert await database.count_documents({}) == 125
+    assert "Scanned 100 samples..." in progress
+    assert progress[-1] == "Sample scan complete: 125 samples."
 
 
 @pytest.mark.asyncio
@@ -132,12 +137,22 @@ async def test_worker_findings_keep_sample_labels_and_assay(database, monkeypatc
 @pytest.mark.asyncio
 async def test_finished_worker_returns_serializable_report(monkeypatch):
     result = {"findings": [], "errors": []}
+    statuses = iter([JobStatus.QUEUED, JobStatus.STARTED, JobStatus.FINISHED])
     job = SimpleNamespace(
-        get_status=lambda **kw: "finished", return_value=lambda: result
+        get_status=lambda **kw: next(statuses), return_value=lambda: result
     )
     enqueue = SimpleNamespace(enqueue=lambda *a, **kw: job)
     monkeypatch.setattr(doctor, "Queue", lambda *a, **kw: enqueue)
-    assert await doctor.check_worker("ska", [{"sample_id": "one"}], 10) == result
+    monkeypatch.setattr(doctor.asyncio, "sleep", AsyncMock())
+    progress = []
+    assert (
+        await doctor.check_worker("ska", [{"sample_id": "one"}], 10, progress.append)
+        == result
+    )
+    assert progress[0] == "Submitting SKA check for 1 sample..."
+    assert any("SKA check: queued" in message for message in progress)
+    assert any("SKA check: running" in message for message in progress)
+    assert progress[-1] == "SKA check complete."
 
 
 @pytest.mark.asyncio
@@ -161,40 +176,76 @@ async def test_worker_failure_and_timeout_are_incomplete(monkeypatch, status):
         (["unavailable"], [], 2),
     ],
 )
-def test_report_and_exit_status(monkeypatch, errors, findings, expected):
+def test_report_and_exit_status(monkeypatch, tmp_path, errors, findings, expected):
     report = doctor.DoctorReport(
         checked_samples=1,
         errors=errors,
         findings=[
             doctor.Finding(
-                sample_id="one", assay="wgs", file_type="ska", message="Missing"
+                sample_id="one",
+                external_sample_id="lab-one",
+                assay="wgs",
+                file_type="ska",
+                message="Missing\nindex",
+                path="reads\tone.skf",
             )
             for _ in findings
         ],
     )
-    check = AsyncMock(return_value=report)
+
+    async def fake_check(progress):
+        progress("Scanning samples and checking alignment files...")
+        return report
+
+    check = AsyncMock(side_effect=fake_check)
     monkeypatch.setattr(doctor_cli, "run_check", check)
-    result = CliRunner().invoke(cli, ["doctor"])
+    output = tmp_path / "doctor.tsv"
+    result = CliRunner(mix_stderr=False).invoke(
+        cli, ["doctor", "--output", str(output)]
+    )
     assert result.exit_code == expected, result.output
-    check.assert_awaited_once_with()
+    check.assert_awaited_once()
+    assert "Scanning samples" in result.stderr
+    assert "Samples checked: 1" in result.output
+    assert f"Samples with potential issues: {len(findings)}" in result.output
+    assert f"Findings: {len(findings)}" in result.output
+    assert f"Incomplete checks: {len(errors)}" in result.output
+    assert f"Report written to: {output}" in result.output
+    with output.open(newline="") as handle:
+        reader = csv.DictReader(handle, delimiter="\t")
+        rows = list(reader)
+        assert "sample_id" in reader.fieldnames  # Also present in a clean report.
+    assert len(rows) == len(findings) + len(errors)
     if expected == 0:
-        assert result.output == "No issues found\n"
+        assert "No issues found\n" in result.output
     else:
         assert "No issues found" not in result.output
         if findings:
-            assert "sample=one" in result.output
-            assert "ska: Missing" in result.output
+            assert "  ska: 1" in result.output
+            assert "lab-one" not in result.output
+            assert rows[0]["sample_id"] == "one"
+            assert rows[0]["external_sample_id"] == "lab-one"
+            assert rows[0]["assay"] == "wgs"
+            assert rows[0]["file_type"] == "ska"
+            assert rows[0]["message"] == "Missing\nindex"
+            assert rows[0]["path"] == "reads\tone.skf"
+            assert rows[0]["status"] == "issue"
         if errors:
-            assert "Check incomplete: unavailable" in result.output
+            assert "Check incomplete" in result.output
+            assert rows[-1]["status"] == "incomplete"
+            assert rows[-1]["message"] == "unavailable"
+            assert rows[-1]["sample_id"] == ""
 
 
-def test_database_failure_is_reported(monkeypatch):
+def test_database_failure_is_reported(monkeypatch, tmp_path):
     monkeypatch.setattr(
         doctor_cli,
         "run_check",
         AsyncMock(side_effect=RuntimeError("database unavailable")),
     )
-    result = CliRunner().invoke(cli, ["doctor"])
+    output = tmp_path / "doctor.tsv"
+    result = CliRunner().invoke(cli, ["doctor", "-o", str(output)])
     assert result.exit_code == 2
-    assert "database unavailable" in result.output
+    assert "Incomplete checks: 1" in result.output
+    assert "database unavailable" in output.read_text()
     assert "No issues found" not in result.output
