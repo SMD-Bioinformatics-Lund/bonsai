@@ -5,7 +5,7 @@ import re
 import ssl
 import tomllib
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import (
     AfterValidator,
@@ -161,6 +161,11 @@ class Settings(BaseSettings):
     # Reference genome and annotations for IGV
     reference_genomes_dir: str = "/reference_genomes"
     annotations_dir: str = "/annotations"
+    # Assays not listed here require all three resource categories.
+    doctor_assay_requirements: dict[str, list[Literal["alignment", "ska", "minhash"]]] = Field(
+        default_factory=dict,
+        description="Required doctor resource categories by exact assay name",
+    )
     # authentication options
     secret_key: str = "not-so-secret"  # openssl rand -hex 32
     access_token_expire_minutes: int = 180  # expiration time for accesst token

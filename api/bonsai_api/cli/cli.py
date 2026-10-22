@@ -28,6 +28,7 @@ from .cli_tasks import (
     run_migrate_database,
     run_update_tag,
 )
+from .doctor import doctor
 from .utils import EmailType, run_async
 
 LOG = getLogger(__name__)
@@ -38,6 +39,9 @@ LOG = getLogger(__name__)
 @click.pass_context
 def cli(_ctx: click.Context):
     """Bonsai api server"""
+
+
+cli.add_command(doctor)
 
 
 @cli.command()
