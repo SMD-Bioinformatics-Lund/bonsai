@@ -82,7 +82,7 @@ TYPING_ENTRIES = [
 ]
 CASES = [
     case(
-        "multi-hit result not yet backfilled",
+        "older multi-hit result without display field",
         [
             {
                 "software": "virulencefinder",

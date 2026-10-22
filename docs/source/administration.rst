@@ -22,27 +22,6 @@ Bonsai, execute the CLI commands in the container.
    # normal command
    $ bonsai_api index
 
-Backfill typing summaries
-------------------------
-
-The SDK's STX result model generates the display value during normal
-serialization when analysis results are uploaded or replaced. The API must use
-an SDK version that includes this computed field. O/H typing uses the selected
-O and H labels already provided by the parser. After upgrading, populate the STX display field
-for existing multi-hit results using their stored hits:
-
-.. code-block:: bash
-
-   bonsai-api backfill-typing-summaries --dry-run
-   bonsai-api backfill-typing-summaries
-
-This does not require the original analysis files or change the stored gene
-hits, curations, or sample dates. The command can be run repeatedly. Entries
-changed by a concurrent upload are skipped and reported; rerun the command to
-refresh those entries. Until backfilled, existing multi-hit STX results without
-the display field show a placeholder. Older single-gene STX results and O/H
-typing can be displayed directly without a backfill.
-
 Create users
 ------------
 
