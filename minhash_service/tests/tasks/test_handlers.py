@@ -3,6 +3,8 @@
 from types import SimpleNamespace
 from unittest.mock import Mock, call, patch
 
+import pytest
+
 from minhash_service.analysis.models import SimilarResult
 from minhash_service.signatures.index import AddResult
 from minhash_service.signatures.io import read_signatures
@@ -227,26 +229,42 @@ def test_cluster_samples_labels_samples_sharing_a_signature(data_dir):
         assert newick.count(f"{sample_id}:") == 1
 
 
-def test_cluster_samples_leaves_out_excluded_samples(data_dir):
-    """An excluded sample is skipped without shifting the other labels."""
+@pytest.mark.parametrize(
+    "problem", ["missing", "excluded", "deleting", "duplicate_records", "multiple_sketches"]
+)
+def test_cluster_samples_rejects_incomplete_input(data_dir, problem):
+    """Two valid samples must not produce a tree when a third cannot participate."""
     repo = Mock()
-    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: [
-        SimpleNamespace(
+
+    def records_for_sample(sample_id, kmer_size):
+        invalid = sample_id == "DRR237261"
+        if invalid and problem == "missing":
+            return []
+        record = SimpleNamespace(
             signature_path=data_dir / f"{sample_id}.sig",
-            exclude_from_analysis=sample_id == "DRR237261",
-            marked_for_deletion=False,
+            exclude_from_analysis=invalid and problem == "excluded",
+            marked_for_deletion=invalid and problem == "deleting",
         )
-    ]
+        return [record, record] if invalid and problem == "duplicate_records" else [record]
+
+    repo.get_by_sample_id_or_checksum.side_effect = records_for_sample
+
+    def load_signatures(path, kmer_size):
+        signatures = read_signatures(path, kmer_size=kmer_size)
+        if path.stem == "DRR237261" and problem == "multiple_sketches":
+            return signatures * 2
+        return signatures
 
     with (
         patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
         patch("minhash_service.tasks.handlers.signature_workflow_lock"),
+        patch("minhash_service.tasks.handlers.read_signatures", side_effect=load_signatures),
+        patch("minhash_service.tasks.handlers.cluster_signatures") as cluster,
     ):
-        newick = cluster_samples(["DRR237260", "DRR237261", "DRR237262", "DRR237263"])
+        with pytest.raises(ValueError, match="per selected sample: DRR237261"):
+            cluster_samples(["DRR237260", "DRR237261", "DRR237262"])
 
-    assert "DRR237261" not in newick
-    for sample_id in ("DRR237260", "DRR237262", "DRR237263"):
-        assert newick.count(f"{sample_id}:") == 1
+    cluster.assert_not_called()
 
 
 def test_check_signature_reports_the_signature_checksum(data_dir):
