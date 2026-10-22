@@ -38,7 +38,7 @@ def overview_client(app, user_obj, monkeypatch):
         "sample_id": "sample-1", "sample_name": "Example sample", "lims_id": "lab-123",
         "qc_status": {"status": "passed"}, "tags": [], "comments": [],
         "created_at": "2026-10-15T12:34:56", "mlst_sequence_type": 0,
-        "stx": "stx1a, stx2a", "oh": "O157:H7",
+        "stx": "stx1, stx2", "oh": "O157:H7",
         "groups": [{"id": "group-1", "display_name": "Excluded membership"}],
         "postalignqc_pct_above_x": {"10": "excluded-coverage-value"},
         "quast_n50": 123456789,
@@ -70,7 +70,7 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
     assert re.findall(r'data-column-id="([^"]+)"', table) == OVERVIEW_IDS
     assert table.count('data-visible="true"') == 14
     assert table.count("<td") == 14
-    assert "stx1a, stx2a" in table
+    assert "stx1, stx2" in table
     assert "O157:H7" in table
     assert '<a href="/sample/sample-1">Open</a>' in table
     assert b"Excluded membership" not in response.data
