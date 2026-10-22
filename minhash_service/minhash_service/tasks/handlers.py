@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import logging
 import tempfile
+from collections import Counter
 from functools import wraps
 from pathlib import Path
 from typing import Any, Iterable, cast
@@ -17,7 +18,7 @@ from minhash_service.analysis.models import (AniEstimateOptions, ClusterMethod,
                                              SimilarSampleResult)
 from minhash_service.analysis.similarity import get_similar_signatures
 from minhash_service.core.config import IntegrityReportLevel, cnf
-from minhash_service.core.exceptions import FileRemovalError, SignatureNotFoundError
+from minhash_service.core.exceptions import FileRemovalError
 from minhash_service.core.factories import (create_audit_trail_repo,
                                             create_report_repo,
                                             create_signature_repo)
@@ -500,28 +501,18 @@ def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None
 
 
 def _load_sample_signatures(
-    sample_ids: list[str],
-    kmer_size: int | None = None,
-    *,
-    require_all: bool = False,
-    sample_labels: dict[str, str] | None = None,
+    sample_ids: list[str], kmer_size: int | None = None
 ) -> list[tuple[str, SourmashSignature]]:
-    """Load sample/signature pairs, optionally requiring one usable sketch each.
-
-    Indexing keeps its filtering behavior; clustering must reject partial input.
-    """
+    """Load signatures paired with the sample id they were loaded for."""
     LOG.debug("Load signatures to memory")
     repo = create_signature_repo()
 
     signatures: list[tuple[str, SourmashSignature]] = []
-    problems: list[str] = []
     for sample_id in sample_ids:
-        label = (sample_labels or {}).get(sample_id) or sample_id
         records = repo.get_by_sample_id_or_checksum(sample_id=sample_id, kmer_size=kmer_size)
 
         if not records:
             LOG.error("No signature found for sample_id=%s", sample_id)
-            problems.append(f"{label} (no signature for k-mer size {kmer_size})")
             continue
 
         if len(records) > 1:
@@ -530,47 +521,16 @@ def _load_sample_signatures(
                 sample_id,
                 kmer_size,
             )
-            problems.append(f"{label} (multiple signature records)")
             continue
 
         record = records[0]
 
         if record.exclude_from_analysis or record.marked_for_deletion:
             LOG.info("Skipping excluded signature %s", sample_id)
-            reason = (
-                "marked for deletion"
-                if record.marked_for_deletion
-                else "excluded from analysis"
-            )
-            problems.append(f"{label} ({reason})")
             continue
 
-        try:
-            sigs = read_signatures(record.signature_path, kmer_size=kmer_size)
-        except (OSError, ValueError, SignatureNotFoundError):
-            if not require_all:
-                raise
-            LOG.warning(
-                "Could not read signature for sample_id=%s", sample_id, exc_info=True
-            )
-            problems.append(f"{label} (signature file missing, unreadable, or invalid)")
-            continue
-
-        if require_all and len(sigs) != 1:
-            problems.append(
-                f"{label} (expected exactly one signature for k-mer size {kmer_size})"
-            )
-            continue
-        if require_all and sigs[0].md5sum() != record.signature_checksum:
-            problems.append(f"{label} (signature does not match its record)")
-            continue
+        sigs = read_signatures(record.signature_path, kmer_size=kmer_size)
         signatures.extend((sample_id, sig) for sig in sigs)
-
-    if require_all and problems:
-        raise ValueError(
-            "Cannot cluster samples without a usable MinHash signature: "
-            + "; ".join(problems)
-        )
     return signatures
 
 
@@ -637,20 +597,14 @@ def search_similar(
     return response
 
 
-def cluster_samples(
-    sample_ids: list[str],
-    cluster_method: str = "single",
-    sample_labels: dict[str, str] | None = None,
-) -> str:
+def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their sourmash signatures.
 
     :param sample_ids list[str]: The sample ids to cluster
     :param cluster_method int: The linkage or clustering method to use, default to single
-    :param sample_labels: Optional Lab IDs for user-facing validation errors
 
-    :raises ValueError: If the method is invalid, fewer than two distinct samples
-        are selected, or any selected sample lacks exactly one usable signature.
+    :raises ValueError: raises an exception if the method is not a valid MSTree clustering method.
 
     :return: clustering result in newick format
     :rtype: str
@@ -663,15 +617,18 @@ def cluster_samples(
         LOG.error(msg)
         raise ValueError(msg) from error
 
-    sample_ids = list(dict.fromkeys(sample_ids))
-    if len(sample_ids) < 2:
-        raise ValueError("MinHash clustering requires at least two distinct samples.")
-    loaded = _load_sample_signatures(
-        sample_ids,
-        kmer_size=cnf.kmer_size,
-        require_all=True,
-        sample_labels=sample_labels,
-    )
+    loaded = _load_sample_signatures(sample_ids, kmer_size=cnf.kmer_size)
+    loaded_counts = Counter(sample_id for sample_id, _ in loaded)
+    invalid_ids = [
+        sample_id
+        for sample_id, count in Counter(sample_ids).items()
+        if loaded_counts[sample_id] != count
+    ]
+    if invalid_ids:
+        raise ValueError(
+            "Could not load exactly one MinHash signature per selected sample: "
+            + ", ".join(invalid_ids)
+        )
     leaf_names = [sample_id for sample_id, _ in loaded]
 
     LOG.info("Cluster %d signatures", len(loaded))
@@ -730,8 +687,22 @@ def find_similar_and_cluster(
         LOG.warning("Invalid number of samples found, %d", len(matches))
         return "()"
 
-    sample_ids = [match["sample_id"] for match in matches]
-    return cluster_samples(sample_ids, cluster_method=method.value)
+    # load sequence signatures to memory
+    repo = create_signature_repo()
+    kmer_size = cnf.kmer_size
+    sample_ids: list[str] = []
+    for match in matches:
+        sample_ids.append(match["sample_id"])
+    signatures = _load_signatures_from_sample_id(sample_ids, kmer_size=kmer_size)
+
+    if len(signatures) != len(sample_ids):
+        raise ValueError("Could not load one signature for every similar sample")
+
+    # cluster samples
+    LOG.info("Cluster samples...")
+    tree, _ = cluster_signatures(signatures, method)
+    newick = tree_to_newick(tree, "", tree.dist, sample_ids)
+    return newick
 
 
 def run_data_integrity_check() -> None:

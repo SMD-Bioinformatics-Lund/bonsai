@@ -6,17 +6,14 @@ from unittest.mock import Mock, call, patch
 import pytest
 
 from minhash_service.analysis.models import SimilarResult
-from minhash_service.core.exceptions import SignatureNotFoundError
 from minhash_service.signatures.index import AddResult
 from minhash_service.signatures.io import read_signatures
 from minhash_service.tasks.handlers import (
     _lookup_checksums_from_sample_ids,
-    _load_signatures_from_sample_id,
     _resolve_sample_matches,
     add_to_index,
     check_signature,
     cluster_samples,
-    find_similar_and_cluster,
     remove_signature,
 )
 
@@ -193,9 +190,7 @@ def test_remove_signature_without_a_signature_is_a_no_op():
     index = Mock()
 
     with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
         patch("minhash_service.tasks.handlers.create_index_store", return_value=index),
         patch("minhash_service.tasks.handlers.SignatureStorage"),
         patch("minhash_service.tasks.handlers.create_audit_trail_repo"),
@@ -208,8 +203,7 @@ def test_remove_signature_without_a_signature_is_a_no_op():
     repo.marked_for_deletion.assert_not_called()
 
 
-@pytest.mark.parametrize("repeat_sample", [False, True])
-def test_cluster_samples_labels_samples_sharing_a_signature(data_dir, repeat_sample):
+def test_cluster_samples_labels_samples_sharing_a_signature(data_dir):
     """Samples with an identical sketch each keep their own leaf label."""
     paths = {
         "sample-a": data_dir / "DRR237260.sig",
@@ -220,191 +214,55 @@ def test_cluster_samples_labels_samples_sharing_a_signature(data_dir, repeat_sam
     repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: [
         SimpleNamespace(
             signature_path=paths[sample_id],
-            signature_checksum=read_signatures(paths[sample_id], kmer_size=kmer_size)[
-                0
-            ].md5sum(),
             exclude_from_analysis=False,
             marked_for_deletion=False,
         )
     ]
 
     with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
         patch("minhash_service.tasks.handlers.signature_workflow_lock"),
     ):
-        sample_ids = list(paths) + (["sample-a"] if repeat_sample else [])
-        newick = cluster_samples(sample_ids)
+        newick = cluster_samples(list(paths))
 
     for sample_id in paths:
         assert newick.count(f"{sample_id}:") == 1
 
 
 @pytest.mark.parametrize(
-    "problem,reason",
-    [
-        ("missing", "no signature for k-mer size"),
-        ("duplicate", "multiple signature records"),
-        ("excluded", "excluded from analysis"),
-        ("deleting", "marked for deletion"),
-        ("missing_file", "signature file missing, unreadable, or invalid"),
-        ("invalid_file", "signature file missing, unreadable, or invalid"),
-        ("wrong_kmer", "signature file missing, unreadable, or invalid"),
-        ("empty", "expected exactly one signature"),
-        ("multiple", "expected exactly one signature"),
-        ("checksum", "signature does not match its record"),
-    ],
+    "problem", ["missing", "excluded", "deleting", "duplicate_records", "multiple_sketches"]
 )
-def test_cluster_samples_rejects_incomplete_input(data_dir, problem, reason):
-    """Two valid samples must never produce a partial tree when a third is invalid."""
-    signature = read_signatures(data_dir / "DRR237260.sig", kmer_size=31)[0]
-    good = _record("good", signature.md5sum())
-    bad = _record("bad", signature.md5sum())
-    bad.signature_path = "bad.sig"
-    bad.exclude_from_analysis = problem == "excluded"
-    bad.marked_for_deletion = problem == "deleting"
-    if problem == "checksum":
-        bad.signature_checksum = "wrong-checksum"
+def test_cluster_samples_rejects_incomplete_input(data_dir, problem):
+    """Two valid samples must not produce a tree when a third cannot participate."""
+    repo = Mock()
 
-    def load(path, kmer_size):
-        if path != "bad.sig":
-            return [signature]
-        if problem == "missing_file":
-            raise FileNotFoundError("server/path/bad.sig")
-        if problem == "invalid_file":
-            raise ValueError("invalid signature")
-        if problem == "wrong_kmer":
-            raise SignatureNotFoundError("no matching k-mer size")
-        if problem == "empty":
+    def records_for_sample(sample_id, kmer_size):
+        invalid = sample_id == "DRR237261"
+        if invalid and problem == "missing":
             return []
-        return [signature, signature] if problem == "multiple" else [signature]
+        record = SimpleNamespace(
+            signature_path=data_dir / f"{sample_id}.sig",
+            exclude_from_analysis=invalid and problem == "excluded",
+            marked_for_deletion=invalid and problem == "deleting",
+        )
+        return [record, record] if invalid and problem == "duplicate_records" else [record]
 
-    repo = Mock()
-    records = (
-        [] if problem == "missing" else [bad, bad] if problem == "duplicate" else [bad]
-    )
-    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: (
-        records if sample_id == "bad" else [good]
-    )
+    repo.get_by_sample_id_or_checksum.side_effect = records_for_sample
+
+    def load_signatures(path, kmer_size):
+        signatures = read_signatures(path, kmer_size=kmer_size)
+        if path.stem == "DRR237261" and problem == "multiple_sketches":
+            return signatures * 2
+        return signatures
 
     with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
-        patch("minhash_service.tasks.handlers.read_signatures", side_effect=load),
+        patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo),
+        patch("minhash_service.tasks.handlers.signature_workflow_lock"),
+        patch("minhash_service.tasks.handlers.read_signatures", side_effect=load_signatures),
         patch("minhash_service.tasks.handlers.cluster_signatures") as cluster,
     ):
-        with pytest.raises(ValueError, match="Cannot cluster samples") as error:
-            cluster_samples(
-                ["good-a", "good-b", "bad"], sample_labels={"bad": "LAB-123"}
-            )
-
-    assert f"LAB-123 ({reason}" in str(error.value)
-    assert "server/path" not in str(error.value)
-    cluster.assert_not_called()
-    assert repo.get_by_sample_id_or_checksum.call_args.kwargs == {
-        "sample_id": "bad",
-        "kmer_size": 31,
-    }
-
-
-def test_cluster_samples_reports_all_unavailable_samples():
-    """An error lists every missing sample, falling back to its internal ID."""
-    repo = Mock()
-    repo.get_by_sample_id_or_checksum.return_value = []
-    with patch(
-        "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-    ):
-        with pytest.raises(ValueError) as error:
-            cluster_samples(
-                ["missing-a", "missing-b"], sample_labels={"missing-a": "LAB-A"}
-            )
-
-    assert "LAB-A (no signature" in str(error.value)
-    assert "missing-b (no signature" in str(error.value)
-
-
-def test_cluster_samples_rejects_multiple_sketches_masking_a_missing_sample(data_dir):
-    """Matching total sketch counts cannot hide an omitted sample."""
-    signature = read_signatures(data_dir / "DRR237260.sig", kmer_size=31)[0]
-    repo = Mock()
-    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: (
-        [] if sample_id == "missing" else [_record(sample_id, signature.md5sum())]
-    )
-    with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
-        patch(
-            "minhash_service.tasks.handlers.read_signatures",
-            return_value=[signature, signature],
-        ),
-        patch("minhash_service.tasks.handlers.cluster_signatures") as cluster,
-    ):
-        with pytest.raises(ValueError) as error:
-            cluster_samples(["multiple", "missing"])
-
-    assert "multiple (expected exactly one signature" in str(error.value)
-    assert "missing (no signature" in str(error.value)
-    cluster.assert_not_called()
-
-
-@pytest.mark.parametrize("sample_ids", [[], ["only"], ["only", "only"]])
-def test_cluster_samples_requires_two_distinct_samples(sample_ids):
-    with patch("minhash_service.tasks.handlers.create_signature_repo") as repo:
-        with pytest.raises(ValueError, match="at least two distinct samples"):
-            cluster_samples(sample_ids)
-    repo.assert_not_called()
-
-
-def test_index_signature_loading_still_filters_ineligible_samples(data_dir):
-    """Strict clustering validation does not change the indexing loader."""
-    signature = read_signatures(data_dir / "DRR237260.sig", kmer_size=31)[0]
-    good = _record("good", signature.md5sum())
-    excluded = _record("excluded", signature.md5sum(), excluded=True)
-    repo = Mock()
-    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: {
-        "good": [good],
-        "excluded": [excluded],
-        "missing": [],
-    }[sample_id]
-    with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
-        patch(
-            "minhash_service.tasks.handlers.read_signatures", return_value=[signature]
-        ),
-    ):
-        loaded = _load_signatures_from_sample_id(["good", "excluded", "missing"], 31)
-    assert loaded == [signature]
-
-
-def test_similar_clustering_rejects_a_match_that_became_unavailable(data_dir):
-    """Search filtering does not allow a partial tree if a match disappears later."""
-    signature = read_signatures(data_dir / "DRR237260.sig", kmer_size=31)[0]
-    repo = Mock()
-    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: (
-        [] if sample_id == "gone" else [_record(sample_id, signature.md5sum())]
-    )
-    with (
-        patch(
-            "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-        ),
-        patch(
-            "minhash_service.tasks.handlers.read_signatures", return_value=[signature]
-        ),
-        patch(
-            "minhash_service.tasks.handlers.search_similar",
-            return_value={
-                "matches": [{"sample_id": sid} for sid in ["good-a", "good-b", "gone"]]
-            },
-        ),
-        patch("minhash_service.tasks.handlers.cluster_signatures") as cluster,
-    ):
-        with pytest.raises(ValueError, match="gone .*no signature"):
-            find_similar_and_cluster("good-a")
+        with pytest.raises(ValueError, match="per selected sample: DRR237261"):
+            cluster_samples(["DRR237260", "DRR237261", "DRR237262"])
 
     cluster.assert_not_called()
 
@@ -419,9 +277,7 @@ def test_check_signature_reports_the_signature_checksum(data_dir):
         )
     ]
 
-    with patch(
-        "minhash_service.tasks.handlers.create_signature_repo", return_value=repo
-    ):
+    with patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo):
         result = check_signature("sample-a")
 
     assert result["records"] == [
