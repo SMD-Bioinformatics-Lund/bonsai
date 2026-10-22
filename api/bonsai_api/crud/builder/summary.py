@@ -126,8 +126,8 @@ def compile_summary_pipeline(
             )
             if isinstance(spec, BuilderArgs):
                 pipeline.extend(build_summary_entry_stages(spec))
-                output_field = spec.output_field or spec.source_path
-                drop_after_build.add(output_field)
+                # Keep normalized outputs for projection; drop the raw source.
+                drop_after_build.add(spec.source_path)
             elif isinstance(spec, LookupSpec):
                 # run lookup function
                 pipeline.extend(build_lookup_stage(spec=spec, db=db))

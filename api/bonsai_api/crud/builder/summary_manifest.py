@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import Field
 
 from .types import BuilderArgs, ColumnFull, LookupSpec, Manifest
+from .typing_summary import oh_summary_expression, stx_summary_expression
 
 BuilderSpec = Annotated[BuilderArgs | LookupSpec, Field(discriminator="kind")]
 
@@ -31,15 +32,19 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
         exclude_fields=["emm_like_alleles"],
     ),
     "stx": BuilderArgs(
-        selector={"software": "virulencefinder"}, source_path="typing_result"
+        selector={"software": "virulencefinder", "analysis_type": "stx"},
+        source_path="typing_result",
+        output_field="stx",
     ),
     "o_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "o_type"},
+        selector={"software": "serotypefinder", "analysis_type": "o_type"},
         source_path="typing_result",
+        output_field="o_type",
     ),
     "h_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "h_type"},
+        selector={"software": "serotypefinder", "analysis_type": "h_type"},
         source_path="typing_result",
+        output_field="h_type",
     ),
     "groups": LookupSpec(
         from_collection="sample_group_collection",
@@ -182,7 +187,14 @@ MANIFEST = Manifest(
             label="EMM Cluster",
             path="$emm.emm_cluster",
         ),
-        ColumnFull(id="stx", requires=["stx"], label="STX", path="$stx"),
+        ColumnFull(
+            id="stx", requires=["stx"], label="STX typing",
+            path=stx_summary_expression(), default_visible=True,
+        ),
+        ColumnFull(
+            id="oh", requires=["o_type", "h_type"], label="OH typing",
+            path=oh_summary_expression(), default_visible=True,
+        ),
         ColumnFull(
             id="postalignqc_pct_above_x",
             requires=["postalignqc"],

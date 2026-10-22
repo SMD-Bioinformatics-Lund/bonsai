@@ -13,7 +13,7 @@ from bonsai_app.extensions import login_manager
 OVERVIEW_IDS = [
     "sample_id", "sample_name", "lims_id", "assay", "release_life_cycle",
     "sequencing_run", "bracken_scientific_name", "qc_status", "comments",
-    "tags", "mlst_sequence_type", "stx", "created_at",
+    "tags", "mlst_sequence_type", "stx", "oh", "created_at",
 ]
 
 
@@ -38,6 +38,7 @@ def overview_client(app, user_obj, monkeypatch):
         "sample_id": "sample-1", "sample_name": "Example sample", "lims_id": "lab-123",
         "qc_status": {"status": "passed"}, "tags": [], "comments": [],
         "created_at": "2026-10-15T12:34:56", "mlst_sequence_type": 0,
+        "stx": "stx1a, stx2a", "oh": "O157:H7",
         "groups": [{"id": "group-1", "display_name": "Excluded membership"}],
         "postalignqc_pct_above_x": {"10": "excluded-coverage-value"},
         "quast_n50": 123456789,
@@ -67,8 +68,10 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
     api.get_sample_summaries.assert_not_called()
     table = sample_table_html(response)
     assert re.findall(r'data-column-id="([^"]+)"', table) == OVERVIEW_IDS
-    assert table.count('data-visible="true"') == 13
-    assert table.count("<td") == 13
+    assert table.count('data-visible="true"') == 14
+    assert table.count("<td") == 14
+    assert "stx1a, stx2a" in table
+    assert "O157:H7" in table
     assert '<a href="/sample/sample-1">Open</a>' in table
     assert b"Excluded membership" not in response.data
     assert b"excluded-coverage-value" not in response.data
@@ -88,9 +91,9 @@ def test_overview_keeps_all_samples_and_existing_cell_formatting(overview_client
     assert len(rows) == 5000
     assert rows[-1][0] == "sample-4999"
     cells = re.findall(r'<td\b([^>]*)>(.*?)</td>', rows[0][1], re.DOTALL)
-    assert len(cells) == 13
+    assert len(cells) == 14
     assert cells[10][1].strip() == "0"
-    assert 'data-order="2026-10-15T12:34:56"' in cells[12][0]
+    assert 'data-order="2026-10-15T12:34:56"' in cells[13][0]
     assert b"&lt;script&gt;unsafe&lt;/script&gt;" in result.data
     assert b"<script>unsafe</script>" not in result.data
 
