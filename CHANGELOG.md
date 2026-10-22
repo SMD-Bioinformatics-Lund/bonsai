@@ -25,8 +25,7 @@
 
 ### Fixed
 
-- Restore STX typing in overview and group tables as a sorted list of distinct reported gene symbols, supporting both multi-hit and previously imported single-gene results. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Restore OH typing in overview and group tables using the current analysis fields, including samples with only an O or H prediction. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Restore STX and OH typing in overview and group tables. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
 - Limit the all-samples overview to 13 metadata and prediction columns and request only those fields from the API, avoiding hidden QC metrics and group-membership lookups. Detailed QC metrics remain available in the group QC view. [#557](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/557)
