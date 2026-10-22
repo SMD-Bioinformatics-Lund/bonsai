@@ -4,8 +4,7 @@ from typing import Any
 
 
 def stx_summary_expression() -> dict[str, Any]:
-    """List distinct reported symbols without dropping any supporting hits."""
-    # Insert each symbol in order; $sortArray requires MongoDB 5.2 or later.
+    """List distinct reported symbols in stored hit order."""
     symbols = {
         "$reduce": {
             "input": {
@@ -31,75 +30,30 @@ def stx_summary_expression() -> dict[str, Any]:
                         ]
                     },
                     "$$value",
-                    {
-                        "$concatArrays": [
-                            {
-                                "$filter": {
-                                    "input": "$$value",
-                                    "as": "symbol",
-                                    "cond": {"$lt": ["$$symbol", "$$this"]},
-                                }
-                            },
-                            ["$$this"],
-                            {
-                                "$filter": {
-                                    "input": "$$value",
-                                    "as": "symbol",
-                                    "cond": {"$gt": ["$$symbol", "$$this"]},
-                                }
-                            },
-                        ]
-                    },
-                ]
-            },
-        }
-    }
-    joined = {
-        "$reduce": {
-            "input": symbols,
-            "initialValue": "",
-            "in": {
-                "$concat": [
-                    "$$value",
-                    {"$cond": [{"$eq": ["$$value", ""]}, "", ", "]},
-                    "$$this",
+                    {"$concatArrays": ["$$value", ["$$this"]]},
                 ]
             },
         }
     }
     return {
-        "$let": {
-            "vars": {"text": joined},
-            "in": {"$cond": [{"$eq": ["$$text", ""]}, "-", "$$text"]},
+        "$reduce": {
+            "input": symbols,
+            "initialValue": "-",
+            "in": {
+                "$cond": [
+                    {"$eq": ["$$value", "-"]},
+                    "$$this",
+                    {"$concat": ["$$value", ", ", "$$this"]},
+                ]
+            },
         }
     }
 
 
 def oh_summary_expression() -> dict[str, Any]:
-    """Combine the O and H predictions, preserving partially typed samples."""
-    return {
-        "$let": {
-            "vars": {
-                "o": {"$ifNull": ["$o_type.sequence_name", ""]},
-                "h": {"$ifNull": ["$h_type.sequence_name", ""]},
-            },
-            "in": {
-                "$cond": [
-                    {
-                        "$and": [
-                            {"$in": ["$$o", ["", "-"]]},
-                            {"$in": ["$$h", ["", "-"]]},
-                        ]
-                    },
-                    "-",
-                    {
-                        "$concat": [
-                            {"$cond": [{"$eq": ["$$o", ""]}, "-", "$$o"]},
-                            ":",
-                            {"$cond": [{"$eq": ["$$h", ""]}, "-", "$$h"]},
-                        ]
-                    },
-                ]
-            },
-        }
-    }
+    """Join O and H predictions, using '-' for each missing component."""
+    parts = []
+    for field in ("o_type", "h_type"):
+        path = f"${field}.sequence_name"
+        parts.append({"$cond": [{"$eq": [{"$ifNull": [path, ""]}, ""]}, "-", path]})
+    return {"$concat": [parts[0], ":", parts[1]]}

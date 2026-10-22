@@ -6,7 +6,7 @@ from bonsai_app.blueprints.groups.controller import format_tablular_data
 from bonsai_app.summary_columns import has_value
 
 
-@pytest.mark.parametrize("value", [None, "", "  ", "-", [], {}, {"x": None}, [""]])
+@pytest.mark.parametrize("value", [None, "", "  ", "-", "-:-", [], {}, {"x": None}, [""]])
 def test_empty_values_are_not_relevant(value):
     assert not has_value(value)
 
