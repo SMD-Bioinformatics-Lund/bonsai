@@ -34,7 +34,7 @@ from bonsai_libs.parse.models.enums import AnalysisType, ResultStatus
                             element_type="VIRULENCE",
                             element_subtype="VIRULENCE",
                         )
-                        for symbol in ["stx2a", "stx1a", "stx2a"]
+                        for symbol in ["stx2a", "stx1a", "stx2c-O157-FLY16"]
                     ]
                 )
             },
@@ -105,7 +105,7 @@ def test_ingestion_keeps_sdk_results_through_storage_and_model_roundtrip(
             loaded = AnalysisViewEntryOut.model_validate(item)
             serialized = loaded.model_dump(exclude_none=True)["result"]
             assert serialized == expected["stx"]
-            assert serialized["gene_symbol"] == "stx2a, stx1a"
+            assert serialized["gene_symbol"] == "stx2, stx1"
             assert len(serialized["hits"]) == 3
     canonical = create.await_args.kwargs["doc"]["envelopes"]
     assert {key: value.get("value") for key, value in canonical.items()} == expected

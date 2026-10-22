@@ -113,9 +113,9 @@ CASES = [
         {"stx": "stx1a", "oh": "-:-"},
     ),
     case(
-        "multiple types preserve order and deduplicate alleles",
+        "multiple types preserve order and deduplicate subtypes across databases",
         [MULTI_HIT],
-        {"stx": "stx2a, stx1a, stx2c-O157-FLY16", "oh": "-:-"},
+        {"stx": "stx2, stx1", "oh": "-:-"},
     ),
     case(
         "O only",
@@ -144,7 +144,7 @@ CASES = [
         "combined summaries",
         TYPING_ENTRIES,
         {
-            "stx": "stx2a, stx1a, stx2c-O157-FLY16",
+            "stx": "stx2, stx1",
             "oh": "O157:H7",
             "mlst_sequence_type": 11,
         },
@@ -153,7 +153,7 @@ CASES = [
     case(
         "STX subset",
         TYPING_ENTRIES,
-        {"stx": "stx2a, stx1a, stx2c-O157-FLY16"},
+        {"stx": "stx2, stx1"},
         ["sample_id", "stx"],
     ),
     case("OH subset", TYPING_ENTRIES, {"oh": "O157:H7"}, ["sample_id", "oh"]),
