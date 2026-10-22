@@ -51,18 +51,6 @@ checks. Exit codes are ``0`` for no issues, ``1`` for potential problems, and
 report reflects data observed during the scan; uploads or deletions in progress
 may warrant a repeat check after they finish.
 
-Future deep validation
-~~~~~~~~~~~~~~~~~~~~~~
-
-``--deep`` is not implemented in this iteration. A future option could run
-format-aware checks where each artifact is stored: alignment structural
-validation followed by indexed region queries to check alignment/index
-compatibility, SKA parsing and header checks, and MinHash signature parsing
-and checksum comparison against stored metadata. It should use separate
-execution limits, preserve the normal report structure, and distinguish
-corruption from unavailable validation tools or incomplete checks. Full
-alignment decoding may be needed beyond a quick structural check.
-
 Create users
 ------------
 
