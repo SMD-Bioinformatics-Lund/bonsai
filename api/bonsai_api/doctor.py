@@ -2,9 +2,7 @@
 
 import asyncio
 from collections import defaultdict
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
 
 from pydantic import BaseModel, Field
 from redis import Redis
@@ -14,9 +12,6 @@ from .config import settings
 from .db.utils import get_db_connection
 from .exceptions import GenomeResourceError
 from .io import to_relative_resource
-
-FileType = Literal["alignment", "ska", "minhash"]
-FILE_TYPES = ("alignment", "ska", "minhash")
 
 
 class Finding(BaseModel):
@@ -34,7 +29,6 @@ class Finding(BaseModel):
 class DoctorReport(BaseModel):
     """Keep detected problems separate from checks that could not complete."""
 
-    checked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     checked_samples: int = 0
     findings: list[Finding] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
@@ -144,30 +138,11 @@ async def check_worker(queue_name: str, samples: list[dict], timeout: int) -> di
         connection.close()
 
 
-async def run_check(
-    *,
-    assays: tuple[str, ...] = (),
-    sample_ids: tuple[str, ...] = (),
-    file_types: tuple[FileType, ...] = (),
-    timeout: int = 60,
-) -> DoctorReport:
-    """Scan projected raw records without pagination or full-model hydration."""
+async def run_check() -> DoctorReport:
+    """Check every sample without pagination or full-model hydration."""
     report = DoctorReport()
     selected = {}
     batches = defaultdict(list)
-    matched_ids = set()
-    query = {}
-    if assays:
-        query["pipeline_runs.assay"] = {"$in": list(assays)}
-    if sample_ids:
-        query["$or"] = [
-            {field: {"$in": list(sample_ids)}}
-            for field in (
-                "sample_id",
-                "external_sample_id",
-                "lims_id",
-            )
-        ]
     projection = {
         field: 1
         for field in (
@@ -184,10 +159,8 @@ async def run_check(
         )
     }
     async with get_db_connection() as db:
-        async for sample in db.sample_collection.find(query, projection):
+        async for sample in db.sample_collection.find({}, projection):
             assay = current_assay(sample)
-            if assays and assay not in assays:
-                continue
             report.checked_samples += 1
             sid = sample.get("sample_id") or str(sample["_id"])
             context = {
@@ -197,26 +170,13 @@ async def run_check(
                 "assay": assay,
             }
             selected[sid] = context
-            matched_ids.update(
-                sample.get(field)
-                for field in (
-                    "sample_id",
-                    "external_sample_id",
-                    "lims_id",
-                )
+            report.findings.extend(
+                Finding(**context, **issue) for issue in check_alignment(sample)
             )
-            required = settings.doctor_assay_requirements.get(assay, list(FILE_TYPES))
-            checks = set(required) & set(file_types or FILE_TYPES)
-            if "alignment" in checks:
-                report.findings.extend(
-                    Finding(**context, **issue) for issue in check_alignment(sample)
-                )
             for file_type, field in (
                 ("ska", "ska_index"),
                 ("minhash", "genome_signature"),
             ):
-                if file_type not in checks:
-                    continue
                 if not sample.get(field):
                     report.findings.append(
                         Finding(
@@ -241,14 +201,8 @@ async def run_check(
                             == "failed",
                         }
                     )
-    for missing in sorted(set(sample_ids) - matched_ids):
-        report.errors.append(
-            f"Requested sample {missing!r} did not match the selection"
-        )
-    if assays and not report.checked_samples:
-        report.errors.append("No samples matched the requested assay selection")
     results = await asyncio.gather(
-        *(check_worker(name, samples, timeout) for name, samples in batches.items())
+        *(check_worker(name, samples, timeout=60) for name, samples in batches.items())
     )
     for result in results:
         report.errors.extend(result["errors"])

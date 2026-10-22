@@ -1,7 +1,6 @@
-"""Doctor must not report a clean result after partial or filtered checks."""
+"""Doctor checks all samples and never reports a partial check as clean."""
 
 import importlib
-import json
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -25,7 +24,9 @@ def database(monkeypatch):
         yield SimpleNamespace(sample_collection=collection)
 
     monkeypatch.setattr(doctor, "get_db_connection", connect)
-    monkeypatch.setattr(doctor.settings, "doctor_assay_requirements", {})
+    monkeypatch.setattr(
+        doctor, "check_worker", AsyncMock(return_value={"findings": [], "errors": []})
+    )
     return collection
 
 
@@ -45,37 +46,26 @@ def sample(sid, assay="wgs"):
 @pytest.mark.asyncio
 async def test_all_records_are_checked_without_pagination(database):
     await database.insert_many([sample(str(i)) for i in range(125)])
-    report = await doctor.run_check(file_types=("alignment",))
+    report = await doctor.run_check()
     assert report.checked_samples == report.affected_samples == 125
     assert report.exit_code == 1
     assert await database.count_documents({}) == 125
 
 
 @pytest.mark.asyncio
-async def test_current_assay_and_sample_filters_intersect(database):
+async def test_all_assays_and_samples_are_checked(database):
     await database.insert_many([sample("one"), sample("two", "other")])
-    report = await doctor.run_check(
-        assays=("wgs",), sample_ids=("lab-one",), file_types=("ska",)
-    )
-    assert report.checked_samples == 1
-    assert [f.sample_id for f in report.findings] == ["one"]
-    historical = await doctor.run_check(
-        assays=("old-assay",), file_types=("alignment",)
-    )
-    assert historical.checked_samples == 0
-    assert historical.exit_code == 2
-
-
-@pytest.mark.asyncio
-async def test_assay_requirements_and_missing_requested_samples(database, monkeypatch):
-    await database.insert_one(sample("one", "amplicon"))
-    monkeypatch.setattr(
-        doctor.settings, "doctor_assay_requirements", {"amplicon": ["alignment"]}
-    )
-    report = await doctor.run_check(sample_ids=("one", "absent"))
-    assert [f.file_type for f in report.findings] == ["alignment"]
-    assert "absent" in report.errors[0]
-    assert report.exit_code == 2
+    report = await doctor.run_check()
+    assert report.checked_samples == 2
+    assert {f.sample_id for f in report.findings} == {"one", "two"}
+    assert {f.assay for f in report.findings} == {"wgs", "other"}
+    for sid in ("one", "two"):
+        assert {f.file_type for f in report.findings if f.sample_id == sid} == {
+            "alignment",
+            "ska",
+            "minhash",
+        }
+    assert report.exit_code == 1
 
 
 def test_alignment_uses_current_resources_and_checks_index(tmp_path, monkeypatch):
@@ -132,10 +122,11 @@ async def test_worker_findings_keep_sample_labels_and_assay(database, monkeypatc
             }
         ),
     )
-    report = await doctor.run_check(file_types=("ska",))
+    report = await doctor.run_check()
     assert report.exit_code == 1
-    assert report.findings[0].external_sample_id == "lab-one"
-    assert report.findings[0].assay == "wgs"
+    finding = next(f for f in report.findings if f.file_type == "ska")
+    assert finding.external_sample_id == "lab-one"
+    assert finding.assay == "wgs"
 
 
 @pytest.mark.asyncio
@@ -163,12 +154,14 @@ async def test_worker_failure_and_timeout_are_incomplete(monkeypatch, status):
 
 @pytest.mark.parametrize(
     "errors,findings,expected",
-    [([], [], 0), ([], [True], 1), (["unavailable"], [True], 2)],
+    [
+        ([], [], 0),
+        ([], [True], 1),
+        (["unavailable"], [True], 2),
+        (["unavailable"], [], 2),
+    ],
 )
-@pytest.mark.parametrize("group_by", ["sample", "file-type"])
-def test_json_grouping_and_exit_status(
-    monkeypatch, errors, findings, expected, group_by
-):
+def test_report_and_exit_status(monkeypatch, errors, findings, expected):
     report = doctor.DoctorReport(
         checked_samples=1,
         errors=errors,
@@ -181,36 +174,27 @@ def test_json_grouping_and_exit_status(
     )
     check = AsyncMock(return_value=report)
     monkeypatch.setattr(doctor_cli, "run_check", check)
-    result = CliRunner().invoke(
-        cli,
-        [
-            "doctor",
-            "check",
-            "--assay",
-            "wgs",
-            "--assay",
-            "other",
-            "--format",
-            "json",
-            "--group-by",
-            group_by,
-        ],
-    )
+    result = CliRunner().invoke(cli, ["doctor"])
     assert result.exit_code == expected, result.output
-    payload = json.loads(result.output)
-    assert payload["affected_samples"] == len(findings)
-    assert set(payload["groups"]) == (
-        {"one" if group_by == "sample" else "ska"} if findings else set()
-    )
-    assert check.await_args.kwargs["assays"] == ("wgs", "other")
+    check.assert_awaited_once_with()
+    if expected == 0:
+        assert result.output == "No issues found\n"
+    else:
+        assert "No issues found" not in result.output
+        if findings:
+            assert "sample=one" in result.output
+            assert "ska: Missing" in result.output
+        if errors:
+            assert "Check incomplete: unavailable" in result.output
 
 
-def test_database_failure_produces_a_json_report(monkeypatch):
+def test_database_failure_is_reported(monkeypatch):
     monkeypatch.setattr(
         doctor_cli,
         "run_check",
         AsyncMock(side_effect=RuntimeError("database unavailable")),
     )
-    result = CliRunner().invoke(cli, ["doctor", "check", "--format", "json"])
+    result = CliRunner().invoke(cli, ["doctor"])
     assert result.exit_code == 2
-    assert "database unavailable" in json.loads(result.output)["errors"][0]
+    assert "database unavailable" in result.output
+    assert "No issues found" not in result.output
