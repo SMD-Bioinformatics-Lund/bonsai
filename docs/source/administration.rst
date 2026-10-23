@@ -22,6 +22,51 @@ Bonsai, execute the CLI commands in the container.
    # normal command
    $ bonsai_api index
 
+Check sample integrity
+----------------------
+
+Run ``doctor`` in the API container to check all samples for potentially missing
+alignment and index data:
+
+.. code-block:: bash
+
+   docker compose exec api bonsai-api doctor --output /tmp/doctor.tsv
+   docker compose cp api:/tmp/doctor.tsv ./doctor.tsv
+
+The required ``--output PATH`` (or ``-o PATH``) writes a tab-separated table.
+In a container, this path is inside the container; use a writable mounted
+directory or copy the report out as shown above. The table has one row per
+finding, with sample IDs, Lab/LIMS IDs, assay, file type, reason, and path.
+Its ``status`` column distinguishes potential issues from incomplete checks;
+incomplete checks without a sample have empty sample columns. Clean reports
+contain only the column headers.
+
+The terminal shows the number of samples checked, samples with potential
+issues, findings by file type, and incomplete checks. If all checks complete
+without findings, it also prints ``No issues found``. All assays require
+alignment files and their indexes, SKA indexes, and MinHash signatures.
+The command checks every sample without
+pagination and does not change sample records, files, or analysis indexes.
+
+Progress is printed to stderr while scanning samples and waiting for workers.
+The scan reports its sample count every 100 samples or five seconds. Worker
+status updates appear when their state changes and every five seconds while
+waiting. Summary statistics go to stdout; the detailed rows go to the specified
+output file.
+
+Alignment paths use the same rules as IGV under ``annotations_dir``, including
+symlinks. Files must be present, readable, and nonempty. SKA and MinHash checks
+run on their respective workers, where the files are mounted; both workers
+must be running the doctor-capable version. MinHash checks inspect search-index
+membership as well as metadata flags and account for intentional QC exclusions
+and shared signatures.
+
+Unavailable services, worker failures, and timeouts are reported as incomplete
+checks. Exit codes are ``0`` for no issues, ``1`` for potential problems, and
+``2`` for incomplete checks. Each worker batch has a 60-second timeout. The
+report reflects data observed during the scan; uploads or deletions in progress
+may warrant a repeat check after they finish.
+
 Create users
 ------------
 
