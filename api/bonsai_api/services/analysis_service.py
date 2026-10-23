@@ -123,7 +123,6 @@ async def ingest_analysis_service(
     file: UploadFile,
     coverage_file: UploadFile | None = None,
     bedcov_file: UploadFile | None = None,
-    hits_file: UploadFile | None = None,
     force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
@@ -147,12 +146,6 @@ async def ingest_analysis_service(
         binary_stream = file.file  # SpooledTemporaryFile object
         text_stream = io.TextIOWrapper(binary_stream, encoding="utf-8")
         auxiliary_files: dict[str, Any] = {}
-        if hits_file is not None:
-            if software != "shigatyper":
-                raise InvalidDataFormat("hits_file is only supported for ShigaTyper")
-            auxiliary_files["hits_path"] = io.TextIOWrapper(
-                hits_file.file, encoding="utf-8"
-            )
         if coverage_file is not None:
             auxiliary_files["coverage_path"] = io.TextIOWrapper(
                 coverage_file.file, encoding="utf-8"

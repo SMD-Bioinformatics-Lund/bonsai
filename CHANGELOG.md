@@ -2,7 +2,6 @@
 
 ### Added
 
-- Accept an optional ShigaTyper companion hits TSV through the analysis upload endpoint and preserve its marker names and read counts. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
@@ -26,7 +25,7 @@
 
 ### Fixed
 
-- Display ShigaTyper predictions, ipaB results, notes, and supporting hits on sample pages while retaining the legacy ShigaPass card. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Display ShigaTyper predictions, ipaB results, and notes on sample pages while retaining the legacy ShigaPass card. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Reject MinHash clustering if any selected sample cannot load exactly one signature, instead of returning a partial tree. [#575](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/575)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)

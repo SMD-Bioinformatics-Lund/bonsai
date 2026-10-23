@@ -36,24 +36,22 @@ def render_card(software, result):
 
 
 @pytest.mark.parametrize("typed", [False, True])
-def test_shigatyper_card_shows_prediction_markers_and_notes(typed):
+def test_shigatyper_card_shows_prediction_ipab_and_notes(typed):
     result = {
         "prediction": "Shigella dysenteriae serotype 3",
         "ipaB": "-",
         "notes": "<script>marker absent</script>",
-        "hits": [{"name": "ipaH_c", "n_reads": 331}],
     }
     if typed:
         result = hydrate_result(software="shigatyper", analysis_type="shigatype", result=result)
     card = render_card("shigatyper", result)
     assert "Shigella dysenteriae serotype 3" in card.get_text()
     assert "ipaB: -" in " ".join(card.get_text().split())
-    assert [cell.get_text() for cell in card.select("tbody td")] == ["ipaH_c", "331"]
     assert "<script>marker absent</script>" in card.get_text()
     assert card.find("script") is None
 
 
-def test_shigatyper_card_without_companion_or_optional_values():
+def test_shigatyper_card_without_optional_values():
     card = render_card(
         "shigatyper",
         {
