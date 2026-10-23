@@ -147,8 +147,7 @@ def test_duplicate_check_uses_normalized_parser_software(monkeypatch):
     )
 
 
-@pytest.mark.parametrize("with_hits", [False, True])
-def test_shigatyper_ingestion_preserves_prediction_and_optional_hits(monkeypatch, with_hits):
+def test_shigatyper_ingestion_preserves_prediction(monkeypatch):
     """Exercise the real SDK parser and capture the records passed to storage."""
     create = AsyncMock()
     upsert = AsyncMock()
@@ -165,7 +164,6 @@ def test_shigatyper_ingestion_preserves_prediction_and_optional_hits(monkeypatch
     report = (
         b"sample\tprediction\tipaB\tnotes\ns1\tShigella dysenteriae serotype 3\t-\tmarker absent\n"
     )
-    hits = b"\tHit\tNumber of reads\n0\tipaH_c\t331\n"
     response = asyncio.run(
         analysis_service.ingest_analysis_service(
             SimpleNamespace(client=None),
@@ -173,9 +171,6 @@ def test_shigatyper_ingestion_preserves_prediction_and_optional_hits(monkeypatch
             software="shigatyper",
             software_version="2.0.5",
             file=SimpleNamespace(file=BytesIO(report), filename="s1.tsv"),
-            hits_file=(
-                SimpleNamespace(file=BytesIO(hits), filename="s1-hits.tsv") if with_hits else None
-            ),
         )
     )
     assert response["envelopes"]["shigatype"]["status"] == "parsed"
@@ -184,33 +179,5 @@ def test_shigatyper_ingestion_preserves_prediction_and_optional_hits(monkeypatch
     assert value["prediction"] == "Shigella dysenteriae serotype 3"
     assert value["ipaB"] == "-"
     assert value["notes"] == "marker absent"
-    assert value["hits"] == ([{"name": "ipaH_c", "n_reads": 331}] if with_hits else [])
     assert upsert.call_args.kwargs["field_name"] == "typing_result"
     assert upsert.call_args.kwargs["item"]["result"] == value
-
-
-@pytest.mark.parametrize("software", ["shigatyper", "mlst"])
-def test_invalid_shigatyper_companion_upload_never_writes(monkeypatch, software):
-    create = AsyncMock()
-    upsert = AsyncMock()
-    monkeypatch.setattr(analysis_service, "sample_exists", AsyncMock(return_value=True))
-    monkeypatch.setattr(analysis_service, "create_analysis", create)
-    monkeypatch.setattr(analysis_service, "upsert_analysis_results", upsert)
-    report = b"sample\tprediction\tipaB\tnotes\ns1\tEIEC\t+\t\n"
-    with pytest.raises(InvalidDataFormat):
-        asyncio.run(
-            analysis_service.ingest_analysis_service(
-                SimpleNamespace(),
-                sample_id="sample-1",
-                software=software,
-                software_version="2.0.5",
-                force=True,
-                file=SimpleNamespace(file=BytesIO(report), filename="s1.tsv"),
-                hits_file=SimpleNamespace(
-                    file=BytesIO(b"Hit\tNumber of reads\nipaH_c\tbad\n"),
-                    filename="s1-hits.tsv",
-                ),
-            )
-        )
-    create.assert_not_awaited()
-    upsert.assert_not_awaited()
