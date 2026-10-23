@@ -31,15 +31,19 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
         exclude_fields=["emm_like_alleles"],
     ),
     "stx": BuilderArgs(
-        selector={"software": "virulencefinder"}, source_path="typing_result"
+        selector={"software": "virulencefinder", "analysis_type": "stx"},
+        source_path="typing_result",
+        label_field="analysis_type",
     ),
     "o_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "o_type"},
+        selector={"software": "serotypefinder", "analysis_type": "o_type"},
         source_path="typing_result",
+        label_field="analysis_type",
     ),
     "h_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "h_type"},
+        selector={"software": "serotypefinder", "analysis_type": "h_type"},
         source_path="typing_result",
+        label_field="analysis_type",
     ),
     "groups": LookupSpec(
         from_collection="sample_group_collection",
@@ -182,7 +186,24 @@ MANIFEST = Manifest(
             label="EMM Cluster",
             path="$emm.emm_cluster",
         ),
-        ColumnFull(id="stx", requires=["stx"], label="STX", path="$stx"),
+        ColumnFull(
+            id="stx", requires=["stx"], label="STX typing",
+            path={"$ifNull": ["$stx.gene_symbol", "-"]}, default_visible=True,
+        ),
+        ColumnFull(
+            id="oh", requires=["o_type", "h_type"], label="OH typing",
+            path={"$concat": [
+                {"$cond": [
+                    {"$eq": [{"$ifNull": ["$o_type.sequence_name", ""]}, ""]},
+                    "-", "$o_type.sequence_name",
+                ]},
+                ":",
+                {"$cond": [
+                    {"$eq": [{"$ifNull": ["$h_type.sequence_name", ""]}, ""]},
+                    "-", "$h_type.sequence_name",
+                ]},
+            ]}, default_visible=True,
+        ),
         ColumnFull(
             id="postalignqc_pct_above_x",
             requires=["postalignqc"],

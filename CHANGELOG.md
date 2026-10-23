@@ -27,6 +27,7 @@
 
 ### Fixed
 
+- Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field to show distinct `stx1` and `stx2` types, stripping subtype suffixes and deduplicating hits across databases while preserving all hit details. Read the parser's single selected O and H labels directly. Re-import existing STX records to persist the updated display field. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
 - Reject MinHash clustering if any selected sample cannot load exactly one signature, instead of returning a partial tree. [#575](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/575)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
