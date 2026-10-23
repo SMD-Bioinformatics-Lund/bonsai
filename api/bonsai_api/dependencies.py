@@ -3,8 +3,8 @@
 import logging
 from typing import Annotated, Generator
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import Actor, SourceType
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import Actor, SourceType
 from bonsai_api.config import settings
 from bonsai_api.crud.user import get_user_by_token
 from bonsai_api.db import Database

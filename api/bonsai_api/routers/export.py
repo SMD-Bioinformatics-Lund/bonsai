@@ -7,7 +7,11 @@ from bonsai_api.services.sample_service import get_sample_service
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_current_active_user, get_database
 from bonsai_api.lims_export.config import InvalidFormatError, load_export_config
-from bonsai_api.lims_export.export import lims_rs_formatter, serialize_lims_results
+from bonsai_api.lims_export.export import (
+    RequiredAnalysisMissingError,
+    lims_rs_formatter,
+    serialize_lims_results,
+)
 from bonsai_api.lims_export.models import AssayConfig
 from bonsai_api.models.user import UserOutputDatabase
 from fastapi import APIRouter, Depends, HTTPException, Security, status
@@ -102,7 +106,13 @@ async def export_to_lims(
             detail=f"Export not supported for assay '{assay}'",
         )
     # Convert sample info to LIMS format
-    lims_data = lims_rs_formatter(sample_obj, conf)
+    try:
+        lims_data = lims_rs_formatter(sample_obj, conf)
+    except RequiredAnalysisMissingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
 
     # 3. Serialize output data to correct media type
     if fmt == "tsv":

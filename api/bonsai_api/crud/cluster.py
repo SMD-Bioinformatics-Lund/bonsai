@@ -1,16 +1,28 @@
 """Cluster related CRUD operations."""
 
 import logging
-from typing import Any, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
-from prp.parse.parsers.chewbacca import replace_cgmlst_errors
+from bonsai_api.redis.models import SkaIndexInput
 
 LOG = logging.getLogger(__name__)
+
+
+def get_sample_label(sample: Mapping[str, Any] | None, sample_id: str) -> str:
+    """Return the Lab ID when available, falling back to the internal ID."""
+    if sample and isinstance(sample.get("external_sample_id"), str):
+        external_sample_id = sample["external_sample_id"]
+        if external_sample_id:
+            return external_sample_id
+    return sample_id
 
 
 class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
@@ -67,12 +79,24 @@ async def get_typing_profiles(
     pipeline.append({"$match": {"sample_id": {"$in": sample_idx}}})
     pipeline.extend(build_summary_entry_stages(spec))
     pipeline.append({"$addFields": {"typing_result": "$typing_result.alleles"}})
-    pipeline.append({"$project": {"_id": 0, "sample_id": 1, "typing_result": 1}})
+    # The external ID is projected only for user-facing validation errors.
+    pipeline.append(
+        {
+            "$project": {
+                "_id": 0,
+                "sample_id": 1,
+                "external_sample_id": 1,
+                "typing_result": 1,
+            }
+        }
+    )
 
     # Query database
     results: list[TypingProfileAggregate] = []
+    sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
+        sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
         results.append(
             TypingProfileAggregate(
@@ -86,13 +110,18 @@ async def get_typing_profiles(
             )
         )
 
-    # Missing samples check (same semantics as before)
-    found_ids = {s.sample_id for s in results}
+    # Reject missing samples and samples for which the requested typing result
+    # was not found. The aggregation emits an empty profile for the latter.
+    found_ids = {sample.sample_id for sample in results if sample.typing_result}
     missing = set(sample_idx) - found_ids
     if missing:
-        sample_ids = ", ".join(sorted(missing))
+        missing_labels = ", ".join(
+            sorted(sample_labels.get(sample_id, sample_id) for sample_id in missing)
+        )
+        profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
-            f'The samples "{sample_ids}" didnt have {typing_method} typing result.'
+            f"No {profile_name} typing profile is available for the following samples: "
+            f"{missing_labels}"
         )
     return results
 
@@ -118,18 +147,44 @@ async def get_signature_path_for_samples(
 
 async def get_ska_index_path_for_samples(
     db: Database, sample_ids: Sequence[str]
-) -> Sequence[str]:
-    """Get genome signature paths for a samples stored in the database."""
+) -> list[SkaIndexInput]:
+    """Get SKA indexes for samples, rejecting samples without an index."""
     LOG.info("Get ska indexes for samples")
-    query = {
-        "$and": [  # query for documents with
-            {"sample_id": {"$in": sample_ids}},  # matching sample ids
-            {"ska_index": {"$ne": None}},  # AND genome_signatures not null
-        ]
+    query = {"sample_id": {"$in": sample_ids}}
+    projection = {
+        "_id": 0,
+        "sample_id": 1,
+        "external_sample_id": 1,
+        "ska_index": 1,
     }
-    projection = {"_id": 0, "sample_id": 1, "ska_index": 1}
     LOG.debug("Query: %s; projection: %s", query, projection)
     cursor = db.sample_collection.find(query, projection)
     results = await cursor.to_list(None)
     LOG.debug("Found %d ska indexes", len(results))
-    return results
+
+    samples_by_id = {sample["sample_id"]: sample for sample in results}
+    missing_ids = [
+        sample_id
+        for sample_id in sample_ids
+        if not samples_by_id.get(sample_id, {}).get("ska_index")
+    ]
+    if missing_ids:
+        sample_labels = ", ".join(
+            sorted(
+                get_sample_label(samples_by_id.get(sample_id), sample_id)
+                for sample_id in missing_ids
+            )
+        )
+        raise EntryNotFound(
+            "No SKA index is available for the following samples: "
+            f"{sample_labels}"
+        )
+
+    return [
+        SkaIndexInput(
+            sample_id=sample_id,
+            external_sample_id=get_sample_label(samples_by_id[sample_id], sample_id),
+            ska_index=samples_by_id[sample_id]["ska_index"],
+        )
+        for sample_id in sample_ids
+    ]

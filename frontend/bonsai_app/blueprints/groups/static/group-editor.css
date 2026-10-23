@@ -1,0 +1,34 @@
+group-editor {
+  display: block;
+}
+
+group-editor .group-editor-card {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+group-editor .ge-input {
+  max-width: 420px;
+}
+
+column-selector .ge-columns-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+group-editor .drag-handle {
+  cursor: grab;
+}
+
+group-editor .drag-handle:active {
+  cursor: grabbing;
+}
+
+group-editor .ge-column-item.is-disabled {
+  opacity: 0.5;
+}
+
+group-editor .ge-column-item.is-disabled .drag-handle {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

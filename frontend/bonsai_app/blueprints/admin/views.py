@@ -1,10 +1,6 @@
 """Declaration of flask admin views"""
 
-from bonsai_app.bonsai import TokenObject
-from bonsai_app.bonsai import create_user as create_new_user
-from bonsai_app.bonsai import delete_user as delete_user_from_db
-from bonsai_app.bonsai import get_user, get_users
-from bonsai_app.bonsai import update_user as update_user_info
+from bonsai_libs.api_client.bonsai.models import CreateUserInput
 from flask import (
     Blueprint,
     current_app,
@@ -25,6 +21,8 @@ from wtforms import (
     validators,
     widgets,
 )
+
+from bonsai_app.bonsai_api import get_api_client
 
 admin_bp = Blueprint(
     "admin",
@@ -56,9 +54,9 @@ def view_users():
         flash("You dont have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
-    token = TokenObject(**current_user.get_id())
-    # get all users
-    users = get_users(token)
+    client = get_api_client()
+    users = client.get_users()
+
     return render_template("users_list.html", users=users)
 
 
@@ -105,10 +103,10 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
     def validate_username(form, field):
         """Check if username already exists."""
         username = field.data
-        token = TokenObject(**current_user.get_id())
         user_exists = True
         try:
-            get_user(token, username=username)
+            client = get_api_client()
+            client.get_user(username)
         except HTTPError as error:
             if error.response.status_code == 404:
                 user_exists = False
@@ -129,9 +127,11 @@ def create_user():
 
     form = UserRegistrationForm(request.form)
     if request.method == "POST" and form.validate():
-        token = TokenObject(**current_user.get_id())
         try:
-            status = create_new_user(token, user_obj=form.data)
+            user_data = CreateUserInput.model_validate(form.data)
+
+            client = get_api_client()
+            client.create_user(user_data)
         except HTTPError as error:
             flash(
                 f"Error when creating a new user, {error.response.status_code}",
@@ -153,12 +153,13 @@ def delete_users():
         flash("You dont have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     removed_users = []
     for username, value in request.form.items():
         if value == "on":
             try:
-                delete_user_from_db(token, username=username)
+                client.delete_user(username)
             except Exception as error:
                 flash(f"Error when deleting user: {username}", "danger")
                 raise ValueError(error) from error
@@ -181,9 +182,10 @@ def update_user(username):
         flash("You dont have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     # get all users
-    user = get_user(token, username=username)
+    user = client.get_user(username)
     form = UserInfoForm(request.form)
 
     if request.method == "POST":
@@ -191,7 +193,7 @@ def update_user(username):
             flash("Invalid input data", "warning")
         elif "update" in request.form:
             try:
-                update_user_info(token, username=username, user=form.data)
+                client.update_user(username=username, user_data=form.data)
             except Exception as error:
                 flash("An error occurred when updating user info", "warning")
                 current_app.logger.error("Error updating user: %s", str(error))
@@ -200,7 +202,7 @@ def update_user(username):
                 current_app.logger.debug("Updated user: %s", username)
         else:
             try:
-                delete_user_from_db(token, username=username)
+                client.delete_user(username)
             except:
                 flash(f"An error occurred when removing {username}", "warning")
             else:

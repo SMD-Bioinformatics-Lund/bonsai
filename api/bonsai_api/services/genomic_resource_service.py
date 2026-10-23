@@ -6,8 +6,8 @@ from pymongo.errors import PyMongoError
 from fastapi import Request
 from pathlib import Path
 
-from api_client.audit_log.client import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.crud.genomic_resource import (
     insert_genomic_resource,
     sample_has_resource,
@@ -54,7 +54,7 @@ async def create_genomic_resource_service(
         raise ValueError("Resource dont have a pipeline run id!")
 
     has_resource_for_pipeline = await sample_has_resource(
-        db, pipeline_id=resource.pipeline_run_id
+        db, sample_id=sample_id, pipeline_id=resource.pipeline_run_id
     )
     if has_resource_for_pipeline and not force:
         raise ConflictError(
@@ -63,8 +63,11 @@ async def create_genomic_resource_service(
         )
     
     try:
-        # Validate reference genome exists
-        await get_reference_genome_service(db, resource_id=resource.reference_genome_id, request=request)
+        # Validate reference genome exists, and resolve whichever identifier the
+        # caller used to the reference genome's own id.
+        ref_genome = await get_reference_genome_service(
+            db, resource_id=resource.reference_genome_id, request=request
+        )
     except EntryNotFound as exc:
         raise EntryNotFound(
             f"Reference genome with ID {resource.reference_genome_id} not found"
@@ -82,7 +85,7 @@ async def create_genomic_resource_service(
                 path=to_relative_resource(r.path, base_dir=base_dir),
                 index_path=to_relative_resource(r.index_path, base_dir=base_dir) if r.index_path else None,
                 pipeline_id=resource.pipeline_run_id,
-                reference_genome_id=resource.reference_genome_id,
+                reference_genome_id=ref_genome.id,
                 visibility=resource.visibility,
             ) for r in resource.resource_data
         ]
@@ -97,6 +100,8 @@ async def create_genomic_resource_service(
                 db,
                 sample_id=sample_id,
                 resource_data=[p.model_dump(mode="json") for p in payload],
+                pipeline_id=resource.pipeline_run_id,
+                replace=force,
             )
             output_resources = [
                 GenomicResourceResponse(

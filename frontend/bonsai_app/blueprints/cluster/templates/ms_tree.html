@@ -516,12 +516,20 @@
           },
         );
 
+        const DEFAULT_NODE_LABEL_FIELD = "Lab ID";
+
         const renderMetadataValue = (nodeId) => {
           const metadata = the_tree.metadata[nodeId];
           const selectedField = document.querySelector("#tooltip-text").value;
 
           if (metadata) {
-            return metadata[selectedField] || metadata.ID || "";
+            return (
+              metadata[DEFAULT_NODE_LABEL_FIELD] ||
+              metadata[selectedField] ||
+              metadata.Name ||
+              metadata.ID ||
+              ""
+            );
           }
           return "";
         };
@@ -561,7 +569,8 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
-        $("#node-label-text").val("ID");
+        $("#node-label-text").val(DEFAULT_NODE_LABEL_FIELD);
+        the_tree.setNodeText(DEFAULT_NODE_LABEL_FIELD);
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);

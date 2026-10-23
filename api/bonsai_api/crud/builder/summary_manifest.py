@@ -31,15 +31,19 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
         exclude_fields=["emm_like_alleles"],
     ),
     "stx": BuilderArgs(
-        selector={"software": "virulencefinder"}, source_path="typing_result"
+        selector={"software": "virulencefinder", "analysis_type": "stx"},
+        source_path="typing_result",
+        label_field="analysis_type",
     ),
     "o_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "o_type"},
+        selector={"software": "serotypefinder", "analysis_type": "o_type"},
         source_path="typing_result",
+        label_field="analysis_type",
     ),
     "h_type": BuilderArgs(
-        selector={"software": "serotypefinder", "type": "h_type"},
+        selector={"software": "serotypefinder", "analysis_type": "h_type"},
         source_path="typing_result",
+        label_field="analysis_type",
     ),
     "groups": LookupSpec(
         from_collection="sample_group_collection",
@@ -55,6 +59,9 @@ BUILDER_REGISTRY: dict[str, BuilderSpec] = {
 MANIFEST = Manifest(
     columns=[
         ColumnFull(id="sample_id", label="Id", path="$sample_id", default_visible=True),
+        ColumnFull(
+            id="external_sample_id", label="Lab ID", path="$external_sample_id"
+        ),
         ColumnFull(
             id="sample_name", label="Name", path="$sample_name", default_visible=True
         ),
@@ -113,6 +120,7 @@ MANIFEST = Manifest(
             id="sequencing_date",
             label="Sequencing date",
             path="$sequencing.sequenced_at",
+            type="date",
         ),
         ColumnFull(
             id="pipeline_version", label="Pipeline version", path="$latest_pipeline_run.pipeline_info.definition.version"
@@ -134,7 +142,11 @@ MANIFEST = Manifest(
             path="$bracken.scientific_name",
             default_visible=True,
         ),
-        ColumnFull(id="quast_n50", requires=["quast"], label="N50", path="$quast.n50"),
+        ColumnFull(id="quast_n50", requires=["quast"], label="N50", path="$quast.n50", type="number"),
+        ColumnFull(
+            id="quast_n_contigs", requires=["quast"], label="# Contigs",
+            path="$quast.n_contigs", type="number",
+        ),
         ColumnFull(
             id="quast_total_length",
             requires=["quast"],
@@ -174,7 +186,24 @@ MANIFEST = Manifest(
             label="EMM Cluster",
             path="$emm.emm_cluster",
         ),
-        ColumnFull(id="stx", requires=["stx"], label="STX", path="$stx"),
+        ColumnFull(
+            id="stx", requires=["stx"], label="STX typing",
+            path={"$ifNull": ["$stx.gene_symbol", "-"]}, default_visible=True,
+        ),
+        ColumnFull(
+            id="oh", requires=["o_type", "h_type"], label="OH typing",
+            path={"$concat": [
+                {"$cond": [
+                    {"$eq": [{"$ifNull": ["$o_type.sequence_name", ""]}, ""]},
+                    "-", "$o_type.sequence_name",
+                ]},
+                ":",
+                {"$cond": [
+                    {"$eq": [{"$ifNull": ["$h_type.sequence_name", ""]}, ""]},
+                    "-", "$h_type.sequence_name",
+                ]},
+            ]}, default_visible=True,
+        ),
         ColumnFull(
             id="postalignqc_pct_above_x",
             requires=["postalignqc"],
@@ -188,6 +217,14 @@ MANIFEST = Manifest(
             label="Mean coverage",
             path="$postalignqc.mean_cov",
             type="number",
+        ),
+        ColumnFull(
+            id="postalignqc_coverage_10", requires=["postalignqc"],
+            label="Cov > 10", path="$postalignqc.pct_above_x.10", type="number",
+        ),
+        ColumnFull(
+            id="postalignqc_coverage_30", requires=["postalignqc"],
+            label="Cov > 30", path="$postalignqc.pct_above_x.30", type="number",
         ),
         ColumnFull(
             id="postalignqc_median_cov",
