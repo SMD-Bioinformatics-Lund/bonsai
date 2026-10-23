@@ -4,7 +4,7 @@ import csv
 import importlib
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from click.testing import CliRunner
@@ -135,24 +135,47 @@ async def test_worker_findings_keep_sample_labels_and_assay(database, monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_finished_worker_returns_serializable_report(monkeypatch):
+@pytest.mark.parametrize(
+    "queue_name,entrypoint,task_kwargs,label",
+    [
+        ("ska", "ska_service.doctor.check_samples", {}, "SKA"),
+        (
+            "minhash",
+            "minhash_service.tasks.dispatch_job",
+            {"task": "doctor_check_samples"},
+            "MinHash",
+        ),
+    ],
+)
+async def test_finished_worker_returns_serializable_report(
+    monkeypatch, queue_name, entrypoint, task_kwargs, label
+):
     result = {"findings": [], "errors": []}
     statuses = iter([JobStatus.QUEUED, JobStatus.STARTED, JobStatus.FINISHED])
     job = SimpleNamespace(
         get_status=lambda **kw: next(statuses), return_value=lambda: result
     )
-    enqueue = SimpleNamespace(enqueue=lambda *a, **kw: job)
+    enqueue = SimpleNamespace(enqueue=Mock(return_value=job))
     monkeypatch.setattr(doctor, "Queue", lambda *a, **kw: enqueue)
     monkeypatch.setattr(doctor.asyncio, "sleep", AsyncMock())
     progress = []
+    samples = [{"sample_id": "one"}]
     assert (
-        await doctor.check_worker("ska", [{"sample_id": "one"}], 10, progress.append)
+        await doctor.check_worker(queue_name, samples, 10, progress.append)
         == result
     )
-    assert progress[0] == "Submitting SKA check for 1 sample..."
-    assert any("SKA check: queued" in message for message in progress)
-    assert any("SKA check: running" in message for message in progress)
-    assert progress[-1] == "SKA check complete."
+    enqueue.enqueue.assert_called_once_with(
+        entrypoint,
+        samples=samples,
+        job_timeout=10,
+        ttl=10,
+        result_ttl=60,
+        **task_kwargs,
+    )
+    assert progress[0] == f"Submitting {label} check for 1 sample..."
+    assert any(f"{label} check: queued" in message for message in progress)
+    assert any(f"{label} check: running" in message for message in progress)
+    assert progress[-1] == f"{label} check complete."
 
 
 @pytest.mark.asyncio

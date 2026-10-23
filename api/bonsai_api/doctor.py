@@ -111,13 +111,19 @@ async def check_worker(
     )
     try:
         queue = Queue(queue_name, connection=connection)
+        entrypoint = f"{queue_name}_service.doctor.check_samples"
+        task_kwargs = {}
+        if queue_name == "minhash":
+            entrypoint = "minhash_service.tasks.dispatch_job"
+            task_kwargs["task"] = "doctor_check_samples"
         job = await asyncio.to_thread(
             queue.enqueue,
-            f"{queue_name}_service.doctor.check_samples",
+            entrypoint,
             samples=samples,
             job_timeout=timeout,
             ttl=timeout,
             result_ttl=60,
+            **task_kwargs,
         )
         started = monotonic()
         last_update = started

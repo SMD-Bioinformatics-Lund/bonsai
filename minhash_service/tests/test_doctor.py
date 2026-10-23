@@ -4,11 +4,14 @@ from unittest.mock import Mock
 
 import pytest
 import sourmash
+from redis import Redis
+from rq.job import Job
 
 from minhash_service import doctor
 from minhash_service.core.config import Settings
 from minhash_service.signatures.index import create_index_store
 from minhash_service.signatures.models import IndexFormat, SignatureRecord
+from minhash_service.tasks.dispatch import ALLOWED_ENTRYPOINTS
 
 
 @pytest.fixture(params=[IndexFormat.ROCKSDB, IndexFormat.SBT])
@@ -43,7 +46,16 @@ def data(tmp_path, monkeypatch, request):
 
 
 def test_excluded_sample_can_share_a_signature_with_an_active_sample(data):
-    result = doctor.check_samples([{"sample_id": "excluded", "qc_failed": True}])
+    job = Job.create(
+        "minhash_service.tasks.dispatch_job",
+        kwargs={
+            "task": "doctor_check_samples",
+            "samples": [{"sample_id": "excluded", "qc_failed": True}],
+        },
+        connection=Redis(),
+    )
+    assert job.func_name in ALLOWED_ENTRYPOINTS
+    result = job.func(*job.args, **job.kwargs)
     assert result == {"findings": [], "errors": []}
 
 
