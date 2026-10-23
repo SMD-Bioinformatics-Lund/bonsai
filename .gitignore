@@ -153,6 +153,7 @@ bonsai-sdk/
 bonsai-prp/
 jasen/
 tmp/
+worktrees/
 
 # editor related files
 *~

@@ -2,6 +2,8 @@
 
 ### Added
 
+- Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
+- Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
@@ -26,6 +28,7 @@
 ### Fixed
 
 - Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field to show distinct `stx1` and `stx2` types, stripping subtype suffixes and deduplicating hits across databases while preserving all hit details. Read the parser's single selected O and H labels directly. Re-import existing STX records to persist the updated display field. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
+- Reject MinHash clustering if any selected sample cannot load exactly one signature, instead of returning a partial tree. [#575](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/575)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
 - Display every STX gene hit in the sample's STX typing card, while retaining support for previously imported single-gene results. [#560](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/560)
 - Return HTTP 422 for analysis uploads containing parser error envelopes before writing analysis records or replacing current sample results, including forced reparses. [#559](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/559)
