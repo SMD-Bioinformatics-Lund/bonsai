@@ -41,7 +41,7 @@ DEFAULT_OVERVIEW_COLUMN_IDS = (
     "created_at",
 )
 
-OPTIONAL_OVERVIEW_COLUMN_IDS = ("external_sample_id", "release_life_cycle")
+OPTIONAL_OVERVIEW_COLUMN_IDS = ("external_sample_id")
 
 DEFAULT_QC_COLUMN_IDS = (
     "sample_id",

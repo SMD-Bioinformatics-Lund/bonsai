@@ -14,7 +14,7 @@ OVERVIEW_IDS = [
     "sample_id", "sample_name", "lims_id", "assay",
     "sequencing_run", "bracken_scientific_name", "qc_status", "comments",
     "tags", "mlst_sequence_type", "stx", "oh", "created_at",
-    "external_sample_id", "release_life_cycle",
+    "external_sample_id"
 ]
 
 
@@ -37,7 +37,7 @@ def overview_client(app, user_obj, monkeypatch):
     ]
     sample = {
         "sample_id": "sample-1", "sample_name": "Example sample", "lims_id": "lab-123",
-        "external_sample_id": "EXTERNAL-456", "release_life_cycle": "development",
+        "external_sample_id": "EXTERNAL-456", 
         "qc_status": {"status": "passed"}, "tags": [], "comments": [],
         "created_at": "2026-10-15T12:34:56", "mlst_sequence_type": 0,
         "stx": "stx1, stx2", "oh": "O157:H7",
@@ -72,7 +72,7 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
     assert re.findall(r'data-column-id="([^"]+)"', table) == OVERVIEW_IDS
     assert table.count('data-visible="true"') == 13
     assert table.count("<td") == 15
-    for column_id in ("external_sample_id", "release_life_cycle"):
+    for column_id in ("external_sample_id"):
         header = re.search(rf'<th\s+data-column-id="{column_id}"[^>]*>', table).group()
         assert 'data-visible="false"' in header
         assert 'data-searchable="true"' in header

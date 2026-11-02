@@ -27,10 +27,10 @@
 
 ### Fixed
 
-- Select valid MLST allele profiles using their analysis type when clustering.
+- Select valid MLST allele profiles using their analysis type when clustering. Resolves an issue where previously an invalid key was used.
 - Confirm sample deletion with a count and sample names, and disable deletion for empty selections.
-- Offer Lab ID and pipeline release stage as initially hidden overview columns, keeping Lab ID searchable. Clarify the pipeline release stage and top Bracken species labels.
-- Remove the duplicate GrapeTree No category option and name the allele quality card "cgMLST alleles".
+- Offer Lab ID and pipeline release stage as initially hidden overview columns, keeping Lab ID searchable. Remove the pipeline release stage and clarify top Bracken species labels.
+- Remove the duplicate GrapeTree "No category" option and name the allele quality card "cgMLST alleles".
 - Explain unavailable similarity data in both Find similar views, keep internal identifiers in console diagnostics, and handle job-submission errors without leaving loading indicators active.
 - Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field to show distinct `stx1` and `stx2` types, stripping subtype suffixes and deduplicating hits across databases while preserving all hit details. Read the parser's single selected O and H labels directly. Re-import existing STX records to persist the updated display field. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
 - Reject MinHash clustering if any selected sample cannot load exactly one signature, instead of returning a partial tree. [#575](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/575)
