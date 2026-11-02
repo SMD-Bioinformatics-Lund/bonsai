@@ -46,6 +46,10 @@ export class BasketComponent extends HTMLElement {
         skip: 0,
       };
       const data = await this.getSamplesDetails(query);
+      if (data.data.length === 0) {
+        this.state.removeSamples(sampleIds);
+        return;
+      }
       // create sample cards for each sample in the basket
       data.data.forEach((sample: SamplesDetails) => {
         const item = document.createElement("div");

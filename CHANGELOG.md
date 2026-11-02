@@ -27,6 +27,7 @@
 
 ### Fixed
 
+- Clear saved basket entries when none of their samples can be found, so an empty basket does not retain a nonzero count. [#604](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/604)
 - Select valid MLST allele profiles using their analysis type when clustering. Resolves an issue where previously an invalid key was used. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
 - Confirm sample deletion with a count and sample names, and disable deletion for empty selections. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
 - Offer Lab ID as an initially hidden, searchable overview column. Remove pipeline release stage from sample tables and simplify the Bracken column label. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
