@@ -29,6 +29,7 @@
     "@types/sortablejs": "^1.15.9",
     "eslint": "^10.10.0",
     "globals": "^16.1.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
     "process": "^0.11.10",
     "ts-loader": "^9.5.2",
@@ -39,7 +40,7 @@
     "webpack-manifest-plugin": "^6.0.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/*.cjs",
     "build": "webpack --mode production",
     "watch": "webpack --mode development --watch --output-path bonsai_app/static/build",
     "buildcp": "webpack && cp -v -r build/ bonsai_app/static",

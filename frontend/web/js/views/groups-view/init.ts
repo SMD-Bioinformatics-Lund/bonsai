@@ -15,6 +15,7 @@ import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
 import { ApiSampleQcStatus } from "../../core/types";
+import { onEvent } from "../../utils/event-bus";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -94,15 +95,15 @@ function showSampleTable(table?: TableController): void {
   table?.getTable().columns.adjust();
 }
 
-function initBasket(api: GroupViewApi): BasketState | void {
+function initBasket(api: GroupViewApi, apiUrl: string, username: string): BasketState | void {
   const basketElement = document.querySelector("#basket-content") as HTMLElement;
   const counterElement = document.querySelector("#basket-counter-container") as HTMLElement;
-  if (!basketElement && !counterElement) {
+  if (!basketElement || !counterElement) {
     console.error("No DOM element for the basket found!");
     return;
   }
 
-  const basketState = new BasketState();
+  const basketState = new BasketState(apiUrl.replace(/\/+$/, ""), username);
   const basketCounter = new SampleBasketCounter();
   basketCounter.basketState = basketState;
   counterElement.appendChild(basketCounter);
@@ -112,7 +113,20 @@ function initBasket(api: GroupViewApi): BasketState | void {
 
   const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
-    element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
+    element.onclick = async (event) => {
+      event.preventDefault();
+      if (!await basketComponent.render()) return;
+      const sampleIds = basketState.getSampleIds();
+      if (sampleIds.length < 2) {
+        throwSmallToast("Select at least two available samples to cluster", "warning");
+        return;
+      }
+      clusterSamples(element, sampleIds, api);
+    };
+  });
+
+  onEvent<{ sampleIds: string[] }>("samples:deleted", event => {
+    basketState.removeSamples(event.detail.sampleIds);
   });
 
   const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
@@ -139,12 +153,6 @@ export async function initGroupView(
   refreshToken: string,
 ): Promise<void> {
   const api = createGroupViewApi(bonsaiApiUrl, accessToken, refreshToken);
-  const basket = initBasket(api);
-  if (!basket) {
-    console.error("Something went wrong when initialize the basket");
-    showSampleTable();
-    return;
-  }
 
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
@@ -172,6 +180,11 @@ export async function initGroupView(
   showSampleTable(table);
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);
+  const basket = initBasket(api, bonsaiApiUrl, userInfo.username);
+  if (!basket) {
+    console.error("Something went wrong when initializing the basket");
+    return;
+  }
   initToast();
   initTooltip();
 
