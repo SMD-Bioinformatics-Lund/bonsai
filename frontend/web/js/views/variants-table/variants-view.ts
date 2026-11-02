@@ -49,6 +49,9 @@ function initVariantTables(): void {
       paging: false,
       select: false,
       searching: true,
+      // Preserve the TB template's genomic order on initialization.
+      order: tbl === '#tb-profiler-variant-tbl' ? [] : [[0, 'asc']],
+      columnDefs: [{ targets: 'no-sort', orderable: false, searchable: false }],
     });
   })
 }

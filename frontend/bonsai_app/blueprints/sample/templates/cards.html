@@ -704,10 +704,11 @@
     {% else %}
         <div class="table-responsive">
             <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped">
+                <caption class="caption-top">Default order: genomic position (ascending).</caption>
                 <thead>
                     <tr>
                         {% if extended %}
-                            <td scope="col">
+                            <td scope="col" class="no-sort">
                                 <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                             </td>
                         {% endif %}
@@ -715,7 +716,8 @@
                         <td scope="col">Variant</td>
                         <td scope="col">Protein change</td>
                         <td scope="col">Gene</td>
-                        <td scope="col">Start</td>
+                        <td scope="col" data-bs-toggle="tooltip"
+                            data-bs-title="Position on the reference genome used by TB Profiler. Insertions and deletions include the VCF anchor base.">Genomic position (1-based)</td>
                         {% if extended %}
                             <td scope="col">Effect</td>
                         {% endif %}
@@ -725,12 +727,12 @@
                         <td scope="col">Resistance (annotated)</td>
                         <td scope="col">Curation</td>
                         {% if extended %}
-                            <td scope="col"></td>
+                            <td scope="col" class="no-sort"></td>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody id="tbprofiler-variant-table" class="table-group-divider">
-                    {% for variant in result.variants %}
+                    {% for variant in result.variants | sort(attribute='start') %}
                         {% if variant.phenotypes | length > 0 or extended %}
                         <tr class="{{ row_class }}">
                             {% if extended %}
