@@ -1,8 +1,9 @@
 export class BasketState {
+  private name = "basket";
   private sampleIds: Set<string> = new Set();
   private onChangeCallbacks: Set<(ids: string[]) => void> = new Set();
 
-  constructor(private apiUrl: string, private username: string) {
+  constructor() {
     this.loadState();
   }
 
@@ -25,11 +26,7 @@ export class BasketState {
   }
 
   removeSamples(sampleIds: string[]): void {
-    let changed = false;
-    sampleIds.forEach((id) => {
-      if (this.sampleIds.delete(id)) changed = true;
-    });
-    if (!changed) return;
+    sampleIds.forEach((id) => this.sampleIds.delete(id));
     this.saveState();
     this.notifyChange();
   }
@@ -46,30 +43,22 @@ export class BasketState {
   }
 
   private saveState(): void {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.getSampleIds()));
-    } catch (error) {
-      console.error("Failed to save basket state", error);
-    }
+    localStorage.setItem(this.storageKey, JSON.stringify(this.getSampleIds()));
   }
 
   private loadState(): void {
-    try {
-      const state = localStorage.getItem(this.storageKey);
-      if (state) {
-        const ids: unknown = JSON.parse(state);
-        if (!Array.isArray(ids)) throw new Error("Saved basket must be an array");
-        this.sampleIds = new Set(ids.filter((id): id is string =>
-          typeof id === "string" && id.trim().length > 0,
-        ));
+    const state = localStorage.getItem(this.storageKey);
+    if (state) {
+      try {
+        const ids = JSON.parse(state) as string[];
+        this.sampleIds = new Set(ids);
+      } catch (e) {
+        console.error("Failed to parse saved basket state", e);
       }
-    } catch (error) {
-      console.error("Failed to load saved basket state", error);
     }
   }
 
   private get storageKey(): string {
-    // The legacy basket_content key has no owner and cannot be safely adopted.
-    return `basket_content:${JSON.stringify([this.apiUrl, this.username])}`;
+    return `${this.name}_content`;
   }
 }

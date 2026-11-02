@@ -31,7 +31,6 @@ export class SampleBasketCounter extends HTMLElement {
   }
 
   connectedCallback() {
-    this.state?.onSelection(this.handleStateChange);
     this.render();
   }
 
@@ -42,7 +41,7 @@ export class SampleBasketCounter extends HTMLElement {
   }
 
   private render() {
-    const nSamples = this.state?.getSampleIds().length ?? 0;
+    const nSamples = this.state?.getSampleIds().length;
     this.innerHTML = String.raw`
       <span id="sample-basket-badge" ${nSamples === 0 ? "hidden" : ""} class="position-absolute top-25 start-75 translate-middle badge rounded-pill bg-danger">
         <span id="sample-basket-counter" data-test-id="samples-in-basket-counter">${nSamples}</span>
