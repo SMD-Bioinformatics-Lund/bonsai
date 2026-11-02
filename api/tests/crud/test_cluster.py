@@ -1,15 +1,35 @@
 """Tests for preparing sample data for clustering jobs."""
 
 import asyncio
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import mongomock
+from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.cluster import (
+    CLUSTER_TYPING_SPECS,
     get_ska_index_path_for_samples,
     get_typing_profiles,
 )
 from bonsai_api.exceptions import EntryNotFound
+
+
+def test_mlst_query_selects_a_stored_profile_with_st_and_alleles():
+    sample = json.loads(
+        (Path(__file__).parents[1] / "data" / "test_ecoli_1.json").read_text()
+    )
+    expected = next(entry for entry in sample["typing_result"] if entry["software"] == "mlst")
+    collection = mongomock.MongoClient().db.samples
+    collection.insert_one(sample)
+    # Exercise the generated selection against the stored schema. Later stages
+    # use MongoDB operations unsupported by mongomock.
+    selection = build_summary_entry_stages(CLUSTER_TYPING_SPECS["mlst"])[0]
+    result = next(collection.aggregate([selection]))["__typing_result_sel_array"]
+    assert result["result"]["sequence_type"] == expected["result"]["sequence_type"]
+    assert result["result"]["alleles"] == expected["result"]["alleles"]
 
 
 async def _async_records(records):

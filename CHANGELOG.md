@@ -27,6 +27,12 @@
 
 ### Fixed
 
+- Select valid MLST allele profiles using their analysis type when clustering. Resolves an issue where previously an invalid key was used. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
+- Confirm sample deletion with a count and sample names, and disable deletion for empty selections. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
+- Offer Lab ID as an initially hidden, searchable overview column. Remove pipeline release stage from sample tables and simplify the Bracken column label. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
+- Remove the duplicate GrapeTree "No category" option. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
+- Rename the allele quality card "cgMLST alleles". [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
+- Explain unavailable similarity data in both Find similar views, keep internal identifiers in console diagnostics, and handle job-submission errors without leaving loading indicators active. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
 - Restore STX and OH typing in overview and group tables using the existing summary builders. Use the SDK's computed STX display field to show distinct `stx1` and `stx2` types, stripping subtype suffixes and deduplicating hits across databases while preserving all hit details. Read the parser's single selected O and H labels directly. Re-import existing STX records to persist the updated display field. [#573](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/573)
 - Reject MinHash clustering if any selected sample cannot load exactly one signature, instead of returning a partial tree. [#575](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/575)
 - Show each STX hit’s source database in the STX typing table, using the SDK’s `ref_database` field and displaying Unknown for older results without a source. [#565](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/565)
