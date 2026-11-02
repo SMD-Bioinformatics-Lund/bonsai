@@ -14,7 +14,7 @@ OVERVIEW_IDS = [
     "sample_id", "sample_name", "lims_id", "assay",
     "sequencing_run", "bracken_scientific_name", "qc_status", "comments",
     "tags", "mlst_sequence_type", "stx", "oh", "created_at",
-    "external_sample_id"
+    "external_sample_id",
 ]
 
 
@@ -32,12 +32,12 @@ def overview_client(app, user_obj, monkeypatch):
     ids = OVERVIEW_IDS + ["groups", "postalignqc_pct_above_x", "quast_n50", "analysis_date"]
     columns = [
         {"id": key, "label": key, "type": column_types.get(key, "string"),
-         "sortable": True, "default_visible": key not in OVERVIEW_IDS or key in ("external_sample_id", "release_life_cycle")}
+         "sortable": True, "default_visible": key not in OVERVIEW_IDS or key == "external_sample_id"}
         for key in reversed(ids)
     ]
     sample = {
         "sample_id": "sample-1", "sample_name": "Example sample", "lims_id": "lab-123",
-        "external_sample_id": "EXTERNAL-456", 
+        "external_sample_id": "EXTERNAL-456",
         "qc_status": {"status": "passed"}, "tags": [], "comments": [],
         "created_at": "2026-10-15T12:34:56", "mlst_sequence_type": 0,
         "stx": "stx1, stx2", "oh": "O157:H7",
@@ -71,8 +71,8 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
     table = sample_table_html(response)
     assert re.findall(r'data-column-id="([^"]+)"', table) == OVERVIEW_IDS
     assert table.count('data-visible="true"') == 13
-    assert table.count("<td") == 15
-    for column_id in ("external_sample_id"):
+    assert table.count("<td") == 14
+    for column_id in ("external_sample_id",):
         header = re.search(rf'<th\s+data-column-id="{column_id}"[^>]*>', table).group()
         assert 'data-visible="false"' in header
         assert 'data-searchable="true"' in header
@@ -99,7 +99,7 @@ def test_overview_keeps_all_samples_and_existing_cell_formatting(overview_client
     assert len(rows) == 5000
     assert rows[-1][0] == "sample-4999"
     cells = re.findall(r'<td\b([^>]*)>(.*?)</td>', rows[0][1], re.DOTALL)
-    assert len(cells) == 15
+    assert len(cells) == 14
     assert cells[OVERVIEW_IDS.index("mlst_sequence_type")][1].strip() == "0"
     assert 'data-order="2026-10-15T12:34:56"' in cells[OVERVIEW_IDS.index("created_at")][0]
     assert b"&lt;script&gt;unsafe&lt;/script&gt;" in result.data
