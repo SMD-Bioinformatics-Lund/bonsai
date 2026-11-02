@@ -13,8 +13,35 @@ import "../../components/spinner-element";
 
 type ApiProblemDetails = {
   title?: unknown;
+  detail?: unknown;
   type?: unknown;
 };
+
+function showSimilarityError(error: unknown, sampleId: string | undefined): void {
+  console.error("Similarity search failed for sample:", sampleId, error);
+  const problem = error instanceof ApiError
+    ? (error.data as ApiProblemDetails | undefined)
+    : undefined;
+  const details = `${error instanceof Error ? error.message : ""} ${
+    typeof problem?.detail === "string" ? problem.detail : ""
+  }`;
+  if (details.includes("No record found for sample_id")) {
+    throwSmallToast(
+      "Similarity data is not available for this sample. Please contact the server administrator.",
+      "warning",
+    );
+  } else if (problem?.type === "urn:bonsai:problem:audit-log-unavailable") {
+    throwSmallToast(
+      "Similarity search is temporarily unavailable. Please try again later.",
+      "error",
+    );
+  } else {
+    throwSmallToast(
+      "Could not find similar samples. Please contact the server administrator.",
+      "error",
+    );
+  }
+}
 
 type RemoveSamplesFromGroupApi = {
   removeSamplesFromGroup(groupId: string, sampleIds: string[]): Promise<void>;
@@ -52,18 +79,17 @@ export async function getSimilarSamplesAndCheckRows(
   const similarityInput = container.querySelector("#similar-samples-threshold") as HTMLInputElement;
   showSpinner(container);
   const sampleId = dt.getSelectedRows()[0];
-  if (sampleId === undefined || sampleId === "undefined")
-    throw Error(`Undefined sampleId; selected rows: ${dt.getSelectedRows()}`);
-  const job = await api.findSimilarSamples(sampleId, {
-    limit: parseInt(limitInput.value),
-    similarity: parseFloat(similarityInput.value),
-    narrow_to_sample_ids: narrow_search_to,
-    cluster: false,
-    typing_method: null,
-    cluster_method: null,
-  });
-  // start polling for job status
   try {
+    if (sampleId === undefined || sampleId === "undefined")
+      throw Error(`Undefined sampleId; selected rows: ${dt.getSelectedRows()}`);
+    const job = await api.findSimilarSamples(sampleId, {
+      limit: parseInt(limitInput.value),
+      similarity: parseFloat(similarityInput.value),
+      narrow_to_sample_ids: narrow_search_to,
+      cluster: false,
+      typing_method: null,
+      cluster_method: null,
+    });
     const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusSimilarity>;
     const result = await pollJob(jobFunc, 3000);
     const matches = result.result.matches;
@@ -74,23 +100,10 @@ export async function getSimilarSamplesAndCheckRows(
       "success",
     );
   } catch (error) {
-    console.error("Error while checking job status:", error);
-
-    // Parse API error response for user-friendly message
-    let message = "Error while finding similar samples. Please try again.";
-    if (error instanceof ApiError && error.data) {
-      const data = error.data as ApiProblemDetails;
-      if (data.title && typeof data.title === "string") {
-        message = data.title;
-      }
-      if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
-        message = "Service temporarily unavailable due to logging issues. Please try again later.";
-      }
-    }
-
-    throwSmallToast(message, "error");
+    showSimilarityError(error, sampleId);
+  } finally {
+    hideSpinner(container);
   }
-  hideSpinner(container);
 }
 
 export function removeSamplesFromGroup(
@@ -133,6 +146,22 @@ export function removeSamplesFromGroup(
 
 export function deleteSelectedSamples(table: TableController, api: ApiService): void {
   const selectedSamples = table.getSelectedRows();
+  if (selectedSamples.length === 0) {
+    throwSmallToast("No samples selected", "warning");
+    return;
+  }
+  const dataTable = table.getTable();
+  const nameColumn = dataTable.columns().header().toArray()
+    .findIndex((header) => header.dataset.columnId === "sample_name");
+  const names = selectedSamples.slice(0, 5).map((sampleId) => {
+    if (nameColumn === -1) return "Unnamed sample";
+    return dataTable.cell(`#${sampleId}`, nameColumn).node()?.textContent?.trim() || "Unnamed sample";
+  });
+  const remaining = selectedSamples.length - names.length;
+  const message = `Delete ${selectedSamples.length} selected sample(s) from Bonsai?\n\n${
+    names.join("\n")
+  }${remaining > 0 ? `\n…and ${remaining} more` : ""}\n\nThis cannot be undone.`;
+  if (!window.confirm(message)) return;
   api
     .deleteSamples(selectedSamples)
     .then(() => {
@@ -277,10 +306,9 @@ export async function findAndClusterSimilarSamples(
     typing_method: TypingMethod.MINHASH,
     cluster_method: ClusterMethod.SINGLE,
   };
-  // queue similar samples job
-  const job = await api.findSimilarSamples(sampleId, searchParams);
-  console.log("Waiting for the following job ID:", job.id);
   try {
+    const job = await api.findSimilarSamples(sampleId, searchParams);
+    console.log("Waiting for the following job ID:", job.id);
     const jobFunc = async () => api.checkJobStatus(job.id) as Promise<ApiJobStatusNewick>;
     jobResult = await pollJob(jobFunc, 3000, 40);
     console.log("Here is the find similar result:", jobResult.result);
@@ -290,32 +318,7 @@ export async function findAndClusterSimilarSamples(
     await showLabIds(leaves, api);
   } catch (error) {
     container.hidden = true;
-
-    // Parse API error response for user-friendly message
-    let message = "Error while finding similar samples. Please try again.";
-    let notificationType = "error";
-    if (error instanceof ApiError && error.data) {
-      const data = error.data as ApiProblemDetails;
-      if (data.title && typeof data.title === "string") {
-        message = data.title;
-      }
-      if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
-        message = "Service temporarily unavailable due to logging issues. Please try again later.";
-      }
-    } else if (error instanceof Error) {
-      if (error.message.includes("No record found for sample_id")) {
-        message = "Similarity data is not available for this sample.";
-        notificationType = "warning";
-      } else {
-        message = error.message;
-      }
-    }
-
-    if (notificationType === "error") {
-      console.error("Error while checking job status:", error);
-    }
-
-    throwSmallToast(message, notificationType);
+    showSimilarityError(error, sampleId);
     return null;
   } finally {
     spinner?.hide();

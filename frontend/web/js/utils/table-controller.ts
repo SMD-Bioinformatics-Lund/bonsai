@@ -93,7 +93,7 @@ function manageAnnotateQcBtn(selectedRows: string[]): void {
 function manageRemoveSamplesBtn(selectedRows: string[]): void {
   /* Enable or disable bulk edit qc status button */
   const btn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
-  if (btn !== null) btn.disabled = 0 > selectedRows.length;
+  if (btn !== null) btn.disabled = selectedRows.length === 0;
 }
 
 function manageSelectSimilarBtn(selectedRows: string[]): void {

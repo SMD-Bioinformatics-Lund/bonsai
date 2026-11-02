@@ -51,7 +51,7 @@ TypingProfileOutput = list[TypingProfileAggregate]
 
 CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
     "mlst": BuilderArgs(
-        selector={"software": "mlst", "type": "mlst"},
+        selector={"software": "mlst", "analysis_type": "mlst"},
         source_path="typing_result",
         output="tool",
         output_field="typing_result",

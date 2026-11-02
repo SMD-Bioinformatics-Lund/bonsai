@@ -102,7 +102,7 @@ MANIFEST = Manifest(
         ),
         ColumnFull(
             id="release_life_cycle",
-            label="Release life cycle",
+            label="Pipeline release stage",
             path="$latest_pipeline_run.pipeline_info.definition.release_life_cycle",
         ),
         ColumnFull(
@@ -138,7 +138,7 @@ MANIFEST = Manifest(
         ColumnFull(
             id="bracken_scientific_name",
             requires=["bracken"],
-            label="Bracken spp",
+            label="Top species (Bracken)",
             path="$bracken.scientific_name",
             default_visible=True,
         ),

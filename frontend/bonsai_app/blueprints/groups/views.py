@@ -30,7 +30,6 @@ DEFAULT_OVERVIEW_COLUMN_IDS = (
     "sample_name",
     "lims_id",
     "assay",
-    "release_life_cycle",
     "sequencing_run",
     "bracken_scientific_name",
     "qc_status",
@@ -41,6 +40,8 @@ DEFAULT_OVERVIEW_COLUMN_IDS = (
     "oh",
     "created_at",
 )
+
+OPTIONAL_OVERVIEW_COLUMN_IDS = ("external_sample_id", "release_life_cycle")
 
 DEFAULT_QC_COLUMN_IDS = (
     "sample_id",
@@ -119,14 +120,15 @@ def groups() -> str:
     client = get_api_client()
     manifest = client.get_valid_summary_columns()
     by_id = {column["id"]: column for column in manifest["columns"]}
+    column_ids = [*DEFAULT_OVERVIEW_COLUMN_IDS, *OPTIONAL_OVERVIEW_COLUMN_IDS]
     columns = [
-        {**by_id[column_id], "default_visible": True}
-        for column_id in DEFAULT_OVERVIEW_COLUMN_IDS
+        {**by_id[column_id], "default_visible": column_id in DEFAULT_OVERVIEW_COLUMN_IDS}
+        for column_id in column_ids
     ]
     response = client.request_json(
         "POST", "samples/summary",
         json={
-            "fields": list(DEFAULT_OVERVIEW_COLUMN_IDS),
+            "fields": column_ids,
             "sort": "-created_at",
             "limit": 0,
             "offset": 0,
