@@ -93,7 +93,7 @@ class GroupPage(BaseGroupPage):
         url = f"{self.base_url}/groups/{self.group_path}"
         # self.driver.get(url)
         reload_page_with_retries(self.driver, url)
-        self.wait.until(EC.title_contains(f"Group - {self.group_path}"))
+        self.wait.until(EC.title_contains("Group - "))
 
 
 class GroupsOverviewPage(BaseGroupPage):

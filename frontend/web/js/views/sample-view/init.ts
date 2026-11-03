@@ -21,6 +21,10 @@ export async function initSampleView(
   let narrow_search_to: string[] | null = null;
   if (groupId !== null) {
     const group = await api.getGroup(groupId);
+    const scope = document.getElementById("similar-samples-scope");
+    if (scope) {
+      scope.textContent = `in group: ${group.display_name}`;
+    }
     if (group.sample_count > 0) {
       const memberships = await api.getMembershipByGroups([groupId]);
       const sampleIds = Array.from(new Set(memberships.map((edge) => edge.sample_id)));

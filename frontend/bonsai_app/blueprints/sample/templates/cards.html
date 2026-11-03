@@ -1236,11 +1236,13 @@
      style="width: 24rem;">
     <div class="card-header">
         Similar samples - 
+        <span id="similar-samples-scope">
         {% if group_id is none %}
             all samples
         {% else %}
-            in group: {{ group_id }}
+            in selected group
         {% endif %}
+        </span>
     </div>
     <div class="card-body">
         <spinner-element></spinner-element>

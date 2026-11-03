@@ -125,15 +125,12 @@ export function removeSamplesFromGroup(
       throwSmallToast(`Removed ${selectedSamples.length} samples from group`, "success");
     })
     .catch((error) => {
-      console.error(`Error removing ${selectedSamples.length} from group:`, error);
+      console.error("Error removing samples from group:", groupId, selectedSamples, error);
 
       // Parse API error response for user-friendly message
       let message = `Failed to remove ${selectedSamples.length} samples from group. Please try again.`;
       if (error instanceof ApiError && error.data) {
         const data = error.data as ApiProblemDetails;
-        if (data.title && typeof data.title === "string") {
-          message = data.title;
-        }
         if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
           message =
             "Service temporarily unavailable due to logging issues. Please try again later.";
@@ -172,16 +169,12 @@ export function deleteSelectedSamples(table: TableController, api: ApiService): 
       emitEvent("samples:deleted", { sampleIds: selectedSamples });
     })
     .catch((error) => {
-      console.error("Error removing samples from database", error);
+      console.error("Error removing samples from database", selectedSamples, error);
 
       // Parse API error response for user-friendly message
       let message = "Failed to delete samples. Please try again.";
       if (error instanceof ApiError && error.data) {
         const data = error.data as ApiProblemDetails;
-        // Use the API's problem-details title if available and safe
-        if (data.title && typeof data.title === "string") {
-          message = data.title;
-        }
         // Optionally map specific types to custom messages
         if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
           message =
@@ -264,12 +257,9 @@ export function initSetSampleQc(
         console.error(`Error updating QC of sample: ${sampleId}`, error);
 
         // Parse API error response for user-friendly message
-        let message = `Failed to update QC of sample ${sampleId}. Please try again.`;
+        let message = "Failed to update QC of a selected sample. Please try again.";
         if (error instanceof ApiError && error.data) {
           const data = error.data as ApiProblemDetails;
-          if (data.title && typeof data.title === "string") {
-            message = data.title;
-          }
           if (data.type === "urn:bonsai:problem:audit-log-unavailable") {
             message =
               "Service temporarily unavailable due to logging issues. Please try again later.";
