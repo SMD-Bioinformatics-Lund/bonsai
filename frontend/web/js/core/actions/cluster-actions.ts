@@ -99,6 +99,10 @@ export async function clusterSamples(
       message = `SNV clustering failed for ${sampleIds.length} selected samples because the server data contains duplicate sequence IDs. Please contact the server administrator.`;
     }
 
+    if (/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i.test(message)) {
+      message = "Could not cluster the selected samples. Please contact the server administrator.";
+    }
+
     throwSmallToast(message, "error");
     console.error("A problem occurred during clustering:", {
       typingMethod: typingMethodEnum,

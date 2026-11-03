@@ -330,8 +330,7 @@ def group(group_id: str) -> str:
     # generate table data
     table_data = format_tablular_data(samples_info["data"], columns)
 
-    # indicate view in title, used for testing
-    title = f"Group - {group_id}"
+    title = f"Group - {group_info.display_name}"
     if display_qc:
         title += " - QC results"
     return render_template(
