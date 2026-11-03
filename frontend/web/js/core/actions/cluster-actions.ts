@@ -95,8 +95,16 @@ export async function clusterSamples(
       message = error.message;
     }
 
+    if (typingMethodEnum === TypingMethod.SKA && message.includes("Duplicate names found")) {
+      message = `SNV clustering failed for ${sampleIds.length} selected samples because the server data contains duplicate sequence IDs. Please contact the server administrator.`;
+    }
+
     throwSmallToast(message, "error");
-    console.error("A problem occurred during clustering:", error);
+    console.error("A problem occurred during clustering:", {
+      typingMethod: typingMethodEnum,
+      sampleIds,
+      error,
+    });
   } finally {
     hideSpinner(btn);
   }
