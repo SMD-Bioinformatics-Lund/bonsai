@@ -27,8 +27,8 @@
 
 ### Fixed
 
-- Show the group's display name instead of its internal ID in the sample page's Similar samples heading when opened from a group. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Use existing group display names in browser titles and badge tooltips, and summarize QC, membership, deletion, and UUID-bearing clustering errors while keeping diagnostic details in the browser console. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show the group's display name instead of its internal ID in the sample page's Similar samples heading when opened from a group. [#608](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/608)
+- Use existing group display names in browser titles and badge tooltips, and summarize QC, membership, deletion, and UUID-bearing clustering errors while keeping diagnostic details in the browser console. [#608](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/608)
 - Explain duplicate sequence IDs when SNV clustering fails, show the selected sample count and guidance to contact the server administrator, and log sample IDs with the original error in the browser console. [#605](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/605)
 - Clear saved basket entries when none of their samples can be found, so an empty basket does not retain a nonzero count. [#604](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/604)
 - Select valid MLST allele profiles using their analysis type when clustering. Resolves an issue where previously an invalid key was used. [#602](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/602)
