@@ -27,8 +27,8 @@
 
 ### Fixed
 
-- Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
+- Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)
 - Reconcile saved basket IDs with available samples, prevent clustering while the basket is unresolved, and ignore outdated responses after basket changes. [#611](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/611)
 - Show the group's display name instead of its internal ID in the sample page's Similar samples heading when opened from a group. [#608](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/608)

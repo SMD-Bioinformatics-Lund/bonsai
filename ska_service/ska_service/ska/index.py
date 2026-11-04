@@ -17,7 +17,7 @@ def resolve_index_path(
 ) -> Path:
     """Resolve and check path to index file.
 
-    If the index cant be found, it will optionally search the index_path directory
+    If the index can't be found, it will optionally search the index_path directory
     for a unique filename match. Ambiguous matches are rejected.
     """
     index_path = Path(cnf.index_dir) / file_name
