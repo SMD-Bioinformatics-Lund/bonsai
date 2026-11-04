@@ -6,9 +6,13 @@
 {% endmacro %}
 
 {% macro add_to_basket_btn() %}
+<button id="replace-basket-btn" class="btn btn-sm btn-success" data-test-id="replace-basket-btn" type="button" disabled>
+    <i class="bi bi-arrow-repeat"></i>
+    <span>Replace basket with selected (0)</span>
+</button>
 <button id="add-to-basket-btn" class="btn btn-sm btn-outline-success" data-test-id="add-to-basket-btn" disabled>
     <i class="bi bi-plus-lg"></i>
-    <span>Add to basket</span>
+    <span>Add selected to basket (0)</span>
 </button>
 {% endmacro %}
 

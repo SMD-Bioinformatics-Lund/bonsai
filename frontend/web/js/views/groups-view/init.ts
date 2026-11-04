@@ -108,11 +108,21 @@ function initBasket(api: GroupViewApi): BasketState | void {
   counterElement.appendChild(basketCounter);
 
   const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
+  const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
+  if (clusterButton) {
+    clusterButton.disabled = true;
+    basketComponent.addEventListener("basket:ready-change", () => {
+      clusterButton.disabled = !basketComponent.canCluster;
+    });
+  }
   basketElement.appendChild(basketComponent);
 
   const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
-    element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
+    element.onclick = (event) => {
+      event.preventDefault();
+      if (basketComponent.canCluster) clusterSamples(element, basketState.getSampleIds(), api);
+    };
   });
 
   const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
@@ -183,7 +193,23 @@ export async function initGroupView(
   if (groupContainer) groupContainer.appendChild(groupList);
 
   const addToBasketBtn = document.getElementById("add-to-basket-btn") as HTMLButtonElement;
-  if (addToBasketBtn) addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
+  if (addToBasketBtn) {
+    addToBasketBtn.onclick = () => {
+      const previousCount = basket.getSampleIds().length;
+      basket.addSamples(table.getSelectedRows());
+      const total = basket.getSampleIds().length;
+      const added = total - previousCount;
+      throwSmallToast(`Added ${added} sample${added === 1 ? "" : "s"}; basket now contains ${total}.`, "success");
+    };
+  }
+
+  const replaceBasketBtn = document.getElementById("replace-basket-btn") as HTMLButtonElement;
+  if (replaceBasketBtn) {
+    replaceBasketBtn.onclick = () => {
+      basket.replaceSamples(table.getSelectedRows());
+      throwSmallToast(`Basket replaced: ${basket.getSampleIds().length} samples.`, "success");
+    };
+  }
 
   const deleteSamplesBtn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
   if (deleteSamplesBtn) deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);
