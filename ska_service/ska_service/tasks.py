@@ -14,11 +14,6 @@ from .ska.cluster import ClusterMethod, calc_snv_distance, to_newick
 LOG = logging.getLogger(__name__)
 
 
-def get_index_name(index_path: str) -> str:
-    """Get the name of the index from the file path."""
-    return Path(index_path).stem.replace('_ska_index', '')
-
-
 def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -> str:
     """
     Cluster multiple sample on their SNVs using SKA indexes.
@@ -52,11 +47,6 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
             f"{sample_labels}"
         )
 
-    sample_id_lookup = {
-        get_index_name(idx["ska_index"]): idx["sample_id"]
-        for idx in indexes
-    }
-
     # validate cluster method
     try:
         method = ClusterMethod(cluster_method)
@@ -64,6 +54,13 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
         msg = f'"{cluster_method}" is not a valid cluster method'
         LOG.error(msg)
         raise ValueError(msg) from error
+
+    for index, path in zip(indexes, idx_paths):
+        if ska.sample_count(path) != 1:
+            label = index.get("external_sample_id") or "Unknown sample"
+            raise ValueError(
+                f"Expected a SKA index containing exactly one sample for {label}."
+            )
 
     with TemporaryDirectory() as tmp_dir:
         # merge indexes into a single file
@@ -75,10 +72,15 @@ def cluster(indexes: Sequence[dict[str, str]], cluster_method: str = "single") -
         # calculate distance between samples from alignment and cluster
         with open(aln_file) as inpt:
             aln = AlignIO.read(inpt, "fasta")
+        if len(aln) != len(indexes):
+            raise ValueError("SKA alignment must contain one sequence per selected sample.")
+        # SKA merge appends samples in input-file order. Each file above has
+        # exactly one sample, so filenames and FASTA labels need not be unique.
+        for sequence, index in zip(aln, indexes):
+            sequence.id = sequence.name = index["sample_id"]
+            sequence.description = ""
         dm = calc_snv_distance(aln)
-        tree, index_names = ska.cluster_distances(dm, method)
-        # lookup sample ids from index names and return newick tree with sample ids as leaf names
-        sample_ids = [sample_id_lookup.get(idx, idx) for idx in index_names]
+        tree, sample_ids = ska.cluster_distances(dm, method)
         newick_tree = to_newick(tree, "", tree.dist, sample_ids)
     return newick_tree
 

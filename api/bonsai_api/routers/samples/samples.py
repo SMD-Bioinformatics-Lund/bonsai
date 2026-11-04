@@ -209,14 +209,17 @@ async def delete_many_samples(
 @router.get("/samples/external/{external_sample_id}", response_model_by_alias=False)
 async def read_sample_by_external_id(
     external_sample_id: str = Path(...),
+    sequencing_run_id: str | None = Query(
+        None, min_length=1, description="Restrict the external-ID lookup to a sequencing run"
+    ),
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ) -> SampleRecordOut:
-    """Read a sample by the identifier assigned by the calling system."""
+    """Read a unique external-ID match; return 409 if several records match."""
     return await get_sample_by_external_id_service(
-        db, external_sample_id=external_sample_id
+        db, external_sample_id=external_sample_id, sequencing_run_id=sequencing_run_id
     )
 
 

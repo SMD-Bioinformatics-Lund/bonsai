@@ -18,7 +18,7 @@ def resolve_index_path(
     """Resolve and check path to index file.
 
     If the index cant be found, it will optionally search the index_path directory
-    for the file.
+    for a unique filename match. Ambiguous matches are rejected.
     """
     index_path = Path(cnf.index_dir) / file_name
 
@@ -29,12 +29,35 @@ def resolve_index_path(
     # else try to find the file
     if find_missing:
         LOG.info("Trying to find file %s by recursive search", file_name)
-        for root, _, files in os.walk(cnf.index_dir):
+        matches: set[Path] = set()
+
+        def walk_error(error):
+            raise error
+
+        for root, _, files in os.walk(cnf.index_dir, onerror=walk_error):
             if index_path.name in files:
-                return Path(root) / index_path.name
+                candidate = Path(root) / index_path.name
+                if candidate.is_file():
+                    matches.add(candidate.resolve())
+        if len(matches) > 1:
+            raise ValueError(
+                f"Multiple SKA index files match {index_path.name!r}; "
+                "provide an exact accessible path."
+            )
+        if matches:
+            return matches.pop()
 
     # if file cannot be found in index_dir raise error
     raise FileNotFoundError(file_name)
+
+
+def ska_sample_count(index_file: Path) -> int:
+    """Read the number of samples in an index using SKA's metadata command."""
+    output = ska_base("nk", arguments=[index_file]).stdout
+    for line in output.splitlines():
+        if line.startswith("samples="):
+            return int(line.split("=", 1)[1])
+    raise ValueError("Could not read the sample count from the SKA index.")
 
 
 def ska_merge(index_files: Sequence[Path], output: Path | None = None) -> Path:

@@ -9,7 +9,7 @@ from bonsai_api.crud.location import get_location
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.qc import QcClassification
@@ -112,13 +112,24 @@ async def get_sample_by_external_id(
     db: Database,
     *,
     external_sample_id: str,
+    sequencing_run_id: str | None = None,
     session: ClientSession | None = None,
 ) -> dict[str, Any] | None:
-    """Get a sample by the identifier assigned by the calling system."""
-    db_obj: SampleRecordDb = await db.sample_collection.find_one(
-        {"external_sample_id": external_sample_id}, session=session
-    )
-    return None if db_obj is None else db_obj
+    """Return a unique external-ID match, rejecting ambiguous sequencing records."""
+    query = {"external_sample_id": external_sample_id}
+    identifier = f"external id {external_sample_id!r}"
+    if sequencing_run_id is not None:
+        query["sequencing.sequencing_run_id"] = sequencing_run_id
+        identifier += f" and sequencing run id {sequencing_run_id!r}"
+    matches = await db.sample_collection.find(query, session=session).limit(2).to_list(2)
+    if len(matches) > 1:
+        guidance = (
+            "Specify sequencing_run_id or use the internal sample ID."
+            if sequencing_run_id is None
+            else "Use the internal sample ID."
+        )
+        raise ConflictError(f"Multiple samples match {identifier}. {guidance}")
+    return matches[0] if matches else None
 
 
 async def add_comment(
