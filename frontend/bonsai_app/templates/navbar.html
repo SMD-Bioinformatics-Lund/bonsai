@@ -1,5 +1,6 @@
 {% macro navbar(current_user) %}
-<nav class="navbar navbar-expand-lg navbar-light sticky-top br-navbar">
+<nav class="navbar navbar-expand-lg navbar-{{ config['NAVBAR_THEME'] }} sticky-top br-navbar"
+     style="background-color: {{ config['NAVBAR_BACKGROUND_COLOR'] }};">
     <div class="container-fluid">
     <div class="navbar-brand">
         <a href="{{ url_for('groups.groups') }}" class="d-block">
@@ -9,9 +10,12 @@
             </div>
         </a>
         <a href="https://github.com/SMD-Bioinformatics-Lund/bonsai/blob/master/CHANGELOG.md"
-           class="d-block text-center text-muted mt-1" style="font-size: .65rem; line-height: 1;"
+           class="d-block text-center navbar-text p-0 mt-1" style="font-size: .65rem; line-height: 1;"
            aria-label="Bonsai v{{ bonsai_version }} changelog">v{{ bonsai_version }}</a>
     </div>
+    {% if config['INSTANCE_LABEL'] %}
+    <span class="badge text-bg-light border me-3">{{ config['INSTANCE_LABEL'] }}</span>
+    {% endif %}
     <button class="navbar-toggler" 
         type="button" 
         data-bs-toggle="collapse"
