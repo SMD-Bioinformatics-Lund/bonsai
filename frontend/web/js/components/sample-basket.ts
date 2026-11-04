@@ -3,6 +3,8 @@ import { BasketState } from "../core/state/basket-state";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
+  private renderVersion = 0;
+  private ready = false;
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
   ) => Promise<ApiSampleDetailsResponse>;
@@ -24,6 +26,17 @@ export class BasketComponent extends HTMLElement {
 
   disconnectedCallback() {
     this.state.offSelection(this.handleStateChange);
+    this.renderVersion++;
+    this.setReady(false);
+  }
+
+  get canCluster(): boolean {
+    return this.ready && this.state.getSampleIds().length >= 2;
+  }
+
+  private setReady(ready: boolean): void {
+    this.ready = ready;
+    this.dispatchEvent(new CustomEvent("basket:ready-change"));
   }
 
   private handleStateChange() {
@@ -31,12 +44,14 @@ export class BasketComponent extends HTMLElement {
   }
 
   async render() {
-    this.innerHTML = "";
+    const version = ++this.renderVersion;
+    this.setReady(false);
     const sampleIds = this.state.getSampleIds();
     if (sampleIds.length === 0) {
       this.innerHTML = "<p>Your basket is empty.</p>";
       return;
     }
+    this.innerHTML = "<p>Loading basket...</p>";
     try {
       const query: ApiGetSamplesDetailsInput = {
         sid: sampleIds,
@@ -46,12 +61,19 @@ export class BasketComponent extends HTMLElement {
         skip: 0,
       };
       const data = await this.getSamplesDetails(query);
-      if (data.data.length === 0) {
-        this.state.removeSamples(sampleIds);
+      // A newer selection or render owns the basket now.
+      if (version !== this.renderVersion) return;
+      const samplesById = new Map(data.data.map((sample) => [sample.sample_id, sample]));
+      const missingIds = sampleIds.filter((id) => !samplesById.has(id));
+      if (missingIds.length > 0) {
+        // The state change renders and validates the remaining basket again.
+        this.state.removeSamples(missingIds);
         return;
       }
+      this.innerHTML = "";
       // create sample cards for each sample in the basket
-      data.data.forEach((sample: SamplesDetails) => {
+      sampleIds.forEach((id) => {
+        const sample: SamplesDetails = samplesById.get(id);
         const item = document.createElement("div");
         item.className = "card mb-2 rounded-1 p-0 sample_in_basket";
         item.innerHTML = String.raw`
@@ -72,13 +94,13 @@ export class BasketComponent extends HTMLElement {
           const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
           if (id) {
             this.state.removeSamples([id]);
-            // Remove the DOM element for the removed sample
-            const card = (e.currentTarget as HTMLElement).closest(".sample_in_basket");
-            if (card) card.remove();
           }
         });
       });
+      this.setReady(true);
     } catch (error) {
+      if (version !== this.renderVersion) return;
+      this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
       console.error("Failed to render basket:", error);
     }
   }

@@ -8,6 +8,51 @@ type ApiProblemDetails = {
   detail?: unknown;
 };
 
+async function summarizeMissingClusterData(
+  message: string,
+  sampleIds: string[],
+  api: ApiService,
+): Promise<string> {
+  // Recognize the existing API/worker messages without changing job payloads.
+  const reasons = [
+    ["No cgMLST typing profile is available for the following samples: ", "cgMLST typing profiles are unavailable"],
+    ["No MLST typing profile is available for the following samples: ", "MLST typing profiles are unavailable"],
+    ["No SKA index is available for the following samples: ", "SKA indexes are unavailable"],
+    ["No SKA index file is available for the following samples: ", "SKA index files are unavailable"],
+    ["Could not load exactly one MinHash signature per selected sample: ", "MinHash signatures are unavailable or invalid"],
+  ];
+  const detail = message.replace(/^(?:ValueError|FileNotFoundError): /, "");
+  const reason = reasons.find(([prefix]) => detail.startsWith(prefix));
+  if (!reason) return message;
+
+  const labels = detail.slice(reason[0].length).split(", ").filter(Boolean);
+  if (labels.length === 0) return message;
+  const summary = `Cannot cluster: ${reason[1]} for ${labels.length} ${labels.length === 1 ? "sample" : "samples"}.`;
+  if (labels.length > 4) return summary;
+
+  // Most API errors already contain Lab IDs; MinHash errors contain internal IDs.
+  const internalIds = labels.filter((label) => sampleIds.includes(label));
+  if (internalIds.length > 0) {
+    try {
+      const response = await api.getSamplesDetails({
+        sid: internalIds,
+        fields: ["sample_id", "external_sample_id"],
+        limit: internalIds.length,
+        offset: 0,
+      });
+      const labIds = new Map(response.data.map((sample) => [sample.sample_id, sample.external_sample_id?.trim()]));
+      if (internalIds.some((id) => !labIds.get(id))) return summary;
+      labels.forEach((label, index) => {
+        labels[index] = labIds.get(label) || label;
+      });
+    } catch {
+      // A failed label lookup must not hide the original clustering failure.
+      return summary;
+    }
+  }
+  return `Cannot cluster: ${reason[1]} for ${labels.join(", ")}.`;
+}
+
 async function openGrapeTree(
   newick: string,
   sampleIds: string[],
@@ -94,6 +139,8 @@ export async function clusterSamples(
     } else if (error instanceof Error) {
       message = error.message;
     }
+
+    message = await summarizeMissingClusterData(message, sampleIds, api);
 
     if (typingMethodEnum === TypingMethod.SKA && message.includes("Duplicate names found")) {
       message = `SNV clustering failed for ${sampleIds.length} selected samples because the server data contains duplicate sequence IDs. Please contact the server administrator.`;

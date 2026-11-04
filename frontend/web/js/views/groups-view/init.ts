@@ -108,11 +108,21 @@ function initBasket(api: GroupViewApi): BasketState | void {
   counterElement.appendChild(basketCounter);
 
   const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
+  const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
+  if (clusterButton) {
+    clusterButton.disabled = true;
+    basketComponent.addEventListener("basket:ready-change", () => {
+      clusterButton.disabled = !basketComponent.canCluster;
+    });
+  }
   basketElement.appendChild(basketComponent);
 
   const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
-    element.onclick = () => clusterSamples(element, basketState.getSampleIds(), api);
+    element.onclick = (event) => {
+      event.preventDefault();
+      if (basketComponent.canCluster) clusterSamples(element, basketState.getSampleIds(), api);
+    };
   });
 
   const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
