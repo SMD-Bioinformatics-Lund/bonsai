@@ -50,6 +50,21 @@ Frontend
 
 .. autopydantic_settings:: bonsai_app.config.Settings
 
+To distinguish a stage or development instance, set these environment variables
+on the frontend container::
+
+   INSTANCE_LABEL="Dev instance"
+   NAVBAR_BACKGROUND_COLOR="#ffe08a"
+   NAVBAR_THEME="light"
+
+``INSTANCE_LABEL`` defaults to empty (no label). ``NAVBAR_BACKGROUND_COLOR``
+accepts a three- or six-digit hex color and defaults to ``#c0ddd1``.
+Use ``NAVBAR_THEME=light`` (the default) for dark navigation text on a light
+background, or ``NAVBAR_THEME=dark`` for light text on a dark background.
+The label remains visible when the navigation menu collapses on small screens.
+Recreate the frontend container after changing its environment variables.
+These settings are independent of ``TESTING`` and do not enable debug mode.
+
 API service
 ^^^^^^^^^^^
 

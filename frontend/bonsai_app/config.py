@@ -2,6 +2,7 @@
 
 import pathlib
 from enum import Enum
+from typing import Literal
 
 from pydantic import Field
 from pydantic_extra_types.timezone_name import TimeZoneName
@@ -53,6 +54,19 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field(
         "session",
         description="Name of the Flask session cookie.",
+    )
+    navbar_background_color: str = Field(
+        "#c0ddd1",
+        pattern=r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+        description="Top bar background color as a three- or six-digit hex color.",
+    )
+    navbar_theme: Literal["light", "dark"] = Field(
+        "light",
+        description="Use light for dark text on a light top bar, or dark for light text.",
+    )
+    instance_label: str = Field(
+        "",
+        description="Optional label displayed in the top bar, e.g. Dev instance.",
     )
 
     # parameters for finding similar samples

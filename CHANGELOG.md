@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
 - Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
