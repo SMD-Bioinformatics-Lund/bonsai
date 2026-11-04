@@ -9,7 +9,7 @@ from bonsai_api.crud.location import get_location
 from bonsai_api.crud.utils import audit_event_context
 from bonsai_api.db import Database
 from bonsai_api.dependencies import ApiRequestContext
-from bonsai_api.exceptions import DatabaseOperationError, EntryNotFound
+from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNotFound
 from bonsai_api.models.base import MultipleRecordsResponseModel
 from bonsai_api.models.location import LocationOutputDatabase
 from bonsai_api.models.qc import QcClassification
@@ -114,11 +114,17 @@ async def get_sample_by_external_id(
     external_sample_id: str,
     session: ClientSession | None = None,
 ) -> dict[str, Any] | None:
-    """Get a sample by the identifier assigned by the calling system."""
-    db_obj: SampleRecordDb = await db.sample_collection.find_one(
+    """Return a unique external-ID match, rejecting ambiguous sequencing records."""
+    cursor = db.sample_collection.find(
         {"external_sample_id": external_sample_id}, session=session
     )
-    return None if db_obj is None else db_obj
+    matches = await cursor.limit(2).to_list(2)
+    if len(matches) > 1:
+        raise ConflictError(
+            f"Multiple samples match external id {external_sample_id!r}. "
+            "Use the internal sample ID."
+        )
+    return matches[0] if matches else None
 
 
 async def add_comment(

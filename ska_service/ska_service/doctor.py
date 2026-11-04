@@ -16,7 +16,7 @@ def check_samples(samples: list[dict]) -> dict:
         try:
             if not path.is_file():
                 if by_name is None:
-                    by_name = {}
+                    found = {}
 
                     def walk_error(error):
                         raise error
@@ -25,8 +25,20 @@ def check_samples(samples: list[dict]) -> dict:
                         settings.index_dir, onerror=walk_error
                     ):
                         for filename in files:
-                            by_name.setdefault(filename, Path(root) / filename)
-                path = by_name.get(path.name, path)
+                            found.setdefault(filename, []).append(Path(root) / filename)
+                    by_name = found
+                matches = {
+                    candidate.resolve()
+                    for candidate in by_name.get(path.name, [])
+                    if candidate.is_file()
+                }
+                if len(matches) > 1:
+                    raise ValueError(
+                        f"Multiple SKA index files match {path.name!r}; "
+                        "provide an exact accessible path."
+                    )
+                if matches:
+                    path = next(iter(matches))
             if not path.is_file():
                 message = "SKA index file is missing"
             elif not os.access(path, os.R_OK):
@@ -35,7 +47,7 @@ def check_samples(samples: list[dict]) -> dict:
                 message = "SKA index file is empty"
             else:
                 continue
-        except OSError as error:
+        except (OSError, ValueError) as error:
             message = f"Cannot access SKA index: {error}"
         findings.append(
             {
