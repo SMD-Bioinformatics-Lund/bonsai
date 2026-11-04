@@ -193,23 +193,7 @@ export async function initGroupView(
   if (groupContainer) groupContainer.appendChild(groupList);
 
   const addToBasketBtn = document.getElementById("add-to-basket-btn") as HTMLButtonElement;
-  if (addToBasketBtn) {
-    addToBasketBtn.onclick = () => {
-      const previousCount = basket.getSampleIds().length;
-      basket.addSamples(table.getSelectedRows());
-      const total = basket.getSampleIds().length;
-      const added = total - previousCount;
-      throwSmallToast(`Added ${added} sample${added === 1 ? "" : "s"}; basket now contains ${total}.`, "success");
-    };
-  }
-
-  const replaceBasketBtn = document.getElementById("replace-basket-btn") as HTMLButtonElement;
-  if (replaceBasketBtn) {
-    replaceBasketBtn.onclick = () => {
-      basket.replaceSamples(table.getSelectedRows());
-      throwSmallToast(`Basket replaced: ${basket.getSampleIds().length} samples.`, "success");
-    };
-  }
+  if (addToBasketBtn) addToBasketBtn.onclick = () => basket.addSamples(table.getSelectedRows());
 
   const deleteSamplesBtn = document.getElementById("remove-samples-btn") as HTMLButtonElement;
   if (deleteSamplesBtn) deleteSamplesBtn.onclick = () => deleteSelectedSamples(table, api);

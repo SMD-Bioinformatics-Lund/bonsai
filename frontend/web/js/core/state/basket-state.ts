@@ -25,12 +25,6 @@ export class BasketState {
     this.notifyChange();
   }
 
-  replaceSamples(sampleIds: string[]): void {
-    this.sampleIds = new Set(sampleIds);
-    this.saveState();
-    this.notifyChange();
-  }
-
   removeSamples(sampleIds: string[]): void {
     sampleIds.forEach((id) => this.sampleIds.delete(id));
     this.saveState();

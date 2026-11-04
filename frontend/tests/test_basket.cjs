@@ -10,7 +10,6 @@ const ts = require("typescript");
 class Element extends EventTarget {
   children = [];
   disabled = false;
-  label = { textContent: "" };
   counter = { textContent: "" };
   badge = { hidden: false };
   set innerHTML(value) {
@@ -23,7 +22,6 @@ class Element extends EventTarget {
   querySelector(selector) {
     if (selector === "#sample-basket-counter") return this.counter;
     if (selector === "#sample-basket-badge") return this.badge;
-    if (selector === "span") return this.label;
     return null;
   }
   querySelectorAll() { return []; }
@@ -34,10 +32,10 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 async function setup(savedIds = []) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
-    "add-to-basket-btn", "replace-basket-btn"];
+    "add-to-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element(), clusterLink = new Element();
-  const requests = [], clusters = [], toasts = [], selectionCallbacks = [];
+  const requests = [], clusters = [], selectionCallbacks = [];
   let selected = [];
   const table = {
     rows: () => ({ ids: () => ({ toArray: () => selected }) }),
@@ -82,19 +80,18 @@ async function setup(savedIds = []) {
     createGroupViewApi: () => api,
     User: class { isAdmin = false; },
     initToast() {}, initTooltip() {},
-    throwSmallToast: message => toasts.push(message),
+    throwSmallToast() {},
     clusterSamples: (_element, sampleIds) => clusters.push(Array.from(sampleIds)),
   }));
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
   return {
-    requests, clusters, toasts, component, clusterButton,
+    requests, clusters, component, clusterButton,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
     cards: () => component.children.map(card => card.innerHTML.match(/<h6 id="([^"]+)"/)[1]),
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
-    replace: () => elements["replace-basket-btn"].onclick(),
     clear: () => elements["clear-basket-btn"].onclick(),
     reopen: () => elements["basket-offcanvas"].dispatchEvent(new Event("show.bs.offcanvas")),
     cluster: () => clusterLink.onclick({ preventDefault() {} }),
@@ -151,12 +148,11 @@ test("failed lookup preserves saved IDs, blocks clustering, and can be retried",
   assert.equal(h.clusterButton.disabled, false);
 });
 
-test("Add preserves older valid samples, deduplicates overlaps, and reports the actual addition", async () => {
+test("adding samples preserves valid entries and ignores an older response", async () => {
   const h = await setup(["old", "overlap"]);
   h.select(["overlap", "new"]);
   h.add();
   assert.deepEqual(h.saved(), ["old", "overlap", "new"]);
-  assert.equal(h.toasts.at(-1), "Added 1 sample; basket now contains 3.");
   await h.respond(1, ["old", "overlap", "new"]);
   await h.respond(0, []);
   assert.deepEqual(h.saved(), ["old", "overlap", "new"]);
@@ -164,21 +160,6 @@ test("Add preserves older valid samples, deduplicates overlaps, and reports the 
   assert.equal(h.count(), 3);
   h.cluster();
   assert.deepEqual(h.clusters, [["old", "overlap", "new"]]);
-});
-
-test("Replace persists only the new selection and ignores a late response for the old basket", async () => {
-  const h = await setup(["old-1", "old-2"]);
-  h.select(["new-1", "new-2"]);
-  h.replace();
-  assert.deepEqual(h.saved(), ["new-1", "new-2"]);
-  assert.equal(h.toasts.at(-1), "Basket replaced: 2 samples.");
-  assert.equal(h.requests.length, 2); // One initial load and one atomic replacement.
-  await h.respond(1, ["new-1", "new-2"]);
-  await h.respond(0, ["old-1", "old-2"]);
-  assert.deepEqual(h.cards(), ["new-1", "new-2"]);
-  assert.equal(h.count(), 2);
-  h.cluster();
-  assert.deepEqual(h.clusters, [["new-1", "new-2"]]);
 });
 
 test("clearing invalidates in-flight responses and cannot resurrect old cards", async () => {
@@ -208,16 +189,4 @@ test("response IDs outside the request never appear in the basket or clustering 
   assert.deepEqual(h.cards(), ["a", "b"]);
   h.cluster();
   assert.deepEqual(h.clusters, [["a", "b"]]);
-});
-
-test("Replace/Add buttons track selection counts and are disabled for empty selections", async () => {
-  const h = await setup();
-  h.select([]);
-  assert.equal(h.elements["replace-basket-btn"].disabled, true);
-  assert.equal(h.elements["add-to-basket-btn"].disabled, true);
-  h.select(["a", "b"]);
-  assert.equal(h.elements["replace-basket-btn"].disabled, false);
-  assert.equal(h.elements["add-to-basket-btn"].disabled, false);
-  assert.equal(h.elements["replace-basket-btn"].label.textContent, "Replace basket with selected (2)");
-  assert.equal(h.elements["add-to-basket-btn"].label.textContent, "Add selected to basket (2)");
 });

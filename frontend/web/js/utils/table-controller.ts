@@ -79,16 +79,9 @@ export class TableController {
 }
 
 function manageAddToBasketBtn(selectedRows: string[]): void {
-  for (const [id, label] of [
-    ["add-to-basket-btn", "Add selected to basket"],
-    ["replace-basket-btn", "Replace basket with selected"],
-  ]) {
-    const btn = document.getElementById(id) as HTMLButtonElement;
-    if (btn === null) continue;
-    btn.disabled = selectedRows.length === 0;
-    const text = btn.querySelector("span");
-    if (text) text.textContent = `${label} (${selectedRows.length})`;
-  }
+  /* Enable/ disable button for adding samples to the basket */
+  const btn = document.getElementById("add-to-basket-btn") as HTMLButtonElement;
+  if (btn !== null) btn.disabled = 1 > selectedRows.length;
 }
 
 function manageAnnotateQcBtn(selectedRows: string[]): void {
