@@ -267,21 +267,16 @@ async def get_sample_by_external_id_service(
     db: Database,
     *,
     external_sample_id: str,
-    sequencing_run_id: str | None = None,
     session: ClientSession | None = None,
 ) -> SampleRecordOut:
     """Retrieve a sample by the identifier assigned by the calling system."""
     raw_sample = await get_sample_by_external_id(
-        db,
-        external_sample_id=external_sample_id,
-        sequencing_run_id=sequencing_run_id,
-        session=session,
+        db, external_sample_id=external_sample_id, session=session
     )
     if raw_sample is None:
-        identifier = f"external id {external_sample_id!r}"
-        if sequencing_run_id is not None:
-            identifier += f" and sequencing run id {sequencing_run_id!r}"
-        raise EntryNotFound(f"Sample with {identifier} not found")
+        raise EntryNotFound(
+            f"Sample with external id '{external_sample_id}' not found"
+        )
     return _to_sample_record_out(raw_sample, identifier=external_sample_id)
 
 

@@ -48,40 +48,18 @@ class ExternalSampleLookupTests(unittest.TestCase):
         self.add_sample(run="RUN-2")
         response = self.client.get("/samples/external/LAB-123")
         self.assertEqual(response.status_code, 409)
-        self.assertIn("sequencing_run_id", response.json()["detail"])
-
-    def test_run_filter_selects_the_requested_record(self):
-        self.add_sample()
-        expected = self.add_sample(run="RUN-2")
-        response = self.client.get(
-            "/samples/external/LAB-123", params={"sequencing_run_id": "RUN-2"}
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["sample_id"], expected)
+        self.assertIn("internal sample ID", response.json()["detail"])
 
     def test_ambiguity_within_the_same_run_still_returns_conflict(self):
         self.add_sample()
         self.add_sample()
-        response = self.client.get(
-            "/samples/external/LAB-123", params={"sequencing_run_id": "RUN-1"}
-        )
+        response = self.client.get("/samples/external/LAB-123")
         self.assertEqual(response.status_code, 409)
 
-    def test_unknown_external_id_or_run_returns_not_found(self):
+    def test_unknown_external_id_returns_not_found(self):
         self.add_sample()
-        for url in (
-            "/samples/external/unknown",
-            "/samples/external/LAB-123?sequencing_run_id=unknown",
-        ):
-            with self.subTest(url=url):
-                self.assertEqual(self.client.get(url).status_code, 404)
-
-    def test_blank_run_filter_is_rejected(self):
-        self.add_sample()
-        response = self.client.get(
-            "/samples/external/LAB-123", params={"sequencing_run_id": ""}
-        )
-        self.assertEqual(response.status_code, 422)
+        response = self.client.get("/samples/external/unknown")
+        self.assertEqual(response.status_code, 404)
 
 
 if __name__ == "__main__":

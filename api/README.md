@@ -18,6 +18,6 @@ Operations like uploading samples, creating groups and users are done via the RE
 
 Uploaded sample IDs are stored as `external_sample_id` and may occur in several
 sequencing runs. `GET /samples/external/{external_sample_id}` returns a record
-only when the match is unique. Add `?sequencing_run_id=RUN-123` to select a run.
-The endpoint returns HTTP 404 when no record matches and HTTP 409 when several
-still match. Use the record's internal `sample_id` for subsequent operations.
+only when the match is unique. The endpoint returns HTTP 404 when no record
+matches and HTTP 409 when several match. Use the record's internal `sample_id`
+for subsequent operations.
