@@ -1,15 +1,15 @@
 """Functions that generate data rendered by views."""
 
-from dataclasses import dataclass
 import logging
 from collections import defaultdict
+from dataclasses import dataclass
 from itertools import chain, groupby
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 from requests import HTTPError
 
-from bonsai_app.bonsai import TokenObject, create_curation, VariantCurationRecord, PhenotypeAnnotation
+from bonsai_libs.api_client.bonsai.models import PhenotypeAnnotation, VariantCurationRecord
 
 from bonsai_app.custom_filters import get_who_group_from_tbprofiler_comment
 from bonsai_app.models import ElementType, PredictionSoftware, QualityControlResult
@@ -181,7 +181,12 @@ def create_amr_summary(sample: SampleObj) -> tuple[dict[str, Any], dict[str, Any
     return amr_summary, resistance_info
 
 
-def get_results_by(sample_info: SampleObj, *, software: str | None = None, analysis_type: str | None = None) -> list[dict[str, Any]]:
+def get_results_by(
+    sample_info: SampleObj,
+    *,
+    software: str | None = None,
+    analysis_type: str | None = None,
+) -> list[dict[str, Any]]:
     """Get prediction results for a given software and/or analysis type.
 
     :param sample_info: Sample object containing element_type_result
@@ -197,7 +202,10 @@ def get_results_by(sample_info: SampleObj, *, software: str | None = None, analy
     for res in sample_info.get("element_type_result", []):
         if software and res.get("software", "").lower() != software.lower():
             continue
-        if analysis_type and res.get("analysis_type", "").lower() != analysis_type.lower():
+        if (
+            analysis_type
+            and res.get("analysis_type", "").lower() != analysis_type.lower()
+        ):
             continue
         results.append(res)
     return results
@@ -206,7 +214,7 @@ def get_results_by(sample_info: SampleObj, *, software: str | None = None, analy
 def sort_variants(variants: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Sort a list of variants by verified status, reference sequence, and position.
 
-    Sorts in order: verified status (passed → unprocessed → failed), 
+    Sorts in order: verified status (passed → unprocessed → failed),
     then by reference sequence name, then by position.
 
     :param variants: List of variant dictionaries to sort
@@ -214,6 +222,7 @@ def sort_variants(variants: list[dict[str, Any]]) -> list[dict[str, Any]]:
     :return: Sorted list of variants
     :rtype: list[dict[str, Any]]
     """
+
     def _sort_key(variant: dict[str, Any]) -> tuple:
         """Generate sort key based on verification status, ref sequence, and position."""
         sort_order = {"passed": 1, "unprocessed": 2, "failed": 3}
@@ -426,6 +435,7 @@ def kw_metadata_to_table(metadata: list[dict[str, Any]]) -> dict[str, dict[str, 
 @dataclass
 class CurationResult:
     """Result of a single curation submission."""
+
     variant_id: str
     analysis_id: str
     success: bool
@@ -441,18 +451,22 @@ def build_curation_records(
     resistance_level: str | None = None,
 ) -> list[dict[str, str | VariantCurationRecord]]:
     """Build curation record payloads.
-    
+
     Validates and structures curation data for API submission.
     """
     if not records:
         raise ValueError("At least one curation record required")
-    
+
     if decision == "rejected" and not rejection_reason:
         raise ValueError("Rejection reason required when rejecting variants")
-    
+
     meta = {"resistance_level": resistance_level} if resistance_level else {}
-    phenotype_records = [PhenotypeAnnotation(name=p, meta=meta) for p in phenotypes] if phenotypes else []
-    
+    phenotype_records = (
+        [PhenotypeAnnotation(name=p, meta=meta) for p in phenotypes]
+        if phenotypes
+        else []
+    )
+
     return [
         {
             "analysis_id": rec["analysis_id"],
@@ -461,59 +475,84 @@ def build_curation_records(
                 result_key=rec["variant_id"],
                 annotation_type="variant",
                 decision=decision,
-                rejection_reason=rejection_reason["description"] if rejection_reason else None,
+                rejection_reason=(
+                    rejection_reason["description"] if rejection_reason else None
+                ),
                 phenotypes=phenotype_records,
-            )
-            } for rec in records
+            ),
+        }
+        for rec in records
     ]
 
 
 def submit_curations_batch(
-    token: TokenObject,
     records: list[dict[str, str | VariantCurationRecord]],
+    *, create_curation_fn: Callable[..., dict[str, Any]]
 ) -> list[CurationResult]:
     """Submit multiple curation records and aggregate results.
-    
+
     Handles errors gracefully and returns detailed results.
     Returns all results (successes and failures) for reporting.
     """
     results = []
-    
+
     for rec in records:
         analysis_id = rec["analysis_id"]
         analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
+        resp = create_curation_fn(
+            analysis_type=analysis_type,
+            analysis_id=analysis_id,
+            record=curation_record,
+        )
         try:
-            resp = create_curation(token, analysis_type=analysis_type, analysis_id=analysis_id, record=curation_record)
-            results.append(CurationResult(
-                variant_id=curation_record.result_key,
+            resp = create_curation_fn(
+                analysis_type=analysis_type,
                 analysis_id=analysis_id,
-                success=True,
-                response=resp,
-            ))
-            LOG.info("Curation created for variant %s in analysis %s", 
-                    curation_record.result_key, analysis_id)
+                record=curation_record,
+            )
+            results.append(
+                CurationResult(
+                    variant_id=curation_record.result_key,
+                    analysis_id=analysis_id,
+                    success=True,
+                    response=resp,
+                )
+            )
+            LOG.info(
+                "Curation created for variant %s in analysis %s",
+                curation_record.result_key,
+                analysis_id,
+            )
         except HTTPError as err:
             LOG.warning(
                 "HTTP error creating curation for %s: %s",
-                curation_record.result_key, err.response.status_code
+                curation_record.result_key,
+                err.response.status_code,
             )
-            results.append(CurationResult(
-                variant_id=curation_record.result_key,
-                analysis_id=analysis_id,
-                success=False,
-                error=f"HTTP {err.response.status_code}: {err.response.text}",
-            ))
+            results.append(
+                CurationResult(
+                    variant_id=curation_record.result_key,
+                    analysis_id=analysis_id,
+                    success=False,
+                    error=f"HTTP {err.response.status_code}: {err.response.text}",
+                )
+            )
         except Exception as err:
-            LOG.error("Unexpected error creating curation for %s: %s", 
-                     curation_record.result_key, str(err))
-            results.append(CurationResult(
-                variant_id=curation_record.result_key,
-                analysis_id=analysis_id,
-                success=False,
-                error=str(err),
-            ))
-    
+            LOG.error(
+                "Unexpected error creating curation for %s: %s",
+                curation_record.result_key,
+                str(err),
+            )
+            results.append(
+                CurationResult(
+                    variant_id=curation_record.result_key,
+                    analysis_id=analysis_id,
+                    success=False,
+                    error=str(err),
+                )
+            )
+
     return results
 
 

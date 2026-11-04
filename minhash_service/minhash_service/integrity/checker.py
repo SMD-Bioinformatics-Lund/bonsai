@@ -26,9 +26,16 @@ def check_signature_integrity(
     # load index
     idx_path = get_index_path(settings.signature_dir, settings.index_format)
     index = create_index_store(idx_path, settings.index_format)
-    indexed_signatures: list[str] = [sig.name for sig in index.list_signatures()]
+    indexed_checksums = index.list_signature_checksums()
 
-    all_records = repo.get_all_signatures()
+    all_records = list(repo.get_all_signatures())
+    eligible_checksums = {
+        r.signature_checksum
+        for r in all_records
+        if r.kmer_size == settings.kmer_size
+        and not r.exclude_from_analysis
+        and not r.marked_for_deletion
+    }
     n_signatures: int = 0
     missing_files: list[str] = []
     corrupted_files: list[str] = []
@@ -46,18 +53,16 @@ def check_signature_integrity(
                 "Signature file for sample_id %s might be corrupted.",
                 record.sample_id,
             )
-        if record.has_been_indexed and record.sample_id not in indexed_signatures:
-            LOG.error(
-                "Signature file for sample_id %s is marked as indexed but not in index.",
-                record.sample_id,
-            )
+        if record.kmer_size != settings.kmer_size:
+            continue
+        eligible = not record.exclude_from_analysis and not record.marked_for_deletion
+        present = record.signature_checksum in indexed_checksums
+        if eligible and (not present or not record.has_been_indexed):
             should_be_indexed.append(record.sample_id)
-        elif not record.has_been_indexed and record.sample_id in indexed_signatures:
-            LOG.error(
-                "Signature file for sample_id %s is not marked as indexed"
-                " but is still in the index.",
-                record.sample_id,
-            )
+        elif not eligible and (
+            record.has_been_indexed
+            or (present and record.signature_checksum not in eligible_checksums)
+        ):
             should_not_be_indexed.append(record.sample_id)
     return IntegrityReport(
         timestamp=dt.datetime.now(dt.timezone.utc),
@@ -65,7 +70,7 @@ def check_signature_integrity(
         duration=(dt.datetime.now(dt.timezone.utc) - start_time).seconds,
         version=sourmash_version,
         total_records=n_signatures,
-        total_indexed=len(indexed_signatures),
+        total_indexed=len(indexed_checksums),
         missing_files=missing_files,
         corrupted_files=corrupted_files,
         should_be_indexed=should_be_indexed,

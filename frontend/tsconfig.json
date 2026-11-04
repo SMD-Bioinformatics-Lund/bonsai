@@ -7,6 +7,13 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "components/*": ["web/js/components/*"],
+      "core/*": ["web/js/core/*"],
+      "utils/*": ["web/js/utils/*"],
+      "views/*": ["web/js/views/*"]
+    },
   }
 }

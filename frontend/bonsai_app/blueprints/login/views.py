@@ -2,9 +2,12 @@
 
 import logging
 
+from bonsai_libs.api_client.core import BearerTokenAuth
+from bonsai_libs.api_client.core.exceptions import UnauthorizedError
 from flask import (
     Blueprint,
     Response,
+    current_app,
     flash,
     redirect,
     render_template,
@@ -13,13 +16,13 @@ from flask import (
     url_for,
 )
 from flask_login import UserMixin, login_required, login_user, logout_user
-from requests.exceptions import HTTPError
 
-from ... import __version__ as VERSION
-from ...bonsai import TokenObject, get_auth_token, get_current_user
-from ...extensions import login_manager
+from bonsai_app import __version__ as VERSION
+from bonsai_app.bonsai_api import BonsaiApiClient
+from bonsai_app.extensions import login_manager
 
 LOG = logging.getLogger(__name__)
+SESSION_ENDED_KEY = "session_ended"
 
 login_bp = Blueprint(
     "login",
@@ -33,17 +36,25 @@ login_bp = Blueprint(
 class LoginUser(UserMixin):
     """Container for user data and perform login."""
 
-    def __init__(self, user_data, token_data):
-        """Create a new user object."""
-        self.roles = []
+    def __init__(self, user_data: dict[str, str], token: str):
+        """Create a new authenticated user.
+
+        :param user_data: User data returned from API
+        :param token: Access token for API authentication
+        """
+
+        self.username = user_data["username"]
+        self.id = self.username
+        self.token = token
+
+        self.roles = user_data.get("roles", [])
+
         for key, value in user_data.items():
             setattr(self, key, value)
-        # store token
-        self.token = token_data
 
     def get_id(self):
-        """Get user auth token"""
-        return self.token.dict()
+        """Get user id."""
+        return self.username
 
     @property
     def is_admin(self):
@@ -62,11 +73,14 @@ def login_page():
 def logout():
     """Logout user."""
     logout_user()
-    session.pop("email", None)
-    session.pop("fname", None)
-    session.pop("lname", None)
-    session.pop("locale", None)
-    return redirect(url_for("public.index"))
+    session.clear()
+    return redirect(url_for("login.logged_out"))
+
+
+@login_bp.route("/logged-out")
+def logged_out():
+    """Confirm that the user's session has ended."""
+    return render_template("logged_out.html", title="Logged out", version=VERSION)
 
 
 @login_bp.route("/login", methods=["GET", "POST"])
@@ -75,37 +89,59 @@ def login():
     if "next" in request.args:
         session["next_url"] = request.args["next"]
 
+    if request.method == "GET":
+        return render_template("login.html", ...)
+
     # get login credentials from form
     username = request.form["username"]
     password = request.form["password"]
 
+    client = BonsaiApiClient(
+        base_url=current_app.config["API_INTERNAL_URL"],
+    )
     try:
-        token_obj: TokenObject = get_auth_token(username, password)
-    except HTTPError as err:
+        client.authenticate_user(username, password)
+        user_obj = client.get_current_user()
+        user = LoginUser(user_obj.model_dump(mode="json"), token=client.auth.token)
+    except UnauthorizedError:
         # if invalid credentials
-        if err.response.status_code == 401:
-            flash("Invalid login credentials", "danger")
-        else:
-            flash("Sorry, you could not log in due to an internal error", "warning")
-
+        flash("Invalid login credentials", "danger")
+        return redirect(url_for("public.index"))
+    except Exception as err:
+        LOG.warning("An unexpected error during login: %s", err)
+        flash("Sorry, you could not log in due to an internal error", "warning")
         return redirect(url_for("public.index"))
 
-    user_obj = get_current_user(token_obj)
-    user = LoginUser(user_obj, token_obj)
+    # set token in session
+    session["access_token"] = client.auth.token
+
     return perform_login(user)
 
 
 @login_manager.user_loader
-def load_user(user_id):
-    """Reload user object from user id stored in session."""
-    token = TokenObject(**user_id)
+def load_user(user_id: str) -> LoginUser | None:
+    """Reconstruct user from session.
+
+    :param user_id: Identifier stored in session
+    :return: LoginUser or None
+    """
+    token = session.get("access_token")
+
+    client = BonsaiApiClient(
+        base_url=current_app.config["API_INTERNAL_URL"],
+        auth=BearerTokenAuth(token),
+    )
     try:
-        user_obj = get_current_user(token)
-    except HTTPError:
+        user_data = client.get_current_user()
+    except UnauthorizedError:
+        # Flask-Login requires a missing user to be represented by None. Remember
+        # that this was an expired authenticated session so the unauthorized
+        # handler can distinguish it from a first-time visitor.
+        session.clear()
+        session[SESSION_ENDED_KEY] = True
         return None
 
-    user = LoginUser(user_obj, token) if user_obj else None
-    return user
+    return LoginUser(user_data.model_dump(mode="json"), token)
 
 
 def perform_login(user: LoginUser) -> Response:
@@ -116,9 +152,6 @@ def perform_login(user: LoginUser) -> Response:
     :return: redirect user to /groups if login is successfull
     :rtype: Response
     """
-    LOG.error(
-        [redirect(url_for("public.index")), type(redirect(url_for("public.index")))]
-    )
     if login_user(user):
         next_url = session.pop("next_url", None)
         return redirect(
@@ -138,4 +171,6 @@ def unauthorized_handler() -> Response:
     :return: redirect failed auth attempt to login page
     :rtype: Response
     """
+    if session.pop(SESSION_ENDED_KEY, False):
+        return redirect(url_for("login.logged_out"))
     return redirect(url_for("login.login_page"))

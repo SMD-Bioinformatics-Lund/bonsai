@@ -4,8 +4,8 @@ import logging
 from typing import Any
 from pymongo.errors import DuplicateKeyError
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database

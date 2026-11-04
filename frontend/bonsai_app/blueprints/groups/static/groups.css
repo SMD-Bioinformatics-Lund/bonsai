@@ -57,3 +57,17 @@
 #sample-table_wrapper {
   overflow-x: auto;
 }
+
+/* Match the wrapper used by the installed DataTables Buttons extension. */
+.dt-button-collection.column-visibility-menu {
+  position: absolute;
+  min-width: 200px;
+  margin-top: 4px;
+  z-index: 2002;
+}
+
+.dt-button-collection.column-visibility-menu .dropdown-menu {
+  position: relative;
+  max-height: min(24rem, 60vh);
+  overflow-y: auto;
+}

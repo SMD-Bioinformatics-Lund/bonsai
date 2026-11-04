@@ -17,7 +17,7 @@ from bonsai_api.dependencies import (
     get_request_context,
     get_audit_log,
 )
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
@@ -32,10 +32,17 @@ UPDATE_PERMISSION = "samples:update"
 async def upload_analysis(
     sample_id: str = Form(...),
     software: str = Form(...),
+    subcommand: str | None = Form(None),
     software_version: str | None = Form(None),
     pipeline_run_id: str | None = Form(None),
     force: bool = Form(False, description="Overwrite existing analysis if present"),
     file: UploadFile = File(...),
+    coverage_file: UploadFile | None = File(
+        None, description="Optional samtools coverage output for post-align QC"
+    ),
+    bedcov_file: UploadFile | None = File(
+        None, description="Optional samtools bedcov output for post-align QC"
+    ),
     db: Database = Depends(get_database),
     user: UserOutputDatabase = Depends(get_current_active_user),
     ctx: ApiRequestContext=Depends(get_request_context),
@@ -48,9 +55,12 @@ async def upload_analysis(
         sample_id=sample_id,
         pipeline_run=pipeline_run_id,
         software=software,
+        subcommand=subcommand,
         software_version=software_version,
         force=force,
         file=file,
+        coverage_file=coverage_file,
+        bedcov_file=bedcov_file,
         ctx=ctx,
         audit=audit,
     )

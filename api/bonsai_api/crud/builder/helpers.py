@@ -40,24 +40,8 @@ def build_get_entry_stage(
             else {"$eq": [f"${source_path}.{k}", v]}
         )
 
-    array_conds = (
-        [{"$and": [_cond_for_array(k, v) for k, v in selector.items()]}]
-        if selector
-        else []
-    )
-    obj_conds = (
-        [{"$and": [_cond_for_obj(k, v) for k, v in selector.items()]}]
-        if selector
-        else []
-    )
-
-    # Build AND conditions for array items: "$$x.<key> == <value>"
-    array_conds = [{"$eq": [f"$$x.{fname}", val]} for fname, val in selector.items()]
-
-    # Build AND conditions for object: "$<source_path>.<key> == <value>"
-    obj_conds = [
-        {"$eq": [f"${source_path}.{fname}", val]} for fname, val in selector.items()
-    ]
+    array_conds = [_cond_for_array(k, v) for k, v in selector.items()]
+    obj_conds = [_cond_for_obj(k, v) for k, v in selector.items()]
     default_entry = {**selector, "result": default_result}
     return [
         # Try to select from an array
@@ -76,7 +60,7 @@ def build_get_entry_stage(
                                 },
                                 "as": "x",
                                 "cond": (
-                                    {"$and": array_conds[0]} if array_conds else True
+                                    {"$and": array_conds} if array_conds else True
                                 ),
                             }
                         },
@@ -92,12 +76,12 @@ def build_get_entry_stage(
                     "$cond": [
                         {
                             "$and": [
-                                {"$not": {"$isArray": f"{source_path}"}},
-                                {"$ne": [f"{source_path}", None]},
-                                obj_conds[0] if obj_conds else True,
+                                {"$not": [{"$isArray": f"${source_path}"}]},
+                                {"$ne": [f"${source_path}", None]},
+                                {"$and": obj_conds} if obj_conds else True,
                             ]
                         },
-                        f"{source_path}",
+                        f"${source_path}",
                         None,
                     ]
                 }

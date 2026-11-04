@@ -6,12 +6,13 @@ import logging
 from enum import Enum
 from typing import Any
 
-from bonsai_app.bonsai import TokenObject, cluster_samples, get_sample_summaries, get_valid_summary_columns
-from bonsai_app.custom_filters import get_json_path
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
+
+from bonsai_app.bonsai_api import get_api_client
+from bonsai_app.summary_columns import has_column_value, has_value, relevant_column_ids
 
 LOG = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class DataPointStyle(BaseModel):  # pylint: disable=too-few-public-methods
 class MetaData(BaseModel):  # pylint: disable=too-few-public-methods
     """Structure of metadata options"""
 
-    metadata: dict[str, dict[str, str | int | float | None]]
+    metadata: dict[str, dict[str, str | int | float | bool | None]]
     metadata_list: list[str]
     metadata_options: dict[str, DataPointStyle]
 
@@ -69,13 +70,16 @@ def _fmt_object(col_id: str, *, data: Any):
     if col_id == "qc_status":
         return f"{data.get('status', 'unknown')} - {data.get('comment', 'No comment')}"
     if col_id == "groups":
-        return ", ".join([group for group in data])
+        return ", ".join(
+            group.get("display_name", group.get("id", ""))
+            if isinstance(group, dict)
+            else group
+            for group in data
+        )
     if col_id == "comments":
-        return ", ".join([
-            comment_obj["comment"]
-            for comment_obj in data
-            if comment_obj["displayed"]
-        ])
+        return ", ".join(
+            [comment_obj["comment"] for comment_obj in data if comment_obj["displayed"]]
+        )
     if col_id == "tags":
         return ", ".join([point["label"] for point in data])
     if col_id == "postalignqc_pct_above_x":
@@ -86,8 +90,11 @@ def _fmt_object(col_id: str, *, data: Any):
 def fmt_metadata(
     sample_obj: dict[str, str | int | list[str | dict[str, Any]]],
     column: dict[str, Any],
-) -> str:
-    data = sample_obj.get(column['id'])
+) -> str | int | float | bool:
+    data = sample_obj.get(column["id"])
+    if not has_column_value(sample_obj, column["id"]):
+        return "-"
+
     match column["type"]:
         case "tags":
             fmt_data = ", ".join([point["label"] for point in data])
@@ -105,7 +112,7 @@ def fmt_metadata(
             fmt_data = datetime.datetime.fromisoformat(data).strftime(r"%Y-%m-%d")
         case "list":
             fmt_data = ", ".join(data)
-        case "number":
+        case "number" | "integer" | "boolean":
             fmt_data = data
         case "string":
             fmt_data = data
@@ -115,7 +122,7 @@ def fmt_metadata(
 
 
 def gather_metadata(
-    samples: list[dict[str, Any]], column_definition: list[Any]
+    samples: list[dict[str, Any]], column_definition: dict[str, Any]
 ) -> MetaData:
     """Create metadata structure.
 
@@ -133,15 +140,20 @@ def gather_metadata(
     - grouptype
     - colorscheme
     """
-    # Get which metadata points to display
-    # skip column with sample button
+    # Keep the internal sample ID as the metadata join key, but do not expose it
+    # as a selectable/displayed metadata field.
+    column_defs = column_definition.get("columns", [])
+    relevant_ids = relevant_column_ids(samples, column_defs)
     columns = [
-        col for col in column_definition.get('columns', [])
-        if col.get("label", "") != ""
+        col
+        for col in column_defs
+        if col.get("id") != "sample_id"
+        and col.get("label", "") != ""
+        and col["id"] in relevant_ids
     ]
-    
+
     # create metadata structure
-    metadata: dict[str, dict[str, str | int | float | None]] = {}
+    metadata: dict[str, dict[str, str | int | float | bool | None]] = {}
     for sample in samples:
         # add sample to metadata list
         sample_id = sample["sample_id"]
@@ -153,14 +165,14 @@ def gather_metadata(
         meta_records: dict[str, str] = {
             meta["fieldname"]: meta["value"]
             for meta in sample.get("metadata", [])
-            if meta["type"] != "table"
+            if meta["type"] != "table" and has_value(meta["value"])
         }
         metadata[sample_id] = {**default_cols, **meta_records}
     # build list of unique columns
     metadata_list: set[str] = set()
     for sample_meta in metadata.values():
         metadata_list.update(set(sample_meta))
-    unique_cols: list[str] = list(metadata_list)
+    unique_cols: list[str] = sorted(metadata_list)
     # build styling for metadata point
     opts: dict[str, DataPointStyle] = {}
     for meta_name in metadata_list:
@@ -195,18 +207,18 @@ def tree():
         column_info = request.form.get("metadata", "{}")
         column_info = None if column_info == "" else json.loads(column_info)
         # query for sample metadata
-        if samples_obj == {}:
-            metadata = {}
-        else:
-            token = TokenObject(**current_user.get_id())
-            sample_summary = get_sample_summaries(
-                token, sample_ids=samples_obj["sample_id"], offset=0
+        metadata = {}
+        if samples_obj:
+            client = get_api_client()
+            sample_summary = client.get_sample_summaries(
+                sample_ids=samples_obj["sample_id"], limit=0, offset=0
             )
             # get column info
-            if column_info is None:
-                column_info = get_valid_summary_columns(token_obj=token)
+            if not column_info:
+                column_info = client.get_valid_summary_columns()
             metadata = gather_metadata(sample_summary["data"], column_info).model_dump()
         data: dict[str, str] = {"nwk": newick, **metadata}
+
         return render_template(
             "ms_tree.html",
             title=f"{typing_data} cluster",
@@ -225,11 +237,11 @@ def cluster():
         sample_ids = [sample["sample_id"] for sample in body["sample_ids"]]
         typing_method = body.get("typing_method", "cgmlst")
         cluster_method = body.get("cluster_method", "MSTreeV2")
-        token = TokenObject(**current_user.get_id())
+
+        client = get_api_client()
         # trigger clustering on api
         try:
-            job = cluster_samples(
-                token,
+            job = client.cluster_samples(
                 sample_ids=sample_ids,
                 typing_method=typing_method,
                 method=cluster_method,

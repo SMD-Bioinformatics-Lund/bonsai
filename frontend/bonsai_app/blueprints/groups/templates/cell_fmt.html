@@ -121,7 +121,7 @@
 {% endmacro %}
 
 {% macro date_renderer(cell_info) %}
-    <td>{{ cell_info | strftime }}</td>
+    <td data-order="{{ cell_info or '' }}">{{ cell_info | strftime if cell_info else '-' }}</td>
 {% endmacro %}
 
 {% macro boolean_renderer(cell_info) %}
@@ -142,7 +142,7 @@
     <td>
     {% for gr in cell_info %}
         <span class="me-1">
-            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.id, bg_color="info") }}
+            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.display_name, bg_color="info") }}
         </span>
     {% endfor %}
     </td>
