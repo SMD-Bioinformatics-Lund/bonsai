@@ -27,7 +27,7 @@
 
 ### Fixed
 
-- Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)
 - Show the group's display name instead of its internal ID in the sample page's Similar samples heading when opened from a group. [#608](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/608)
 - Use existing group display names in browser titles and badge tooltips, and summarize QC, membership, deletion, and UUID-bearing clustering errors while keeping diagnostic details in the browser console. [#608](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/608)
 - Explain duplicate sequence IDs when SNV clustering fails, show the selected sample count and guidance to contact the server administrator, and log sample IDs with the original error in the browser console. [#605](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/605)
