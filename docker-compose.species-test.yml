@@ -1,0 +1,76 @@
+# Append after the base, dev and local-test overlays. All persistent test data
+# lives on the external project data drive; the candidate frontend uses its
+# production build and bundled assets.
+name: bonsai-species-test
+
+services:
+  mongodb:
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR:?Set an external test run directory}/mongodb:/data/db
+
+  redis:
+    volumes:
+      - ${BONSAI_TEST_RUN_DIR}/redis:/data
+
+  frontend:
+    build:
+      target: production
+    ports: !override
+      - "127.0.0.1:18000:8000"
+
+  api:
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/fixtures/resources:/reference_genomes:ro
+      - ${BONSAI_TEST_RUN_DIR}/fixtures/resources:/annotations:ro
+    ports: !override
+      - "127.0.0.1:18001:8000"
+
+  notification_service:
+    ports: !override
+      - "127.0.0.1:18005:8000"
+
+  audit_log_service:
+    ports: !override
+      - "127.0.0.1:18004:8000"
+
+  mailhog:
+    ports: !override
+      - "127.0.0.1:11025:1025"
+      - "127.0.0.1:18025:8025"
+
+  minhash_service:
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/minhash:/data/signature_db
+
+  minhash_cron_service:
+    build:
+      target: development
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/minhash:/data/signature_db
+
+  ska_service:
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/fixtures/samples:/data/samples:ro
+
+  bootstrap:
+    image: bonsai-species-test-api
+    environment:
+      PYTHONPATH: /test-prp
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/fixtures/bootstrap.yml:/bootstrap/default.yml:ro
+      - ${BONSAI_PRP_SOURCE:-../bonsai-prp}:/test-prp:ro
+    command: ["python", "-c", "from prp.cli import cli; cli()", "bonsai", "bootstrap", "/bootstrap/default.yml"]
+
+  test-data-seeder:
+    image: bonsai-species-test-api
+    environment:
+      PYTHONPATH: /test-prp
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/fixtures:/data:ro
+      - ${BONSAI_PRP_SOURCE:-../bonsai-prp}:/test-prp:ro
+      - ./e2e_tests/fixtures/local/seed_species.sh:/seed-species.sh:ro
+    entrypoint: ["/bin/sh", "/seed-species.sh"]
+
+  e2e-tests:
+    volumes: !override
+      - ${BONSAI_TEST_RUN_DIR}/browser-results:/app/reports

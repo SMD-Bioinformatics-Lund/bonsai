@@ -144,6 +144,7 @@ volumes/e2e_tests/*
 !volumes/e2e_tests/.gitkeep
 volumes/minhash_service/*
 data/*
+/data
 reports/*
 e2e_tests/fixtures/local/samples/*
 e2e_tests/fixtures/local/cases/
