@@ -118,6 +118,8 @@ def build(run, output):
         summary = ', '.join(f'{value} {status.lower()}' for status, value in outcomes.items())
         charts.append(f'<figure><h3>{escape(phase.replace("-", " ").capitalize())}</h3><img src="assets/general-{phase}.svg" width="850" height="55" alt="{summary}"><figcaption>{summary}; total {sum(outcomes.values())} checks. <a href="evidence/general-ui-results-latest.json">Exact observations and denominators</a>.</figcaption></figure>')
     rendered = {f["id"]: card(f) for f in findings}
+    from build_bounded_findings import render as render_bounded
+    bounded_html, bounded_summary = render_bounded(run, output, publish, figure)
     categories = Counter(x["category"] for x in content.values())
     verified = {fid for fid, item in fixes.get("findings", {}).items() if item["status"] == "verified"}
     critical = {fid for fid, item in content.items() if item["category"] == "blocker"}
@@ -135,7 +137,7 @@ def build(run, output):
                      '<p>Start the patched local stack with <code>bash scripts/general-test.sh up</code>. Rebuild its JavaScript with <code>bash scripts/general-test.sh build-js</code>. All generated assets remain on the external data drive.</p>')
     replacements = {
         "BLOCKER_COUNT": str(categories["blocker"]), "OTHER_COUNT": str(len(content) - categories["blocker"]),
-        "ANSWER": opening, "VERIFIED_COUNT": str(critical_verified),
+        "ANSWER": escape(bounded_summary) + opening, "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html,
         "FIX_SUMMARY": escape(fixes.get("summary", "Fix phase pending. All screenshots below describe the unchanged development candidate.")),
         "FIX_BRANCH": escape(fixes.get("branch", "Pending creation after the expanded baseline")), "FIX_DETAILS": technical,
         "CHARTS": ''.join(charts),
@@ -149,10 +151,12 @@ def build(run, output):
         publish("general-fix-verification.json")
     html = re.sub(r"@@([A-Z_]+)@@", lambda m: replacements[m[1]], TEMPLATE.read_text())
     (output / "index.html").write_text(html)
-    provenance = {"built_at": datetime.now(timezone.utc).isoformat(), "scope": "General application behavior only; earlier analysis work archived",
+    provenance = {"built_at": datetime.now(timezone.utc).isoformat(), "scope": "General application behavior and read-only stored-summary rendering; analysis execution and curation writes excluded",
                   "application_base_commit": context["source_base_commit"], "counts_by_phase": counts,
                   "finding_categories": dict(categories), "published_evidence": published,
-                  "authoring_sources": {str(p.relative_to(REPO)): digest(p) for p in (CONTENT, TEMPLATE, Path(__file__))}}
+                  "authoring_sources": {str(p.relative_to(REPO)): digest(p) for p in (
+                      CONTENT, TEMPLATE, Path(__file__), REPO / "scripts/build_bounded_findings.py",
+                      REPO / "docs/local-testing/bounded-findings-content.json", REPO / "docs/local-testing/bounded-scope.json")}}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(json.dumps({"page": str(output / "index.html"), "findings": len(findings), "counts": counts, "screenshots": len(screenshots)}))
 

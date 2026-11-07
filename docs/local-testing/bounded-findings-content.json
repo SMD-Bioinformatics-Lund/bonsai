@@ -1,0 +1,44 @@
+{
+  "CSV-EMPTY-CELL-500": {
+    "title": "An accepted CSV empty cell makes its record unreadable",
+    "severity": "Proposed blocker",
+    "impact": "A normal empty cell becomes a non-finite numeric value that the API cannot serialize. The metadata page then fails.",
+    "retest": "Upload a small inventory table with an empty cell, then read the same stored record and metadata page."
+  },
+  "ORDINARY-RECORD-DELETE": {
+    "title": "An ordinary account can delete records through the API",
+    "severity": "Proposed blocker",
+    "impact": "The API authorizes deletion with the update permission, while the frontend offers deletion only to administrators.",
+    "retest": "The ordinary account must receive a denial before deletion runs; administrator deletion must still work."
+  },
+  "PRIVATE-RECORD-SCOPE": {
+    "title": "Record-level private visibility is not enforced",
+    "severity": "Scope gap",
+    "impact": "The API accepts and returns private visibility, but an uninvited account can read the record through the API and frontend. The model describes these fields as preparation for access control.",
+    "retest": "Decide the intended record access policy and enforce it consistently across read, list and mutation paths before relying on this field as a privacy boundary."
+  },
+  "MISSING-RECORD-FEEDBACK": {
+    "title": "Missing records produce server errors or blank pages",
+    "severity": "Follow-up",
+    "impact": "Missing metadata and user-edit links can return HTTP 500. Missing sample links redirect to an unrelated page, and missing table names produce an empty page.",
+    "retest": "Unavailable samples, metadata tables and user records should return a clear 404 state."
+  },
+  "METADATA-VALIDATION-500": {
+    "title": "Invalid metadata is reported as a server failure",
+    "severity": "Follow-up",
+    "impact": "Empty batches and malformed CSV input return HTTP 500 instead of input-validation feedback.",
+    "retest": "Reject empty batches and malformed CSV without modifying the record or returning a server error."
+  },
+  "TB-CURATION-500": {
+    "title": "A stored TB report fails on absent optional curation metadata",
+    "severity": "Proposed blocker",
+    "impact": "The stored sample summary cannot render when optional resistance-level display metadata is absent. Existing stored decisions and values are being preserved.",
+    "retest": "Open the existing report without creating or changing a curation; its summary and stored decision must render."
+  },
+  "TB-NO-AMR-500": {
+    "title": "A stored TB report with a null result cannot be opened",
+    "severity": "Proposed blocker",
+    "impact": "A valid stored null result is treated as a dictionary while building the summary. The read-only report page returns HTTP 500.",
+    "retest": "Open the stored summary, preserve the null value and display an availability message. Variant-page and curation-write workflows remain excluded."
+  }
+}

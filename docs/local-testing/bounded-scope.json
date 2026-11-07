@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "purpose": "Verify diagnostic software behavior against existing synthetic records and supplied expected values.",
+  "basis": "Task scope and visible platform guidance; successful execution is not evidence that a broader activity is permitted.",
+  "increments": [
+    {
+      "id": "record-workflows",
+      "actions": ["Authentication and role restrictions", "Disposable record/group lifecycle", "Metadata and comments", "Table search and generic CSV/XLSX exports", "Missing-record and invalid-input feedback"]
+    },
+    {
+      "id": "stored-report-rendering",
+      "actions": ["Read-only navigation of existing sample summaries", "Rendering null results and optional fields", "Compare displayed identities with saved fixture expectations"],
+      "condition": "The first increment has completed and its findings have been reviewed; no unresolved platform safety stop applies."
+    }
+  ],
+  "excluded": [
+    "Raw sequencing downloads, generation or modification",
+    "Pipeline execution, similarity/clustering jobs and analysis uploads",
+    "Variant or phenotype curation writes",
+    "Biological design, experimental optimization or changes intended to increase harmful capabilities",
+    "Deriving new biological associations or patient-specific clinical decisions",
+    "Testing hidden safety thresholds or changing terminology to bypass a safety stop"
+  ],
+  "data": "Existing local synthetic fixtures; additional disposable records contain generic text, numbers and small inventory tables only.",
+  "mutation_prefix": "bounded_",
+  "api_reads": ["^/users/(?:me|[^/]+)?/?$", "^/groups(?:/.*)?$", "^/memberships$", "^/samples/[^/]+(?:/metadata)?$"],
+  "api_creates": ["/groups/", "/samples/", "/users/"],
+  "browser_blocked_urls": [
+    "*://localhost:18001/analysis*",
+    "*://localhost:18001/cluster*",
+    "*://localhost:18001/job*",
+    "*://localhost:18001/samples/*/similar*",
+    "*://localhost:18001/samples/*/pipeline-runs*",
+    "*://localhost:18001/samples/*/resources*",
+    "*://localhost:18000/sample/*/similar*",
+    "*://localhost:18000/sample/*/variants*",
+    "*://localhost:18000/cluster*",
+    "*://localhost:18000/samples/cluster*",
+    "*://localhost:18000/tree*"
+  ],
+  "runtime": "Compute workers are stopped temporarily during the bounded pass. API helpers reject unlisted routes and mutations of records outside the disposable fixture set.",
+  "on_platform_stop": "Stop the affected activity, preserve the visible notice and completed work, and review the scope before any continuation. Do not automatically retry the blocked workflow.",
+  "limitations": "The harness restrictions are operational checks, not platform approval, a security sandbox or clinical validation."
+}
