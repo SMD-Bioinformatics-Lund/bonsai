@@ -13,7 +13,7 @@
     {% set base_url="github.com/jodyphelan/tbdb/commit" %}
 {% endif %}
 {% if base_url is defined %}
-<a class="br-card-link" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+<a class="br-card-link" href="https://{{base_url}}/{{db.version}}" title="{{ db.version }}" aria-label="Database version {{ db.version }}" target="_blank">{{ db.version[:6] }}</a>
 {% else %}
 {{ db.version }}
 {% endif %}
@@ -1187,7 +1187,7 @@
 {% endmacro %}
 
 
-{% macro emm_card(emm) %}
+{% macro emm_card(emm, status=none, reason=none) %}
 {# Card for displaying EMM typing results #}
 <div class="card col-md-auto">
     <div class="card-header">
@@ -1197,6 +1197,10 @@
         </a>
     </div>
     <div class="card-body">
+        {% if not emm %}
+            <p class="text-muted">{% if status == 'empty' %}Empty EMM typing report.{% else %}EMM typing result is unavailable.{% endif %}</p>
+            {% if reason %}<p class="text-muted">{{ reason }}</p>{% endif %}
+        {% else %}
         <table class="table table-sm">
             <tbody>
                 <tr>
@@ -1214,7 +1218,7 @@
                             <i class="bi bi-question-circle"></i>
                         </span>
                     </th>
-                    <td>{{ emm.cluster_count | default('-', true) }}</tr>
+                    <td>{{ emm.cluster_count if emm.cluster_count is not none else '-' }}</td>
                 </tr>
                 <tr>
                     <th>
@@ -1231,6 +1235,7 @@
                 </tr>
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}

@@ -173,13 +173,13 @@ MANIFEST = Manifest(
             path="$chewbbaca.n_novel",
         ),
         ColumnFull(
-            id="emm_type", requires=["emm"], label="EMM Type", path="$emm.emmtype"
+            id="emm_type", requires=["emm"], label="EMM Type", path="$emmtyper.emmtype"
         ),
         ColumnFull(
             id="emm_cluster",
             requires=["emm"],
             label="EMM Cluster",
-            path="$emm.emm_cluster",
+            path="$emmtyper.emm_cluster",
         ),
         ColumnFull(
             id="stx", requires=["stx"], label="STX typing",
