@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "title": "Bonsai development release-test review",
+  "question": "What should be fixed before next week's release test?",
+  "answer": "The local candidate is ready for a focused human retest, but several access-control and selection/save defects still need resolution before the affected workflows are released. Many earlier failures have small, locally verified fixes on paired application and SDK branches.",
+  "as_of": "7 November 2026",
+  "scope": "Synthetic-data software testing, separate accounts, generic record workflows, offline parser contracts and read-only display of stored reports. The latest gap audit performed no live analysis upload, analysis execution or curation write.",
+  "recommendation": "Resolve the two access-policy gates first. Resolve the four P1 workflow gates before those workflows are enabled. Review and build both local branches, then repeat the acceptance route on a fresh instance.",
+  "priority_definitions": {
+    "P0": "Resolve before ordinary-user access or use of restricted records; the private-record priority depends on the promised access policy.",
+    "P1": "Resolve before the affected release workflow is enabled.",
+    "P2": "Schedule in the next correction cycle; any deferral needs an explicit scope decision or usable workaround.",
+    "P3": "Backlog or presentation policy, unless the affected format or phone workflow is a release requirement."
+  },
+  "aliases": {
+    "TB-NO-AMR-500": ["DETAIL-NULL-500"],
+    "MISSING-RECORD-FEEDBACK": ["DETAIL-MISSING-500"],
+    "ORDINARY-RECORD-DELETE": ["ACCOUNT-SINGLE-DELETE"],
+    "BASKET-ACCOUNT-SHARED": ["ACCOUNT-BASKET-ISOLATION"],
+    "BASKET-UNDEFINED-ASSAY": ["ACCOUNT-BASKET-HTML"],
+    "VARIANT-FILTER-AND": ["DETAIL-COMBINED-FILTER"],
+    "VARIANT-HIDE-DISMISSED-500": ["DETAIL-DISMISSED-500"],
+    "EMM-LIMS-EXPORT-500": ["EMM-EXPORT-500"],
+    "EMM-DISPLAY-MISSING": ["DISPLAY-EMM-SUMMARY"],
+    "KLEBORATE-UPLOAD-422": ["PARSER-KLEBORATE-INTEGRATION"],
+    "SA-TYPING-SURFACE-GAP": ["PARSER-TYPING-SURFACES"],
+    "ECOLI-VARIANTS-EMPTY": ["DETAIL-UNAVAILABLE-NEGATIVE"]
+  },
+  "fixed_titles": {
+    "ACCOUNT-ROLE-PERMISSIONS": "Generic record-create and legacy read scopes disagreed with the roles",
+    "BASKET-UNDEFINED-ASSAY": "Basket labels interpreted markup and displayed a missing assay as undefined",
+    "COMMENT-HIDE-PERMISSION-500": "Ordinary accounts were offered comment removal that failed with HTTP 500",
+    "MISSING-RECORD-FEEDBACK": "Missing-record routes crashed instead of returning a usable 404",
+    "ORDINARY-RECORD-DELETE": "Single and bulk deletion admitted ordinary accounts",
+    "TB-NO-AMR-500": "Stored null results crashed summary and detail pages"
+  },
+  "open_findings": [
+    {
+      "id": "ANALYSIS-UPLOAD-ROLE-GATE",
+      "priority": "P0",
+      "title": "The ingestion route admits the viewing role and rejects the uploader role",
+      "impact": "The route's role gate conflicts with the documented account model: an ordinary viewing account passes the upload boundary, while the dedicated uploader is denied.",
+      "reproduction": "In an isolated app using the real router, JWT decoding and role checks, POST /analysis/ returned 201 for user, 401 for uploader and 201 for admin. Only the downstream service and user lookup were stubbed.",
+      "evidence_level": "Isolated authorization test; no live ingestion",
+      "recency": "New in the final gap audit",
+      "action": "Require the existing write scope intended for uploads, then verify the full role matrix with a stubbed service before any separately authorized ingestion test.",
+      "workaround": "Restrict route access until the role contract is corrected.",
+      "evidence": ["release-review/2026-11-07/permission-gate.json"],
+      "code": ["api/bonsai_api/routers/analysis.py", "docs/source/administration.rst"]
+    },
+    {
+      "id": "PRIVATE-RECORD-SCOPE",
+      "priority": "P0",
+      "title": "A private-marked record remains readable by an uninvited account",
+      "impact": "The private marker currently provides no demonstrated record-level confidentiality. Private-group access checks passed, but they do not protect an independently addressable record.",
+      "reproduction": "A disposable record was created as private with owner user:admin. The API normalized the owner to admin; uninvited user_two still received HTTP 200 and the record. The earlier frontend probe also displayed it.",
+      "evidence_level": "Live generic API probe; earlier browser confirmation",
+      "recency": "Reconfirmed in the final gap audit",
+      "action": "Decide whether private records are promised in this release. If so, enforce the policy on list, direct-read and related routes. Otherwise remove or clearly disable the privacy promise before use.",
+      "workaround": "Use unrestricted synthetic records only; do not rely on this marker for restricted data.",
+      "condition": "P0 when private or restricted records are part of the release contract. Source comments describe record access controls as preparatory.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json", "bounded/2026-11-07/findings.json"]
+    },
+    {
+      "id": "CURATION-DOUBLE-SUBMIT",
+      "priority": "P1",
+      "title": "One confirmation saves, then reports failure and shows stale state",
+      "impact": "A successful write is reported as a conflict. Repeated user attempts and the unchanged on-screen status make the saved state difficult to trust.",
+      "reproduction": "The original browser run reproduced this for two decisions: one Confirm saved the record, then returned HTTP 409; reload showed the saved result. The controller still calls create_curation_fn twice, and the view fetches its display state before the POST.",
+      "evidence_level": "Historical live reproduction plus current source confirmation",
+      "recency": "No new curation write in the later bounded passes",
+      "action": "Remove the duplicate service call and reload the saved state before rendering. Verify one service call and fresh feedback with a generic stub; perform a separately scoped end-to-end write test before enabling this workflow.",
+      "workaround": "Keep the affected write workflow out of release use until verified.",
+      "evidence": ["findings.json", "release-review/2026-11-07/source-audit.json"],
+      "code": ["frontend/bonsai_app/blueprints/sample/controllers.py", "frontend/bonsai_app/blueprints/sample/views.py"]
+    },
+    {
+      "id": "VARIANT-SELECT-ALL-INVALID",
+      "priority": "P1",
+      "title": "Select all adds an extra row with undefined identifiers",
+      "impact": "The bulk action's local payload contains an invalid extra target. A visible three-row selection produces four payload entries.",
+      "reproduction": "The final read-only browser probe selected the header checkbox on the existing three-row table: four local records were produced, including one without valid identifiers. No form was submitted; the checkbox was cleared afterwards.",
+      "evidence_level": "Live browser state inspection; no submission",
+      "recency": "Reconfirmed after the sidebar fix",
+      "action": "Bind individual-row handlers only to body checkboxes. Verify that header selection produces exactly the displayed valid row identifiers, including after filtering.",
+      "workaround": "Avoid the header Select all control until corrected.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"],
+      "code": ["frontend/web/js/views/variants-table/variants-view.ts"]
+    },
+    {
+      "id": "KLEBORATE-UPLOAD-422",
+      "priority": "P1",
+      "title": "The supported report path cannot receive its required companion input",
+      "impact": "Offline parser success does not translate into working API ingestion for the two Klebsiella assay paths. This leaves a release path unavailable.",
+      "reproduction": "Twenty frozen reports parse offline, but the four original positive/empty upload attempts returned HTTP 422 for a missing hAMRonization companion. The current upload signature still exposes only the main file and coverage/bedcov companions.",
+      "evidence_level": "Historical API reproduction; current signature inspection; offline parser pass",
+      "recency": "No new live upload in the bounded passes",
+      "action": "Agree the companion-file API contract and forward the input to the existing parser. Cover the plumbing with fixed parser stubs, then separately verify ingestion before claiming this path works.",
+      "workaround": "Mark the integration path unavailable until its contract is complete.",
+      "evidence": ["findings.json", "parser-display/2026-11-07/findings.json", "release-review/2026-11-07/source-audit.json"],
+      "code": ["api/bonsai_api/routers/analysis.py"]
+    },
+    {
+      "id": "SELECTED-FILTER-STALE",
+      "priority": "P1",
+      "title": "Clearing a selected-only view still exports the old records",
+      "impact": "An export can contain records after the selection count has reached zero. This is more consequential than the original stale-display observation.",
+      "reproduction": "Select all eight disposable records, enable Show only selected, then Deselect all. The selection is zero and Add to basket is disabled, but eight rows remain and the CSV contains all eight.",
+      "evidence_level": "Live browser reproduction and exported-file inspection",
+      "recency": "New export consequence confirmed in the final gap audit",
+      "action": "Redraw the active selected-row filter when selection is cleared, then verify the visible row set and exported set agree at zero and nonzero selections.",
+      "workaround": "Reset the selected-only filter and inspect the displayed row count before exporting.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json", "expanded-findings.json"]
+    },
+    {
+      "id": "RECOVERY-SAME-FIELD-CONFLICT",
+      "priority": "P2",
+      "title": "Concurrent edits to the same group field silently overwrite",
+      "impact": "Two editors of the same description get last-writer behavior without a conflict prompt. Independent-field overwrites were fixed separately.",
+      "reproduction": "Two stale browser tabs saved different descriptions; the later value replaced the earlier one.",
+      "evidence_level": "Live two-tab generic workflow",
+      "action": "Define an edit-version or conflict contract; until then refresh before editing and coordinate changes.",
+      "evidence": ["failure-recovery/2026-11-07/findings.json"]
+    },
+    {
+      "id": "RECOVERY-MEMBERSHIP-PARTIAL",
+      "priority": "P2",
+      "title": "A partial membership failure cannot be resumed from the refreshed selection",
+      "impact": "One removal can remain unapplied. The improved warning reports partial success, but repeating Apply does not complete the original intent.",
+      "reproduction": "A two-record removal was interrupted after one success; the refreshed common selection was empty while one membership remained.",
+      "evidence_level": "Injected transport failure in a live generic workflow",
+      "action": "Retain the intended operation or expose per-target outcomes. Until then inspect and remove remaining memberships individually.",
+      "evidence": ["failure-recovery/2026-11-07/findings.json"]
+    },
+    {
+      "id": "RECOVERY-SESSION-DRAFT",
+      "priority": "P2",
+      "title": "Session expiry loses an unsent comment draft",
+      "impact": "Expiry is rejected correctly, but typed text is not restored after sign-in.",
+      "reproduction": "An expired-session submission did not write or crash; its draft disappeared during reauthentication.",
+      "evidence_level": "Live expired-session generic workflow",
+      "action": "Preserve a short-lived account-scoped draft, or provide a clear copy-before-login route.",
+      "evidence": ["failure-recovery/2026-11-07/findings.json"]
+    },
+    {
+      "id": "GROUP-EDITOR-EMPTY-COUNT",
+      "priority": "P2",
+      "title": "A populated group editor says no records have been added",
+      "impact": "The saved membership is present, but the edit screen gives a misleading empty-state message.",
+      "reproduction": "The final disposable group had ten API members while its editor displayed No samples added yet; the original large-group case behaved the same way.",
+      "evidence_level": "Live API and browser comparison",
+      "action": "Use the existing saved count or load the member list for the editor; verify empty and populated groups.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"]
+    },
+    {
+      "id": "CSV-FORMULA-PREFIX",
+      "priority": "P2",
+      "title": "CSV protection misses some formula-like prefixes",
+      "impact": "Names beginning + or - are emitted without the protection used for = and @. Formula execution in a target spreadsheet was not tested, so this is an export-hardening gap rather than a demonstrated exploit.",
+      "reproduction": "Harmless names +1+1 and -1+1 remained unprefixed in CSV bytes. XLSX contained no formula cells and retained long identifiers as text.",
+      "evidence_level": "File-byte inspection and installed-library source inspection",
+      "action": "Define the spreadsheet-safe CSV contract and validate representative clients. Raise to P1 if opening untrusted CSV text directly is an expected release workflow.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"]
+    },
+    {
+      "id": "SA-TYPING-SURFACE-GAP",
+      "priority": "P2",
+      "title": "Stored SPA and SCCmec fields have no agreed summary surface",
+      "impact": "These parsed fields are present in the API but cannot be read on the current summary. This is an unresolved feature-scope decision.",
+      "reproduction": "The frozen stored record contains SPA and SCCmec values; no corresponding summary cards were found.",
+      "evidence_level": "Stored API-to-browser comparison",
+      "action": "Choose a supported reading surface or explicitly exclude these fields from the release promise. Raise to P1 if already advertised.",
+      "evidence": ["parser-display/2026-11-07/findings.json", "findings.json"]
+    },
+    {
+      "id": "ECOLI-VARIANTS-EMPTY",
+      "priority": "P2",
+      "title": "The generic detail route still supports only a limited result type",
+      "impact": "The misleading negative message has been fixed, but stored non-TB detail results still lack a full reading surface. Clear availability feedback does not constitute support for those results.",
+      "reproduction": "The route names the stored type it displays and shows unavailable feedback for unsupported results; the earlier E. coli record has stored fields outside that route's supported type.",
+      "evidence_level": "Read-only sweep and current route inspection",
+      "action": "Decide the release's supported detail types; add a reading surface if promised. Raise to P1 for any advertised unsupported path.",
+      "evidence": ["detail-read/2026-11-07/findings.json", "findings.json"]
+    },
+    {
+      "id": "OVERVIEW-MOBILE-OVERFLOW",
+      "priority": "P3",
+      "title": "The application overview overflows phone-width screens",
+      "impact": "The full page scrolls horizontally, making controls awkward on a phone. The separate findings/report site fits phone widths.",
+      "reproduction": "With the final audit records, page width was 1570 CSS pixels at both 320 and 390 pixel viewports; the exact excess depends on table content.",
+      "evidence_level": "Live responsive browser measurements",
+      "action": "Contain horizontal scrolling inside the table. Raise priority if phone operation is a release requirement.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"]
+    },
+    {
+      "id": "CSV-NEWLINE-NORMALIZATION",
+      "priority": "P3",
+      "title": "CSV export replaces embedded name newlines with spaces",
+      "impact": "Quoting, Unicode and leading-zero identifiers survived, but the exported name is not byte-for-byte equal to the stored multiline name.",
+      "reproduction": "A quoted name containing a newline and Cafe with an accent was exported with a space at the newline position.",
+      "evidence_level": "Stored-value to CSV-cell comparison",
+      "action": "Document normalization or preserve multiline text, according to the export contract.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"]
+    }
+  ],
+  "new_fixed": [
+    {
+      "id": "DETAIL-COMMENT-CONTEXT-500",
+      "priority": "P1",
+      "title": "Commented detail pages crashed after the role-aware sidebar change",
+      "summary": "Both shared sidebar imports now receive request context. Six focused ordinary/admin page checks and the complete 62-test frontend suite pass; the same stored detail page opens in the browser.",
+      "evidence": ["release-review/2026-11-07/gap-audit.json"],
+      "code": ["frontend/bonsai_app/blueprints/sample/templates/resistance_variants.html", "frontend/bonsai_app/blueprints/sample/templates/sample_layout.html", "frontend/tests/test_sidebar_context.py"]
+    }
+  ],
+  "fixed_groups": [
+    {"title": "Access, sessions and account administration", "text": "Account create/edit, non-admin denial, single/bulk deletion permission, generic uploader/read role checks, disabled sessions, stale tabs and account-scoped baskets have targeted passing retests. The newly discovered ingestion gate is separate and remains open."},
+    {"title": "Record organization and metadata", "text": "Group deletion preserves unrelated memberships; unchanged Apply preserves hidden memberships; 125-record preselection is batched. Metadata append, categories, table shape, empty cells, validation and concurrent updates were corrected."},
+    {"title": "Comments and save recovery", "text": "Concurrent comments receive unique IDs; stable retry keys avoid duplicate saves. Group saves guard repeated clicks and retain independent fields. Partial or uncertain saves now give explicit feedback. Historical duplicate comment IDs were not migrated."},
+    {"title": "Reading, filtering and downloads", "text": "Pending/null/missing records, saved-result filters, combined predicates, misleading availability wording and EMM exports were corrected. Stored EMM summaries, table projections, extended-summary context and full version labels now display correctly."},
+    {"title": "SDK parser contracts", "text": "Three small SDK fixes cover selected-result dispatch, header-only empty-table shape and a stream being read twice. Fixed input values, zero values, stream/path parity and version boundaries have focused checks."},
+    {"title": "Final integrated regression", "text": "The last gap sweep exposed a comment-sidebar context crash missed by earlier isolated checks. The minimal fix passed six role-aware page checks and the complete frontend suite. This is why a fresh integrated human retest remains necessary."}
+  ],
+  "coverage": [
+    {"area": "Representative records", "result": "80 original synthetic records; 125 records at the broad table test", "limit": "Eight configured assay paths include aliases; they are not eight independent species."},
+    {"area": "Accounts and generic workflows", "result": "Four separate accounts; accounts, groups, metadata, comments, baskets, selection and exports", "limit": "Role checks are route-specific. The final ingestion boundary audit found a missed route."},
+    {"area": "Offline parser contracts", "result": "479 frozen report parses; 714 final contract observations passed", "limit": "Version dispatch boundaries do not prove every producer-version format. No upstream analysis tool was run."},
+    {"area": "Literal field fidelity", "result": "2029 selected source fields matched parser output; 1969 stored counterparts matched the API", "limit": "60 fields had no stored Kleborate counterpart. Selected fields are not exhaustive schemas."},
+    {"area": "Stored browser views", "result": "80-record read-only sweeps; 20 EMM descriptors displayed, including two empty results", "limit": "SPA/SCCmec and broader detail types remain explicit scope gaps."},
+    {"area": "LIMS file fidelity", "result": "20 CSV/TSV files matched selected literal values", "limit": "20 further export cases were unavailable because required MLST data was missing."},
+    {"area": "Selected automated suites", "result": "196 SDK + 62 frontend + 45 API + 17 scope-guard tests passed", "limit": "320 is a suite inventory, not coverage percentage. Only the 62 frontend tests were rerun after the final template-only fix."},
+    {"area": "Final generic gap audit", "result": "CSV/XLSX data types, selected-only export, private reads, role gate, group count and phone layout checked", "limit": "Spreadsheet formula execution, new ingestion and curation submissions were not performed."}
+  ],
+  "assay_paths": ["mtuberculosis", "saureus", "ecoli", "kpneumoniae", "klebsiella", "spyogenes", "streptococcus", "staphylococcus"],
+  "remaining_gaps": [
+    "Real JASEN output and end-to-end producer-to-ingestion compatibility remain untested; no public biological data was acquired for this review.",
+    "Scientific or clinical correctness was not assessed. Literal field preservation and software behavior were checked against frozen expectations.",
+    "Production images were not rebuilt. Local application and SDK source overlays were tested together; merge, clean build and fresh deployment remain necessary.",
+    "LDAP/SSO, Firefox/Safari, production-scale load, full API outages and process-crash recovery remain untested.",
+    "Original clustering evidence is preserved: 28 eligible assay/method combinations passed. No clustering was rerun in the later bounded passes; one failed-QC case was explained rather than counted as a defect.",
+    "Curation writes and new ingestion were not repeated in the later bounded tests. Historical reproductions and source inspection support those open findings, with lower current end-to-end confidence."
+  ],
+  "acceptance_route": [
+    {"step": "Build and identify the candidate", "check": "Review both local branches, build fresh application/SDK images and record the deployed revisions. Confirm source overlays are no longer masking packaging issues."},
+    {"step": "Verify access first", "check": "Repeat ordinary/admin/uploader route checks with generic stubs; resolve the private-record contract and test owner, invited and uninvited list/direct access. Confirm deletion and administrative denials remain correct."},
+    {"step": "Check reading across configured paths", "check": "Open representative positive, empty, pending and missing-result records for every configured path. Compare displayed literal fields with frozen expected values; verify comments do not break summaries or detail pages."},
+    {"step": "Check selection and files", "check": "Filter, select across pages, clear a selected-only view and compare the visible/exported record sets. Verify Select all yields exactly valid displayed IDs without submitting a write. Inspect CSV/XLSX identifiers and literal text."},
+    {"step": "Check generic persistence and recovery", "check": "Use disposable records for group membership, metadata, comments and deletion. Try two tabs, a delayed response and session expiry. Reload to confirm the persisted result and unchanged unrelated data."},
+    {"step": "Gate excluded workflows explicitly", "check": "Keep the two historically failing write/integration workflows outside acceptance claims until their contracts and separately scoped verification are complete. Record unsupported surfaces as unavailable rather than passing."}
+  ],
+  "screenshots": [
+    {"path": "release-review/2026-11-07/browser/selected-only-after-clear.png", "title": "A cleared selected-only view still contains rows", "caption": "Final generic audit: eight disposable records remain after Deselect all. The selection count is zero; the subsequent CSV also contained eight records. This is direct browser and file evidence for SELECTED-FILTER-STALE."},
+    {"path": "release-review/2026-11-07/browser/detail-page-availability-after-fix.png", "title": "The commented detail page opens after the context fix", "caption": "The same stored read-only page previously returned HTTP 500. After passing context to the sidebar imports, it opens normally. No decision was submitted. This illustrates the locally fixed regression, not a complete write-workflow test."}
+  ]
+}

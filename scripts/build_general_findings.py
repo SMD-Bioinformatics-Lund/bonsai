@@ -164,6 +164,13 @@ def build(run, output):
         "FINDINGS": publish("general-findings.json"), "UI_RESULTS": publish("general-ui-results-latest.json"),
         "APP_COMMIT": context["source_base_commit"], "SDK_COMMIT": context["sdk_revision"],
         "SCREENSHOT_INDEX": '<ul>' + ''.join(f'<li><a href="{url}">{escape(caption)}</a></li>' for url, caption in screenshots) + '</ul>',
+        "RELEASE_REVIEW": ('<section class="overview"><h2>Current priorities and a condensed PDF</h2>'
+                           '<p>The consolidated review supersedes historical open/fixed labels when prioritizing next week\'s work. '
+                           'It identifies 15 open items, 41 locally fixed items and one explained case, with six access/workflow gates at the front of the queue.</p>'
+                           '<div class="evidence-links"><a href="review/index.html">Read the prioritized review</a>'
+                           '<a href="review/output/pdf/bonsai-release-review.pdf">Download the 8-page PDF</a>'
+                           '<a href="review/technical.html">Methods and exact evidence</a></div></section>')
+                          if (output / "review/index.html").is_file() else '',
     }
     if fixes:
         publish("general-fix-verification.json")
