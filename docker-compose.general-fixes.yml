@@ -1,0 +1,12 @@
+# Append to the isolated test stack only after its baseline evidence is frozen.
+# Reuse the recorded runtime/SDK dependencies and mount the small candidate patch.
+services:
+  frontend:
+    environment:
+      PYTHONPATH: /app/fix
+    volumes:
+      - ./frontend/bonsai_app:/app/fix/bonsai_app:ro
+      - ${BONSAI_TEST_RUN_DIR:?Set the external run directory}/frontend-build:/app/fix/bonsai_app/static/build:ro
+  api:
+    volumes:
+      - ./api/bonsai_api:/app/api/bonsai_api:ro

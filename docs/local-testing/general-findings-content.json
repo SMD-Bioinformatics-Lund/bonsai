@@ -208,5 +208,12 @@
         "caption": "Baseline observation: the overview is wider than a phone screen."
       }
     ]
+  },
+  "GROUP-DELETE-MEMBERSHIP-LOSS": {
+    "title": "Deleting one group removes memberships in other groups",
+    "category": "blocker",
+    "impact": "Records remain after group deletion, but their unrelated group memberships can be silently lost. A fresh one-record, two-group probe reproduced the loss on the unchanged baseline.",
+    "retest": "Delete group A while one of its records also belongs to B. The record and its B membership must remain, and B\u2019s count must be unchanged.",
+    "screenshots": []
   }
 }

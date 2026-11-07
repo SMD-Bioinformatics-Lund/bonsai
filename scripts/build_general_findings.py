@@ -87,6 +87,9 @@ def build(run, output):
             verification = '<p class="retest"><strong>Fix verification: ' + escape(fix["status"]) + '</strong>' + escape(fix["summary"]) + '</p>'
             for item in fix.get("screenshots", []):
                 verification += figure(item)
+            if fix.get("evidence"):
+                verification += '<p class="footnote">Verification evidence: ' + ' · '.join(
+                    f'<a href="{publish(path)}">{escape(Path(path).name)}</a>' for path in fix["evidence"]) + '</p>'
         gallery = '<div class="gallery">' + ''.join(figure(x) for x in text["screenshots"]) + '</div>' if text["screenshots"] else ''
         return (f'<article class="finding" id="{fid}"><div class="finding-head"><div class="meta"><span class="badge {category}">{label}</span>'
                 f'<a class="finding-id" href="#{fid}">{fid}</a></div><h3>{escape(text["title"])}</h3></div><div class="finding-body">'
@@ -116,10 +119,25 @@ def build(run, output):
         charts.append(f'<figure><h3>{escape(phase.replace("-", " ").capitalize())}</h3><img src="assets/general-{phase}.svg" width="850" height="55" alt="{summary}"><figcaption>{summary}; total {sum(outcomes.values())} checks. <a href="evidence/general-ui-results-latest.json">Exact observations and denominators</a>.</figcaption></figure>')
     rendered = {f["id"]: card(f) for f in findings}
     categories = Counter(x["category"] for x in content.values())
+    verified = {fid for fid, item in fixes.get("findings", {}).items() if item["status"] == "verified"}
+    critical = {fid for fid, item in content.items() if item["category"] == "blocker"}
+    critical_verified = len(critical & verified)
+    opening = (f'<strong>{critical_verified} of {len(critical)} general-workflow blockers passed targeted fix verification.</strong> '
+               f'{len(content) - len(verified)} smaller findings remain open. The unchanged baseline evidence and local fix results are kept separately below.') if fixes.get("findings") else (
+               f'<strong>{len(critical)} proposed blockers affect ordinary application workflows.</strong> '
+               'Group memberships, metadata, pending records, filtering and account administration require a release retest.')
+    technical = ''
+    if fixes.get("source_commit"):
+        technical = (f'<h4>Local patch and verification</h4><p>Application patch: <code>{escape(fixes["source_commit"])}</code>. '
+                     f'<a href="{publish("general-regression-results.json")}">Automated checks and commands</a> · '
+                     f'<a href="{publish("general-fixed-api-results.json")}">Generic API probes</a>.</p>'
+                     '<p>The production JavaScript build and TypeScript check passed. Branch source and compiled bundles were mounted into the recorded runtime images for this local test; shipped container images were not rebuilt.</p>'
+                     '<p>Start the patched local stack with <code>bash scripts/general-test.sh up</code>. Rebuild its JavaScript with <code>bash scripts/general-test.sh build-js</code>. All generated assets remain on the external data drive.</p>')
     replacements = {
         "BLOCKER_COUNT": str(categories["blocker"]), "OTHER_COUNT": str(len(content) - categories["blocker"]),
-        "FIX_SUMMARY": fixes.get("summary", "Fix phase pending. All screenshots below describe the unchanged development candidate."),
-        "FIX_BRANCH": fixes.get("branch", "Pending creation after the expanded baseline"),
+        "ANSWER": opening, "VERIFIED_COUNT": str(critical_verified),
+        "FIX_SUMMARY": escape(fixes.get("summary", "Fix phase pending. All screenshots below describe the unchanged development candidate.")),
+        "FIX_BRANCH": escape(fixes.get("branch", "Pending creation after the expanded baseline")), "FIX_DETAILS": technical,
         "CHARTS": ''.join(charts),
         "BLOCKERS": ''.join(rendered[k] for k, v in content.items() if v["category"] == "blocker"),
         "OTHER": ''.join(rendered[k] for k, v in content.items() if v["category"] != "blocker"),
