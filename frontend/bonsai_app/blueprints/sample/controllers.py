@@ -251,12 +251,13 @@ def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) ->
     min_depth = form.get("min-depth")
     if min_depth and variant["depth"] is not None:
         if form.get("depth-operator") == "gte":
-            variant_passes_qc = variant["depth"] >= int(min_depth)
+            variant_passes_qc = variant_passes_qc and variant["depth"] >= int(min_depth)
         else:
-            variant_passes_qc = variant["depth"] <= int(min_depth)
+            variant_passes_qc = variant_passes_qc and variant["depth"] <= int(min_depth)
 
     # hide variant that have been manually dismissed
-    if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":
+    decision = (variant.get("curation") or {}).get("decision", variant.get("verified"))
+    if bool(form.get("hide-dismissed")) and decision in {"reject", "failed"}:
         variant_passes_qc = False
 
     # hide varians without resistance
@@ -290,7 +291,8 @@ def filter_variants(
 ) -> dict[str, Any]:
     """Filter resistance variants from prediction sw."""
     for prediction in sample_info["element_type_result"]:
-        variants = prediction["result"]["variants"]
+        merge_variants_with_curations(prediction)
+        variants = (prediction.get("result") or {}).get("variants", [])
         if len(variants) == 0:
             continue
         # build up a new variant list that passes all filtering criteria
@@ -324,7 +326,7 @@ def get_variant_genes(sample_info, software=None) -> tuple[str, ...]:
         if software and not software == prediction["software"]:
             continue
         # skip predictions withouht variants
-        variants = prediction["result"]["variants"]
+        variants = (prediction.get("result") or {}).get("variants", [])
         genes.update({variant["reference_sequence"] for variant in variants})
     return tuple(sorted(genes))
 
@@ -350,7 +352,7 @@ def get_all_who_classifications(sample_info, software=None) -> tuple[str, ...]:
         if software and not prediction["software"] == software:
             continue
         # skip predictions withouht variants
-        variants = prediction["result"]["variants"]
+        variants = (prediction.get("result") or {}).get("variants", [])
         for variant in variants:
             classification.update(get_variant_classifications(variant))
     return tuple(sorted(classification))
@@ -368,7 +370,7 @@ def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
             continue
         # skip predictions withouht variants
         variants = {
-            variant["variant_type"] for variant in prediction["result"]["variants"]
+            variant["variant_type"] for variant in (prediction.get("result") or {}).get("variants", [])
         }
         variant_types.update(variants)
     return tuple(sorted(variant_types))

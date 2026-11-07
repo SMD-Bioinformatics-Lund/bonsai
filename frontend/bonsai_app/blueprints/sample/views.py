@@ -324,7 +324,10 @@ def resistance_variants(sample_id: str) -> str:
     :rtype: str
     """
     client = get_api_client()
-    sample_info = client.get_sample_by_id(sample_id=sample_id)
+    try:
+        sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except NotFoundError:
+        abort(404)
 
     # Handle POST requests for filtering or variant classification
     if request.method == "POST":
@@ -395,7 +398,8 @@ def resistance_variants(sample_id: str) -> str:
         sample_info, software="tbprofiler", analysis_type="amr"
     )
     for pred_res in tbprofiler_results:
-        pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
+        if "variants" in (pred_res.get("result") or {}):
+            pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
     # Sort top-level structural and SNV variants if present
     for variant_key in ("sv_variants", "snv_variants"):
@@ -470,6 +474,7 @@ def resistance_variants(sample_id: str) -> str:
         title=f"{sample_info['external_sample_id']} resistance",
         sample=sample_info,
         amr_results=amr_results,
+        has_detail_result=any("variants" in (r.get("result") or {}) for r in amr_results),
         form_data=form_data,
         form_state=form_state,
         antibiotics=antibiotics,
