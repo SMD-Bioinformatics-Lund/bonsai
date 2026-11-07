@@ -20,9 +20,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--run-dir", type=Path, required=True)
 parser.add_argument("--role", default="user_one")
+parser.add_argument("--session-name", default="")
 parser.add_argument("--url", default="http://localhost:18000")
 args = parser.parse_args()
 output = args.run_dir.resolve() / "browser-results" / args.role
+if args.session_name:
+    output = output / args.session_name
 output.mkdir(parents=True, exist_ok=True)
 options = webdriver.ChromeOptions()
 options.binary_location = "/snap/chromium/current/usr/lib/chromium-browser/chrome"
