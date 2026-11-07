@@ -22,7 +22,7 @@ async def get_samples_from_pipeline_run(
     pipeline_run_id: str,
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get get samples analysed with a pipeline run."""

@@ -46,7 +46,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: UserOutputDatabase = Security(get_current_user, scopes=["users:me"]),
+    current_user: UserOutputDatabase = Security(get_current_user),
 ) -> UserOutputDatabase | None:
     """Get current active user."""
     # disable API authentication

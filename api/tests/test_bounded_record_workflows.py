@@ -40,7 +40,8 @@ def test_nonfinite_stored_numbers_have_a_json_representation():
 
 
 @pytest.mark.parametrize("role,status_code", [("user", 401), ("admin", 200)])
-def test_record_deletion_requires_write_permission(monkeypatch, role, status_code):
+@pytest.mark.parametrize("path", ["/samples/", "/samples/bounded-test-record"])
+def test_record_deletion_requires_write_permission(monkeypatch, role, status_code, path):
     @asynccontextmanager
     async def transaction(*args, **kwargs):
         yield None
@@ -61,7 +62,7 @@ def test_record_deletion_requires_write_permission(monkeypatch, role, status_cod
     app.dependency_overrides[get_audit_log] = lambda: None
     app.dependency_overrides[get_request_context] = lambda: SimpleNamespace(actor=None, metadata=None)
     with TestClient(app) as client:
-        response = client.request("DELETE", "/samples/", json=["bounded-test-record"])
+        response = client.request("DELETE", path, json=["bounded-test-record"] if path == "/samples/" else None)
     assert response.status_code == status_code
     assert delete.await_count == (1 if role == "admin" else 0)
 

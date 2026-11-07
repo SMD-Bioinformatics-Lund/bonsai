@@ -34,8 +34,25 @@
         <script src="{{ asset_url('commons.js') }}"></script>
         <script src="{{ asset_url('bootstrap-init.js') }}"></script>
         {% endblock scripts %}
+        <script>
+        // Keep rendered account state in step with other tabs and browser history.
+        (() => {
+            const renderedUser = {{ (current_user.get_id() if current_user.is_authenticated else '') | tojson }};
+            const key = 'bonsai_active_account';
+            try {
+                if (localStorage.getItem(key) !== renderedUser) localStorage.setItem(key, renderedUser);
+                const checkAccount = () => {
+                    if (localStorage.getItem(key) !== renderedUser) location.reload();
+                };
+                window.addEventListener('storage', event => {
+                    if (event.key === key || event.key === null) checkAccount();
+                });
+                window.addEventListener('pageshow', checkAccount);
+            } catch (_) { /* Storage can be unavailable in restricted browser profiles. */ }
+        })();
+        </script>
     </head>
-    <body class="bg-light">
+    <body class="bg-light" data-bonsai-user="{{ current_user.get_id() if current_user.is_authenticated else '' }}">
         {% block navbar %}
         {% endblock navbar %}
         {# toast #}

@@ -30,7 +30,7 @@ class Element extends EventTarget {
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 async function setup(savedIds = []) {
-  const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
+  const storage = new Map([["basket_content:test-user", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
     "add-to-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
@@ -45,6 +45,7 @@ async function setup(savedIds = []) {
   class DataTable { constructor() { return table; } }
   DataTable.Buttons = { jszip() {} };
   const document = {
+    body: { dataset: { bonsaiUser: "test-user" } },
     createElement: () => new Element(),
     getElementById: id => elements[id] ?? null,
     querySelector: selector => selector === "#basket-cluster-samples .btn" ? clusterButton
@@ -52,9 +53,9 @@ async function setup(savedIds = []) {
     querySelectorAll: selector => selector === "#basket-cluster-samples a" ? [clusterLink] : [],
   };
   const globals = {
-    HTMLElement: Element, CustomEvent, Error, document, window: {},
+    HTMLElement: Element, CustomEvent, Error, document, window: new EventTarget(),
     customElements: { define() {} }, baseUrl: "",
-    localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
+    localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     console: { error() {} },
   };
   function load(relativePath, require = () => ({})) {
@@ -87,7 +88,7 @@ async function setup(savedIds = []) {
   const component = elements["basket-content"].children[0];
   return {
     requests, clusters, component, clusterButton,
-    saved: () => JSON.parse(storage.get("basket_content")),
+    saved: () => JSON.parse(storage.get("basket_content:test-user")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
     cards: () => component.children.map(card => card.innerHTML.match(/<h6 id="([^"]+)"/)[1]),
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
@@ -97,11 +98,18 @@ async function setup(savedIds = []) {
     cluster: () => clusterLink.onclick({ preventDefault() {} }),
     elements,
     async respond(index, sampleIds) {
-      requests[index].resolve({ data: sampleIds.map(sample_id => ({ sample_id, sample_name: sample_id, assay: "test" })) });
+      requests[index].resolve({ data: sampleIds.map(sample_id => typeof sample_id === "object" ? sample_id : ({ sample_id, sample_name: sample_id, assay: "test" })) });
       await tick();
     },
   };
 }
+
+test("record names remain literal and missing assay text is empty", async () => {
+  const h = await setup(["owned"]);
+  await h.respond(0, [{ sample_id: "owned", sample_name: "Name <b>literal</b>", assay: undefined }]);
+  assert.match(h.component.children[0].innerHTML, /Name &lt;b&gt;literal&lt;\/b&gt;/);
+  assert.doesNotMatch(h.component.children[0].innerHTML, /undefined|<b>literal/);
+});
 
 test("mixed missing IDs are removed from storage and count before clustering", async () => {
   const valid = Array.from({ length: 16 }, (_, i) => `valid-${i}`);

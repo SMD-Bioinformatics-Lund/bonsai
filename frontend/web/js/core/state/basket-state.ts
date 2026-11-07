@@ -3,8 +3,15 @@ export class BasketState {
   private sampleIds: Set<string> = new Set();
   private onChangeCallbacks: Set<(ids: string[]) => void> = new Set();
 
-  constructor() {
+  constructor(private readonly userId = document.body?.dataset.bonsaiUser || "anonymous") {
+    localStorage.removeItem("basket_content");
     this.loadState();
+    window.addEventListener("storage", (event) => {
+      if (event.key === this.storageKey || event.key === null) {
+        this.loadState();
+        this.notifyChange();
+      }
+    });
   }
 
   onSelection(callback: (ids: string[]) => void): void {
@@ -20,12 +27,14 @@ export class BasketState {
   }
 
   addSamples(sampleIds: string[]): void {
+    this.loadState();
     sampleIds.forEach((id) => this.sampleIds.add(id));
     this.saveState();
     this.notifyChange();
   }
 
   removeSamples(sampleIds: string[]): void {
+    this.loadState();
     sampleIds.forEach((id) => this.sampleIds.delete(id));
     this.saveState();
     this.notifyChange();
@@ -47,6 +56,7 @@ export class BasketState {
   }
 
   private loadState(): void {
+    this.sampleIds.clear();
     const state = localStorage.getItem(this.storageKey);
     if (state) {
       try {
@@ -59,6 +69,6 @@ export class BasketState {
   }
 
   private get storageKey(): string {
-    return `${this.name}_content`;
+    return `${this.name}_content:${this.userId}`;
   }
 }

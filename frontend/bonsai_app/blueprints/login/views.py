@@ -3,7 +3,7 @@
 import logging
 
 from bonsai_libs.api_client.core import BearerTokenAuth
-from bonsai_libs.api_client.core.exceptions import UnauthorizedError
+from bonsai_libs.api_client.core.exceptions import ApiError
 from flask import (
     Blueprint,
     Response,
@@ -103,9 +103,13 @@ def login():
         client.authenticate_user(username, password)
         user_obj = client.get_current_user()
         user = LoginUser(user_obj.model_dump(mode="json"), token=client.auth.token)
-    except UnauthorizedError:
+    except ApiError as err:
         # if invalid credentials
-        flash("Invalid login credentials", "danger")
+        if err.status in {400, 401, 403}:
+            flash("Invalid login credentials", "danger")
+        else:
+            LOG.warning("An unexpected API error during login: %s", err.status)
+            flash("Sorry, you could not log in due to an internal error", "warning")
         return redirect(url_for("public.index"))
     except Exception as err:
         LOG.warning("An unexpected error during login: %s", err)
@@ -133,7 +137,9 @@ def load_user(user_id: str) -> LoginUser | None:
     )
     try:
         user_data = client.get_current_user()
-    except UnauthorizedError:
+    except ApiError as err:
+        if err.status not in {400, 401, 403}:
+            raise
         # Flask-Login requires a missing user to be represented by None. Remember
         # that this was an expired authenticated session so the unauthorized
         # handler can distinguish it from a first-time visitor.
