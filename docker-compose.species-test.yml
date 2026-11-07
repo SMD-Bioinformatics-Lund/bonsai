@@ -54,6 +54,8 @@ services:
 
   bootstrap:
     image: bonsai-species-test-api
+    healthcheck:
+      disable: true
     environment:
       PYTHONPATH: /test-prp
     volumes: !override
@@ -63,6 +65,8 @@ services:
 
   test-data-seeder:
     image: bonsai-species-test-api
+    healthcheck:
+      disable: true
     environment:
       PYTHONPATH: /test-prp
     volumes: !override

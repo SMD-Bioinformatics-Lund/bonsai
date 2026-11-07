@@ -13,6 +13,7 @@ from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
 
@@ -33,19 +34,21 @@ options.add_experimental_option("prefs", {"download.default_directory": str(outp
                                           "download.prompt_for_download": False})
 service = Service("/snap/bin/chromium.chromedriver", log_output=str(output / "chromedriver.log"))
 browser = webdriver.Chrome(service=service, options=options)
+browser.set_page_load_timeout(45)
 wait = WebDriverWait(browser, 20)
 
 
-def snap():
+def snap(limit=6000):
     """Observe the rendered page and visible controls before choosing an action."""
-    state = {"url": browser.current_url, "title": browser.title,
-             "text": browser.find_element(By.TAG_NAME, "body").text[:12000], "controls": []}
-    for element in browser.find_elements(By.CSS_SELECTOR, "a,button,input,select,textarea"):
-        if element.is_displayed():
-            state["controls"].append({"tag": element.tag_name, "text": element.text[:120],
-                                      "id": element.get_attribute("id"), "name": element.get_attribute("name"),
-                                      "type": element.get_attribute("type"), "href": element.get_attribute("href"),
-                                      "aria_label": element.get_attribute("aria-label"), "enabled": element.is_enabled()})
+    state = browser.execute_script("""
+        const controls = [...document.querySelectorAll('a,button,input,select,textarea')]
+            .filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden')
+            .map(e => ({tag:e.tagName.toLowerCase(), text:(e.innerText||'').slice(0,120),
+                id:e.id, name:e.getAttribute('name'), type:e.getAttribute('type'), href:e.href||null,
+                aria_label:e.getAttribute('aria-label'), enabled:!e.matches(':disabled')}));
+        return {url:location.href, title:document.title,
+            text:document.body.innerText.slice(0,arguments[0]), controls};
+    """, limit)
     print(json.dumps(state, ensure_ascii=False))
 
 
@@ -59,15 +62,39 @@ def evidence(name):
     print(output / f"{name}.png")
 
 
-def record(case, status, expected, observed, sample=None, artifact=None):
+def record(case, status, expected, observed, sample=None, artifact=None, observed_url=None):
     if status not in {"PASS", "FAIL", "BLOCKED", "N/A"}:
         raise ValueError("Use an explicit test result")
     item = {"time": datetime.now(timezone.utc).isoformat(), "role": args.role,
             "case": case, "status": status, "expected": expected, "observed": observed,
-            "sample": sample, "url": browser.current_url, "artifact": artifact}
+            "sample": sample, "url": observed_url or browser.current_url, "artifact": artifact}
     with (args.run_dir / "ui-results.jsonl").open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(item) + "\n")
     print(json.dumps(item))
+
+
+def open_sample_by_id(sid, text_limit=6500):
+    """Follow the visible overview search and Open link using keyboard activation."""
+    cases = json.loads((args.run_dir / "fixtures/expectations.json").read_text())["samples"]
+    case = next(item for item in cases if item["sample_id"] == sid)
+    browser.get(args.url.rstrip("/") + "/groups")
+    field = wait.until(lambda driver: driver.find_element(By.ID, "dt-search-0"))
+    field.clear()
+    field.send_keys(sid)
+    wait.until(lambda driver: len(driver.find_elements(By.CSS_SELECTOR, "tbody tr")) == 1
+               and case["sample_name"] in driver.find_element(By.CSS_SELECTOR, "tbody tr").text)
+    browser.find_element(By.LINK_TEXT, "Open").send_keys(Keys.RETURN)
+    body = browser.find_element(By.TAG_NAME, "body").text
+    status = "PASS" if (browser.title != "500 Internal Server Error"
+                        and case["sample_name"] in body and case["species"] in body) else "FAIL"
+    evidence(sid + "-detail")
+    artifact = str((output / f"{sid}-detail.png").relative_to(args.run_dir.resolve()))
+    record("sample-detail-navigation", status, "Expected sample identity and species render",
+           browser.title, sample=sid, artifact=artifact)
+    state = {"sample": sid, "title": browser.title, "url": browser.current_url,
+             "artifact": artifact, "body": body[:text_limit]}
+    print(json.dumps(state))
+    return state
 
 
 browser.get(args.url)

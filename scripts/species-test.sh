@@ -3,16 +3,32 @@ set -euo pipefail
 
 REPO_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 BONSAI_PROJECT_DATA="${BONSAI_PROJECT_DATA:-${HOME}/data/codex/bonsai}"
-export BONSAI_TEST_RUN_DIR="${BONSAI_TEST_RUN_DIR:-${BONSAI_PROJECT_DATA}/runs/$(date -u +%Y-%m-%d)-species-ui}"
+if [[ -z "${BONSAI_TEST_RUN_DIR:-}" ]]; then
+    active_run="${BONSAI_PROJECT_DATA}/runs/species-ui-active"
+    if [[ "${1:-status}" != "prepare" && -d "${active_run}" ]]; then
+        BONSAI_TEST_RUN_DIR="$(readlink -f "${active_run}")"
+    else
+        BONSAI_TEST_RUN_DIR="${BONSAI_PROJECT_DATA}/runs/$(date -u +%Y-%m-%d)-species-ui"
+    fi
+fi
+export BONSAI_TEST_RUN_DIR
 export DOCKER_CONFIG="${DOCKER_CONFIG:-${BONSAI_PROJECT_DATA}/tools/docker-config}"
 compose=(docker compose --parallel 1 -f "${REPO_ROOT}/docker-compose.yml"
     -f "${REPO_ROOT}/docker-compose.dev.yml" -f "${REPO_ROOT}/docker-compose.local-test.yml"
     -f "${REPO_ROOT}/docker-compose.species-test.yml")
 
+action="${1:-status}"
+if [[ "${action}" != "status" && "${action}" != "logs" ]]; then
+    mkdir -p "${BONSAI_TEST_RUN_DIR}/logs"
+    exec > >(tee "${BONSAI_TEST_RUN_DIR}/logs/${action}-$(date -u +%Y%m%dT%H%M%SZ).log") 2>&1
+fi
+
 case "${1:-status}" in
     prepare)
         python3 "${REPO_ROOT}/e2e_tests/fixtures/local/generate/generate_species_fixtures.py" \
             --root "${BONSAI_TEST_RUN_DIR}/fixtures"
+        mkdir -p "${BONSAI_PROJECT_DATA}/runs"
+        ln -sfnT "${BONSAI_TEST_RUN_DIR}" "${BONSAI_PROJECT_DATA}/runs/species-ui-active"
         ;;
     build)
         shift
