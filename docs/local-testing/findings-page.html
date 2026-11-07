@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Bonsai development test findings, reproduction steps and screenshot evidence from the synthetic browser pass.">
+  <link rel="icon" href="data:,">
+  <title>Bonsai development test findings</title>
+  <style>
+    :root{--ink:#172f3b;--muted:#526876;--line:#dbe4e9;--paper:#fff;--page:#f3f6f8;--teal:#12645b;--red:#a72935;--red-bg:#fff0f1;--amber:#815414;--amber-bg:#fff4dc;--blue:#285c85;--blue-bg:#eaf3fb;--green:#266444;--green-bg:#eaf6ee}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--teal);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}button{font:inherit}button,a,summary{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #147b9c;outline-offset:4px}.shell{max-width:1152px;margin:auto;padding:0 24px}.topbar{background:#fff;border-bottom:1px solid var(--line)}.topbar .shell{display:flex;justify-content:space-between;gap:16px;align-items:center;padding-top:16px;padding-bottom:16px}.brand{font-size:.88rem;font-weight:750;letter-spacing:.035em;color:var(--teal)}.small{font-size:.85rem;color:var(--muted)}.hero{padding:48px 0 30px}.eyebrow{font-size:.82rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.12;letter-spacing:-.04em;margin:0 0 20px;max-width:850px}h2{font-size:1.65rem;letter-spacing:-.025em;line-height:1.25;margin:0}h3{font-size:1.3rem;line-height:1.3;margin:12px 0}p{margin:0 0 14px}.lead{font-size:1.12rem;max-width:850px}.scope-note{color:var(--muted);max-width:830px}.nav{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0}.nav a{display:inline-flex;align-items:center;min-height:44px;border:1px solid var(--line);border-radius:100px;padding:8px 16px;text-decoration:none;font-size:.9rem;background:white;font-weight:600}.nav a:hover{border-color:var(--teal);background:#edf7f4}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 22px}.stat{background:white;border:1px solid var(--line);border-radius:14px;padding:18px 20px}.stat strong{display:block;font-size:1.85rem;letter-spacing:-.045em;line-height:1.25}.stat span{font-size:.85rem;color:var(--muted)}.stat.attention{border-color:#ecc7cb}.stat.attention strong{color:var(--red)}.overview{border:1px solid var(--line);background:white;border-radius:16px;padding:22px 26px;margin-bottom:40px}.overview h2{font-size:1.1rem}.overview figure{margin:12px 0 0}.overview img{display:block;width:100%;height:auto;max-width:850px}.overview figcaption{font-size:.83rem;color:var(--muted);max-width:850px}.section{margin:0 0 42px}.section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px}.section-heading span{font-size:.85rem;color:var(--muted)}.section-intro{color:var(--muted);margin:0 0 22px;max-width:850px}.finding{background:white;border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:0 0 20px;scroll-margin-top:22px}.finding-head{padding:22px 26px 0}.finding-head .meta{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.badge{font-size:.75rem;padding:4px 10px;border-radius:6px;font-weight:750;line-height:1.5;display:inline-block}.badge.blocker{color:var(--red);background:var(--red-bg)}.badge.missing,.badge.followup{color:var(--amber);background:var(--amber-bg)}.badge.question{color:var(--blue);background:var(--blue-bg)}.badge.explained{color:var(--green);background:var(--green-bg)}.finding-id{font-size:.71rem;letter-spacing:.04em;color:var(--muted);overflow-wrap:anywhere}.finding-body{padding:0 26px 22px}.impact{margin:0 0 18px;max-width:920px}.retest{padding:13px 16px;background:#f5f8fa;border-left:3px solid #88aba5;margin:18px 0 0;font-size:.92rem}.retest strong{display:block;color:var(--teal);font-size:.78rem;text-transform:uppercase;letter-spacing:.045em;margin-bottom:4px}.case-note{font-size:.86rem;color:var(--muted);margin:12px 0 0}.gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0}.gallery.single{grid-template-columns:minmax(0,1fr);max-width:860px}.screenshot{margin:0;min-width:0}.screenshot button{display:block;position:relative;width:100%;padding:0;border:1px solid #ced9df;background:#f5f7f9;border-radius:10px;overflow:hidden;cursor:zoom-in}.screenshot button:hover{border-color:var(--teal)}.screenshot img{display:block;width:100%;height:auto}.zoom-hint{position:absolute;right:8px;bottom:8px;font-size:.72rem;padding:4px 8px;background:#173c42eb;color:#fff;border-radius:5px;pointer-events:none}.screenshot figcaption{font-size:.82rem;color:var(--muted);line-height:1.5;margin:9px 0 0}.screenshot figcaption a{white-space:nowrap}.technical{border-top:1px solid var(--line);padding-top:12px;margin-top:18px}.technical summary{cursor:pointer;font-weight:650;font-size:.88rem;min-height:32px}.technical .details-body{padding-top:12px;font-size:.9rem}.technical h4{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:14px 0 5px}.technical h4:first-child{margin-top:0}.technical ol{padding-left:22px;margin:6px 0 16px}.technical code,.scope code{overflow-wrap:anywhere;font-size:.85em}.technical ul{padding-left:20px}.technical li{margin:4px 0}.api-evidence{padding:16px 18px;border:1px solid #ecd5d8;border-radius:10px;background:#fff8f8;font:.88rem/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:normal;overflow-wrap:anywhere}.passed,.scope{background:white;border:1px solid var(--line);border-radius:16px;padding:24px 26px}.check-list{list-style:none;padding:0;margin:0}.check-list li{padding:13px 0;border-bottom:1px solid var(--line)}.check-list li:last-child{border-bottom:0}.check-list strong{display:block;color:var(--green);margin-bottom:2px}.check-list span{font-size:.92rem;color:var(--muted)}.table-wrap{overflow-x:auto;margin:18px 0 10px}table{border-collapse:collapse;width:100%;text-align:left;font-size:.85rem}th,td{padding:10px 9px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-size:.76rem;font-weight:700}td:first-child{font-weight:650;min-width:150px}td.pass{color:var(--green);font-weight:650}td.na{color:#647784}.footnote{font-size:.82rem;color:var(--muted)}.scope ul{padding-left:20px}.scope li{margin:8px 0}.evidence-links{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.evidence-links a{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:.86rem;text-decoration:none;min-height:44px}.provenance{font-size:.85rem;color:var(--muted)}.provenance dd{margin:0 0 12px}.provenance dt{font-weight:700;color:var(--ink)}footer{padding:8px 0 36px;font-size:.83rem;color:var(--muted)}footer .shell{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}dialog{border:1px solid var(--line);border-radius:14px;padding:0;max-width:1200px;width:calc(100vw - 24px);max-height:calc(100dvh - 24px);color:var(--ink);background:white}dialog::backdrop{background:#10222be6}.viewer-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}.viewer-bar p{font-weight:700;margin:0}.viewer-bar button,.viewer-footer button{border:1px solid var(--line);background:#f5f8fa;color:var(--ink);border-radius:8px;padding:8px 12px;min-height:44px;cursor:pointer}.viewer-pan{overflow:auto;max-height:65dvh;background:#edf1f4;overscroll-behavior:contain}.viewer-pan img{display:block;width:100%;height:auto}.viewer-pan.actual img{width:auto;max-width:none}.viewer-footer{padding:12px 16px}.viewer-footer p{font-size:.85rem;margin-bottom:10px}.viewer-actions{display:flex;align-items:center;flex-wrap:wrap;gap:16px;font-size:.85rem}.skip{position:absolute;top:-100px;left:16px;background:white;padding:10px;z-index:10}.skip:focus{top:10px}
+    .chart-legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:.9rem;margin:8px 0 12px}.chart-legend span{display:flex;align-items:center;gap:7px}.chart-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}.chart-legend .pass{background:#387556}.chart-legend .fail{background:#b43c47}.chart-legend .na{background:#778994}
+    @media(max-width:650px){.shell{padding:0 18px}.topbar .shell{padding-top:12px;padding-bottom:12px}.topbar .small{font-size:.73rem;max-width:120px;text-align:right}.hero{padding-top:30px}.lead{font-size:1.02rem}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{padding:15px 16px}.stat strong{font-size:1.65rem}.overview{padding:18px;margin-bottom:30px}.finding-head{padding:18px 18px 0}.finding-body{padding:0 18px 18px}h3{font-size:1.2rem}.gallery{grid-template-columns:minmax(0,1fr);gap:20px}.section-heading{display:block}.section-heading span{display:block;margin-top:5px}.section{margin-bottom:30px}.passed,.scope{padding:20px 18px}.nav{gap:7px}.nav a{padding:8px 12px;font-size:.83rem}.finding-id{font-size:.65rem}.retest{padding:12px 13px}.viewer-footer{padding:12px}.viewer-actions{gap:12px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+    @media print{body{background:white}.nav,.zoom-hint,.viewer,.skip{display:none}.shell{max-width:none;padding:0}.hero{padding-top:20px}.finding{break-inside:avoid}.technical{display:block}a{color:inherit}}
+  </style>
+</head>
+<body id="top">
+  <a class="skip" href="#main">Skip to findings</a>
+  <div class="topbar"><div class="shell"><span class="brand">BONSAI · LOCAL TEST REVIEW</span><span class="small">Synthetic data · 6–7 Nov 2026</span></div></div>
+  <main class="shell" id="main">
+    <header class="hero">
+      <p class="eyebrow">Development branch · v3.0.0-rc5</p>
+      <h1>What needs attention before release?</h1>
+      <p class="lead"><strong>Seven proposed release blockers were reproduced</strong> in the initial synthetic pass. Curation feedback, TB sample pages, user administration, Kleborate ingestion and S. pyogenes export need fixes before a release retest.</p>
+      <p class="scope-note">80 synthetic samples were prepared across eight supported assay paths. No JASEN pipeline was run. These results cover application behavior, not biological accuracy or release certification.</p>
+      <nav class="nav" aria-label="Page sections"><a href="#blockers">Blockers · 7</a><a href="#other">Other findings · 5</a><a href="#passed">Passing workflows</a><a href="#scope">Scope and evidence</a></nav>
+    </header>
+    <div class="stats" aria-label="Test overview">
+      <div class="stat attention"><strong>7</strong><span>proposed release blockers</span></div>
+      <div class="stat"><strong>80</strong><span>synthetic samples</span></div>
+      <div class="stat"><strong>8</strong><span>supported assay paths</span></div>
+      <div class="stat"><strong>28 / 28</strong><span>API clustering cases passed</span></div>
+    </div>
+    <section class="overview" aria-labelledby="outcomes-title">
+      <h2 id="outcomes-title">Recorded browser checks</h2>
+      <figure><img src="assets/browser-checks.svg" width="850" height="55" alt="48 browser checks passed, 13 failed and one was not applicable, out of 62 recorded checks."><div class="chart-legend" aria-hidden="true"><span><i class="pass"></i>Passed: 48</span><span><i class="fail"></i>Failed: 13</span><span><i class="na"></i>Not applicable: 1</span></div><figcaption>Outcome counts for 62 checks, grouped by account, case and sample. Several failed checks share an underlying finding; the 13 failures are not 13 distinct defects. <a href="@@UI_RESULTS@@">Exact results</a> · <a href="#scope">Test scope</a></figcaption></figure>
+    </section>
+    <section class="section" id="blockers" aria-labelledby="blockers-title">
+      <div class="section-heading"><h2 id="blockers-title">Proposed release blockers</h2><span>7 reproduced findings · no fixes applied during the pass</span></div>
+      <p class="section-intro">User-visible failures and the API ingestion gap are listed first. Tap a screenshot to enlarge it; full-resolution PNGs are also linked.</p>
+      @@BLOCKERS@@
+    </section>
+    <section class="section" id="other" aria-labelledby="other-title">
+      <div class="section-heading"><h2 id="other-title">Other findings and scope questions</h2><span>1 missing result · 2 scope questions · 2 follow-ups</span></div>
+      <p class="section-intro">The missing EMM result was reproduced. Non-TB variant display and SPA/SCCmec need product-scope decisions. The account and denial findings are follow-ups.</p>
+      @@OTHER@@
+    </section>
+    <section class="section" id="explained" aria-labelledby="explained-title">
+      <div class="section-heading"><h2 id="explained-title">An explained failure</h2><span>Kept separate from defects</span></div>
+      @@EXPLAINED@@
+    </section>
+    <section class="section" id="passed" aria-labelledby="passed-title">
+      <div class="section-heading"><h2 id="passed-title">What passed</h2><span>Evidence from the same synthetic instance</span></div>
+      <div class="passed">
+        <ul class="check-list">
+          <li><strong>Clustering through the API and browser</strong><span>All 28 supported assay/method API combinations passed. MinHash, SNV, MLST and cgMLST were also run through the basket UI; each downloaded tree retained all nine selected IDs exactly once.</span></li>
+          <li><strong>Core sample reading and result checks</strong><span>Summary navigation was exercised across all eight assay paths. S. aureus AMR/PVL and E. coli STX/O/H positive and no-findings examples were checked. TB QC values and failed/resequence state were checked.</span></li>
+          <li><strong>Saved state and working feedback</strong><span>Basket reload, removal and clearing worked. Comments retained literal HTML text, Unicode and attribution. QC confirmation updated the visible status. Failed clustering identified the affected sample and stopped loading.</span></li>
+          <li><strong>TB export and genome browser</strong><span>The TB LIMS file included accepted rifampicin resistance and excluded rejected and uncurated variants. IGV loaded the synthetic reference, annotation and indexed BAM; locus navigation displayed coverage and alignments.</span></li>
+          <li><strong>Temporary group management</strong><span>An empty test group was created, updated, reloaded and deleted. The original eight groups and four accounts were retained.</span></li>
+        </ul>
+        <div class="table-wrap">@@COVERAGE_TABLE@@</div>
+        <p class="footnote">API clustering used nine eligible samples per assay. “n/a” indicates no configured MLST/cgMLST profile for that assay. SNV uses SKA. <a href="@@CLUSTER_RESULTS@@">Exact selections, jobs and results</a>.</p>
+        @@PASSING_GALLERY@@
+      </div>
+    </section>
+    <section class="section" id="scope" aria-labelledby="scope-title">
+      <div class="section-heading"><h2 id="scope-title">Scope, evidence and next steps</h2></div>
+      <div class="scope">
+        <p>This is a snapshot of the first representative synthetic pass, completed on 7 November 2026. Findings remain open. After fixes, the failing cases should be rerun on fresh input, followed by the passing workflows that share the changed code.</p>
+        <ul>
+          <li>479 report parses were validated. The fixtures are parser-compatible synthetic reports, not outputs from a completed JASEN run.</li>
+          <li>The eight assay paths include both <code>kpneumoniae</code> and <code>klebsiella</code>; they are not eight distinct species. Generic streptococcus and staphylococcus examples were included.</li>
+          <li>The reference is 100 kb and the BAM contains 20 synthetic reads. IGV access and presentation were checked; production performance and biological accuracy were not measured.</li>
+          <li>LDAP/SSO, production infrastructure and real clinical datasets were not tested. The uploader-only role was denied frontend access, consistent with its API-only permissions.</li>
+          <li>TB003 was changed by the UI pass: two curations, one comment and passed QC were saved. Administrator creation/editing could not reach a successful path because of the recorded failures.</li>
+        </ul>
+        <div class="evidence-links"><a href="@@FINDINGS@@">Finding records</a><a href="@@UI_RESULTS@@">Browser results</a><a href="@@CLUSTER_RESULTS@@">Clustering results</a><a href="@@RUN_CONTEXT@@">Run context</a><a href="@@END_STATE@@">Final instance state</a><a href="provenance.json">Page provenance</a></div>
+        <details class="technical"><summary>Exact code versions and screenshot index</summary><div class="details-body"><dl class="provenance"><dt>Application base</dt><dd><code>@@APP_COMMIT@@</code></dd><dt>SDK revision</dt><dd><code>@@SDK_COMMIT@@</code></dd><dt>Local test branch</dt><dd><code>@@BRANCH@@</code></dd><dt>Harness revision at test completion</dt><dd><code>@@HARNESS_COMMIT@@</code></dd></dl>@@SCREENSHOT_INDEX@@</div></details>
+      </div>
+    </section>
+  </main>
+  <footer><div class="shell"><span>Bonsai development test findings · synthetic evidence only</span><a href="#top">Back to top ↑</a></div></footer>
+  <dialog id="viewer" aria-labelledby="viewer-title">
+    <div class="viewer-bar"><p id="viewer-title">Screenshot</p><button type="button" id="viewer-close">Close ✕</button></div>
+    <div class="viewer-pan" id="viewer-pan"><img id="viewer-image" alt=""></div>
+    <div class="viewer-footer"><p id="viewer-caption"></p><div class="viewer-actions"><button type="button" id="viewer-size" aria-pressed="false">View at full size</button><a id="viewer-original" target="_blank" rel="noopener">Open original PNG ↗</a></div></div>
+  </dialog>
+  <script>
+    const viewer=document.getElementById('viewer'),pan=document.getElementById('viewer-pan'),size=document.getElementById('viewer-size');
+    document.querySelectorAll('[data-image]').forEach(button=>button.addEventListener('click',()=>{
+      const image=document.getElementById('viewer-image');image.src=button.dataset.image;image.alt=button.dataset.caption;
+      document.getElementById('viewer-caption').textContent=button.dataset.caption;document.getElementById('viewer-original').href=button.dataset.image;
+      pan.classList.remove('actual');size.textContent='View at full size';size.setAttribute('aria-pressed','false');viewer.showModal();pan.scrollTo(0,0);
+    }));
+    document.getElementById('viewer-close').addEventListener('click',()=>viewer.close());
+    size.addEventListener('click',()=>{const actual=pan.classList.toggle('actual');size.textContent=actual?'Fit to screen':'View at full size';size.setAttribute('aria-pressed',String(actual));});
+    viewer.addEventListener('click',event=>{if(event.target===viewer){const r=viewer.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)viewer.close();}});
+  </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+{
+  "CURATION-DOUBLE-SUBMIT": {
+    "title": "Curation is saved but reported as failed",
+    "category": "blocker",
+    "impact": "A saved accept or reject decision is presented as a failure. The table still says Uncurated until the page is reloaded, leaving the saved state unclear.",
+    "retest": "With a fresh uncurated TB variant, submit one decision. A single creation request, a success message and an immediately updated row should be observed.",
+    "note": "TB003 already contains the decisions saved during this pass. Use another uncurated sample for a fresh reproduction.",
+    "screenshots": [
+      {"path": "browser-results/user_one/full-access/tb003-accepted-rifampicin.png", "caption": "After one acceptance: a conflict banner is shown and the rpoB row remains Uncurated."},
+      {"path": "browser-results/user_one/full-access/tb003-curations-after-reload.png", "caption": "After reloading: rpoB is Accepted and embB is Rejected. Both decisions had been saved despite the failure messages."}
+    ]
+  },
+  "TB-CURATION-500": {
+    "title": "A curated TB sample cannot be opened",
+    "category": "blocker",
+    "impact": "The whole sample summary is lost when a valid curation has no optional resistance level. QC and other results cannot be reviewed on that page.",
+    "retest": "Open a TB sample with an accepted rifampicin curation whose phenotype metadata has no resistance_level. The sample summary and decision should render.",
+    "screenshots": [{"path": "browser-results/user_one/tb-detail-500.png", "caption": "Opening synthetic_tb_001 leads to an HTTP 500 page. The missing optional field is identified in the saved traceback."}]
+  },
+  "TB-NO-AMR-500": {
+    "title": "A TB sample with no AMR findings crashes",
+    "category": "blocker",
+    "impact": "An ordinary negative TB result produces a server error instead of an empty-results state.",
+    "retest": "Open synthetic_tb_002, whose parsed TBProfiler AMR result is null. Identity, QC and an explicit no-findings state should remain available.",
+    "screenshots": [{"path": "browser-results/user_one/synthetic_tb_002-detail.png", "caption": "Opening synthetic_tb_002 returns HTTP 500. The parser output and traceback show a null result being indexed as a variants dictionary."}]
+  },
+  "ADMIN-CREATE-USER-500": {
+    "title": "A new user cannot be created",
+    "category": "blocker",
+    "impact": "New local accounts cannot be added through the administrator interface, even with valid account fields and a strong matching password.",
+    "retest": "Create a previously unused username through Admin. The expected not-found response during availability checking should be handled and the account should be created once.",
+    "screenshots": [{"path": "browser-results/admin/full-access/create-user-valid-input.png", "caption": "Submitting valid input returns HTTP 500. No ui_rehearsal account was created."}]
+  },
+  "ADMIN-EDIT-USER-500": {
+    "title": "An existing user cannot be opened for editing",
+    "category": "blocker",
+    "impact": "Account details and roles cannot be managed through the existing-user edit screen.",
+    "retest": "Open user_two from the administrator user list. The form should be populated from the current SDK response model, then a reversible profile edit should be saved and reloaded.",
+    "screenshots": [{"path": "browser-results/admin/full-access/admin-edit-existing-user.png", "caption": "Selecting user_two from Manage users returns HTTP 500 before the edit form can be shown."}]
+  },
+  "KLEBORATE-UPLOAD-422": {
+    "title": "Kleborate reports cannot be ingested",
+    "category": "blocker",
+    "impact": "K/O typing and virulence results remain unavailable through normal ingestion for both supported Klebsiella assay names.",
+    "retest": "Upload a Kleborate report together with its hAMRonization companion. Positive and no-AMR examples should be accepted for both kpneumoniae and klebsiella.",
+    "note": "This was reproduced through the upload API, before a results page could be populated. Four rejected uploads are recorded; the paired inputs passed SDK parsing.",
+    "screenshots": []
+  },
+  "EMM-LIMS-EXPORT-500": {
+    "title": "S pyogenes LIMS export fails",
+    "category": "blocker",
+    "impact": "The configured species, MLST and EMM export cannot be downloaded for either the positive or the no-EMM example.",
+    "retest": "Export synthetic_sp_001 and synthetic_sp_002 through Variants → Export to LIMS. A valid file, with the defined empty-result behavior for the second sample, should be downloaded.",
+    "screenshots": [{"path": "browser-results/admin/full-access/sp001-lims-export-error.png", "caption": "After Export to LIMS: Error when generating export file is shown and no file is downloaded. The API traceback points to the EMM formatter."}]
+  },
+  "EMM-DISPLAY-MISSING": {
+    "title": "A parsed EMM type is absent from the summary",
+    "category": "missing",
+    "impact": "EMM1.0 is stored in the API but cannot be seen on the sample summary. The same missing card was observed on the generic streptococcus path.",
+    "retest": "Open an EMM-positive sample. The EMM type should be displayed, and a no-EMM sample should have a clear empty-results state.",
+    "screenshots": [{"path": "browser-results/admin/full-access/synthetic_sp_001-detail.png", "caption": "The S. pyogenes summary shows MLST but no EMM card. The saved API probe independently contains EMM1.0."}]
+  },
+  "ECOLI-VARIANTS-EMPTY": {
+    "title": "The E coli variants page gives a misleading empty result",
+    "category": "question",
+    "impact": "The API contains a gyrA S83L quinolone-resistance variant, while the Variants page says No predicted resistance determinants. The page currently selects TBProfiler results only.",
+    "retest": "Decide the intended non-TB variants scope. AMRFinder point variants should either be displayed or the unsupported scope should be explained without implying a biological negative.",
+    "screenshots": [{"path": "browser-results/user_one/full-access/ec001-variants-empty.png", "caption": "The E. coli Variants page reports no resistance determinants despite the AMRFinder point variant retained in the API."}]
+  },
+  "SA-TYPING-SURFACE-GAP": {
+    "title": "SPA and SCCmec have no summary reading surface",
+    "category": "question",
+    "impact": "SPA t021 and SCCmec IV are parsed and available through the API but are absent from the S. aureus summary. The intended frontend support needs clarification.",
+    "retest": "Confirm whether SPA and SCCmec are intended release features in the frontend. If so, add readable positive and no-findings states and retest both.",
+    "screenshots": [{"path": "browser-results/user_one/synthetic_sa_001-detail.png", "caption": "The S. aureus summary is available, but no SPA or SCCmec card is shown. API values are retained in the linked probe."}]
+  },
+  "BASKET-ACCOUNT-SHARED": {
+    "title": "The next account inherits the previous basket",
+    "category": "followup",
+    "impact": "On a shared browser, another person's selection can be mistaken for the current account's selection. This observation does not demonstrate a sample-permission bypass.",
+    "retest": "Select samples as user_one, log out and log in as user_two in the same browser. Independent selections, or an explicitly documented shared-browser policy, should be verified.",
+    "screenshots": [{"path": "browser-results/user_two/full-access/basket-inherited-from-user-one.png", "caption": "After switching to user_two, all nine samples selected by user_one remain in the basket. Removing or clearing also changes the shared selection."}]
+  },
+  "NONADMIN-ADMIN-500": {
+    "title": "An unauthorized admin visit returns a server error",
+    "category": "followup",
+    "impact": "A non-admin user gets an HTTP 500 page rather than a useful denial or redirect. Administrative data was not displayed.",
+    "retest": "Visit /admin/users as user_two. A clear denial or a valid redirect should be returned without a server error.",
+    "screenshots": [{"path": "browser-results/user_two/full-access/admin-access-denied.png", "caption": "A direct non-admin visit to user management returns HTTP 500. The denial path targets the nonexistent public.home endpoint."}]
+  },
+  "MINHASH-CLUSTER-FAIL": {
+    "title": "The original MinHash failure was explained by failed QC",
+    "category": "explained",
+    "impact": "The failing ten-sample selection included synthetic_sa_010, whose failed/resequence status intentionally excludes its signature. This is not evidence of a valid-input clustering defect.",
+    "retest": "Keep the failed-QC case as an error-feedback check. All 28 supported assay/method combinations passed with nine eligible samples per assay, and all four basket clustering methods rendered and exported correctly.",
+    "screenshots": [{"path": "browser-results/user_one/full-access/clustering-failed-qc-feedback.png", "caption": "The UI stops loading and identifies synthetic_sa_010 by its external ID when the intentionally excluded sample is selected."}]
+  }
+}
