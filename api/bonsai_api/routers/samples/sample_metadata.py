@@ -42,7 +42,7 @@ from .permissions import UPDATE_PERMISSION, WRITE_PERMISSION
 @router.post("/samples/{sample_id}/metadata")
 async def add_sample_metadata(
     sample_id: str = Path(...),
-    metadata: list[InputMetaEntry] = None,
+    metadata: list[InputMetaEntry] = Body(..., min_length=1),
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
         get_current_active_user, scopes=[UPDATE_PERMISSION]
@@ -55,7 +55,7 @@ async def add_sample_metadata(
         )
     except ValueError as err:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err)
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(err)
         )
     except FileExistsError as err:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(err))

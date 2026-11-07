@@ -2,9 +2,10 @@
 
 from datetime import datetime
 from enum import StrEnum
+import math
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator
+from pydantic import BaseModel, BeforeValidator, field_validator
 
 
 class MetadataTypes(StrEnum):
@@ -50,6 +51,22 @@ class TableMetadataInDb(BaseModel):
     data: list[list[str | int | float | datetime]]
     category: str
     type: Literal["table"] = "table"
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def normalize_empty_cells(cls, rows):
+        """Keep CSV missing cells and legacy non-finite values JSON-readable."""
+        result = []
+        for row in rows:
+            cells = []
+            for cell in row:
+                if cell is None or isinstance(cell, float) and math.isnan(cell):
+                    cell = ""
+                elif isinstance(cell, float) and math.isinf(cell):
+                    cell = str(cell)
+                cells.append(cell)
+            result.append(cells)
+        return result
 
 
 InputMetaEntry = DatetimeMetadataEntry | InputTableMetadata | GenericMetadataEntry

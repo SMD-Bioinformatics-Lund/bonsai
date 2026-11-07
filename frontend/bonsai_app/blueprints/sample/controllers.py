@@ -378,7 +378,7 @@ def filter_variants_if_processed(sample_info, result_type="AMR"):
     """Filter out unprocessed and failed variants if any variants have been processed."""
     results = []
     for result in sample_info["element_type_result"]:
-        if result["analysis_type"] == "amr" and len(result["result"]["variants"]) > 0:
+        if result["analysis_type"] == "amr" and (result.get("result") or {}).get("variants"):
             # check if result has has processed variants
             processed = [QualityControlResult.FAILED, QualityControlResult.PASSED]
             has_proc_variants = any(
@@ -565,7 +565,7 @@ def merge_variants_with_curations(analysis_result: dict[str, Any]) -> dict[str, 
     :param analysis_result: Single analysis result dict with 'result' and 'curations' keys
     :return: Modified analysis_result with variants enriched with curation data
     """
-    if "result" not in analysis_result or "variants" not in analysis_result["result"]:
+    if not analysis_result.get("result") or "variants" not in analysis_result["result"]:
         return analysis_result  # No variants to process
 
     if "curations" not in analysis_result:

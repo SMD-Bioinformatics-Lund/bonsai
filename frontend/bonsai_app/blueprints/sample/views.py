@@ -20,7 +20,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests import HTTPError
 from pydantic import ValidationError
-from bonsai_libs.api_client.core.exceptions import ApiError
+from bonsai_libs.api_client.core.exceptions import ApiError, NotFoundError
 
 from bonsai_app.bonsai_api import get_api_client
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
@@ -103,6 +103,8 @@ def sample(sample_id: str) -> str:
     # get sample
     try:
         sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except NotFoundError:
+        abort(404)
     except (ApiError, ValidationError):
         current_app.logger.exception("Failed to load sample %s", sample_id)
         flash("Something went wrong loading the sample. Please try again.", "toast-warning")
@@ -130,7 +132,7 @@ def sample(sample_id: str) -> str:
 
     # Sort variants within all prediction results
     for pred_res in sample_info.get("element_type_result", []):
-        if "variants" in pred_res.get("result", {}):
+        if "variants" in (pred_res.get("result") or {}):
             pred_res["result"]["variants"] = sort_variants(
                 pred_res["result"]["variants"]
             )
@@ -485,6 +487,8 @@ def metadata(sample_id: str) -> str:
 
     try:
         sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except NotFoundError:
+        abort(404)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -514,6 +518,8 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     client = get_api_client()
     try:
         sample_info = client.get_sample_by_id(sample_id=sample_id)
+    except NotFoundError:
+        abort(404)
     except HTTPError as error:
         # throw proper error page
         abort(error.response.status_code)
@@ -521,6 +527,8 @@ def open_metadata_tbl(sample_id: str, fieldname: str) -> str:
     _, metadata_tbls = split_metadata(sample_info)
     indexed_tbls = {tbl["fieldname"]: tbl for tbl in metadata_tbls}
     table = indexed_tbls.get(fieldname, None)
+    if table is None:
+        abort(404)
 
     return render_template(
         "metadata_table.html",

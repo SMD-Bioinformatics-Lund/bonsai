@@ -3,6 +3,7 @@
 from bonsai_libs.api_client.bonsai.models import CreateUserInput
 from bonsai_libs.api_client.core.exceptions import ApiError, NotFoundError
 from flask import (
+    abort,
     Blueprint,
     current_app,
     flash,
@@ -189,7 +190,10 @@ def update_user(username):
     client = get_api_client()
 
     # get all users
-    user = client.get_user(username)
+    try:
+        user = client.get_user(username)
+    except NotFoundError:
+        abort(404)
     form = UserInfoForm(request.form)
 
     if request.method == "POST":
