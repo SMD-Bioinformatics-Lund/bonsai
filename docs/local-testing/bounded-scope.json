@@ -16,6 +16,11 @@
       "id": "read-only-details",
       "actions": ["Navigate existing summaries, metadata and detailed result views", "Check record identity and stored row counts", "Exercise display-only sorting, search and filter forms", "Check existing exports for file structure and record identity", "Record unavailable controls and empty states explicitly"],
       "condition": "Stored-summary findings have been reviewed. Only existing synthetic records are read; filter submissions cannot contain curation fields."
+    },
+    {
+      "id": "account-isolation-and-permissions",
+      "actions": ["Compare documented roles through UI and API", "Check account switching, browser history, multiple tabs and isolated profiles", "Expire a test session and change or disable disposable accounts", "Verify private-group owner, invitee and uninvited access", "Map unfinished record-private behavior without inventing an access policy"],
+      "condition": "All account, group and record mutations target registered disposable fixtures. Original users and records cannot be modified."
     }
   ],
   "excluded": [

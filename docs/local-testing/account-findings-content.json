@@ -1,0 +1,38 @@
+{
+  "ACCOUNT-SINGLE-DELETE": {
+    "title": "The single-record delete route accepts an ordinary account",
+    "severity": "Proposed blocker",
+    "impact": "The bulk delete route correctly denies an ordinary account, but the single-record route deletes the same kind of record with update permission.",
+    "retest": "Deny both deletion entry points before any deletion service runs. The disposable record must remain readable."
+  },
+  "ACCOUNT-ROLE-PERMISSIONS": {
+    "title": "Route permissions disagree with the documented roles",
+    "severity": "Proposed blocker",
+    "impact": "The uploader cannot create a generic record, and ordinary users cannot use the older record-list route. A shared dependency adds an unrelated own-profile permission, while the list route requires write permission.",
+    "retest": "Allow the documented generic uploader write, keep uploader record reads and frontend access denied, and make both list entry points available to ordinary readers."
+  },
+  "ACCOUNT-BASKET-ISOLATION": {
+    "title": "Selections are shared between accounts and become stale across tabs",
+    "severity": "Follow-up",
+    "impact": "The next account inherits the previous selection. Clearing it also clears the first account's saved selection, and another tab can retain stale contents.",
+    "retest": "Keep selections per account, preserve them on same-account reloads, and update same-account tabs after a selection change."
+  },
+  "ACCOUNT-STALE-PAGES": {
+    "title": "Old tabs and browser history retain the previous authenticated page",
+    "severity": "Proposed blocker",
+    "impact": "Switching accounts or logging out in another tab leaves the old page and its rendered access token in place. Browser Back can also restore the old authenticated view.",
+    "retest": "Coordinate rendered account changes between tabs and revalidate restored history pages. A separate browser profile must remain independent. This checks browser state; it does not introduce server-side bearer-token revocation."
+  },
+  "ACCOUNT-DISABLED-SESSION": {
+    "title": "Disabling an account leaves its browser session on a server-error page",
+    "severity": "Follow-up",
+    "impact": "The API correctly denies the inactive account, but the frontend does not handle that rejection. Existing sessions return HTTP 500 and fresh sign-in attempts show an internal-error message.",
+    "retest": "End the inactive session clearly and show ordinary sign-in feedback. Expired and deleted-account sessions must still be rejected correctly."
+  },
+  "ACCOUNT-BASKET-HTML": {
+    "title": "Record names are interpreted as HTML in the basket",
+    "severity": "Proposed blocker",
+    "impact": "A harmless record name containing a b tag becomes markup in the basket. Record names should be displayed literally. Script payloads were not exercised.",
+    "retest": "Display the original name as text, escape markup, and display a readable empty value for a missing optional assay."
+  }
+}

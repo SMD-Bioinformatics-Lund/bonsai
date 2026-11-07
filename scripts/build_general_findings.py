@@ -66,6 +66,7 @@ def build(run, output):
                 f'<figcaption>{caption} <a href="{url}" target="_blank" rel="noopener">Original PNG ↗</a></figcaption></figure>')
 
     fixes = read_json(run / "general-fix-verification.json") if (run / "general-fix-verification.json").exists() else {}
+    account_closed = {"BASKET-ACCOUNT-SHARED": "ACCOUNT-BASKET-ISOLATION", "BASKET-UNDEFINED-ASSAY": "ACCOUNT-BASKET-HTML"} if (run / "account-sessions/2026-11-07/findings.json").exists() else {}
 
     def card(finding):
         fid = finding["id"]
@@ -83,6 +84,8 @@ def build(run, output):
         details.append('<h4>Saved baseline evidence</h4><ul>' + ''.join(links) + '</ul>')
         fix = fixes.get("findings", {}).get(fid)
         verification = ''
+        if fid in account_closed:
+            verification = f'<p class="retest"><strong>Resolved in the account/session iteration</strong><a href="#{account_closed[fid]}">Current fix verification and evidence</a>. The screenshots below preserve the earlier baseline.</p>'
         if fix:
             verification = '<p class="retest"><strong>Fix verification: ' + escape(fix["status"]) + '</strong>' + escape(fix["summary"]) + '</p>'
             for item in fix.get("screenshots", []):
@@ -122,6 +125,8 @@ def build(run, output):
     bounded_html, bounded_summary = render_bounded(run, output, publish, figure)
     from build_detail_findings import render as render_details
     detail_html, detail_summary = render_details(run, output, publish, figure)
+    from build_account_findings import render as render_accounts
+    account_html, account_summary = render_accounts(run, output, publish, figure)
     categories = Counter(x["category"] for x in content.values())
     verified = {fid for fid, item in fixes.get("findings", {}).items() if item["status"] == "verified"}
     critical = {fid for fid, item in content.items() if item["category"] == "blocker"}
@@ -137,11 +142,14 @@ def build(run, output):
                      f'<a href="{publish("general-fixed-api-results.json")}">Generic API probes</a>.</p>'
                      '<p>The production JavaScript build and TypeScript check passed. Branch source and compiled bundles were mounted into the recorded runtime images for this local test; shipped container images were not rebuilt.</p>'
                      '<p>Start the patched local stack with <code>bash scripts/general-test.sh up</code>. Rebuild its JavaScript with <code>bash scripts/general-test.sh build-js</code>. All generated assets remain on the external data drive.</p>')
+    earlier_summary = fixes.get("summary", "Fix phase pending. All screenshots below describe the unchanged development candidate.")
+    if account_html:
+        earlier_summary = earlier_summary.replace("Six smaller findings remain open.", "The two basket follow-ups were resolved in the later account iteration.")
     replacements = {
         "BLOCKER_COUNT": str(categories["blocker"]), "OTHER_COUNT": str(len(content) - categories["blocker"]),
-        "ANSWER": (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
-        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html,
-        "FIX_SUMMARY": escape(fixes.get("summary", "Fix phase pending. All screenshots below describe the unchanged development candidate.")),
+        "ANSWER": escape(account_summary) if account_html else (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
+        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html, "ACCOUNTS": account_html,
+        "FIX_SUMMARY": escape(earlier_summary),
         "FIX_BRANCH": escape(fixes.get("branch", "Pending creation after the expanded baseline")), "FIX_DETAILS": technical,
         "CHARTS": ''.join(charts),
         "BLOCKERS": ''.join(rendered[k] for k, v in content.items() if v["category"] == "blocker"),
@@ -160,7 +168,8 @@ def build(run, output):
                   "authoring_sources": {str(p.relative_to(REPO)): digest(p) for p in (
                       CONTENT, TEMPLATE, Path(__file__), REPO / "scripts/build_bounded_findings.py",
                       REPO / "docs/local-testing/bounded-findings-content.json", REPO / "docs/local-testing/bounded-scope.json",
-                      REPO / "scripts/build_detail_findings.py", REPO / "docs/local-testing/detail-findings-content.json")}}
+                      REPO / "scripts/build_detail_findings.py", REPO / "docs/local-testing/detail-findings-content.json",
+                      REPO / "scripts/build_account_findings.py", REPO / "docs/local-testing/account-findings-content.json")}}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(json.dumps({"page": str(output / "index.html"), "findings": len(findings), "counts": counts, "screenshots": len(screenshots)}))
 
