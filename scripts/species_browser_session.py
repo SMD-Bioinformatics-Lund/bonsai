@@ -23,6 +23,7 @@ parser.add_argument("--role", default="user_one")
 parser.add_argument("--session-name", default="")
 parser.add_argument("--results-file", default="ui-results.jsonl")
 parser.add_argument("--phase", default="initial")
+parser.add_argument("--performance-log", action="store_true")
 parser.add_argument("--url", default="http://localhost:18000")
 args = parser.parse_args()
 output = args.run_dir.resolve() / "browser-results" / args.role
@@ -34,7 +35,7 @@ options.binary_location = "/snap/chromium/current/usr/lib/chromium-browser/chrom
 options.add_argument("--headless=new")
 options.add_argument("--window-size=1440,1100")
 options.add_argument(f"--user-data-dir={output / 'profile'}")
-options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+options.set_capability("goog:loggingPrefs", {"browser": "ALL", **({"performance": "ALL"} if args.performance_log else {})})
 options.add_experimental_option("prefs", {"download.default_directory": str(output / "downloads"),
                                           "download.prompt_for_download": False,
                                           "net.network_prediction_options": 2})

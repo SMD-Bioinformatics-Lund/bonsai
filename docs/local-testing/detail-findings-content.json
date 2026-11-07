@@ -1,0 +1,38 @@
+{
+  "DETAIL-NULL-500": {
+    "title": "A stored null result still crashes the detail page",
+    "severity": "Proposed blocker",
+    "impact": "The summary opens, but its Variants link returns HTTP 500 when a stored result is null.",
+    "retest": "Open the same detail link, preserve the null value and show an explicit availability message."
+  },
+  "DETAIL-UNAVAILABLE-NEGATIVE": {
+    "title": "Unavailable detail results are presented as a negative result",
+    "severity": "Proposed blocker",
+    "impact": "A view without a supported stored detail result says No predicted resistance determinants. That wording can be mistaken for a completed negative result.",
+    "retest": "Distinguish an unavailable detail result from an available result with zero rows, and identify which stored result type this view displays."
+  },
+  "DETAIL-COMBINED-FILTER": {
+    "title": "The second numeric filter overrides the first",
+    "severity": "Proposed blocker",
+    "impact": "Combining frequency and depth filters can retain rows that fail the first condition. The displayed selection does not match the submitted conditions.",
+    "retest": "Combine one failing and one passing numeric condition. No row should remain unless both conditions hold."
+  },
+  "DETAIL-DISMISSED-500": {
+    "title": "Hide dismissed returns a server error",
+    "severity": "Proposed blocker",
+    "impact": "The offered display filter reads a legacy field absent from current stored rows and returns HTTP 500.",
+    "retest": "Use existing saved decisions to hide exactly the rejected rows, without writing or changing any decision."
+  },
+  "EMM-EXPORT-500": {
+    "title": "The configured S. pyogenes export cannot be downloaded",
+    "severity": "Proposed blocker",
+    "impact": "The export formatter uses an outdated result-descriptor field. All ten existing S. pyogenes fixtures return HTTP 500 in both formats. An empty result also requires dictionary-shape handling.",
+    "retest": "Read the current descriptor and preserve the existing empty-value fallback. Validate CSV/TSV structure and the saved record identity. Clinical interpretation of exported values is outside this check."
+  },
+  "DETAIL-MISSING-500": {
+    "title": "A missing detail record returns HTTP 500",
+    "severity": "Follow-up",
+    "impact": "A stale or invalid detail URL becomes a server error instead of a clear unavailable-record response.",
+    "retest": "Return HTTP 404 for the missing record without attempting further reference or result reads."
+  }
+}

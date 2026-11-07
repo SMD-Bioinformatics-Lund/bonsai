@@ -11,6 +11,11 @@
       "id": "stored-report-rendering",
       "actions": ["Read-only navigation of existing sample summaries", "Rendering null results and optional fields", "Compare displayed identities with saved fixture expectations"],
       "condition": "The first increment has completed and its findings have been reviewed; no unresolved platform safety stop applies."
+    },
+    {
+      "id": "read-only-details",
+      "actions": ["Navigate existing summaries, metadata and detailed result views", "Check record identity and stored row counts", "Exercise display-only sorting, search and filter forms", "Check existing exports for file structure and record identity", "Record unavailable controls and empty states explicitly"],
+      "condition": "Stored-summary findings have been reviewed. Only existing synthetic records are read; filter submissions cannot contain curation fields."
     }
   ],
   "excluded": [
@@ -23,7 +28,7 @@
   ],
   "data": "Existing local synthetic fixtures; additional disposable records contain generic text, numbers and small inventory tables only.",
   "mutation_prefix": "bounded_",
-  "api_reads": ["^/users/(?:me|[^/]+)?/?$", "^/groups(?:/.*)?$", "^/memberships$", "^/samples/[^/]+(?:/metadata)?$"],
+  "api_reads": ["^/users/(?:me|[^/]+)?/?$", "^/groups(?:/.*)?$", "^/memberships$", "^/samples/[^/]+(?:/metadata)?$", "^/export/[^/]+/lims$"],
   "api_creates": ["/groups/", "/samples/", "/users/"],
   "browser_blocked_urls": [
     "*://localhost:18001/analysis*",
@@ -33,7 +38,6 @@
     "*://localhost:18001/samples/*/pipeline-runs*",
     "*://localhost:18001/samples/*/resources*",
     "*://localhost:18000/sample/*/similar*",
-    "*://localhost:18000/sample/*/variants*",
     "*://localhost:18000/cluster*",
     "*://localhost:18000/samples/cluster*",
     "*://localhost:18000/tree*"

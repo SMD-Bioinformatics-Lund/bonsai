@@ -21,6 +21,6 @@ PY
   workers-stop) docker stop "${workers[@]}" ;;
   workers-start) docker start "${workers[@]}" ;;
   status) docker inspect --format '{{.Name}} {{.State.Status}}' "${workers[@]}" ;;
-  guards) python3 -m unittest discover -s "${REPO_ROOT}/scripts/tests" -p test_bounded_scope.py ;;
+  guards) python3 -m unittest discover -s "${REPO_ROOT}/scripts/tests" -p 'test_*scope.py' ;;
   *) echo "Usage: $0 {scope|workers-stop|workers-start|status|guards}" >&2; exit 2 ;;
 esac

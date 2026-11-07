@@ -42,7 +42,7 @@ class BoundedApi:
         try:
             result = json.loads(raw) if raw else None
         except json.JSONDecodeError:
-            result = raw[:500]
+            result = raw if self.last_status < 300 else raw[:500]
         if self.last_status < 300:
             self.scope.register(method, path, data, result)
             (self.directory / "registry.json").write_text(json.dumps({"samples": sorted(self.scope.samples),
