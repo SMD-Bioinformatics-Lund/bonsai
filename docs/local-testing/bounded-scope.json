@@ -26,6 +26,11 @@
       "id": "failure-recovery-and-integrity",
       "actions": ["Interrupt generic saves before and after server acceptance", "Retry and double-submit generic comment and group operations", "Compare concurrent metadata, comment and group edits with stored state", "Check navigation and session rejection during pending saves"],
       "condition": "Fault injection and mutations are confined to registered disposable records and groups. All stored biological results remain unchanged."
+    },
+    {
+      "id": "parser-display-fidelity",
+      "actions": ["Inventory installed parser registrations and frozen fixture coverage", "Parse existing frozen report files offline against recorded expected values", "Exercise generic QC and identity format errors, empty inputs and version dispatch", "Compare parser fields with existing stored API values and read-only browser displays"],
+      "condition": "No analysis upload, pipeline execution, new biological interpretation or curation writes. Additional input cases contain generic QC or identity values only. Parser version dispatch coverage is distinguished from format compatibility."
     }
   ],
   "excluded": [

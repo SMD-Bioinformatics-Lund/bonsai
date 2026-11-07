@@ -1,0 +1,9 @@
+# Optional paired local SDK checkout. No test fixtures or biological payloads
+# are mounted from the SDK repository into the running application.
+services:
+  api:
+    volumes:
+      - ./bonsai-sdk/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro
+  frontend:
+    volumes:
+      - ./bonsai-sdk/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro

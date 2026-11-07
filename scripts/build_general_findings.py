@@ -132,6 +132,8 @@ def build(run, output):
     account_html, account_summary = render_accounts(run, output, publish, figure)
     from build_recovery_findings import render as render_recovery
     recovery_html, recovery_summary = render_recovery(run, output, publish, figure)
+    from build_parser_findings import render as render_parsers
+    parser_html, parser_summary = render_parsers(run, output, publish, figure)
     categories = Counter(x["category"] for x in content.values())
     verified = {fid for fid, item in fixes.get("findings", {}).items() if item["status"] == "verified"}
     critical = {fid for fid, item in content.items() if item["category"] == "blocker"}
@@ -152,8 +154,8 @@ def build(run, output):
         earlier_summary = earlier_summary.replace("Six smaller findings remain open.", "The two basket follow-ups were resolved in the later account iteration.")
     replacements = {
         "BLOCKER_COUNT": str(categories["blocker"]), "OTHER_COUNT": str(len(content) - categories["blocker"]),
-        "ANSWER": escape(recovery_summary) if recovery_html else escape(account_summary) if account_html else (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
-        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html, "ACCOUNTS": account_html, "RECOVERY": recovery_html,
+        "ANSWER": escape(parser_summary) if parser_html else escape(recovery_summary) if recovery_html else escape(account_summary) if account_html else (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
+        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html, "ACCOUNTS": account_html, "RECOVERY": recovery_html, "PARSERS": parser_html,
         "FIX_SUMMARY": escape(earlier_summary),
         "FIX_BRANCH": escape(fixes.get("branch", "Pending creation after the expanded baseline")), "FIX_DETAILS": technical,
         "CHARTS": ''.join(charts),
@@ -175,7 +177,8 @@ def build(run, output):
                       REPO / "docs/local-testing/bounded-findings-content.json", REPO / "docs/local-testing/bounded-scope.json",
                       REPO / "scripts/build_detail_findings.py", REPO / "docs/local-testing/detail-findings-content.json",
                       REPO / "scripts/build_account_findings.py", REPO / "docs/local-testing/account-findings-content.json",
-                      REPO / "scripts/build_recovery_findings.py", REPO / "docs/local-testing/recovery-findings-content.json")}}
+                      REPO / "scripts/build_recovery_findings.py", REPO / "docs/local-testing/recovery-findings-content.json",
+                      REPO / "scripts/build_parser_findings.py", REPO / "docs/local-testing/parser-findings-content.json")}}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(json.dumps({"page": str(output / "index.html"), "findings": len(findings), "counts": counts, "screenshots": len(screenshots)}))
 

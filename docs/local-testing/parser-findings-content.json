@@ -1,0 +1,102 @@
+{
+  "PARSER-MYKROBE-SELECTION": {
+    "severity": "Proposed blocker",
+    "title": "Selecting one result type crashes a valid parser",
+    "impact": "Species-only and lineage-only requests raise UnboundLocalError although the full report parses. Each branch now sets its own result-type context.",
+    "summary": "Both isolated result requests preserve the full-parse value and leave unrequested envelopes skipped.",
+    "screenshots": []
+  },
+  "PARSER-BRACKEN-EMPTY": {
+    "severity": "Proposed blocker",
+    "title": "A header-only report is marked parsed with the wrong shape",
+    "impact": "An empty valid table becomes a nested dictionary instead of the declared result list. The SDK now returns an empty list and an empty envelope.",
+    "summary": "The header-only case returns empty with value []; numeric zero remains a parsed value.",
+    "screenshots": []
+  },
+  "PARSER-COVERAGE-STREAM": {
+    "severity": "Proposed blocker",
+    "title": "Stream input silently loses coverage rows",
+    "impact": "The parser consumes the source and then tries to read it again. Path input works, but a text stream retains only its first row.",
+    "summary": "The parser reads once; both generic rows remain for path and stream input.",
+    "screenshots": []
+  },
+  "DISPLAY-EMM-SUMMARY": {
+    "severity": "Proposed blocker",
+    "title": "Stored EMM results are absent from the summary",
+    "impact": "The template tests emmtype while the current descriptor uses emm. The existing card was never selected.",
+    "summary": "All 20 stored EMM descriptors now have a reading surface, including two explicit empty reports. A zero cluster count is retained.",
+    "screenshots": [
+      {
+        "path": "parser-display/2026-11-07/browser/baseline/user_one/emm-summary-display-synthetic_sp_001.png",
+        "caption": "Before: the stored EMM result has no summary card."
+      },
+      {
+        "path": "parser-display/2026-11-07/browser/fixed/user_one/emm-summary-display-synthetic_sp_001.png",
+        "caption": "After: the supplied EMM type and cluster are visible alongside MLST."
+      },
+      {
+        "path": "parser-display/2026-11-07/browser/fixed/user_one/emm-summary-display-synthetic_sp_002.png",
+        "caption": "After: a header-free empty EMM report has explicit empty feedback."
+      }
+    ]
+  },
+  "DISPLAY-EMM-TABLE": {
+    "severity": "Proposed blocker",
+    "title": "Requested EMM summary columns are silently omitted",
+    "impact": "The summary columns read an emm alias, while the builder emits emmtyper. Existing API records contain the value but requested table projections lose it.",
+    "summary": "Both projection paths now use the existing alias. All 80 table-summary comparisons pass; all 18 positive EMM records retain the supplied type and cluster. The existing default layout does not request these columns.",
+    "screenshots": [
+      {
+        "path": "parser-display/2026-11-07/browser/fixed/user_one/overview-emm-column-configuration-synthetic_sp_001.png",
+        "caption": "Configuration gap: the unchanged default overview layout does not offer EMM columns."
+      }
+    ]
+  },
+  "DISPLAY-EXTENDED-CONTEXT": {
+    "severity": "Proposed blocker",
+    "title": "The extended summary crashes when a stored row needs its record context",
+    "impact": "An imported card constructs a display link using sample, but the macro import omits context.",
+    "summary": "The import now receives its context. The previously failing extended summary opens and retains the two frozen species rows; no viewer link or analysis action was executed.",
+    "screenshots": [
+      {
+        "path": "parser-display/2026-11-07/browser/baseline/user_one/extended-species-row-retention-synthetic_tb_001.png",
+        "caption": "Before: the extended summary returns HTTP 500."
+      },
+      {
+        "path": "parser-display/2026-11-07/browser/fixed/user_one/extended-species-row-retention-synthetic_tb_001.png",
+        "caption": "After: the same extended summary opens, retaining both source species rows."
+      }
+    ]
+  },
+  "DISPLAY-DATABASE-VERSION": {
+    "severity": "Follow-up",
+    "title": "A shortened version link lacks a full readable label",
+    "impact": "Recognized database links show only six characters. The full version was present in the URL but absent from visible text or an accessible label.",
+    "summary": "The existing short link now exposes the full version in its title and accessible label.",
+    "screenshots": [
+      {
+        "path": "parser-display/2026-11-07/browser/baseline/user_one/database-version-display-synthetic_tb_001.png",
+        "caption": "Before: a stored database version is shown only as a short link label."
+      }
+    ]
+  },
+  "PARSER-KLEBORATE-INTEGRATION": {
+    "severity": "Integration gap",
+    "title": "Kleborate parsing passes, but its stored counterpart is missing",
+    "impact": "All 20 frozen Kleborate reports parse offline. Earlier ingestion failed, leaving 60 selected fields without stored counterparts across the two assay aliases.",
+    "summary": "No new upload was attempted in this read-only pass. A separately scoped ingestion test is still needed.",
+    "screenshots": []
+  },
+  "PARSER-TYPING-SURFACES": {
+    "severity": "Product scope gap",
+    "title": "SPA and SCCmec still lack an agreed reading surface",
+    "impact": "The selected parser values and stored API values match, but the current summaries offer no corresponding cards.",
+    "summary": "The missing controls are recorded as N/A, not passed. The intended release scope needs a product decision.",
+    "screenshots": [
+      {
+        "path": "parser-display/2026-11-07/browser/fixed/user_one/unsupported-spa-surface-synthetic_sa_001.png",
+        "caption": "Open scope gap: stored SPA/SCCmec results have no summary reading surface."
+      }
+    ]
+  }
+}
