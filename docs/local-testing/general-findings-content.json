@@ -1,0 +1,212 @@
+{
+  "ADMIN-CREATE-USER-500": {
+    "title": "A new user cannot be created",
+    "category": "blocker",
+    "impact": "New local accounts cannot be added through the administrator interface, even with valid account fields and a strong matching password.",
+    "retest": "Create a previously unused username through Admin. The expected not-found response during availability checking should be handled and the account should be created once.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/full-access/create-user-valid-input.png",
+        "caption": "Submitting valid input returns HTTP 500. No ui_rehearsal account was created."
+      }
+    ]
+  },
+  "ADMIN-EDIT-USER-500": {
+    "title": "An existing user cannot be opened for editing",
+    "category": "blocker",
+    "impact": "Account details and roles cannot be managed through the existing-user edit screen.",
+    "retest": "Open user_two from the administrator user list. The form should be populated from the current SDK response model, then a reversible profile edit should be saved and reloaded.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/full-access/admin-edit-existing-user.png",
+        "caption": "Selecting user_two from Manage users returns HTTP 500 before the edit form can be shown."
+      }
+    ]
+  },
+  "BASKET-ACCOUNT-SHARED": {
+    "title": "The next account inherits the previous basket",
+    "category": "followup",
+    "impact": "On a shared browser, another person's selection can be mistaken for the current account's selection. This observation does not demonstrate a sample-permission bypass.",
+    "retest": "Select samples as user_one, log out and log in as user_two in the same browser. Independent selections, or an explicitly documented shared-browser policy, should be verified.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_two/full-access/basket-inherited-from-user-one.png",
+        "caption": "After switching to user_two, all nine samples selected by user_one remain in the basket. Removing or clearing also changes the shared selection."
+      }
+    ]
+  },
+  "NONADMIN-ADMIN-500": {
+    "title": "An unauthorized admin visit returns a server error",
+    "category": "followup",
+    "impact": "A non-admin user gets an HTTP 500 page rather than a useful denial or redirect. Administrative data was not displayed.",
+    "retest": "Visit /admin/users as user_two. A clear denial or a valid redirect should be returned without a server error.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_two/full-access/admin-access-denied.png",
+        "caption": "A direct non-admin visit to user management returns HTTP 500. The denial path targets the nonexistent public.home endpoint."
+      }
+    ]
+  },
+  "METADATA-ADD-500": {
+    "title": "Valid metadata cannot be added",
+    "category": "blocker",
+    "impact": "Adding ordinary text or numeric metadata fails with HTTP 500.",
+    "retest": "Append a new field and verify existing fields remain intact.",
+    "screenshots": []
+  },
+  "PRIVATE-GROUP-INVITE-500": {
+    "title": "Private groups cannot be created with invited users",
+    "category": "blocker",
+    "impact": "A private group with a valid invitation returns HTTP 500.",
+    "retest": "Create a private group with one invited account; verify owner, invitee and uninvited access separately.",
+    "screenshots": []
+  },
+  "QC-FILTER-EMPTY": {
+    "title": "An exact status filter hides matching rows",
+    "category": "blocker",
+    "impact": "The advanced table filter excludes a row that visibly has the requested status.",
+    "retest": "Combine a category filter with QC Equals failed; only matching rows should remain.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/expanded-baseline/advanced-filter-qc-empty.png",
+        "caption": "Baseline observation: an exact status filter hides matching rows."
+      }
+    ]
+  },
+  "PENDING-SAMPLE-500": {
+    "title": "A pending record cannot be opened",
+    "category": "blocker",
+    "impact": "A valid record without a completed pipeline returns HTTP 500 instead of an available pending state.",
+    "retest": "Open empty and metadata-only records without supplying any analysis data.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/general-baseline/pending-empty-summary.png",
+        "caption": "Baseline observation: a pending record cannot be opened."
+      },
+      {
+        "path": "browser-results/user_one/general-baseline/pending-metadata-summary.png",
+        "caption": "Baseline observation: a pending record cannot be opened."
+      }
+    ]
+  },
+  "GROUP-MEMBERSHIP-LOSS": {
+    "title": "Applying unchanged groups removes other memberships",
+    "category": "blocker",
+    "impact": "Selecting records with one common group and applying without changes removes their individual memberships. This can silently change organization of records.",
+    "retest": "Apply an unchanged common selection to records with different additional memberships; verify every original edge remains.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/expanded-baseline/membership-apply-preserves-unshown-groups.png",
+        "caption": "Baseline observation: applying unchanged groups removes other memberships."
+      },
+      {
+        "path": "browser-results/admin/expanded-baseline/membership-common-group-before-apply.png",
+        "caption": "Baseline observation: applying unchanged groups removes other memberships."
+      }
+    ]
+  },
+  "GROUP-MEMBERSHIP-LIMIT": {
+    "title": "Group preselection fails above 100 selected records",
+    "category": "blocker",
+    "impact": "The selector silently loses common group preselection for a 125-record selection.",
+    "retest": "Select 125 members of a common group and verify preselection and a harmless Apply.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/expanded-baseline/group-membership-125-preselection.png",
+        "caption": "Baseline observation: group preselection fails above 100 selected records."
+      }
+    ]
+  },
+  "METADATA-CATEGORY-LOSS": {
+    "title": "Interleaved metadata categories lose fields",
+    "category": "missing",
+    "impact": "An earlier field disappears when another category occurs between two fields of the same category.",
+    "retest": "Display categories A, B, A and verify all fields appear once.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/expanded-baseline/metadata-noncontiguous-categories.png",
+        "caption": "Baseline observation: interleaved metadata categories lose fields."
+      }
+    ]
+  },
+  "METADATA-TABLE-EMPTY": {
+    "title": "An accepted metadata table has no visible contents",
+    "category": "missing",
+    "impact": "Accepted CSV metadata cannot be read as an inline or standalone table.",
+    "retest": "Create a small generic CSV table and verify its headings, cells and category placement.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/expanded-baseline/metadata-table-content.png",
+        "caption": "Baseline observation: an accepted metadata table has no visible contents."
+      }
+    ]
+  },
+  "SELECTED-FILTER-STALE": {
+    "title": "Clearing selected rows leaves stale filtered results",
+    "category": "followup",
+    "impact": "Show only selected continues displaying the old rows after Deselect all. The settled state was confirmed.",
+    "retest": "Deselect all while the selected-row filter is active; the table should become empty.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/general-baseline/deselect-all-with-selected-filter.png",
+        "caption": "Baseline observation: clearing selected rows leaves stale filtered results."
+      }
+    ]
+  },
+  "GROUP-EDITOR-EMPTY-COUNT": {
+    "title": "A populated group editor reports no members",
+    "category": "followup",
+    "impact": "The editor says No samples added yet for a group with 123 members.",
+    "retest": "Open a populated group editor and compare its count with the membership records.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/expanded-baseline/populated-group-editor-count.png",
+        "caption": "Baseline observation: a populated group editor reports no members."
+      }
+    ]
+  },
+  "BASKET-UNDEFINED-ASSAY": {
+    "title": "Pending records display undefined in the basket",
+    "category": "followup",
+    "impact": "A missing optional category is printed as literal undefined.",
+    "retest": "Add a pending record to the basket; a readable empty value should be shown.",
+    "screenshots": [
+      {
+        "path": "browser-results/admin/expanded-baseline/basket-125-selection.png",
+        "caption": "Baseline observation: pending records display undefined in the basket."
+      }
+    ]
+  },
+  "COMMENT-HIDE-PERMISSION-500": {
+    "title": "A comment control offers an action that fails",
+    "category": "followup",
+    "impact": "A regular account is shown Remove, but using it returns HTTP 500. Administrator removal succeeds.",
+    "retest": "Keep the established permission policy and make the control and denial feedback agree with it.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/expanded-baseline/regular-user-comment-hide-feedback.png",
+        "caption": "Baseline observation: a comment control offers an action that fails."
+      },
+      {
+        "path": "browser-results/admin/expanded-baseline/admin-comment-hide.png",
+        "caption": "Baseline observation: a comment control offers an action that fails."
+      }
+    ]
+  },
+  "OVERVIEW-MOBILE-OVERFLOW": {
+    "title": "The overview is wider than a phone screen",
+    "category": "followup",
+    "impact": "At both 320 px and 390 px, the overview expands to 1488 CSS pixels rather than containing horizontal table scrolling.",
+    "retest": "Review narrow-screen navigation, action controls and table scrolling; the report itself is checked separately.",
+    "screenshots": [
+      {
+        "path": "browser-results/user_one/general-baseline/overview-mobile-390.png",
+        "caption": "Baseline observation: the overview is wider than a phone screen."
+      },
+      {
+        "path": "browser-results/user_one/general-baseline/overview-mobile-320.png",
+        "caption": "Baseline observation: the overview is wider than a phone screen."
+      }
+    ]
+  }
+}

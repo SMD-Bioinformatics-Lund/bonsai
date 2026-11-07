@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--run-dir", type=Path, required=True)
 parser.add_argument("--role", default="user_one")
 parser.add_argument("--session-name", default="")
+parser.add_argument("--results-file", default="ui-results.jsonl")
+parser.add_argument("--phase", default="initial")
 parser.add_argument("--url", default="http://localhost:18000")
 args = parser.parse_args()
 output = args.run_dir.resolve() / "browser-results" / args.role
@@ -34,7 +36,8 @@ options.add_argument("--window-size=1440,1100")
 options.add_argument(f"--user-data-dir={output / 'profile'}")
 options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 options.add_experimental_option("prefs", {"download.default_directory": str(output / "downloads"),
-                                          "download.prompt_for_download": False})
+                                          "download.prompt_for_download": False,
+                                          "net.network_prediction_options": 2})
 service = Service("/snap/bin/chromium.chromedriver", log_output=str(output / "chromedriver.log"))
 browser = webdriver.Chrome(service=service, options=options)
 browser.set_page_load_timeout(45)
@@ -69,9 +72,10 @@ def record(case, status, expected, observed, sample=None, artifact=None, observe
     if status not in {"PASS", "FAIL", "BLOCKED", "N/A"}:
         raise ValueError("Use an explicit test result")
     item = {"time": datetime.now(timezone.utc).isoformat(), "role": args.role,
+            "phase": args.phase,
             "case": case, "status": status, "expected": expected, "observed": observed,
             "sample": sample, "url": observed_url or browser.current_url, "artifact": artifact}
-    with (args.run_dir / "ui-results.jsonl").open("a", encoding="utf-8") as handle:
+    with (args.run_dir / args.results_file).open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(item) + "\n")
     print(json.dumps(item))
 
