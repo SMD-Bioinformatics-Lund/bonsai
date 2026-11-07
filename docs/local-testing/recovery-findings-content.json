@@ -1,0 +1,56 @@
+{
+  "RECOVERY-METADATA-LOSS": {
+    "title": "Concurrent metadata saves silently lose successful changes",
+    "severity": "Proposed blocker",
+    "impact": "Five pairs of simultaneous appends reported success, but only five of ten independent fields remained. Three simultaneous additions of the same field also all reported success.",
+    "retest": "Append independent fields concurrently and retain all of them. Creating one field concurrently must have one successful request and clear conflicts for the others."
+  },
+  "RECOVERY-COMMENT-IDENTITIES": {
+    "title": "Concurrent comments receive duplicate identifiers",
+    "severity": "Proposed blocker",
+    "impact": "All 15 comment texts were retained, but they shared only nine identifiers. Later actions address a comment by its identifier, making a collision unsafe for record management.",
+    "retest": "Retain all simultaneous comment texts with distinct identifiers. Existing historical collisions are not migrated by this patch."
+  },
+  "RECOVERY-COMMENT-RETRY": {
+    "title": "A lost comment response creates duplicates during recovery",
+    "severity": "Proposed blocker",
+    "impact": "A comment accepted before its response was lost was posted again during SDK recovery. A failure before acceptance returned a server-error page and lost the draft. Replaying an explicitly identified API request also appended a second comment.",
+    "retest": "Keep a stable request identity across retries, reject changed content under the same key, preserve an interrupted draft, and clearly confirm a completed save. The earlier comment-removal permission error is also corrected."
+  },
+  "RECOVERY-GROUP-OVERLAP": {
+    "title": "A stale group editor overwrites another tab's independent edit",
+    "severity": "Proposed blocker",
+    "impact": "Changing a description in an already open second tab reverted the name saved in the first tab. The API already supports independent partial updates; the editor was sending unchanged stale fields.",
+    "retest": "Save a name in one tab and a description in another. Both changes must remain. Same-field version conflicts remain a separate follow-up."
+  },
+  "RECOVERY-GROUP-PENDING": {
+    "title": "Save and Reset remain active while a group save is pending",
+    "severity": "Follow-up",
+    "impact": "Repeated Save clicks sent overlapping writes. Reset and form changes were also available while the two-stage operation was running.",
+    "retest": "Disable the editor during a pending save, ignore repeated actions, and submit one captured set of form values."
+  },
+  "RECOVERY-GROUP-FEEDBACK": {
+    "title": "Failed group saves hide partial or uncertain success",
+    "severity": "Follow-up",
+    "impact": "The group name could be saved while its column settings failed, but only a generic failure was shown. The same generic message appeared when a successful save lost its response.",
+    "retest": "Explain which stage was confirmed, preserve the draft, and retry the known group. When acceptance is uncertain, say that changes may already have been saved."
+  },
+  "RECOVERY-SESSION-DRAFT": {
+    "title": "An expired session loses the unsent comment draft",
+    "severity": "Follow-up",
+    "impact": "The expired submission is correctly rejected without a write or server error, but the sign-in page does not retain its draft.",
+    "retest": "Choose a privacy-conscious draft recovery policy and verify it across session expiry, account switching and sign-in. No browser-persistent draft storage was introduced."
+  },
+  "RECOVERY-MEMBERSHIP-PARTIAL": {
+    "title": "A partial membership removal needs individual review",
+    "severity": "Follow-up",
+    "impact": "When removal succeeds for one of two selected records and fails for the other, resynchronization clears the common selection. Repeating Apply does not repeat the original removal intent. The remaining membership is retained and unrelated memberships are preserved.",
+    "retest": "Define resumable batch intent or a clear per-record outcome view. Until then, review the remaining record individually; the error now explicitly warns that some changes may already be saved."
+  },
+  "RECOVERY-SAME-FIELD-CONFLICT": {
+    "title": "Overlapping edits to the same group field have no conflict prompt",
+    "severity": "Follow-up",
+    "impact": "The last save of the same description replaces the earlier value. The current API has no edit-version precondition, so the independent-field fix cannot detect this conflict.",
+    "retest": "Agree on an optimistic concurrency contract before adding a version field or conditional writes. Same-field conflict detection remains open."
+  }
+}

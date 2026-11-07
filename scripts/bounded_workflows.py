@@ -18,12 +18,13 @@ class BoundedApi:
                                 content_type="application/x-www-form-urlencoded")
         self.token = response["access_token"]
 
-    def request(self, path, *, data=None, body=None, method=None, expected=(200, 201), content_type="application/json"):
+    def request(self, path, *, data=None, body=None, method=None, expected=(200, 201), content_type="application/json", extra_headers=None):
         method = method or ("POST" if data is not None or body is not None else "GET")
         self.scope.check(method, path, data)
         if data is not None:
             body = json.dumps(data).encode()
         headers = {"Content-Type": content_type}
+        headers.update(extra_headers or {})
         if self.token:
             headers["Authorization"] = "Bearer " + self.token
         try:

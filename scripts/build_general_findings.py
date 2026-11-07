@@ -67,6 +67,7 @@ def build(run, output):
 
     fixes = read_json(run / "general-fix-verification.json") if (run / "general-fix-verification.json").exists() else {}
     account_closed = {"BASKET-ACCOUNT-SHARED": "ACCOUNT-BASKET-ISOLATION", "BASKET-UNDEFINED-ASSAY": "ACCOUNT-BASKET-HTML"} if (run / "account-sessions/2026-11-07/findings.json").exists() else {}
+    recovery_ready = (run / "failure-recovery/2026-11-07/findings.json").exists()
 
     def card(finding):
         fid = finding["id"]
@@ -93,6 +94,8 @@ def build(run, output):
             if fix.get("evidence"):
                 verification += '<p class="footnote">Verification evidence: ' + ' · '.join(
                     f'<a href="{publish(path)}">{escape(Path(path).name)}</a>' for path in fix["evidence"]) + '</p>'
+        if recovery_ready and fid == "COMMENT-HIDE-PERMISSION-500":
+            verification = '<p class="retest"><strong>Resolved in the recovery iteration</strong>Ordinary accounts no longer see the administrator-only removal control. Denied direct requests show normal feedback. <a href="#RECOVERY-COMMENT-RETRY">Current verification and screenshots</a>. The images below preserve the earlier baseline.</p>'
         gallery = '<div class="gallery">' + ''.join(figure(x) for x in text["screenshots"]) + '</div>' if text["screenshots"] else ''
         return (f'<article class="finding" id="{fid}"><div class="finding-head"><div class="meta"><span class="badge {category}">{label}</span>'
                 f'<a class="finding-id" href="#{fid}">{fid}</a></div><h3>{escape(text["title"])}</h3></div><div class="finding-body">'
@@ -127,6 +130,8 @@ def build(run, output):
     detail_html, detail_summary = render_details(run, output, publish, figure)
     from build_account_findings import render as render_accounts
     account_html, account_summary = render_accounts(run, output, publish, figure)
+    from build_recovery_findings import render as render_recovery
+    recovery_html, recovery_summary = render_recovery(run, output, publish, figure)
     categories = Counter(x["category"] for x in content.values())
     verified = {fid for fid, item in fixes.get("findings", {}).items() if item["status"] == "verified"}
     critical = {fid for fid, item in content.items() if item["category"] == "blocker"}
@@ -147,8 +152,8 @@ def build(run, output):
         earlier_summary = earlier_summary.replace("Six smaller findings remain open.", "The two basket follow-ups were resolved in the later account iteration.")
     replacements = {
         "BLOCKER_COUNT": str(categories["blocker"]), "OTHER_COUNT": str(len(content) - categories["blocker"]),
-        "ANSWER": escape(account_summary) if account_html else (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
-        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html, "ACCOUNTS": account_html,
+        "ANSWER": escape(recovery_summary) if recovery_html else escape(account_summary) if account_html else (escape(detail_summary) + 'The record-level private visibility gap remains open. Earlier test phases and remaining smaller findings are preserved below.') if detail_html else escape(bounded_summary) + opening,
+        "VERIFIED_COUNT": str(critical_verified), "BOUNDED": bounded_html, "DETAILS": detail_html, "ACCOUNTS": account_html, "RECOVERY": recovery_html,
         "FIX_SUMMARY": escape(earlier_summary),
         "FIX_BRANCH": escape(fixes.get("branch", "Pending creation after the expanded baseline")), "FIX_DETAILS": technical,
         "CHARTS": ''.join(charts),
@@ -169,7 +174,8 @@ def build(run, output):
                       CONTENT, TEMPLATE, Path(__file__), REPO / "scripts/build_bounded_findings.py",
                       REPO / "docs/local-testing/bounded-findings-content.json", REPO / "docs/local-testing/bounded-scope.json",
                       REPO / "scripts/build_detail_findings.py", REPO / "docs/local-testing/detail-findings-content.json",
-                      REPO / "scripts/build_account_findings.py", REPO / "docs/local-testing/account-findings-content.json")}}
+                      REPO / "scripts/build_account_findings.py", REPO / "docs/local-testing/account-findings-content.json",
+                      REPO / "scripts/build_recovery_findings.py", REPO / "docs/local-testing/recovery-findings-content.json")}}
     (output / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     print(json.dumps({"page": str(output / "index.html"), "findings": len(findings), "counts": counts, "screenshots": len(screenshots)}))
 

@@ -21,6 +21,11 @@
       "id": "account-isolation-and-permissions",
       "actions": ["Compare documented roles through UI and API", "Check account switching, browser history, multiple tabs and isolated profiles", "Expire a test session and change or disable disposable accounts", "Verify private-group owner, invitee and uninvited access", "Map unfinished record-private behavior without inventing an access policy"],
       "condition": "All account, group and record mutations target registered disposable fixtures. Original users and records cannot be modified."
+    },
+    {
+      "id": "failure-recovery-and-integrity",
+      "actions": ["Interrupt generic saves before and after server acceptance", "Retry and double-submit generic comment and group operations", "Compare concurrent metadata, comment and group edits with stored state", "Check navigation and session rejection during pending saves"],
+      "condition": "Fault injection and mutations are confined to registered disposable records and groups. All stored biological results remain unchanged."
     }
   ],
   "excluded": [
