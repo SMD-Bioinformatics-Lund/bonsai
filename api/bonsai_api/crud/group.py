@@ -52,7 +52,7 @@ async def get_groups_crud(
 
     if user_id is not None and "admin" not in (user_roles or []):
         # non-admin users only see public groups, or those they own / are invited to
-        data_pipeline.append(build_public_visibility_match_stage(user_id))
+        data_pipeline.append(build_user_visibility_match_stage(user_id))
 
     # format the group data
     data_pipeline.append(group_project_stage(include_allowed=True, include_presets=True))
@@ -194,7 +194,7 @@ async def get_group(
         ]
         if user_id is not None and "admin" not in (user_roles or []):
             # non-admin users only see public groups, or those they own / are invited to
-            data_pipeline.append(build_public_visibility_match_stage(user_id))
+            data_pipeline.append(build_user_visibility_match_stage(user_id))
 
         # add data fields
         data_pipeline.append(group_project_stage(include_presets=True))

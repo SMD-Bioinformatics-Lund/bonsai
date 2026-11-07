@@ -1,6 +1,7 @@
 """Declaration of flask admin views"""
 
 from bonsai_libs.api_client.bonsai.models import CreateUserInput
+from bonsai_libs.api_client.core.exceptions import ApiError, NotFoundError
 from flask import (
     Blueprint,
     current_app,
@@ -40,7 +41,7 @@ def admin_panel():
     # if not valid token
     if not current_user.is_admin:
         flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        return redirect(url_for("public.index"))
 
     return redirect(url_for("admin.view_users"))
 
@@ -52,7 +53,7 @@ def view_users():
     # if not valid token
     if not current_user.is_admin:
         flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
     users = client.get_users()
@@ -107,6 +108,8 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
         try:
             client = get_api_client()
             client.get_user(username)
+        except NotFoundError:
+            user_exists = False
         except HTTPError as error:
             if error.response.status_code == 404:
                 user_exists = False
@@ -123,7 +126,7 @@ def create_user():
     # if not valid token
     if not current_user.is_admin:
         flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        return redirect(url_for("public.index"))
 
     form = UserRegistrationForm(request.form)
     if request.method == "POST" and form.validate():
@@ -132,11 +135,12 @@ def create_user():
 
             client = get_api_client()
             client.create_user(user_data)
-        except HTTPError as error:
+        except (HTTPError, ApiError) as error:
             flash(
-                f"Error when creating a new user, {error.response.status_code}",
+                "Error when creating a new user",
                 "warning",
             )
+            current_app.logger.error("Error creating user: %s", error)
         else:
             flash("Created new user", "success")
         return redirect(url_for("admin.view_users"))
@@ -151,7 +155,7 @@ def delete_users():
     # if not valid token
     if not current_user.is_admin:
         flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
 
@@ -180,7 +184,7 @@ def update_user(username):
     # if not valid token
     if not current_user.is_admin:
         flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
 
@@ -209,11 +213,11 @@ def update_user(username):
                 flash(f"Removed user {username}", "success")
     elif request.method == "GET":
         # populate form with deafults from the database
-        form.username.data = user["username"]
-        form.first_name.data = user["first_name"]
-        form.last_name.data = user["last_name"]
-        form.email.data = user["email"]
-        form.roles.data = user["roles"]
+        form.username.data = user.username
+        form.first_name.data = user.first_name
+        form.last_name.data = user.last_name
+        form.email.data = user.email
+        form.roles.data = user.roles
         if current_user.authentication_method == "ldap":
             form.password.render_kw = {"disabled": True}
             form.confirm.render_kw = {"disabled": True}

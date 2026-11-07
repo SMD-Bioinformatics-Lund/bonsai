@@ -36,6 +36,8 @@ export class GroupSelector extends HTMLElement {
   private membershipAbort?: AbortController;
   private currentSelectedSamples: string[] = [];
   private currentMemberships: MembershipBySample = {};
+  private commonGroupIds = new Set<string>();
+  private membershipReady = false;
 
   constructor() {
     super();
@@ -44,6 +46,7 @@ export class GroupSelector extends HTMLElement {
     this.shadow.appendChild(template.content.cloneNode(true));
     this.selector = this.shadow.getElementById("groups") as ChoiceSelect;
     this.applyBtn = this.shadow.getElementById("apply") as HTMLButtonElement;
+    this.applyBtn.disabled = true;
     this.clearBtn = this.shadow.getElementById("clear") as HTMLButtonElement;
   }
 
@@ -73,9 +76,12 @@ export class GroupSelector extends HTMLElement {
   };
   private onApply = async () => {
     if (!this.getSelectedSamples || !this.addToGroup || !this.removeFromGroup) return;
+    if (!this.membershipReady) return;
 
     const sampleIds = this.getSelectedSamples();
     const selectedGroupIds: string[] = this.selector.getSelected();
+    const memberships = this.currentMemberships;
+    const commonGroupIds = new Set(this.commonGroupIds);
 
     if (!sampleIds.length) {
       this.dispatchEvent(
@@ -85,18 +91,20 @@ export class GroupSelector extends HTMLElement {
     }
 
     let membershipChanged = false;
+    this.membershipReady = false;
+    this.applyBtn.disabled = true;
 
     try {
       // For each sample, compute which groups to add/remove
-      // A sample should be in ALL selected groups and in NO deselected groups
+      // Only previously common groups are represented as selected in the UI.
       for (const sampleId of sampleIds) {
-        const currentGroups = new Set(this.currentMemberships[sampleId] ?? []);
+        const currentGroups = new Set(memberships[sampleId] ?? []);
         const targetGroups = new Set(selectedGroupIds);
 
         // Groups to add: in target but not in current
         const toAdd = [...targetGroups].filter(gid => !currentGroups.has(gid));
-        // Groups to remove: in current but not in target
-        const toRemove = [...currentGroups].filter(gid => !targetGroups.has(gid));
+        // Preserve individual memberships that were not shown as selected.
+        const toRemove = [...commonGroupIds].filter(gid => currentGroups.has(gid) && !targetGroups.has(gid));
 
         if (toAdd.length > 0) {
           for (const gid of toAdd) {
@@ -122,6 +130,7 @@ export class GroupSelector extends HTMLElement {
       if (membershipChanged) {
         emitEvent("samples:group-memberships-changed", { sampleIds });
       }
+      await this.preselectGroupsForSamples(this.currentSelectedSamples);
     }
   };
 
@@ -147,7 +156,11 @@ export class GroupSelector extends HTMLElement {
   /* Preselect the groups based on the selected samples */
   private async preselectGroupsForSamples(sampleIds: string[]) {
     if (this.membershipAbort) this.membershipAbort.abort();
-    this.membershipAbort = new AbortController();
+    const controller = new AbortController();
+    this.membershipAbort = controller;
+    this.membershipReady = false;
+    this.applyBtn.disabled = true;
+    this.commonGroupIds.clear();
 
     if (!sampleIds?.length || !this.getGroupMembership) {
       this.selector.clearSelected();
@@ -156,7 +169,8 @@ export class GroupSelector extends HTMLElement {
     }
 
     try {
-      const membershipsEdges = await this.getGroupMembership(sampleIds, this.membershipAbort.signal);
+      const membershipsEdges = await this.getGroupMembership(sampleIds, controller.signal);
+      if (controller.signal.aborted) return;
       const memberships = groupMemberships(membershipsEdges);
       this.currentMemberships = memberships;
       
@@ -177,7 +191,10 @@ export class GroupSelector extends HTMLElement {
         .map(([gid]) => gid);
 
       groupNameIntersect.sort();
+      this.commonGroupIds = new Set(groupNameIntersect);
       this.selector.setSelected(groupNameIntersect);
+      this.membershipReady = true;
+      this.applyBtn.disabled = false;
     } catch (err) {
       console.warn("Failed to preselect samples", err);
     }

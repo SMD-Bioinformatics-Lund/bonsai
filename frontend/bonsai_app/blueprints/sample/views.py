@@ -493,7 +493,7 @@ def metadata(sample_id: str) -> str:
     kw_tbl = kw_metadata_to_table(kw_metadata)
     grouped_meta_tbl = {
         name: list(gr)
-        for name, gr in groupby(metadata_tbls, key=lambda x: x["category"])
+        for name, gr in groupby(sorted(metadata_tbls, key=lambda x: x["category"]), key=lambda x: x["category"])
     }
 
     return render_template(

@@ -38,7 +38,7 @@
                             {{ meta_table(kw_tbl[category], 'kw-meta', show_columns=False) }}
                         </div>
                     {% endif %}
-                    {% if category in metadata_tbls %}
+                    {% if category in grouped_metadata_tbls %}
                         <div class="row justify-content-md-center">
                             {% for meta in grouped_metadata_tbls[category] %}
                                 <div class="col-md-auto w-50">{{ meta_table(meta, loop.index, name=meta.fieldname) }}</div>

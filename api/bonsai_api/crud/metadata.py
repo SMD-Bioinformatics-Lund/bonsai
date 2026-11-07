@@ -21,18 +21,21 @@ async def add_metadata_to_sample(
 
     # 1. verify that fieldname does not already exist
     sample_obj = await get_sample_by_id(db, sample_id=sample_id)
+    if sample_obj is None:
+        raise EntryNotFound(sample_id)
     input_fieldnames = {met.fieldname for met in metadata}
-    sample_meta = sample_obj['metadata']
+    sample_meta = TypeAdapter(MetaEntriesInDb).validate_python(sample_obj.get("metadata", []))
     db_fieldnames = {meta.fieldname for meta in sample_meta}
-    if len(input_fieldnames & db_fieldnames) > 0:
+    duplicates = input_fieldnames & db_fieldnames
+    if duplicates:
         raise FileExistsError(
-            f"Metadata field '{metadata.fieldname}' already exist for sample {sample_id}"
+            f"Metadata fields {', '.join(sorted(duplicates))} already exist for sample {sample_id}"
         )
 
     # 2. push new metadata entry to existing metadata
     meta_info: list[MetaEntryInDb] = []
     for meta in sample_meta:
-        if meta['fieldname'] not in input_fieldnames:
+        if meta.fieldname not in input_fieldnames:
             meta_info.append(meta)
     # if entry is a table, serialize and reformat
     for record in metadata:
