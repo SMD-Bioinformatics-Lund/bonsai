@@ -17,6 +17,9 @@ export class GroupEditor extends HTMLElement {
 
   private _api?: GroupEditorApi;
   private isInitialized = false;
+  private saving = false;
+  private savedCore = { display_name: "", description: "" };
+  private savedColumns: string[] = [];
 
   set api(api: GroupEditorApi) {
     this._api = api;
@@ -65,14 +68,19 @@ export class GroupEditor extends HTMLElement {
   async load(groupId: string) {
     const data = await this.api.getGroup(groupId)
     this.model.loadFromApi(data);
+    this.savedCore = { display_name: data.display_name, description: data.description };
+    this.savedColumns = [...data.table_columns];
     this.render();
   }
 
   async save() {
+    if (this.saving) return;
     if (!this._api) {
       throw new Error("<group-editor> cannot save without API");
     }
 
+    this.setSaving(true);
+    let coreSaved = false;
     try {
       // post updates to group
       let groupId: string;
@@ -82,24 +90,37 @@ export class GroupEditor extends HTMLElement {
         display_name: this.model.displayName,
         description: this.model.description,
       }
+      const selector = this.querySelector('column-selector') as ColumnSelector;
+      const columns = selector.items.filter(item => item.enabled).map(item => item.id);
+      const creating = this.mode === "create";
       if ( this.mode == "create" ) {
         // The group key is stable and cannot be changed afterwards.
         const groupObj = await this._api.createGroup({ ...corePayload, group_key: this.model.groupKey })
         groupId = groupObj.group_id;
         this.model.groupId = groupId;
         this.mode = "edit";
+        this.model.mode = "edit";
+        this.savedCore = { ...corePayload };
+        coreSaved = true;
       } else {
         groupId = this.model.groupId!;
-        await this._api.updateGroup(groupId, corePayload)
+        // Only changed fields belong to this draft; preserve independent edits in other tabs.
+        const changes: Partial<typeof corePayload> = {};
+        if (corePayload.display_name !== this.savedCore.display_name) changes.display_name = corePayload.display_name;
+        if (corePayload.description !== this.savedCore.description) changes.description = corePayload.description;
+        if (Object.keys(changes).length) {
+          await this._api.updateGroup(groupId, changes);
+          this.savedCore = { ...corePayload };
+          coreSaved = true;
+        }
       }
 
       // update allowed columns
       // first narrow to only selected elements then get the col id
-      const selector =this.querySelector('column-selector') as ColumnSelector
-      await this._api.updateAllowedColumns(
-        groupId,
-        selector.items.filter(item => item.enabled).map(item => item.id)
-      );
+      if (creating || JSON.stringify(columns) !== JSON.stringify(this.savedColumns)) {
+        await this._api.updateAllowedColumns(groupId, columns);
+        this.savedColumns = [...columns];
+      }
 
       this.dispatchEvent(
         new CustomEvent("group-editor:saved", {
@@ -120,13 +141,25 @@ export class GroupEditor extends HTMLElement {
     } catch (err) {
       this.dispatchEvent(
         new CustomEvent("group-editor:error", {
-          detail: { message: "Failed to save group", cause: err }
+          detail: { message: coreSaved
+            ? "Group details were saved, but column settings could not be confirmed. Retry to finish saving."
+            : "Failed to save group: some changes may have been saved. Check the group before retrying.", cause: err }
         })
       )
-    };
+    } finally {
+      this.setSaving(false);
+    }
+  }
+
+  private setSaving(saving: boolean) {
+    this.saving = saving;
+    this.inert = saving;
+    this.setAttribute("aria-busy", String(saving));
+    this.querySelectorAll<HTMLButtonElement>(".ge-actions button").forEach(button => { button.disabled = saving; });
   }
 
   private async delete() {
+    if (this.saving) return;
     const groupId = this.model.groupId;
     if (this.mode !== "edit" || !groupId) return;
 
@@ -156,6 +189,7 @@ export class GroupEditor extends HTMLElement {
   }
 
   private reset() {
+    if (this.saving) return;
     if (this.mode === "edit" && this.model.groupId) {
       this.load(this.model.groupId);
     } else {

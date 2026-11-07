@@ -24,6 +24,8 @@ async def add_metadata_to_sample(
     if sample_obj is None:
         raise EntryNotFound(sample_id)
     input_fieldnames = {met.fieldname for met in metadata}
+    if len(input_fieldnames) != len(metadata):
+        raise FileExistsError("Metadata field names must be unique within a request")
     sample_meta = TypeAdapter(MetaEntriesInDb).validate_python(sample_obj.get("metadata", []))
     db_fieldnames = {meta.fieldname for meta in sample_meta}
     duplicates = input_fieldnames & db_fieldnames
@@ -34,9 +36,6 @@ async def add_metadata_to_sample(
 
     # 2. push new metadata entry to existing metadata
     meta_info: list[MetaEntryInDb] = []
-    for meta in sample_meta:
-        if meta.fieldname not in input_fieldnames:
-            meta_info.append(meta)
     # if entry is a table, serialize and reformat
     for record in metadata:
         if record.type == "table":
@@ -45,11 +44,13 @@ async def add_metadata_to_sample(
             meta_info.append(record)
 
     cursor: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {"$set": {"metadata": [meta.model_dump() for meta in meta_info]}},
+        {"sample_id": sample_id, "metadata.fieldname": {"$nin": list(input_fieldnames)}},
+        {"$push": {"metadata": {"$each": [meta.model_dump() for meta in meta_info]}}},
     )
     if cursor.matched_count == 0:
-        raise EntryNotFound(sample_id)
+        if await get_sample_by_id(db, sample_id=sample_id) is None:
+            raise EntryNotFound(sample_id)
+        raise FileExistsError("A metadata field was added by another request; reload before retrying")
     is_updated = cursor.matched_count == 1 and cursor.modified_count == 1
     if not is_updated:
         raise ValueError("Metadata not modified.")

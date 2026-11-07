@@ -71,13 +71,15 @@ def test_stored_metadata_reads_legacy_csv_and_structured_tables(model):
 async def test_appending_metadata_retains_existing_fields_and_normalizes_tables(monkeypatch):
     sample = {"metadata": [{"fieldname": "First", "category": "general", "type": "string", "value": "Retain"}]}
     monkeypatch.setattr(metadata_crud, "get_sample_by_id", AsyncMock(return_value=sample))
-    update = AsyncMock(return_value=SimpleNamespace(matched_count=1, modified_count=1))
+    collection = MongoClient().test.sample
+    collection.insert_one({"sample_id": "record-1", **sample})
+    update = AsyncMock(side_effect=collection.update_one)
     db = SimpleNamespace(sample_collection=SimpleNamespace(update_one=update))
     assert await metadata_crud.add_metadata_to_sample("record-1", [
         GenericMetadataEntry(fieldname="Count", category="general", type="integer", value=7),
         InputTableMetadata(fieldname="Inventory", value="Item,Count\nDesk,2\n"),
     ], db)
-    stored = update.call_args.args[1]["$set"]["metadata"]
+    stored = collection.find_one({"sample_id": "record-1"})["metadata"]
     assert [entry["fieldname"] for entry in stored] == ["First", "Count", "Inventory"]
     assert stored[0]["value"] == "Retain"
     assert stored[2]["columns"] == ["Item", "Count"]

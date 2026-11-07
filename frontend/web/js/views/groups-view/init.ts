@@ -242,7 +242,7 @@ export async function initGroupView(
     addToGroupSelector.addEventListener("apply:error", (ev: Event) => {
       const { error } = (ev as CustomEvent).detail;
       console.error("Apply error:", table.getSelectedRows(), error);
-      throwSmallToast("Could not update group memberships. Please try again.", "error");
+      throwSmallToast("Could not update group memberships. Some changes may already be saved; review memberships before retrying.", "error");
     });
 
     addToGroupSelector.addEventListener("apply:skipped", (ev: Event) => {

@@ -5,6 +5,7 @@ import logging
 from datetime import date
 from itertools import groupby
 from typing import Any, Dict, Tuple
+from uuid import uuid4
 
 from flask import (
     Blueprint,
@@ -51,6 +52,12 @@ samples_bp = Blueprint(
 )
 
 
+@samples_bp.context_processor
+def comment_form_defaults():
+    """Give every sample sidebar a separate, reusable comment request identity."""
+    return {"comment_request_id": str(uuid4()), "comment_draft": ""}
+
+
 @samples_bp.route("/samples")
 @login_required
 def samples():
@@ -88,7 +95,7 @@ def cluster(sample_id: str) -> str:
 
 @samples_bp.route("/sample/<sample_id>")
 @login_required
-def sample(sample_id: str) -> str:
+def sample(sample_id: str, *, comment_draft: str = "", comment_request_id: str | None = None) -> str:
     """Generate sample page.
 
     :param sample_id: Sample id
@@ -158,6 +165,8 @@ def sample(sample_id: str) -> str:
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
         token=current_user.token,
+        comment_draft=comment_draft,
+        comment_request_id=comment_request_id or str(uuid4()),
     )
 
 
@@ -186,12 +195,20 @@ def add_comment(sample_id: str) -> str:
 
     # post comment
     data = request.form["comment"]
+    request_id = request.form.get("comment-request-id") or str(uuid4())
     try:
         client.post_comment_to_sample(
-            sample_id=sample_id, username=current_user.username, comment=data
+            sample_id=sample_id, username=current_user.username, comment=data,
+            headers={"Idempotency-Key": request_id},
         )
-    except HTTPError:
-        flash("Error posting commment", "danger")
+    except (ApiError, HTTPError) as error:
+        code = getattr(error, "status", None) or getattr(getattr(error, "response", None), "status_code", None)
+        if code == 409:
+            flash("This comment request was already used with different content. Reload before posting a new comment.", "warning")
+        else:
+            flash("The comment save could not be confirmed. The draft is retained; retry it to avoid posting a duplicate.", "warning")
+        return sample(sample_id, comment_draft=data, comment_request_id=request_id), code if code in (409, 422) else 503
+    flash("Comment added", "success")
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
@@ -203,8 +220,8 @@ def hide_comment(sample_id: str, comment_id: str) -> str:
     # hide comment
     try:
         client.remove_comment_from_sample(sample_id=sample_id, comment_id=comment_id)
-    except HTTPError as error:
-        flash(str(error), "danger")
+    except (ApiError, HTTPError):
+        flash("The comment could not be removed. Check your permissions and try again.", "warning")
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 

@@ -1,6 +1,7 @@
 """Functions for performing CURD operations on sample collection."""
 
 import logging
+from hashlib import sha256
 from typing import Any
 
 from bonsai_libs.api_client.audit_log import AuditLogClient
@@ -133,39 +134,48 @@ async def add_comment(
     comment: Comment,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
+    *,
+    request_key: str | None = None,
 ) -> list[CommentInDatabase]:
-    """Add comment to previously added sample."""
-    # get existing comments for sample to get the next comment id
-    sample = await get_sample_by_id(db, sample_id=sample_id)
-    comments: list[CommentInDatabase] = [
-        CommentInDatabase.model_validate(c) for c in sample["comments"]
-    ]
-    comment_id = max(c.id for c in comments) + 1 if len(comments) > 0 else 1
+    """Append with a unique ID, replaying an identified request at most once."""
+    key = sha256(f"{ctx.actor.id}\0{request_key}".encode()).hexdigest() if request_key else None
     event_subject = Subject(id=sample_id, type=SourceType.USR)
-    meta = {"sample_id": sample_id, "comment_id": comment_id}
+    meta = {"sample_id": sample_id}
     with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
-        comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
-        update_obj: UpdateResult = await db.sample_collection.update_one(
-            {"sample_id": sample_id},
-            {
+        for _ in range(64):
+            sample = await get_sample_by_id(db, sample_id=sample_id)
+            if sample is None:
+                raise EntryNotFound(sample_id)
+            stored = sample.get("comments", [])
+            comments = [CommentInDatabase.model_validate(c) for c in stored]
+            if key:
+                previous = next((c for c in stored if c.get("_request_key") == key), None)
+                if previous is not None:
+                    if any(previous.get(k) != v for k, v in comment.model_dump(exclude={"created_at"}).items()):
+                        raise ConflictError("This comment request key was already used with different content")
+                    meta["replayed"] = True
+                    return comments
+            comment_id = max((c.id for c in comments), default=0) + 1
+            meta["comment_id"] = comment_id
+            comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
+            entry = comment_obj.model_dump(by_alias=False)
+            query = {"sample_id": sample_id, "comments.id": {"$ne": comment_id}}
+            if key:
+                entry["_request_key"] = key
+                query["comments._request_key"] = {"$ne": key}
+            update_obj = await db.sample_collection.update_one(query, {
                 "$set": {"modified_at": get_timestamp()},
-                "$push": {
-                    "comments": {
-                        "$each": [comment_obj.model_dump(by_alias=False)],
-                        "$position": 0,
-                    }
-                },
-            },
-        )
-
-        if not update_obj.matched_count == 1:
-            raise EntryNotFound(sample_id)
-        if not update_obj.modified_count == 1:
-            raise DatabaseOperationError(sample_id)
-
-        LOG.info("Added comment to %s", sample_id)
-        comments.insert(0, comment_obj)
-    return comments
+                "$push": {"comments": {"$each": [entry], "$position": 0}},
+            })
+            # A concurrent append took this ID or request key. Read it and retry.
+            if update_obj.matched_count == 0:
+                continue
+            if update_obj.modified_count != 1:
+                raise DatabaseOperationError(sample_id)
+            LOG.info("Added comment to %s", sample_id)
+            comments.insert(0, comment_obj)
+            return comments
+        raise ConflictError("Comments changed repeatedly; retry this request")
 
 
 async def hide_comment(

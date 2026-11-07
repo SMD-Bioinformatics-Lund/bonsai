@@ -20,7 +20,7 @@ function createGroupEditorApi(apiBaseUrl: string, accessToken: string, refreshTo
     createGroup: (data: InputCoreGroupInfo) =>
       groupApi.createGroup(data),
 
-    updateGroup: (id: string, data: InputCoreGroupInfo) =>
+    updateGroup: (id: string, data: Partial<InputCoreGroupInfo>) =>
       groupApi.updateGroup(id, data),
 
     getGroup: (id: string) =>

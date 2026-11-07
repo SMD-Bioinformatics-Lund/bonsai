@@ -12,7 +12,7 @@ export class GroupApi {
     });
   }
 
-  updateGroup(groupId: string, data: InputCoreGroupInfo): Promise<GroupInfo> {
+  updateGroup(groupId: string, data: Partial<InputCoreGroupInfo>): Promise<GroupInfo> {
     return this.http.request<GroupInfo>(`/groups/${groupId}`, {
       method: 'PUT',
       body: JSON.stringify(data)
