@@ -1,0 +1,105 @@
+{
+  "acquired_at_utc": "2026-11-08T16:09:34.988464+00:00",
+  "fixture_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+  "origin": "One saved report/companion pair reused for software scenarios; not four biological samples",
+  "scope": "Report transport, parsing, persistence and literal browser display; no new sequence analysis or interpretation",
+  "source_reports": [
+    {
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/kpneumoniae/kleborate_v3_kpsc_output.txt",
+      "bytes": 4641,
+      "md5": "b3fe405e5f8fe4190c27db499be3ce76",
+      "sha256": "6f82d55d8e559bfe8b0d39d970ca6f36b736efc936aa1c69ef8000f7a8fab6e4",
+      "git_object_verified": true,
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_output.txt"
+    },
+    {
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt",
+      "bytes": 5371,
+      "md5": "0263b023f6742960ed8392d2b42c77d4",
+      "sha256": "fd38e8ec795031819bf01e89e1887a7c4810ed858c0909b1d7dd6edc20aa1d90",
+      "git_object_verified": true,
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt"
+    }
+  ],
+  "cases": [
+    {
+      "key": "klebsiella-provided",
+      "assay": "klebsiella",
+      "companion_state": "provided",
+      "external_id": "fixture_kleb_klebsiella_provided",
+      "label": "Saved Kleborate software fixture / klebsiella / provided"
+    },
+    {
+      "key": "klebsiella-header-only",
+      "assay": "klebsiella",
+      "companion_state": "header-only",
+      "external_id": "fixture_kleb_klebsiella_header-only",
+      "label": "Saved Kleborate software fixture / klebsiella / header-only"
+    },
+    {
+      "key": "kpneumoniae-provided",
+      "assay": "kpneumoniae",
+      "companion_state": "provided",
+      "external_id": "fixture_kleb_kpneumoniae_provided",
+      "label": "Saved Kleborate software fixture / kpneumoniae / provided"
+    },
+    {
+      "key": "kpneumoniae-header-only",
+      "assay": "kpneumoniae",
+      "companion_state": "header-only",
+      "external_id": "fixture_kleb_kpneumoniae_header-only",
+      "label": "Saved Kleborate software fixture / kpneumoniae / header-only"
+    }
+  ],
+  "sequence_processing_enabled": false,
+  "header_only_control": {
+    "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/derived/kpneumoniae-software-controls/header-only-companion.tsv",
+    "bytes": 611,
+    "md5": "6757aef636781d087f0b7af35048634e",
+    "sha256": "db43e8d33338149c7f90525e3293e4db2b9b8bb1fbabd3d67fcc0ccd6ae8c704",
+    "parent": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt",
+    "derivation": "First header line only; synthetic empty-companion software control",
+    "limitation": "The primary report is unchanged; this is not a coherent biological no-findings sample"
+  },
+  "excluded": [
+    "mislabelled Quast fixture",
+    "original inconsistent run metadata",
+    "raw reads",
+    "genomes",
+    "typing schemas",
+    "sequence indexes",
+    "variants"
+  ],
+  "local_fixes": {
+    "prepared_at_utc": "2026-11-08T16:19:52.564741+00:00",
+    "pushes_performed": false,
+    "PRP": {
+      "repository": "/home/jakob/src/codex/bonsai-prp",
+      "worktree": "/home/jakob/data/codex/jasen/environments/prp-kleborate-companion/source",
+      "branch": "pr/kleborate-companion-upload",
+      "base": "085ce7d3f2e475860cbe1529698e87fc17e6f801",
+      "head": "80d3a012273bda5554783db07d4d89d5d1ccffd4",
+      "production_scope": "13 additions, 1 deletion in one uploader file",
+      "baseline_tests": "3 failed, 2 passed",
+      "fixed_tests": "5 passed"
+    },
+    "SDK": {
+      "repository": "/home/jakob/src/codex/bonsai/bonsai-sdk",
+      "branch": "pr/kleborate-kaptive-nesting",
+      "base": "5789a9c7530407683f1fee9ffa450512269e62bc",
+      "head": "c04cc720a3e3789efeb507e083cf2ce781997074",
+      "production_scope": "5\t3\tsrc/bonsai_libs/parse/parsers/kleborate.py",
+      "baseline_tests": "4 failed",
+      "fixed_tests": "4 passed"
+    },
+    "active_sdk": {
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source",
+      "head": "f6d3fc76d4013b440aaf0392c1cc5a759d0bb16b"
+    },
+    "active_api": {
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-index-auth-pilot/source",
+      "head": "953e8575a86fec789d648e564dda23cfec632556"
+    },
+    "scope": "Generic file transport and stored-report field mapping only; no new sequence analyses"
+  }
+}

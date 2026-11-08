@@ -14,7 +14,7 @@
       "additional_containers": ["sccmec", "spatyper"],
       "source_publication": "https://doi.org/10.1186/s12920-025-02305-2"
     },
-    "klebsiella": {"label": "Klebsiella", "profile": "klebsiella", "mode": "earlier synthetic coverage confirmed for both aliases; duplicate QC import skipped; repository fixture provenance is inconsistent"},
+    "klebsiella": {"label": "Klebsiella", "profile": "klebsiella", "mode": "saved Kleborate import completed under both aliases with two local fixes; summary-reading failures remain", "software_case_catalog": "datasets/bonsai_kleborate_saved_report_cases.json"},
     "spyogenes": {"label": "S. pyogenes", "profile": "streptococcus_pyogenes", "mode": "pending qualification"},
     "streptococcus": {"label": "Other Streptococcus", "profile": "streptococcus", "mode": "pending qualification"},
     "staphylococcus": {"label": "Other Staphylococcus", "profile": "staphylococcus", "mode": "pending qualification"},
