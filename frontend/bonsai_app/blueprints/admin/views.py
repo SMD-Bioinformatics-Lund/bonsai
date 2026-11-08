@@ -209,11 +209,11 @@ def update_user(username):
                 flash(f"Removed user {username}", "success")
     elif request.method == "GET":
         # populate form with deafults from the database
-        form.username.data = user["username"]
-        form.first_name.data = user["first_name"]
-        form.last_name.data = user["last_name"]
-        form.email.data = user["email"]
-        form.roles.data = user["roles"]
+        form.username.data = user.username
+        form.first_name.data = user.first_name
+        form.last_name.data = user.last_name
+        form.email.data = user.email
+        form.roles.data = user.roles
         if current_user.authentication_method == "ldap":
             form.password.render_kw = {"disabled": True}
             form.confirm.render_kw = {"disabled": True}
