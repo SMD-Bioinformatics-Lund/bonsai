@@ -23,27 +23,27 @@ async def add_metadata_to_sample(
     sample_obj = await get_sample_by_id(db, sample_id=sample_id)
     input_fieldnames = {met.fieldname for met in metadata}
     sample_meta = sample_obj['metadata']
-    db_fieldnames = {meta.fieldname for meta in sample_meta}
+    db_fieldnames = {meta["fieldname"] for meta in sample_meta}
     if len(input_fieldnames & db_fieldnames) > 0:
         raise FileExistsError(
-            f"Metadata field '{metadata.fieldname}' already exist for sample {sample_id}"
+            f"Metadata field '{input_fieldnames}' already exist for sample {sample_id}"
         )
 
     # 2. push new metadata entry to existing metadata
-    meta_info: list[MetaEntryInDb] = []
+    meta_info: list[dict[str, Any]] = []
     for meta in sample_meta:
         if meta['fieldname'] not in input_fieldnames:
             meta_info.append(meta)
     # if entry is a table, serialize and reformat
     for record in metadata:
         if record.type == "table":
-            meta_info.append(parse_metadata_table(entry=record))
+            meta_info.append(parse_metadata_table(entry=record).model_dump())
         else:
-            meta_info.append(record)
+            meta_info.append(record.model_dump())
 
     cursor: UpdateResult = await db.sample_collection.update_one(
         {"sample_id": sample_id},
-        {"$set": {"metadata": [meta.model_dump() for meta in meta_info]}},
+        {"$set": {"metadata": meta_info}},
     )
     if cursor.matched_count == 0:
         raise EntryNotFound(sample_id)
