@@ -123,6 +123,7 @@ async def ingest_analysis_service(
     file: UploadFile,
     coverage_file: UploadFile | None = None,
     bedcov_file: UploadFile | None = None,
+    hamronization_file: UploadFile | None = None,
     force: bool = False,
     pipeline_run: str | None = None,
     software_version: str | None,
@@ -154,6 +155,8 @@ async def ingest_analysis_service(
             auxiliary_files["bedcov_path"] = io.TextIOWrapper(
                 bedcov_file.file, encoding="utf-8"
             )
+        if hamronization_file is not None:
+            auxiliary_files["hamronization_source"] = io.TextIOWrapper(hamronization_file.file, encoding="utf-8")
         parser_args: dict[str, Any] = {
             "software": software,
             "version": software_version,
