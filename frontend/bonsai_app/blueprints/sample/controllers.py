@@ -251,9 +251,9 @@ def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) ->
     min_depth = form.get("min-depth")
     if min_depth and variant["depth"] is not None:
         if form.get("depth-operator") == "gte":
-            variant_passes_qc = variant["depth"] >= int(min_depth)
+            variant_passes_qc = variant_passes_qc and variant["depth"] >= int(min_depth)
         else:
-            variant_passes_qc = variant["depth"] <= int(min_depth)
+            variant_passes_qc = variant_passes_qc and variant["depth"] <= int(min_depth)
 
     # hide variant that have been manually dismissed
     if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":
