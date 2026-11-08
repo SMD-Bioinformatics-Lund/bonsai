@@ -69,6 +69,7 @@ function updateQcTableCells(
     if (status.status === "passed") statusElement.classList.add("text-success");
     if (status.status === "failed") statusElement.classList.add("text-danger");
     statusElement.textContent = status.status;
+    cell.dataset.search = status.status;
     cell.replaceChildren(statusElement);
 
     let tooltipText = status.comment || status.action;
@@ -160,6 +161,11 @@ export async function initGroupView(
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
   const tableConfig = {
     ...sampleTableConfig,
+    columnDefs: [{
+      targets: "_all",
+      // Read cell values even for columns excluded from global search.
+      searchBuilder: { orthogonal: { display: "display", search: "search" } },
+    }],
     searchBuilder: {
       columns: Array.from(headers).flatMap((cell, idx) =>
         cell.dataset.filterable === "true" ? [idx] : [],
