@@ -1,6 +1,11 @@
 import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
 
+const htmlEscapes: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function escapeHtml(value: unknown): string {
+  return String(value).replace(/[&<>"']/g, character => htmlEscapes[character]);
+}
+
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
   private renderVersion = 0;
@@ -79,8 +84,8 @@ export class BasketComponent extends HTMLElement {
         item.innerHTML = String.raw`
         <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
             <a class="text-muted d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
-                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
-                <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
+                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${escapeHtml(sample.sample_name)}</h6>
+                <i class="text-muted fs-6 fw-light p-0">${sample.assay ?? ""}</i>
             </a>
             <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" type="button" data-id="${sample.sample_id}">
                 <i class="bi bi-trash3-fill"></i>
