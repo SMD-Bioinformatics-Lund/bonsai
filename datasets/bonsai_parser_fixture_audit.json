@@ -1,0 +1,1460 @@
+{
+  "recorded_at_utc": "2026-11-08T17:29:11.793121+00:00",
+  "sdk_head": "f6d3fc76d4013b440aaf0392c1cc5a759d0bb16b",
+  "scope": "Existing report schemas and metadata only; no new biological analysis",
+  "cases": [
+    {
+      "case": "ecoli/amrfinder",
+      "software": "amrfinder",
+      "version": "4.2.7",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/amrfinder.v4.stx.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/amrfinder.v4.stx.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "2d6e8af414ec67c0b0982c99175d6026ad7f7d58e60d328e98bd6d3695a4791b",
+      "bytes": 6916,
+      "schema": {
+        "format": "delimited",
+        "columns": 22,
+        "data_rows": 32,
+        "header_sha256": "29be0db71b0734aa81d24844952e1045e9455295e5e9792d71f1087adfce7236",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/chewbbaca",
+      "software": "chewbbaca",
+      "version": "3.5.3",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/chewbbaca.out",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/chewbbaca.out",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "6d9113fff0130ffacc435dc67880333ee92ceee1d8687cb7ed7d896636b2bfd9",
+      "bytes": 216674,
+      "schema": {
+        "format": "delimited",
+        "columns": 7602,
+        "data_rows": 1,
+        "header_sha256": "faf8c5cb2ede52749bc39d34b06d9542e368fb14a11b6db8ae754289a7d69711",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/gambitcore",
+      "software": "gambitcore",
+      "version": "0.0.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/gambitcore.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/gambitcore.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "51de7f89e7f948e93ac29687984c9ded5045fb0cd1831a59c5a577ba57aea861",
+      "bytes": 270,
+      "schema": {
+        "format": "delimited",
+        "columns": 10,
+        "data_rows": 1,
+        "header_sha256": "2def1ca36c6f0825b3ddd9404708c37313c49dc005388b57cacc284a93f71c6d",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/bracken",
+      "software": "bracken",
+      "version": "2.8",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/bracken.out",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/bracken.out",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "e575f5573659df88597fe2db20019871d7785b37df705d8c52742c52ccd6c904",
+      "bytes": 10787,
+      "schema": {
+        "format": "delimited",
+        "columns": 7,
+        "data_rows": 214,
+        "header_sha256": "38e37101e24f8039338b867b1e1b3cbc61816d662c870b093c9943d9694a19c5",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/mlst",
+      "software": "mlst",
+      "version": "2.23.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/mlst.json",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/mlst.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "60c35f793c5af40d1824043f9db5e730c120323774c0494a0e1bfde06f9c9e07",
+      "bytes": 358,
+      "schema": {
+        "format": "json",
+        "root_type": "list",
+        "top_level_fields": 5,
+        "field_name_sha256": "a7a74ae03ee0837fcd72af009a57abd79f88b4b4048029668aa34a5cb6d405b3"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/quast",
+      "software": "quast",
+      "version": "5.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/quast.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/quast.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "c3b9442d373f5e1c80cbe62b9376e5e2f774044f154c5f04ebad32402ce26584",
+      "bytes": 1134,
+      "schema": {
+        "format": "delimited",
+        "columns": 55,
+        "data_rows": 1,
+        "header_sha256": "351acde0b9d9b574ea57bb675fa44e7b193e5acaa78f7128080835ecf6ba42ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/resfinder",
+      "software": "resfinder",
+      "version": "4.7.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/resfinder.json",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/resfinder.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "65e12eb4e397c4731e99836fe5a2fe8d85ae11937a3c00740866f3028618b448",
+      "bytes": 49009,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 14,
+        "field_name_sha256": "2553ba65f22d2e05562179f346108fdeb5a5216856b09c17eb46fdc5ddbc179b"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/serotypefinder",
+      "software": "serotypefinder",
+      "version": "2.0.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/serotypefinder.json",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/serotypefinder.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "3c651162ea77aba8f67374ae396b269a560e3bcf613565c08bcffe400ff0554f",
+      "bytes": 1003,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 1,
+        "field_name_sha256": "4e0679bd71c7788d0398014b0c699668fe9bf2c9bb0db4aa5634c3883058177d"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/shigatyper",
+      "software": "shigatyper",
+      "version": "2.0.5",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/shigatyper.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/shigatyper.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "0115cbd1019c19e82664c6c399228eeb18866dd7c3aee77418387fe0ac285909",
+      "bytes": 132,
+      "schema": {
+        "format": "delimited",
+        "columns": 4,
+        "data_rows": 1,
+        "header_sha256": "48e02c3aba16a14201e4c7a838a39ac7f922cbe991a21d9d9c3d386ed0da97ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "ecoli/virulencefinder",
+      "software": "virulencefinder",
+      "version": "3.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/virulencefinder.json",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/virulencefinder.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "d0147bc7d2622c55fa02422f4e6c18b4e7318b4739f775b9e6ff85811f1146ff",
+      "bytes": 28708,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 12,
+        "field_name_sha256": "273471b6e857e89cb314ca6d52a0c6895c7e8f24ce8420e900f32a93208e1320"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "kpneumoniae/kleborate",
+      "software": "kleborate",
+      "version": "3.2.4",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_output.txt",
+      "container_path": "/audit/sdk/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_output.txt",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "kpneumoniae",
+      "role": "primary",
+      "sha256": "6f82d55d8e559bfe8b0d39d970ca6f36b736efc936aa1c69ef8000f7a8fab6e4",
+      "bytes": 4641,
+      "schema": {
+        "format": "delimited",
+        "columns": 113,
+        "data_rows": 1,
+        "header_sha256": "0e7066b1d6324222126d161374010196720f87b2cdf3e80e5543f05060ff8e94",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {
+        "hamronization_source": "/audit/sdk/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt"
+      }
+    },
+    {
+      "case": "kpneumoniae/hAMRonization",
+      "software": "hAMRonization",
+      "version": "3.2.4",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt",
+      "container_path": "/audit/sdk/tests/fixtures/kpneumoniae/kleborate_v3_kpsc_hamronization_output.txt",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "kpneumoniae",
+      "role": "companion",
+      "sha256": "fd38e8ec795031819bf01e89e1887a7c4810ed858c0909b1d7dd6edc20aa1d90",
+      "bytes": 5371,
+      "schema": {
+        "format": "delimited",
+        "columns": 32,
+        "data_rows": 21,
+        "header_sha256": "937b4aba230013090a9f4f190aa48cc017e1b095d5344e091cc25a2e5b719505",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "kpneumoniae/quast",
+      "software": "quast",
+      "version": "5.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/kpneumoniae/quast.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/kpneumoniae/quast.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "kpneumoniae",
+      "role": "primary",
+      "sha256": "c3b9442d373f5e1c80cbe62b9376e5e2f774044f154c5f04ebad32402ce26584",
+      "bytes": 1134,
+      "schema": {
+        "format": "delimited",
+        "columns": 55,
+        "data_rows": 1,
+        "header_sha256": "351acde0b9d9b574ea57bb675fa44e7b193e5acaa78f7128080835ecf6ba42ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "mtuberculosis/gambitcore",
+      "software": "gambitcore",
+      "version": "0.0.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/gambitcore.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/gambitcore.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "0588c70043e4159554bf68d9386914629dba868614d290107fef4a70c9c575bc",
+      "bytes": 285,
+      "schema": {
+        "format": "delimited",
+        "columns": 10,
+        "data_rows": 1,
+        "header_sha256": "2def1ca36c6f0825b3ddd9404708c37313c49dc005388b57cacc284a93f71c6d",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "mtuberculosis/bracken",
+      "software": "bracken",
+      "version": "2.8",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/bracken.out",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/bracken.out",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "f5798a7121965eae3451be536dcd6ebac287b419a30a6961f06f14593b5c4d39",
+      "bytes": 4635,
+      "schema": {
+        "format": "delimited",
+        "columns": 7,
+        "data_rows": 89,
+        "header_sha256": "38e37101e24f8039338b867b1e1b3cbc61816d662c870b093c9943d9694a19c5",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "mtuberculosis/mykrobe",
+      "software": "mykrobe",
+      "version": "0.12.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/mykrobe.csv",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/mykrobe.csv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "f7fec7c614b65753a2fc83c78de2ee4930eaf993a52b195717337d6df9c04fff",
+      "bytes": 9815,
+      "schema": {
+        "format": "delimited",
+        "columns": 19,
+        "data_rows": 15,
+        "header_sha256": "f3016f53e5cdcb1f2f057a976b09ed30a89f0d9a700e1f0569e09781a87b7a99",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "mtuberculosis/quast",
+      "software": "quast",
+      "version": "5.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/quast.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/quast.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "1cb8d3873339e259a5cc50e1f732b628ab1cc765c3c54dc53f2f28bef77338f2",
+      "bytes": 1140,
+      "schema": {
+        "format": "delimited",
+        "columns": 55,
+        "data_rows": 1,
+        "header_sha256": "351acde0b9d9b574ea57bb675fa44e7b193e5acaa78f7128080835ecf6ba42ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "mtuberculosis/tbprofiler",
+      "software": "tbprofiler",
+      "version": "6.3.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/tbprofiler.json",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/tbprofiler.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "555d2dedb59ad0cf2bbdedf406bf23e74d338fd556935e2683d3564dcbf045f2",
+      "bytes": 197304,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 15,
+        "field_name_sha256": "6d2522f9d7832228e07aea5ff17ec88acd09165671d6abe811ab04c370cba34b"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/amrfinder",
+      "software": "amrfinder",
+      "version": "4.2.7",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/amrfinder.v4.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/amrfinder.v4.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "ab6a193ca4239e21c442bfec55c6c5e68396a4ed2f993c2b8eca1774ebd5fb03",
+      "bytes": 5840,
+      "schema": {
+        "format": "delimited",
+        "columns": 22,
+        "data_rows": 27,
+        "header_sha256": "29be0db71b0734aa81d24844952e1045e9455295e5e9792d71f1087adfce7236",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/chewbbaca",
+      "software": "chewbbaca",
+      "version": "3.5.3",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/chewbbaca.out",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/chewbbaca.out",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "f745baaa2c45550707f5c1fd5aaea2cf757b135d9c93c426d7c153958a375d87",
+      "bytes": 23679,
+      "schema": {
+        "format": "delimited",
+        "columns": 1862,
+        "data_rows": 1,
+        "header_sha256": "eea5df14cd50059a433d7c9f6e7185fff171fc77be793b2e8a2793746319a482",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/gambitcore",
+      "software": "gambitcore",
+      "version": "0.0.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/gambitcore.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/gambitcore.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "267f57b167c6a33ae8b2f677346dd1267b30d2dcb897a9e0d5ade3caf03df26b",
+      "bytes": 275,
+      "schema": {
+        "format": "delimited",
+        "columns": 10,
+        "data_rows": 1,
+        "header_sha256": "2def1ca36c6f0825b3ddd9404708c37313c49dc005388b57cacc284a93f71c6d",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/bracken",
+      "software": "bracken",
+      "version": "2.8",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/bracken.out",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/bracken.out",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "f4819e00a11b09abb6ab05cb9ea1e332b57ea90aec8852218f077852ad75a89e",
+      "bytes": 2851,
+      "schema": {
+        "format": "delimited",
+        "columns": 7,
+        "data_rows": 55,
+        "header_sha256": "38e37101e24f8039338b867b1e1b3cbc61816d662c870b093c9943d9694a19c5",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/mlst",
+      "software": "mlst",
+      "version": "2.23.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/mlst.json",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/mlst.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "c0af8ce344afa7f36454d9432ffae516886ac51d61dc1e14618231e99090e5cc",
+      "bytes": 338,
+      "schema": {
+        "format": "json",
+        "root_type": "list",
+        "top_level_fields": 5,
+        "field_name_sha256": "a7a74ae03ee0837fcd72af009a57abd79f88b4b4048029668aa34a5cb6d405b3"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/nanoplot",
+      "software": "nanoplot",
+      "version": "1.46.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/nanoplot.txt",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/nanoplot.txt",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "92db638e76a32c8f2297c0c0ecdb0395838a0a4bfd9ebd7f82156917ec862aac",
+      "bytes": 793,
+      "schema": {
+        "format": "text",
+        "line_count": 27
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/quast",
+      "software": "quast",
+      "version": "5.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/quast.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/quast.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "1ba57df5728fa08f81eb89d7561f11dda2b657b777a205b9c8e08914f5265585",
+      "bytes": 1135,
+      "schema": {
+        "format": "delimited",
+        "columns": 55,
+        "data_rows": 1,
+        "header_sha256": "351acde0b9d9b574ea57bb675fa44e7b193e5acaa78f7128080835ecf6ba42ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/resfinder",
+      "software": "resfinder",
+      "version": "4.7.2",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/resfinder.json",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/resfinder.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "d24844e032226fd828803081b2bfff382e563ec76d8b1249b9debb7f1225b376",
+      "bytes": 37099,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 14,
+        "field_name_sha256": "2553ba65f22d2e05562179f346108fdeb5a5216856b09c17eb46fdc5ddbc179b"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/samtools.coverage",
+      "software": "samtools.coverage",
+      "version": "1.17",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/samtools_coverage.txt",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/samtools_coverage.txt",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "4e84ee8afb9d2232819f7c3a5864013a74ef0f868804e3ebb42dd370926809e4",
+      "bytes": 197,
+      "schema": {
+        "format": "delimited",
+        "columns": 9,
+        "data_rows": 2,
+        "header_sha256": "b1449131ce56cec203dce4c4aad4986571e4b893aa77d27f944dbb913884e598",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/samtools.stats",
+      "software": "samtools.stats",
+      "version": "1.17",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/samtools_stats.txt",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/samtools_stats.txt",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "64164b0d2e1c05080d211d130b98cd13471143c476235156b9f4ab28d2a7eee8",
+      "bytes": 57687,
+      "schema": {
+        "format": "text",
+        "line_count": 1919
+      },
+      "auxiliary": {
+        "coverage_path": "/audit/sdk/tests/fixtures/saureus/samtools_coverage.txt",
+        "bedcov_path": "/audit/sdk/tests/fixtures/saureus/samtools_bedcov.txt"
+      }
+    },
+    {
+      "case": "saureus/sccmectyper",
+      "software": "sccmectyper",
+      "version": "1.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/sccmec.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/sccmec.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "85ee8a0e0febc789a8691735b25c91b593d6703c3f3f17d82f050bbec1ba0d37",
+      "bytes": 568,
+      "schema": {
+        "format": "delimited",
+        "columns": 17,
+        "data_rows": 1,
+        "header_sha256": "4090f40e0fb83ced3e207301946ec620b19e5ead1fb9dd6e71bdcfcd1ddaf1ca",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/spatyper",
+      "software": "spatyper",
+      "version": "0.3.3",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/spatyper.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/spatyper.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "107ed7f270074a6df4f4654acf3f85b6539fd5bb366be5bc1162781496aec45d",
+      "bytes": 68,
+      "schema": {
+        "format": "delimited",
+        "columns": 3,
+        "data_rows": 1,
+        "header_sha256": "9370d50fe9aa8465a41b38974a77a8bd5077b7a6bde63ee518d5a8c257a5e38a",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "saureus/virulencefinder",
+      "software": "virulencefinder",
+      "version": "3.2.0",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/virulencefinder.json",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/virulencefinder.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Declared in repository manifest; producer execution/version not independently verified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "cccc8d6e0d16ce4c81a9f640e1d6591fd5f13a14abe6a1a902cd3c5accfae5f1",
+      "bytes": 15454,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 12,
+        "field_name_sha256": "273471b6e857e89cb314ca6d52a0c6895c7e8f24ce8420e900f32a93208e1320"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/streptococcus/emmtyper.tsv",
+      "software": "emmtyper",
+      "version": "0.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/streptococcus/emmtyper.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/streptococcus/emmtyper.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Producer version absent; placeholder is a dispatch label",
+      "fixture_group": "streptococcus",
+      "role": "primary",
+      "sha256": "61d54c6780d9157eb06a2285558025e9546e661fbbe29797e3988d91ecb4bcc2",
+      "bytes": 57,
+      "schema": {
+        "format": "headerless-delimited",
+        "columns": 5,
+        "data_rows": 1,
+        "header_note": "The first row is data, not column names"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/streptococcus/kraken.report",
+      "software": "kraken",
+      "version": "0.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/streptococcus/kraken.report",
+      "container_path": "/audit/sdk/tests/fixtures/streptococcus/kraken.report",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Producer version absent; placeholder is a dispatch label",
+      "fixture_group": "streptococcus",
+      "role": "primary",
+      "sha256": "2fdfc9f2a78db410db9f1e45ba3d63732819b7715e925d00f1ebcd90386bd3cb",
+      "bytes": 1143,
+      "schema": {
+        "format": "headerless-delimited",
+        "columns": 6,
+        "data_rows": 18,
+        "header_note": "The first row is data, not column names"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/saureus/amrfinder.v3.tsv",
+      "software": "amrfinder",
+      "version": "3.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/amrfinder.v3.tsv",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/amrfinder.v3.tsv",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Legacy format family from fixture filename; exact producer version unverified",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "36ff3cac9efcc21910174d9514473c9e90c0f76cf9ac314d2c53b83ac3aa16f1",
+      "bytes": 5982,
+      "schema": {
+        "format": "delimited",
+        "columns": 22,
+        "data_rows": 27,
+        "header_sha256": "53eb20b1b3d44831d3a3e1804c0c827d8977040883cec7b210224ce7bc1fd294",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/ecoli/virulencefinder.v2.stx.json",
+      "software": "virulencefinder",
+      "version": "2.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/ecoli/virulencefinder.v2.stx.json",
+      "container_path": "/audit/sdk/tests/fixtures/ecoli/virulencefinder.v2.stx.json",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Legacy format family from fixture filename; exact producer version unverified",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "27f03ec724eb0bcc668aeb2bd2bf31f84f60c98380bb8dbbd112734be98dc765",
+      "bytes": 14031,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 1,
+        "field_name_sha256": "1968c4dda5560060be1c4089827850e5f6fc21c07dedff566660875a28ef58ff"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/saureus/bwa.qc",
+      "software": "postalignqc",
+      "version": "0.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/saureus/bwa.qc",
+      "container_path": "/audit/sdk/tests/fixtures/saureus/bwa.qc",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Legacy numeric QC fixture; exact producer version absent",
+      "fixture_group": "saureus",
+      "role": "primary",
+      "sha256": "43daf904e6aa557e21b4f373c6bd63d6e863a47f42eb81f3f82ddffd1042dcdd",
+      "bytes": 637,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 14,
+        "field_name_sha256": "9650a74577baef074b637674cc89d4c5eedeebf1a17ec415c00e858158eef44c"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "extra/mtuberculosis/bwa.qc",
+      "software": "postalignqc",
+      "version": "0.0.0+fixture.unknown",
+      "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/mtuberculosis/bwa.qc",
+      "container_path": "/audit/sdk/tests/fixtures/mtuberculosis/bwa.qc",
+      "origin": "saved_repository_fixture",
+      "version_basis": "Legacy numeric QC fixture; exact producer version absent",
+      "fixture_group": "mtuberculosis",
+      "role": "primary",
+      "sha256": "f8b06eaee00251edebd5e06bdb2cd9c7399744ea4e9c5952c435427fbae857f3",
+      "bytes": 618,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 14,
+        "field_name_sha256": "9650a74577baef074b637674cc89d4c5eedeebf1a17ec415c00e858158eef44c"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/amrfinder",
+      "software": "amrfinder",
+      "version": "4.2.7",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/amrfinderplus/pilot_k12_err022075_amrfinder.tsv",
+      "container_path": "/audit/native/amrfinderplus/pilot_k12_err022075_amrfinder.tsv",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "ca8995a905c1930e779e4d53b7f09b030a1b7f86281e9b130db0fc5710aea547",
+      "bytes": 1297,
+      "schema": {
+        "format": "delimited",
+        "columns": 22,
+        "data_rows": 5,
+        "header_sha256": "29be0db71b0734aa81d24844952e1045e9455295e5e9792d71f1087adfce7236",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/chewbbaca",
+      "software": "chewbbaca",
+      "version": "3.5.4",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/chewbbaca/pilot_k12_err022075_chewbbaca.tsv",
+      "container_path": "/audit/native/chewbbaca/pilot_k12_err022075_chewbbaca.tsv",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "2b9d4113fcd8ed0604e0a0f04a324b54d6024a484a5c347c58d080e6f27cf9ef",
+      "bytes": 146457,
+      "schema": {
+        "format": "delimited",
+        "columns": 7602,
+        "data_rows": 1,
+        "header_sha256": "d960e677407e322bd61df14889cc0c3735217fe7af259c7226e9db25e16e1164",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/gambitcore",
+      "software": "gambitcore",
+      "version": "0.0.2",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/gambitcore/pilot_k12_err022075_gambitcore.tsv",
+      "container_path": "/audit/native/gambitcore/pilot_k12_err022075_gambitcore.tsv",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "7272728cde13fc3fcd3f601ee36c746e0859146feea9098180731b8585678a3a",
+      "bytes": 276,
+      "schema": {
+        "format": "delimited",
+        "columns": 10,
+        "data_rows": 1,
+        "header_sha256": "2def1ca36c6f0825b3ddd9404708c37313c49dc005388b57cacc284a93f71c6d",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/mlst",
+      "software": "mlst",
+      "version": "2.23.0",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/mlst/pilot_k12_err022075_mlst.json",
+      "container_path": "/audit/native/mlst/pilot_k12_err022075_mlst.json",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "29a4391f1f249daf538743e5c669b4ccca5d9d05da6f14d70083e7f857766981",
+      "bytes": 369,
+      "schema": {
+        "format": "json",
+        "root_type": "list",
+        "top_level_fields": 5,
+        "field_name_sha256": "a7a74ae03ee0837fcd72af009a57abd79f88b4b4048029668aa34a5cb6d405b3"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/quast",
+      "software": "quast",
+      "version": "5.2.0",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/quast/pilot_k12_err022075_quast.tsv",
+      "container_path": "/audit/native/quast/pilot_k12_err022075_quast.tsv",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "23c6e2facde19f9545dca0fa0794604a26e4f609d4b9a817f51ce8ed0868771f",
+      "bytes": 1131,
+      "schema": {
+        "format": "delimited",
+        "columns": 55,
+        "data_rows": 1,
+        "header_sha256": "351acde0b9d9b574ea57bb675fa44e7b193e5acaa78f7128080835ecf6ba42ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/resfinder",
+      "software": "resfinder",
+      "version": "4.7.2",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/resfinder/pilot_k12_err022075_resfinder.json",
+      "container_path": "/audit/native/resfinder/pilot_k12_err022075_resfinder.json",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "3ee40dad8392c695051cc01b1acbf1ef12e41331793c5d35a91ee043884eef04",
+      "bytes": 35043,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 14,
+        "field_name_sha256": "2553ba65f22d2e05562179f346108fdeb5a5216856b09c17eb46fdc5ddbc179b"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/samtools.coverage",
+      "software": "samtools.coverage",
+      "version": "1.17",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/coverage/pilot_k12_err022075_bwa_mapcoverage.txt",
+      "container_path": "/audit/native/coverage/pilot_k12_err022075_bwa_mapcoverage.txt",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "4d6ff68a2be48ebb908a7414054985b2686085baeb610d2316ac27a78e57b10b",
+      "bytes": 143,
+      "schema": {
+        "format": "delimited",
+        "columns": 9,
+        "data_rows": 1,
+        "header_sha256": "b1449131ce56cec203dce4c4aad4986571e4b893aa77d27f944dbb913884e598",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/samtools.stats",
+      "software": "samtools.stats",
+      "version": "1.17",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/samtools_stats/pilot_k12_err022075.stats",
+      "container_path": "/audit/native/samtools_stats/pilot_k12_err022075.stats",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "1880532f15e749e133d683bad0e5118d482b68c2cb2c7a950d5cf32b6233e43d",
+      "bytes": 80555,
+      "schema": {
+        "format": "text",
+        "line_count": 1746
+      },
+      "auxiliary": {
+        "coverage_path": "/audit/native/coverage/pilot_k12_err022075_bwa_mapcoverage.txt",
+        "bedcov_path": "/audit/native/samtools_bedcov/pilot_k12_err022075.bedcov.tsv"
+      }
+    },
+    {
+      "case": "native-ecoli/serotypefinder",
+      "software": "serotypefinder",
+      "version": "2.0.2",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/serotypefinder/pilot_k12_err022075_serotypefinder.json",
+      "container_path": "/audit/native/serotypefinder/pilot_k12_err022075_serotypefinder.json",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "87ce7c0528285007170e7600f2152562e4af924790eb200742e4c2029d225c30",
+      "bytes": 1262,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 1,
+        "field_name_sha256": "4e0679bd71c7788d0398014b0c699668fe9bf2c9bb0db4aa5634c3883058177d"
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/shigatyper",
+      "software": "shigatyper",
+      "version": "2.0.5",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/shigatyper/pilot_k12_err022075.tsv",
+      "container_path": "/audit/native/shigatyper/pilot_k12_err022075.tsv",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "2bc36a56fa9d40fd1bf7f850a63ab5c8f83b426c5700423610832bd1401c407d",
+      "bytes": 102,
+      "schema": {
+        "format": "delimited",
+        "columns": 4,
+        "data_rows": 1,
+        "header_sha256": "48e02c3aba16a14201e4c7a838a39ac7f922cbe991a21d9d9c3d386ed0da97ba",
+        "duplicate_headers": [],
+        "conflicting_duplicate_headers": []
+      },
+      "auxiliary": {}
+    },
+    {
+      "case": "native-ecoli/virulencefinder",
+      "software": "virulencefinder",
+      "version": "3.2.0",
+      "path": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/output/ecoli/virulencefinder/pilot_k12_err022075_virulencefinder.json",
+      "container_path": "/audit/native/virulencefinder/pilot_k12_err022075_virulencefinder.json",
+      "origin": "completed_native_run_saved_report",
+      "version_basis": "Recorded in pinned JASEN 1.4.1 run manifest; no new producer execution in this audit",
+      "fixture_group": "ecoli",
+      "role": "primary",
+      "sha256": "44d876a571339d2f25ff230c8d8d676209125977b51858e8f85babe9e07c0e4e",
+      "bytes": 12834,
+      "schema": {
+        "format": "json",
+        "root_type": "dict",
+        "top_level_fields": 12,
+        "field_name_sha256": "273471b6e857e89cb314ca6d52a0c6895c7e8f24ce8420e900f32a93208e1320"
+      },
+      "auxiliary": {}
+    }
+  ],
+  "parser_matrix": [
+    {
+      "parser": "amrfinder",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "3.99.99",
+          "entry": "AmrFinderV3Parser"
+        },
+        {
+          "min": "4.0.0",
+          "max": "99999.0.0",
+          "entry": "AmrFinderParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "4.2.7": 70
+      },
+      "saved_report_cases": 4,
+      "saved_manifest_version_labels": [
+        "3.0.0+fixture.unknown",
+        "4.2.7"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "bracken",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "BrackenParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "2.8.0": 80
+      },
+      "saved_report_cases": 3,
+      "saved_manifest_version_labels": [
+        "2.8"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "chewbbaca",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "ChewbbacaParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "3.3.10": 70
+      },
+      "saved_report_cases": 3,
+      "saved_manifest_version_labels": [
+        "3.5.3",
+        "3.5.4"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "emmtyper",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "EmmTyperParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "0.2.0": 20
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "0.0.0+fixture.unknown"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "gambitcore",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "GambitcoreParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 4,
+      "saved_manifest_version_labels": [
+        "0.0.2"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "hAMRonization",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "HAmrOnizationParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "3.2.4"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "kleborate",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "KleborateParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "3.2.4": 20
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "3.2.4"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "kraken",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "KrakenParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "0.0.0+fixture.unknown"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "mlst",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "MlstParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "2.23.0": 50
+      },
+      "saved_report_cases": 3,
+      "saved_manifest_version_labels": [
+        "2.23.0"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "mykrobe",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "MykrobeParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "0.12.2": 10
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "0.12.2"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "nanoplot",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "NanoplotParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "1.46.2"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "postalignqc",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "PostAlignQcParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "1.0.0": 10
+      },
+      "saved_report_cases": 2,
+      "saved_manifest_version_labels": [
+        "0.0.0+fixture.unknown"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "quast",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "QuastParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "5.2.0": 80
+      },
+      "saved_report_cases": 5,
+      "saved_manifest_version_labels": [
+        "5.2.0"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "resfinder",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "ResFinderParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 3,
+      "saved_manifest_version_labels": [
+        "4.7.2"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "samtools.coverage",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "SamtoolsCovParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 2,
+      "saved_manifest_version_labels": [
+        "1.17"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "samtools.stats",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "SamtoolsQcParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 2,
+      "saved_manifest_version_labels": [
+        "1.17"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "sccmectyper",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "SccMecParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "1.2.0": 20
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "1.2.0"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "serotypefinder",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "SerotypeFinderParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "2.0.0": 10
+      },
+      "saved_report_cases": 2,
+      "saved_manifest_version_labels": [
+        "2.0.2"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "shigatyper",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "ShigatyperParser"
+        }
+      ],
+      "generated_fixture_versions": {},
+      "saved_report_cases": 2,
+      "saved_manifest_version_labels": [
+        "2.0.5"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "spatyper",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "SpatyperParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "0.3.3": 20
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "0.3.3"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "tbprofiler",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "99999.0.0",
+          "entry": "TbProfilerParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "6.3.0": 9
+      },
+      "saved_report_cases": 1,
+      "saved_manifest_version_labels": [
+        "6.3.0"
+      ],
+      "native_saved_report_cases": 0,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    },
+    {
+      "parser": "virulencefinder",
+      "registered_ranges": [
+        {
+          "min": "0.0.0",
+          "max": "2.99.99",
+          "entry": "VirulenceFinderV2Parser"
+        },
+        {
+          "min": "3.0.0",
+          "max": "99999.0.0",
+          "entry": "VirulenceFinderParser"
+        }
+      ],
+      "generated_fixture_versions": {
+        "3.0.0": 10
+      },
+      "saved_report_cases": 4,
+      "saved_manifest_version_labels": [
+        "2.0.0+fixture.unknown",
+        "3.2.0"
+      ],
+      "native_saved_report_cases": 1,
+      "exact_version_warning": "File examples and registry dispatch do not certify every version in the registered range"
+    }
+  ],
+  "metadata_findings": [
+    {
+      "type": "fixture-assay-mismatch",
+      "fixture": "kpneumoniae",
+      "declared_assay": "ecoli",
+      "manifest": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-kleborate/source/tests/fixtures/kpneumoniae/sample_1.manifest.yml",
+      "scope": "Repository fixture metadata, not a verified producer run"
+    },
+    {
+      "type": "shared-qc-fixture",
+      "fixtures": [
+        "kpneumoniae/quast.tsv",
+        "ecoli/quast.tsv"
+      ],
+      "scope": "These bytes cannot establish independent Klebsiella producer coverage"
+    }
+  ],
+  "source_version_note": "Unknown fixture versions are explicitly synthetic dispatch labels, not claims of producer execution"
+}
