@@ -98,6 +98,8 @@
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=extended) }}
                         </div>
+                    {% elif elem.analysis_type == 'amr' and elem.result is none %}
+                        <p class="text-muted">No stored result is available for {{ elem.software }}.</p>
                     {% endif %}
                 {% endfor %}
                 {# Add supplementary resistance info #}
