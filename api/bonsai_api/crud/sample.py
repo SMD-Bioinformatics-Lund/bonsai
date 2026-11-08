@@ -135,34 +135,24 @@ async def add_comment(
     audit: AuditLogClient | None = None,
 ) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
-    # get existing comments for sample to get the next comment id
-    sample = await get_sample_by_id(db, sample_id=sample_id)
-    comments: list[CommentInDatabase] = [
-        CommentInDatabase.model_validate(c) for c in sample["comments"]
-    ]
-    comment_id = max(c.id for c in comments) + 1 if len(comments) > 0 else 1
     event_subject = Subject(id=sample_id, type=SourceType.USR)
-    meta = {"sample_id": sample_id, "comment_id": comment_id}
+    meta = {"sample_id": sample_id}
     with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
-        comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
-        update_obj: UpdateResult = await db.sample_collection.update_one(
-            {"sample_id": sample_id},
-            {
-                "$set": {"modified_at": get_timestamp()},
-                "$push": {
-                    "comments": {
-                        "$each": [comment_obj.model_dump(by_alias=False)],
-                        "$position": 0,
-                    }
-                },
-            },
-        )
-
-        if not update_obj.matched_count == 1:
-            raise EntryNotFound(sample_id)
-        if not update_obj.modified_count == 1:
+        while True:
+            sample = await get_sample_by_id(db, sample_id=sample_id)
+            comments = [CommentInDatabase.model_validate(c) for c in sample["comments"]]
+            comment_id = max((c.id for c in comments), default=0) + 1
+            meta["comment_id"] = comment_id
+            comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
+            update_obj = await db.sample_collection.update_one(
+                {"sample_id": sample_id, "comments.id": {"$ne": comment_id}},
+                {"$set": {"modified_at": get_timestamp()},
+                 "$push": {"comments": {"$each": [comment_obj.model_dump(by_alias=False)], "$position": 0}}},
+            )
+            if update_obj.matched_count:
+                break
+        if update_obj.modified_count != 1:
             raise DatabaseOperationError(sample_id)
-
         LOG.info("Added comment to %s", sample_id)
         comments.insert(0, comment_obj)
     return comments
