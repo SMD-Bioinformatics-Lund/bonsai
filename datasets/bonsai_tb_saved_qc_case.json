@@ -1,0 +1,45 @@
+{
+  "case": "fixture_tb_sdk5789",
+  "profile": "mtuberculosis",
+  "source_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+  "acquired_at_utc": "2026-11-08T15:36:08.308983+00:00",
+  "data_root": "/home/jakob/data/codex/jasen",
+  "origin": "Existing repository QC reports; mixed fixtures, not a newly analysed TB isolate",
+  "scope": "Numeric QC parsing, persistence and UI display only; no new sequence, resistance, virulence or lineage analysis",
+  "reports": [
+    {
+      "filename": "quast.tsv",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/mtuberculosis/quast.tsv",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/mtuberculosis/quast.tsv",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 1140,
+      "md5": "8c33297432f4d152ed610238afc1a0e9",
+      "sha256": "1cb8d3873339e259a5cc50e1f732b628ab1cc765c3c54dc53f2f28bef77338f2",
+      "software": "quast",
+      "software_version": "5.2.0"
+    },
+    {
+      "filename": "bwa.qc",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/mtuberculosis/bwa.qc",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/mtuberculosis/bwa.qc",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 618,
+      "md5": "9f06cfe4f40f8257904e4011975bd377",
+      "sha256": "f8b06eaee00251edebd5e06bdb2cd9c7399744ea4e9c5952c435427fbae857f3",
+      "software": "postalignqc",
+      "software_version": "0.0.0+fixture.unknown"
+    }
+  ],
+  "sequence_processing_enabled": false,
+  "version_note": "Legacy postalignqc producer version is absent from the source fixture; 0.0.0+fixture.unknown is a synthetic version placeholder required by the API",
+  "excluded": [
+    "raw reads",
+    "genomes",
+    "typing schemas",
+    "resistance/virulence/lineage reports",
+    "sequence indexes",
+    "variant files"
+  ]
+}

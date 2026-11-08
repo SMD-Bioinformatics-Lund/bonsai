@@ -18,6 +18,7 @@
     "spyogenes": {"label": "S. pyogenes", "profile": "streptococcus_pyogenes", "mode": "pending qualification"},
     "streptococcus": {"label": "Other Streptococcus", "profile": "streptococcus", "mode": "pending qualification"},
     "staphylococcus": {"label": "Other Staphylococcus", "profile": "staphylococcus", "mode": "pending qualification"},
-    "mtuberculosis": {"label": "M. tuberculosis profile", "profile": "mycobacterium_tuberculosis", "mode": "pending scope and source qualification"}
+    "mtuberculosis": {"label": "M. tuberculosis profile", "profile": "mycobacterium_tuberculosis", "mode": "saved numeric-QC reports only; no native sequence processing or biological result reports",
+      "software_fixture_external_id": "fixture_tb_sdk5789"}
   }
 }
