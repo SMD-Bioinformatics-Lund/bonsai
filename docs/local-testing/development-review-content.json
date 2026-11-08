@@ -1,0 +1,938 @@
+{
+  "title": "Bonsai development: known issues and priorities",
+  "question": "Which known issues are present in development?",
+  "answer": "The tested development revision contains substantial access-control, data-preservation and core workflow problems. All known baseline issues are prioritized here, including those for which a separate local fix exists. The priority queue is assessed against unpatched development.",
+  "as_of": "8 November 2026",
+  "development_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+  "sdk_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+  "scope": "Software behavior with synthetic records, generic account and persistence workflows, offline frozen parser fixtures, and read-only stored-result views. No fresh live analysis upload, analysis execution or curation write was performed for this report.",
+  "counting_rule": "Distinct baseline issues and product-scope gaps are counted after the existing explicit alias merges. Local fix status is ignored. One local-only sidebar regression and one explained failed-QC case are excluded. Priorities are recommended release urgency, not observed clinical harm or a measure of product coverage.",
+  "priorities": {
+    "P0": "Resolve before ordinary-user access or restricted-data use. The record-privacy item is conditional on private records being a promised feature.",
+    "P1": "Resolve before the affected workflow is released: unauthorized actions, lost or hidden information, incorrect selection, or a blocked normal workflow.",
+    "P2": "Resolve in the next correction cycle, or defer with an explicit product decision and usable workaround.",
+    "P3": "Presentation, accessibility or export-policy follow-up; raise priority if it is a release requirement."
+  },
+  "first_actions": [
+    "Review the ordinary/admin/uploader authorization matrix first, including both deletion routes and the ingestion boundary.",
+    "Settle the private-record contract before relying on its visibility marker. Private-group behavior is a separate boundary.",
+    "Prioritize group and metadata preservation, concurrent writes and stable comment identities before broad user testing.",
+    "Retest filtering, selected-only exports, saved-state feedback and all advertised result-reading paths on the eventual release build."
+  ],
+  "issues": [
+    {
+      "id": "ORDINARY-RECORD-DELETE",
+      "priority": "P0",
+      "area": "Access",
+      "title": "Ordinary accounts can delete records",
+      "observed": "Both single and bulk API deletion use update permission, which ordinary accounts hold. The UI does not offer them deletion.",
+      "why": "Unauthorized destructive action crosses the documented role boundary.",
+      "acceptance": "Deny ordinary deletion before any service call; retain administrator deletion.",
+      "sources": [
+        [
+          "api/bonsai_api/routers/samples/samples.py",
+          "async def delete_many_samples"
+        ],
+        [
+          "api/bonsai_api/routers/samples/samples.py",
+          "async def delete_sample"
+        ]
+      ]
+    },
+    {
+      "id": "ANALYSIS-UPLOAD-ROLE-GATE",
+      "priority": "P0",
+      "area": "Access",
+      "title": "The ingestion role boundary is inverted",
+      "observed": "The real baseline router admits user and rejects uploader in an isolated authorization test: observed statuses 201 and 401 respectively. The downstream service is a stub.",
+      "why": "A viewing role reaches the upload service while the intended automation role is blocked.",
+      "acceptance": "Require the intended write scope and verify the complete role matrix without executing ingestion.",
+      "sources": [
+        [
+          "api/bonsai_api/dependencies.py",
+          "scopes=[\"users:me\"]"
+        ],
+        [
+          "api/bonsai_api/routers/analysis.py",
+          "async def upload_analysis"
+        ]
+      ]
+    },
+    {
+      "id": "PRIVATE-RECORD-SCOPE",
+      "priority": "P0",
+      "area": "Access",
+      "title": "Private-record visibility is not enforced",
+      "observed": "An uninvited ordinary account can read an admin-owned private-marked record. The read function has no record-owner or visibility check.",
+      "why": "P0 if private records are promised; the source describes access fields as preparatory.",
+      "acceptance": "Agree the privacy contract, then enforce it across direct reads, lists and related routes, or disable the promise.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/sample.py",
+          "async def get_sample_by_id"
+        ],
+        [
+          "api/bonsai_api/models/sample.py",
+          "visibility"
+        ]
+      ]
+    },
+    {
+      "id": "GROUP-DELETE-MEMBERSHIP-LOSS",
+      "priority": "P1",
+      "area": "Preservation",
+      "title": "Deleting a group removes unrelated memberships",
+      "observed": "Deleting one group removes a member's links to other groups. The record itself remains; membership aggregation returns edges outside the requested group.",
+      "why": "A routine organization action silently changes unrelated saved state.",
+      "acceptance": "Delete a populated group while retaining all records and every unrelated membership edge.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/memberships.py",
+          "$unwind"
+        ]
+      ]
+    },
+    {
+      "id": "GROUP-MEMBERSHIP-LOSS",
+      "priority": "P1",
+      "area": "Preservation",
+      "title": "Unchanged Apply removes undisplayed memberships",
+      "observed": "The selector displays common memberships, then treats them as each record's complete target set. Applying unchanged settings removes individual memberships.",
+      "why": "A no-change action causes persistent organization loss.",
+      "acceptance": "Apply the unchanged common selection and preserve every record's individual memberships.",
+      "sources": [
+        [
+          "frontend/web/js/components/group-selector.ts",
+          "const targetGroups = new Set(selectedGroupIds)"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-METADATA-LOSS",
+      "priority": "P1",
+      "area": "Preservation",
+      "title": "Concurrent metadata saves lose successful writes",
+      "observed": "Two isolated baseline appends both return success, but only one field remains. The read-modify-write operation replaces the complete metadata array.",
+      "why": "Reported success does not mean the user's data was retained.",
+      "acceptance": "Retain all independent concurrent fields; concurrent creation of one field must have one winner.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/metadata.py",
+          "\"$set\": {\"metadata\""
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-COMMENT-IDENTITIES",
+      "priority": "P1",
+      "area": "Preservation",
+      "title": "Concurrent comments receive duplicate IDs",
+      "observed": "Five simultaneous baseline comments retain all five texts but receive one distinct ID. IDs are allocated from an unprotected prior snapshot.",
+      "why": "Later operations address comments by ID, so collisions make record management ambiguous.",
+      "acceptance": "Retain all texts with unique identifiers under forced simultaneous submissions.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/sample.py",
+          "comment_id = max(c.id for c in comments)"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-GROUP-OVERLAP",
+      "priority": "P1",
+      "area": "Preservation",
+      "title": "A stale editor overwrites an independent group edit",
+      "observed": "Saving a description in a stale second tab reverts the name saved in the first tab. Unchanged fields are resent in the full payload.",
+      "why": "Independent successful edits unexpectedly erase one another.",
+      "acceptance": "Save different fields from two tabs and retain both values.",
+      "sources": [
+        [
+          "frontend/web/js/views/group-editor/index.ts",
+          "await this._api.updateGroup(groupId, corePayload)"
+        ]
+      ]
+    },
+    {
+      "id": "METADATA-ADD-500",
+      "priority": "P1",
+      "area": "Metadata",
+      "title": "Appending valid metadata returns HTTP 500",
+      "observed": "Appending to a record with existing metadata mixes raw dictionaries and typed entries. Normal input fails instead of being appended.",
+      "why": "A core data-entry workflow is blocked for existing records.",
+      "acceptance": "Append valid fields while retaining originals; duplicate fields must get clear conflict feedback.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/metadata.py",
+          "db_fieldnames = {meta.fieldname for meta in sample_meta}"
+        ]
+      ]
+    },
+    {
+      "id": "METADATA-CATEGORY-LOSS",
+      "priority": "P1",
+      "area": "Metadata",
+      "title": "Interleaved metadata categories hide fields",
+      "observed": "The view groups unsorted records by adjacent category, then overwrites a category when it appears again. Stored fields disappear from the rendered view.",
+      "why": "Users cannot reliably read all retained metadata.",
+      "acceptance": "Display every field when categories are interleaved in stored order.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "groupby(metadata, key=lambda x: x[\"category\"])"
+        ]
+      ]
+    },
+    {
+      "id": "METADATA-TABLE-EMPTY",
+      "priority": "P1",
+      "area": "Metadata",
+      "title": "An accepted metadata table displays no contents",
+      "observed": "CSV-shaped metadata can be accepted and stored without conversion to the table read shape. The page then shows no columns or rows.",
+      "why": "Accepted input has no usable reading surface.",
+      "acceptance": "Show original headings and cells for both accepted CSV-shaped and stored-table representations.",
+      "sources": [
+        [
+          "api/bonsai_api/models/metadata.py",
+          "MetaEntriesInDb = list[MetaEntryInDb]"
+        ]
+      ]
+    },
+    {
+      "id": "CSV-EMPTY-CELL-500",
+      "priority": "P1",
+      "area": "Metadata",
+      "title": "A normal empty CSV cell makes metadata unreadable",
+      "observed": "The baseline CSV reader retains a non-finite numeric value for an empty inventory cell. JSON serialization raises Out of range float values are not JSON compliant.",
+      "why": "Ordinary accepted data can break the record's reading route.",
+      "acceptance": "Accept missing cells and render the stored table without a serialization error.",
+      "sources": [
+        [
+          "api/bonsai_api/io.py",
+          "def parse_metadata_table"
+        ],
+        [
+          "api/bonsai_api/models/metadata.py",
+          "class TableMetadataInDb"
+        ]
+      ]
+    },
+    {
+      "id": "CURATION-DOUBLE-SUBMIT",
+      "priority": "P1",
+      "area": "Saved state",
+      "title": "One confirmation saves, then reports a conflict",
+      "observed": "The original browser run saved a decision, returned HTTP 409 and displayed stale state. The baseline controller calls the creation service twice for one confirmation.",
+      "why": "Successful writes appear to fail, encouraging retries and obscuring saved state.",
+      "acceptance": "Call the service once and render refreshed saved state; verify with stubs before any separately scoped write test.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "def submit_curations_batch"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-COMMENT-RETRY",
+      "priority": "P1",
+      "area": "Saved state",
+      "title": "Comment recovery duplicates a saved submission",
+      "observed": "A lost response can cause another append of the same comment. There is no request identity; an error before acceptance can also lose the draft.",
+      "why": "Retries can change persistent content while feedback remains uncertain.",
+      "acceptance": "A repeated identified request must store one comment; retain a draft after a known failed submission.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/sample.py",
+          "async def add_comment"
+        ],
+        [
+          "frontend/bonsai_app/blueprints/sample/views.py",
+          "def add_comment"
+        ]
+      ]
+    },
+    {
+      "id": "SELECTED-FILTER-STALE",
+      "priority": "P1",
+      "area": "Selection",
+      "title": "Clearing selected-only rows leaves stale exports",
+      "observed": "After Select all, Show only selected and Deselect all, old rows remain visible. The later file check exported eight records with zero selected.",
+      "why": "The exported set can conflict with the user's visible selection intent.",
+      "acceptance": "At zero and nonzero selections, displayed rows and exported records must match the selected-only view.",
+      "sources": [
+        [
+          "frontend/web/js/views/groups-view/init.ts",
+          "\"selectNone\""
+        ],
+        [
+          "frontend/web/js/views/groups-view/init.ts",
+          "\"showSelected\""
+        ]
+      ]
+    },
+    {
+      "id": "VARIANT-SELECT-ALL-INVALID",
+      "priority": "P1",
+      "area": "Selection",
+      "title": "Select all adds an undefined extra target",
+      "observed": "A three-row table creates four local payload entries, including one without valid identifiers. The header checkbox is also handled as a row checkbox.",
+      "why": "Bulk actions receive an invalid extra target.",
+      "acceptance": "The header must select exactly the displayed valid row IDs, including after filtering; no write is needed for this check.",
+      "sources": [
+        [
+          "frontend/web/js/views/variants-table/variants-view.ts",
+          "initVariantSelection"
+        ]
+      ]
+    },
+    {
+      "id": "VARIANT-FILTER-AND",
+      "priority": "P1",
+      "area": "Filtering",
+      "title": "The second numeric predicate overrides the first",
+      "observed": "Depth filtering replaces the prior frequency result instead of combining it. Three rows remain when the requested conjunction should return none.",
+      "why": "The table presents results outside the user's requested criteria.",
+      "acceptance": "Both predicates must intersect, including cases where either one fails.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "variant_passes_qc = variant[\"depth\"] >= int(min_depth)"
+        ]
+      ]
+    },
+    {
+      "id": "VARIANT-HIDE-DISMISSED-500",
+      "priority": "P1",
+      "area": "Filtering",
+      "title": "Hide dismissed crashes the detail page",
+      "observed": "The filter reads a legacy verified field before merging saved decisions. A record containing a rejected row returns HTTP 500.",
+      "why": "A normal saved-state filter makes the reading workflow unavailable.",
+      "acceptance": "Hide exactly the rejected rows using saved decision state, without changing stored decisions.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "variant[\"verified\"] == \"failed\""
+        ]
+      ]
+    },
+    {
+      "id": "QC-FILTER-EMPTY",
+      "priority": "P1",
+      "area": "Filtering",
+      "title": "Exact status filtering hides matching records",
+      "observed": "The status column is filterable but excluded from the search cache used by the advanced filter. A known matching row is omitted.",
+      "why": "The requested cohort can silently be incomplete.",
+      "acceptance": "Exact and combined status filters must return all expected records; clearing them must restore the full table.",
+      "sources": [
+        [
+          "frontend/web/js/views/groups-view/init.ts",
+          "searchBuilder: {"
+        ],
+        [
+          "frontend/bonsai_app/blueprints/groups/templates/cell_fmt.html",
+          "macro qc_status_renderer"
+        ]
+      ]
+    },
+    {
+      "id": "GROUP-MEMBERSHIP-LIMIT",
+      "priority": "P1",
+      "area": "Selection",
+      "title": "Membership preselection fails beyond 100 records",
+      "observed": "The UI sends one membership lookup for 125 selected records while the API permits at most 100 IDs. The common group is not preselected.",
+      "why": "Ordinary larger selections lose essential context before an edit.",
+      "acceptance": "Batch membership reads within the API limit and preselect the common group for all 125 records.",
+      "sources": [
+        [
+          "frontend/web/js/core/api/index.ts",
+          "getMemberships"
+        ]
+      ]
+    },
+    {
+      "id": "ADMIN-CREATE-USER-500",
+      "priority": "P1",
+      "area": "Accounts",
+      "title": "A valid new account cannot be created",
+      "observed": "A normal unknown username produces the SDK's NotFoundError, while form validation catches the older HTTPError type. Creation returns HTTP 500.",
+      "why": "Administrator onboarding is blocked by the expected availability check.",
+      "acceptance": "Create and list one valid account; invalid fields must produce form feedback without a write.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/admin/views.py",
+          "except HTTPError as error:"
+        ]
+      ]
+    },
+    {
+      "id": "ADMIN-EDIT-USER-500",
+      "priority": "P1",
+      "area": "Accounts",
+      "title": "An existing account cannot be opened for editing",
+      "observed": "The edit form indexes a typed UserResponse as a dictionary. Opening an existing account returns HTTP 500.",
+      "why": "Normal account maintenance is unavailable.",
+      "acceptance": "Populate the form from the typed response and verify that an ordinary profile edit persists.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/admin/views.py",
+          "form.first_name.data = user[\"first_name\"]"
+        ]
+      ]
+    },
+    {
+      "id": "ACCOUNT-ROLE-PERMISSIONS",
+      "priority": "P1",
+      "area": "Accounts",
+      "title": "Generic create/read routes disagree with the roles",
+      "observed": "The shared active-user dependency adds users:me to write-only uploader requests. The older list route requires write permission from ordinary readers.",
+      "why": "Supported automation and read workflows are blocked by unrelated scopes.",
+      "acceptance": "Allow generic uploader creation and ordinary list reads while preserving the intended denials.",
+      "sources": [
+        [
+          "api/bonsai_api/dependencies.py",
+          "scopes=[\"users:me\"]"
+        ],
+        [
+          "api/bonsai_api/routers/samples/samples.py",
+          "async def list_samples"
+        ]
+      ]
+    },
+    {
+      "id": "ACCOUNT-STALE-PAGES",
+      "priority": "P1",
+      "area": "Accounts",
+      "title": "Old tabs retain the previous authenticated view",
+      "observed": "After logout or account switching, other tabs and browser history can retain the prior rendered page and access token. Independent profiles are a separate case.",
+      "why": "Shared-browser account changes leave stale authenticated state on screen.",
+      "acceptance": "Revalidate restored pages and coordinate account changes across tabs. Server-side token revocation is a separate contract.",
+      "sources": [
+        [
+          "frontend/bonsai_app/templates/bootstrap_base.html",
+          "<body class=\"bg-light\">"
+        ],
+        [
+          "frontend/bonsai_app/blueprints/groups/templates/groups.html",
+          "\"{{ token }}\""
+        ]
+      ]
+    },
+    {
+      "id": "BASKET-UNDEFINED-ASSAY",
+      "priority": "P1",
+      "area": "Literal text",
+      "title": "Basket names are interpreted as markup",
+      "observed": "A harmless b-tag record name becomes HTML in the basket. A missing optional assay also appears as the literal undefined label.",
+      "why": "Untrusted labels are not reliably presented as literal text. Script execution was not tested.",
+      "acceptance": "Render names literally and give a readable empty value for the optional assay.",
+      "sources": [
+        [
+          "frontend/web/js/components/sample-basket.ts",
+          "${sample.sample_name}"
+        ]
+      ]
+    },
+    {
+      "id": "PRIVATE-GROUP-INVITE-500",
+      "priority": "P1",
+      "area": "Groups",
+      "title": "Private groups cannot be created with invitees",
+      "observed": "Creation accesses a nonexistent owner_id attribute. Group listing and direct lookup also apply a public-only visibility helper instead of honoring owner/invitee access.",
+      "why": "An advertised private-group workflow cannot be completed.",
+      "acceptance": "Owner and invitees must create, list and open the group; an uninvited account must be denied.",
+      "sources": [
+        [
+          "api/bonsai_api/services/group_service.py",
+          "owner_id"
+        ],
+        [
+          "api/bonsai_api/crud/group.py",
+          "build_public_visibility_match_stage(user_id)"
+        ]
+      ]
+    },
+    {
+      "id": "PENDING-SAMPLE-500",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "A pending record cannot be opened",
+      "observed": "A valid record without a completed pipeline is accepted, but the summary assumes pipeline metadata exists and returns HTTP 500.",
+      "why": "A normal record lifecycle state has no usable page.",
+      "acceptance": "Empty and metadata-only records must open with clear pending feedback.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "macro sample_header"
+        ]
+      ]
+    },
+    {
+      "id": "TB-CURATION-500",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "Absent optional display metadata crashes a summary",
+      "observed": "The stored summary indexes optional resistance-level metadata that is absent in a valid stored decision. Rendering returns HTTP 500.",
+      "why": "Existing stored information cannot be read without changing the record.",
+      "acceptance": "Render the original summary and decisions when optional display fields are missing.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "phenotype.meta.resistance_level"
+        ]
+      ]
+    },
+    {
+      "id": "TB-NO-AMR-500",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "Null stored results crash summary and detail pages",
+      "observed": "A valid null result is indexed as a dictionary in several reading helpers. Empty-result records cannot be opened reliably.",
+      "why": "A valid empty result becomes an application failure.",
+      "acceptance": "Keep stored null values and provide explicit availability feedback throughout both views.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "prediction[\"result\"][\"variants\"]"
+        ]
+      ]
+    },
+    {
+      "id": "ECOLI-VARIANTS-EMPTY",
+      "priority": "P1",
+      "area": "Reading scope",
+      "title": "Unsupported stored data is presented as a negative",
+      "observed": "The detail route selects only TBProfiler results yet reports No predicted resistance determinants for a record with stored AMRFinder results.",
+      "why": "A missing reading surface is presented as absence of findings. Broader detail support also needs a scope decision.",
+      "acceptance": "Distinguish unavailable or unsupported results from a negative result; define supported detail types.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/resistance_variants.html",
+          "No predicted resistance determinants."
+        ]
+      ]
+    },
+    {
+      "id": "EMM-DISPLAY-MISSING",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "Stored EMM results are omitted from the summary",
+      "observed": "The summary checks emmtype while current descriptors use emm. Stored results have no card, including explicit empty-result states.",
+      "why": "Supported parsed information never reaches its intended reading surface.",
+      "acceptance": "Display positive, empty and unavailable descriptors and preserve numeric zero values.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "res.analysis_type == \"emmtype\""
+        ]
+      ]
+    },
+    {
+      "id": "DISPLAY-EMM-TABLE",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "Requested EMM table columns are silently absent",
+      "observed": "Two requested summary-column paths do not match the existing projection alias. Positive stored values are omitted even when those columns are requested.",
+      "why": "An explicitly requested table projection silently loses information.",
+      "acceptance": "Return the supplied type and cluster through both requested projection paths. Default layouts are a separate configuration choice.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/builder/summary_manifest.py",
+          "path=\"$emm.emmtype\""
+        ],
+        [
+          "api/bonsai_api/crud/builder/summary_manifest.py",
+          "path=\"$emm.emm_cluster\""
+        ]
+      ]
+    },
+    {
+      "id": "DISPLAY-EXTENDED-CONTEXT",
+      "priority": "P1",
+      "area": "Reading",
+      "title": "The extended summary lacks its record context",
+      "observed": "The imported card macro needs sample context when building a stored-row display link. Extended rendering returns HTTP 500 for the relevant record shape.",
+      "why": "The advertised extended view cannot be opened for valid stored content.",
+      "acceptance": "Open the display-only extended summary and retain its supplied rows and links without executing an analysis or viewer action.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "from \"cards.html\" import"
+        ]
+      ]
+    },
+    {
+      "id": "EMM-LIMS-EXPORT-500",
+      "priority": "P1",
+      "area": "Exports",
+      "title": "The configured EMM export fails",
+      "observed": "The formatter accesses the old descriptor field and old result-type name. Positive and empty EMM exports return HTTP 500 instead of a file.",
+      "why": "A configured release download path is blocked.",
+      "acceptance": "Produce CSV and TSV with correct record identity and supplied values, including defined empty results.",
+      "sources": [
+        [
+          "api/bonsai_api/lims_export/formatters.py",
+          "def emm_typing"
+        ]
+      ]
+    },
+    {
+      "id": "KLEBORATE-UPLOAD-422",
+      "priority": "P1",
+      "area": "Integration",
+      "title": "A required companion file has no upload path",
+      "observed": "Frozen reports parse offline with their companion, but the original four API attempts returned HTTP 422. The upload route exposes no hAMRonization companion input.",
+      "why": "The supported Klebsiella paths have an incomplete ingestion contract.",
+      "acceptance": "Define and stub-test companion-file plumbing; verify ingestion separately before claiming the integration works.",
+      "sources": [
+        [
+          "api/bonsai_api/routers/analysis.py",
+          "coverage_file: UploadFile"
+        ],
+        [
+          "api/bonsai_api/routers/analysis.py",
+          "bedcov_file: UploadFile"
+        ]
+      ]
+    },
+    {
+      "id": "PARSER-MYKROBE-SELECTION",
+      "priority": "P1",
+      "area": "SDK parser",
+      "title": "Selecting a single result type crashes Mykrobe parsing",
+      "observed": "Species-only and lineage-only requests raise UnboundLocalError although the full frozen report parses. Each branch needs its own result-type context.",
+      "why": "A supported parser request mode fails on valid input.",
+      "acceptance": "Selected values must match full-parse values while unrequested envelopes remain skipped.",
+      "sources": [
+        [
+          "sdk:src/bonsai_libs/parse/parsers/mykrobe.py",
+          "if AnalysisType.SPECIES in want:"
+        ],
+        [
+          "sdk:src/bonsai_libs/parse/parsers/mykrobe.py",
+          "if AnalysisType.LINEAGE in want:"
+        ]
+      ]
+    },
+    {
+      "id": "PARSER-BRACKEN-EMPTY",
+      "priority": "P1",
+      "area": "SDK parser",
+      "title": "A header-only report has the wrong result shape",
+      "observed": "A valid empty table is marked parsed and returns a nested dictionary instead of the declared result list.",
+      "why": "Empty input violates the parser's output contract and can mislead downstream readers.",
+      "acceptance": "Return an empty envelope and empty list; retain numeric zero as a parsed value.",
+      "sources": [
+        [
+          "sdk:src/bonsai_libs/parse/parsers/bracken.py",
+          "return {AnalysisType.SPECIES: []}"
+        ]
+      ]
+    },
+    {
+      "id": "PARSER-COVERAGE-STREAM",
+      "priority": "P1",
+      "area": "SDK parser",
+      "title": "A coverage stream silently loses rows",
+      "observed": "The baseline parser consumes its stream and reads it again. A two-row generic stream retains only the first row, while path input works.",
+      "why": "Accepted input is silently incomplete.",
+      "acceptance": "Read once and preserve both rows identically for path and stream input.",
+      "sources": [
+        [
+          "sdk:src/bonsai_libs/parse/parsers/samtools.py",
+          "first = self._get_first_normalized_row"
+        ],
+        [
+          "sdk:src/bonsai_libs/parse/parsers/samtools.py",
+          "next(rows_iter, None)"
+        ]
+      ]
+    },
+    {
+      "id": "BASKET-ACCOUNT-SHARED",
+      "priority": "P2",
+      "area": "Browser state",
+      "title": "Basket selections are shared across accounts",
+      "observed": "The next account inherits the prior basket, clearing it affects the first account, and another tab can retain stale contents.",
+      "why": "Selection intent is not isolated by account or synchronized reliably.",
+      "acceptance": "Keep independent account baskets, preserve same-account reloads and synchronize same-account tabs.",
+      "sources": [
+        [
+          "frontend/web/js/core/state/basket-state.ts",
+          "`${this.name}_content`"
+        ]
+      ]
+    },
+    {
+      "id": "ACCOUNT-DISABLED-SESSION",
+      "priority": "P2",
+      "area": "Accounts",
+      "title": "A disabled session ends on a server-error page",
+      "observed": "The API denies the disabled account correctly, but frontend handling misses the current permission exception. Existing sessions return HTTP 500.",
+      "why": "Correct denial is obscured by broken session feedback; no successful bypass was observed.",
+      "acceptance": "End the inactive session clearly and show normal sign-in feedback.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/login/views.py",
+          "except UnauthorizedError:"
+        ]
+      ]
+    },
+    {
+      "id": "NONADMIN-ADMIN-500",
+      "priority": "P2",
+      "area": "Accounts",
+      "title": "An unauthorized admin visit returns HTTP 500",
+      "observed": "The denial redirects to the nonexistent public.home endpoint. No administrative user data was displayed in the failed visit.",
+      "why": "An expected denial becomes a broken navigation/error page.",
+      "acceptance": "Return a usable denial or redirect with clear feedback.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/admin/views.py",
+          "url_for(\"public.home\")"
+        ]
+      ]
+    },
+    {
+      "id": "COMMENT-HIDE-PERMISSION-500",
+      "priority": "P2",
+      "area": "Comments",
+      "title": "Ordinary users see a removal action that crashes",
+      "observed": "A regular account is offered Remove, but the API requires write permission and the frontend misses the SDK denial exception. The action returns HTTP 500.",
+      "why": "The available control disagrees with the role and produces misleading failure feedback.",
+      "acceptance": "Expose only permitted controls and handle a denied direct request without a server error.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/sidebar.html",
+          "aria-label=\"Remove\""
+        ],
+        [
+          "frontend/bonsai_app/blueprints/sample/views.py",
+          "def hide_comment"
+        ]
+      ]
+    },
+    {
+      "id": "GROUP-EDITOR-EMPTY-COUNT",
+      "priority": "P2",
+      "area": "Groups",
+      "title": "A populated editor says no records were added",
+      "observed": "The API has saved members, but the editor renders an empty samples list and displays No samples added yet.",
+      "why": "The edit screen contradicts the persisted membership.",
+      "acceptance": "Display the saved count or members and verify empty and populated states.",
+      "sources": [
+        [
+          "frontend/web/js/views/group-editor/render/samples.ts",
+          "No samples added yet."
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-GROUP-PENDING",
+      "priority": "P2",
+      "area": "Recovery",
+      "title": "Save and Reset remain active during a pending save",
+      "observed": "Repeated Save clicks produce overlapping writes. Reset and field changes remain possible during the two-stage operation.",
+      "why": "One user operation can launch competing updates and unclear feedback.",
+      "acceptance": "Guard repeated actions and use one captured payload until completion.",
+      "sources": [
+        [
+          "frontend/web/js/views/group-editor/index.ts",
+          "async save()"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-GROUP-FEEDBACK",
+      "priority": "P2",
+      "area": "Recovery",
+      "title": "Group failures hide partial or uncertain success",
+      "observed": "Core details can save while column settings fail. A lost success response gives the same generic Failed to save group message.",
+      "why": "The user cannot tell what persisted or what should be retried.",
+      "acceptance": "Report confirmed stages and uncertainty, preserve the draft and retry the same known group.",
+      "sources": [
+        [
+          "frontend/web/js/views/group-editor/index.ts",
+          "message: \"Failed to save group\""
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-MEMBERSHIP-PARTIAL",
+      "priority": "P2",
+      "area": "Recovery",
+      "title": "A partial batch removal has no resumable intent",
+      "observed": "When one removal succeeds and another fails, refreshed common selection can become empty. Repeating Apply does not complete the original removal.",
+      "why": "The remaining membership needs individual review; unrelated-membership loss is a separate P1 issue.",
+      "acceptance": "Retain batch intent or expose per-record outcomes and a clear continuation path.",
+      "sources": [
+        [
+          "frontend/web/js/components/group-selector.ts",
+          "private onApply = async () =>"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-SAME-FIELD-CONFLICT",
+      "priority": "P2",
+      "area": "Concurrency",
+      "title": "Same-field edits silently use the last writer",
+      "observed": "Two editors can save different descriptions without a version precondition or conflict prompt. The later description replaces the earlier one.",
+      "why": "A concurrent overwrite is not distinguished from a normal successful edit.",
+      "acceptance": "Agree an edit-version/conflict contract and test stale updates.",
+      "sources": [
+        [
+          "api/bonsai_api/crud/group.py",
+          "async def update_group"
+        ]
+      ]
+    },
+    {
+      "id": "RECOVERY-SESSION-DRAFT",
+      "priority": "P2",
+      "area": "Recovery",
+      "title": "Session expiry discards an unsent comment draft",
+      "observed": "The form has no account-scoped draft recovery. The expiry observation was made on a layered candidate; the baseline likewise has no restoration path.",
+      "why": "Typed work can be lost during reauthentication. Exact baseline expiry feedback was not rerun.",
+      "acceptance": "Choose a draft-recovery policy and verify expiry, sign-in and account switching.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/sidebar.html",
+          "name=\"comment\""
+        ],
+        [
+          "frontend/bonsai_app/blueprints/sample/views.py",
+          "def add_comment"
+        ]
+      ]
+    },
+    {
+      "id": "METADATA-VALIDATION-500",
+      "priority": "P2",
+      "area": "Validation",
+      "title": "Invalid metadata input returns a server failure",
+      "observed": "Empty batches and malformed CSV are not rejected cleanly before the write path. They return HTTP 500 rather than input feedback.",
+      "why": "Recoverable input mistakes look like application failures.",
+      "acceptance": "Reject invalid input with clear validation feedback and no record change.",
+      "sources": [
+        [
+          "api/bonsai_api/routers/samples/sample_metadata.py",
+          "async def add_sample_metadata"
+        ]
+      ]
+    },
+    {
+      "id": "MISSING-RECORD-FEEDBACK",
+      "priority": "P2",
+      "area": "Navigation",
+      "title": "Missing-record links give broken or unrelated pages",
+      "observed": "Missing record, metadata, table and user-edit links can return HTTP 500, blank content or an unrelated redirect instead of a clear 404.",
+      "why": "Stale or incorrect links are difficult to diagnose and recover from.",
+      "acceptance": "Return a clear unavailable state without further dependent reads.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/views.py",
+          "def sample"
+        ],
+        [
+          "frontend/bonsai_app/blueprints/admin/views.py",
+          "def update_user"
+        ]
+      ]
+    },
+    {
+      "id": "SA-TYPING-SURFACE-GAP",
+      "priority": "P2",
+      "area": "Product scope",
+      "title": "SPA and SCCmec have no agreed summary surface",
+      "observed": "The fields are parsed and stored in the API but have no corresponding summary cards.",
+      "why": "A release-scope decision is missing. Raise to P1 if these reading surfaces are already promised.",
+      "acceptance": "Provide a supported reading surface or explicitly exclude the fields from the release claim.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "for res in sample.typing_result"
+        ]
+      ]
+    },
+    {
+      "id": "CSV-FORMULA-PREFIX",
+      "priority": "P2",
+      "area": "Export policy",
+      "title": "CSV protection misses formula-like sign prefixes",
+      "observed": "Harmless +1+1 and -1+1 names remain unprotected in CSV. Protection exists for other prefixes. Formula execution in a spreadsheet client was not tested.",
+      "why": "Export hardening is incomplete; raise to P1 for expected direct opening of untrusted CSV text.",
+      "acceptance": "Define and validate a spreadsheet-safe CSV contract for representative clients.",
+      "sources": [
+        [
+          "frontend/web/js/views/groups-view/init.ts",
+          "\"csv\""
+        ]
+      ]
+    },
+    {
+      "id": "OVERVIEW-MOBILE-OVERFLOW",
+      "priority": "P3",
+      "area": "Presentation",
+      "title": "The overview overflows phone-width screens",
+      "observed": "The original baseline page was 1488 CSS pixels wide at both 320 and 390 pixel viewports. The full page, rather than just the table, scrolls horizontally.",
+      "why": "Phone controls are awkward; raise priority if phone operation is required.",
+      "acceptance": "Contain horizontal scrolling inside the table and retain accessible page controls.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/groups/templates/groups.html",
+          "{{ sample_table(table_data) }}"
+        ]
+      ]
+    },
+    {
+      "id": "DISPLAY-DATABASE-VERSION",
+      "priority": "P3",
+      "area": "Accessibility",
+      "title": "A shortened version label has no full text label",
+      "observed": "The displayed database version is truncated. Its full value is present in the link URL but not in a title or accessible label.",
+      "why": "Reading the exact stored version requires inspecting or opening the link.",
+      "acceptance": "Expose the complete version as a readable title and accessible label.",
+      "sources": [
+        [
+          "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "macro make_db_link"
+        ]
+      ]
+    },
+    {
+      "id": "CSV-NEWLINE-NORMALIZATION",
+      "priority": "P3",
+      "area": "Export policy",
+      "title": "CSV export replaces name newlines with spaces",
+      "observed": "A quoted Unicode record name loses its embedded newline during export. Quoting, the accent and raw leading-zero identifiers are retained.",
+      "why": "Exact multiline fidelity is undefined; this is an export-contract decision.",
+      "acceptance": "Document the normalization or preserve multiline values consistently.",
+      "sources": [
+        [
+          "frontend/web/js/views/groups-view/init.ts",
+          "\"csv\""
+        ]
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "browser-results/admin/expanded-baseline/populated-group-editor-count.png",
+      "title": "A populated development group is presented as empty",
+      "caption": "Original baseline evidence for GROUP-EDITOR-EMPTY-COUNT. The finding records a 123-member group, but its edit screen says No samples added yet. The saved membership and its displayed empty state disagree."
+    },
+    {
+      "path": "browser-results/admin/expanded-baseline/variant-combined-filters.png",
+      "title": "Combined numeric filters retain rows outside the requested conjunction",
+      "caption": "Original baseline evidence for VARIANT-FILTER-AND. The requested frequency/depth conjunction should exclude these rows. The second predicate overwrites the first predicate's result. Stored data was not altered by this filter check."
+    }
+  ],
+  "limits": [
+    "This report is pinned to development 21eccf7 and the recorded SDK 5789a9c. No remote fetch or claim about later upstream changes is made.",
+    "The historical browser/API baseline, later layered observations and exact baseline source checks have different evidence strength. Each finding labels its basis; no fresh full development deployment was performed for this report.",
+    "The three SDK parser items apply to the recorded dependency revision. An installation using a different SDK revision must be checked separately.",
+    "Coverage includes 80 representative synthetic records across eight configured assay paths, including aliases, and table workflows up to 125 records. It is not exhaustive species or producer-version coverage.",
+    "The parser pass exercised 479 frozen reports and selected literal fields. Broader format/version combinations, real JASEN output, scientific correctness, LDAP/SSO, other browser engines and production-scale load remain untested.",
+    "Historical ingestion and curation-write failures are retained as evidence. No fresh live ingestion, curation write, sequencing workflow or clustering execution was performed for this report.",
+    "The local-only comment-sidebar context regression is excluded. The original failed-QC clustering case was explained and is also excluded. Existing reports and the running patched test instance are preserved."
+  ]
+}
