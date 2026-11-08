@@ -80,7 +80,7 @@ function initButtons(): void {
 function initVariantSelection(): void {
   // individual checkboxes
   document
-    .querySelectorAll<HTMLInputElement>(".br-content input[type='checkbox']")
+    .querySelectorAll<HTMLInputElement>(".br-content input[type='checkbox'][data-variant-id]")
     .forEach(cb => {
       cb.addEventListener("change", () => selectVariant(cb));
     });
@@ -135,7 +135,7 @@ function selectAllVariants(elem: HTMLInputElement, tableId: string): void {
   if (!table) return;
 
   table
-    .querySelectorAll<HTMLInputElement>("input[type='checkbox']")
+    .querySelectorAll<HTMLInputElement>("input[type='checkbox'][data-variant-id]")
     .forEach(el => {
       el.checked = elem.checked;
       selectVariant(el);
