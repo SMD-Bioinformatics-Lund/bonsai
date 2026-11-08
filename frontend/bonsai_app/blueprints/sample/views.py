@@ -366,6 +366,7 @@ def resistance_variants(sample_id: str) -> str:
                     resistance_level=resistance_level,
                 )
                 results = submit_curations_batch(batch_records, create_curation_fn=client.create_curation)
+                sample_info = client.get_sample_by_id(sample_id=sample_id)
 
                 # Report results to user
                 successes = sum(1 for r in results if r.success)

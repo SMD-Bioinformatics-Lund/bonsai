@@ -500,11 +500,6 @@ def submit_curations_batch(
         analysis_id = rec["analysis_id"]
         analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
-        resp = create_curation_fn(
-            analysis_type=analysis_type,
-            analysis_id=analysis_id,
-            record=curation_record,
-        )
         try:
             resp = create_curation_fn(
                 analysis_type=analysis_type,
