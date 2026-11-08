@@ -1,0 +1,392 @@
+{
+  "as_of": "2026-11-08",
+  "basis": "Workflow exposure is inferred from the observed trigger and pinned source, not measured production frequency. Real JASEN input, local account practices and feature usage have not been supplied. Severity remains the development catalog's assessment. Exact patch sizes are measured against each candidate's stated base; prerequisite changes are additional.",
+  "selection_rule": "Review severity, the chance of encountering the stated trigger in this installation, and the size of the required change together. A small patch is not by itself proof of low risk. 'Early review' suggests review order, not authorization to merge.",
+  "issues": {
+    "ORDINARY-RECORD-DELETE": {
+      "exposure": "Direct API / restricted UI",
+      "normal_workflow": "An ordinary account using the delete API is affected every time. The ordinary UI hides deletion, so accidental normal UI use is less likely.",
+      "minimal_fix": "Use the existing write permission on both deletion routes.",
+      "review_band": "Early review",
+      "caveat": "Destructive permission boundary; verify ordinary denial and administrator access before release."
+    },
+    "ANALYSIS-UPLOAD-ROLE-GATE": {
+      "exposure": "Routine for dedicated uploaders",
+      "normal_workflow": "Every dedicated-uploader submission is denied; ordinary-account submissions are admitted. Exposure depends on which role the ingestion client uses.",
+      "minimal_fix": "Change the upload route to the existing write scope, after repairing shared role checks.",
+      "review_band": "Early review",
+      "caveat": "Requires ACCOUNT-ROLE-PERMISSIONS. Authorization was tested with the downstream service stubbed."
+    },
+    "PRIVATE-RECORD-SCOPE": {
+      "exposure": "Conditional privacy feature",
+      "normal_workflow": "Public-default workflows are unaffected. Any private-marked record remains readable across accounts if this unfinished privacy feature is relied on.",
+      "minimal_fix": "The candidate rejects new private-marked records, selecting a public-only creation contract.",
+      "review_band": "Policy decision before release",
+      "caveat": "Partial containment only: existing private-marked records remain exposed. A private-data deployment needs ACL enforcement or a separate migration/access decision; this branch alone does not close P0."
+    },
+    "GROUP-DELETE-MEMBERSHIP-LOSS": {
+      "exposure": "Normal overlapping groups",
+      "normal_workflow": "Deleting a populated group removes other memberships when records belong to multiple groups. Overlapping cohorts make this a realistic administrative trigger.",
+      "minimal_fix": "Match the target group after unwinding membership arrays.",
+      "review_band": "Early review",
+      "caveat": "A one-stage query fix prevents unrelated membership deletion."
+    },
+    "GROUP-MEMBERSHIP-LOSS": {
+      "exposure": "Normal mixed memberships",
+      "normal_workflow": "Applying an unchanged common group selection erases individual memberships when the selected records have different groups.",
+      "minimal_fix": "Remove only originally common groups and capture the selection used by Apply.",
+      "review_band": "Early review",
+      "caveat": "No component redesign or partial-batch recovery is included."
+    },
+    "RECOVERY-METADATA-LOSS": {
+      "exposure": "Concurrent writers",
+      "normal_workflow": "Two users or automated clients append fields to the same record before either save completes. Less likely in a single-editor manual workflow.",
+      "minimal_fix": "Append atomically with a field-name condition and distinguish duplicate conflicts.",
+      "review_band": "Concurrency-dependent",
+      "caveat": "Requires METADATA-ADD-500. Independent fields and competing duplicate fields were checked under forced overlap."
+    },
+    "RECOVERY-COMMENT-IDENTITIES": {
+      "exposure": "Concurrent writers",
+      "normal_workflow": "Comments submitted to one record at the same time can share an ID. Ordinary sequential comments do not trigger the collision.",
+      "minimal_fix": "Condition the append on ID availability and retry an actual collision.",
+      "review_band": "Concurrency-dependent",
+      "caveat": "Existing duplicate IDs are not renumbered by this fix."
+    },
+    "RECOVERY-GROUP-OVERLAP": {
+      "exposure": "Stale tabs / multiple editors",
+      "normal_workflow": "One user leaves a group editor open while another changes a different field. Saving the older form overwrites the unrelated change.",
+      "minimal_fix": "Send only changed core fields and changed column selection.",
+      "review_band": "Concurrency-dependent",
+      "caveat": "Same-field last-writer behavior and pending-save controls remain separate P2 issues."
+    },
+    "METADATA-ADD-500": {
+      "exposure": "Routine repeated metadata entry",
+      "normal_workflow": "Appending to a record with existing metadata reaches the broken dictionary/object mix. A first append to an empty record may succeed.",
+      "minimal_fix": "Keep stored records as dictionaries and serialize only new typed fields.",
+      "review_band": "Early review",
+      "caveat": "Concurrent append safety is a separate dependent candidate."
+    },
+    "METADATA-CATEGORY-LOSS": {
+      "exposure": "Routine repeated metadata entry",
+      "normal_workflow": "Fields from a previously used category are appended after another category. Stored order then interleaves categories.",
+      "minimal_fix": "Sort by category before grouping the display fields.",
+      "review_band": "Early review",
+      "caveat": "Only display grouping changes; stored field order and values remain untouched."
+    },
+    "METADATA-TABLE-EMPTY": {
+      "exposure": "Whenever table metadata is used",
+      "normal_workflow": "An accepted metadata table is opened in the summary or standalone table view. Frequency depends on whether table metadata is used locally.",
+      "minimal_fix": "Normalize the accepted read shapes and render their headings and rows.",
+      "review_band": "Feature-dependent",
+      "caveat": "Three files cover the model/read boundary and template; this is larger than the single-line display fixes."
+    },
+    "CSV-EMPTY-CELL-500": {
+      "exposure": "Normal CSV input",
+      "normal_workflow": "A CSV has a blank cell in a column inferred as numeric. Such blanks are ordinary inventory/metadata input, if CSV tables are used.",
+      "minimal_fix": "Normalize missing numeric cells to empty text in the stored table model.",
+      "review_band": "Early review",
+      "caveat": "The patch handles the reported missing-cell case; unrelated malformed numeric input is excluded."
+    },
+    "CURATION-DOUBLE-SUBMIT": {
+      "exposure": "Every confirmation using this path",
+      "normal_workflow": "One Confirm action invokes the same save twice. The first save can persist before the second call reports a conflict.",
+      "minimal_fix": "Remove the duplicate service call and reload state after the save.",
+      "review_band": "Early review",
+      "caveat": "Only generic stubbed service calls and refreshed rendering were tested; no live decision was written."
+    },
+    "RECOVERY-COMMENT-RETRY": {
+      "exposure": "Lost responses / retries",
+      "normal_workflow": "A comment is saved but its response is lost, then the same submission is retried. Stable-network sequential use is less exposed.",
+      "minimal_fix": "Carry one actor-scoped request key through form, SDK headers and conditional append; retain a failed draft.",
+      "review_band": "Concurrency-dependent",
+      "caveat": "Requires RECOVERY-COMMENT-IDENTITIES. This is the largest candidate and crosses five files; session-expiry draft recovery remains separate."
+    },
+    "SELECTED-FILTER-STALE": {
+      "exposure": "Normal selected-only table use",
+      "normal_workflow": "Show selected is active and the last selected row is cleared. The stale display also contaminates the subsequent CSV export.",
+      "minimal_fix": "Redraw the shared table after selection changes.",
+      "review_band": "Early review",
+      "caveat": "The shared handler also covers ordinary accounts without administrator group controls."
+    },
+    "VARIANT-SELECT-ALL-INVALID": {
+      "exposure": "Every header Select all",
+      "normal_workflow": "The header checkbox is clicked in the stored-row table, including after a table filter. Individual row clicks avoid the extra target.",
+      "minimal_fix": "Bind selection only to checkboxes carrying a row identifier.",
+      "review_band": "Early review",
+      "caveat": "Selection payloads were checked without submitting any action."
+    },
+    "VARIANT-FILTER-AND": {
+      "exposure": "Combined numeric filtering",
+      "normal_workflow": "Both numeric predicates are enabled and a row passes only the second. Using one predicate does not expose the overwritten result.",
+      "minimal_fix": "Combine each depth predicate with the existing accumulated filter result.",
+      "review_band": "Early review",
+      "caveat": "Only Boolean filter composition changes."
+    },
+    "VARIANT-HIDE-DISMISSED-500": {
+      "exposure": "Whenever Hide dismissed is used",
+      "normal_workflow": "The option is enabled for stored rows using the current decision schema. The obsolete field lookup then fails.",
+      "minimal_fix": "Merge saved decisions before filtering and read the existing rejection decision.",
+      "review_band": "Early review",
+      "caveat": "Read-only filtering is checked; stored decisions are not changed."
+    },
+    "QC-FILTER-EMPTY": {
+      "exposure": "Normal exact status filtering",
+      "normal_workflow": "SearchBuilder filters QC exactly while that column is excluded from global search. The normal overview column configuration has this combination.",
+      "minimal_fix": "Provide the plain status search value and the SearchBuilder orthogonal mapping.",
+      "review_band": "Early review",
+      "caveat": "Real DataTables checks cover exact filtering, combined conditions, clearing and export data."
+    },
+    "GROUP-MEMBERSHIP-LIMIT": {
+      "exposure": "Large selections",
+      "normal_workflow": "More than 100 records are selected for group management. Smaller selections do not hit the membership query limit.",
+      "minimal_fix": "Batch membership reads within the API limit while retaining common-group calculation.",
+      "review_band": "Feature-dependent",
+      "caveat": "A 125-record generic selection was checked; this does not resolve partial write batches."
+    },
+    "ADMIN-CREATE-USER-500": {
+      "exposure": "Every new local account",
+      "normal_workflow": "An administrator submits a new local account. This is infrequent administration, and may be uncommon if external authentication supplies all users.",
+      "minimal_fix": "Catch the SDK's typed not-found exception during the existence check.",
+      "review_band": "Early review",
+      "caveat": "A small deterministic fix for the local-account administration path."
+    },
+    "ADMIN-EDIT-USER-500": {
+      "exposure": "Every local profile edit",
+      "normal_workflow": "An administrator opens or updates an existing local account. External-account management may avoid this path.",
+      "minimal_fix": "Read typed response attributes and preserve password/update return semantics.",
+      "review_band": "Feature-dependent",
+      "caveat": "The UI and API changes are kept together because opening and saving form one workflow."
+    },
+    "ACCOUNT-ROLE-PERMISSIONS": {
+      "exposure": "Routine for uploader role",
+      "normal_workflow": "A dedicated uploader creates a generic record, or an ordinary user uses the legacy list endpoint. The frontend's summary list takes another path.",
+      "minimal_fix": "Remove the unrelated shared scope and retain explicit per-route scopes.",
+      "review_band": "Early review",
+      "caveat": "This is the prerequisite for the one-line upload boundary fix."
+    },
+    "ACCOUNT-STALE-PAGES": {
+      "exposure": "Shared browser / multiple tabs",
+      "normal_workflow": "Accounts are switched or logged out with old tabs/history still available in the same browser profile. Separate profiles reduce exposure.",
+      "minimal_fix": "Revalidate restored pages and reload on a cross-tab account change.",
+      "review_band": "Environment-dependent",
+      "caveat": "This refreshes visible pages; it does not provide server-side JWT revocation or per-account basket storage."
+    },
+    "BASKET-UNDEFINED-ASSAY": {
+      "exposure": "Markup-like names / missing assay",
+      "normal_workflow": "A record name contains HTML-like text, or its optional assay is absent. Simple alphanumeric names do not expose the markup interpretation.",
+      "minimal_fix": "Escape the name at its HTML insertion and render absent assay as empty text.",
+      "review_band": "Early review",
+      "caveat": "Literal presentation is tested. Script execution was not attempted or claimed."
+    },
+    "PRIVATE-GROUP-INVITE-500": {
+      "exposure": "Private groups with invitees",
+      "normal_workflow": "A private group is created with invited accounts. Public groups and owner-only groups do not trigger the same response-shape error.",
+      "minimal_fix": "Use the existing account response and membership helpers consistently.",
+      "review_band": "Feature-dependent",
+      "caveat": "Group access checks remain distinct from the unfinished private-record ACL feature."
+    },
+    "PENDING-SAMPLE-500": {
+      "exposure": "Pending / metadata-only records",
+      "normal_workflow": "A record is opened before a pipeline is attached, or remains metadata-only. The ingestion delay determines how often this state is seen.",
+      "minimal_fix": "Handle absent pipeline/database metadata and show the pending state.",
+      "review_band": "Early review",
+      "caveat": "Only optional display metadata is handled."
+    },
+    "TB-CURATION-500": {
+      "exposure": "Valid optional stored fields",
+      "normal_workflow": "A stored decision lacks optional display metadata. Presence depends on the producer and editing path; populated metadata avoids the crash.",
+      "minimal_fix": "Read the optional display metadata before rendering its label.",
+      "review_band": "Early review",
+      "caveat": "Literal stored display values are checked, without making or changing a diagnostic decision."
+    },
+    "TB-NO-AMR-500": {
+      "exposure": "Null stored results",
+      "normal_workflow": "A stored report envelope has a null result and its summary or detail is opened. Normal fully populated results do not trigger this case.",
+      "minimal_fix": "Keep null envelopes out of row traversal and render explicit availability text.",
+      "review_band": "Feature-dependent",
+      "caveat": "Four files cover both views and shared readers; source data stays null."
+    },
+    "ECOLI-VARIANTS-EMPTY": {
+      "exposure": "Every unsupported detail type",
+      "normal_workflow": "The stored detail page is opened for a result type the view does not render. The baseline message misleadingly resembles a negative finding.",
+      "minimal_fix": "State the supported stored-result type and point to the extended report.",
+      "review_band": "Early review",
+      "caveat": "This corrects the claim; it does not implement display support for additional result types."
+    },
+    "EMM-DISPLAY-MISSING": {
+      "exposure": "Every current EMM descriptor",
+      "normal_workflow": "The summary receives the SDK's current EMM analysis type. All such descriptors are skipped by the obsolete template condition.",
+      "minimal_fix": "Use the current descriptor and render populated, empty and unavailable states, including zero.",
+      "review_band": "Feature-dependent",
+      "caveat": "Local frequency depends on whether this stored report category is used."
+    },
+    "DISPLAY-EMM-TABLE": {
+      "exposure": "Custom requested columns",
+      "normal_workflow": "A client or group layout explicitly requests EMM type/cluster columns. The observed default layout does not request them.",
+      "minimal_fix": "Correct the two projection paths to the current stored fields.",
+      "review_band": "Early review",
+      "caveat": "A two-expression fix; enabling columns by default is a separate layout decision."
+    },
+    "DISPLAY-EXTENDED-CONTEXT": {
+      "exposure": "Extended rows needing record context",
+      "normal_workflow": "The extended summary renders a supplied row with record-dependent links. Rows without those links may avoid the missing template context.",
+      "minimal_fix": "Import the card macros with the existing request context.",
+      "review_band": "Early review",
+      "caveat": "One template import changes; no linked viewer action is executed."
+    },
+    "EMM-LIMS-EXPORT-500": {
+      "exposure": "Every configured EMM export",
+      "normal_workflow": "The configured EMM export is requested for current positive or empty descriptors. Other export categories use different formatters.",
+      "minimal_fix": "Read the typed descriptor and its dictionary fields, including the defined empty case.",
+      "review_band": "Feature-dependent",
+      "caveat": "CSV/TSV identity and literal supplied values are tested."
+    },
+    "KLEBORATE-UPLOAD-422": {
+      "exposure": "Every upload needing a companion",
+      "normal_workflow": "A Kleborate report requires its hAMRonization companion, but the current route/client cannot provide it. Actual local uploader usage is unknown.",
+      "minimal_fix": "Forward one optional multipart file through API/service and a paired SDK upload branch.",
+      "review_band": "Feature-dependent",
+      "caveat": "The app and SDK branches are a pair. Transport and stream binding are stub-tested; live parsing, persistence and end-to-end ingestion remain unverified."
+    },
+    "PARSER-MYKROBE-SELECTION": {
+      "exposure": "Selected-type SDK clients",
+      "normal_workflow": "An SDK caller requests one result category. The ordinary API ingestion path requests all categories and avoids this particular crash.",
+      "minimal_fix": "Use the defined result selection variable for both requested-category checks.",
+      "review_band": "Early review",
+      "caveat": "Very small patch, but lower expected exposure in the default API workflow."
+    },
+    "PARSER-BRACKEN-EMPTY": {
+      "exposure": "Valid header-only report",
+      "normal_workflow": "A valid Bracken report has a header and no result rows. A populated report avoids the wrong empty-result shape.",
+      "minimal_fix": "Return the defined empty-list shape for a header-only report.",
+      "review_band": "Early review",
+      "caveat": "One-line SDK fix; frozen literal input only."
+    },
+    "PARSER-COVERAGE-STREAM": {
+      "exposure": "Normal API stream input",
+      "normal_workflow": "A multi-row coverage report is supplied as a stream, as in the API's TextIOWrapper path. File-path inputs avoid the consumed-stream problem.",
+      "minimal_fix": "Read the source once before parsing the rows.",
+      "review_band": "Early review",
+      "caveat": "The SDK branch preserves both rows for path and stream input; no coverage computation is run."
+    },
+    "BASKET-ACCOUNT-SHARED": {
+      "exposure": "Shared browser profile",
+      "normal_workflow": "A second account uses the same browser profile after a basket was saved. Dedicated profiles avoid the cross-account selection carryover.",
+      "minimal_fix": "Estimate: one state module plus account key/synchronization handling; existing combined fix can be separated later.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No separate candidate requested in this P0/P1 pass."
+    },
+    "ACCOUNT-DISABLED-SESSION": {
+      "exposure": "Administrative account disabling",
+      "normal_workflow": "An account is disabled while its browser session is active, then a protected page is opened.",
+      "minimal_fix": "Estimate: local session/error handling in the authentication boundary; small, but expiry and disabled cases need distinction.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    },
+    "NONADMIN-ADMIN-500": {
+      "exposure": "Direct unauthorized URL",
+      "normal_workflow": "An ordinary user opens an administrator URL, usually through a bookmark or direct link rather than visible navigation.",
+      "minimal_fix": "Estimate: a local denial/exception-handler change, without altering permission rules.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    },
+    "COMMENT-HIDE-PERMISSION-500": {
+      "exposure": "Ordinary users / visible control",
+      "normal_workflow": "An ordinary user clicks the displayed comment removal control and receives an authorization error that becomes HTTP 500.",
+      "minimal_fix": "Estimate: template control visibility plus a narrow typed-error handler in the route.",
+      "review_band": "P2 / not prepared",
+      "caveat": "The P1 comment-retry candidate does not include this denial fix."
+    },
+    "GROUP-EDITOR-EMPTY-COUNT": {
+      "exposure": "Populated group editor",
+      "normal_workflow": "The existing group editor is opened and its unpopulated count is read as zero.",
+      "minimal_fix": "Estimate: bind the existing saved count or load member count at initialization; local UI change.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    },
+    "RECOVERY-GROUP-PENDING": {
+      "exposure": "Slow saves / repeat actions",
+      "normal_workflow": "Save is still pending and Save or Reset is clicked again. Network delay increases the window.",
+      "minimal_fix": "Estimate: a local pending flag and captured payload, with button disable/reset handling in one component.",
+      "review_band": "P2 / not prepared",
+      "caveat": "Excluded from the P1 stale-field patch to keep its scope narrow."
+    },
+    "RECOVERY-GROUP-FEEDBACK": {
+      "exposure": "Partial or lost save responses",
+      "normal_workflow": "A multi-stage group save succeeds partly or its response is lost. Normal complete saves do not expose the uncertainty.",
+      "minimal_fix": "Estimate: multi-stage state/feedback changes; larger than an exception-message edit.",
+      "review_band": "P2 / not prepared",
+      "caveat": "Continuation behavior needs an explicit contract before implementation."
+    },
+    "RECOVERY-MEMBERSHIP-PARTIAL": {
+      "exposure": "Interrupted batch updates",
+      "normal_workflow": "A batch membership change stops after some records were updated, then the UI is reopened or retried.",
+      "minimal_fix": "Estimate: retained batch intent and per-stage outcomes; several component paths, not a one-line fix.",
+      "review_band": "P2 / not prepared",
+      "caveat": "The P1 read-batching and preservation fixes do not provide resumable writes."
+    },
+    "RECOVERY-SAME-FIELD-CONFLICT": {
+      "exposure": "Multiple editors / same field",
+      "normal_workflow": "Two stale forms modify the same group field. Different-field preservation does not prevent last-writer replacement.",
+      "minimal_fix": "Estimate: edit-version checks across model, API and UI; broader than this minimal patch set.",
+      "review_band": "P2 / not prepared",
+      "caveat": "Conflict policy needs agreement; no frequency telemetry is available."
+    },
+    "RECOVERY-SESSION-DRAFT": {
+      "exposure": "Session expiry while writing",
+      "normal_workflow": "An unsent comment remains in an open page until authentication expires, then the user submits or navigates.",
+      "minimal_fix": "Estimate: scoped draft persistence/recovery across sign-in and account switching; policy and several UI paths.",
+      "review_band": "P2 / not prepared",
+      "caveat": "The P1 retry page preserves a failed submission, not an expired unsent draft."
+    },
+    "METADATA-VALIDATION-500": {
+      "exposure": "Invalid input",
+      "normal_workflow": "A client submits a malformed metadata field value. Valid repeated appends are covered by the P1 branch.",
+      "minimal_fix": "Estimate: narrow validation/exception mapping at the metadata boundary, with invalid-input cases.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No extra defensive normalization is bundled into P1 fixes."
+    },
+    "MISSING-RECORD-FEEDBACK": {
+      "exposure": "Stale links / removed records",
+      "normal_workflow": "A bookmark or link names a removed/missing record, metadata table or administrator-managed account.",
+      "minimal_fix": "Estimate: a few typed not-found handlers in affected views and a usable unavailable state.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    },
+    "SA-TYPING-SURFACE-GAP": {
+      "exposure": "Stored SPA/SCCmec descriptors",
+      "normal_workflow": "Those stored fields are expected in the summary. Current supported display claims have not defined a reading surface for them.",
+      "minimal_fix": "Estimate: scope decision first; an exclusion notice is small, a supported card requires agreed fields and display checks.",
+      "review_band": "P2 / not prepared",
+      "caveat": "No new biological interpretation or derived typing is proposed."
+    },
+    "CSV-FORMULA-PREFIX": {
+      "exposure": "Formula-like labels / spreadsheet use",
+      "normal_workflow": "An exported text label starts with a formula-like sign prefix and is opened in a spreadsheet. Plain labels avoid this case.",
+      "minimal_fix": "Estimate: export-format sanitization after choosing spreadsheet clients and the literal-text contract.",
+      "review_band": "P2 / not prepared",
+      "caveat": "Spreadsheet formula execution was not tested."
+    },
+    "OVERVIEW-MOBILE-OVERFLOW": {
+      "exposure": "Phone-width overview",
+      "normal_workflow": "The application overview is opened on a narrow screen; the separate findings report already has its own mobile layout.",
+      "minimal_fix": "Estimate: table container/width CSS with narrow-screen navigation checks; local layout work.",
+      "review_band": "P3 / not prepared",
+      "caveat": "No app layout refactoring is included in P0/P1 candidates."
+    },
+    "DISPLAY-DATABASE-VERSION": {
+      "exposure": "Long version labels",
+      "normal_workflow": "A database version exceeds the shortened summary label and the full value is needed.",
+      "minimal_fix": "Estimate: one template label/title change and an accessible full-text value.",
+      "review_band": "P3 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    },
+    "CSV-NEWLINE-NORMALIZATION": {
+      "exposure": "Multiline record names",
+      "normal_workflow": "A record name contains a newline and is exported through DataTables CSV. Single-line names are unaffected.",
+      "minimal_fix": "Estimate: one export-format option or documented normalization, after choosing the intended CSV contract.",
+      "review_band": "P3 / not prepared",
+      "caveat": "No separate candidate in this pass."
+    }
+  }
+}

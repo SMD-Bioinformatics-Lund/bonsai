@@ -1,0 +1,2262 @@
+{
+  "created_at": "2026-11-08T08:38:55.007324+00:00",
+  "application_base": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+  "sdk_base": "5789a9c7530407683f1fee9ffa450512269e62bc",
+  "issue_count": 38,
+  "branch_count": 39,
+  "production_only": true,
+  "remote_publication_performed": false,
+  "scope": "Isolated candidate checks, generic fixtures and literal frozen-input parser contracts; not full live ingestion or clinical validation",
+  "assessment_basis": "Workflow exposure is inferred from the observed trigger and pinned source, not measured production frequency. Real JASEN input, local account practices and feature usage have not been supplied. Severity remains the development catalog's assessment. Exact patch sizes are measured against each candidate's stated base; prerequisite changes are additional.",
+  "selection_rule": "Review severity, the chance of encountering the stated trigger in this installation, and the size of the required change together. A small patch is not by itself proof of low risk. 'Early review' suggests review order, not authorization to merge.",
+  "verification": {
+    "created_at": "2026-11-08T08:38:54.852955+00:00",
+    "scope": "Isolated candidate checks, generic fixtures and literal frozen-input parser contracts; not full live ingestion or clinical validation",
+    "candidate_count": 39,
+    "passing": 39,
+    "checks_passed": 91,
+    "candidates": [
+      {
+        "id": "ORDINARY-RECORD-DELETE",
+        "head": "e07c608476803971b48e980fe1ffb318a2f2db0a",
+        "status": "PASS",
+        "passed": 4,
+        "method": "api",
+        "result": "checks/ORDINARY-RECORD-DELETE/e07c608476/081043/result.json",
+        "log_hashes": {
+          "checks/ORDINARY-RECORD-DELETE/e07c608476/081043/0-api.log": "e674a5b9affc69417dac21beb38b512ffebc7a970083a2f43bcb0f13af870016"
+        }
+      },
+      {
+        "id": "ACCOUNT-ROLE-PERMISSIONS",
+        "head": "5b7e90594dde4b4b514eef8d45db46162da499ea",
+        "status": "PASS",
+        "passed": 5,
+        "method": "api",
+        "result": "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/result.json",
+        "log_hashes": {
+          "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/0-api.log": "68c281780fcf34be32a2b11216e19866ade94dbe7c85d1df3dec7ae0334f5622",
+          "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/1-api.log": "8825a7e1f73cdce172c79f55056cabc85f849fa1d052bbbd25a440ff1df1c5f7"
+        }
+      },
+      {
+        "id": "ANALYSIS-UPLOAD-ROLE-GATE",
+        "head": "dd5c2481be225712b0b4ae0565d7b701b4c4686e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "permission",
+        "result": "checks/ANALYSIS-UPLOAD-ROLE-GATE/dd5c2481be/081050/result.json",
+        "log_hashes": {
+          "checks/ANALYSIS-UPLOAD-ROLE-GATE/dd5c2481be/081050/0-permission.log": "368da4df79a4c8dc25ffa0a9d27bd216d5e2f8b209fbac5346e739b3110c9a63"
+        }
+      },
+      {
+        "id": "PRIVATE-RECORD-SCOPE",
+        "head": "ce4fa9e1779d0b3f08e3630520565ca3d01cd57e",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/PRIVATE-RECORD-SCOPE/ce4fa9e177/081052/result.json",
+        "log_hashes": {
+          "checks/PRIVATE-RECORD-SCOPE/ce4fa9e177/081052/0-api.log": "f3f54085b4a778eceaab140ec1cd768e4842f237b507988c388a530d3a075b82"
+        }
+      },
+      {
+        "id": "GROUP-DELETE-MEMBERSHIP-LOSS",
+        "head": "5861b369bc71470a980ae4aed3911937df109fb7",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/GROUP-DELETE-MEMBERSHIP-LOSS/5861b369bc/081054/result.json",
+        "log_hashes": {
+          "checks/GROUP-DELETE-MEMBERSHIP-LOSS/5861b369bc/081054/0-api.log": "bed79c3742311f6e03a906ecbbdf9f72a98a560468c73a169e29d4b1e3214548"
+        }
+      },
+      {
+        "id": "GROUP-MEMBERSHIP-LOSS",
+        "head": "0e782307e2551a6c3afad00b5595bb6417e9624f",
+        "status": "PASS",
+        "passed": 4,
+        "method": "node",
+        "result": "checks/GROUP-MEMBERSHIP-LOSS/0e782307e2/081600/result.json",
+        "log_hashes": {
+          "checks/GROUP-MEMBERSHIP-LOSS/0e782307e2/081600/0-node.log": "abedc5f998aa0e0b40d1d9ae3147e503269701293e4f08b19fc4c3d8cded4db0"
+        }
+      },
+      {
+        "id": "METADATA-ADD-500",
+        "head": "e767620b6d62b0dcbb9530147461280e22a7fbef",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/METADATA-ADD-500/e767620b6d/081057/result.json",
+        "log_hashes": {
+          "checks/METADATA-ADD-500/e767620b6d/081057/0-api.log": "12e7aacb1ebb186c8eec27b72b8037d1d424e5e9a12e300ef12a9a3e2aff8104"
+        }
+      },
+      {
+        "id": "RECOVERY-METADATA-LOSS",
+        "head": "d7ee2464e82811107129ca462acd6cb6189d4603",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/RECOVERY-METADATA-LOSS/d7ee2464e8/081059/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-METADATA-LOSS/d7ee2464e8/081059/0-api.log": "aa54ca98bc9333c04a69e42695989b8b0fc28b6e56762960140a39a12959aa4d"
+        }
+      },
+      {
+        "id": "RECOVERY-COMMENT-IDENTITIES",
+        "head": "34cbe08fed81255fd3d8d3d45b9763aabe5af934",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/RECOVERY-COMMENT-IDENTITIES/34cbe08fed/081101/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-COMMENT-IDENTITIES/34cbe08fed/081101/0-api.log": "78438e28191963f40d48eb40e776f92aacaf6c746cc6165ad224252737f58325"
+        }
+      },
+      {
+        "id": "RECOVERY-GROUP-OVERLAP",
+        "head": "e049aec434621b10c094ff6888dda27abf8dec3f",
+        "status": "PASS",
+        "passed": 1,
+        "method": "node",
+        "result": "checks/RECOVERY-GROUP-OVERLAP/e049aec434/081601/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-GROUP-OVERLAP/e049aec434/081601/0-node.log": "b99d698e9c61a7a0c68c5b3b1f7e1857eefa235114c62ce291712b8ebecf4ae2"
+        }
+      },
+      {
+        "id": "METADATA-CATEGORY-LOSS",
+        "head": "13a4b49e3f6b50e8c717af6db068eb29d6a6273b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/METADATA-CATEGORY-LOSS/13a4b49e3f/081059/result.json",
+        "log_hashes": {
+          "checks/METADATA-CATEGORY-LOSS/13a4b49e3f/081059/0-frontend.log": "12c0f6d7392288ba648f02895076467dc7e4650e2a728676410f37b27c769358"
+        }
+      },
+      {
+        "id": "METADATA-TABLE-EMPTY",
+        "head": "fa643f1d987e4b90a25f3bcd530581c19651e44e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "api, frontend",
+        "result": "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/result.json",
+        "log_hashes": {
+          "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/0-api.log": "eea05462e45fdb6ccee6d11dff4e35b38ba5a8a62941f893499ac75ae4ba1a73",
+          "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/1-frontend.log": "33c37c0791e3e7139388c9a0718bf8bbf3d3a02f84b32b20e8b28e128a5c4fc6"
+        }
+      },
+      {
+        "id": "CSV-EMPTY-CELL-500",
+        "head": "9811fa547b554c5b5dee2e6e742bca8d2b0deb2f",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/CSV-EMPTY-CELL-500/9811fa547b/081108/result.json",
+        "log_hashes": {
+          "checks/CSV-EMPTY-CELL-500/9811fa547b/081108/0-api.log": "df665b18bd034ca84a71aa0621b7dd0ba0cde03ba4b92ee3d06a456cbe68ab72"
+        }
+      },
+      {
+        "id": "CURATION-DOUBLE-SUBMIT",
+        "head": "aa554c2ad2cbb0adf9eccf8487b237bdc9a583e0",
+        "status": "PASS",
+        "passed": 2,
+        "method": "frontend",
+        "result": "checks/CURATION-DOUBLE-SUBMIT/aa554c2ad2/081101/result.json",
+        "log_hashes": {
+          "checks/CURATION-DOUBLE-SUBMIT/aa554c2ad2/081101/0-frontend.log": "692a749b0647f6a25d2ed3aef94bf7486f8a8e8ffdafb248e9f4053cf53fc8ec"
+        }
+      },
+      {
+        "id": "SELECTED-FILTER-STALE",
+        "head": "859f603e8db62593a71518b29a35e1bf11917a2c",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/SELECTED-FILTER-STALE/candidate.png"
+      },
+      {
+        "id": "VARIANT-SELECT-ALL-INVALID",
+        "head": "6d08d7abd5256440ad9f0c74b25e77b7c0ac5b5a",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/VARIANT-SELECT-ALL-INVALID/candidate.png"
+      },
+      {
+        "id": "VARIANT-FILTER-AND",
+        "head": "16fb3d32d5b9694365c3880eb2cb63b05eb08e5e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/VARIANT-FILTER-AND/16fb3d32d5/081103/result.json",
+        "log_hashes": {
+          "checks/VARIANT-FILTER-AND/16fb3d32d5/081103/0-frontend.log": "71413bcabd13e05f8b71369533d7020a12905eec39119c5b2acd53399c41356c"
+        }
+      },
+      {
+        "id": "VARIANT-HIDE-DISMISSED-500",
+        "head": "20bbb27b2f85c82a25557aa2527f65f009c02019",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/VARIANT-HIDE-DISMISSED-500/20bbb27b2f/081106/result.json",
+        "log_hashes": {
+          "checks/VARIANT-HIDE-DISMISSED-500/20bbb27b2f/081106/0-frontend.log": "0202fbfe98110b7f9324871d8ac3b7b74417e8f477c6e132257aa0f097acd3b2"
+        }
+      },
+      {
+        "id": "QC-FILTER-EMPTY",
+        "head": "77b75326f97936382633c001a9ee7a562b48a824",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/QC-FILTER-EMPTY/candidate.png"
+      },
+      {
+        "id": "GROUP-MEMBERSHIP-LIMIT",
+        "head": "6ddfd15b2c4f9c439ec561999b56fa4aea73d1a8",
+        "status": "PASS",
+        "passed": 2,
+        "method": "node",
+        "result": "checks/GROUP-MEMBERSHIP-LIMIT/6ddfd15b2c/081602/result.json",
+        "log_hashes": {
+          "checks/GROUP-MEMBERSHIP-LIMIT/6ddfd15b2c/081602/0-node.log": "da15263b16b331f30e33a51b4fa8409d74ed824f92edbcbc6a188be7bec7bec1"
+        }
+      },
+      {
+        "id": "ADMIN-CREATE-USER-500",
+        "head": "e01528db104ccb7d392441f42cfe742ee45f5e8e",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/ADMIN-CREATE-USER-500/e01528db10/081108/result.json",
+        "log_hashes": {
+          "checks/ADMIN-CREATE-USER-500/e01528db10/081108/0-frontend.log": "9009046eb92a1b0c1b8dc96754f348236160d451dbec62e0483d39620fc50699"
+        }
+      },
+      {
+        "id": "ADMIN-EDIT-USER-500",
+        "head": "619cab28e4bf8f8706a391804b017442090106aa",
+        "status": "PASS",
+        "passed": 2,
+        "method": "frontend, api",
+        "result": "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/result.json",
+        "log_hashes": {
+          "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/0-frontend.log": "1e20906032903d8796ad6ff735284b417b14e5bca426b8ac8bab53940c595b5a",
+          "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/1-api.log": "69396acf5d1b34f55c2ae151345fe1e138f631722aaff9f0a8157e99d9cab888"
+        }
+      },
+      {
+        "id": "ACCOUNT-STALE-PAGES",
+        "head": "8567eda7b11457fa7619fc9fe30f7e21d0ba14ad",
+        "status": "PASS",
+        "passed": 3,
+        "method": "node",
+        "result": "checks/ACCOUNT-STALE-PAGES/8567eda7b1/081602/result.json",
+        "log_hashes": {
+          "checks/ACCOUNT-STALE-PAGES/8567eda7b1/081602/0-node.log": "e41dc24c56ed5c88bcdf05cc458ff44cc419214a75b0e8c1ff8fd42e979bb322"
+        }
+      },
+      {
+        "id": "BASKET-UNDEFINED-ASSAY",
+        "head": "a011b68355535d49b70ddbebaf38d8e572869fe0",
+        "status": "PASS",
+        "passed": 1,
+        "method": "node",
+        "result": "checks/BASKET-UNDEFINED-ASSAY/a011b68355/082003/result.json",
+        "log_hashes": {
+          "checks/BASKET-UNDEFINED-ASSAY/a011b68355/082003/0-node.log": "e260d66f98c1d025f69f61dd619ec0036c8c272d9e7dd937b1e9120c829d3f94"
+        }
+      },
+      {
+        "id": "PRIVATE-GROUP-INVITE-500",
+        "head": "1b1d4b7e97c6b02bd54d5990c93bca743b879e3b",
+        "status": "PASS",
+        "passed": 4,
+        "method": "api",
+        "result": "checks/PRIVATE-GROUP-INVITE-500/1b1d4b7e97/081115/result.json",
+        "log_hashes": {
+          "checks/PRIVATE-GROUP-INVITE-500/1b1d4b7e97/081115/0-api.log": "47dc1f0a9735f1de6f5bca562ff7d548d9fb0b78f29444bfd0f88a4905800cf6"
+        }
+      },
+      {
+        "id": "TB-CURATION-500",
+        "head": "d2218de5ec04515bdc642ab509f902dbc397be5f",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/TB-CURATION-500/d2218de5ec/081117/result.json",
+        "log_hashes": {
+          "checks/TB-CURATION-500/d2218de5ec/081117/0-frontend.log": "c6dfed477097bd787e4d894ca667ee9ecd4f9fe28aa58e6fcc699b0b1026ec49"
+        }
+      },
+      {
+        "id": "ECOLI-VARIANTS-EMPTY",
+        "head": "4bd99d441ff66b7e1d013d5af6bbd3d0394b1edc",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/ECOLI-VARIANTS-EMPTY/4bd99d441f/081119/result.json",
+        "log_hashes": {
+          "checks/ECOLI-VARIANTS-EMPTY/4bd99d441f/081119/0-frontend.log": "0b8a8339f5f62c40851246ec091a5b5e02bc1900413fcf617f65748072dc04e2"
+        }
+      },
+      {
+        "id": "DISPLAY-EMM-TABLE",
+        "head": "ca7a7c22cc5f95a3868e4e314d2313a9b9068c94",
+        "status": "PASS",
+        "passed": 1,
+        "method": "mongo",
+        "result": "checks/DISPLAY-EMM-TABLE/ca7a7c22cc/081603/result.json",
+        "log_hashes": {
+          "checks/DISPLAY-EMM-TABLE/ca7a7c22cc/081603/0-mongo.log": "e217a434967abd71b5c1622dfeba7b332222929fcf5c462771ddbfb2104bc10f"
+        }
+      },
+      {
+        "id": "DISPLAY-EXTENDED-CONTEXT",
+        "head": "45d812d891084c38064a2348f5d495c3d4d0efe3",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/DISPLAY-EXTENDED-CONTEXT/45d812d891/081123/result.json",
+        "log_hashes": {
+          "checks/DISPLAY-EXTENDED-CONTEXT/45d812d891/081123/0-frontend.log": "056a2df01f1db03d733df1f8c349f0f0a5c34582fad49cf1ce4bb51b84cc5785"
+        }
+      },
+      {
+        "id": "EMM-LIMS-EXPORT-500",
+        "head": "3aeb54797bab82ed33fc78ef7ee190bfbe3a78e1",
+        "status": "PASS",
+        "passed": 5,
+        "method": "api",
+        "result": "checks/EMM-LIMS-EXPORT-500/3aeb54797b/081125/result.json",
+        "log_hashes": {
+          "checks/EMM-LIMS-EXPORT-500/3aeb54797b/081125/0-api.log": "2522a326e279a06e6cf3966f5e6c5bf495b8b249312298e85328479718d6ed9f"
+        }
+      },
+      {
+        "id": "KLEBORATE-UPLOAD-422",
+        "head": "6547f49a7312aa1ba12eeeeccaa2be7e068b5ce7",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/KLEBORATE-UPLOAD-422/6547f49a73/081127/result.json",
+        "log_hashes": {
+          "checks/KLEBORATE-UPLOAD-422/6547f49a73/081127/0-api.log": "a640923eea714ec0ca615d4be9d14669a94b7416eade756908e400e7d1ed5aa7"
+        }
+      },
+      {
+        "id": "PARSER-MYKROBE-SELECTION",
+        "head": "3183b86d7aec72309b62e656ac3c969abba2fe7f",
+        "status": "PASS",
+        "passed": 2,
+        "method": "sdk",
+        "result": "checks/PARSER-MYKROBE-SELECTION/3183b86d7a/081129/result.json",
+        "log_hashes": {
+          "checks/PARSER-MYKROBE-SELECTION/3183b86d7a/081129/0-sdk.log": "237c9a5c14628cdf7ab926c803ac62932cc1cf4c3bcc3161c8e5aa1b1a019dea"
+        }
+      },
+      {
+        "id": "PARSER-BRACKEN-EMPTY",
+        "head": "019d5904bd59eb58a6399ac02ba49c4106b93490",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/PARSER-BRACKEN-EMPTY/019d5904bd/081130/result.json",
+        "log_hashes": {
+          "checks/PARSER-BRACKEN-EMPTY/019d5904bd/081130/0-sdk.log": "5d2315a156d5315c966326fe182630ee852085a690324f0bda3fc4ed3c22a975"
+        }
+      },
+      {
+        "id": "PARSER-COVERAGE-STREAM",
+        "head": "1cd7ad6ec984aafea2386fe9156123ae7f2cb04d",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/PARSER-COVERAGE-STREAM/1cd7ad6ec9/081131/result.json",
+        "log_hashes": {
+          "checks/PARSER-COVERAGE-STREAM/1cd7ad6ec9/081131/0-sdk.log": "f5c504529ee06eb5dab668acd919d511e525dd8efcde862fcb6510d057bb62de"
+        }
+      },
+      {
+        "id": "KLEBORATE-CLIENT-COMPANION",
+        "head": "e9c6d609da6a2c4c7c447026a71df8973c1cf78b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/KLEBORATE-CLIENT-COMPANION/e9c6d609da/081132/result.json",
+        "log_hashes": {
+          "checks/KLEBORATE-CLIENT-COMPANION/e9c6d609da/081132/0-sdk.log": "5c7da0e3930aa0d4e18eaf561f8d8ff28fe2da670ea6dcd8319617cccbf80d27"
+        }
+      },
+      {
+        "id": "PENDING-SAMPLE-500",
+        "head": "f24e6a59cbd5aa2e9b98cd427f278ac05277910b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/PENDING-SAMPLE-500/f24e6a59cb/081133/result.json",
+        "log_hashes": {
+          "checks/PENDING-SAMPLE-500/f24e6a59cb/081133/0-frontend.log": "33c37c0791e3e7139388c9a0718bf8bbf3d3a02f84b32b20e8b28e128a5c4fc6"
+        }
+      },
+      {
+        "id": "TB-NO-AMR-500",
+        "head": "e6d57246675b3a8b91de544d67792b4e9e0197c2",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/TB-NO-AMR-500/e6d5724667/081649/result.json",
+        "log_hashes": {
+          "checks/TB-NO-AMR-500/e6d5724667/081649/0-frontend.log": "c8cbcbd70fce132d10d773117c8e642bcf8d2703af4f5ffa322a5d76d6b84935",
+          "checks/TB-NO-AMR-500/e6d5724667/081649/1-frontend.log": "24f3dafabbbe933d02f230b216b21686feda8b499b8a190a45b96da39c02f805"
+        }
+      },
+      {
+        "id": "RECOVERY-COMMENT-RETRY",
+        "head": "66a99c96e7fa3478d7ab7bee23a98e3723e08502",
+        "status": "PASS",
+        "passed": 6,
+        "method": "api, frontend",
+        "result": "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/0-api.log": "b0fb52423c6210c5bf4175c05a5e6957ddc7284c02592757cb89f2a3625d4888",
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/1-api.log": "ffc23426d63a1f69302ee66d9b22e6397bce65d0b7aa765125cb6a56a77717e9",
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/2-frontend.log": "a53c1257db3f3ce2d0da2f69d9d1186eafcfbbf179deb0cf3337dbe524c38794"
+        }
+      },
+      {
+        "id": "EMM-DISPLAY-MISSING",
+        "head": "a883d776f67a72980235c7fbc857ab39c8a64eff",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/EMM-DISPLAY-MISSING/a883d776f6/081611/result.json",
+        "log_hashes": {
+          "checks/EMM-DISPLAY-MISSING/a883d776f6/081611/0-frontend.log": "c85c85c5f62a6797b8e8b202a8f89228d9178b6369192f454e57074addd51c30"
+        }
+      }
+    ]
+  },
+  "integration": {
+    "trees": {
+      "Bonsai": {
+        "path": "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai",
+        "head": "96b58760cf5ee06dc7f524c22c89701065e35d71"
+      },
+      "SDK": {
+        "path": "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/sdk",
+        "head": "5805c75c9c8bdce56c41b183727257b6810e082f"
+      }
+    },
+    "checks": [
+      {
+        "name": "typescript",
+        "status": "PASS",
+        "log": "integration/typescript.log"
+      },
+      {
+        "name": "webpack",
+        "status": "PASS",
+        "log": "integration/webpack.log"
+      },
+      {
+        "name": "api",
+        "status": "PASS",
+        "log": "integration/api.log"
+      },
+      {
+        "name": "frontend",
+        "status": "PASS",
+        "log": "integration/frontend.log"
+      },
+      {
+        "name": "sdk",
+        "status": "PASS",
+        "log": "integration/sdk.log"
+      }
+    ],
+    "static_analysis": [
+      {
+        "surface": "api",
+        "status": "PASS",
+        "log": "integration/pylint-api.log"
+      },
+      {
+        "surface": "frontend",
+        "status": "PASS",
+        "log": "integration/pylint-frontend.log"
+      }
+    ],
+    "merge_resolutions": [
+      "When combined with CSV-EMPTY-CELL-500, union the pydantic imports (BeforeValidator and field_validator).",
+      "When combined with METADATA-TABLE-EMPTY, union the pydantic imports (BeforeValidator and field_validator).",
+      "When combined with VARIANT-HIDE-DISMISSED-500, retain both the decision merge and the null-safe row lookup.",
+      "When combined with TB-NO-AMR-500, retain both the decision merge and the null-safe row lookup."
+    ]
+  },
+  "candidates": [
+    {
+      "id": "ORDINARY-RECORD-DELETE",
+      "repository": "Bonsai",
+      "branch": "pr/ordinary-record-delete",
+      "head": "e07c608476803971b48e980fe1ffb318a2f2db0a",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Require write permission for record deletion",
+      "priority": "P0",
+      "files": [
+        {
+          "path": "api/bonsai_api/routers/samples/samples.py",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "An ordinary account using the delete API is affected every time. The ordinary UI hides deletion, so accidental normal UI use is less likely.",
+      "minimal_fix": "Use the existing write permission on both deletion routes.",
+      "caveat": "Destructive permission boundary; verify ordinary denial and administrator access before release.",
+      "verification": {
+        "id": "ORDINARY-RECORD-DELETE",
+        "head": "e07c608476803971b48e980fe1ffb318a2f2db0a",
+        "status": "PASS",
+        "passed": 4,
+        "method": "api",
+        "result": "checks/ORDINARY-RECORD-DELETE/e07c608476/081043/result.json",
+        "log_hashes": {
+          "checks/ORDINARY-RECORD-DELETE/e07c608476/081043/0-api.log": "e674a5b9affc69417dac21beb38b512ffebc7a970083a2f43bcb0f13af870016"
+        }
+      },
+      "merge_note": null,
+      "body": "ordinary-record-delete.md",
+      "patch_sha256": "d14a9072a6f2d4b5b42c1fd81ec47b736d535ee1f4c5f864584dc7553301c6f2",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/ordinary-record-delete"
+    },
+    {
+      "id": "ACCOUNT-ROLE-PERMISSIONS",
+      "repository": "Bonsai",
+      "branch": "pr/account-role-permissions",
+      "head": "5b7e90594dde4b4b514eef8d45db46162da499ea",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Apply route-specific role scopes to generic create and read",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/dependencies.py",
+          "added": 1,
+          "removed": 1
+        },
+        {
+          "path": "api/bonsai_api/routers/analysis.py",
+          "added": 7,
+          "removed": 7
+        },
+        {
+          "path": "api/bonsai_api/routers/samples/samples.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 9,
+      "production_removed": 9,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A dedicated uploader creates a generic record, or an ordinary user uses the legacy list endpoint. The frontend's summary list takes another path.",
+      "minimal_fix": "Remove the unrelated shared scope and retain explicit per-route scopes.",
+      "caveat": "This is the prerequisite for the one-line upload boundary fix.",
+      "verification": {
+        "id": "ACCOUNT-ROLE-PERMISSIONS",
+        "head": "5b7e90594dde4b4b514eef8d45db46162da499ea",
+        "status": "PASS",
+        "passed": 5,
+        "method": "api",
+        "result": "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/result.json",
+        "log_hashes": {
+          "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/0-api.log": "68c281780fcf34be32a2b11216e19866ade94dbe7c85d1df3dec7ae0334f5622",
+          "checks/ACCOUNT-ROLE-PERMISSIONS/5b7e90594d/081644/1-api.log": "8825a7e1f73cdce172c79f55056cabc85f849fa1d052bbbd25a440ff1df1c5f7"
+        }
+      },
+      "merge_note": null,
+      "body": "account-role-permissions.md",
+      "patch_sha256": "8e01d02c2d10ad5c8fb68325b8331d164835165d9a93d9cb16986f83c04413fd",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/account-role-permissions"
+    },
+    {
+      "id": "ANALYSIS-UPLOAD-ROLE-GATE",
+      "repository": "Bonsai",
+      "branch": "pr/analysis-upload-role-gate",
+      "head": "dd5c2481be225712b0b4ae0565d7b701b4c4686e",
+      "base_ref": "pr/account-role-permissions",
+      "base_commit": "5b7e90594dde4b4b514eef8d45db46162da499ea",
+      "dependencies": [
+        "ACCOUNT-ROLE-PERMISSIONS"
+      ],
+      "title": "Require write permission for analysis uploads",
+      "priority": "P0",
+      "files": [
+        {
+          "path": "api/bonsai_api/routers/analysis.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Every dedicated-uploader submission is denied; ordinary-account submissions are admitted. Exposure depends on which role the ingestion client uses.",
+      "minimal_fix": "Change the upload route to the existing write scope, after repairing shared role checks.",
+      "caveat": "Requires ACCOUNT-ROLE-PERMISSIONS. Authorization was tested with the downstream service stubbed.",
+      "verification": {
+        "id": "ANALYSIS-UPLOAD-ROLE-GATE",
+        "head": "dd5c2481be225712b0b4ae0565d7b701b4c4686e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "permission",
+        "result": "checks/ANALYSIS-UPLOAD-ROLE-GATE/dd5c2481be/081050/result.json",
+        "log_hashes": {
+          "checks/ANALYSIS-UPLOAD-ROLE-GATE/dd5c2481be/081050/0-permission.log": "368da4df79a4c8dc25ffa0a9d27bd216d5e2f8b209fbac5346e739b3110c9a63"
+        }
+      },
+      "merge_note": null,
+      "body": "analysis-upload-role-gate.md",
+      "patch_sha256": "512346911174ef53bf58ac412c7907b36dc9936bd9f06c60b030ab41d0fb4f3a",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/analysis-upload-role-gate"
+    },
+    {
+      "id": "PRIVATE-RECORD-SCOPE",
+      "repository": "Bonsai",
+      "branch": "pr/private-record-scope",
+      "head": "ce4fa9e1779d0b3f08e3630520565ca3d01cd57e",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Reject new private-marked records while sample ACLs are unfinished",
+      "priority": "P0",
+      "files": [
+        {
+          "path": "api/bonsai_api/models/sample.py",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": "Public-only creation; does not add ACLs or migrate existing private-marked records",
+      "review_band": "Policy decision before release",
+      "normal_workflow": "Public-default workflows are unaffected. Any private-marked record remains readable across accounts if this unfinished privacy feature is relied on.",
+      "minimal_fix": "The candidate rejects new private-marked records, selecting a public-only creation contract.",
+      "caveat": "Partial containment only: existing private-marked records remain exposed. A private-data deployment needs ACL enforcement or a separate migration/access decision; this branch alone does not close P0.",
+      "verification": {
+        "id": "PRIVATE-RECORD-SCOPE",
+        "head": "ce4fa9e1779d0b3f08e3630520565ca3d01cd57e",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/PRIVATE-RECORD-SCOPE/ce4fa9e177/081052/result.json",
+        "log_hashes": {
+          "checks/PRIVATE-RECORD-SCOPE/ce4fa9e177/081052/0-api.log": "f3f54085b4a778eceaab140ec1cd768e4842f237b507988c388a530d3a075b82"
+        }
+      },
+      "merge_note": null,
+      "body": "private-record-scope.md",
+      "patch_sha256": "0253c1a4638c8b7924324061312e42370d227b769e2cf10f01c67760b2e41e50",
+      "resolution": "Conditional containment; privacy P0 remains open for existing private data",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/private-record-scope"
+    },
+    {
+      "id": "GROUP-DELETE-MEMBERSHIP-LOSS",
+      "repository": "Bonsai",
+      "branch": "pr/group-delete-membership-loss",
+      "head": "5861b369bc71470a980ae4aed3911937df109fb7",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Limit group deletion to the target membership edges",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/memberships.py",
+          "added": 1,
+          "removed": 0
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 0,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Deleting a populated group removes other memberships when records belong to multiple groups. Overlapping cohorts make this a realistic administrative trigger.",
+      "minimal_fix": "Match the target group after unwinding membership arrays.",
+      "caveat": "A one-stage query fix prevents unrelated membership deletion.",
+      "verification": {
+        "id": "GROUP-DELETE-MEMBERSHIP-LOSS",
+        "head": "5861b369bc71470a980ae4aed3911937df109fb7",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/GROUP-DELETE-MEMBERSHIP-LOSS/5861b369bc/081054/result.json",
+        "log_hashes": {
+          "checks/GROUP-DELETE-MEMBERSHIP-LOSS/5861b369bc/081054/0-api.log": "bed79c3742311f6e03a906ecbbdf9f72a98a560468c73a169e29d4b1e3214548"
+        }
+      },
+      "merge_note": null,
+      "body": "group-delete-membership-loss.md",
+      "patch_sha256": "769615479192771e91ca2675a61f023299ba20aaf4da4ad1da0a2b722d3a2287",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/group-delete-membership-loss"
+    },
+    {
+      "id": "GROUP-MEMBERSHIP-LOSS",
+      "repository": "Bonsai",
+      "branch": "pr/group-membership-loss",
+      "head": "0e782307e2551a6c3afad00b5595bb6417e9624f",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Preserve individual memberships when applying common groups",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/components/group-selector.ts",
+          "added": 7,
+          "removed": 2
+        }
+      ],
+      "production_added": 7,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Applying an unchanged common group selection erases individual memberships when the selected records have different groups.",
+      "minimal_fix": "Remove only originally common groups and capture the selection used by Apply.",
+      "caveat": "No component redesign or partial-batch recovery is included.",
+      "verification": {
+        "id": "GROUP-MEMBERSHIP-LOSS",
+        "head": "0e782307e2551a6c3afad00b5595bb6417e9624f",
+        "status": "PASS",
+        "passed": 4,
+        "method": "node",
+        "result": "checks/GROUP-MEMBERSHIP-LOSS/0e782307e2/081600/result.json",
+        "log_hashes": {
+          "checks/GROUP-MEMBERSHIP-LOSS/0e782307e2/081600/0-node.log": "abedc5f998aa0e0b40d1d9ae3147e503269701293e4f08b19fc4c3d8cded4db0"
+        }
+      },
+      "merge_note": null,
+      "body": "group-membership-loss.md",
+      "patch_sha256": "eaa8160a12ed3ea11bde9fb109eab1919934efd8d6f412f60a1bdd59b98562c3",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/group-membership-loss"
+    },
+    {
+      "id": "METADATA-ADD-500",
+      "repository": "Bonsai",
+      "branch": "pr/metadata-add-500",
+      "head": "e767620b6d62b0dcbb9530147461280e22a7fbef",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Append typed metadata alongside existing stored fields",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/metadata.py",
+          "added": 6,
+          "removed": 6
+        }
+      ],
+      "production_added": 6,
+      "production_removed": 6,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Appending to a record with existing metadata reaches the broken dictionary/object mix. A first append to an empty record may succeed.",
+      "minimal_fix": "Keep stored records as dictionaries and serialize only new typed fields.",
+      "caveat": "Concurrent append safety is a separate dependent candidate.",
+      "verification": {
+        "id": "METADATA-ADD-500",
+        "head": "e767620b6d62b0dcbb9530147461280e22a7fbef",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/METADATA-ADD-500/e767620b6d/081057/result.json",
+        "log_hashes": {
+          "checks/METADATA-ADD-500/e767620b6d/081057/0-api.log": "12e7aacb1ebb186c8eec27b72b8037d1d424e5e9a12e300ef12a9a3e2aff8104"
+        }
+      },
+      "merge_note": null,
+      "body": "metadata-add-500.md",
+      "patch_sha256": "25a28e0ccc1bf1f37a46e6de9dff4eff47c9fc50a2bbcf4390f10226056416f3",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/metadata-add-500"
+    },
+    {
+      "id": "RECOVERY-METADATA-LOSS",
+      "repository": "Bonsai",
+      "branch": "pr/recovery-metadata-loss",
+      "head": "d7ee2464e82811107129ca462acd6cb6189d4603",
+      "base_ref": "pr/metadata-add-500",
+      "base_commit": "e767620b6d62b0dcbb9530147461280e22a7fbef",
+      "dependencies": [
+        "METADATA-ADD-500"
+      ],
+      "title": "Append metadata atomically without overwriting concurrent fields",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/metadata.py",
+          "added": 5,
+          "removed": 6
+        }
+      ],
+      "production_added": 5,
+      "production_removed": 6,
+      "policy_condition": null,
+      "review_band": "Concurrency-dependent",
+      "normal_workflow": "Two users or automated clients append fields to the same record before either save completes. Less likely in a single-editor manual workflow.",
+      "minimal_fix": "Append atomically with a field-name condition and distinguish duplicate conflicts.",
+      "caveat": "Requires METADATA-ADD-500. Independent fields and competing duplicate fields were checked under forced overlap.",
+      "verification": {
+        "id": "RECOVERY-METADATA-LOSS",
+        "head": "d7ee2464e82811107129ca462acd6cb6189d4603",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/RECOVERY-METADATA-LOSS/d7ee2464e8/081059/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-METADATA-LOSS/d7ee2464e8/081059/0-api.log": "aa54ca98bc9333c04a69e42695989b8b0fc28b6e56762960140a39a12959aa4d"
+        }
+      },
+      "merge_note": null,
+      "body": "recovery-metadata-loss.md",
+      "patch_sha256": "efe88d1b7c6c1bb32f7cfbfb1346b03d3db054fde926b77b075c6d85235e4194",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/recovery-metadata-loss"
+    },
+    {
+      "id": "RECOVERY-COMMENT-IDENTITIES",
+      "repository": "Bonsai",
+      "branch": "pr/recovery-comment-identities",
+      "head": "34cbe08fed81255fd3d8d3d45b9763aabe5af934",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Allocate distinct comment IDs under concurrent append",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/sample.py",
+          "added": 15,
+          "removed": 25
+        }
+      ],
+      "production_added": 15,
+      "production_removed": 25,
+      "policy_condition": null,
+      "review_band": "Concurrency-dependent",
+      "normal_workflow": "Comments submitted to one record at the same time can share an ID. Ordinary sequential comments do not trigger the collision.",
+      "minimal_fix": "Condition the append on ID availability and retry an actual collision.",
+      "caveat": "Existing duplicate IDs are not renumbered by this fix.",
+      "verification": {
+        "id": "RECOVERY-COMMENT-IDENTITIES",
+        "head": "34cbe08fed81255fd3d8d3d45b9763aabe5af934",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/RECOVERY-COMMENT-IDENTITIES/34cbe08fed/081101/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-COMMENT-IDENTITIES/34cbe08fed/081101/0-api.log": "78438e28191963f40d48eb40e776f92aacaf6c746cc6165ad224252737f58325"
+        }
+      },
+      "merge_note": null,
+      "body": "recovery-comment-identities.md",
+      "patch_sha256": "afbab0c3c834f20ecf87975797f73adc8a6d0416989e75fd7bda8ecd00a9530f",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/recovery-comment-identities"
+    },
+    {
+      "id": "RECOVERY-GROUP-OVERLAP",
+      "repository": "Bonsai",
+      "branch": "pr/recovery-group-overlap",
+      "head": "e049aec434621b10c094ff6888dda27abf8dec3f",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Send only changed fields from the group editor",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/core/api/services/groups.ts",
+          "added": 1,
+          "removed": 1
+        },
+        {
+          "path": "frontend/web/js/views/group-editor/api.ts",
+          "added": 1,
+          "removed": 1
+        },
+        {
+          "path": "frontend/web/js/views/group-editor/index.ts",
+          "added": 15,
+          "removed": 5
+        }
+      ],
+      "production_added": 17,
+      "production_removed": 7,
+      "policy_condition": null,
+      "review_band": "Concurrency-dependent",
+      "normal_workflow": "One user leaves a group editor open while another changes a different field. Saving the older form overwrites the unrelated change.",
+      "minimal_fix": "Send only changed core fields and changed column selection.",
+      "caveat": "Same-field last-writer behavior and pending-save controls remain separate P2 issues.",
+      "verification": {
+        "id": "RECOVERY-GROUP-OVERLAP",
+        "head": "e049aec434621b10c094ff6888dda27abf8dec3f",
+        "status": "PASS",
+        "passed": 1,
+        "method": "node",
+        "result": "checks/RECOVERY-GROUP-OVERLAP/e049aec434/081601/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-GROUP-OVERLAP/e049aec434/081601/0-node.log": "b99d698e9c61a7a0c68c5b3b1f7e1857eefa235114c62ce291712b8ebecf4ae2"
+        }
+      },
+      "merge_note": null,
+      "body": "recovery-group-overlap.md",
+      "patch_sha256": "387737f646245a9429eae6b731c2e2a40613f15f6a14cded1fe6e54ffa2d214f",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/recovery-group-overlap"
+    },
+    {
+      "id": "METADATA-CATEGORY-LOSS",
+      "repository": "Bonsai",
+      "branch": "pr/metadata-category-loss",
+      "head": "13a4b49e3f6b50e8c717af6db068eb29d6a6273b",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Group interleaved metadata categories without dropping fields",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Fields from a previously used category are appended after another category. Stored order then interleaves categories.",
+      "minimal_fix": "Sort by category before grouping the display fields.",
+      "caveat": "Only display grouping changes; stored field order and values remain untouched.",
+      "verification": {
+        "id": "METADATA-CATEGORY-LOSS",
+        "head": "13a4b49e3f6b50e8c717af6db068eb29d6a6273b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/METADATA-CATEGORY-LOSS/13a4b49e3f/081059/result.json",
+        "log_hashes": {
+          "checks/METADATA-CATEGORY-LOSS/13a4b49e3f/081059/0-frontend.log": "12c0f6d7392288ba648f02895076467dc7e4650e2a728676410f37b27c769358"
+        }
+      },
+      "merge_note": null,
+      "body": "metadata-category-loss.md",
+      "patch_sha256": "65b44004a2164da5da15f4e486e4fb6731711a57a459ce4540f5b339ef9b57e6",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/metadata-category-loss"
+    },
+    {
+      "id": "METADATA-TABLE-EMPTY",
+      "repository": "Bonsai",
+      "branch": "pr/metadata-table-empty",
+      "head": "fa643f1d987e4b90a25f3bcd530581c19651e44e",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Render accepted metadata table shapes consistently",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/models/metadata.py",
+          "added": 17,
+          "removed": 3
+        },
+        {
+          "path": "api/bonsai_api/models/sample.py",
+          "added": 3,
+          "removed": 3
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/metadata.html",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 21,
+      "production_removed": 7,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "An accepted metadata table is opened in the summary or standalone table view. Frequency depends on whether table metadata is used locally.",
+      "minimal_fix": "Normalize the accepted read shapes and render their headings and rows.",
+      "caveat": "Three files cover the model/read boundary and template; this is larger than the single-line display fixes.",
+      "verification": {
+        "id": "METADATA-TABLE-EMPTY",
+        "head": "fa643f1d987e4b90a25f3bcd530581c19651e44e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "api, frontend",
+        "result": "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/result.json",
+        "log_hashes": {
+          "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/0-api.log": "eea05462e45fdb6ccee6d11dff4e35b38ba5a8a62941f893499ac75ae4ba1a73",
+          "checks/METADATA-TABLE-EMPTY/fa643f1d98/081104/1-frontend.log": "33c37c0791e3e7139388c9a0718bf8bbf3d3a02f84b32b20e8b28e128a5c4fc6"
+        }
+      },
+      "merge_note": "When combined with CSV-EMPTY-CELL-500, union the pydantic imports (BeforeValidator and field_validator).",
+      "body": "metadata-table-empty.md",
+      "patch_sha256": "fb8b14f8ab04470be7c257f75ecd70efc6320e918dae332fad488037c9318cb9",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/metadata-table-empty"
+    },
+    {
+      "id": "CSV-EMPTY-CELL-500",
+      "repository": "Bonsai",
+      "branch": "pr/csv-empty-cell-500",
+      "head": "9811fa547b554c5b5dee2e6e742bca8d2b0deb2f",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Normalize missing numeric CSV cells to empty text",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/models/metadata.py",
+          "added": 7,
+          "removed": 1
+        }
+      ],
+      "production_added": 7,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A CSV has a blank cell in a column inferred as numeric. Such blanks are ordinary inventory/metadata input, if CSV tables are used.",
+      "minimal_fix": "Normalize missing numeric cells to empty text in the stored table model.",
+      "caveat": "The patch handles the reported missing-cell case; unrelated malformed numeric input is excluded.",
+      "verification": {
+        "id": "CSV-EMPTY-CELL-500",
+        "head": "9811fa547b554c5b5dee2e6e742bca8d2b0deb2f",
+        "status": "PASS",
+        "passed": 1,
+        "method": "api",
+        "result": "checks/CSV-EMPTY-CELL-500/9811fa547b/081108/result.json",
+        "log_hashes": {
+          "checks/CSV-EMPTY-CELL-500/9811fa547b/081108/0-api.log": "df665b18bd034ca84a71aa0621b7dd0ba0cde03ba4b92ee3d06a456cbe68ab72"
+        }
+      },
+      "merge_note": "When combined with METADATA-TABLE-EMPTY, union the pydantic imports (BeforeValidator and field_validator).",
+      "body": "csv-empty-cell-500.md",
+      "patch_sha256": "a27bd90acce2d8a91c1d8d53b5a88b489ee521287d61cbf7529fb6e845f37eb0",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/csv-empty-cell-500"
+    },
+    {
+      "id": "CURATION-DOUBLE-SUBMIT",
+      "repository": "Bonsai",
+      "branch": "pr/curation-double-submit",
+      "head": "aa554c2ad2cbb0adf9eccf8487b237bdc9a583e0",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Submit a confirmation once and render refreshed state",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "added": 0,
+          "removed": 5
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/views.py",
+          "added": 1,
+          "removed": 0
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 5,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "One Confirm action invokes the same save twice. The first save can persist before the second call reports a conflict.",
+      "minimal_fix": "Remove the duplicate service call and reload state after the save.",
+      "caveat": "Only generic stubbed service calls and refreshed rendering were tested; no live decision was written.",
+      "verification": {
+        "id": "CURATION-DOUBLE-SUBMIT",
+        "head": "aa554c2ad2cbb0adf9eccf8487b237bdc9a583e0",
+        "status": "PASS",
+        "passed": 2,
+        "method": "frontend",
+        "result": "checks/CURATION-DOUBLE-SUBMIT/aa554c2ad2/081101/result.json",
+        "log_hashes": {
+          "checks/CURATION-DOUBLE-SUBMIT/aa554c2ad2/081101/0-frontend.log": "692a749b0647f6a25d2ed3aef94bf7486f8a8e8ffdafb248e9f4053cf53fc8ec"
+        }
+      },
+      "merge_note": null,
+      "body": "curation-double-submit.md",
+      "patch_sha256": "fe8e7a6ea5887097cfe0943d0f859f8b828a97136f0d38964c95ac74d3f0b44e",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/curation-double-submit"
+    },
+    {
+      "id": "SELECTED-FILTER-STALE",
+      "repository": "Bonsai",
+      "branch": "pr/selected-filter-stale",
+      "head": "859f603e8db62593a71518b29a35e1bf11917a2c",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Redraw selected-only tables after selection changes",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/utils/table-controller.ts",
+          "added": 1,
+          "removed": 0
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 0,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Show selected is active and the last selected row is cleared. The stale display also contaminates the subsequent CSV export.",
+      "minimal_fix": "Redraw the shared table after selection changes.",
+      "caveat": "The shared handler also covers ordinary accounts without administrator group controls.",
+      "verification": {
+        "id": "SELECTED-FILTER-STALE",
+        "head": "859f603e8db62593a71518b29a35e1bf11917a2c",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/SELECTED-FILTER-STALE/candidate.png"
+      },
+      "merge_note": null,
+      "body": "selected-filter-stale.md",
+      "patch_sha256": "88e47c81279716851604aae53e8cd5adaa4d43a0af3e5deb50c54612aea7bb94",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/selected-filter-stale"
+    },
+    {
+      "id": "VARIANT-SELECT-ALL-INVALID",
+      "repository": "Bonsai",
+      "branch": "pr/variant-select-all-invalid",
+      "head": "6d08d7abd5256440ad9f0c74b25e77b7c0ac5b5a",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Restrict bulk row selection to identified checkboxes",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/views/variants-table/variants-view.ts",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "The header checkbox is clicked in the stored-row table, including after a table filter. Individual row clicks avoid the extra target.",
+      "minimal_fix": "Bind selection only to checkboxes carrying a row identifier.",
+      "caveat": "Selection payloads were checked without submitting any action.",
+      "verification": {
+        "id": "VARIANT-SELECT-ALL-INVALID",
+        "head": "6d08d7abd5256440ad9f0c74b25e77b7c0ac5b5a",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/VARIANT-SELECT-ALL-INVALID/candidate.png"
+      },
+      "merge_note": null,
+      "body": "variant-select-all-invalid.md",
+      "patch_sha256": "2b106cb4ae26c45a719c7aa65cb949fcebae89acd97c6eecb5db0100b2bda907",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/variant-select-all-invalid"
+    },
+    {
+      "id": "VARIANT-FILTER-AND",
+      "repository": "Bonsai",
+      "branch": "pr/variant-filter-and",
+      "head": "16fb3d32d5b9694365c3880eb2cb63b05eb08e5e",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Intersect numeric row-filter predicates",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "Both numeric predicates are enabled and a row passes only the second. Using one predicate does not expose the overwritten result.",
+      "minimal_fix": "Combine each depth predicate with the existing accumulated filter result.",
+      "caveat": "Only Boolean filter composition changes.",
+      "verification": {
+        "id": "VARIANT-FILTER-AND",
+        "head": "16fb3d32d5b9694365c3880eb2cb63b05eb08e5e",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/VARIANT-FILTER-AND/16fb3d32d5/081103/result.json",
+        "log_hashes": {
+          "checks/VARIANT-FILTER-AND/16fb3d32d5/081103/0-frontend.log": "71413bcabd13e05f8b71369533d7020a12905eec39119c5b2acd53399c41356c"
+        }
+      },
+      "merge_note": null,
+      "body": "variant-filter-and.md",
+      "patch_sha256": "1c0e2237dd81e310b1add14bef8580a2ca009916dcde718f492d07f255c6da91",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/variant-filter-and"
+    },
+    {
+      "id": "VARIANT-HIDE-DISMISSED-500",
+      "repository": "Bonsai",
+      "branch": "pr/variant-hide-dismissed-500",
+      "head": "20bbb27b2f85c82a25557aa2527f65f009c02019",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Read the stored rejection decision when filtering rows",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "added": 2,
+          "removed": 1
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "The option is enabled for stored rows using the current decision schema. The obsolete field lookup then fails.",
+      "minimal_fix": "Merge saved decisions before filtering and read the existing rejection decision.",
+      "caveat": "Read-only filtering is checked; stored decisions are not changed.",
+      "verification": {
+        "id": "VARIANT-HIDE-DISMISSED-500",
+        "head": "20bbb27b2f85c82a25557aa2527f65f009c02019",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/VARIANT-HIDE-DISMISSED-500/20bbb27b2f/081106/result.json",
+        "log_hashes": {
+          "checks/VARIANT-HIDE-DISMISSED-500/20bbb27b2f/081106/0-frontend.log": "0202fbfe98110b7f9324871d8ac3b7b74417e8f477c6e132257aa0f097acd3b2"
+        }
+      },
+      "merge_note": "When combined with TB-NO-AMR-500, retain both the decision merge and the null-safe row lookup.",
+      "body": "variant-hide-dismissed-500.md",
+      "patch_sha256": "72627f6405d35fffc86a383dd2bb5c8f009fc23563fb094074b901672cfaa36d",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/variant-hide-dismissed-500"
+    },
+    {
+      "id": "QC-FILTER-EMPTY",
+      "repository": "Bonsai",
+      "branch": "pr/qc-filter-empty",
+      "head": "77b75326f97936382633c001a9ee7a562b48a824",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Use plain QC status values for SearchBuilder filtering",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/groups/templates/cell_fmt.html",
+          "added": 1,
+          "removed": 1
+        },
+        {
+          "path": "frontend/web/js/views/groups-view/init.ts",
+          "added": 6,
+          "removed": 0
+        }
+      ],
+      "production_added": 7,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "SearchBuilder filters QC exactly while that column is excluded from global search. The normal overview column configuration has this combination.",
+      "minimal_fix": "Provide the plain status search value and the SearchBuilder orthogonal mapping.",
+      "caveat": "Real DataTables checks cover exact filtering, combined conditions, clearing and export data.",
+      "verification": {
+        "id": "QC-FILTER-EMPTY",
+        "head": "77b75326f97936382633c001a9ee7a562b48a824",
+        "status": "PASS",
+        "passed": 4,
+        "method": "Chromium / real DataTables plugins",
+        "result": "browser-checks/20261108T083645/results.json",
+        "artifact": "browser-checks/20261108T083645/QC-FILTER-EMPTY/candidate.png"
+      },
+      "merge_note": null,
+      "body": "qc-filter-empty.md",
+      "patch_sha256": "a4d0bdccfc80fe24cacd6846d84d0987359de646c26d41fb1efe8c02e7844ddf",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/qc-filter-empty"
+    },
+    {
+      "id": "GROUP-MEMBERSHIP-LIMIT",
+      "repository": "Bonsai",
+      "branch": "pr/group-membership-limit",
+      "head": "6ddfd15b2c4f9c439ec561999b56fa4aea73d1a8",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Batch membership lookups within the API query limit",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/core/api/index.ts",
+          "added": 8,
+          "removed": 7
+        }
+      ],
+      "production_added": 8,
+      "production_removed": 7,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "More than 100 records are selected for group management. Smaller selections do not hit the membership query limit.",
+      "minimal_fix": "Batch membership reads within the API limit while retaining common-group calculation.",
+      "caveat": "A 125-record generic selection was checked; this does not resolve partial write batches.",
+      "verification": {
+        "id": "GROUP-MEMBERSHIP-LIMIT",
+        "head": "6ddfd15b2c4f9c439ec561999b56fa4aea73d1a8",
+        "status": "PASS",
+        "passed": 2,
+        "method": "node",
+        "result": "checks/GROUP-MEMBERSHIP-LIMIT/6ddfd15b2c/081602/result.json",
+        "log_hashes": {
+          "checks/GROUP-MEMBERSHIP-LIMIT/6ddfd15b2c/081602/0-node.log": "da15263b16b331f30e33a51b4fa8409d74ed824f92edbcbc6a188be7bec7bec1"
+        }
+      },
+      "merge_note": null,
+      "body": "group-membership-limit.md",
+      "patch_sha256": "52609b64bcde5696266965d96e1382739260c83151eb533ccf590b0d02c94767",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/group-membership-limit"
+    },
+    {
+      "id": "ADMIN-CREATE-USER-500",
+      "repository": "Bonsai",
+      "branch": "pr/admin-create-user-500",
+      "head": "e01528db104ccb7d392441f42cfe742ee45f5e8e",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Handle typed SDK not-found during local user creation",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/admin/views.py",
+          "added": 3,
+          "removed": 5
+        }
+      ],
+      "production_added": 3,
+      "production_removed": 5,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "An administrator submits a new local account. This is infrequent administration, and may be uncommon if external authentication supplies all users.",
+      "minimal_fix": "Catch the SDK's typed not-found exception during the existence check.",
+      "caveat": "A small deterministic fix for the local-account administration path.",
+      "verification": {
+        "id": "ADMIN-CREATE-USER-500",
+        "head": "e01528db104ccb7d392441f42cfe742ee45f5e8e",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/ADMIN-CREATE-USER-500/e01528db10/081108/result.json",
+        "log_hashes": {
+          "checks/ADMIN-CREATE-USER-500/e01528db10/081108/0-frontend.log": "9009046eb92a1b0c1b8dc96754f348236160d451dbec62e0483d39620fc50699"
+        }
+      },
+      "merge_note": null,
+      "body": "admin-create-user-500.md",
+      "patch_sha256": "701728625f9aa8b5d568baa424bc3227b3ecaf1d5e53f5dc63dcd0cf518b6749",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/admin-create-user-500"
+    },
+    {
+      "id": "ADMIN-EDIT-USER-500",
+      "repository": "Bonsai",
+      "branch": "pr/admin-edit-user-500",
+      "head": "619cab28e4bf8f8706a391804b017442090106aa",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Open typed account responses and preserve profile update semantics",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/user.py",
+          "added": 2,
+          "removed": 3
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/admin/views.py",
+          "added": 5,
+          "removed": 5
+        }
+      ],
+      "production_added": 7,
+      "production_removed": 8,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "An administrator opens or updates an existing local account. External-account management may avoid this path.",
+      "minimal_fix": "Read typed response attributes and preserve password/update return semantics.",
+      "caveat": "The UI and API changes are kept together because opening and saving form one workflow.",
+      "verification": {
+        "id": "ADMIN-EDIT-USER-500",
+        "head": "619cab28e4bf8f8706a391804b017442090106aa",
+        "status": "PASS",
+        "passed": 2,
+        "method": "frontend, api",
+        "result": "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/result.json",
+        "log_hashes": {
+          "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/0-frontend.log": "1e20906032903d8796ad6ff735284b417b14e5bca426b8ac8bab53940c595b5a",
+          "checks/ADMIN-EDIT-USER-500/619cab28e4/081110/1-api.log": "69396acf5d1b34f55c2ae151345fe1e138f631722aaff9f0a8157e99d9cab888"
+        }
+      },
+      "merge_note": null,
+      "body": "admin-edit-user-500.md",
+      "patch_sha256": "fea8d3159bb0944bd6289a42a1179810f02909134bccf20d8856f1d4ae64d093",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/admin-edit-user-500"
+    },
+    {
+      "id": "ACCOUNT-STALE-PAGES",
+      "repository": "Bonsai",
+      "branch": "pr/account-stale-pages",
+      "head": "8567eda7b11457fa7619fc9fe30f7e21d0ba14ad",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Revalidate restored pages after account changes",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/templates/bootstrap_base.html",
+          "added": 15,
+          "removed": 0
+        }
+      ],
+      "production_added": 15,
+      "production_removed": 0,
+      "policy_condition": null,
+      "review_band": "Environment-dependent",
+      "normal_workflow": "Accounts are switched or logged out with old tabs/history still available in the same browser profile. Separate profiles reduce exposure.",
+      "minimal_fix": "Revalidate restored pages and reload on a cross-tab account change.",
+      "caveat": "This refreshes visible pages; it does not provide server-side JWT revocation or per-account basket storage.",
+      "verification": {
+        "id": "ACCOUNT-STALE-PAGES",
+        "head": "8567eda7b11457fa7619fc9fe30f7e21d0ba14ad",
+        "status": "PASS",
+        "passed": 3,
+        "method": "node",
+        "result": "checks/ACCOUNT-STALE-PAGES/8567eda7b1/081602/result.json",
+        "log_hashes": {
+          "checks/ACCOUNT-STALE-PAGES/8567eda7b1/081602/0-node.log": "e41dc24c56ed5c88bcdf05cc458ff44cc419214a75b0e8c1ff8fd42e979bb322"
+        }
+      },
+      "merge_note": null,
+      "body": "account-stale-pages.md",
+      "patch_sha256": "6761ff6c81bf1df4a758c7f6c0c3341d30d2e7a5e8898779e652dcb877cc8a17",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/account-stale-pages"
+    },
+    {
+      "id": "BASKET-UNDEFINED-ASSAY",
+      "repository": "Bonsai",
+      "branch": "pr/basket-undefined-assay",
+      "head": "a011b68355535d49b70ddbebaf38d8e572869fe0",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Render basket names literally and absent assay as empty text",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/web/js/components/sample-basket.ts",
+          "added": 7,
+          "removed": 2
+        }
+      ],
+      "production_added": 7,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A record name contains HTML-like text, or its optional assay is absent. Simple alphanumeric names do not expose the markup interpretation.",
+      "minimal_fix": "Escape the name at its HTML insertion and render absent assay as empty text.",
+      "caveat": "Literal presentation is tested. Script execution was not attempted or claimed.",
+      "verification": {
+        "id": "BASKET-UNDEFINED-ASSAY",
+        "head": "a011b68355535d49b70ddbebaf38d8e572869fe0",
+        "status": "PASS",
+        "passed": 1,
+        "method": "node",
+        "result": "checks/BASKET-UNDEFINED-ASSAY/a011b68355/082003/result.json",
+        "log_hashes": {
+          "checks/BASKET-UNDEFINED-ASSAY/a011b68355/082003/0-node.log": "e260d66f98c1d025f69f61dd619ec0036c8c272d9e7dd937b1e9120c829d3f94"
+        }
+      },
+      "merge_note": null,
+      "body": "basket-undefined-assay.md",
+      "patch_sha256": "0dd125e1172178f27a5cfeec07e03c6a205761a35a277cfed56f2067e0665773",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/basket-undefined-assay"
+    },
+    {
+      "id": "PRIVATE-GROUP-INVITE-500",
+      "repository": "Bonsai",
+      "branch": "pr/private-group-invite-500",
+      "head": "1b1d4b7e97c6b02bd54d5990c93bca743b879e3b",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Use consistent account shapes for private-group invitees",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/group.py",
+          "added": 2,
+          "removed": 2
+        },
+        {
+          "path": "api/bonsai_api/services/group_service.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 3,
+      "production_removed": 3,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "A private group is created with invited accounts. Public groups and owner-only groups do not trigger the same response-shape error.",
+      "minimal_fix": "Use the existing account response and membership helpers consistently.",
+      "caveat": "Group access checks remain distinct from the unfinished private-record ACL feature.",
+      "verification": {
+        "id": "PRIVATE-GROUP-INVITE-500",
+        "head": "1b1d4b7e97c6b02bd54d5990c93bca743b879e3b",
+        "status": "PASS",
+        "passed": 4,
+        "method": "api",
+        "result": "checks/PRIVATE-GROUP-INVITE-500/1b1d4b7e97/081115/result.json",
+        "log_hashes": {
+          "checks/PRIVATE-GROUP-INVITE-500/1b1d4b7e97/081115/0-api.log": "47dc1f0a9735f1de6f5bca562ff7d548d9fb0b78f29444bfd0f88a4905800cf6"
+        }
+      },
+      "merge_note": null,
+      "body": "private-group-invite-500.md",
+      "patch_sha256": "528b1422a099b086bd9094483acfb475e352b6f32247bce9d6c6d52c50a3eb2b",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/private-group-invite-500"
+    },
+    {
+      "id": "TB-CURATION-500",
+      "repository": "Bonsai",
+      "branch": "pr/tb-curation-500",
+      "head": "d2218de5ec04515bdc642ab509f902dbc397be5f",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Render decisions without optional display metadata",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "added": 3,
+          "removed": 1
+        }
+      ],
+      "production_added": 3,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A stored decision lacks optional display metadata. Presence depends on the producer and editing path; populated metadata avoids the crash.",
+      "minimal_fix": "Read the optional display metadata before rendering its label.",
+      "caveat": "Literal stored display values are checked, without making or changing a diagnostic decision.",
+      "verification": {
+        "id": "TB-CURATION-500",
+        "head": "d2218de5ec04515bdc642ab509f902dbc397be5f",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/TB-CURATION-500/d2218de5ec/081117/result.json",
+        "log_hashes": {
+          "checks/TB-CURATION-500/d2218de5ec/081117/0-frontend.log": "c6dfed477097bd787e4d894ca667ee9ecd4f9fe28aa58e6fcc699b0b1026ec49"
+        }
+      },
+      "merge_note": null,
+      "body": "tb-curation-500.md",
+      "patch_sha256": "faca3189b20b30e1ad8f3c590d6682900a3c84146da07602e3739da8b5b46e99",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/tb-curation-500"
+    },
+    {
+      "id": "ECOLI-VARIANTS-EMPTY",
+      "repository": "Bonsai",
+      "branch": "pr/ecoli-variants-empty",
+      "head": "4bd99d441ff66b7e1d013d5af6bbd3d0394b1edc",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Label the stored detail view with its supported result scope",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/resistance_variants.html",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "The stored detail page is opened for a result type the view does not render. The baseline message misleadingly resembles a negative finding.",
+      "minimal_fix": "State the supported stored-result type and point to the extended report.",
+      "caveat": "This corrects the claim; it does not implement display support for additional result types.",
+      "verification": {
+        "id": "ECOLI-VARIANTS-EMPTY",
+        "head": "4bd99d441ff66b7e1d013d5af6bbd3d0394b1edc",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/ECOLI-VARIANTS-EMPTY/4bd99d441f/081119/result.json",
+        "log_hashes": {
+          "checks/ECOLI-VARIANTS-EMPTY/4bd99d441f/081119/0-frontend.log": "0b8a8339f5f62c40851246ec091a5b5e02bc1900413fcf617f65748072dc04e2"
+        }
+      },
+      "merge_note": null,
+      "body": "ecoli-variants-empty.md",
+      "patch_sha256": "a59131951003a6520d8b16e6fba6c8402bb8b202625ffb402dbbdb2047d476e2",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/ecoli-variants-empty"
+    },
+    {
+      "id": "DISPLAY-EMM-TABLE",
+      "repository": "Bonsai",
+      "branch": "pr/display-emm-table",
+      "head": "ca7a7c22cc5f95a3868e4e314d2313a9b9068c94",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Project requested EMM fields from their current stored paths",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/builder/summary_manifest.py",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A client or group layout explicitly requests EMM type/cluster columns. The observed default layout does not request them.",
+      "minimal_fix": "Correct the two projection paths to the current stored fields.",
+      "caveat": "A two-expression fix; enabling columns by default is a separate layout decision.",
+      "verification": {
+        "id": "DISPLAY-EMM-TABLE",
+        "head": "ca7a7c22cc5f95a3868e4e314d2313a9b9068c94",
+        "status": "PASS",
+        "passed": 1,
+        "method": "mongo",
+        "result": "checks/DISPLAY-EMM-TABLE/ca7a7c22cc/081603/result.json",
+        "log_hashes": {
+          "checks/DISPLAY-EMM-TABLE/ca7a7c22cc/081603/0-mongo.log": "e217a434967abd71b5c1622dfeba7b332222929fcf5c462771ddbfb2104bc10f"
+        }
+      },
+      "merge_note": null,
+      "body": "display-emm-table.md",
+      "patch_sha256": "7022a0707c8da865b777e9b01d7004a3547e3a5f3efee0626e3808f2ed391d62",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/display-emm-table"
+    },
+    {
+      "id": "DISPLAY-EXTENDED-CONTEXT",
+      "repository": "Bonsai",
+      "branch": "pr/display-extended-context",
+      "head": "45d812d891084c38064a2348f5d495c3d4d0efe3",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Import extended-summary cards with record context",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "The extended summary renders a supplied row with record-dependent links. Rows without those links may avoid the missing template context.",
+      "minimal_fix": "Import the card macros with the existing request context.",
+      "caveat": "One template import changes; no linked viewer action is executed.",
+      "verification": {
+        "id": "DISPLAY-EXTENDED-CONTEXT",
+        "head": "45d812d891084c38064a2348f5d495c3d4d0efe3",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/DISPLAY-EXTENDED-CONTEXT/45d812d891/081123/result.json",
+        "log_hashes": {
+          "checks/DISPLAY-EXTENDED-CONTEXT/45d812d891/081123/0-frontend.log": "056a2df01f1db03d733df1f8c349f0f0a5c34582fad49cf1ce4bb51b84cc5785"
+        }
+      },
+      "merge_note": null,
+      "body": "display-extended-context.md",
+      "patch_sha256": "dfb26ddf11446369a41a17dd64a4ccf17b14a88373af76fcb2b51fb1159035f2",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/display-extended-context"
+    },
+    {
+      "id": "EMM-LIMS-EXPORT-500",
+      "repository": "Bonsai",
+      "branch": "pr/emm-lims-export-500",
+      "head": "3aeb54797bab82ed33fc78ef7ee190bfbe3a78e1",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Read current EMM descriptors in CSV and TSV formatters",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/lims_export/formatters.py",
+          "added": 5,
+          "removed": 2
+        }
+      ],
+      "production_added": 5,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "The configured EMM export is requested for current positive or empty descriptors. Other export categories use different formatters.",
+      "minimal_fix": "Read the typed descriptor and its dictionary fields, including the defined empty case.",
+      "caveat": "CSV/TSV identity and literal supplied values are tested.",
+      "verification": {
+        "id": "EMM-LIMS-EXPORT-500",
+        "head": "3aeb54797bab82ed33fc78ef7ee190bfbe3a78e1",
+        "status": "PASS",
+        "passed": 5,
+        "method": "api",
+        "result": "checks/EMM-LIMS-EXPORT-500/3aeb54797b/081125/result.json",
+        "log_hashes": {
+          "checks/EMM-LIMS-EXPORT-500/3aeb54797b/081125/0-api.log": "2522a326e279a06e6cf3966f5e6c5bf495b8b249312298e85328479718d6ed9f"
+        }
+      },
+      "merge_note": null,
+      "body": "emm-lims-export-500.md",
+      "patch_sha256": "cc3ada02976ffbd3bcd5e09b5db883384b2ff06096778a5c2f6d06699d33763a",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/emm-lims-export-500"
+    },
+    {
+      "id": "KLEBORATE-UPLOAD-422",
+      "repository": "Bonsai",
+      "branch": "pr/kleborate-upload-422",
+      "head": "6547f49a7312aa1ba12eeeeccaa2be7e068b5ce7",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Forward an optional hAMRonization companion through the API",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/routers/analysis.py",
+          "added": 2,
+          "removed": 0
+        },
+        {
+          "path": "api/bonsai_api/services/analysis_service.py",
+          "added": 3,
+          "removed": 0
+        }
+      ],
+      "production_added": 5,
+      "production_removed": 0,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "A Kleborate report requires its hAMRonization companion, but the current route/client cannot provide it. Actual local uploader usage is unknown.",
+      "minimal_fix": "Forward one optional multipart file through API/service and a paired SDK upload branch.",
+      "caveat": "The app and SDK branches are a pair. Transport and stream binding are stub-tested; live parsing, persistence and end-to-end ingestion remain unverified.",
+      "verification": {
+        "id": "KLEBORATE-UPLOAD-422",
+        "head": "6547f49a7312aa1ba12eeeeccaa2be7e068b5ce7",
+        "status": "PASS",
+        "passed": 2,
+        "method": "api",
+        "result": "checks/KLEBORATE-UPLOAD-422/6547f49a73/081127/result.json",
+        "log_hashes": {
+          "checks/KLEBORATE-UPLOAD-422/6547f49a73/081127/0-api.log": "a640923eea714ec0ca615d4be9d14669a94b7416eade756908e400e7d1ed5aa7"
+        }
+      },
+      "merge_note": null,
+      "body": "kleborate-upload-422.md",
+      "patch_sha256": "73efedaca7af26127cd4fa5d9f6959b744ef15ee699577ae6058f120fdd4d850",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [
+        "KLEBORATE-CLIENT-COMPANION"
+      ],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/kleborate-upload-422"
+    },
+    {
+      "id": "PARSER-MYKROBE-SELECTION",
+      "repository": "SDK",
+      "branch": "pr/parser-mykrobe-selection",
+      "head": "3183b86d7aec72309b62e656ac3c969abba2fe7f",
+      "base_ref": "master",
+      "base_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+      "dependencies": [],
+      "title": "Honor selected result categories in the Mykrobe parser",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "src/bonsai_libs/parse/parsers/mykrobe.py",
+          "added": 2,
+          "removed": 0
+        }
+      ],
+      "production_added": 2,
+      "production_removed": 0,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "An SDK caller requests one result category. The ordinary API ingestion path requests all categories and avoids this particular crash.",
+      "minimal_fix": "Use the defined result selection variable for both requested-category checks.",
+      "caveat": "Very small patch, but lower expected exposure in the default API workflow.",
+      "verification": {
+        "id": "PARSER-MYKROBE-SELECTION",
+        "head": "3183b86d7aec72309b62e656ac3c969abba2fe7f",
+        "status": "PASS",
+        "passed": 2,
+        "method": "sdk",
+        "result": "checks/PARSER-MYKROBE-SELECTION/3183b86d7a/081129/result.json",
+        "log_hashes": {
+          "checks/PARSER-MYKROBE-SELECTION/3183b86d7a/081129/0-sdk.log": "237c9a5c14628cdf7ab926c803ac62932cc1cf4c3bcc3161c8e5aa1b1a019dea"
+        }
+      },
+      "merge_note": null,
+      "body": "parser-mykrobe-selection.md",
+      "patch_sha256": "2adc0b8b8dfd27c44632bb85f7b56f6c8302aeddcb131f148e68919da0f321e8",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai/bonsai-sdk push -u origin pr/parser-mykrobe-selection"
+    },
+    {
+      "id": "PARSER-BRACKEN-EMPTY",
+      "repository": "SDK",
+      "branch": "pr/parser-bracken-empty",
+      "head": "019d5904bd59eb58a6399ac02ba49c4106b93490",
+      "base_ref": "master",
+      "base_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+      "dependencies": [],
+      "title": "Return an empty list for header-only Bracken reports",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "src/bonsai_libs/parse/parsers/bracken.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 1,
+      "production_removed": 1,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A valid Bracken report has a header and no result rows. A populated report avoids the wrong empty-result shape.",
+      "minimal_fix": "Return the defined empty-list shape for a header-only report.",
+      "caveat": "One-line SDK fix; frozen literal input only.",
+      "verification": {
+        "id": "PARSER-BRACKEN-EMPTY",
+        "head": "019d5904bd59eb58a6399ac02ba49c4106b93490",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/PARSER-BRACKEN-EMPTY/019d5904bd/081130/result.json",
+        "log_hashes": {
+          "checks/PARSER-BRACKEN-EMPTY/019d5904bd/081130/0-sdk.log": "5d2315a156d5315c966326fe182630ee852085a690324f0bda3fc4ed3c22a975"
+        }
+      },
+      "merge_note": null,
+      "body": "parser-bracken-empty.md",
+      "patch_sha256": "d0028783fde92fd891877988f43fd137ee307e1888396c720d193f27d9042e98",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai/bonsai-sdk push -u origin pr/parser-bracken-empty"
+    },
+    {
+      "id": "PARSER-COVERAGE-STREAM",
+      "repository": "SDK",
+      "branch": "pr/parser-coverage-stream",
+      "head": "1cd7ad6ec984aafea2386fe9156123ae7f2cb04d",
+      "base_ref": "master",
+      "base_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+      "dependencies": [],
+      "title": "Read coverage streams once and preserve every supplied row",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "src/bonsai_libs/parse/parsers/samtools.py",
+          "added": 4,
+          "removed": 10
+        }
+      ],
+      "production_added": 4,
+      "production_removed": 10,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A multi-row coverage report is supplied as a stream, as in the API's TextIOWrapper path. File-path inputs avoid the consumed-stream problem.",
+      "minimal_fix": "Read the source once before parsing the rows.",
+      "caveat": "The SDK branch preserves both rows for path and stream input; no coverage computation is run.",
+      "verification": {
+        "id": "PARSER-COVERAGE-STREAM",
+        "head": "1cd7ad6ec984aafea2386fe9156123ae7f2cb04d",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/PARSER-COVERAGE-STREAM/1cd7ad6ec9/081131/result.json",
+        "log_hashes": {
+          "checks/PARSER-COVERAGE-STREAM/1cd7ad6ec9/081131/0-sdk.log": "f5c504529ee06eb5dab668acd919d511e525dd8efcde862fcb6510d057bb62de"
+        }
+      },
+      "merge_note": null,
+      "body": "parser-coverage-stream.md",
+      "patch_sha256": "0ceff669deb4f6d3fc7f113be6e27213bffdc06be2e914178bf1a248f6e2e471",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai/bonsai-sdk push -u origin pr/parser-coverage-stream"
+    },
+    {
+      "id": "KLEBORATE-CLIENT-COMPANION",
+      "repository": "SDK",
+      "branch": "pr/kleborate-client-companion",
+      "head": "e9c6d609da6a2c4c7c447026a71df8973c1cf78b",
+      "base_ref": "master",
+      "base_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+      "dependencies": [],
+      "title": "Send the optional hAMRonization file in SDK multipart uploads",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "src/bonsai_libs/api_client/bonsai/models.py",
+          "added": 1,
+          "removed": 0
+        },
+        {
+          "path": "src/bonsai_libs/api_client/bonsai/samples.py",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 3,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "A Kleborate report requires its hAMRonization companion, but the current route/client cannot provide it. Actual local uploader usage is unknown.",
+      "minimal_fix": "Add one optional input path and bind it as a multipart file; close both file handles.",
+      "caveat": "The app and SDK branches are a pair. Transport and stream binding are stub-tested; live parsing, persistence and end-to-end ingestion remain unverified.",
+      "verification": {
+        "id": "KLEBORATE-CLIENT-COMPANION",
+        "head": "e9c6d609da6a2c4c7c447026a71df8973c1cf78b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "sdk",
+        "result": "checks/KLEBORATE-CLIENT-COMPANION/e9c6d609da/081132/result.json",
+        "log_hashes": {
+          "checks/KLEBORATE-CLIENT-COMPANION/e9c6d609da/081132/0-sdk.log": "5c7da0e3930aa0d4e18eaf561f8d8ff28fe2da670ea6dcd8319617cccbf80d27"
+        }
+      },
+      "merge_note": null,
+      "body": "kleborate-client-companion.md",
+      "patch_sha256": "1e59ca5c475cdec5d256dce4978e50efc5116f8f05d583a5d2340b95c61329ad",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [
+        "KLEBORATE-UPLOAD-422"
+      ],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai/bonsai-sdk push -u origin pr/kleborate-client-companion"
+    },
+    {
+      "id": "PENDING-SAMPLE-500",
+      "repository": "Bonsai",
+      "branch": "pr/pending-sample-500",
+      "head": "f24e6a59cbd5aa2e9b98cd427f278ac05277910b",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Render pending records without pipeline metadata",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "added": 5,
+          "removed": 1
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/views.py",
+          "added": 1,
+          "removed": 1
+        }
+      ],
+      "production_added": 6,
+      "production_removed": 2,
+      "policy_condition": null,
+      "review_band": "Early review",
+      "normal_workflow": "A record is opened before a pipeline is attached, or remains metadata-only. The ingestion delay determines how often this state is seen.",
+      "minimal_fix": "Handle absent pipeline/database metadata and show the pending state.",
+      "caveat": "Only optional display metadata is handled.",
+      "verification": {
+        "id": "PENDING-SAMPLE-500",
+        "head": "f24e6a59cbd5aa2e9b98cd427f278ac05277910b",
+        "status": "PASS",
+        "passed": 1,
+        "method": "frontend",
+        "result": "checks/PENDING-SAMPLE-500/f24e6a59cb/081133/result.json",
+        "log_hashes": {
+          "checks/PENDING-SAMPLE-500/f24e6a59cb/081133/0-frontend.log": "33c37c0791e3e7139388c9a0718bf8bbf3d3a02f84b32b20e8b28e128a5c4fc6"
+        }
+      },
+      "merge_note": null,
+      "body": "pending-sample-500.md",
+      "patch_sha256": "956ebc3bcdedf49b5d586a2563d0cf8eec3ae8de27e3dc96f2e5b27efa6f1c9a",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/pending-sample-500"
+    },
+    {
+      "id": "TB-NO-AMR-500",
+      "repository": "Bonsai",
+      "branch": "pr/tb-no-amr-500",
+      "head": "e6d57246675b3a8b91de544d67792b4e9e0197c2",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Keep summary and detail available for null stored results",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/controllers.py",
+          "added": 6,
+          "removed": 6
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/resistance_variants.html",
+          "added": 3,
+          "removed": 0
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "added": 2,
+          "removed": 0
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/views.py",
+          "added": 3,
+          "removed": 1
+        }
+      ],
+      "production_added": 14,
+      "production_removed": 7,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "A stored report envelope has a null result and its summary or detail is opened. Normal fully populated results do not trigger this case.",
+      "minimal_fix": "Keep null envelopes out of row traversal and render explicit availability text.",
+      "caveat": "Four files cover both views and shared readers; source data stays null.",
+      "verification": {
+        "id": "TB-NO-AMR-500",
+        "head": "e6d57246675b3a8b91de544d67792b4e9e0197c2",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/TB-NO-AMR-500/e6d5724667/081649/result.json",
+        "log_hashes": {
+          "checks/TB-NO-AMR-500/e6d5724667/081649/0-frontend.log": "c8cbcbd70fce132d10d773117c8e642bcf8d2703af4f5ffa322a5d76d6b84935",
+          "checks/TB-NO-AMR-500/e6d5724667/081649/1-frontend.log": "24f3dafabbbe933d02f230b216b21686feda8b499b8a190a45b96da39c02f805"
+        }
+      },
+      "merge_note": "When combined with VARIANT-HIDE-DISMISSED-500, retain both the decision merge and the null-safe row lookup.",
+      "body": "tb-no-amr-500.md",
+      "patch_sha256": "b90a80dfef68f061a5b0550a87f0e799aa98c0924f144414bfd36b45efff741f",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/tb-no-amr-500"
+    },
+    {
+      "id": "RECOVERY-COMMENT-RETRY",
+      "repository": "Bonsai",
+      "branch": "pr/recovery-comment-retry",
+      "head": "66a99c96e7fa3478d7ab7bee23a98e3723e08502",
+      "base_ref": "pr/recovery-comment-identities",
+      "base_commit": "34cbe08fed81255fd3d8d3d45b9763aabe5af934",
+      "dependencies": [
+        "RECOVERY-COMMENT-IDENTITIES"
+      ],
+      "title": "Deduplicate identified comment retries and preserve failed drafts",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "api/bonsai_api/crud/sample.py",
+          "added": 16,
+          "removed": 2
+        },
+        {
+          "path": "api/bonsai_api/routers/samples/sample_metadata.py",
+          "added": 3,
+          "removed": 1
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/comment_retry.html",
+          "added": 11,
+          "removed": 0
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/sidebar.html",
+          "added": 1,
+          "removed": 0
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/views.py",
+          "added": 17,
+          "removed": 11
+        }
+      ],
+      "production_added": 48,
+      "production_removed": 14,
+      "policy_condition": null,
+      "review_band": "Concurrency-dependent",
+      "normal_workflow": "A comment is saved but its response is lost, then the same submission is retried. Stable-network sequential use is less exposed.",
+      "minimal_fix": "Carry one actor-scoped request key through form, SDK headers and conditional append; retain a failed draft.",
+      "caveat": "Requires RECOVERY-COMMENT-IDENTITIES. This is the largest candidate and crosses five files; session-expiry draft recovery remains separate.",
+      "verification": {
+        "id": "RECOVERY-COMMENT-RETRY",
+        "head": "66a99c96e7fa3478d7ab7bee23a98e3723e08502",
+        "status": "PASS",
+        "passed": 6,
+        "method": "api, frontend",
+        "result": "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/result.json",
+        "log_hashes": {
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/0-api.log": "b0fb52423c6210c5bf4175c05a5e6957ddc7284c02592757cb89f2a3625d4888",
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/1-api.log": "ffc23426d63a1f69302ee66d9b22e6397bce65d0b7aa765125cb6a56a77717e9",
+          "checks/RECOVERY-COMMENT-RETRY/66a99c96e7/081111/2-frontend.log": "a53c1257db3f3ce2d0da2f69d9d1186eafcfbbf179deb0cf3337dbe524c38794"
+        }
+      },
+      "merge_note": null,
+      "body": "recovery-comment-retry.md",
+      "patch_sha256": "a2ac3638258dd1b69a6b636e2dbc283489bf23262fb258e8a05d48e8103af14d",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/recovery-comment-retry"
+    },
+    {
+      "id": "EMM-DISPLAY-MISSING",
+      "repository": "Bonsai",
+      "branch": "pr/emm-display-missing",
+      "head": "a883d776f67a72980235c7fbc857ab39c8a64eff",
+      "base_ref": "development",
+      "base_commit": "21eccf7075fb59a897cb2ae86b0d6cdb95d0089c",
+      "dependencies": [],
+      "title": "Render current EMM descriptors and empty availability states",
+      "priority": "P1",
+      "files": [
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/cards.html",
+          "added": 7,
+          "removed": 2
+        },
+        {
+          "path": "frontend/bonsai_app/blueprints/sample/templates/sample.html",
+          "added": 2,
+          "removed": 2
+        }
+      ],
+      "production_added": 9,
+      "production_removed": 4,
+      "policy_condition": null,
+      "review_band": "Feature-dependent",
+      "normal_workflow": "The summary receives the SDK's current EMM analysis type. All such descriptors are skipped by the obsolete template condition.",
+      "minimal_fix": "Use the current descriptor and render populated, empty and unavailable states, including zero.",
+      "caveat": "Local frequency depends on whether this stored report category is used.",
+      "verification": {
+        "id": "EMM-DISPLAY-MISSING",
+        "head": "a883d776f67a72980235c7fbc857ab39c8a64eff",
+        "status": "PASS",
+        "passed": 3,
+        "method": "frontend",
+        "result": "checks/EMM-DISPLAY-MISSING/a883d776f6/081611/result.json",
+        "log_hashes": {
+          "checks/EMM-DISPLAY-MISSING/a883d776f6/081611/0-frontend.log": "c85c85c5f62a6797b8e8b202a8f89228d9178b6369192f454e57074addd51c30"
+        }
+      },
+      "merge_note": null,
+      "body": "emm-display-missing.md",
+      "patch_sha256": "d8789f1a9fb6169821c4e2f664135083fb7c376c20486768c52e2187a3bc2c88",
+      "resolution": "Targeted fix; stated validation limits apply",
+      "paired_candidates": [],
+      "user_publish_command": "git -C /home/jakob/src/codex/bonsai push -u origin pr/emm-display-missing"
+    }
+  ]
+}
