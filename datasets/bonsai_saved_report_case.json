@@ -1,0 +1,85 @@
+{
+  "case": "fixture_saureus_sdk5789",
+  "profile": "saureus",
+  "source_commit": "5789a9c7530407683f1fee9ffa450512269e62bc",
+  "acquired_at_utc": "2026-11-08T15:16:34.705729+00:00",
+  "data_root": "/home/jakob/data/codex/jasen",
+  "origin": "Existing repository test reports; mixed fixtures, not a newly analysed isolate",
+  "scope": "Literal report parsing, persistence and UI display; no sequence processing or clinical interpretation",
+  "reports": [
+    {
+      "filename": "spatyper.tsv",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/saureus/spatyper.tsv",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/saureus/spatyper.tsv",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 68,
+      "md5": "3c486f5180746a358d699cf8377c6dc1",
+      "sha256": "107ed7f270074a6df4f4654acf3f85b6539fd5bb366be5bc1162781496aec45d",
+      "software": "spatyper",
+      "subcommand": null,
+      "software_version": "0.3.3"
+    },
+    {
+      "filename": "quast.tsv",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/saureus/quast.tsv",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/saureus/quast.tsv",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 1135,
+      "md5": "ff33966c20701cee3aa6bbce8aec9ae4",
+      "sha256": "1ba57df5728fa08f81eb89d7561f11dda2b657b777a205b9c8e08914f5265585",
+      "software": "quast",
+      "subcommand": null,
+      "software_version": "5.2.0"
+    },
+    {
+      "filename": "samtools_coverage.txt",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/saureus/samtools_coverage.txt",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/saureus/samtools_coverage.txt",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 197,
+      "md5": "12cfb6f77e652c408e372d848e831bcc",
+      "sha256": "4e84ee8afb9d2232819f7c3a5864013a74ef0f868804e3ebb42dd370926809e4",
+      "software": "samtools",
+      "subcommand": "coverage",
+      "software_version": "1.17"
+    },
+    {
+      "filename": "samtools_bedcov.txt",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/saureus/samtools_bedcov.txt",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/saureus/samtools_bedcov.txt",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 55,
+      "md5": "9606d0ea19ccb29edbfe729e2da728b1",
+      "sha256": "3f19f704d20cf30a145db80589111d8bf0f33df12fc4a313407371bfdc7d7233",
+      "software": "samtools",
+      "subcommand": "bedcov",
+      "software_version": "1.17"
+    },
+    {
+      "filename": "samtools_stats.txt",
+      "path": "datasets/github/bonsai-sdk-saved-reports/5789a9c7530407683f1fee9ffa450512269e62bc/raw/saureus/samtools_stats.txt",
+      "upstream_url": "https://github.com/SMD-Bioinformatics-Lund/bonsai-sdk/blob/5789a9c7530407683f1fee9ffa450512269e62bc/tests/fixtures/saureus/samtools_stats.txt",
+      "git_object_verified": true,
+      "publisher_checksum_verified": false,
+      "bytes": 57687,
+      "md5": "b1782556b76365ad315b68b1c28ed139",
+      "sha256": "64164b0d2e1c05080d211d130b98cd13471143c476235156b9f4ab28d2a7eee8",
+      "software": "samtools",
+      "subcommand": "stats",
+      "software_version": "1.17"
+    }
+  ],
+  "sequence_processing_enabled": false,
+  "excluded": [
+    "raw reads",
+    "genomes",
+    "typing schemas",
+    "resistance/virulence reports",
+    "sequence indexes",
+    "variant files"
+  ]
+}

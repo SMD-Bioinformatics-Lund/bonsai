@@ -5,7 +5,8 @@
   "cases": {
     "ecoli": {"label": "E. coli", "profile": "escherichia_coli", "mode": "reuse completed native producer output"},
     "saureus": {
-      "label": "S. aureus", "profile": "staphylococcus_aureus", "mode": "input preparation interrupted; no producer results loaded",
+      "label": "S. aureus", "profile": "staphylococcus_aureus", "mode": "saved-report software fixture only; native input preparation remains interrupted",
+      "software_fixture_external_id": "fixture_saureus_sdk5789",
       "accession": "ERR16064671", "dataset": "saureus-benchmark",
       "external_id": "org_saureus_err16064671", "sample_name": "Public S. aureus benchmark (ERR16064671)",
       "lims_id": "ORG-SAUREUS-001", "reference": "GCF_000012045.1", "reference_species_dir": "staphylococcus_aureus",
