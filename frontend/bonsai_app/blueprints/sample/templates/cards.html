@@ -1030,7 +1030,7 @@
 
 
 {% macro analysis_meta_databases(sample_info) %}
-{% set databases = sample_info.pipeline.pipeline_info.databases %}
+{% set databases = sample_info.pipeline.pipeline_info.databases if sample_info.pipeline else [] %}
 {% if databases %}
 <div class="card">
     <div class="card-body">
@@ -1064,6 +1064,7 @@
             </a>
         </h5>
         {% set p = sample_info.pipeline %}
+        {% if p %}
         <table class="table">
             <tbody>
                 <tr>
@@ -1084,6 +1085,9 @@
                 </tr>
             </tbody>
         </table>
+        {% else %}
+        <p class="text-muted">No completed pipeline is available for this sample.</p>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
