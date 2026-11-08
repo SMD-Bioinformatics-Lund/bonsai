@@ -44,7 +44,7 @@ def download(url,path,*,expected_md5=None,expected_sha256=None,expected_bytes=No
     part=path.with_name(path.name+'.part')
     if not path.exists():
         print('Downloading '+path.name,flush=True)
-        subprocess.run(['curl','--fail','--location','--retry','5','--retry-all-errors','--connect-timeout','20',
+        subprocess.run(['curl','--ipv4','--fail','--location','--retry','5','--retry-all-errors','--connect-timeout','20',
             '--speed-time','120','--speed-limit','1024','--continue-at','-','--silent','--show-error',
             '--output',str(part),url],check=True,env=env())
     actual=hashes(path if path.exists() else part)

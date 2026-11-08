@@ -1,0 +1,22 @@
+{
+  "scope": "Software handling and display of existing results; sequence-processing expansion stopped after a biological content restriction",
+  "sequence_processing_enabled": false,
+  "order": ["ecoli", "saureus", "klebsiella", "spyogenes", "streptococcus", "staphylococcus", "mtuberculosis"],
+  "cases": {
+    "ecoli": {"label": "E. coli", "profile": "escherichia_coli", "mode": "reuse completed native producer output"},
+    "saureus": {
+      "label": "S. aureus", "profile": "staphylococcus_aureus", "mode": "input preparation interrupted; no producer results loaded",
+      "accession": "ERR16064671", "dataset": "saureus-benchmark",
+      "external_id": "org_saureus_err16064671", "sample_name": "Public S. aureus benchmark (ERR16064671)",
+      "lims_id": "ORG-SAUREUS-001", "reference": "GCF_000012045.1", "reference_species_dir": "staphylococcus_aureus",
+      "schema_id": "141106", "schema_name": "Staphylococcus_aureus", "training_file": "Staphylococcus_aureus.trn",
+      "additional_containers": ["sccmec", "spatyper"],
+      "source_publication": "https://doi.org/10.1186/s12920-025-02305-2"
+    },
+    "klebsiella": {"label": "Klebsiella", "profile": "klebsiella", "mode": "pending qualification"},
+    "spyogenes": {"label": "S. pyogenes", "profile": "streptococcus_pyogenes", "mode": "pending qualification"},
+    "streptococcus": {"label": "Other Streptococcus", "profile": "streptococcus", "mode": "pending qualification"},
+    "staphylococcus": {"label": "Other Staphylococcus", "profile": "staphylococcus", "mode": "pending qualification"},
+    "mtuberculosis": {"label": "M. tuberculosis profile", "profile": "mycobacterium_tuberculosis", "mode": "pending scope and source qualification"}
+  }
+}

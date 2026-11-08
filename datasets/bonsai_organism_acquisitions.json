@@ -1,0 +1,161 @@
+{
+  "data_root": "/home/jakob/data/codex/jasen",
+  "cases": {
+    "saureus": {
+      "reads": {
+        "metadata_url": "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=ERR16064671&result=read_run&fields=run_accession%2Cstudy_accession%2Csample_accession%2Cscientific_name%2Ctax_id%2Csample_title%2Csample_alias%2Clibrary_strategy%2Clibrary_source%2Clibrary_layout%2Cinstrument_platform%2Cfastq_ftp%2Cfastq_md5%2Cfastq_bytes&format=json",
+        "metadata": {
+          "run_accession": "ERR16064671",
+          "study_accession": "PRJEB90249",
+          "sample_accession": "SAMEA120863009",
+          "scientific_name": "Staphylococcus aureus",
+          "tax_id": "1280",
+          "sample_title": "staaur-s-R1",
+          "sample_alias": "staaur-s-R1.fastq.gz",
+          "library_strategy": "WGS",
+          "library_source": "GENOMIC",
+          "library_layout": "PAIRED",
+          "instrument_platform": "ILLUMINA",
+          "fastq_ftp": "ftp.sra.ebi.ac.uk/vol1/fastq/ERR160/071/ERR16064671/ERR16064671_1.fastq.gz;ftp.sra.ebi.ac.uk/vol1/fastq/ERR160/071/ERR16064671/ERR16064671_2.fastq.gz",
+          "fastq_md5": "b8b15ad22120666de24caddfa1a2dc12;4b87cef3907a7763a95e2daa2e9d767e",
+          "fastq_bytes": "110110751;116359538"
+        },
+        "files": [
+          {
+            "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR160/071/ERR16064671/ERR16064671_1.fastq.gz",
+            "path": "datasets/ena/saureus-benchmark/ERR16064671/raw/ERR16064671_1.fastq.gz",
+            "bytes": 110110751,
+            "md5": "b8b15ad22120666de24caddfa1a2dc12",
+            "sha256": "8fcbbc77a3c0a687edb093cf77159a976b10a10537c5ea51bd48977e2ee58c8d",
+            "acquired_at_utc": "2026-11-08T14:10:24.833635+00:00",
+            "publisher_checksum_verified": true,
+            "publisher_md5": "b8b15ad22120666de24caddfa1a2dc12",
+            "publisher_sha256": null
+          },
+          {
+            "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR160/071/ERR16064671/ERR16064671_2.fastq.gz",
+            "path": "datasets/ena/saureus-benchmark/ERR16064671/raw/ERR16064671_2.fastq.gz",
+            "bytes": 116359538,
+            "md5": "4b87cef3907a7763a95e2daa2e9d767e",
+            "sha256": "dc4c8fbcd59548a2d29f0123ee194fee99ac33408073e375b6b34506cf4a054e",
+            "acquired_at_utc": "2026-11-08T14:10:10.089650+00:00",
+            "publisher_checksum_verified": true,
+            "publisher_md5": "4b87cef3907a7763a95e2daa2e9d767e",
+            "publisher_sha256": null
+          }
+        ]
+      },
+      "pair_validation": {
+        "validated_at_utc": "2026-11-08T14:10:31.373872+00:00",
+        "read_pairs": 1315813,
+        "bases": 360739122,
+        "parent_sha256": [
+          "8fcbbc77a3c0a687edb093cf77159a976b10a10537c5ea51bd48977e2ee58c8d",
+          "dc4c8fbcd59548a2d29f0123ee194fee99ac33408073e375b6b34506cf4a054e"
+        ]
+      },
+      "additional_containers": [
+        {
+          "tool": "sccmec",
+          "url": "https://depot.galaxyproject.org/singularity/sccmec:1.2.0--hdfd78af_0",
+          "path": "containers/jasen-1.4.1/sccmec.sif",
+          "bytes": 332734464,
+          "md5": "ec6d40296f77c91e068a2d6a96028967",
+          "sha256": "10a332360c93c371b7bf1994fdece7cb9db8b2d5ff4fa1b283b2f2472a858308",
+          "acquired_at_utc": "2026-11-08T14:11:03.706900+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "tool": "spatyper",
+          "url": "https://depot.galaxyproject.org/singularity/spatyper:0.3.3--pyhdfd78af_3",
+          "path": "containers/jasen-1.4.1/spatyper.sif",
+          "bytes": 64679936,
+          "md5": "f44aa599440c399ed44536a8445bb3fd",
+          "sha256": "48076ca865d7ba1706b236c9756774a3c8b069528b22fca22b3ae7d1ad29284a",
+          "acquired_at_utc": "2026-11-08T14:11:10.711570+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "reference": {
+        "accession": "GCF_000012045.1",
+        "metadata_url": "https://api.ncbi.nlm.nih.gov/datasets/v2/genome/accession/GCF_000012045.1/dataset_report",
+        "files": [
+          {
+            "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/012/045/GCF_000012045.1_ASM1204v1/GCF_000012045.1_ASM1204v1_genomic.fna.gz",
+            "path": "datasets/ncbi/bacterial-references/GCF_000012045.1/raw/GCF_000012045.1_ASM1204v1_genomic.fna.gz",
+            "bytes": 816945,
+            "md5": "effa526ef397b1bc12c737c943c729e1",
+            "sha256": "540fb94551c3bc15ea51269f8a241099c810e48126b640e5c884a50008aed9a8",
+            "acquired_at_utc": "2026-11-08T14:11:13.103842+00:00",
+            "publisher_checksum_verified": true,
+            "publisher_md5": "effa526ef397b1bc12c737c943c729e1",
+            "publisher_sha256": null
+          },
+          {
+            "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/012/045/GCF_000012045.1_ASM1204v1/GCF_000012045.1_ASM1204v1_genomic.gff.gz",
+            "path": "datasets/ncbi/bacterial-references/GCF_000012045.1/raw/GCF_000012045.1_ASM1204v1_genomic.gff.gz",
+            "bytes": 259900,
+            "md5": "850fc3423980893087574ee50dcaa74a",
+            "sha256": "5deeaad5a69e98c797469f1e263f9540b5baaf37ad93cdb0a53a99f221ee8f46",
+            "acquired_at_utc": "2026-11-08T14:11:13.852182+00:00",
+            "publisher_checksum_verified": true,
+            "publisher_md5": "850fc3423980893087574ee50dcaa74a",
+            "publisher_sha256": null
+          }
+        ],
+        "derived_path": "datasets/ncbi/bacterial-references/GCF_000012045.1/derived",
+        "derived_files": {
+          "GCF_000012045.1.fasta": {
+            "bytes": 2849194,
+            "md5": "5545a84ab045ed1f96c8c694f54e1ddb",
+            "sha256": "ba781af392d83d9e29bb1c3687c5d7fbbe83c78811ed16e45eece90481c03461"
+          },
+          "GCF_000012045.1.fasta.fai": {
+            "bytes": 60,
+            "md5": "6a67196d68290f70d1959c605ab59961",
+            "sha256": "1d1b4bad95702975f8cb16b81f37f8d69b7497b2da097ba4547f351cfbc4b7a8"
+          },
+          "GCF_000012045.1.gff": {
+            "bytes": 1727971,
+            "md5": "fdf7fb694dd7d39f612fe80853c3f43d",
+            "sha256": "efc686ba31c464d8a3e83ae79d4031643839ac761981194fa4e86356cde47c6b"
+          }
+        }
+      },
+      "schema_inputs_preserved": {
+        "files": [
+          {
+            "url": "https://www.cgmlst.org/ncs/schema/141106/alleles",
+            "path": "datasets/cgmlst-org/staphylococcus_aureus/schema-141106-snapshot-2026-11-08/raw/cgmlst_schema_Staphylococcus_aureus_141106.zip",
+            "bytes": 107378997,
+            "md5": "edf207bcc3252b0cc29185e0cd5d46ad",
+            "sha256": "24c5b5b7bae66609cace8292b57b3bbc50fe7f2af610d1cc53e1651fffc9138b",
+            "acquired_at_utc": "2026-11-08T14:11:29.216166+00:00",
+            "publisher_checksum_verified": false,
+            "publisher_md5": null,
+            "publisher_sha256": null
+          },
+          {
+            "url": "https://raw.githubusercontent.com/B-UMMI/chewBBACA/v3.5.4/CHEWBBACA/prodigal_training_files/Staphylococcus_aureus.trn",
+            "path": "datasets/chewbbaca/prodigal-training-files/3.5.4/raw/Staphylococcus_aureus.trn",
+            "bytes": 558392,
+            "md5": "3b6d6124db419232abd277b9caba04d2",
+            "sha256": "fa629ecf5efdd35c1f076d2511c4ddada9bbdc78202b4700fe86b998a21456f9",
+            "acquired_at_utc": "2026-11-08T14:11:47.319691+00:00",
+            "publisher_checksum_verified": false,
+            "publisher_md5": null,
+            "publisher_sha256": null
+          }
+        ],
+        "preparation_completed": false,
+        "analysis_started": false,
+        "results_loaded": false,
+        "status": "Sequence-processing expansion stopped after the user reported content being withheld"
+      }
+    }
+  }
+}
