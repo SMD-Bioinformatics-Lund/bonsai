@@ -206,7 +206,7 @@ async def create_group_service(
     ):
         raise ForbiddenAccess("Only owner or admin may create a private group")
 
-    if group_record.invited_users and not (creator.owner_id or creator.is_admin()):
+    if group_record.invited_users and not (creator.user_id or creator.is_admin()):
         raise ForbiddenAccess("Only owner or admin may invited users on creation")
 
     # Build database document
