@@ -6,7 +6,7 @@ export interface GroupEditorApi {
 
   updateGroup(
     groupId: string,
-    data: InputCoreGroupInfo
+    data: Partial<InputCoreGroupInfo>
   ): Promise<GroupInfo>;
 
   updateAllowedColumns(

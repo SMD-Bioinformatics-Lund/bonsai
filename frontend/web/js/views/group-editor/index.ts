@@ -17,6 +17,8 @@ export class GroupEditor extends HTMLElement {
 
   private _api?: GroupEditorApi;
   private isInitialized = false;
+  private savedCore = { display_name: "", description: "" };
+  private savedColumns: string[] = [];
 
   set api(api: GroupEditorApi) {
     this._api = api;
@@ -65,6 +67,8 @@ export class GroupEditor extends HTMLElement {
   async load(groupId: string) {
     const data = await this.api.getGroup(groupId)
     this.model.loadFromApi(data);
+    this.savedCore = { display_name: data.display_name, description: data.description };
+    this.savedColumns = [...data.table_columns];
     this.render();
   }
 
@@ -82,6 +86,7 @@ export class GroupEditor extends HTMLElement {
         display_name: this.model.displayName,
         description: this.model.description,
       }
+      const creating = this.mode === "create";
       if ( this.mode == "create" ) {
         // The group key is stable and cannot be changed afterwards.
         const groupObj = await this._api.createGroup({ ...corePayload, group_key: this.model.groupKey })
@@ -90,16 +95,21 @@ export class GroupEditor extends HTMLElement {
         this.mode = "edit";
       } else {
         groupId = this.model.groupId!;
-        await this._api.updateGroup(groupId, corePayload)
+        const changes: Partial<typeof corePayload> = {};
+        if (corePayload.display_name !== this.savedCore.display_name) changes.display_name = corePayload.display_name;
+        if (corePayload.description !== this.savedCore.description) changes.description = corePayload.description;
+        if (Object.keys(changes).length) await this._api.updateGroup(groupId, changes);
       }
 
       // update allowed columns
       // first narrow to only selected elements then get the col id
       const selector =this.querySelector('column-selector') as ColumnSelector
-      await this._api.updateAllowedColumns(
-        groupId,
-        selector.items.filter(item => item.enabled).map(item => item.id)
-      );
+      const columns = selector.items.filter(item => item.enabled).map(item => item.id);
+      if (creating || JSON.stringify(columns) !== JSON.stringify(this.savedColumns)) {
+        await this._api.updateAllowedColumns(groupId, columns);
+      }
+      this.savedCore = { ...corePayload };
+      this.savedColumns = [...columns];
 
       this.dispatchEvent(
         new CustomEvent("group-editor:saved", {
