@@ -256,7 +256,7 @@ def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) ->
             variant_passes_qc = variant["depth"] <= int(min_depth)
 
     # hide variant that have been manually dismissed
-    if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":
+    if bool(form.get("hide-dismissed")) and (variant.get("curation") or {}).get("decision") == "reject":
         variant_passes_qc = False
 
     # hide varians without resistance
@@ -290,6 +290,7 @@ def filter_variants(
 ) -> dict[str, Any]:
     """Filter resistance variants from prediction sw."""
     for prediction in sample_info["element_type_result"]:
+        merge_variants_with_curations(prediction)
         variants = prediction["result"]["variants"]
         if len(variants) == 0:
             continue
