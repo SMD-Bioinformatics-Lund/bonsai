@@ -31,9 +31,6 @@ async def add_metadata_to_sample(
 
     # 2. push new metadata entry to existing metadata
     meta_info: list[dict[str, Any]] = []
-    for meta in sample_meta:
-        if meta['fieldname'] not in input_fieldnames:
-            meta_info.append(meta)
     # if entry is a table, serialize and reformat
     for record in metadata:
         if record.type == "table":
@@ -42,11 +39,13 @@ async def add_metadata_to_sample(
             meta_info.append(record.model_dump())
 
     cursor: UpdateResult = await db.sample_collection.update_one(
-        {"sample_id": sample_id},
-        {"$set": {"metadata": meta_info}},
+        {"sample_id": sample_id, "metadata.fieldname": {"$nin": list(input_fieldnames)}},
+        {"$push": {"metadata": {"$each": meta_info}}},
     )
     if cursor.matched_count == 0:
-        raise EntryNotFound(sample_id)
+        if await get_sample_by_id(db, sample_id=sample_id) is None:
+            raise EntryNotFound(sample_id)
+        raise FileExistsError("A metadata field was added by another request")
     is_updated = cursor.matched_count == 1 and cursor.modified_count == 1
     if not is_updated:
         raise ValueError("Metadata not modified.")
