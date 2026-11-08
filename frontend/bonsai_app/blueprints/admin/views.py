@@ -12,6 +12,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
+from bonsai_libs.api_client.core.exceptions import NotFoundError
 from wtforms import (
     Form,
     PasswordField,
@@ -107,11 +108,8 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
         try:
             client = get_api_client()
             client.get_user(username)
-        except HTTPError as error:
-            if error.response.status_code == 404:
-                user_exists = False
-            else:
-                raise error
+        except NotFoundError:
+            user_exists = False
         if user_exists:
             raise ValidationError(f"An user with username {username} already exists")
 
