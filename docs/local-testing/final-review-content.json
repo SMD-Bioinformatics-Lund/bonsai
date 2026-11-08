@@ -1,0 +1,170 @@
+{
+  "title": "Bonsai final development test report",
+  "question": "What should be resolved before the development release?",
+  "answer": "Release review should start with four P0 access/privacy findings, then the P1 failures affecting ordinary review, editing, export and ingestion. Minimal local candidates exist for all 38 original P0/P1 findings and five later findings. Two later P1 summary-display issues still have no prepared candidate. The final offline parser regression passes on the locally patched SDK and uploader; this does not establish that the unpatched development baseline passes.",
+  "as_of": "8 November 2026",
+  "scope": "Final consolidation of saved software-test evidence. The baseline catalog remains pinned to Bonsai development 21eccf7 and SDK 5789a9c. Later integration findings retain their own application, SDK, PRP or JASEN attribution. No new biological analyses or application changes are performed to build this report.",
+  "status": "Testing wrapped up; local candidates prepared; release selection and deployment validation remain outstanding.",
+  "counting_rule": "The 55 original baseline findings are preserved, including their explicit alias consolidation. Nine later findings are added: eight product/integration findings and one fixture-provenance finding. Distinct failures at different layers of the same upload workflow remain separate because they require different patches. A missing-analysis summary and an unsupported variants detail view are separate display paths. The 20 corrected synthetic fixture formats are test-maintenance evidence, not 20 additional production bugs. Candidate preparation is counted independently from resolution on development.",
+  "recommended_order": [
+    {"title": "Resolve access boundaries first", "text": "Review the four P0 findings. The private-record branch is a public-only creation mitigation, not an ACL implementation or a migration for existing private-marked records. Private-data use therefore needs an explicit product decision and verification of existing records.", "issues": ["ORDINARY-RECORD-DELETE", "ANALYSIS-UPLOAD-ROLE-GATE", "PRIVATE-RECORD-SCOPE", "INDEX-WRITE-AUTHENTICATION"]},
+    {"title": "Prefer frequent, small workflow corrections", "text": "Account create/edit, metadata append and rendering, selection/filter correctness, pending-record rendering and paired-read QC counts are plausible everyday triggers. Their prepared changes are narrow. Actual installation frequency has not been measured.", "issues": ["ADMIN-CREATE-USER-500", "ADMIN-EDIT-USER-500", "METADATA-ADD-500", "METADATA-CATEGORY-LOSS", "SELECTED-FILTER-STALE", "VARIANT-FILTER-AND", "PENDING-SAMPLE-500", "SAMTOOLS-READ-PAIR-COUNT"]},
+    {"title": "Keep related ingestion patches together", "text": "The Kleborate path crosses the API, SDK multipart client, PRP uploader and SDK field mapping. The four prepared layer-specific fixes are complementary. Correct imports still leave the P1 summary-reading issue open.", "issues": ["KLEBORATE-UPLOAD-422", "PRP-KLEBORATE-COMPANION", "SDK-KAPTIVE-NESTING", "KLEBORATE-SUMMARY-DISPATCH"]},
+    {"title": "Close the remaining misleading summary states", "text": "Missing analyses must remain distinguishable from parsed empty results. The Kleborate summary must show the stored supported values and availability states correctly. Both are open P1 findings without separate fix branches.", "issues": ["MISSING-ANALYSIS-NEGATIVE-SUMMARY", "KLEBORATE-SUMMARY-DISPATCH"]}
+  ],
+  "limits": [
+    "The development report is pinned to a recorded local revision; no remote refresh or claim about the current upstream development tip is made.",
+    "Historical development browser/API observations, isolated baseline reproductions, and later observations traced to baseline source have different evidence strength. Each original issue retains its attribution label and evidence links.",
+    "The newer live instance uses a composition of local fixes. A successful check there is evidence for that composition, not for the unpatched development baseline or an arbitrary selection of candidate branches.",
+    "The only completed raw-data JASEN run is one E. coli K-12 laboratory control with paired Illumina input. No other species has been validated end to end from raw reads in this work.",
+    "All seven profiles had earlier synthetic coverage. The newer instance has seven records across four profiles; its four Kleborate scenarios reuse one saved report pair and are not four independent biological samples. The TB-profile addition is numeric QC only.",
+    "All 22 registered parser keys have saved-file examples, but not every upstream field has an independent expected-value oracle. Six fixture version labels are explicitly unverified placeholders or format-family labels.",
+    "Historical producer releases, full live import/store/export/browser coverage for every format, and reimport/overwrite/version-replacement/failure cleanup remain incomplete.",
+    "The last parser audit adds no new production parser defect. Repeating the same saved fixture set is showing diminishing returns; new independent saved outputs or import-lifecycle cases would add more information.",
+    "LDAP/SSO, other browser engines, long-read input, production load and clinical accuracy are outside the completed coverage. Earlier synthetic clustering checks do not provide independent raw-data epidemiological validation.",
+    "Sequence-processing expansion remained stopped after the reported biological content restriction. The exact triggering action was not exposed. The later work used saved reports and software contracts; the interrupted species preparation was not resumed.",
+    "All fix branches remain local. Tests, patch sizes and dependencies support review; they do not constitute approval to merge or evidence that all combinations have been deployed."
+  ],
+  "handoff": [
+    "Select candidates using severity, expected local workflow exposure and measured production patch size together. Do not treat the total number of passing checks as a clinical accuracy metric.",
+    "Respect the recorded dependencies and paired upload patches. Two model/import and detail-filter overlap resolutions are documented in the original candidate catalog.",
+    "Retest the chosen branch composition with this installation's account roles and actual producer versions before next week's hands-on test. The old broad synthetic instance and newer isolated reference instance remain separate.",
+    "Keep the two open P1 summary findings visible when selecting the release set. A prepared candidate is not a statement that the issue has been fixed on development.",
+    "Further raw-data testing would add most information through a benign K-12 long-read control if relevant locally, a two-record batch, or a controlled input-failure/recovery scenario. These are proposals, not completed runs."
+  ],
+  "new_findings": [
+    {
+      "id": "INDEX-WRITE-AUTHENTICATION", "priority": "P0", "area": "Access", "repository": "Bonsai",
+      "title": "Index mutation routes lack the required write authentication",
+      "observed": "The isolated baseline allowed the index-mutation service path without the intended anonymous/ordinary-account denial. The fix applies the existing write scope to both mutation routes.",
+      "why": "An unauthenticated or ordinary caller can cross a mutation permission boundary.",
+      "normal_workflow": "Direct API use without authentication or with an ordinary account. This is not exposed through ordinary authorized viewing; local frequency is unmeasured.",
+      "minimal_fix": "Use the existing write scope on two routes; 7 additions and 1 deletion in one production file, on top of the account-role candidate.",
+      "acceptance": "Deny anonymous and ordinary callers before a service mutation; preserve uploader and administrator access.",
+      "basis": "Isolated baseline/candidate role checks, followed by four live authorization probes against a nonexistent record.",
+      "evidence": ["data/native-control-checks.json", "data/branches.json"],
+      "validation": "8 candidate role/route checks passed; four baseline denial checks failed as expected. All four subsequent live authorization probes matched the expected status without modifying records.",
+      "candidate_source": "index_auth"
+    },
+    {
+      "id": "SAMTOOLS-READ-PAIR-COUNT", "priority": "P1", "area": "QC units", "repository": "SDK",
+      "title": "Paired-read QC counts are displayed as individual reads",
+      "observed": "The 1,250,000-pair laboratory input was initially displayed as 2,500,000 read pairs. The parser used the paired-read count without converting it to pairs.",
+      "why": "A routine displayed QC quantity has the wrong unit and is doubled.",
+      "normal_workflow": "Every paired input using this samtools-stats path, including the tested JASEN Illumina workflow.",
+      "minimal_fix": "One integer conversion in the parser: 1 addition and 1 deletion in production; two existing test expectations are also updated.",
+      "acceptance": "Display 1,250,000 pairs for this control and retain the defined unpaired-input behavior.",
+      "basis": "Known input-pair count, baseline/candidate generic unit checks, and corrected live API/browser display.",
+      "evidence": ["data/native-control-checks.json", "../organisms/evidence/ecoli/qc-values.png"],
+      "validation": "Four generic count cases passed; baseline reproduced three failures and one unpaired pass. The stored and displayed control now agree with the input-pair count.",
+      "candidate_source": "read_pairs"
+    },
+    {
+      "id": "JASEN-SAMPLE-NAME-QUOTING", "priority": "P1", "area": "Producer output", "repository": "JASEN",
+      "title": "Descriptive sample labels break producer output generation",
+      "observed": "The native create-YAML task exited with a shell syntax error for the label Public reference MG1655 (ERR022075).",
+      "why": "A descriptive display label can prevent an otherwise completed workflow from producing importable output.",
+      "normal_workflow": "Labels containing spaces or shell punctuation. Identifier-only naming conventions make this less likely.",
+      "minimal_fix": "Shell-quote the existing sample-name argument in YAML and CDM output generation; 6 additions and 6 deletions across two production files. No analysis logic changes.",
+      "acceptance": "Preserve the descriptive sample label literally while completing the output manifest.",
+      "basis": "Captured native task failure at JASEN 1.4.1 and successful resumed output generation using the local quoting patch.",
+      "evidence": ["data/native-control-provenance.json", "../organisms/"],
+      "validation": "The resumed laboratory-control run completed and its output manifest imported successfully. This is one label and one completed producer case, not an exhaustive shell-character test.",
+      "candidate_source": "jasen_quote"
+    },
+    {
+      "id": "MISSING-ANALYSIS-NEGATIVE-SUMMARY", "priority": "P1", "area": "Result availability", "repository": "Bonsai",
+      "title": "An omitted analysis is presented as a negative summary",
+      "observed": "Saved-report and QC-only records have no element-analysis descriptors, but their extended summary shows negative-result wording.",
+      "why": "Unavailable analysis data can be mistaken for a completed analysis with no findings.",
+      "normal_workflow": "Partial imports, QC-only workflows or interrupted uploads. Frequency in complete routine imports is unmeasured.",
+      "minimal_fix": "Estimate: small summary-template change distinguishing an absent descriptor from a parsed empty result. No derived analysis is required.",
+      "acceptance": "Show an unavailable/not-performed state when the relevant descriptor is absent; retain a separate empty-result state for completed analyses.",
+      "basis": "Reproduced with both the saved S. aureus software case and the TB-profile QC-only case on the patched live instance.",
+      "evidence": ["../organisms/data/saureus-software-checks.json", "../organisms/data/tb-software-checks.json"],
+      "validation": "The relevant availability check fails in both cases. No separate fix has been implemented or verified.",
+      "candidate_source": null
+    },
+    {
+      "id": "PRP-KLEBORATE-COMPANION", "priority": "P1", "area": "Upload orchestration", "repository": "PRP",
+      "title": "PRP does not forward the listed companion report",
+      "observed": "PRP 2.0.0 uploads the primary report without its separately listed companion and receives HTTP 422 after creating the sample. No partial analysis descriptors were stored.",
+      "why": "A normal manifest cannot complete this ingestion path despite the companion file being available.",
+      "normal_workflow": "Manifests listing Kleborate and its hAMRonization companion separately. Local feature-use frequency is unmeasured.",
+      "minimal_fix": "Attach the companion to the existing primary upload and skip it as a standalone analysis; 13 additions and 1 deletion in one uploader file.",
+      "acceptance": "Import one canonical analysis with its companion under both assay aliases and avoid a duplicate companion upload.",
+      "basis": "Pinned PRP baseline regression, candidate routing checks and four saved-report integration scenarios.",
+      "evidence": ["../organisms/kleborate/data/evidence.json"],
+      "validation": "Baseline: 3 failed, 2 passed. Candidate: 5 passed. Four integrated imports succeed with the complementary API/SDK fixes.",
+      "candidate_source": "prp_companion"
+    },
+    {
+      "id": "SDK-KAPTIVE-NESTING", "priority": "P1", "area": "Saved-report parsing", "repository": "SDK",
+      "title": "Nested Kaptive fields and percentage notation reject a saved report",
+      "observed": "The pinned SDK reads the fields from the wrong result block and rejects the saved explicit-percentage representation, preventing the whole report from being accepted.",
+      "why": "A saved producer-format report is rejected during normal ingestion.",
+      "normal_workflow": "Reports using the tested Kleborate 3.2.4 nested field structure and explicit percentage notation. Other producer versions remain a separate compatibility question.",
+      "minimal_fix": "Read the existing nested block and convert explicit percentages to the model's fraction representation; 5 additions and 3 deletions in one production parser file.",
+      "acceptance": "Import the unchanged saved report and preserve its literal values in the stored descriptors.",
+      "basis": "Four baseline/candidate input-format checks, unchanged original report, and parser-to-storage comparisons for both aliases.",
+      "evidence": ["../organisms/kleborate/data/evidence.json", "../organisms/data/parser-audit-results.json"],
+      "validation": "Baseline: 4 failed. Candidate: 4 passed. Four full parser-to-storage envelope comparisons pass after composition with the other upload fixes.",
+      "candidate_source": "sdk_kaptive"
+    },
+    {
+      "id": "KLEBORATE-SUMMARY-DISPATCH", "priority": "P1", "area": "Summary display", "repository": "Bonsai",
+      "title": "The Kleborate summary omits or misrepresents stored results",
+      "observed": "Stored species and K/O labels are missing or use an unsuitable card; a supplied-result card is blank; a score-only object is treated as an empty list.",
+      "why": "Successful ingestion still leaves supported stored information unreadable or misleading on the ordinary summary.",
+      "normal_workflow": "The tested summary under both assay aliases. The four scenarios share one saved report pair, so biological diversity and production frequency are not established.",
+      "minimal_fix": "Estimate: limited result-dispatch/template work and a K/O-specific card. Larger than the two import patches, but no storage or workflow restructuring is indicated.",
+      "acceptance": "Render the stored supported labels and score shapes with correct units and availability states under both aliases.",
+      "basis": "Ordinary-account browser checks after successful import and whole-envelope storage comparisons.",
+      "evidence": ["../organisms/kleborate/", "../organisms/kleborate/data/evidence.json"],
+      "validation": "29 of 43 functional checks pass; all 14 failed checks concern summary reading. No separate display fix has been prepared.",
+      "candidate_source": null
+    },
+    {
+      "id": "NO-SIGNATURE-WIDGET-ERROR", "priority": "P2", "area": "Result availability", "repository": "Bonsai",
+      "title": "The automatic similarity widget errors for unindexed records",
+      "observed": "The automatic widget logs a missing-signature error and disappears for deliberately unindexed saved-report records.",
+      "why": "An expected unavailable state produces an unexplained missing widget and noisy errors.",
+      "normal_workflow": "Records without a signature/index, including QC-only and partial imports. Indexed complete workflows do not establish the frequency of this case.",
+      "minimal_fix": "Estimate: small availability check and an explicit unavailable state. No similarity computation needs to be added.",
+      "acceptance": "Show a clear unavailable state without attempting an unsupported query or logging an unexpected failure.",
+      "basis": "Console observations in the saved S. aureus and TB-profile QC cases; also recorded in the Kleborate integration.",
+      "evidence": ["../organisms/data/saureus-software-checks.json", "../organisms/data/tb-software-checks.json"],
+      "validation": "Observed on deliberately unindexed records. A fix is not prepared; no multi-sample similarity behavior was evaluated in this increment.",
+      "candidate_source": null
+    },
+    {
+      "id": "KLEBSIELLA-FIXTURE-PROVENANCE", "priority": "P2", "area": "Test evidence", "repository": "SDK test fixtures",
+      "title": "Klebsiella fixtures contain E. coli metadata and shared QC bytes",
+      "observed": "The fixture run metadata declares ecoli, its assembly label is ecoli_test_1, and its Quast bytes are identical to the E. coli fixture.",
+      "why": "Generic parsing can be tested, but these files cannot establish independent Klebsiella producer coverage.",
+      "normal_workflow": "Use of these repository fixtures as representative species-specific producer evidence. This is a test-data issue; production exposure is not established.",
+      "minimal_fix": "Estimate: small fixture-metadata correction and an honestly labelled or replaced QC fixture. Existing originals were preserved and the misleading duplicate import was skipped.",
+      "acceptance": "Keep generic software coverage explicit and require independent correctly attributed evidence for species-specific producer claims.",
+      "basis": "Pinned Git-file comparison and later parser-fixture audit; no new record or biological analysis was needed.",
+      "evidence": ["../organisms/data/klebsiella-fixture-preflight.json", "../organisms/data/parser-audit-results.json"],
+      "validation": "The metadata mismatch and identical QC bytes are confirmed. No upstream fixture-fix candidate is prepared. The separate 20 synthetic header corrections do not resolve this provenance issue.",
+      "candidate_source": null,
+      "test_data_only": true
+    }
+  ],
+  "screenshots": [
+    {"source": "development/assets/variant-combined-filters.png", "name": "combined-filters.png", "issue": "VARIANT-FILTER-AND", "title": "Combined filters retain rows outside the requested conjunction", "caption": "Original development browser evidence. The second numeric predicate overwrites the first, so the visible row selection does not match both conditions. Stored data was not changed by this check."},
+    {"source": "organisms/kleborate/evidence/klebsiella-provided-summary.png", "name": "kleborate-summary.png", "issue": "KLEBORATE-SUMMARY-DISPATCH", "title": "Successful import does not ensure a readable summary", "caption": "Patched integration instance, saved-report software case. Whole-envelope comparisons pass while supported stored labels and result shapes remain absent or misrepresented. This is display evidence, not biological interpretation."},
+    {"source": "organisms/evidence/tb/summary.png", "name": "missing-analysis-summary.png", "issue": "MISSING-ANALYSIS-NEGATIVE-SUMMARY", "title": "QC-only data receives negative-analysis wording", "caption": "The TB-profile case contains two saved numeric-QC analyses only. Negative wording in the extended summary is therefore an availability/display defect; no native TB analysis was performed."},
+    {"source": "development/assets/populated-group-editor-count.png", "name": "group-editor-count.png", "issue": "GROUP-EDITOR-EMPTY-COUNT", "title": "A populated group is presented as empty", "caption": "Original development browser evidence. The saved group contains 123 members while its editor says that no samples have been added. This P2 feedback issue is separate from the P1 membership-loss fixes."}
+  ],
+  "species_context": [
+    {"profile": "E. coli", "context": "Common intestinal inhabitant; some strains cause diarrhoea, urinary or bloodstream infection. Harmless carriage and disease-causing strains share the same species name.", "source": "https://www.cdc.gov/ecoli/about/"},
+    {"profile": "S. aureus", "context": "Skin/nose carriage; skin, wound, bloodstream, heart-valve and bone infections. MRSA and MSSA are categories within the same species.", "source": "https://www.cdc.gov/staphylococcus-aureus/about/"},
+    {"profile": "Klebsiella", "context": "A broader group with intestinal carriage and important healthcare-associated pneumonia, bloodstream and surgical-site infections. Medical devices are a relevant clinical context.", "source": "https://www.cdc.gov/klebsiella/about/"},
+    {"profile": "S. pyogenes", "context": "Group A strep: throat/skin disease and sometimes invasive infection. Immune complications can follow the infection, including rheumatic fever and kidney inflammation.", "source": "https://www.cdc.gov/group-a-strep/about/"},
+    {"profile": "Other Streptococcus", "context": "A diverse genus bucket. Examples include group B strep with neonatal disease and pneumococcus with pneumonia/meningitis. These examples were not each independently validated here.", "source": "https://www.cdc.gov/group-b-strep/about/", "source2": "https://www.cdc.gov/pneumococcal/hcp/clinical-overview/index.html"},
+    {"profile": "Other Staphylococcus", "context": "Includes common skin inhabitants, particularly coagulase-negative staphylococci, that can cause bloodstream or implanted-device infection. Clinical context distinguishes carriage, contamination and infection.", "source": "https://arpsp.cdc.gov/psp/listing/antimicrobial-resistance/profile/vancomycin-resistant-cns", "source2": "https://www.cdc.gov/lab-quality/php/prevent-adult-blood-culture-contamination/primary-measure.html"},
+    {"profile": "M. tuberculosis", "context": "Tuberculosis most often affects the lungs but may affect other organs. Latent infection and active disease are distinct clinical states.", "source": "https://www.who.int/news-room/fact-sheets/detail/tuberculosis"}
+  ]
+}
