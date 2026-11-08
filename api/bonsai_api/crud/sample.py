@@ -1,6 +1,7 @@
 """Functions for performing CURD operations on sample collection."""
 
 import logging
+from hashlib import sha256
 from typing import Any
 
 from bonsai_libs.api_client.audit_log import AuditLogClient
@@ -133,21 +134,34 @@ async def add_comment(
     comment: Comment,
     ctx: ApiRequestContext,
     audit: AuditLogClient | None = None,
+    *, request_key: str | None = None,
 ) -> list[CommentInDatabase]:
     """Add comment to previously added sample."""
+    key = sha256(f"{ctx.actor.id}\0{request_key}".encode()).hexdigest() if request_key else None
     event_subject = Subject(id=sample_id, type=SourceType.USR)
     meta = {"sample_id": sample_id}
     with audit_event_context(audit, "create_comment", ctx, event_subject, meta):
         while True:
             sample = await get_sample_by_id(db, sample_id=sample_id)
             comments = [CommentInDatabase.model_validate(c) for c in sample["comments"]]
+            if key:
+                previous = next((c for c in sample["comments"] if c.get("_request_key") == key), None)
+                if previous is not None:
+                    if any(previous.get(k) != v for k, v in comment.model_dump(exclude={"created_at"}).items()):
+                        raise ConflictError("Comment request key was already used with different content")
+                    return comments
             comment_id = max((c.id for c in comments), default=0) + 1
             meta["comment_id"] = comment_id
             comment_obj = CommentInDatabase(id=comment_id, **comment.model_dump())
+            entry = comment_obj.model_dump(by_alias=False)
+            query = {"sample_id": sample_id, "comments.id": {"$ne": comment_id}}
+            if key:
+                entry["_request_key"] = key
+                query["comments._request_key"] = {"$ne": key}
             update_obj = await db.sample_collection.update_one(
-                {"sample_id": sample_id, "comments.id": {"$ne": comment_id}},
+                query,
                 {"$set": {"modified_at": get_timestamp()},
-                 "$push": {"comments": {"$each": [comment_obj.model_dump(by_alias=False)], "$position": 0}}},
+                 "$push": {"comments": {"$each": [entry], "$position": 0}}},
             )
             if update_obj.matched_count:
                 break

@@ -18,6 +18,7 @@
 </div>
 <form class="pb-2"
       action={{ url_for('samples.add_comment', sample_id=sample.sample_id) }} method="post">
+    <input type="hidden" name="comment_request_key" value="{{ g.comment_request_key }}">
     <div class="form-floating mt-4">
         <textarea class="form-control" name="comment" id="comment-box" placeholder="Leave a comment" required></textarea>
         <label class="text-muted" for="comment-box">My comment</label>

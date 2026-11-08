@@ -22,6 +22,7 @@ from bonsai_api.models.metadata import InputMetaEntry
 from bonsai_api.models.sample import Comment, CommentInDatabase
 from bonsai_api.models.user import UserOutputDatabase
 from fastapi import (
+    Header,
     APIRouter,
     Body,
     Depends,
@@ -69,6 +70,7 @@ async def add_sample_metadata(
 async def post_comment(
     comment: Comment,
     sample_id: str = Path(...),
+    request_key: str | None = Header(None, alias="Idempotency-Key"),
     db: Database = Depends(get_database),
     audit_log: AuditLogClient = Depends(get_audit_log),
     req_ctx: ApiRequestContext = Depends(get_request_context),
@@ -77,7 +79,7 @@ async def post_comment(
     ),
 ) -> CommentsObj:
     """Add a comment to a sample."""
-    return await add_comment(db, sample_id, comment, req_ctx, audit_log)
+    return await add_comment(db, sample_id, comment, req_ctx, audit_log, request_key=request_key)
 
 
 @router.delete(

@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container py-3">
+    <p>The comment save could not be confirmed. It may already have been saved. Retrying this submission will not create a duplicate.</p>
+    <form action="{{ url_for('samples.add_comment', sample_id=sample_id) }}" method="post">
+        <input type="hidden" name="comment_request_key" value="{{ request_key }}">
+        <textarea class="form-control" name="comment" required>{{ comment }}</textarea>
+        <button class="btn btn-outline-success mt-2" type="submit">Retry comment</button>
+    </form>
+</div>
+{% endblock %}

@@ -2,11 +2,13 @@
 
 import json
 import logging
+from uuid import uuid4
 from datetime import date
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
 from flask import (
+    g,
     Blueprint,
     abort,
     current_app,
@@ -18,7 +20,7 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from requests import HTTPError
+from requests import HTTPError, RequestException
 from pydantic import ValidationError
 from bonsai_libs.api_client.core.exceptions import ApiError
 
@@ -49,6 +51,11 @@ samples_bp = Blueprint(
     static_folder="static",
     static_url_path="/samples/static",
 )
+
+
+@samples_bp.before_request
+def identify_comment_submission():
+    g.comment_request_key = request.form.get("comment_request_key") or str(uuid4())
 
 
 @samples_bp.route("/samples")
@@ -178,18 +185,17 @@ def find_similar_samples(sample_id: str) -> Tuple[Dict[str, Any], int]:
 
 @samples_bp.route("/sample/<sample_id>/comment", methods=["POST"])
 @login_required
-def add_comment(sample_id: str) -> str:
-    """Post sample."""
+def add_comment(sample_id: str):
     client = get_api_client()
-
-    # post comment
-    data = request.form["comment"]
+    comment = request.form["comment"]
+    request_key = g.comment_request_key
     try:
-        client.post_comment_to_sample(
-            sample_id=sample_id, username=current_user.username, comment=data
-        )
-    except HTTPError:
-        flash("Error posting commment", "danger")
+        client.post_comment_to_sample(sample_id=sample_id, username=current_user.username, comment=comment,
+                                      headers={"Idempotency-Key": request_key})
+    except (ApiError, RequestException) as error:
+        LOG.warning("Comment save could not be confirmed: %s", error)
+        return render_template("comment_retry.html", sample_id=sample_id, comment=comment,
+                               request_key=request_key), 503
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
