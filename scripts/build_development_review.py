@@ -64,7 +64,7 @@ def assemble(run, content):
         item["evidence_documents"] = sorted(documents)
         if oid == "ANALYSIS-UPLOAD-ROLE-GATE":
             basis = "Isolated baseline reproduction"
-        elif oid in direct:
+        elif oid in direct and oid != 'BASKET-UNDEFINED-ASSAY':
             basis = "Original development browser/API evidence"
         elif oid in sdk_cases:
             basis = "Recorded SDK-baseline contract test"
@@ -170,7 +170,7 @@ def render_pdf(output, content, ledger, drawing, images):
     story.extend([t("The screenshots are unchanged original files from the synthetic development baseline. Catalog links expose the saved observations and pinned source evidence.","Small"),PageBreak()])
     heading("Evidence and practical limits", "What supports this development catalog?")
     for basis,count in ledger["counts_by_basis"].items():story.append(p('<b>'+escape(basis)+': '+str(count)+' items.</b>',"Body"))
-    story.append(t("The source-traced group was observed after some local changes, then checked against the relevant implementation at the pinned development/SDK revisions. These are not 19 new end-to-end baseline reproductions. The isolated checks use generic in-memory records or a stubbed service, without the running API or database.","Small"))
+    story.append(t("The source-traced group was observed after some local changes, then checked against the relevant implementation at the pinned development/SDK revisions. These are not fresh end-to-end baseline reproductions. The isolated checks use generic in-memory records or a stubbed service, without the running API or database.","Small"))
     for item in content["limits"]:story.append(t(item,"Small"))
     story.extend([t("Priority definitions","SubR")])
     for priority,meaning in content["priorities"].items():story.append(p('<b>'+priority+':</b> '+escape(meaning),"Small"))
