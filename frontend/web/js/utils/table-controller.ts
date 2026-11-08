@@ -104,6 +104,7 @@ function manageSelectSimilarBtn(selectedRows: string[]): void {
 
 export function initSamplesTable(tableId: string, tableConfig: Config): TableController {
   const controller = new TableController(tableId, tableConfig);
+  controller.getTable().on("select deselect", () => controller.getTable().draw(false));
 
   // add callback functions
   const funcs: TblStateCallbackFunc[] = [
