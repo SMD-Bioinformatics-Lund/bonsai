@@ -1,7 +1,7 @@
 """Data model definition of input/ output data"""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 import logging
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, computed_field, field_validator, model_validator
@@ -281,7 +281,7 @@ class SampleInfoCreate(ForbidExtraModelMixin):  # pylint: disable=too-few-public
     owners: list[str] = Field(default_factory=list, description="Owner identifiers (user:<id>)")
     owner_organizations: list[str] = Field(default_factory=list, description="Organization ids (org:<id>)")
     access_groups: list[str] = Field(default_factory=list, description="Optional access groups")
-    visibility: Visibility = Visibility.PUBLIC
+    visibility: Literal[Visibility.PUBLIC] = Visibility.PUBLIC
 
     @field_validator("lims_id", mode="before")
     @classmethod
