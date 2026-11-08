@@ -1,0 +1,765 @@
+{
+  "captured_at_utc": "2026-11-08T12:46:07.894446+00:00",
+  "source_branch": "test/jasen-public-reference-pilot",
+  "external_data_root": "/home/jakob/data/codex/jasen",
+  "run_directory": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot",
+  "scope": "One public E. coli K-12 MG1655 reference-strain software integration pilot",
+  "upstream": {
+    "repository": "https://github.com/genomic-medicine-sweden/jasen",
+    "commit": "e5e86ca8d87ec8173b6a245135b5a1858c771a5d",
+    "version": "1.4.1",
+    "extracted_at": "2026-11-08T11:19:45.391435+00:00"
+  },
+  "local_producer_patch": {
+    "id": "JASEN-SAMPLE-NAME-QUOTING",
+    "apparent_priority": "P1",
+    "branch": "pr/quote-producer-sample-name",
+    "head": "48736c6dcf9c239dc7618115abb6c7fcf84821c4",
+    "upstream_commit": "e5e86ca8d87ec8173b6a245135b5a1858c771a5d",
+    "path": "/home/jakob/data/codex/jasen/environments/jasen-quoted-sample-name/source",
+    "production_changes": "4\t5\tmodules/local/cdm/main.nf\n2\t1\tmodules/local/jasentool/main.nf",
+    "prepared_at_utc": "2026-11-08T12:30:09.548483+00:00",
+    "observed_failure": "Native create_yaml task exits 2 with a shell syntax error for Public reference MG1655 (ERR022075)",
+    "normal_trigger": "Descriptive sample labels containing spaces or shell punctuation; less likely with identifier-only labels",
+    "minimal_fix": "Shell-quote the existing sample-name argument in YAML and CDM output; no analysis or parser changes",
+    "published": false
+  },
+  "uploader": {
+    "commit": "085ce7d3f2e475860cbe1529698e87fc17e6f801",
+    "version": "2.0.0",
+    "role": "official Bonsai manifest uploader",
+    "repository": "https://github.com/SMD-Bioinformatics-Lund/bonsai-prp.git"
+  },
+  "nextflow": {
+    "version": "25.10.4",
+    "path": "environments/nextflow/25.10.4/nextflow",
+    "bytes": 38685870,
+    "md5": "552b8da06541123bde302a03bc5372ef",
+    "sha256": "60db869a7618783e3ee60183a2b0c6c50ffc67221eabec60800b904991786aaa",
+    "url": "https://github.com/nextflow-io/nextflow/releases/download/v25.10.4/nextflow-25.10.4-dist",
+    "publisher_sha256_verified": true
+  },
+  "singularity_version": "singularity version 3.7.0+47-g59447d168",
+  "java_version": "openjdk version \"25.0.4.1\" 2026-08-18",
+  "pipeline_containers": [
+    {
+      "tool": "ncbi-amrfinderplus",
+      "url": "https://depot.galaxyproject.org/singularity/ncbi-amrfinderplus:4.2.7--hf69ffd2_0",
+      "path": "containers/jasen-1.4.1/ncbi-amrfinderplus.sif",
+      "bytes": 295751680,
+      "md5": "188d26b6f86dc76488be7fae9a9614ab",
+      "sha256": "ad6b4a09a76d6edbaf95fd3d2b4f385032e4af8a240b04622c9c83db476a5bf6",
+      "acquired_at_utc": "2026-11-08T11:26:48.665984+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "blast",
+      "url": "https://depot.galaxyproject.org/singularity/blast:2.14.0--hf3cf87c_0",
+      "path": "containers/jasen-1.4.1/blast.sif",
+      "bytes": 207167488,
+      "md5": "720e1ede218137ad1599f15d98a2bd13",
+      "sha256": "1bd4d5ca251aed20cf28b3c4a2a8b7e0dd9c1dd5a0874a2e931f45cf3b797578",
+      "acquired_at_utc": "2026-11-08T11:27:17.149318+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "bwakit",
+      "url": "https://depot.galaxyproject.org/singularity/bwakit:0.7.17.dev1--hdfd78af_1",
+      "path": "containers/jasen-1.4.1/bwakit.sif",
+      "bytes": 101711872,
+      "md5": "ade614b597e11de144c4d157ac43d122",
+      "sha256": "6cbb4dfa825280b0899767d1e6e249dcd15c2d50e204c978acbfef5a5531af50",
+      "acquired_at_utc": "2026-11-08T11:25:58.540488+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "chewbbaca",
+      "url": "https://depot.galaxyproject.org/singularity/chewbbaca:3.5.4--pyh106432d_0",
+      "path": "containers/jasen-1.4.1/chewbbaca.sif",
+      "bytes": 428630016,
+      "md5": "743b8dad84d9c867521f8e3a963b8efc",
+      "sha256": "a230b3028864415e2247d95e6824c780de0e13f7ce200789840e8fefcb314bad",
+      "acquired_at_utc": "2026-11-08T11:28:09.331408+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "fastqc",
+      "url": "https://depot.galaxyproject.org/singularity/fastqc:0.12.1--hdfd78af_0",
+      "path": "containers/jasen-1.4.1/fastqc.sif",
+      "bytes": 293392384,
+      "md5": "568a314161b58088c9f042f650e83706",
+      "sha256": "20c596671fe25d241eb2491b705bbda4f7678703117550084f9ec5a62acb8231",
+      "acquired_at_utc": "2026-11-08T11:27:43.639695+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "freebayes",
+      "url": "https://depot.galaxyproject.org/singularity/freebayes:1.3.6--hbfe0e7f_2",
+      "path": "containers/jasen-1.4.1/freebayes.sif",
+      "bytes": 101634048,
+      "md5": "9cf694c25b16ce71e266d22ce5aa4e1e",
+      "sha256": "ed2234b515896f21dbccf370c0d18861d79f016d051fa8b087e679a7a0366985",
+      "acquired_at_utc": "2026-11-08T11:28:35.059627+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "gambitcore",
+      "url": "docker://clinicalgenomicslund/gambitcore:0.0.2",
+      "path": "containers/jasen-1.4.1/gambitcore.sif",
+      "bytes": 340721664,
+      "md5": "8aff45684b5c0eacdcbcff7177045948",
+      "sha256": "4f31a8ad1e11796fb63c1aaf68f39a8864f16f36c9b5c19b0bde390e89847f2c",
+      "acquired_at_utc": "2026-11-08T11:40:04.533954+00:00",
+      "publisher_checksum_verified": false
+    },
+    {
+      "tool": "htslib",
+      "url": "https://depot.galaxyproject.org/singularity/htslib:1.21--h566b1c6_1",
+      "path": "containers/jasen-1.4.1/htslib.sif",
+      "bytes": 24977408,
+      "md5": "9b0eab42a99cb1e8ed6ed974de94dd8f",
+      "sha256": "e54f542223b3943714cd83b913b494a3353b3b2700067c0b2ceced6d1f948f89",
+      "acquired_at_utc": "2026-11-08T11:28:15.319311+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "jasentool",
+      "url": "docker://clinicalgenomicslund/jasentool:1.3.0",
+      "path": "containers/jasen-1.4.1/jasentool.sif",
+      "bytes": 482398208,
+      "md5": "a312e08a798e16a4b6cdd2dda3f37155",
+      "sha256": "dd0d69677c44c2352217286f70ba675049254b0c8d1d9a68803e6762b22513d5",
+      "acquired_at_utc": "2026-11-08T11:41:02.466987+00:00",
+      "publisher_checksum_verified": false
+    },
+    {
+      "tool": "mlst",
+      "url": "https://depot.galaxyproject.org/singularity/mlst:2.23.0--hdfd78af_1",
+      "path": "containers/jasen-1.4.1/mlst.sif",
+      "bytes": 944005120,
+      "md5": "03e1527d9bbf3f1f9ed8e4c63cb5951e",
+      "sha256": "95a23215e318fdb33ebb8b0b6f9f0f739a8cc2017e13737c4aacd0fde5f77ff2",
+      "acquired_at_utc": "2026-11-08T11:30:55.723453+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "perl-json",
+      "url": "https://depot.galaxyproject.org/singularity/perl-json:4.10--pl5321hdfd78af_0",
+      "path": "containers/jasen-1.4.1/perl-json.sif",
+      "bytes": 30015488,
+      "md5": "4357dafd35826300b4f644b898d80375",
+      "sha256": "f50d9ff946e05dc361719e7de27db334b919b866d7164fae2e316e34058920b3",
+      "acquired_at_utc": "2026-11-08T12:20:00.120297+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "plasmidfinder",
+      "url": "https://depot.galaxyproject.org/singularity/plasmidfinder:2.1.6--py314hdfd78af_2",
+      "path": "containers/jasen-1.4.1/plasmidfinder.sif",
+      "bytes": 352944128,
+      "md5": "d0dbfcc9a72c411574aa8481baf0febe",
+      "sha256": "031462ff05ee5142974259de6183c1aa6060a21c7fc079296a79973fe25ee7d8",
+      "acquired_at_utc": "2026-11-08T11:31:54.041992+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "prodigal",
+      "url": "https://depot.galaxyproject.org/singularity/prodigal:2.6.3--h7b50bb2_10",
+      "path": "containers/jasen-1.4.1/prodigal.sif",
+      "bytes": 6713344,
+      "md5": "c945fbd430f24b86c471edb125fe0c21",
+      "sha256": "7cba83a60c8ebc06d1568c13b995605e3f96266a967e0c482bc2f693a04b19f4",
+      "acquired_at_utc": "2026-11-08T11:31:57.447338+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "quast",
+      "url": "https://depot.galaxyproject.org/singularity/quast:5.2.0--py310pl5321hc8f18ef_2",
+      "path": "containers/jasen-1.4.1/quast.sif",
+      "bytes": 530104320,
+      "md5": "a60938f91cdebda49b1a75396da893de",
+      "sha256": "6349e0f2c43a92fa5e222d8da2cfbaecc569d0c5d94f95d925922a1eab912e13",
+      "acquired_at_utc": "2026-11-08T11:33:39.192852+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "resfinder",
+      "url": "https://depot.galaxyproject.org/singularity/resfinder:4.7.2--pyhdfd78af_0",
+      "path": "containers/jasen-1.4.1/resfinder.sif",
+      "bytes": 372776960,
+      "md5": "c38d0ba52fa5a99b126f6b9c4a134de9",
+      "sha256": "21964c267b2c460ca4924d887f45904442ffc868fd2ee16a4a8bfa56ee1ce14a",
+      "acquired_at_utc": "2026-11-08T11:34:47.282972+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "samtools",
+      "url": "https://depot.galaxyproject.org/singularity/samtools:1.17--h00cdaf9_0",
+      "path": "containers/jasen-1.4.1/samtools.sif",
+      "bytes": 22634496,
+      "md5": "63e0b96f9f9fff5f8d3821414ff1e6ef",
+      "sha256": "de1e9b85acbac78efa29d1caeff54f49432578c7659c6fc0a02c2829815a7c19",
+      "acquired_at_utc": "2026-11-08T11:34:52.588282+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "seqtk",
+      "url": "https://depot.galaxyproject.org/singularity/seqtk:1.4--he4a0461_2",
+      "path": "containers/jasen-1.4.1/seqtk.sif",
+      "bytes": 6123520,
+      "md5": "0ee9e140a579e6123672565726250023",
+      "sha256": "9104bc98a8cf029f5da6a51a5366ec3e1cd4002b54f528143df7398425c538e0",
+      "acquired_at_utc": "2026-11-08T11:34:52.757434+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "serotypefinder",
+      "url": "https://depot.galaxyproject.org/singularity/serotypefinder:2.0.2--py312hdfd78af_1",
+      "path": "containers/jasen-1.4.1/serotypefinder.sif",
+      "bytes": 354516992,
+      "md5": "e8359f202593e8dd3c067a8c1ecbb5ee",
+      "sha256": "13ebe3d32da84b0ee3b49ae272deaa7659bd70582b542b9607b02c61d724e4d2",
+      "acquired_at_utc": "2026-11-08T11:35:45.255788+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "shigatyper",
+      "url": "https://depot.galaxyproject.org/singularity/shigatyper:2.0.5--pyhdfd78af_0",
+      "path": "containers/jasen-1.4.1/shigatyper.sif",
+      "bytes": 149368832,
+      "md5": "19902872fcdca09300a6b36a653f8b93",
+      "sha256": "c64b0b7ee709d1bdf69696b251d959dfffd826644d3ace93faf98a11f086c8b4",
+      "acquired_at_utc": "2026-11-08T11:36:12.382817+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "ska2",
+      "url": "https://depot.galaxyproject.org/singularity/ska2:0.3.10--h4349ce8_0",
+      "path": "containers/jasen-1.4.1/ska2.sif",
+      "bytes": 6492160,
+      "md5": "7d412fa836d60acf061ce610c977bd48",
+      "sha256": "1c7b1336bf37b68a50fafa9d7fac7104d63ddf66a52e5bdfe4b99115c15a5d81",
+      "acquired_at_utc": "2026-11-08T11:36:15.904642+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "skesa",
+      "url": "https://depot.galaxyproject.org/singularity/skesa:2.5.1--hdcf5f25_0",
+      "path": "containers/jasen-1.4.1/skesa.sif",
+      "bytes": 15978496,
+      "md5": "640e9c474cc079d018bcdb6e26cadd3e",
+      "sha256": "7a45f3fded22afc88ef426b61f16e118993bdc53d6100b09c63969a1447956df",
+      "acquired_at_utc": "2026-11-08T11:36:21.634979+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "sourmash",
+      "url": "https://depot.galaxyproject.org/singularity/sourmash:4.8.2--hdfd78af_0",
+      "path": "containers/jasen-1.4.1/sourmash.sif",
+      "bytes": 165244928,
+      "md5": "0702d232da594e488e181373786c25d9",
+      "sha256": "bd87674cdd4f2faaefe7bafeb712e070ec581b3e5a8e6719e68bb5da5fb97c2e",
+      "acquired_at_utc": "2026-11-08T11:36:50.242180+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    },
+    {
+      "tool": "virulencefinder",
+      "url": "https://depot.galaxyproject.org/singularity/virulencefinder:3.2.0--pyhdfd78af_0",
+      "path": "containers/jasen-1.4.1/virulencefinder.sif",
+      "bytes": 373043200,
+      "md5": "a6e03d9f8c33ae1f1c9ca2a8f68b794c",
+      "sha256": "c6670a328376cd8bb5374cc792f0598630f7172502835dd5ab487c9af1a079b0",
+      "acquired_at_utc": "2026-11-08T11:37:42.194258+00:00",
+      "publisher_checksum_verified": false,
+      "publisher_md5": null,
+      "publisher_sha256": null
+    }
+  ],
+  "bonsai": {
+    "trees": {
+      "Bonsai": {
+        "path": "/home/jakob/data/codex/jasen/environments/bonsai-index-auth-pilot/source",
+        "head": "953e8575a86fec789d648e564dda23cfec632556"
+      },
+      "SDK": {
+        "path": "/home/jakob/data/codex/jasen/environments/bonsai-pilot-sdk-pair-count/source",
+        "head": "bd6817c02caeb63670c021710eb53942188caf46"
+      }
+    },
+    "candidates": {
+      "ORDINARY-RECORD-DELETE": "e07c608476803971b48e980fe1ffb318a2f2db0a",
+      "ACCOUNT-ROLE-PERMISSIONS": "5b7e90594dde4b4b514eef8d45db46162da499ea",
+      "ANALYSIS-UPLOAD-ROLE-GATE": "dd5c2481be225712b0b4ae0565d7b701b4c4686e",
+      "PRIVATE-RECORD-SCOPE": "ce4fa9e1779d0b3f08e3630520565ca3d01cd57e",
+      "GROUP-DELETE-MEMBERSHIP-LOSS": "5861b369bc71470a980ae4aed3911937df109fb7",
+      "GROUP-MEMBERSHIP-LOSS": "0e782307e2551a6c3afad00b5595bb6417e9624f",
+      "METADATA-ADD-500": "e767620b6d62b0dcbb9530147461280e22a7fbef",
+      "RECOVERY-METADATA-LOSS": "d7ee2464e82811107129ca462acd6cb6189d4603",
+      "RECOVERY-COMMENT-IDENTITIES": "34cbe08fed81255fd3d8d3d45b9763aabe5af934",
+      "RECOVERY-GROUP-OVERLAP": "e049aec434621b10c094ff6888dda27abf8dec3f",
+      "METADATA-CATEGORY-LOSS": "13a4b49e3f6b50e8c717af6db068eb29d6a6273b",
+      "METADATA-TABLE-EMPTY": "fa643f1d987e4b90a25f3bcd530581c19651e44e",
+      "CSV-EMPTY-CELL-500": "9811fa547b554c5b5dee2e6e742bca8d2b0deb2f",
+      "CURATION-DOUBLE-SUBMIT": "aa554c2ad2cbb0adf9eccf8487b237bdc9a583e0",
+      "SELECTED-FILTER-STALE": "859f603e8db62593a71518b29a35e1bf11917a2c",
+      "VARIANT-SELECT-ALL-INVALID": "6d08d7abd5256440ad9f0c74b25e77b7c0ac5b5a",
+      "VARIANT-FILTER-AND": "16fb3d32d5b9694365c3880eb2cb63b05eb08e5e",
+      "VARIANT-HIDE-DISMISSED-500": "20bbb27b2f85c82a25557aa2527f65f009c02019",
+      "QC-FILTER-EMPTY": "77b75326f97936382633c001a9ee7a562b48a824",
+      "GROUP-MEMBERSHIP-LIMIT": "6ddfd15b2c4f9c439ec561999b56fa4aea73d1a8",
+      "ADMIN-CREATE-USER-500": "e01528db104ccb7d392441f42cfe742ee45f5e8e",
+      "ADMIN-EDIT-USER-500": "619cab28e4bf8f8706a391804b017442090106aa",
+      "ACCOUNT-STALE-PAGES": "8567eda7b11457fa7619fc9fe30f7e21d0ba14ad",
+      "BASKET-UNDEFINED-ASSAY": "a011b68355535d49b70ddbebaf38d8e572869fe0",
+      "PRIVATE-GROUP-INVITE-500": "1b1d4b7e97c6b02bd54d5990c93bca743b879e3b",
+      "TB-CURATION-500": "d2218de5ec04515bdc642ab509f902dbc397be5f",
+      "ECOLI-VARIANTS-EMPTY": "4bd99d441ff66b7e1d013d5af6bbd3d0394b1edc",
+      "DISPLAY-EMM-TABLE": "ca7a7c22cc5f95a3868e4e314d2313a9b9068c94",
+      "DISPLAY-EXTENDED-CONTEXT": "45d812d891084c38064a2348f5d495c3d4d0efe3",
+      "EMM-LIMS-EXPORT-500": "3aeb54797bab82ed33fc78ef7ee190bfbe3a78e1",
+      "KLEBORATE-UPLOAD-422": "6547f49a7312aa1ba12eeeeccaa2be7e068b5ce7",
+      "PARSER-MYKROBE-SELECTION": "3183b86d7aec72309b62e656ac3c969abba2fe7f",
+      "PARSER-BRACKEN-EMPTY": "019d5904bd59eb58a6399ac02ba49c4106b93490",
+      "PARSER-COVERAGE-STREAM": "1cd7ad6ec984aafea2386fe9156123ae7f2cb04d",
+      "KLEBORATE-CLIENT-COMPANION": "e9c6d609da6a2c4c7c447026a71df8973c1cf78b",
+      "PENDING-SAMPLE-500": "f24e6a59cbd5aa2e9b98cd427f278ac05277910b",
+      "TB-NO-AMR-500": "e6d57246675b3a8b91de544d67792b4e9e0197c2",
+      "RECOVERY-COMMENT-RETRY": "66a99c96e7fa3478d7ab7bee23a98e3723e08502",
+      "EMM-DISPLAY-MISSING": "a883d776f67a72980235c7fbc857ab39c8a64eff",
+      "INDEX-WRITE-AUTHENTICATION": "f2d8992b9e66abfdda5ff3fcfb0a58874edfba50",
+      "SAMTOOLS-READ-PAIR-COUNT": "f0fdc9e9fc82bb90733363408770d6c0daebfdba"
+    },
+    "checks": [
+      {
+        "name": "index-write-role-boundary",
+        "status": "PASS",
+        "tests": 8
+      },
+      {
+        "name": "read-pair-count-units",
+        "status": "PASS",
+        "tests": 4
+      }
+    ],
+    "parent_composition_checks": [
+      {
+        "name": "typescript",
+        "status": "PASS",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--pull",
+          "never",
+          "--network",
+          "none",
+          "--user",
+          "1000:1000",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08:/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/web:/app/frontend/web:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/tsconfig.json:/app/frontend/tsconfig.json:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/webpack.config.js:/app/frontend/webpack.config.js:ro",
+          "-w",
+          "/app/frontend",
+          "--entrypoint",
+          "node",
+          "bonsai-general-node-tools",
+          "node_modules/typescript/bin/tsc",
+          "--noEmit"
+        ],
+        "log": "integration/typescript.log"
+      },
+      {
+        "name": "webpack",
+        "status": "PASS",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--pull",
+          "never",
+          "--network",
+          "none",
+          "--user",
+          "1000:1000",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08:/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/web:/app/frontend/web:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/tsconfig.json:/app/frontend/tsconfig.json:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/webpack.config.cjs:/app/frontend/webpack.config.cjs:ro",
+          "-w",
+          "/app/frontend",
+          "--entrypoint",
+          "node",
+          "bonsai-general-node-tools",
+          "node_modules/webpack-cli/bin/cli.js",
+          "--config",
+          "webpack.config.cjs",
+          "--mode",
+          "production",
+          "--output-path",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/frontend-build"
+        ],
+        "log": "integration/webpack.log"
+      },
+      {
+        "name": "api",
+        "status": "PASS",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--pull",
+          "never",
+          "--network",
+          "none",
+          "--user",
+          "1000:1000",
+          "-v",
+          "/home/jakob/data/codex/bonsai:/home/jakob/data/codex/bonsai",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/api/bonsai_api:/app/api/bonsai_api:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/bonsai_app:/app/frontend/bonsai_app:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/sdk/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/environments/general-test-deps:/test-deps:ro",
+          "-e",
+          "PYTHONPATH=/test-deps:/app/api:/app/frontend",
+          "-e",
+          "SECRET_KEY=isolated-integration-check",
+          "-e",
+          "TESTING=true",
+          "-e",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "--entrypoint",
+          "python",
+          "bonsai-species-test-api",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/test_bounded_record_workflows.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/test_account_permissions.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/minimal_pr_extra_checks.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/test_general_ui_regressions.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/test_save_recovery.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api/test_readonly_exports.py",
+          "-k",
+          "(record_deletion_requires_write_permission) or (generic_record_creation or write_only_role) or (ordinary_legacy_list) or (private_creation) or (csv_missing_numeric) or (comment_header) or (kleborate_route or kleborate_service) or (group_lookup) or (appending_metadata or duplicate_metadata) or (stored_metadata_reads) or (profile_update_returns) or (private_group) or (simultaneous_independent_metadata or simultaneous_duplicate_field) or (simultaneous_comments_have_distinct_ids) or (concurrent_replay or replay_with_changed or request_keys_are_scoped) or (emm_export)",
+          "--confcutdir",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-api"
+        ],
+        "log": "integration/api.log"
+      },
+      {
+        "name": "frontend",
+        "status": "PASS",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--pull",
+          "never",
+          "--network",
+          "none",
+          "--user",
+          "1000:1000",
+          "-v",
+          "/home/jakob/data/codex/bonsai:/home/jakob/data/codex/bonsai",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/api/bonsai_api:/app/api/bonsai_api:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/bonsai_app:/app/frontend/bonsai_app:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/sdk/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/environments/general-test-deps:/test-deps:ro",
+          "-e",
+          "PYTHONPATH=/test-deps:/app/api:/app/frontend",
+          "-e",
+          "SECRET_KEY=isolated-integration-check",
+          "-e",
+          "TESTING=true",
+          "-e",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "--entrypoint",
+          "python",
+          "bonsai-species-test-frontend",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend/test_general_ui_regressions.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend/minimal_pr_extra_checks.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend/test_bounded_record_workflows.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend/test_readonly_details.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend/test_parser_display.py",
+          "-k",
+          "(noncontiguous_metadata) or (metadata_table_is_rendered) or (new_user_accepts) or (edit_form_accepts) or (pending_sample_summary) or (comment_recovery or context_free_comment) or (null_detail) or (unsupported_view) or (single_confirmation or confirmation_renders) or (optional_stored_curation) or (stored_null_result) or (numeric_filters_require) or (hide_dismissed_uses) or (current_emm_descriptor) or (extended_summary_imports)",
+          "--confcutdir",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-frontend"
+        ],
+        "log": "integration/frontend.log"
+      },
+      {
+        "name": "sdk",
+        "status": "PASS",
+        "command": [
+          "docker",
+          "run",
+          "--rm",
+          "--pull",
+          "never",
+          "--network",
+          "none",
+          "--user",
+          "1000:1000",
+          "-v",
+          "/home/jakob/data/codex/bonsai:/home/jakob/data/codex/bonsai",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/api/bonsai_api:/app/api/bonsai_api:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/frontend/bonsai_app:/app/frontend/bonsai_app:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/sdk/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro",
+          "-v",
+          "/home/jakob/data/codex/bonsai/environments/general-test-deps:/test-deps:ro",
+          "-e",
+          "PYTHONPATH=/test-deps:/app/api:/app/frontend",
+          "-e",
+          "SECRET_KEY=isolated-integration-check",
+          "-e",
+          "TESTING=true",
+          "-e",
+          "PYTHONDONTWRITEBYTECODE=1",
+          "--entrypoint",
+          "python",
+          "bonsai-species-test-api",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-sdk/minimal_pr_extra_checks.py",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-sdk/test_fidelity_regressions.py",
+          "-k",
+          "(sdk_companion) or (mykrobe_selected) or (header_only_bracken) or (samtools_coverage)",
+          "--confcutdir",
+          "/home/jakob/data/codex/bonsai/runs/2026-11-06-species-ui/minimal-prs/2026-11-08/integration/bonsai/checks-sdk"
+        ],
+        "log": "integration/sdk.log"
+      }
+    ],
+    "parent_app_head": "96b58760cf5ee06dc7f524c22c89701065e35d71",
+    "change": "Existing write scopes on two routes and one SDK read-pair count conversion; other changes are the parent minimal-fix composition",
+    "parent_sdk_head": "5805c75c9c8bdce56c41b183727257b6810e082f"
+  },
+  "docker_images": [
+    {
+      "tags": [
+        "bonsai-species-test-api:latest"
+      ],
+      "id": "sha256:f7a7592edd93b4fd30cb92d71583f32240e1e3c0f128d3c3f17663eb54825bbe",
+      "digests": []
+    },
+    {
+      "tags": [
+        "bonsai-species-test-frontend:latest"
+      ],
+      "id": "sha256:7e9a7efea7e0bdeb5eed69e5eda3e63eec2bf2e3ebfe4ba5327b2f41a551fff6",
+      "digests": []
+    },
+    {
+      "tags": [
+        "bonsai-species-test-audit_log_service:latest"
+      ],
+      "id": "sha256:7f564282baa46a3e96bd9867409b42acecce899b7d7131fe21c622672f12dbd1",
+      "digests": []
+    },
+    {
+      "tags": [
+        "bonsai-species-test-notification_service:latest"
+      ],
+      "id": "sha256:e5daee352d140185e9b25e1465c7ac12abf7c61f3f934d4c1718fe60903acac6",
+      "digests": []
+    },
+    {
+      "tags": [
+        "bonsai-species-test-minhash_service:latest"
+      ],
+      "id": "sha256:982a1bdd07d15200be47bed50f2161256499fa0e351098371fadc1c623645b9d",
+      "digests": []
+    },
+    {
+      "tags": [
+        "mongo:4.4.22"
+      ],
+      "id": "sha256:cb026d11ad72d7240f3709c9d673af4cb2c7ff735dd455a015f6172b1efa53da",
+      "digests": [
+        "mongo@sha256:dcef38a5b82ca7e1293055ededc22d38fb27fffb526523c70a4cbd864182c310"
+      ]
+    },
+    {
+      "tags": [
+        "redis:7.0.10"
+      ],
+      "id": "sha256:33e3db53b328be5c7782f3ff3ff52ea9478d7492fb10cb23c05fd2517dd90137",
+      "digests": [
+        "redis@sha256:92b8b307ee28ed74da17578064c73307ad41e43f422f0b7e4e91498b406c59e3"
+      ]
+    },
+    {
+      "tags": [
+        "mailhog/mailhog:latest"
+      ],
+      "id": "sha256:4de68494cd0dbcbc141beb755eedce4d328ab10b2d1061d74c2489e0af5f28a9",
+      "digests": [
+        "mailhog/mailhog@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea"
+      ]
+    }
+  ],
+  "preparation_order": [
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_runtime.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_containers.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/fetch_reads.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_assets.py",
+      "download"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_assets.py",
+      "index"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_schema.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_reads.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_bonsai.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/run_import.py",
+      "--accounts-only"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_producer_fix.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/prepare_pair_count_fix.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/run_pipeline.py"
+    ],
+    [
+      "python3",
+      "scripts/jasen_pilot/finish_pilot.py"
+    ]
+  ],
+  "status_files": [
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/pipeline-status.json",
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/pilot-status.json",
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/bonsai/import-status.json",
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/bonsai/browser-status.json",
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/bonsai/pair-count-correction-status.json",
+    "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/bonsai/fidelity-status.json"
+  ],
+  "new_local_fixes": [
+    {
+      "id": "INDEX-WRITE-AUTHENTICATION",
+      "branch": "pr/index-write-authentication",
+      "head": "f2d8992b9e66abfdda5ff3fcfb0a58874edfba50",
+      "apparent_priority": "P0"
+    },
+    {
+      "id": "JASEN-SAMPLE-NAME-QUOTING",
+      "branch": "pr/quote-producer-sample-name",
+      "head": "48736c6dcf9c239dc7618115abb6c7fcf84821c4",
+      "apparent_priority": "P1"
+    },
+    {
+      "id": "SAMTOOLS-READ-PAIR-COUNT",
+      "branch": "pr/parser-read-pair-count",
+      "head": "f0fdc9e9fc82bb90733363408770d6c0daebfdba",
+      "apparent_priority": "P1"
+    }
+  ],
+  "credentials_file": "/home/jakob/data/codex/jasen/runs/2026-11-08-bonsai-reference-pilot/bonsai/accounts.json",
+  "limitations": [
+    "One reference strain; not species-wide or clinical validation",
+    "Pinned MLST container bundled database; deployment snapshots may differ",
+    "Pilot uses the local minimal-fix composition rather than development directly",
+    "No decision submission; single-control automatic similarity widget only"
+  ],
+  "local_only": true
+}

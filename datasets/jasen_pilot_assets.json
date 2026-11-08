@@ -1,0 +1,642 @@
+{
+  "data_root": "/home/jakob/data/codex/jasen",
+  "datasets": [
+    {
+      "provider": "CGE",
+      "dataset": "resfinder_db",
+      "release": "2.6.0",
+      "files": [
+        {
+          "url": "https://bitbucket.org/genomicepidemiology/resfinder_db/get/2.6.0.tar.gz",
+          "path": "datasets/cge/resfinder_db/2.6.0/raw/2.6.0.tar.gz",
+          "bytes": 827850,
+          "md5": "afd10c28f3b54e28a2838829cb316af2",
+          "sha256": "160a0d1978a75291585ff8dad22ca157eca0a7e60c5e53e900c721a9277cad7f",
+          "acquired_at_utc": "2026-11-08T11:31:18.225537+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/cge/resfinder_db/2.6.0/derived/resfinder_db"
+    },
+    {
+      "provider": "CGE",
+      "dataset": "pointfinder_db",
+      "release": "4.1.1",
+      "files": [
+        {
+          "url": "https://bitbucket.org/genomicepidemiology/pointfinder_db/get/4.1.1.tar.gz",
+          "path": "datasets/cge/pointfinder_db/4.1.1/raw/4.1.1.tar.gz",
+          "bytes": 149202,
+          "md5": "0b8a55b28253b54adf23b80ea5878612",
+          "sha256": "7da9b8ae4d242d07ed7f744b0dd7827e40df73a0e4b7b2f681e802683bcb4382",
+          "acquired_at_utc": "2026-11-08T11:31:18.223488+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/cge/pointfinder_db/4.1.1/derived/pointfinder_db"
+    },
+    {
+      "provider": "CGE",
+      "dataset": "virulencefinder_db",
+      "release": "2.0.1",
+      "files": [
+        {
+          "url": "https://bitbucket.org/genomicepidemiology/virulencefinder_db/get/2.0.1.tar.gz",
+          "path": "datasets/cge/virulencefinder_db/2.0.1/raw/2.0.1.tar.gz",
+          "bytes": 602729,
+          "md5": "d78615c8de39e8ed9b3b67fe2eb51eda",
+          "sha256": "0ae82b1eb6240330c5f01d6ce2db00b958df461131db0708b54b0b7825012bba",
+          "acquired_at_utc": "2026-11-08T11:31:18.226118+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/cge/virulencefinder_db/2.0.1/derived/virulencefinder_db"
+    },
+    {
+      "provider": "CGE",
+      "dataset": "serotypefinder_db",
+      "release": "1.1.0",
+      "files": [
+        {
+          "url": "https://bitbucket.org/genomicepidemiology/serotypefinder_db/get/1.1.0.tar.gz",
+          "path": "datasets/cge/serotypefinder_db/1.1.0/raw/1.1.0.tar.gz",
+          "bytes": 168449,
+          "md5": "295bad1d8baa9d2ae55bc33609e0aaee",
+          "sha256": "8b41fd17904365ff7ea2a3e93bf993b97b179367d862a4ac7a7937fe2dcd3c34",
+          "acquired_at_utc": "2026-11-08T11:31:18.224887+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/cge/serotypefinder_db/1.1.0/derived/serotypefinder_db"
+    },
+    {
+      "provider": "CGE",
+      "dataset": "plasmidfinder_db",
+      "release": "2.2.0",
+      "files": [
+        {
+          "url": "https://bitbucket.org/genomicepidemiology/plasmidfinder_db/get/2.2.0.tar.gz",
+          "path": "datasets/cge/plasmidfinder_db/2.2.0/raw/2.2.0.tar.gz",
+          "bytes": 95544,
+          "md5": "5b3e913bc99c4e0046a317d39d421944",
+          "sha256": "263c4693bf60848b82f4d4c392f73f219f685c9b26c100a10d44990543d8ca5a",
+          "acquired_at_utc": "2026-11-08T11:31:18.226766+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/cge/plasmidfinder_db/2.2.0/derived/plasmidfinder_db"
+    },
+    {
+      "provider": "GAMBIT",
+      "dataset": "refseq-curated",
+      "release": "1.0",
+      "files": [
+        {
+          "url": "https://storage.googleapis.com/jlumpe-gambit/public/databases/refseq-curated/1.0/gambit-refseq-curated-1.0.gdb",
+          "path": "datasets/gambit/refseq-curated/1.0/raw/gambit-refseq-curated-1.0.gdb",
+          "bytes": 14188544,
+          "md5": "b7560d4fb1af9757b16ea874f9666567",
+          "sha256": "55784db0cdbc4ac5f94f347fca2289b74b8005a750c270b5169bb197c63ecaef",
+          "acquired_at_utc": "2026-11-08T11:31:57.939034+00:00",
+          "publisher_checksum_verified": true,
+          "publisher_md5": "b7560d4fb1af9757b16ea874f9666567",
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://storage.googleapis.com/jlumpe-gambit/public/databases/refseq-curated/1.0/gambit-refseq-curated-1.0.gs",
+          "path": "datasets/gambit/refseq-curated/1.0/raw/gambit-refseq-curated-1.0.gs",
+          "bytes": 1382389760,
+          "md5": "1ecb2a8c4c3de238e1c30a9817df983f",
+          "sha256": "0d19d6175c7bc3add84ffcb38384387ba5fbc1b84eef79cc34d73fc2205134b8",
+          "acquired_at_utc": "2026-11-08T11:39:17.246819+00:00",
+          "publisher_checksum_verified": true,
+          "publisher_md5": "1ecb2a8c4c3de238e1c30a9817df983f",
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/gambit/refseq-curated/1.0/derived/database"
+    },
+    {
+      "provider": "NCBI",
+      "dataset": "k12-mg1655-reference",
+      "release": "GCF_000005845.2",
+      "files": [
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz",
+          "path": "datasets/ncbi/k12-mg1655-reference/GCF_000005845.2/raw/GCF_000005845.2_ASM584v2_genomic.fna.gz",
+          "bytes": 1379902,
+          "md5": "c13d459b5caa702ff7e1f26fe44b8ad7",
+          "sha256": "a96d3cfa58c88d477013c768f90a11d2386d42a70d566abfb6d9013dcbd24255",
+          "acquired_at_utc": "2026-11-08T11:31:18.233969+00:00",
+          "publisher_checksum_verified": true,
+          "publisher_md5": "c13d459b5caa702ff7e1f26fe44b8ad7",
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gff.gz",
+          "path": "datasets/ncbi/k12-mg1655-reference/GCF_000005845.2/raw/GCF_000005845.2_ASM584v2_genomic.gff.gz",
+          "bytes": 387627,
+          "md5": "0f52ffc94af5ddf544ff89cc6f546b0c",
+          "sha256": "afdf03dc1d06e423d874ee29d9e0df14f5d32baf893f4da9f93aa721eb5f495e",
+          "acquired_at_utc": "2026-11-08T11:31:18.235068+00:00",
+          "publisher_checksum_verified": true,
+          "publisher_md5": "0f52ffc94af5ddf544ff89cc6f546b0c",
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/ncbi/k12-mg1655-reference/GCF_000005845.2/derived"
+    },
+    {
+      "provider": "NCBI",
+      "dataset": "AMRFinderPlus",
+      "release": "2026-10-29.1",
+      "database_format": "4.2",
+      "files": [
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR.LIB",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR.LIB",
+          "bytes": 109693661,
+          "md5": "7f2a578f68f6f6ec1be30fe1b0fcb763",
+          "sha256": "7720938a0e30da498bc49b3df0aa3413571723037be872eb5674ef655c486bd9",
+          "acquired_at_utc": "2026-11-08T11:31:19.313307+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMRProt-mutation.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMRProt-mutation.tsv",
+          "bytes": 207256,
+          "md5": "92daf58ed4d0fa84177bf1f3d9ef48ef",
+          "sha256": "d883ca3d9189200ddab5f7e8831ddc075c41bd0e735bdc4c446a80caf1f12a50",
+          "acquired_at_utc": "2026-11-08T11:31:19.106274+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMRProt-suppress.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMRProt-suppress.tsv",
+          "bytes": 494,
+          "md5": "10ae803343960788371af339bdd41c61",
+          "sha256": "2b713905b359b464260526bde24ab53218a1f7c59f1c020d49fc3338d7293697",
+          "acquired_at_utc": "2026-11-08T11:31:19.105444+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMRProt-susceptible.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMRProt-susceptible.fa",
+          "bytes": 31111,
+          "md5": "4c8672bcca28609eeb2174f9b0d9d3dd",
+          "sha256": "14a9900f90f870dbfa6e72e08464be4a2db1dec2b7439bc3c1cdc7a34c2157a1",
+          "acquired_at_utc": "2026-11-08T11:31:19.105954+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMRProt-susceptible.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMRProt-susceptible.tsv",
+          "bytes": 8080,
+          "md5": "fd35fb906c4f387ceecaaba3849725c4",
+          "sha256": "5e98b47833a4770e2262a91ef23474c40b53b8acd0aea196f26f287a98978bb0",
+          "acquired_at_utc": "2026-11-08T11:31:19.106555+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMRProt.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMRProt.fa",
+          "bytes": 4732322,
+          "md5": "def4069101bf8ddbee374ddfe9f2f3e2",
+          "sha256": "c60040cddf242e012601cc50beb295bcb4e721d290b8d9fe9e1992034902319f",
+          "acquired_at_utc": "2026-11-08T11:31:19.126203+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_CDS.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_CDS.fa",
+          "bytes": 11229150,
+          "md5": "a26bd31a4e99465f86892d01ce21b60d",
+          "sha256": "12edc653f90c83bf4bb636c0b65a12f58d93eeb8413f44e1fb32eec164e448bb",
+          "acquired_at_utc": "2026-11-08T11:31:19.147176+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Acinetobacter_baumannii.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Acinetobacter_baumannii.fa",
+          "bytes": 303,
+          "md5": "28779658bd28aaa761d85cb8569735e6",
+          "sha256": "472054eff1fb825a82f59c1b7ec5648eba113553cfc80d0e82547ec1ca07d8c2",
+          "acquired_at_utc": "2026-11-08T11:31:19.126713+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Acinetobacter_baumannii.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Acinetobacter_baumannii.tsv",
+          "bytes": 538,
+          "md5": "cb8da7b95c5b6b9aa21fb5409e86e68d",
+          "sha256": "99da88bc4e031f61dab5c5bcb17152b93f42c905f9c4f23a6072161276ddd00b",
+          "acquired_at_utc": "2026-11-08T11:31:19.127115+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Bordetella_pertussis.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Bordetella_pertussis.fa",
+          "bytes": 2961,
+          "md5": "8824cfb6e71a9331dcb662ad811cc1d9",
+          "sha256": "57a1fc5c7734c33901daad4040a13825913149acaefaf82fb7ddf1139383598b",
+          "acquired_at_utc": "2026-11-08T11:31:19.127517+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Bordetella_pertussis.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Bordetella_pertussis.tsv",
+          "bytes": 347,
+          "md5": "596da2d7129f6d0d77aab1459e32b764",
+          "sha256": "597ab237cd2ff52f79400f54d5506ee789353c9767fc0aaeb09447e9f076a4f2",
+          "acquired_at_utc": "2026-11-08T11:31:19.127937+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Campylobacter.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Campylobacter.fa",
+          "bytes": 6971,
+          "md5": "b3908fc391bcc1b8824f2115717a1833",
+          "sha256": "8fd355ba1ddc39184066d70fbf8419a2582da924c84e89d03144b0e815177134",
+          "acquired_at_utc": "2026-11-08T11:31:19.128366+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Campylobacter.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Campylobacter.tsv",
+          "bytes": 1670,
+          "md5": "f6a626b4901e1a33079437f00c2bc1ed",
+          "sha256": "ce6187e3292489d168b7e235c5c061f01fe22c6f9a8e91e5e744ad434f5a855b",
+          "acquired_at_utc": "2026-11-08T11:31:19.128749+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Clostridioides_difficile.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Clostridioides_difficile.fa",
+          "bytes": 3454,
+          "md5": "3464318edafc2f661274be7312c9d0f0",
+          "sha256": "ac00fd727c0c32bc001b4c527508142fa7af1a4ac6f5e37bd1ebd87866d474ce",
+          "acquired_at_utc": "2026-11-08T11:31:19.129142+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Clostridioides_difficile.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Clostridioides_difficile.tsv",
+          "bytes": 510,
+          "md5": "5fe702fc092b8e92ab2c830644dd77ab",
+          "sha256": "bf53151f2190dc2ea406abeb7e025247cf2cc8c5c787beab478d195a29f80d96",
+          "acquired_at_utc": "2026-11-08T11:31:19.129574+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Enterococcus_faecalis.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Enterococcus_faecalis.fa",
+          "bytes": 2984,
+          "md5": "396b23c85b4582e88e9c78c2cbc3f3e8",
+          "sha256": "0916658691fdc453fdbe38ed90b0eccdfbfc99905c4fb3dd7843a2eede1d2aa8",
+          "acquired_at_utc": "2026-11-08T11:31:19.130034+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Enterococcus_faecalis.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Enterococcus_faecalis.tsv",
+          "bytes": 446,
+          "md5": "68a5075f2731835adda0639bc8aacf69",
+          "sha256": "d10c34918f451fbca0fbed7dd0994446a21de71fa5cff585292e5dfa71a209a7",
+          "acquired_at_utc": "2026-11-08T11:31:19.130479+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Enterococcus_faecium.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Enterococcus_faecium.fa",
+          "bytes": 2989,
+          "md5": "01d707f308d7c601950ab1e4176a3377",
+          "sha256": "a0121244330f4f61059357906e56ea3558696d006b0a3283598e7ce7f18f2f4b",
+          "acquired_at_utc": "2026-11-08T11:31:19.130916+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Enterococcus_faecium.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Enterococcus_faecium.tsv",
+          "bytes": 444,
+          "md5": "7b252c387f449a9a13a0bc2262651935",
+          "sha256": "5dfab0b2b8e721eb212ee1736021522bbe826170c31c2b573f5d3b1a3d807b91",
+          "acquired_at_utc": "2026-11-08T11:31:19.131365+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Escherichia.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Escherichia.fa",
+          "bytes": 7791,
+          "md5": "55ce5264cc01c7ab3b456c89d8f1f894",
+          "sha256": "920f32496f36cd35e5feffd95d878c17cbe3408fe2290528ee4b1d37befc45eb",
+          "acquired_at_utc": "2026-11-08T11:31:19.131834+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Escherichia.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Escherichia.tsv",
+          "bytes": 8332,
+          "md5": "c501d768051ce0f1aac02f3201015ad2",
+          "sha256": "495c2c35bb396d7538d7562774f5029c69ee1940269435fbc91b8d7fe25f9fae",
+          "acquired_at_utc": "2026-11-08T11:31:19.132360+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Klebsiella_oxytoca.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Klebsiella_oxytoca.fa",
+          "bytes": 166,
+          "md5": "e9757e23de834fe0c3f034c76f76213a",
+          "sha256": "78d81787e0ee2497d604e274b4f28b411e1e400d77274a055562e8227016d28b",
+          "acquired_at_utc": "2026-11-08T11:31:19.132790+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Klebsiella_oxytoca.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Klebsiella_oxytoca.tsv",
+          "bytes": 848,
+          "md5": "f3ec2a5cc0b85261796d307b8d0db9c2",
+          "sha256": "b826f7209f75f6d02b2f46255b1d16ffd69cb1234155717e707241d24873b6fd",
+          "acquired_at_utc": "2026-11-08T11:31:19.133239+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Klebsiella_pneumoniae.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Klebsiella_pneumoniae.fa",
+          "bytes": 365,
+          "md5": "5076ac07711ced6314687cd96634701d",
+          "sha256": "77ca0529b89781827cfb1077695b5dce0bb5da17b5e035c4ae33a014eb4bf340",
+          "acquired_at_utc": "2026-11-08T11:31:19.133665+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Klebsiella_pneumoniae.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Klebsiella_pneumoniae.tsv",
+          "bytes": 355,
+          "md5": "597cfca9f35edcaab1c011a782ed81a2",
+          "sha256": "58050e41d93dc5879c946f33156153c0c5d6e49af9ae81091d01b6b824ab83a2",
+          "acquired_at_utc": "2026-11-08T11:31:19.134108+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Neisseria_gonorrhoeae.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Neisseria_gonorrhoeae.fa",
+          "bytes": 6138,
+          "md5": "6832d8ecea304806830f254a4b2bacf1",
+          "sha256": "dae318bd32754b9f591b44cc2e0f57c2b79cfbecce97862faf15220f950ccd1d",
+          "acquired_at_utc": "2026-11-08T11:31:19.134560+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Neisseria_gonorrhoeae.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Neisseria_gonorrhoeae.tsv",
+          "bytes": 2339,
+          "md5": "df645e78f2863ff224a9bd7290b0f2e2",
+          "sha256": "01b9e782881bb74b3c75993912f065c9c314e513aa9627f7729f7bf663012b3d",
+          "acquired_at_utc": "2026-11-08T11:31:19.134997+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Salmonella.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Salmonella.fa",
+          "bytes": 1612,
+          "md5": "c1961eb24a4c1224b052ca624d688423",
+          "sha256": "3bd08a2660c4de9128f1919297f9ebc4ebe156b3a98001ac86ad7e82c0c8ae44",
+          "acquired_at_utc": "2026-11-08T11:31:19.135442+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Salmonella.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Salmonella.tsv",
+          "bytes": 462,
+          "md5": "0fe717142e01d4f5c9261619527a220b",
+          "sha256": "1be3f4d162297cdcd393014294e016ecb5e673bfe653b0ca7e40a646da0ea67d",
+          "acquired_at_utc": "2026-11-08T11:31:19.135868+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Staphylococcus_aureus.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Staphylococcus_aureus.fa",
+          "bytes": 3414,
+          "md5": "8fea013f0fd4d5e7f6dbaa87f1549ad8",
+          "sha256": "31edbcd4dddfd83e7d713fa9da314054c957954fa1b6485ee537a096ffcbc3b6",
+          "acquired_at_utc": "2026-11-08T11:31:19.136321+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Staphylococcus_aureus.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Staphylococcus_aureus.tsv",
+          "bytes": 1976,
+          "md5": "b035060022b89bea7fb98a6ac3239faf",
+          "sha256": "a4ba2b39aec5ba63fb531a8807fba866840f40f618c40ed5906e10efa38c445a",
+          "acquired_at_utc": "2026-11-08T11:31:19.136752+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Streptococcus_pneumoniae.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Streptococcus_pneumoniae.fa",
+          "bytes": 2990,
+          "md5": "66fe38f3f0ca0a0fb35392f38cf57d40",
+          "sha256": "c83c78e212f21fb7867a35a26010cb34f40c0a062a51a411354f76450403f610",
+          "acquired_at_utc": "2026-11-08T11:31:19.137202+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/AMR_DNA-Streptococcus_pneumoniae.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/AMR_DNA-Streptococcus_pneumoniae.tsv",
+          "bytes": 914,
+          "md5": "42ec41450e7d6e418d62703be6ba2ecd",
+          "sha256": "0be2f4f2dbb661a1bdc95a62133af2445fd270ab790c92a5196378eb69277cdf",
+          "acquired_at_utc": "2026-11-08T11:31:19.137640+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/ReferenceGeneCatalog.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/ReferenceGeneCatalog.txt",
+          "bytes": 2350805,
+          "md5": "a60a09462eada2b9fe89f95495817a2c",
+          "sha256": "396ccc7b02ad9e56219abed6da513648b5f08259878ab3f8fdc3a6558ad55592",
+          "acquired_at_utc": "2026-11-08T11:31:19.145509+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/ReferenceGeneHierarchy.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/ReferenceGeneHierarchy.txt",
+          "bytes": 1291968,
+          "md5": "81935ef05132f5ffcc494d97ff0b2b6a",
+          "sha256": "46ee6f71d7a399a3aa09da8405ffadd1efc247ef17fbfc5f42434dc43620dc7b",
+          "acquired_at_utc": "2026-11-08T11:31:19.149150+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/amr_targets.fa",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/amr_targets.fa",
+          "bytes": 1716076,
+          "md5": "211d5052626d122a82b2631eb5c76526",
+          "sha256": "4a522e238b00de88907a1018ff42d7ee90fd25539367bf0d51266dd75b8b27e6",
+          "acquired_at_utc": "2026-11-08T11:31:19.151111+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/changelog.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/changelog.txt",
+          "bytes": 22763,
+          "md5": "e61eb983fcd0051902e82f94c530500a",
+          "sha256": "aaad01e83e3760d8d2d5e2847c77c31b725fd9625f4ad57ab2cd19f4fd8cc4fb",
+          "acquired_at_utc": "2026-11-08T11:31:19.149516+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/changes.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/changes.txt",
+          "bytes": 22763,
+          "md5": "e61eb983fcd0051902e82f94c530500a",
+          "sha256": "aaad01e83e3760d8d2d5e2847c77c31b725fd9625f4ad57ab2cd19f4fd8cc4fb",
+          "acquired_at_utc": "2026-11-08T11:31:19.149870+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/database_format_version.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/database_format_version.txt",
+          "bytes": 6,
+          "md5": "3d3e24f7cb6d5ffc50e20a45dc94a52e",
+          "sha256": "8fb33dadbe981cf5847df269c10c2a3fe107f2b269d5ccb6db37d1f61ffc3bba",
+          "acquired_at_utc": "2026-11-08T11:31:19.150168+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/fam.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/fam.tsv",
+          "bytes": 344877,
+          "md5": "2d7d74866b2761ac54a9f1c002e08722",
+          "sha256": "621c56fd3904c48a54622b860de2293e2e9ed444d340e235cbe8fea973b174d7",
+          "acquired_at_utc": "2026-11-08T11:31:19.151383+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/mapgenelist.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/mapgenelist.txt",
+          "bytes": 230357,
+          "md5": "1bda8667a5d8ebb68f594dfa887883ad",
+          "sha256": "ebb8d7d6f67e228b249e7f3c7a3844e1d2aacd8a92749821ea76821fad4bc86f",
+          "acquired_at_utc": "2026-11-08T11:31:19.151810+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/taxgroup.tsv",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/taxgroup.tsv",
+          "bytes": 1490,
+          "md5": "5968ee960d2b02475aa5dc91d2f331eb",
+          "sha256": "e44282d5b30a3fb2adf618a27a0ffda163b1b5b2041b406eb35363249cb1c172",
+          "acquired_at_utc": "2026-11-08T11:31:19.151678+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        },
+        {
+          "url": "https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/4.2/2026-10-29.1/version.txt",
+          "path": "datasets/ncbi/amrfinderplus/2026-10-29.1/raw/version.txt",
+          "bytes": 13,
+          "md5": "ecaa707ee8cdf513bb9805b4589af620",
+          "sha256": "c1a62817c6022142cdeb7c2e746759059f24538795e29609af3e718ec02de8f0",
+          "acquired_at_utc": "2026-11-08T11:31:19.152084+00:00",
+          "publisher_checksum_verified": false,
+          "publisher_md5": null,
+          "publisher_sha256": null
+        }
+      ],
+      "derived_path": "datasets/ncbi/amrfinderplus/2026-10-29.1/derived/database"
+    }
+  ]
+}

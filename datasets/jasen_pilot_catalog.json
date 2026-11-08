@@ -1,0 +1,89 @@
+{
+  "data_root": "/home/jakob/data/codex/jasen",
+  "datasets": [
+    {
+      "id": "ena-k12-mg1655-ERR022075",
+      "accession": "ERR022075",
+      "study": "PRJEB2323",
+      "biosample": "SAMEA779983",
+      "organism": "Escherichia coli str. K-12 substr. MG1655",
+      "tax_id": 511145,
+      "metadata_url": "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=ERR022075&result=read_run&fields=run_accession%2Cstudy_accession%2Csample_accession%2Cscientific_name%2Ctax_id%2Csample_title%2Clibrary_strategy%2Clibrary_source%2Clibrary_layout%2Cinstrument_platform%2Cinstrument_model%2Cread_count%2Cbase_count%2Cfastq_ftp%2Cfastq_md5%2Cfastq_bytes&format=json",
+      "files": [
+        {
+          "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR022/ERR022075/ERR022075_1.fastq.gz",
+          "path": "datasets/ena/k12-mg1655/ERR022075/raw/ERR022075_1.fastq.gz",
+          "bytes": 1875702420,
+          "publisher_md5": "4766e60e72da987e4c54e47fee5653a4",
+          "verified": true,
+          "sha256": "c4764b1d2708e6f3213ccbe67379029623d8909ad08124e862a43fdcfed2ce30",
+          "acquired_at_utc": "2026-11-08T11:48:06.701586+00:00"
+        },
+        {
+          "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR022/ERR022075/ERR022075_2.fastq.gz",
+          "path": "datasets/ena/k12-mg1655/ERR022075/raw/ERR022075_2.fastq.gz",
+          "bytes": 1982742623,
+          "publisher_md5": "78608288625e084d68b4b5e8c1725933",
+          "verified": true,
+          "sha256": "c3aa644a69556b57d769ae96be600cf419e9a131e0bd983d82ff5d1f44001139",
+          "acquired_at_utc": "2026-11-08T11:43:11.561572+00:00"
+        }
+      ],
+      "derivations": [
+        {
+          "kind": "paired deterministic reservoir subsample",
+          "seed": 42,
+          "read_pairs": 1250000,
+          "bases": 252500000,
+          "created_at_utc": "2026-11-08T11:59:58.843569+00:00",
+          "parent_accession": "ERR022075",
+          "parent_sha256": [
+            "c4764b1d2708e6f3213ccbe67379029623d8909ad08124e862a43fdcfed2ce30",
+            "c3aa644a69556b57d769ae96be600cf419e9a131e0bd983d82ff5d1f44001139"
+          ],
+          "commands": [
+            [
+              "singularity",
+              "exec",
+              "--cleanenv",
+              "/home/jakob/data/codex/jasen/containers/jasen-1.4.1/seqtk.sif",
+              "seqtk",
+              "sample",
+              "-s42",
+              "/home/jakob/data/codex/jasen/datasets/ena/k12-mg1655/ERR022075/raw/ERR022075_1.fastq.gz",
+              "1250000"
+            ],
+            [
+              "singularity",
+              "exec",
+              "--cleanenv",
+              "/home/jakob/data/codex/jasen/containers/jasen-1.4.1/seqtk.sif",
+              "seqtk",
+              "sample",
+              "-s42",
+              "/home/jakob/data/codex/jasen/datasets/ena/k12-mg1655/ERR022075/raw/ERR022075_2.fastq.gz",
+              "1250000"
+            ]
+          ],
+          "files": [
+            {
+              "path": "datasets/ena/k12-mg1655/ERR022075/derived/paired-seed42-1250000/ERR022075_1.fastq.gz",
+              "bytes": 120971818,
+              "md5": "aa1075f5f52c08be1917179df4eb689d",
+              "sha256": "d7aeca667271375530625159ea24b7460cbacd007f280f6a86d727e48f52e25a"
+            },
+            {
+              "path": "datasets/ena/k12-mg1655/ERR022075/derived/paired-seed42-1250000/ERR022075_2.fastq.gz",
+              "bytes": 126792324,
+              "md5": "be4d9271d227eda1b796b5240af5aaad",
+              "sha256": "2e76a6b105eb60aa39f5e580b859d165582886a476bfce3f7b2f07faacff8c57"
+            }
+          ],
+          "pair_identifiers_validated": true,
+          "all_record_lengths_validated": true,
+          "scope": "Bounded software integration input; not a clinical or species-wide benchmark"
+        }
+      ]
+    }
+  ]
+}

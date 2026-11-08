@@ -1,0 +1,31 @@
+{
+  "provider": "chewie-NS",
+  "endpoint": "https://chewbbaca.online/NS/api",
+  "species_id": 10,
+  "schema_id": 1,
+  "snapshot": "2026-11-08",
+  "acquired_at_utc": "2026-11-08T11:32:31.390212+00:00",
+  "command": [
+    "singularity",
+    "exec",
+    "--cleanenv",
+    "--bind",
+    "/mnt/4851c27b-0958-480e-8fed-760c8fb94297/codex/jasen:/mnt/4851c27b-0958-480e-8fed-760c8fb94297/codex/jasen",
+    "--bind",
+    "/home/jakob/data/codex/jasen:/home/jakob/data/codex/jasen",
+    "/home/jakob/data/codex/jasen/containers/jasen-1.4.1/chewbbaca.sif",
+    "chewie",
+    "DownloadSchema",
+    "-sp",
+    "10",
+    "-sc",
+    "1",
+    "-o",
+    "/home/jakob/data/codex/jasen/datasets/chewbbaca-ns/ecoli-innuendo-wgmlst/snapshot-2026-11-08/raw",
+    "--latest"
+  ],
+  "raw_schema_relative_path": "Escherichia_coli_wgMLST",
+  "files": 15206,
+  "inventory_sha256": "8fed1f9f14ce3f05db09e3faaebe4cd0026df362c3462fb7a4617f1dfc3aa893",
+  "publisher_checksum_verified": false
+}

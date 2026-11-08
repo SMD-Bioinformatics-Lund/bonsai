@@ -1,0 +1,99 @@
+name: bonsai-jasen-pilot
+
+services:
+  mongodb:
+    image: mongo:4.4.22
+    pull_policy: never
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    volumes:
+      - ${JASEN_PILOT_RUN}/bonsai/mongodb:/data/db
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7.0.10
+    pull_policy: never
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    mem_limit: 128m
+  minhash_service:
+    image: bonsai-species-test-minhash_service
+    pull_policy: never
+    command: ["minhash-service", "run-minhash-worker"]
+    volumes:
+      - ${JASEN_PILOT_RUN}/bonsai/minhash:/data/signature_db
+    depends_on:
+      mongodb: {condition: service_healthy}
+      redis: {condition: service_started}
+  mailhog:
+    image: mailhog/mailhog:latest
+    pull_policy: never
+    logging: {driver: none}
+  notification_service:
+    image: bonsai-species-test-notification_service
+    pull_policy: never
+    environment: {SMTP_HOST: mailhog, SMTP_PORT: 1025}
+    depends_on: [mailhog]
+  audit_log_service:
+    image: bonsai-species-test-audit_log_service
+    pull_policy: never
+    environment: {DB_HOST: mongodb}
+    depends_on:
+      mongodb: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/openapi.json"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  api:
+    image: bonsai-species-test-api
+    pull_policy: never
+    command: ["uvicorn", "bonsai_api.main:app", "--log-level", "info", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      PYTHONPATH: /app/api
+      DB_HOST: mongodb
+      REDIS_HOST: redis
+      API_AUTHENTICATION: "true"
+      BONSAI_ADMIN_USER: pilot_admin
+      BONSAI_ADMIN_PASSWORD: ${JASEN_PILOT_PASSWORD}
+      SECRET_KEY: ${JASEN_PILOT_SECRET}
+      ALLOWED_ORIGINS: '["http://127.0.0.1:18100","http://100.90.51.21:18100"]'
+      NOTIFICATION_SERVICE_API: http://notification_service:8000/
+      AUDIT_LOG_SERVICE_API: http://audit_log_service:8000/
+      ANNOTATIONS_DIR: ${JASEN_PILOT_RUN}/output
+      REFERENCE_GENOMES_DIR: ${JASEN_PILOT_REFERENCE}
+    volumes:
+      - ${BONSAI_PILOT_APP}/api/bonsai_api:/app/api/bonsai_api:ro
+      - ${BONSAI_PILOT_SDK}/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro
+      - ${JASEN_PILOT_RUN}/output:${JASEN_PILOT_RUN}/output:ro
+      - ${JASEN_PILOT_REFERENCE}:${JASEN_PILOT_REFERENCE}:ro
+      - ${JASEN_PILOT_ASSET_GENOMES}:${JASEN_PILOT_ASSET_GENOMES}:ro
+    ports:
+      - "127.0.0.1:18101:8000"
+      - "100.90.51.21:18101:8000"
+    depends_on:
+      mongodb: {condition: service_healthy}
+      redis: {condition: service_started}
+      audit_log_service: {condition: service_healthy}
+      notification_service: {condition: service_started}
+  frontend:
+    image: bonsai-species-test-frontend
+    pull_policy: never
+    environment:
+      PYTHONPATH: /app/fix
+      API_INTERNAL_URL: http://api:8000
+      API_EXTERNAL_URL: http://100.90.51.21:18101
+      SECRET_KEY: ${JASEN_PILOT_SECRET}
+      SESSION_COOKIE_NAME: jasen_pilot_session
+      INSTANCE_LABEL: JASEN public reference pilot
+      TZ: Europe/Stockholm
+    volumes:
+      - ${BONSAI_PILOT_APP}/frontend/bonsai_app:/app/fix/bonsai_app:ro
+      - ${BONSAI_PILOT_SDK}/src/bonsai_libs:/usr/local/lib/python3.11/site-packages/bonsai_libs:ro
+      - ${BONSAI_PILOT_BUILD}:/app/fix/bonsai_app/static/build:ro
+    ports:
+      - "127.0.0.1:18100:8000"
+      - "100.90.51.21:18100:8000"
+    depends_on: [api]
