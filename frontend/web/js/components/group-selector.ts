@@ -36,6 +36,7 @@ export class GroupSelector extends HTMLElement {
   private membershipAbort?: AbortController;
   private currentSelectedSamples: string[] = [];
   private currentMemberships: MembershipBySample = {};
+  private commonGroupIds = new Set<string>();
 
   constructor() {
     super();
@@ -76,6 +77,8 @@ export class GroupSelector extends HTMLElement {
 
     const sampleIds = this.getSelectedSamples();
     const selectedGroupIds: string[] = this.selector.getSelected();
+    const memberships = this.currentMemberships;
+    const commonGroupIds = new Set(this.commonGroupIds);
 
     if (!sampleIds.length) {
       this.dispatchEvent(
@@ -90,13 +93,13 @@ export class GroupSelector extends HTMLElement {
       // For each sample, compute which groups to add/remove
       // A sample should be in ALL selected groups and in NO deselected groups
       for (const sampleId of sampleIds) {
-        const currentGroups = new Set(this.currentMemberships[sampleId] ?? []);
+        const currentGroups = new Set(memberships[sampleId] ?? []);
         const targetGroups = new Set(selectedGroupIds);
 
         // Groups to add: in target but not in current
         const toAdd = [...targetGroups].filter(gid => !currentGroups.has(gid));
         // Groups to remove: in current but not in target
-        const toRemove = [...currentGroups].filter(gid => !targetGroups.has(gid));
+        const toRemove = [...commonGroupIds].filter(gid => currentGroups.has(gid) && !targetGroups.has(gid));
 
         if (toAdd.length > 0) {
           for (const gid of toAdd) {
@@ -121,6 +124,7 @@ export class GroupSelector extends HTMLElement {
     } finally {
       if (membershipChanged) {
         emitEvent("samples:group-memberships-changed", { sampleIds });
+        await this.preselectGroupsForSamples(this.currentSelectedSamples);
       }
     }
   };
@@ -177,6 +181,7 @@ export class GroupSelector extends HTMLElement {
         .map(([gid]) => gid);
 
       groupNameIntersect.sort();
+      this.commonGroupIds = new Set(groupNameIntersect);
       this.selector.setSelected(groupNameIntersect);
     } catch (err) {
       console.warn("Failed to preselect samples", err);
