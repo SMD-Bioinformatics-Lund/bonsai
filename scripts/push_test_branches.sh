@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Push the 44 final-report fix candidates and five related test/report branches.
-# This script is for the user to run. It creates no PRs and never force-pushes.
+# May be run by the user or agent under the workspace Git permissions.
+# It creates no PRs and never force-pushes.
 # --dry-run checks local refs and prints commands without contacting any remote.
 set -euo pipefail
 
