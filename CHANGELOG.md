@@ -4,7 +4,7 @@
 
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
-- Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
+- Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577) 
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
@@ -32,6 +32,7 @@
 - Show all metadata fields when entries from the same category are interleaved with other categories. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Parse CSV metadata when creating samples and display stored metadata tables correctly. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Handle empty CSV metadata cells as blank values instead of causing HTTP 500 errors when reading samples. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Preserve unrelated sample memberships when deleting a group or applying group changes to samples with different memberships. [#621](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/621)
 - Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)
