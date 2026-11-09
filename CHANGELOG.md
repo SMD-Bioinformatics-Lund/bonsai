@@ -28,6 +28,11 @@
 
 ### Fixed
 
+- Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Use saved curation decisions when hiding dismissed variants, avoiding detail-page errors for variants without the legacy verification field. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Split group-membership lookups into batches of at most 100 sample IDs so membership preselection works for larger selections. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)

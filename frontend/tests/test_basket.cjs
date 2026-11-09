@@ -39,6 +39,7 @@ async function setup(savedIds = []) {
   let selected = [];
   const table = {
     rows: () => ({ ids: () => ({ toArray: () => selected }) }),
+    draw() {},
     columns: { adjust() {} },
     on: (_events, callback) => selectionCallbacks.push(callback),
   };
