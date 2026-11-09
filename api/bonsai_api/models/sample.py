@@ -25,7 +25,7 @@ from .base import (
     RWModel,
     TimestampsMixin,
 )
-from .metadata import InputMetaEntry
+from .metadata import InputMetaEntry, MetaEntriesInDb
 from .qc import QcClassification
 
 LOG = logging.getLogger(__name__)
@@ -303,7 +303,7 @@ class SampleRecordDb(SampleBase):
 
     # Grouping and organization
     groups: list[str] = Field(default_factory=list, description="Group Ids the sample is a member of.")
-    metadata: list[InputMetaEntry] = Field(default_factory=list)
+    metadata: MetaEntriesInDb = Field(default_factory=list)
 
     # Curation flag
     curated: bool = False
@@ -347,7 +347,7 @@ class SampleRecordOut(SampleBase):
     
     # Grouping and organization
     groups: list[str] = Field(default_factory=list)
-    metadata: list[InputMetaEntry] = []
+    metadata: MetaEntriesInDb = Field(default_factory=list)
     
     # Sequencing and pipeline information
     sequencing: SequencingInfo | None = None
