@@ -3,9 +3,9 @@
 from datetime import datetime
 import math
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Literal
 
-from pydantic import BaseModel, BeforeValidator, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class MetadataTypes(StrEnum):
@@ -60,18 +60,4 @@ class TableMetadataInDb(BaseModel):
 
 InputMetaEntry = DatetimeMetadataEntry | InputTableMetadata | GenericMetadataEntry
 MetaEntryInDb = DatetimeMetadataEntry | TableMetadataInDb | GenericMetadataEntry
-def normalize_metadata_tables(entries):
-    """Read both stored tables and CSV inputs accepted by older sample uploads."""
-    from bonsai_api.io import parse_metadata_table
-
-    return [
-        parse_metadata_table(entry=entry)
-        if isinstance(entry, InputTableMetadata)
-        else parse_metadata_table(entry=InputTableMetadata.model_validate(entry))
-        if isinstance(entry, dict) and entry.get("type") == "table" and "value" in entry
-        else entry
-        for entry in entries
-    ]
-
-
-MetaEntriesInDb = Annotated[list[MetaEntryInDb], BeforeValidator(normalize_metadata_tables)]
+MetaEntriesInDb = list[MetaEntryInDb]
