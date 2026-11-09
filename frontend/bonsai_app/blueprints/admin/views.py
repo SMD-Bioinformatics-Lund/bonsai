@@ -12,6 +12,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from requests.exceptions import HTTPError
+from bonsai_libs.api_client.core.exceptions import NotFoundError
 from wtforms import (
     Form,
     PasswordField,
@@ -107,11 +108,8 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
         try:
             client = get_api_client()
             client.get_user(username)
-        except HTTPError as error:
-            if error.response.status_code == 404:
-                user_exists = False
-            else:
-                raise error
+        except NotFoundError:
+            user_exists = False
         if user_exists:
             raise ValidationError(f"An user with username {username} already exists")
 
@@ -209,11 +207,11 @@ def update_user(username):
                 flash(f"Removed user {username}", "success")
     elif request.method == "GET":
         # populate form with deafults from the database
-        form.username.data = user["username"]
-        form.first_name.data = user["first_name"]
-        form.last_name.data = user["last_name"]
-        form.email.data = user["email"]
-        form.roles.data = user["roles"]
+        form.username.data = user.username
+        form.first_name.data = user.first_name
+        form.last_name.data = user.last_name
+        form.email.data = user.email
+        form.roles.data = user.roles
         if current_user.authentication_method == "ldap":
             form.password.render_kw = {"disabled": True}
             form.confirm.render_kw = {"disabled": True}

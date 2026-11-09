@@ -28,6 +28,8 @@
 
 ### Fixed
 
+- Handle the API client's not-found response when validating a new username so admins can create users without HTTP 500 errors. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
+- Open existing users in the admin editor using the API client's user model, return updated user details after saving, and accept unchanged saves without storing plaintext passwords. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
 - Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
