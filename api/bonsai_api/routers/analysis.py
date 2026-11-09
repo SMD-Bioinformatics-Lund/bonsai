@@ -44,7 +44,7 @@ async def upload_analysis(
         None, description="Optional samtools bedcov output for post-align QC"
     ),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION]),
     ctx: ApiRequestContext=Depends(get_request_context),
     audit: AuditLogClient=Depends(get_audit_log),
 ):
