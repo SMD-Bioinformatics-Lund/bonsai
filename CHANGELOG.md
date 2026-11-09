@@ -28,11 +28,11 @@
 
 ### Fixed
 
-- Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Use saved curation decisions when hiding dismissed variants, avoiding detail-page errors for variants without the legacy verification field. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Split group-membership lookups into batches of at most 100 sample IDs so membership preselection works for larger selections. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Use saved curation decisions when hiding dismissed variants, avoiding detail-page errors for variants without the legacy verification field. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Split group-membership lookups into batches of at most 100 sample IDs so membership preselection works for larger selections. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Allow appending metadata to samples with existing metadata without HTTP 500 errors, preserving existing entries. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Preserve concurrent metadata additions and reject conflicting field names atomically. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Show all scalar metadata fields and tables when entries from the same category are interleaved with other categories. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
