@@ -108,7 +108,7 @@ async def list_samples(
     offset: int = Query(0, ge=0),
     db: Database = Depends(get_database),
     current_user: UserOutputDatabase = Security(  # pylint: disable=unused-argument
-        get_current_active_user, scopes=[WRITE_PERMISSION]
+        get_current_active_user, scopes=[READ_PERMISSION]
     ),
 ):
     """Get samples from the database. It can return either the full or summarized sample information."""

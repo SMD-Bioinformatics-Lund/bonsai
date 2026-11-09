@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body, Security
 from fastapi.responses import JSONResponse
 
 from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
@@ -44,7 +44,7 @@ async def upload_analysis(
         None, description="Optional samtools bedcov output for post-align QC"
     ),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION]),
     ctx: ApiRequestContext=Depends(get_request_context),
     audit: AuditLogClient=Depends(get_audit_log),
 ):
@@ -78,7 +78,7 @@ async def create_analysis_curation(
     curation: CurationCreateRecord,
     analysis_type: str = Body(description="Type of analysis result this curation applies to (e.g., 'resistance_variants')"),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):
@@ -103,7 +103,7 @@ async def list_curations(
         False, description="If true, only return approved curations"
     ),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
 ):
     """List all curations for an analysis."""
     filters = {"analysis_id": analysis_id}
@@ -125,7 +125,7 @@ async def list_curations(
 async def get_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
 ):
     """Get a specific curation record for a analysis."""
     curations = await get_curations_service(
@@ -140,7 +140,7 @@ async def get_curation(
 async def approve_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):
@@ -161,7 +161,7 @@ async def approve_curation(
 async def delete_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):
