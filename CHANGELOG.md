@@ -28,6 +28,10 @@
 
 ### Fixed
 
+- Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Explain when the TBProfiler variant view has no supported stored results instead of presenting that as a negative resistance finding. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Pass sample context to summary cards so extended reports can build links for the current sample. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Handle the API client's not-found response when validating a new username so admins can create users without HTTP 500 errors. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
 - Open existing users in the admin editor using the API client's user model, return updated user details after saving, and accept unchanged saves without storing plaintext passwords. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
 - Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
