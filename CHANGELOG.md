@@ -28,10 +28,10 @@
 
 ### Fixed
 
-- Allow appending metadata to samples with existing metadata without HTTP 500 errors, preserving existing entries. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Show all metadata fields when entries from the same category are interleaved with other categories. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Display uploaded metadata tables and read both stored tables and CSV metadata accepted by older sample uploads. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Handle empty CSV metadata cells as blank values instead of causing HTTP 500 errors when reading samples. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Allow appending metadata to samples with existing metadata without HTTP 500 errors, preserving existing entries. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Show all metadata fields when entries from the same category are interleaved with other categories. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Display uploaded metadata tables and read both stored tables and CSV metadata accepted by older sample uploads. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Handle empty CSV metadata cells as blank values instead of causing HTTP 500 errors when reading samples. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)
