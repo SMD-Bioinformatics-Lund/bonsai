@@ -2,6 +2,11 @@ import Choices from "choices.js";
 import DataTable from "datatables.net-bs5";
 import { initTooltip } from "utils/notification";
 
+const selectedVariants = new Map<string, {
+  variant_id: string;
+  analysis_id: string;
+  analysis_type: string;
+}>();
 
 export function initVariantsView(): void {
   initSelects();
@@ -94,39 +99,30 @@ function initVariantSelection(): void {
 }
 
 function selectVariant(element: HTMLInputElement): void {
-  const selected = new Set<string>(
-    JSON.parse(localStorage.getItem("selectedVariants") || "[]")
-  );
-
   const item = {
     variant_id: element.dataset.variantId!,
     analysis_id: element.dataset.analysisId!,
     analysis_type: element.dataset.analysisType!,
   };
 
-  const key = `${item.analysis_id}:${item.analysis_type}:${item.variant_id}`;
+  const key = JSON.stringify(item);
 
   if (element.checked) {
-    selected.add(key);
+    selectedVariants.set(key, item);
   } else {
-    selected.delete(key);
+    selectedVariants.delete(key);
   }
 
-  const payload = Array.from(selected).map(key => {
-    const [analysis_id, analysis_type, variant_id] = key.split(":");
-    return { analysis_id, analysis_type, variant_id };
-  });
+  const payload = Array.from(selectedVariants.values());
 
   const input = document.getElementById("curations-input") as HTMLInputElement;
   if (input) {
     input.value = JSON.stringify(payload);
   }
 
-  localStorage.setItem("selectedVariants", JSON.stringify(Array.from(selected)));
-
   const counter = document.getElementById("selected-variants-counter");
   if (counter) {
-    counter.textContent = String(selected.size);
+    counter.textContent = String(selectedVariants.size);
   }
 }
 
@@ -143,11 +139,11 @@ function selectAllVariants(elem: HTMLInputElement, tableId: string): void {
 }
 
 function resetSelectedOnLoad(): void {
-  const checked = Array.from(
-    document.querySelectorAll<HTMLInputElement>('.br-content input[type="checkbox"]')
-  )
-    .filter(input => input.checked)
-    .map(input => input.id);
-
-  localStorage.setItem("selectedVariants", JSON.stringify(checked));
+  selectedVariants.clear();
+  document.querySelectorAll<HTMLInputElement>('.br-content input[type="checkbox"]')
+    .forEach(input => { input.checked = false; });
+  const input = document.getElementById("curations-input") as HTMLInputElement | null;
+  if (input) input.value = "[]";
+  const counter = document.getElementById("selected-variants-counter");
+  if (counter) counter.textContent = "0";
 }

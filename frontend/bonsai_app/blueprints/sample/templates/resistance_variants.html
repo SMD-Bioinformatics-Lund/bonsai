@@ -161,6 +161,7 @@
 <div class="variant-options mt-md-2 y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
     {{ sidebar_header("Analyze variants", size="md") }}
     <div class="fw-light mb-2">Selected: <span id="selected-variants-counter">0</span></div>
+    <p class="small">Confirm saves the selected decision and resistance annotations, replacing any existing curation for each selected variant.</p>
     <form method="post" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-classification">
         {# Varaint rejection section #}
         {{ sidebar_header("verify prediction") }}

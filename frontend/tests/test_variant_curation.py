@@ -53,7 +53,16 @@ def test_hide_dismissed_uses_embedded_curations_without_legacy_verified_field(hi
 
 
 def test_curation_post_renders_fresh_sample_data(app, monkeypatch):
-    original = {"external_sample_id": "LAB-1", "element_type_result": [], "metadata": []}
+    original = {
+        "external_sample_id": "LAB-1", "metadata": [],
+        "element_type_result": [{
+            "analysis_id": "analysis-1", "analysis_type": "amr", "software": "tbprofiler",
+            "result": {"variants": [{
+                "id": "variant-1", "reference_sequence": "gene-1",
+                "variant_type": "snp", "phenotypes": [],
+            }]},
+        }],
+    }
     refreshed = {**deepcopy(original), "sample_name": "Refreshed after curation"}
     api = SimpleNamespace(
         get_sample_by_id=Mock(side_effect=[original, refreshed]),
@@ -85,3 +94,38 @@ def test_curation_post_renders_fresh_sample_data(app, monkeypatch):
     api.create_curation.assert_called_once()
     assert api.get_sample_by_id.call_count == 2
     assert rendered["sample"] is refreshed
+
+
+@pytest.mark.parametrize("decision,reason", [(None, None), ("reject", None)])
+def test_curation_requires_a_decision_and_rejection_reason(decision, reason):
+    with pytest.raises(ValueError):
+        controllers.build_curation_records(
+            [{"analysis_id": "a", "analysis_type": "amr", "variant_id": "0"}],
+            decision=decision, rejection_reason=reason,
+        )
+
+
+@pytest.mark.parametrize("depth_operator,depth", [("gte", 100), ("lte", 10)])
+def test_depth_filter_does_not_override_failed_frequency_filter(depth_operator, depth):
+    form = MultiDict({
+        "min-frequency": "50", "freq-operator": "gte",
+        "min-depth": "50", "depth-operator": depth_operator,
+    })
+    assert not controllers.has_variant_passed_filters(
+        {"frequency": 0.1, "depth": depth, "phenotypes": []}, form
+    )
+
+
+def test_updated_curation_displays_latest_curator_and_time():
+    analysis = {
+        "result": {"variants": [{"id": 0}]},
+        "curations": [{
+            "id": "existing", "annotation_type": "variant", "result_key": "0",
+            "decision": "accept", "curated_by": "second-user",
+            "created_at": "2025-01-01", "modified_at": "2026-11-10",
+        }],
+    }
+    controllers.merge_variants_with_curations(analysis)
+    merged = analysis["result"]["variants"][0]["curation"]
+    assert merged["curated_by"] == "second-user"
+    assert merged["curated_at"] == "2026-11-10"

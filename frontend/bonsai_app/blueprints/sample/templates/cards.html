@@ -731,7 +731,7 @@
                 </thead>
                 <tbody id="tbprofiler-variant-table" class="table-group-divider">
                     {% for variant in result.variants %}
-                        {% if variant.phenotypes | length > 0 or extended %}
+                        {% if variant.phenotypes | length > 0 or (variant.curation.phenotypes | default([], true) | length > 0) or extended %}
                         <tr class="{{ row_class }}">
                             {% if extended %}
                                 <td>
@@ -866,6 +866,12 @@
                                             data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
                                         <i class="bi bi-person-fill"></i>
                                     </span>
+                                {% endif %}
+                                {% if extended and variant.curation.id %}
+                                    <form method="post" action="{{ url_for('samples.remove_curation', sample_id=sample.sample_id, curation_id=variant.curation.id) }}"
+                                          onsubmit="return confirm('Remove this curation? The variant will become uncurated.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger mt-1">Remove curation</button>
+                                    </form>
                                 {% endif %}
                             </td>
                             {% if extended %}
