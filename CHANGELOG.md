@@ -28,6 +28,10 @@
 
 ### Fixed
 
+- Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Explain when the TBProfiler variant view has no supported stored results instead of presenting that as a negative resistance finding. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Pass sample context to summary cards so extended reports can build links for the current sample. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
 - Show EMM typing cards using the stored analysis type, distinguish empty and unavailable reports, and preserve zero cluster counts. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Read EMM overview columns from the normalized EMMtyper result fields. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Export EMM results to LIMS using the current analysis model and handle unavailable result payloads without HTTP 500 errors. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)

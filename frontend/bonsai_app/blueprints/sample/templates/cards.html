@@ -841,12 +841,14 @@
                                     {% for phenotype in user_annotated %}
                                         <li>
                                             {{ phenotype.name | capitalize }}
-                                            {% set resistance_level = phenotype.meta.resistance_level %}
+                                            {% set resistance_level = (phenotype.meta | default({}, true)).get('resistance_level') %}
+                                            {% if resistance_level %}
                                             <span class="badge text-bg-secondary"
                                                     data-bs-toggle="tooltip" data-bs-placement="top"
                                                     data-bs-title="{{ resistance_level | capitalize | default("-") }}">
                                                     {{ resistance_level[:2].upper() }}
                                             </span>
+                                            {% endif %}
                                         </li>
                                     {% endfor %}
                                     </ul>
