@@ -175,7 +175,7 @@
         </table>
         <h5 class="card-title">Predicted mutations</h5>
             {% if resistance.mutations | length == 0 %}
-                <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+                <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
             {% else %}
                 <table class="table">
                     <thead>
@@ -215,7 +215,7 @@
     <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
-        <p class="card-text fst-italic">No  identified virulence factors.</p>
+        <p class="card-text fst-italic">No virulence factors identified.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
     {% elif pred.software == "amrfinder" and pred.analysis_type == "virulence" %}
@@ -400,7 +400,7 @@
     {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
         <table class="table table-striped">
             <caption>Database: {{result.genes[0].ref_database}}</caption>
@@ -428,7 +428,7 @@
     {% endif  %}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <table class="table table-striped">
             <caption>Database: {{ result.variants[0].ref_database }}</caption>
@@ -465,7 +465,7 @@
     <h5 class="card-title">Genes</h5>
     {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped fs-6">
         <thead>
@@ -518,7 +518,7 @@
     <h5 class="card-title">Genes</h5>
     {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped">
         <thead>
@@ -556,9 +556,9 @@
 
 {% macro amrfinder_method_desc(method) %}
     {% if "BLAST" in method %}
-        <p>The hit was identified in a protein (P) or nucleotide translated (X) or Nucleotide (BLASTN).  BLAST hits are hits that are &lt; 100% identical to a database protein, but at coverage &gt; 90%. The percent identity cutoff is, by default, 90%, but may be higher or lower if it was manually curated. Manual curation of BLAST parameters usually occurrs for <i>plus</i> genes where no HMM and cutoff have been curated.</p>
+        <p>The hit was identified in a protein (P) or nucleotide translated (X) or Nucleotide (BLASTN).  BLAST hits are hits that are &lt; 100% identical to a database protein, but at coverage &gt; 90%. The percent identity cutoff is, by default, 90%, but may be higher or lower if it was manually curated. Manual curation of BLAST parameters usually occurs for <i>plus</i> genes where no HMM and cutoff have been curated.</p>
     {% elif "EXACT" in method %}
-        <p>These mean that we have an amino-acid sequence identical protein in the AMRFinderPlus database.</p>
+        <p>The protein has an amino acid sequence identical to a protein in the AMRFinderPlus database.</p>
     {% elif "PARTIAL" in method %}
         <p>Hits &lt; 90% of the length of the database protein are called either PARTIAL if the hit is internal to a contig or PARTIAL_CONTIG_END if the gene could have been broken by a contig boundary.</p>
     {% elif "INTERNAL_STOP" in method %}
@@ -576,7 +576,7 @@
     {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped fs-6">
         <thead>
@@ -623,7 +623,7 @@
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <table class="table table-striped">
             <thead>
@@ -700,7 +700,7 @@
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | n_results_with_resistance == 0 and not extended %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <div class="table-responsive">
             <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped">
@@ -1164,7 +1164,7 @@
                         <td>{{ pred.result.flic | fmt_null_values }}</td>
                     </tr>
                     <tr>
-                        <td>CRISPER</td>
+                        <td>CRISPR</td>
                         <td>{{ pred.result.crispr | fmt_null_values }}</td>
                     </tr>
                     <tr>
