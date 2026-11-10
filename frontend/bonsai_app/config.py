@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # verify SSL certificated for https connections to API
     verify_ssl: bool | pathlib.Path = Field(
         True,
-        description="If SSL should be verifed for HTTPS requests to the API. Can also provide a path to the CA bundle that should be used.",
+        description="If SSL should be verified for HTTPS requests to the API. Can also provide a path to the CA bundle that should be used.",
     )
     request_timeout: int = Field(
         60, description="Timeout for requests to API in seconds."
