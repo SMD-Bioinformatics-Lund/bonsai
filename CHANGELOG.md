@@ -28,7 +28,7 @@
 
 ### Fixed
 
-- Use explicit QC search values for exact-status filters, keep them current after QC edits, and allow filtering columns excluded from global text search. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Use explicit QC search values for exact-status filters, keep them current after QC edits, and allow filtering columns excluded from global text search. [#627](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/627)
 - Show EMM typing cards using the stored analysis type, distinguish empty and unavailable reports, and preserve zero cluster counts. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Read EMM overview columns from the normalized EMMtyper result fields. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Export EMM results to LIMS using the current analysis model and handle unavailable result payloads without HTTP 500 errors. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
