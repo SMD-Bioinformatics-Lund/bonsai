@@ -130,7 +130,7 @@ def sample(sample_id: str) -> str:
 
     # Sort variants within all prediction results
     for pred_res in sample_info.get("element_type_result", []):
-        if "variants" in pred_res.get("result", {}):
+        if "variants" in (pred_res.get("result") or {}):
             pred_res["result"]["variants"] = sort_variants(
                 pred_res["result"]["variants"]
             )
@@ -366,6 +366,7 @@ def resistance_variants(sample_id: str) -> str:
                     resistance_level=resistance_level,
                 )
                 results = submit_curations_batch(batch_records, create_curation_fn=client.create_curation)
+                sample_info = client.get_sample_by_id(sample_id=sample_id)
 
                 # Report results to user
                 successes = sum(1 for r in results if r.success)
@@ -393,6 +394,8 @@ def resistance_variants(sample_id: str) -> str:
         sample_info, software="tbprofiler", analysis_type="amr"
     )
     for pred_res in tbprofiler_results:
+        if pred_res.get("result") is None:
+            continue
         pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
     # Sort top-level structural and SNV variants if present
@@ -493,7 +496,10 @@ def metadata(sample_id: str) -> str:
     kw_tbl = kw_metadata_to_table(kw_metadata)
     grouped_meta_tbl = {
         name: list(gr)
-        for name, gr in groupby(metadata_tbls, key=lambda x: x["category"])
+        for name, gr in groupby(
+            sorted(metadata_tbls, key=lambda x: x["category"]),
+            key=lambda x: x["category"],
+        )
     }
 
     return render_template(

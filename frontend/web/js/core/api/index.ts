@@ -89,13 +89,14 @@ export class ApiService {
   };
 
   getMembershipsBySamples = async (sampleIds: string[], signal?: AbortSignal) => {
-    return this.http.request<MembershipEdges>(
-      `/memberships?${objectToQueryParams({ s: sampleIds })}`,
-      {
-        method: "GET",
-        signal,
-      },
-    );
+    const edges: MembershipEdges = [];
+    for (let offset = 0; offset < sampleIds.length; offset += 100) {
+      edges.push(...await this.http.request<MembershipEdges>(
+        `/memberships?${objectToQueryParams({ s: sampleIds.slice(offset, offset + 100) })}`,
+        { method: "GET", signal },
+      ));
+    }
+    return edges;
   };
 
   private handleError = (error: unknown) => {

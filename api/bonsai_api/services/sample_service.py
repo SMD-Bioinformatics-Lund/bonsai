@@ -29,6 +29,7 @@ from bonsai_api.exceptions import (
     DatabaseOperationError,
     EntryNotFound,
 )
+from bonsai_api.io import parse_metadata_table
 from bonsai_api.models.analysis import AnalysisResult, VariantContext
 from bonsai_api.models.context import ApiRequestContext
 from bonsai_api.models.genomic_resource import GenomicResourceResponse
@@ -39,6 +40,7 @@ from bonsai_api.models.igv import (
     IgvTrack,
 )
 from bonsai_api.models.memberships import MembershipEdge
+from bonsai_api.models.metadata import InputTableMetadata
 from bonsai_api.models.pipeline import PipelineRun
 from bonsai_api.models.reference_genome import ReferenceGenomeResponse
 from bonsai_api.models.sample import SampleInfoCreate, SampleRecordDb, SampleRecordOut
@@ -89,7 +91,10 @@ async def create_sample_service(
         access_groups=sample.access_groups,
         visibility=sample.visibility,
         sequencing=sample.sequencing,
-        metadata=sample.metadata,
+        metadata=[
+            parse_metadata_table(entry) if isinstance(entry, InputTableMetadata) else entry
+            for entry in sample.metadata
+        ],
     )
 
     event_subject = Subject(id=sample.sample_id, type=SourceType.USR)

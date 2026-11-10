@@ -256,7 +256,7 @@ def has_variant_passed_filters(variant: dict[str, Any], form: dict[str, Any]) ->
             variant_passes_qc = variant["depth"] <= int(min_depth)
 
     # hide variant that have been manually dismissed
-    if bool(form.get("hide-dismissed")) and variant["verified"] == "failed":
+    if bool(form.get("hide-dismissed")) and (variant.get("curation") or {}).get("decision") == "reject":
         variant_passes_qc = False
 
     # hide varians without resistance
@@ -290,7 +290,8 @@ def filter_variants(
 ) -> dict[str, Any]:
     """Filter resistance variants from prediction sw."""
     for prediction in sample_info["element_type_result"]:
-        variants = prediction["result"]["variants"]
+        merge_variants_with_curations(prediction)
+        variants = (prediction.get("result") or {}).get("variants", [])
         if len(variants) == 0:
             continue
         # build up a new variant list that passes all filtering criteria
@@ -324,7 +325,7 @@ def get_variant_genes(sample_info, software=None) -> tuple[str, ...]:
         if software and not software == prediction["software"]:
             continue
         # skip predictions withouht variants
-        variants = prediction["result"]["variants"]
+        variants = (prediction.get("result") or {}).get("variants", [])
         genes.update({variant["reference_sequence"] for variant in variants})
     return tuple(sorted(genes))
 
@@ -350,7 +351,7 @@ def get_all_who_classifications(sample_info, software=None) -> tuple[str, ...]:
         if software and not prediction["software"] == software:
             continue
         # skip predictions withouht variants
-        variants = prediction["result"]["variants"]
+        variants = (prediction.get("result") or {}).get("variants", [])
         for variant in variants:
             classification.update(get_variant_classifications(variant))
     return tuple(sorted(classification))
@@ -368,7 +369,7 @@ def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
             continue
         # skip predictions withouht variants
         variants = {
-            variant["variant_type"] for variant in prediction["result"]["variants"]
+            variant["variant_type"] for variant in (prediction.get("result") or {}).get("variants", [])
         }
         variant_types.update(variants)
     return tuple(sorted(variant_types))
@@ -378,7 +379,7 @@ def filter_variants_if_processed(sample_info, result_type="AMR"):
     """Filter out unprocessed and failed variants if any variants have been processed."""
     results = []
     for result in sample_info["element_type_result"]:
-        if result["analysis_type"] == "amr" and len(result["result"]["variants"]) > 0:
+        if result["analysis_type"] == "amr" and (result.get("result") or {}).get("variants"):
             # check if result has has processed variants
             processed = [QualityControlResult.FAILED, QualityControlResult.PASSED]
             has_proc_variants = any(
@@ -421,7 +422,7 @@ def split_metadata(sample_obj: dict[str, Any]):
 def kw_metadata_to_table(metadata: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Format key-value metadata to a dataframe like table object."""
     grouped_kw_meta: dict[str, dict[str, Any]] = {}
-    for name, records_itr in groupby(metadata, key=lambda x: x["category"]):
+    for name, records_itr in groupby(sorted(metadata, key=lambda x: x["category"]), key=lambda x: x["category"]):
         records = list(records_itr)
         raw_series = pd.Series(
             [rec["value"] for rec in records],
@@ -500,11 +501,6 @@ def submit_curations_batch(
         analysis_id = rec["analysis_id"]
         analysis_type = rec["analysis_type"]
         curation_record = rec["curation"]
-        resp = create_curation_fn(
-            analysis_type=analysis_type,
-            analysis_id=analysis_id,
-            record=curation_record,
-        )
         try:
             resp = create_curation_fn(
                 analysis_type=analysis_type,
@@ -565,7 +561,7 @@ def merge_variants_with_curations(analysis_result: dict[str, Any]) -> dict[str, 
     :param analysis_result: Single analysis result dict with 'result' and 'curations' keys
     :return: Modified analysis_result with variants enriched with curation data
     """
-    if "result" not in analysis_result or "variants" not in analysis_result["result"]:
+    if not analysis_result.get("result") or "variants" not in analysis_result["result"]:
         return analysis_result  # No variants to process
 
     if "curations" not in analysis_result:
