@@ -71,9 +71,12 @@ def emm_typing(
     """Extract and format EMM result from a sample."""
     options = options or {}
     for ty in sample.typing_result:
-        if ty.type == "emmtype":
+        if ty.analysis_type == "emm":
             result: TypingResultEmm = ty.result
-            return result.emmtype or "NA", ""
+            if result is None:
+                raise AnalysisNoResultError()
+            emm_type = result.get("emmtype") if isinstance(result, dict) else result.emmtype
+            return emm_type or "NA", ""
     raise AnalysisNotPresentError(
         f"Sample '{sample.sample_name}' doesn't have EMM type."
     )

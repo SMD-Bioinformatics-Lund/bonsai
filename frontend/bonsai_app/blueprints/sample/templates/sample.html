@@ -56,9 +56,9 @@
                         <div class="col-md-auto">
                         {{ mlst_card(res.result) }}
                         </div>
-                    {% elif res.analysis_type == "emmtype" and res.result %}
+                    {% elif res.analysis_type == "emm" %}
                         <div class="col-md-auto">
-                        {{ emm_card(res.result) }}
+                        {{ emm_card(res.result, status=res.status, reason=res.reason) }}
                         </div>
                     {% elif res.analysis_type == "stx" and res.result %}
                         <div class="col-md-auto">
