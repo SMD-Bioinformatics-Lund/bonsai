@@ -28,6 +28,10 @@
 
 ### Fixed
 
+- Skip username availability lookups for invalid usernames so partially completed admin user forms show validation errors instead of crashing on a blank username. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Redirect non-admin users safely from admin pages and show username lookup and user creation API failures as form warnings instead of HTTP 500 errors. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Require an explicit Delete action in the user editor, report bulk deletion failures per user, and return to the user list even without a referrer. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Correct admin validation message typos and display errors when no role or an unsupported role is selected. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show an unavailable-analysis message on sample summaries when no AMR analysis is stored, including when opened from a group, instead of reporting a negative resistance finding. [#629](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/629)
 - Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
 - Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
