@@ -57,4 +57,4 @@ def test_parsed_empty_amr_result_keeps_its_negative_finding(summary_client, quer
 
     assert response.status_code == 200
     assert b"No stored AMR analysis is available." not in response.data
-    assert b"No resistance yeilding mutations identified" in response.data
+    assert b"No resistance yielding mutations identified" in response.data

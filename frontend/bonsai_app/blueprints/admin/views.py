@@ -40,7 +40,7 @@ def admin_panel():
     """Default admin panel view."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
+        flash("You don't have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
     return redirect(url_for("admin.view_users"))
@@ -52,7 +52,7 @@ def view_users():
     """Edit Bonsai users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
+        flash("You don't have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
     client = get_api_client()
@@ -65,7 +65,7 @@ PASSWORD_VALIDATORS = [
     validators.Length(min=8, max=72),
     validators.Regexp(
         r"^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).+)\S$",
-        message="The password must include upper- and lower case letters with at leats one number.",
+        message="The password must include uppercase and lowercase letters with at least one number.",
     ),
     validators.EqualTo("confirm", message="Passwords must match"),
 ]
@@ -111,7 +111,7 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
         except NotFoundError:
             user_exists = False
         if user_exists:
-            raise ValidationError(f"An user with username {username} already exists")
+            raise ValidationError(f"A user with username {username} already exists")
 
 
 @admin_bp.route("/admin/users/new", methods=["GET", "POST"])
@@ -120,7 +120,7 @@ def create_user():
     """Create new users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
+        flash("You don't have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
     form = UserRegistrationForm(request.form)
@@ -148,7 +148,7 @@ def delete_users():
     """Delete users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
+        flash("You don't have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
     client = get_api_client()
@@ -177,7 +177,7 @@ def update_user(username):
     """Edit existing user."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
+        flash("You don't have permission to view this page", "warning")
         return redirect(url_for("public.home"))
 
     client = get_api_client()

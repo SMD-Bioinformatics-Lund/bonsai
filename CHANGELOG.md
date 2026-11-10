@@ -28,8 +28,9 @@
 
 ### Fixed
 
-- Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
+- Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
+- Correct user-facing spelling and grammar in resistance and virulence results, typing labels, tooltips, account validation, permission and export errors, CLI help, and configuration descriptions. [#633](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/633)
 - Show an unavailable-analysis message on sample summaries when no AMR analysis is stored, including when opened from a group, instead of reporting a negative resistance finding. [#629](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/629)
 - Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
 - Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
