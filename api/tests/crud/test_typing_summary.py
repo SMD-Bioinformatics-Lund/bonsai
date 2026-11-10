@@ -82,6 +82,12 @@ TYPING_ENTRIES = [
 ]
 CASES = [
     case(
+        "EMM type and cluster use normalized EMMtyper fields",
+        [entry("emm", {"emmtype": "emm1.0", "emm_cluster": "A-C3"}, software="emmtyper")],
+        {"emm_type": "emm1.0", "emm_cluster": "A-C3"},
+        ["sample_id", "emm_type", "emm_cluster"],
+    ),
+    case(
         "older multi-hit result without display field",
         [
             {

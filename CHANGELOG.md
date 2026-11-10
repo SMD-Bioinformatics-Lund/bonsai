@@ -28,6 +28,9 @@
 
 ### Fixed
 
+- Show EMM typing cards using the stored analysis type, distinguish empty and unavailable reports, and preserve zero cluster counts. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
+- Read EMM overview columns from the normalized EMMtyper result fields. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
+- Export EMM results to LIMS using the current analysis model and handle unavailable result payloads without HTTP 500 errors. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Handle the API client's not-found response when validating a new username so admins can create users without HTTP 500 errors. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
 - Open existing users in the admin editor using the API client's user model, return updated user details after saving, and accept unchanged saves without storing plaintext passwords. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
 - Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
