@@ -29,7 +29,7 @@ class FieldDefinition(BaseModel):
 
     parameter_name: str = Field(
         ...,
-        description="What the parameter is going to be callsed",
+        description="What the parameter is going to be called",
         examples=["STREP ART"],
     )
     data_type: DataType = Field(

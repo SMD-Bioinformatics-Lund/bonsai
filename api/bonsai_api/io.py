@@ -138,7 +138,7 @@ def validate_resource_identifier(resource: str) -> Path:
         raise GenomeResourceError("Resource path can't be absolute", requested)
 
     if ".." in requested.parts:
-        raise GenomeResourceError("Resource path cant contain '..'", requested)
+        raise GenomeResourceError("Resource path cannot contain '..'", requested)
 
     return requested
 

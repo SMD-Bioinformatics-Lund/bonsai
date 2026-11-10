@@ -40,7 +40,11 @@ def admin_panel():
     # if not valid token
     if not current_user.is_admin:
         flash("You don't have permission to view this page", "warning")
+<<<<<<< HEAD
         return redirect(url_for("public.index"))
+=======
+        return redirect(url_for("public.home"))
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
 
     return redirect(url_for("admin.view_users"))
 
@@ -52,7 +56,11 @@ def view_users():
     # if not valid token
     if not current_user.is_admin:
         flash("You don't have permission to view this page", "warning")
+<<<<<<< HEAD
         return redirect(url_for("public.index"))
+=======
+        return redirect(url_for("public.home"))
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
 
     client = get_api_client()
     users = client.get_users()
@@ -64,7 +72,11 @@ PASSWORD_VALIDATORS = [
     validators.Length(min=8, max=72),
     validators.Regexp(
         r"^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).+)\S$",
+<<<<<<< HEAD
         message="The password must include uppercase and lowercase letters and at least one number.",
+=======
+        message="The password must include uppercase and lowercase letters with at least one number.",
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
     ),
     validators.EqualTo("confirm", message="Passwords must match"),
 ]
@@ -126,7 +138,11 @@ def create_user():
     # if not valid token
     if not current_user.is_admin:
         flash("You don't have permission to view this page", "warning")
+<<<<<<< HEAD
         return redirect(url_for("public.index"))
+=======
+        return redirect(url_for("public.home"))
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
 
     form = UserRegistrationForm(request.form)
     if request.method == "POST" and form.validate():
@@ -154,7 +170,11 @@ def delete_users():
     # if not valid token
     if not current_user.is_admin:
         flash("You don't have permission to view this page", "warning")
+<<<<<<< HEAD
         return redirect(url_for("public.index"))
+=======
+        return redirect(url_for("public.home"))
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
 
     client = get_api_client()
 
@@ -183,7 +203,11 @@ def update_user(username):
     # if not valid token
     if not current_user.is_admin:
         flash("You don't have permission to view this page", "warning")
+<<<<<<< HEAD
         return redirect(url_for("public.index"))
+=======
+        return redirect(url_for("public.home"))
+>>>>>>> 982a4c22da4eca50935aeab7c290b5371a612b1f
 
     client = get_api_client()
 

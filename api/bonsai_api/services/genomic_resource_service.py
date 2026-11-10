@@ -51,7 +51,7 @@ async def create_genomic_resource_service(
         raise EntryNotFound(f"Sample with ID {sample_id} not found")
     
     if resource.pipeline_run_id is None:
-        raise ValueError("Resource dont have a pipeline run id!")
+        raise ValueError("Resource does not have a pipeline run ID!")
 
     has_resource_for_pipeline = await sample_has_resource(
         db, sample_id=sample_id, pipeline_id=resource.pipeline_run_id
