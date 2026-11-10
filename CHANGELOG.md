@@ -28,6 +28,8 @@
 
 ### Fixed
 
+- Show variant table sorting arrows, preserve the supplied order until a header is clicked, and prevent selection and action headers from reordering variants. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show an empty or checked checkbox icon on the groups table's "Show only selected" button to indicate whether the filter is active. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show an unavailable-analysis message on sample summaries when no AMR analysis is stored, including when opened from a group, instead of reporting a negative resistance finding. [#629](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/629)
 - Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
 - Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)

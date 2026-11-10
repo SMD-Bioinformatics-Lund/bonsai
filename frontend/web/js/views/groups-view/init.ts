@@ -31,7 +31,10 @@ const sampleTableConfig = {
           selectorModifier: { search: "applied" as const },
         },
         "selectNone",
-        "showSelected",
+        {
+          extend: "showSelected",
+          text: '<i class="bi bi-square" aria-hidden="true"></i><i class="bi bi-check-square" aria-hidden="true"></i> Show only selected',
+        },
       ],
     },
     top1End: {
