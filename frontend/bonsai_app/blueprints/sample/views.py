@@ -58,7 +58,7 @@ samples_bp = Blueprint(
 def _get_sample_groups(
     client: Any, sample_info: dict[str, Any]
 ) -> list[GroupResponse] | None:
-    """Resolve memberships for the sidebar, distinguishing lookup errors from no groups."""
+    """Resolve visible memberships; None indicates a failed group lookup."""
     group_ids = set(sample_info.get("groups") or [])
     if not group_ids:
         return []
@@ -69,10 +69,7 @@ def _get_sample_groups(
         LOG.exception("Unable to load groups for sample %s", sample_info["sample_id"])
         return None
 
-    if {group.group_id for group in groups} != group_ids:
-        LOG.warning("Unable to resolve all groups for sample %s", sample_info["sample_id"])
-        return None
-
+    # The group listing is visibility-filtered, so omitted IDs are not lookup errors.
     return sorted(groups, key=lambda group: (group.display_name.casefold(), group.group_id))
 
 

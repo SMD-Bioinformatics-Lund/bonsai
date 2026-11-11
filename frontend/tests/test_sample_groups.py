@@ -85,13 +85,9 @@ def test_sidebar_distinguishes_no_memberships_without_a_group_lookup(sample_grou
 
 
 @pytest.mark.parametrize("page", ["", "/resistance/variants", "/metadata"])
-@pytest.mark.parametrize("failure", ["network", "unresolved"])
-def test_group_lookup_failure_keeps_the_sample_page_available(sample_groups_page, page, failure):
+def test_group_lookup_failure_keeps_the_sample_page_available(sample_groups_page, page):
     client, sample, api = sample_groups_page
-    if failure == "network":
-        api.get_groups.side_effect = NetworkError("API unavailable")
-    else:
-        api.get_groups.return_value = []
+    api.get_groups.side_effect = NetworkError("API unavailable")
 
     response = client.get(f"/sample/{sample['sample_id']}{page}")
 
@@ -101,3 +97,56 @@ def test_group_lookup_failure_keeps_the_sample_page_available(sample_groups_page
     assert "Unable to load group memberships." in groups.get_text()
     assert "No group memberships." not in groups.get_text()
     assert not groups.find_all("a")
+
+
+@pytest.mark.parametrize("page", ["", "/resistance/variants", "/metadata"])
+@pytest.mark.parametrize("from_group", [False, True])
+def test_non_admin_keeps_public_links_with_private_memberships(
+    sample_groups_page, user_obj, page, from_group,
+):
+    client, sample, api = sample_groups_page
+    user_obj.roles = ["user"]
+    sample["groups"] = ["private-group", "group-b", "group-a", "group-a"]
+    api.get_groups.return_value = [
+        group for group in api.get_groups.return_value if group.group_id != "group-z"
+    ]
+    query = "?group_id=group-b" if from_group else ""
+
+    response = client.get(f"/sample/{sample['sample_id']}{page}{query}")
+
+    assert response.status_code == 200
+    dom = BeautifulSoup(response.data, "html.parser")
+    groups = dom.select_one('nav[aria-label="Sample groups"]')
+    assert [(link.get_text(strip=True), link["href"]) for link in groups.find_all("a")] == [
+        ("alpha", "/groups/group-a"),
+        ("Beta <team>", "/groups/group-b"),
+    ]
+    assert "Unable to load" not in groups.get_text()
+    assert "No group memberships." not in groups.get_text()
+    assert "private-group" not in str(groups)
+    assert "Other samples" not in groups.get_text()
+    api.get_groups.assert_called_once_with()
+
+
+@pytest.mark.parametrize("page", ["", "/resistance/variants", "/metadata"])
+@pytest.mark.parametrize("empty_listing", [False, True])
+def test_non_admin_with_only_hidden_memberships_has_no_visible_links(
+    sample_groups_page, user_obj, page, empty_listing,
+):
+    client, sample, api = sample_groups_page
+    user_obj.roles = ["user"]
+    sample["groups"] = ["private-group"]
+    if empty_listing:
+        api.get_groups.return_value = []
+
+    response = client.get(f"/sample/{sample['sample_id']}{page}")
+
+    assert response.status_code == 200
+    dom = BeautifulSoup(response.data, "html.parser")
+    groups = dom.select_one('nav[aria-label="Sample groups"]')
+    assert "No visible group memberships." in groups.get_text()
+    assert "Unable to load" not in groups.get_text()
+    assert "No group memberships." not in groups.get_text()
+    assert not groups.find_all("a")
+    assert "private-group" not in str(groups)
+    api.get_groups.assert_called_once_with()

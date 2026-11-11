@@ -234,6 +234,8 @@
                         </li>
                     {% endfor %}
                 </ul>
+            {% elif sample.groups %}
+                <p class="text-muted">No visible group memberships.</p>
             {% else %}
                 <p class="text-muted">No group memberships.</p>
             {% endif %}
