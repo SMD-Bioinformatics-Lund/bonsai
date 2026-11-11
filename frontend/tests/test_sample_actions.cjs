@@ -15,12 +15,16 @@ class ApiError extends Error {
 }
 
 function setup({ ids = [uuid], confirm = true, error, submissionFails = false } = {}) {
-  const toasts = [], logs = [], prompts = [], deleted = [], removed = [];
+  const toasts = [], logs = [], prompts = [], deleted = [], removed = [], groupRemovals = [], events = [];
   let hidden = 0;
   const spinner = { show() {}, hide() { hidden++; } };
   const container = { querySelector: selector => selector === "spinner-element" ? spinner : { value: "0.5" } };
   const api = {
     deleteSamples: async samples => { deleted.push(samples); },
+    removeSamplesFromGroup: async (groupId, samples) => {
+      if (error) throw error;
+      groupRemovals.push([groupId, samples]);
+    },
     findSimilarSamples: async () => { if (submissionFails) throw error; return { id: "job" }; },
     checkJobStatus: async () => { throw error; },
   };
@@ -41,14 +45,15 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
     require: () => ({
       ApiError, pollJob: fn => fn(),
       throwSmallToast: (...args) => toasts.push(args),
-      showSpinner() {}, hideSpinner: () => { hidden++; }, emitEvent() {},
+      showSpinner() {}, hideSpinner: () => { hidden++; },
+      emitEvent: (...args) => events.push(args),
       TypingMethod: { MINHASH: "minhash" }, ClusterMethod: { SINGLE: "single" },
     }),
     console: { error: (...args) => logs.push(args), log() {} },
     window: { confirm: message => { prompts.push(message); return confirm; } },
     document: { getElementById: () => container },
   });
-  return { actions: exports, api, table, toasts, logs, prompts, deleted, removed,
+  return { actions: exports, api, table, toasts, logs, prompts, deleted, removed, groupRemovals, events,
     btn: { closest: () => container }, hidden: () => hidden };
 }
 
@@ -71,6 +76,44 @@ test("confirmed deletion shows names/count without UUIDs and submits selected ID
   assert.ok(!h.prompts[0].includes(uuid));
   assert.deepEqual(h.deleted, [[uuid]]);
   assert.deepEqual(h.removed, [[uuid]]);
+});
+
+test("empty selections and cancelled group removal leave memberships and selection unchanged", () => {
+  for (const options of [{ ids: [] }, { confirm: false }]) {
+    const h = setup(options);
+    h.actions.removeSamplesFromGroup("group-1", h.table, h.api);
+    assert.equal(h.groupRemovals.length, 0);
+    assert.equal(h.removed.length, 0);
+    assert.equal(h.events.length, 0);
+    assert.equal(h.prompts.length, options.ids ? 0 : 1);
+    assert.equal(h.table.selectedRows, undefined);
+  }
+});
+
+test("confirmed group removal explains scope and removes only the selected memberships", async () => {
+  const h = setup({ ids: [uuid, "sample-2"] });
+  h.actions.removeSamplesFromGroup("group-1", h.table, h.api);
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.match(h.prompts[0], /2 selected samples from this group/);
+  assert.match(h.prompts[0], /samples will remain in Bonsai/);
+  assert.ok(!h.prompts[0].includes(uuid));
+  assert.deepEqual(h.groupRemovals, [["group-1", [uuid, "sample-2"]]]);
+  assert.deepEqual(h.removed, [[uuid, "sample-2"]]);
+  assert.deepEqual(Array.from(h.table.selectedRows), []);
+  assert.equal(h.events[0][0], "samples:group-memberships-changed");
+  assert.equal(h.deleted.length, 0);
+});
+
+test("failed group removal preserves table rows and selection", async () => {
+  const h = setup({ error: new Error("Removal failed") });
+  h.actions.removeSamplesFromGroup("group-1", h.table, h.api);
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(h.removed.length, 0);
+  assert.equal(h.events.length, 0);
+  assert.equal(h.table.selectedRows, undefined);
+  assert.equal(h.toasts.at(-1)[1], "error");
 });
 
 for (const view of ["table", "detail"]) {

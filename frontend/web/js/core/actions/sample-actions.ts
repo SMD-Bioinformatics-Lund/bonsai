@@ -54,6 +54,7 @@ type TidyTreeSelection = {
 };
 
 type TidyTreeInstance = {
+  zoom: { filter(predicate: () => boolean): void };
   search(predicate: (node: { data: { id: string } }) => boolean): TidyTreeSelection;
   eachLeafLabel(callback: (label: HTMLElement) => void): void;
 };
@@ -116,6 +117,10 @@ export function removeSamplesFromGroup(
     throwSmallToast("No samples selected", "warning");
     return;
   }
+  const sampleLabel = selectedSamples.length === 1 ? "sample" : "samples";
+  if (!window.confirm(
+    `Remove ${selectedSamples.length} selected ${sampleLabel} from this group?\n\nThe samples will remain in Bonsai.`,
+  )) return;
   api
     .removeSamplesFromGroup(groupId, selectedSamples)
     .then(() => {
@@ -346,6 +351,8 @@ export function drawDendrogram(
     leafLabels: true,
     margin: [10, 10, 80, 10],
   });
+  // Keep the small overview tree stationary while preserving clickable labels.
+  tree.zoom.filter(() => false);
 
   tree
     .search((d: { data: { id: string } }) => d.data.id.includes(sampleId))

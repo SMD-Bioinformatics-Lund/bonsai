@@ -30,6 +30,11 @@
 
 ### Fixed
 
+- Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Disable panning and zooming in the sample summary's similar-sample tree while keeping sample labels clickable. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Clearly highlight the active Summary or QC view in group tables. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Count only visible comments in sample-table badges and hide the badge when the last visible comment is removed. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Display empty virulence messages and missing or unavailable AMR and variant-analysis messages in cards, retaining analysis context and the distinction between missing data and negative findings. [#637](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/637)
 - Remove the outdated extended virulence report reference and use the same no-hits message in all sample-summary views. [#637](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/637)
 - Keep the STX typing card visible for E. coli samples with no hits, showing an explicit no-hits message for empty analyses and an unavailable-result message when no STX analysis is stored. [#634](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/634)

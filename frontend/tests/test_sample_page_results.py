@@ -217,6 +217,44 @@ def test_remove_curation_checks_sample_and_returns_to_variant_view(sample_page, 
     assert b"Remove curation" not in response.data
 
 
+@pytest.mark.parametrize("decision", ["accept", "reject", "flag_for_review"])
+def test_curation_removal_icon_is_next_to_status_and_keeps_confirmation(sample_page, decision):
+    client, sample, prediction = sample_page
+    variant = prediction["result"]["variants"][0]
+    prediction["curations"] = [{
+        "id": "existing", "annotation_type": "variant", "result_key": str(variant["id"]),
+        "decision": decision, "phenotypes": [],
+    }]
+
+    response = client.get(f"/sample/{sample['sample_id']}/resistance/variants")
+
+    assert response.status_code == 200
+    page = BeautifulSoup(response.data, "html.parser")
+    row = page.select_one("#tbprofiler-variant-table tr")
+    button = row.find("button", attrs={"aria-label": "Remove curation"})
+    assert button.find("i", class_="bi-trash3-fill")
+    assert button.get_text(strip=True) == ""
+    form = button.find_parent("form")
+    assert form["method"] == "post"
+    assert form["action"] == f"/sample/{sample['sample_id']}/curation/existing/remove"
+    assert "confirm(" in form["onsubmit"]
+    status_cell = row.find_all("td")[1]
+    assert button.find_parent("td") is status_cell
+    assert form.find_previous_sibling("span", class_="badge")
+
+
+def test_uncurated_variant_has_no_removal_icon(sample_page):
+    client, sample, _ = sample_page
+
+    response = client.get(f"/sample/{sample['sample_id']}/resistance/variants")
+
+    assert response.status_code == 200
+    page = BeautifulSoup(response.data, "html.parser")
+    row = page.select_one("#tbprofiler-variant-table tr")
+    assert "Uncurated" in row.get_text()
+    assert row.find("button", attrs={"aria-label": "Remove curation"}) is None
+
+
 def test_update_failure_shows_readable_message_and_keeps_existing_curation(sample_page):
     client, sample, prediction = sample_page
     variant = prediction["result"]["variants"][0]

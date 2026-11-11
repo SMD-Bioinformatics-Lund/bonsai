@@ -36,7 +36,7 @@
                     {# Dropdown for adding samples to group #}
 
                     <div class="dropdown ps-2 add-to-group-btn">
-                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         Add to group <i class="bi bi-folder-plus"></i>
                         </button>
                         <div id="add-samples-to-group-container" class="dropdown-menu"></div>
@@ -46,16 +46,18 @@
                 {% if display_qc %}
                     {{ qc_bulk_toggle(bad_qc_actions)}}
                 {% endif %}
-                <div class="btn-group ms-2" role="group" aria-label="Three button group">
+                <div class="btn-group ms-2" role="group" aria-label="Sample table view">
                     <a type="button"
-                            class="btn btn-outline btn-dark btn-sm {% if not display_qc %}active{% endif %}"
+                            class="btn btn-sm {% if not display_qc %}btn-success active{% else %}btn-outline-secondary{% endif %}"
+                            aria-pressed="{{ (not display_qc) | lower }}"
                             data-test-id="open-prediction-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show prediction summary"
                             href="{{ url_for('groups.group', group_id=group_id, qc=False) }}">
                         <i class="bi bi-search"></i> Summary
                     </a>
                     <a type="button" 
-                            class="btn btn-outline btn-dark btn-sm {% if display_qc %}active{% endif %}"
+                            class="btn btn-sm {% if display_qc %}btn-success active{% else %}btn-outline-secondary{% endif %}"
+                            aria-pressed="{{ display_qc | lower }}"
                             data-test-id="open-qc-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show QC metrics"
                             href="{{ url_for('groups.group', group_id=group_id, qc=True) }}">
