@@ -28,6 +28,11 @@
 
 ### Fixed
 
+- Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Disable panning and zooming in the sample summary's similar-sample tree while keeping sample labels clickable. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Clearly highlight the active Summary or QC view in group tables. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Count only visible comments in sample-table badges and hide the badge when the last visible comment is removed. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Show variant table sorting arrows, preserve the supplied order until a header is clicked, and prevent selection and action headers from reordering variants. [#631](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/631)

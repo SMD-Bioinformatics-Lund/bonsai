@@ -88,3 +88,28 @@
 .cell-sm {
   width: 1rem !important;
 }
+
+.variant-layout .br-main,
+.variant-layout .br-content {
+  min-width: 0;
+}
+
+.variant-layout #phenotype-heading > .col-md-auto {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 992px) {
+  .variant-layout {
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+
+  .variant-layout .br-main {
+    grid-template-columns: minmax(0, 1fr) 16rem;
+  }
+
+  .variant-layout .br-sidebar,
+  .variant-layout .br-toc {
+    min-width: 16rem;
+  }
+}
