@@ -2,6 +2,7 @@
 {% from "sidebar.html" import sidebar, sidebar_header %}
 {% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
 {% from "cards.html" import amr_prediction_card with context %}
+{% from "cards.html" import analysis_message_card %}
 
 {% macro export_btn() %}
     {{ sidebar_header("Action") }}
@@ -235,14 +236,20 @@
         <div class="br-content container-fluid pb-5">
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
-            {% if amr_results and not (amr_results | selectattr("result") | list) %}
-                <p>Stored variant detail results are unavailable for this record.</p>
-            {% endif %}
             <div id="phenotype-heading" class="row justify-content-md-center">
+                {% if amr_results and not (amr_results | selectattr("result") | list) %}
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "Stored variant detail results are unavailable for this record.") }}
+                    </div>
+                {% endif %}
                 {% if is_filtered and amr_results | length == 0 %}
-                    <p>No stored TBProfiler variant result is displayed with these filters. Use the extended report to inspect the available stored results.</p>
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "No stored TBProfiler variant result is displayed with these filters. Use the extended report to inspect the available stored results.") }}
+                    </div>
                 {% elif amr_results | length == 0 %}
-                    <p>No stored TBProfiler variant result is available in this view. Other stored result types are not displayed here.</p>
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "No stored TBProfiler variant result is available in this view. Other stored result types are not displayed here.") }}
+                    </div>
                 {% else %}
                     {% for elem in amr_results if elem.result %}
                         <div class="col-md-auto">

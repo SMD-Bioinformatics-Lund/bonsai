@@ -210,6 +210,16 @@
 {% endmacro %}
 
 
+{% macro analysis_message_card(title, message) %}
+<div class="card">
+    <div class="card-header">{{ title }}</div>
+    <div class="card-body">
+        <p class="card-text text-muted mb-0">{{ message }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro virulence_card(pred) %}
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
