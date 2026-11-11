@@ -37,7 +37,8 @@
     {% else %}
         {% set tooltip_info = None %}
     {% endif %}
-    <td>
+    {# Exact QC filters need the plain status without display whitespace or markup. #}
+    <td data-search="{{ status }}">
         <span class="fw-light {{ text_colour }}">
             {{ status }}
         </span>
