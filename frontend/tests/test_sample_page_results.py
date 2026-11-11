@@ -248,7 +248,7 @@ def test_update_failure_shows_readable_message_and_keeps_existing_curation(sampl
 @pytest.mark.parametrize("page", ["", "/resistance/variants"])
 @pytest.mark.parametrize("approved_by", [None, "reviewer"])
 @pytest.mark.parametrize("modified_at", [None, "2026-11-11T12:00:00"])
-def test_curation_tooltip_labels_modification_time_and_authors(
+def test_curation_tooltip_does_not_attribute_approval_time_to_curator(
     sample_page, app, page, approved_by, modified_at,
 ):
     client, sample, prediction = sample_page
@@ -274,7 +274,4 @@ def test_curation_tooltip_labels_modification_time_and_authors(
     assert "Curated by: annotation-author" in text
     assert f"Last modified: {expected_time}" in text
     assert "Curated at:" not in text
-    if approved_by:
-        assert "Approved by: reviewer" in text
-    else:
-        assert "Approved by:" not in text
+    assert "Approved by:" not in text
