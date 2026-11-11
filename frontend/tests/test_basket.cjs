@@ -32,7 +32,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 async function setup(savedIds = []) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
-    "add-to-basket-btn"];
+    "add-to-basket-btn", "empty-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element(), clusterLink = new Element();
   const requests = [], clusters = [], selectionCallbacks = [];
@@ -94,6 +94,7 @@ async function setup(savedIds = []) {
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
     clear: () => elements["clear-basket-btn"].onclick(),
+    empty: () => elements["empty-basket-btn"].onclick(),
     reopen: () => elements["basket-offcanvas"].dispatchEvent(new Event("show.bs.offcanvas")),
     cluster: () => clusterLink.onclick({ preventDefault() {} }),
     elements,
@@ -163,15 +164,17 @@ test("adding samples preserves valid entries and ignores an older response", asy
   assert.deepEqual(h.clusters, [["old", "overlap", "new"]]);
 });
 
-test("clearing invalidates in-flight responses and cannot resurrect old cards", async () => {
-  const h = await setup(["old-1", "old-2"]);
-  h.clear();
-  await h.respond(0, ["old-1", "old-2"]);
-  assert.deepEqual(h.saved(), []);
-  assert.deepEqual(h.cards(), []);
-  assert.equal(h.count(), 0);
-  assert.equal(h.clusterButton.disabled, true);
-});
+for (const action of ["clear", "empty"]) {
+  test(`${action} basket invalidates in-flight responses and cannot resurrect old cards`, async () => {
+    const h = await setup(["old-1", "old-2"]);
+    h[action]();
+    await h.respond(0, ["old-1", "old-2"]);
+    assert.deepEqual(h.saved(), []);
+    assert.deepEqual(h.cards(), []);
+    assert.equal(h.count(), 0);
+    assert.equal(h.clusterButton.disabled, true);
+  });
+}
 
 test("older errors cannot overwrite a newer successfully resolved basket", async () => {
   const h = await setup(["a", "b"]);
