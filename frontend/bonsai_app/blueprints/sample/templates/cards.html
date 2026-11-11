@@ -220,18 +220,12 @@
 {% endmacro %}
 
 
-{% macro virulence_card(pred, is_filtered=False) %}
+{% macro virulence_card(pred) %}
 <div class="card">
     <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
-        <p class="card-text fst-italic">
-            {% if is_filtered %}
-                No validated virulence factors identified. Use the extended virulence report to see all predicted virulence factors.
-            {% else %}
-                No virulence factors identified.
-            {% endif %}
-        </p>
+        <p class="card-text fst-italic">No virulence factors identified.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
     {% elif pred.software == "amrfinder" and pred.analysis_type == "virulence" %}

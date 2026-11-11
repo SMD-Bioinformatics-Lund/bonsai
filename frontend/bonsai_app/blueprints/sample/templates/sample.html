@@ -121,7 +121,7 @@
                 {% for res in sample.element_type_result %}
                     {% if res.analysis_type == "virulence" and res.result %}
                         <div class="col-md-auto">
-                            {{ virulence_card(res, is_filtered=is_filtered) }}
+                            {{ virulence_card(res) }}
                         </div>
                     {% endif %}
                 {% endfor %}
