@@ -252,6 +252,16 @@ class VariantCurationCreate(ItemCurationCreateBase):
     phenotypes: list[PhenotypeAnnotation] | None = None
 
 
+class VariantCurationUpdate(BaseModel):
+    """Editable variant annotations; identity and audit fields are server controlled."""
+
+    model_config = {"extra": "forbid"}
+
+    decision: Literal["accept", "reject", "flag_for_review"]
+    rejection_reason: str | None = Field(default=None, max_length=1000)
+    phenotypes: list[PhenotypeAnnotation] = Field(default_factory=list)
+
+
 class GeneCurationCreate(ItemCurationCreateBase):
     """Creation request for gene curation."""
     annotation_type: Literal["gene"] = "gene"

@@ -4,7 +4,7 @@
 
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
-- Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
+- Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577) 
 - Display the current Bonsai version below the tree logo in the navigation bar, linking to the changelog. [#558](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/558)
 - Groups carry a `group_key`, a stable name such as `saureus` that uploads use to reference a group while the API keeps generating `group_id`. The key is unique, required when creating a group, set in the group editor, and cannot be changed afterwards.
 - Delete a group from the group editor, with a confirmation that says how many samples will leave the group.
@@ -28,6 +28,37 @@
 
 ### Fixed
 
+- Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
+- Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
+- Show variant table sorting arrows, preserve the supplied order until a header is clicked, and prevent selection and action headers from reordering variants. [#631](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/631)
+- Show an empty or checked checkbox icon on the groups table's "Show only selected" button to indicate whether the filter is active. [#631](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/631)
+- Use explicit QC search values for exact-status filters, keep them current after QC edits, and limit direct filtering to an explicit list of columns so text containing special characters remains searchable. [#627](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/627)
+- Skip username availability lookups for invalid usernames so partially completed admin user forms show validation errors instead of crashing on a blank username. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Redirect non-admin users safely from admin pages and show username lookup and user creation API failures as form warnings instead of HTTP 500 errors. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Require an explicit Delete action in the user editor, report bulk deletion failures per user, and return to the user list even without a referrer. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Correct admin validation message typos and display errors when no role or an unsupported role is selected. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Correct user-facing spelling and grammar in resistance and virulence results, typing labels, tooltips, account validation, permission and export errors, CLI help, and configuration descriptions. [#633](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/633)
+- Show an unavailable-analysis message on sample summaries when no AMR analysis is stored, including when opened from a group, instead of reporting a negative resistance finding. [#629](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/629)
+- Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Explain when the TBProfiler variant view has no supported stored results instead of presenting that as a negative resistance finding. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Pass sample context to summary cards so extended reports can build links for the current sample. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Show EMM typing cards using the stored analysis type, distinguish empty and unavailable reports, and preserve zero cluster counts. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
+- Read EMM overview columns from the normalized EMMtyper result fields. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
+- Export EMM results to LIMS using the current analysis model and handle unavailable result payloads without HTTP 500 errors. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
+- Handle the API client's not-found response when validating a new username so admins can create users without HTTP 500 errors. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
+- Open existing users in the admin editor using the API client's user model, return updated user details after saving, and accept unchanged saves without storing plaintext passwords. [#625](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/625)
+- Submit each variant curation once and refresh the displayed sample after saving, avoiding false conflict messages after a successful confirmation. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Use saved curation decisions when hiding dismissed variants, avoiding detail-page errors for variants without the legacy verification field. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Split group-membership lookups into batches of at most 100 sample IDs so membership preselection works for larger selections. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Allow appending metadata to samples with existing metadata without HTTP 500 errors, preserving existing entries. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Preserve concurrent metadata additions and reject conflicting field names atomically. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Show all scalar metadata fields and tables when entries from the same category are interleaved with other categories. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Parse CSV metadata when creating samples and display stored metadata tables correctly. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Handle empty CSV metadata cells as blank values instead of causing HTTP 500 errors when reading samples. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
+- Preserve unrelated sample memberships when deleting a group or applying group changes to samples with different memberships. [#621](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/621)
 - Preserve each selected sample's identity during SKA clustering when filenames or sequence names repeat, reject multi-sample indexes, and report ambiguous filename recovery in clustering and doctor checks. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Reject ambiguous external sample ID lookups with HTTP 409 instead of choosing an arbitrary sequencing record. [#614](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/614)
 - Show Lab IDs for up to four samples affected by missing clustering data, and summarize larger groups by count while keeping diagnostic details in the browser console. [#613](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/613)
@@ -118,6 +149,7 @@
 
 ### Changed
 
+- Rename the top navigation tab from Groups to Home. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)

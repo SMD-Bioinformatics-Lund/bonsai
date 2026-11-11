@@ -15,6 +15,7 @@
 
 {% block css %}
 {{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='dataTables.bootstrap5.min.css')}}">
 <link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 {% endblock css %}
@@ -26,7 +27,7 @@
         <table id="sv-variant-tbl" class="table">
             <thead>
                 <tr>
-                    <th>
+                    <th data-dt-order="disable">
                         <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                     </th>
                     <th>Info</th>
@@ -36,7 +37,7 @@
                     <th>Quality</th>
                     <th>Method</th>
                     <th>Phenotype</th>
-                    <th></th>
+                    <th data-dt-order="disable"></th>
                 </tr>
             </thead>
             <tbody id="sv-variant-table">
@@ -161,6 +162,7 @@
 <div class="variant-options mt-md-2 y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
     {{ sidebar_header("Analyze variants", size="md") }}
     <div class="fw-light mb-2">Selected: <span id="selected-variants-counter">0</span></div>
+    <p class="small">Confirm saves the selected decision and resistance annotations, replacing any existing curation for each selected variant.</p>
     <form method="post" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-classification">
         {# Varaint rejection section #}
         {{ sidebar_header("verify prediction") }}
@@ -233,11 +235,14 @@
         <div class="br-content container-fluid pb-5">
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
+            {% if amr_results and not (amr_results | selectattr("result") | list) %}
+                <p>Stored variant detail results are unavailable for this record.</p>
+            {% endif %}
             <div id="phenotype-heading" class="row justify-content-md-center">
                 {% if is_filtered and amr_results | length == 0 %}
-                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                    <p>No stored TBProfiler variant result is displayed with these filters. Use the extended report to inspect the available stored results.</p>
                 {% elif amr_results | length == 0 %}
-                    <p>No predicted resistance determinants.</p>
+                    <p>No stored TBProfiler variant result is available in this view. Other stored result types are not displayed here.</p>
                 {% else %}
                     {% for elem in amr_results if elem.result %}
                         <div class="col-md-auto">

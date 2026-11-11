@@ -39,7 +39,7 @@
     "webpack-manifest-plugin": "^6.0.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/*.cjs",
     "build": "webpack --mode production",
     "watch": "webpack --mode development --watch --output-path bonsai_app/static/build",
     "buildcp": "webpack && cp -v -r build/ bonsai_app/static",

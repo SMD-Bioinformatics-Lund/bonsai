@@ -4,6 +4,7 @@ from collections import defaultdict
 import logging
 
 from typing import Any
+from fastapi.encoders import jsonable_encoder
 from pydantic import ValidationError, TypeAdapter
 from pymongo import UpdateOne
 from pymongo.client_session import ClientSession
@@ -15,7 +16,7 @@ from bonsai_api.exceptions import ConflictError, DatabaseOperationError, EntryNo
 from bonsai_libs.api_client.core.exceptions import ApiError
 from bonsai_api.crud.utils import managed_transaction
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.models.analysis import CurationRecord, CurationCreateRecord
+from bonsai_api.models.analysis import CurationRecord, CurationCreateRecord, VariantCurationUpdate
 from bonsai_api.db import Database
 from bonsai_libs.api_client.audit_log.models import Subject, SourceType
 from bonsai_libs.api_client.audit_log import AuditLogClient, EventCreate
@@ -42,7 +43,7 @@ async def create_curation_service(
         analysis = await get_analysis_service(db, analysis_id=analysis_id, session=txn)
 
         if analysis_type not in analysis.envelopes:
-            raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis_type}'")
+            raise EntryNotFound(f"Analysis '{analysis_id}' does not have a result of type '{analysis_type}'")
         
         try:
             # Enrich curation with analysis context and validate
@@ -110,6 +111,62 @@ async def create_curation_service(
         except Exception as exc:
             LOG.error("Error storing curation")
             raise DatabaseOperationError(str(exc)) from exc
+
+
+async def update_variant_curation_service(
+    db: Database,
+    *,
+    curation_id: str,
+    curation: VariantCurationUpdate,
+    curated_by: str,
+    ctx: ApiRequestContext,
+    audit: AuditLogClient | None = None,
+) -> None:
+    """Revise an existing variant curation and invalidate its previous approval."""
+    async with managed_transaction(db.client) as txn:
+        existing = await get_curation_by_id_crud(
+            db, curation_id=curation_id, session=txn
+        )
+        if not existing:
+            raise EntryNotFound(f"Curation {curation_id} not found")
+        if existing["annotation_type"] != "variant":
+            raise ConflictError("Only variant curations can be revised here")
+
+        updates = curation.model_dump()
+        if curation.decision != "reject":
+            updates["rejection_reason"] = None
+        updates.update(curated_by=curated_by, approved_by=None)
+        before = {key: existing.get(key) for key in updates}
+        if not await update_curation_crud(
+            db, curation_id=curation_id, updates=updates, session=txn
+        ):
+            raise EntryNotFound(f"Curation {curation_id} was not updated")
+
+        await sync_curation_summary_for_analysis(
+            db, sample_id=existing["sample_id"],
+            analysis_id=existing["analysis_id"], session=txn
+        )
+
+        if isinstance(audit, AuditLogClient):
+            event = EventCreate(
+                source_service="bonsai_api",
+                event_type="update_curation",
+                actor=ctx.actor if ctx else None,
+                subject=Subject(id=curation_id, type=SourceType.USR),
+                metadata={
+                    "analysis_id": existing["analysis_id"],
+                    "analysis_type": existing["analysis_type"],
+                    "result_key": existing["result_key"],
+                    "before": before,
+                    "after": {key: updates[key] for key in before},
+                },
+            )
+            try:
+                audit.post_event(event)
+            except ApiError as exc:
+                raise AuditLogError(
+                    f"Audit log event failed for curation update {curation_id}: {exc}"
+                ) from exc
 
 
 async def get_curations_service(
@@ -186,11 +243,10 @@ async def delete_curation_service(
     audit: AuditLogClient | None = None,
 ) -> None:
     """Delete a curation record."""
-    curation = await get_curation_by_id_crud(db, curation_id=curation_id)
-    if not curation:
-        raise EntryNotFound(f"Curation {curation_id} not found")
-    
     async with managed_transaction(db.client) as txn:
+        curation = await get_curation_by_id_crud(db, curation_id=curation_id, session=txn)
+        if not curation:
+            raise EntryNotFound(f"Curation {curation_id} not found")
         await delete_curation_crud(db, curation_id=curation_id, session=txn)
 
         # sync changes to sample object
@@ -202,22 +258,27 @@ async def delete_curation_service(
             session=txn,
         )
     
-    # Audit log
-    if isinstance(audit, AuditLogClient):
-        subject = Subject(id=curation_id, type=SourceType.USR)
-        event = EventCreate(
-            source_service="bonsai_api",
-            event_type="delete_curation",
-            actor=ctx.actor if ctx else None,
-            subject=subject,
-            metadata={"deleted_by": deleted_by},
-        )
-        try:
-            audit.post_event(event)
-        except ApiError as exc:
-            raise AuditLogError(
-                f"Audit log event failed for curation delete {curation_id}: {exc}"
-            ) from exc
+        # Keep the audit write inside the transaction, as for curation edits.
+        if isinstance(audit, AuditLogClient):
+            subject = Subject(id=curation_id, type=SourceType.USR)
+            event = EventCreate(
+                source_service="bonsai_api",
+                event_type="delete_curation",
+                actor=ctx.actor if ctx else None,
+                subject=subject,
+                metadata={
+                    "deleted_by": deleted_by,
+                    "curation": jsonable_encoder({
+                        key: value for key, value in curation.items() if key != "_id"
+                    }),
+                },
+            )
+            try:
+                audit.post_event(event)
+            except ApiError as exc:
+                raise AuditLogError(
+                    f"Audit log event failed for curation delete {curation_id}: {exc}"
+                ) from exc
     
     LOG.info("Deleted curation %s", curation_id)
 

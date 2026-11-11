@@ -31,7 +31,10 @@ const sampleTableConfig = {
           selectorModifier: { search: "applied" as const },
         },
         "selectNone",
-        "showSelected",
+        {
+          extend: "showSelected",
+          text: '<i class="bi bi-square" aria-hidden="true"></i><i class="bi bi-check-square" aria-hidden="true"></i> Show only selected',
+        },
       ],
     },
     top1End: {
@@ -69,6 +72,8 @@ function updateQcTableCells(
     if (status.status === "passed") statusElement.classList.add("text-success");
     if (status.status === "failed") statusElement.classList.add("text-danger");
     statusElement.textContent = status.status;
+    // Keep the search value in sync with the visible status after QC edits.
+    cell.dataset.search = status.status;
     cell.replaceChildren(statusElement);
 
     let tooltipText = status.comment || status.action;
@@ -158,8 +163,17 @@ export async function initGroupView(
 
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
+  // Columns excluded from global search that expose plain data-search values.
+  // Add similar column IDs here; keep their data-search values current after edits.
+  const directSearchColumnIds = [
+    "qc_status",
+  ];
   const tableConfig = {
     ...sampleTableConfig,
+    columnDefs: [{
+      targets: directSearchColumnIds.map((columnId) => `[data-column-id="${columnId}"]`),
+      searchBuilder: { orthogonal: { display: "display", search: "search" } },
+    }],
     searchBuilder: {
       columns: Array.from(headers).flatMap((cell, idx) =>
         cell.dataset.filterable === "true" ? [idx] : [],

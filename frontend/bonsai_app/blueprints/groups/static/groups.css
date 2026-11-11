@@ -58,6 +58,15 @@
   overflow-x: auto;
 }
 
+.buttons-show-selected .bi-check-square,
+.buttons-show-selected.active .bi-square {
+  display: none;
+}
+
+.buttons-show-selected.active .bi-check-square {
+  display: inline;
+}
+
 /* Match the wrapper used by the installed DataTables Buttons extension. */
 .dt-button-collection.column-visibility-menu {
   position: absolute;

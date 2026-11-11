@@ -71,9 +71,12 @@ def emm_typing(
     """Extract and format EMM result from a sample."""
     options = options or {}
     for ty in sample.typing_result:
-        if ty.type == "emmtype":
+        if ty.analysis_type == "emm":
             result: TypingResultEmm = ty.result
-            return result.emmtype or "NA", ""
+            if result is None:
+                raise AnalysisNoResultError()
+            emm_type = result.get("emmtype") if isinstance(result, dict) else result.emmtype
+            return emm_type or "NA", ""
     raise AnalysisNotPresentError(
         f"Sample '{sample.sample_name}' doesn't have EMM type."
     )
@@ -116,7 +119,7 @@ def species_prediction(
             )
             return rows[0].scientific_name, ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_name}' dont have {preferred_software} species prediction result."
+        f"Sample '{sample.sample_name}' does not have a {preferred_software} species prediction result."
     )
 
 
@@ -137,7 +140,7 @@ def lineage_prediction(
             sublineage = max(av.result, key=lambda x: len(x.lineage))
             return sublineage.lineage.replace("lineage", ""), ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_name}' dont have tbprofiler prediction results."
+        f"Sample '{sample.sample_name}' does not have tbprofiler prediction results."
     )
 
 
@@ -222,7 +225,7 @@ def amr_prediction_for_antibiotic(
         # If curations existed but nothing was resolved, treat as no result
         raise AnalysisNoResultError()
     raise AnalysisNoResultError(
-        f"Sample '{sample.sample_name}' dont have AMR prediction from {preferred_software}."
+        f"Sample '{sample.sample_name}' does not have an AMR prediction from {preferred_software}."
     )
 
 
@@ -263,7 +266,7 @@ def amr_prediction_for_antibiotic_back(
                 raise AnalysisNoResultError()
             return ", ".join(accepted_variants + genes), ""
     raise AnalysisNotPresentError(
-        f"Sample '{sample.sample_name}' dont have AMR prediction from {preferred_software}."
+        f"Sample '{sample.sample_name}' does not have an AMR prediction from {preferred_software}."
     )
 
 

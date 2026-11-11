@@ -28,7 +28,7 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            {{ navbar_link('Groups', 'groups.groups', test_id='groups-view-btn') }}
+            {{ navbar_link('Home', 'groups.groups', test_id='groups-view-btn') }}
             {{ navbar_link('About', 'public.about') }}
             {# {{ navbar_link('Locations', 'groups.groups', True) }} #}
             {% if current_user.is_admin %}

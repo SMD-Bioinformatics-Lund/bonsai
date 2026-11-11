@@ -5,9 +5,14 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body, Security
 from fastapi.responses import JSONResponse
 
-from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
+from bonsai_api.models.analysis import (
+    CurationCreateRecord, CurationRecord, VariantCurationUpdate,
+)
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.services.curation_service import approve_curation_service, create_curation_service, delete_curation_service, get_curations_service
+from bonsai_api.services.curation_service import (
+    approve_curation_service, create_curation_service, delete_curation_service,
+    get_curations_service, update_variant_curation_service,
+)
 from bonsai_api.services.analysis_service import ingest_analysis_service
 from bonsai_api.db import Database
 from bonsai_api.models.user import UserOutputDatabase
@@ -134,6 +139,27 @@ async def get_curation(
     if not curations:
         raise HTTPException(status_code=404, detail="Curation not found")
     return curations[0]
+
+
+@router.put("/curations/{curation_id}", response_model=dict[str, str])
+async def update_variant_curation(
+    curation_id: str,
+    curation: VariantCurationUpdate,
+    db: Database = Depends(get_database),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
+    ctx: ApiRequestContext = Depends(get_request_context),
+    audit: AuditLogClient = Depends(get_audit_log),
+):
+    """Update the decision and resistance annotations of an existing variant curation."""
+    await update_variant_curation_service(
+        db,
+        curation_id=curation_id,
+        curation=curation,
+        curated_by=user.username,
+        ctx=ctx,
+        audit=audit,
+    )
+    return {"curation_id": curation_id}
 
 
 @router.patch("/curations/{curation_id}/approve")
