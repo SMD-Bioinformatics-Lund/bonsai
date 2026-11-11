@@ -912,14 +912,15 @@
 
 {% macro stx_card(pred) %}
 {# Accept multi-hit results and previously imported single-gene results. #}
-{% if pred.result.hits is defined %}
-    {% set genes=pred.result.hits or [] %}
+{% set result=pred.result if pred else none %}
+{% if result and result.hits is defined %}
+    {% set genes=result.hits or [] %}
 {% else %}
-    {% set genes=[pred.result] if pred.result else [] %}
+    {% set genes=[result] if result else [] %}
 {% endif %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.analysis_type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        STX typing{% if pred %} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]{% endif %}
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -940,7 +941,13 @@
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5">No STX genes identified.</td></tr>
+                <tr><td colspan="5">
+                    {% if pred and (pred.status == "empty" or result) %}
+                        No STX genes identified.
+                    {% else %}
+                        STX typing result is unavailable.
+                    {% endif %}
+                </td></tr>
                 {% endfor %}
             </tbody>
         </table>

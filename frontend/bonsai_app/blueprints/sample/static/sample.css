@@ -7,6 +7,10 @@
   text-decoration: underline;
 }
 
+.sample-group-link {
+  overflow-wrap: anywhere;
+}
+
 .br-filter-select {
   max-width: 40%;
 }

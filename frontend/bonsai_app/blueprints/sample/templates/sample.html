@@ -33,7 +33,7 @@
     </div>
 </div>
 <div class="container-fluid br-layout">
-    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls) }}
+    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
     <main class="br-main order-1" 
         data-bs-spy="scroll" data-bs-target="#toc-contents">
         {{ sample_header(sample) }}
@@ -61,7 +61,7 @@
                         <div class="col-md-auto">
                         {{ emm_card(res.result, status=res.status, reason=res.reason) }}
                         </div>
-                    {% elif res.analysis_type == "stx" and res.result %}
+                    {% elif res.analysis_type == "stx" %}
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
                         </div>
@@ -79,6 +79,12 @@
                         </div>
                     {% endif %}
                 {% endfor %}
+                {% set stx_results = sample.typing_result | selectattr("analysis_type", "equalto", "stx") | list %}
+                {% if sample.pipeline and sample.pipeline.assay == "ecoli" and not stx_results %}
+                    <div class="col-md-auto">
+                    {{ stx_card(none) }}
+                    </div>
+                {% endif %}
             </div>
             <h5>Phenotype prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
