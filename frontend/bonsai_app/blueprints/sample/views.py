@@ -70,7 +70,7 @@ def remove_samples():
             result = client.delete_samples(sample_ids=sample_ids)
             current_app.logger.info("removed %d samples", result.get("n_deleted", 0))
     else:
-        flash("You dont have permission to remove samples", "warning")
+        flash("You don't have permission to remove samples", "warning")
     return redirect(request.referrer)
 
 
@@ -130,7 +130,7 @@ def sample(sample_id: str) -> str:
 
     # Sort variants within all prediction results
     for pred_res in sample_info.get("element_type_result", []):
-        if "variants" in pred_res.get("result", {}):
+        if "variants" in (pred_res.get("result") or {}):
             pred_res["result"]["variants"] = sort_variants(
                 pred_res["result"]["variants"]
             )
@@ -189,7 +189,7 @@ def add_comment(sample_id: str) -> str:
             sample_id=sample_id, username=current_user.username, comment=data
         )
     except HTTPError:
-        flash("Error posting commment", "danger")
+        flash("Error posting comment", "danger")
     return redirect(url_for("samples.sample", sample_id=sample_id))
 
 
@@ -394,6 +394,8 @@ def resistance_variants(sample_id: str) -> str:
         sample_info, software="tbprofiler", analysis_type="amr"
     )
     for pred_res in tbprofiler_results:
+        if pred_res.get("result") is None:
+            continue
         pred_res["result"]["variants"] = sort_variants(pred_res["result"]["variants"])
 
     # Sort top-level structural and SNV variants if present

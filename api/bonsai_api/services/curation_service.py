@@ -42,7 +42,7 @@ async def create_curation_service(
         analysis = await get_analysis_service(db, analysis_id=analysis_id, session=txn)
 
         if analysis_type not in analysis.envelopes:
-            raise EntryNotFound(f"Analysis '{analysis_id}' dont have result of type '{analysis_type}'")
+            raise EntryNotFound(f"Analysis '{analysis_id}' does not have a result of type '{analysis_type}'")
         
         try:
             # Enrich curation with analysis context and validate

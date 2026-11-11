@@ -51,7 +51,7 @@ class SmtpConfig(BaseSettings):
 
     host: str
     port: int = 25
-    timeout: int = Field(60, description="Conection timeout in seconds.")
+    timeout: int = Field(60, description="Connection timeout in seconds.")
     use_tls: bool = False
     use_ssl: bool = False
 
