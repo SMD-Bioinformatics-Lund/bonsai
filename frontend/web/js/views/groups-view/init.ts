@@ -160,12 +160,15 @@ export async function initGroupView(
 
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
+  // Columns excluded from global search that expose plain data-search values.
+  // Add similar column IDs here; keep their data-search values current after edits.
+  const directSearchColumnIds = [
+    "qc_status",
+  ];
   const tableConfig = {
     ...sampleTableConfig,
     columnDefs: [{
-      targets: '[data-column-id="qc_status"]',
-      // QC is excluded from the global-search cache. Read its plain status
-      // directly while preserving normal text filtering for other columns.
+      targets: directSearchColumnIds.map((columnId) => `[data-column-id="${columnId}"]`),
       searchBuilder: { orthogonal: { display: "display", search: "search" } },
     }],
     searchBuilder: {

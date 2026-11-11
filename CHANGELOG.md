@@ -28,7 +28,7 @@
 
 ### Fixed
 
-- Use explicit QC search values for exact-status filters, keep them current after QC edits, and scope advanced-filter handling to QC so text containing special characters remains searchable. [#627](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/627)
+- Use explicit QC search values for exact-status filters, keep them current after QC edits, and limit direct filtering to an explicit list of columns so text containing special characters remains searchable. [#627](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/627)
 - Skip username availability lookups for invalid usernames so partially completed admin user forms show validation errors instead of crashing on a blank username. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Redirect non-admin users safely from admin pages and show username lookup and user creation API failures as form warnings instead of HTTP 500 errors. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Require an explicit Delete action in the user editor, report bulk deletion failures per user, and return to the user list even without a referrer. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
