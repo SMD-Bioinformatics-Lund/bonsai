@@ -224,13 +224,8 @@
 
 {% block content %}
 {% set footnotes = [] %}
-<<<<<<< HEAD
-<div class="container-fluid br-layout variant-layout">
-    {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls) }}
-=======
 <div class="container-fluid br-layout">
     {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
->>>>>>> development
     <main class="br-main order-1">
         <div class="br-toc">
             {# right handed sidebar for filters and classification #}
