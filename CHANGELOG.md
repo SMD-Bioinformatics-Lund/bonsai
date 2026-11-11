@@ -2,7 +2,7 @@
 
 ### Added
 
-- Show alphabetically sorted group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships and unavailable memberships. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show alphabetically sorted group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships and unavailable memberships. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
 - Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577) 
