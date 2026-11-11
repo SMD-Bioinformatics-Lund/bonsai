@@ -70,7 +70,7 @@ def setup(ctx: click.Context, password: str):
 @cli.command()
 @click.pass_obj
 @click.option("-u", "--username", required=True, help="Desired username.")
-@click.option("--fname", help="Fist name")
+@click.option("--fname", help="First name")
 @click.option("--lname", help="Last name")
 @click.option("-m", "--email", required=True, help="E-mail.")
 @click.option(
@@ -84,7 +84,7 @@ def setup(ctx: click.Context, password: str):
     "--role",
     required=True,
     type=click.Choice(list(USER_ROLES.keys())),
-    help="User role which dictates persmission.",
+    help="User role which dictates permissions.",
 )
 def create_user(
     _ctx: click.Context,

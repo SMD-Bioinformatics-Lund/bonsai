@@ -1,6 +1,7 @@
 """Declaration of flask admin views"""
 
 from bonsai_libs.api_client.bonsai.models import CreateUserInput
+from bonsai_libs.api_client.core.exceptions import ApiError, NotFoundError
 from flask import (
     Blueprint,
     current_app,
@@ -11,8 +12,6 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
-from requests.exceptions import HTTPError
-from bonsai_libs.api_client.core.exceptions import NotFoundError
 from wtforms import (
     Form,
     PasswordField,
@@ -40,8 +39,8 @@ def admin_panel():
     """Default admin panel view."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        flash("You don't have permission to view this page", "warning")
+        return redirect(url_for("public.index"))
 
     return redirect(url_for("admin.view_users"))
 
@@ -52,8 +51,8 @@ def view_users():
     """Edit Bonsai users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        flash("You don't have permission to view this page", "warning")
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
     users = client.get_users()
@@ -65,7 +64,7 @@ PASSWORD_VALIDATORS = [
     validators.Length(min=8, max=72),
     validators.Regexp(
         r"^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).+)\S$",
-        message="The password must include upper- and lower case letters with at leats one number.",
+        message="The password must include uppercase and lowercase letters and at least one number.",
     ),
     validators.EqualTo("confirm", message="Passwords must match"),
 ]
@@ -103,6 +102,8 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
 
     def validate_username(form, field):
         """Check if username already exists."""
+        if field.errors:
+            return
         username = field.data
         user_exists = True
         try:
@@ -110,8 +111,12 @@ class UserRegistrationForm(UserInfoForm):  # pylint: disable=too-few-public-meth
             client.get_user(username)
         except NotFoundError:
             user_exists = False
+        except ApiError as error:
+            raise ValidationError(
+                "Could not check username availability. Please try again."
+            ) from error
         if user_exists:
-            raise ValidationError(f"An user with username {username} already exists")
+            raise ValidationError(f"A user with username {username} already exists")
 
 
 @admin_bp.route("/admin/users/new", methods=["GET", "POST"])
@@ -120,8 +125,8 @@ def create_user():
     """Create new users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        flash("You don't have permission to view this page", "warning")
+        return redirect(url_for("public.index"))
 
     form = UserRegistrationForm(request.form)
     if request.method == "POST" and form.validate():
@@ -130,14 +135,14 @@ def create_user():
 
             client = get_api_client()
             client.create_user(user_data)
-        except HTTPError as error:
+        except ApiError:
             flash(
-                f"Error when creating a new user, {error.response.status_code}",
+                "An error occurred when creating the user. Please try again.",
                 "warning",
             )
         else:
             flash("Created new user", "success")
-        return redirect(url_for("admin.view_users"))
+            return redirect(url_for("admin.view_users"))
     # get all users
     return render_template("user_form.html", method="create", form=form)
 
@@ -148,8 +153,8 @@ def delete_users():
     """Delete users."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        flash("You don't have permission to view this page", "warning")
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
 
@@ -158,9 +163,9 @@ def delete_users():
         if value == "on":
             try:
                 client.delete_user(username)
-            except Exception as error:
+            except ApiError:
                 flash(f"Error when deleting user: {username}", "danger")
-                raise ValueError(error) from error
+                continue
             removed_users.append(username)
 
     # inform user which samples was removed
@@ -168,7 +173,7 @@ def delete_users():
         names = ", ".join(removed_users)
         flash(f"Deleted users: {names}", "success")
     # get all users
-    return redirect(request.referrer)
+    return redirect(url_for("admin.view_users"))
 
 
 @admin_bp.route("/admin/users/<username>", methods=["GET", "POST"])
@@ -177,8 +182,8 @@ def update_user(username):
     """Edit existing user."""
     # if not valid token
     if not current_user.is_admin:
-        flash("You dont have permission to view this page", "warning")
-        return redirect(url_for("public.home"))
+        flash("You don't have permission to view this page", "warning")
+        return redirect(url_for("public.index"))
 
     client = get_api_client()
 
@@ -198,7 +203,7 @@ def update_user(username):
             else:
                 flash(f"Updated user {username}", "success")
                 current_app.logger.debug("Updated user: %s", username)
-        else:
+        elif "delete" in request.form:
             try:
                 client.delete_user(username)
             except:
@@ -206,7 +211,7 @@ def update_user(username):
             else:
                 flash(f"Removed user {username}", "success")
     elif request.method == "GET":
-        # populate form with deafults from the database
+        # populate form with defaults from the database
         form.username.data = user.username
         form.first_name.data = user.first_name
         form.last_name.data = user.last_name

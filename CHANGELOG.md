@@ -29,6 +29,16 @@
 ### Fixed
 
 - Use explicit QC search values for exact-status filters, keep them current after QC edits, and allow filtering columns excluded from global text search. [#627](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/627)
+- Skip username availability lookups for invalid usernames so partially completed admin user forms show validation errors instead of crashing on a blank username. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Redirect non-admin users safely from admin pages and show username lookup and user creation API failures as form warnings instead of HTTP 500 errors. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Require an explicit Delete action in the user editor, report bulk deletion failures per user, and return to the user list even without a referrer. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Correct admin validation message typos and display errors when no role or an unsupported role is selected. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
+- Correct user-facing spelling and grammar in resistance and virulence results, typing labels, tooltips, account validation, permission and export errors, CLI help, and configuration descriptions. [#633](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/633)
+- Show an unavailable-analysis message on sample summaries when no AMR analysis is stored, including when opened from a group, instead of reporting a negative resistance finding. [#629](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/629)
+- Display curated TB resistance annotations when optional phenotype metadata or resistance levels are missing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Handle absent AMR result payloads on sample summaries, variant pages, and filters, showing an unavailable-result message instead of crashing. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Explain when the TBProfiler variant view has no supported stored results instead of presenting that as a negative resistance finding. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
+- Pass sample context to summary cards so extended reports can build links for the current sample. [#628](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/628)
 - Show EMM typing cards using the stored analysis type, distinguish empty and unavailable reports, and preserve zero cluster counts. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Read EMM overview columns from the normalized EMMtyper result fields. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
 - Export EMM results to LIMS using the current analysis model and handle unavailable result payloads without HTTP 500 errors. [#626](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/626)
@@ -135,6 +145,7 @@
 
 ### Changed
 
+- Rename the top navigation tab from Groups to Home. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
 - Hide inactive Locations, Profile, and Settings navigation entries. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)

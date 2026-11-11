@@ -233,11 +233,14 @@
         <div class="br-content container-fluid pb-5">
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
+            {% if amr_results and not (amr_results | selectattr("result") | list) %}
+                <p>Stored variant detail results are unavailable for this record.</p>
+            {% endif %}
             <div id="phenotype-heading" class="row justify-content-md-center">
                 {% if is_filtered and amr_results | length == 0 %}
-                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                    <p>No stored TBProfiler variant result is displayed with these filters. Use the extended report to inspect the available stored results.</p>
                 {% elif amr_results | length == 0 %}
-                    <p>No predicted resistance determinants.</p>
+                    <p>No stored TBProfiler variant result is available in this view. Other stored result types are not displayed here.</p>
                 {% else %}
                     {% for elem in amr_results if elem.result %}
                         <div class="col-md-auto">
