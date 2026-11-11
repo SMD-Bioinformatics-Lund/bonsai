@@ -25,7 +25,7 @@ def sample_page(app, user_obj, monkeypatch):
     prediction["result"]["variants"] = prediction["result"]["variants"][:1]
     prediction["curations"] = []
     sample.update(
-        element_type_result=[prediction], species_prediction=[], typing_result=[],
+        element_type_result=[prediction], species_prediction=[], typing_result=[], groups=[],
         qc_result=[], reference_genome_id=None,
         metadata=[], qc_status={"status": "unprocessed", "action": None, "comment": ""},
     )

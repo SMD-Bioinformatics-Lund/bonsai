@@ -7,6 +7,10 @@
   text-decoration: underline;
 }
 
+.sample-group-link {
+  overflow-wrap: anywhere;
+}
+
 .br-filter-select {
   max-width: 40%;
 }
@@ -88,6 +92,7 @@
 .cell-sm {
   width: 1rem !important;
 }
+<<<<<<< HEAD
 
 .variant-layout .br-main,
 .variant-layout .br-content {
@@ -113,3 +118,5 @@
     min-width: 16rem;
   }
 }
+=======
+>>>>>>> development

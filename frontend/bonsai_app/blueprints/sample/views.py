@@ -21,6 +21,7 @@ from flask import (
 from flask_login import current_user, login_required
 from requests import HTTPError
 from pydantic import ValidationError
+from bonsai_libs.api_client.bonsai.models import GroupResponse
 from bonsai_libs.api_client.core.exceptions import ApiError
 
 from bonsai_app.bonsai_api import get_api_client, update_variant_curation
@@ -52,6 +53,24 @@ samples_bp = Blueprint(
     static_folder="static",
     static_url_path="/samples/static",
 )
+
+
+def _get_sample_groups(
+    client: Any, sample_info: dict[str, Any]
+) -> list[GroupResponse] | None:
+    """Resolve visible memberships; None indicates a failed group lookup."""
+    group_ids = set(sample_info.get("groups") or [])
+    if not group_ids:
+        return []
+
+    try:
+        groups = [group for group in client.get_groups() if group.group_id in group_ids]
+    except (ApiError, HTTPError, ValidationError):
+        LOG.exception("Unable to load groups for sample %s", sample_info["sample_id"])
+        return None
+
+    # The group listing is visibility-filtered, so omitted IDs are not lookup errors.
+    return sorted(groups, key=lambda group: (group.display_name.casefold(), group.group_id))
 
 
 @samples_bp.route("/samples")
@@ -151,6 +170,7 @@ def sample(sample_id: str) -> str:
     return render_template(
         "sample.html",
         sample=sample_info,
+        sample_groups=_get_sample_groups(client, sample_info),
         group_id=group_id,
         title=sample_info["sample_name"],
         is_filtered=bool(group_id),
@@ -503,6 +523,7 @@ def resistance_variants(sample_id: str) -> str:
         "resistance_variants.html",
         title=f"{sample_info['external_sample_id']} resistance",
         sample=sample_info,
+        sample_groups=_get_sample_groups(client, sample_info),
         amr_results=amr_results,
         form_data=form_data,
         form_state=form_state,
@@ -558,6 +579,7 @@ def metadata(sample_id: str) -> str:
         "metadata.html",
         title=f"{sample_info['external_sample_id']} metadata",
         sample=sample_info,
+        sample_groups=_get_sample_groups(client, sample_info),
         kw_tbl=kw_tbl,
         metadata_tbls=metadata_tbls,
         grouped_metadata_tbls=grouped_meta_tbl,

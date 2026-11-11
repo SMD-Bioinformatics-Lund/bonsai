@@ -130,11 +130,13 @@ function initBasket(api: GroupViewApi): BasketState | void {
     };
   });
 
-  const clearBasketBtn = document.getElementById("clear-basket-btn") as HTMLButtonElement;
-  if (clearBasketBtn) {
-    clearBasketBtn.onclick = () => {
-      basketState.clear();
-    };
+  for (const buttonId of ["clear-basket-btn", "empty-basket-btn"]) {
+    const clearBasketBtn = document.getElementById(buttonId) as HTMLButtonElement;
+    if (clearBasketBtn) {
+      clearBasketBtn.onclick = () => {
+        basketState.clear();
+      };
+    }
   }
 
   const offcanvas = document.getElementById("basket-offcanvas");
