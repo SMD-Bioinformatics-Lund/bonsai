@@ -243,3 +243,38 @@ def test_update_failure_shows_readable_message_and_keeps_existing_curation(sampl
     assert b"This curation changed. Reload and try again." in response.data
     assert b"Accepted" in response.data
     api.create_curation.assert_not_called()
+
+
+@pytest.mark.parametrize("page", ["", "/resistance/variants"])
+@pytest.mark.parametrize("approved_by", [None, "reviewer"])
+@pytest.mark.parametrize("modified_at", [None, "2026-11-11T12:00:00"])
+def test_curation_tooltip_labels_modification_time_and_authors(
+    sample_page, app, page, approved_by, modified_at,
+):
+    client, sample, prediction = sample_page
+    variant = prediction["result"]["variants"][0]
+    created_at = "2025-01-01T10:00:00"
+    prediction["curations"] = [{
+        "id": "existing", "annotation_type": "variant", "result_key": str(variant["id"]),
+        "decision": "reject", "rejection_reason": "Needs review", "phenotypes": [],
+        "curated_by": "annotation-author", "approved_by": approved_by,
+        "created_at": created_at, "modified_at": modified_at,
+    }]
+
+    response = client.get(f"/sample/{sample['sample_id']}{page}")
+
+    assert response.status_code == 200
+    dom = BeautifulSoup(response.data, "html.parser")
+    tooltip = next(
+        element["data-bs-title"] for element in dom.select("[data-bs-title]")
+        if "Curated by:" in element["data-bs-title"]
+    )
+    text = BeautifulSoup(tooltip, "html.parser").get_text(" ", strip=True)
+    expected_time = app.jinja_env.filters["strftime"](modified_at or created_at, "%c")
+    assert "Curated by: annotation-author" in text
+    assert f"Last modified: {expected_time}" in text
+    assert "Curated at:" not in text
+    if approved_by:
+        assert "Approved by: reviewer" in text
+    else:
+        assert "Approved by:" not in text

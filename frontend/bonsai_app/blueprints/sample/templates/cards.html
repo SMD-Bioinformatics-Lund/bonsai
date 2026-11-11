@@ -863,7 +863,10 @@
                                     <span class="badge text-bg-primary"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                             data-bs-html=true
-                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
+                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br>
+                                                {% if variant.curation.approved_by %}<strong>Approved by:</strong> {{ variant.curation.approved_by }}<br>{% endif %}
+                                                <strong>Last modified:</strong> {{ variant.curation.modified_at | strftime('%c') }}<br>
+                                                <strong>Note:</strong> {{ variant.curation.note | default('-') }}">
                                         <i class="bi bi-person-fill"></i>
                                     </span>
                                 {% endif %}

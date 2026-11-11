@@ -127,9 +127,39 @@ async def test_update_preserves_identity_replaces_annotations_and_clears_approva
     )
     event = audit.post_event.call_args.args[0]
     assert event.event_type == "update_curation"
+    assert event.actor.id == "second-user"
+    assert event.metadata["before"]["curated_by"] == "first-user"
+    assert event.metadata["after"]["curated_by"] == "second-user"
     assert event.metadata["before"]["decision"] == "reject"
     assert event.metadata["before"]["approved_by"] == "approver"
     assert event.metadata["after"]["phenotypes"] == saved["phenotypes"]
+
+
+@pytest.mark.asyncio
+async def test_approval_preserves_curator_and_records_approval_author(curation_db):
+    original = {**_curation(), "approved_by": None}
+    await curation_db.curations_collection.insert_one(dict(original))
+    audit = Mock(spec=AuditLogClient)
+
+    await curation_service.approve_curation_service(
+        curation_db, curation_id="curation-1", approved_by="reviewer",
+        ctx=SimpleNamespace(actor=Actor(type="user", id="reviewer")), audit=audit,
+    )
+
+    saved = await curation_db.curations_collection.find_one({"id": "curation-1"})
+    assert saved["curated_by"] == original["curated_by"]
+    assert saved["created_at"] == original["created_at"]
+    assert saved["decision"] == original["decision"]
+    assert saved["phenotypes"] == original["phenotypes"]
+    assert saved["approved_by"] == "reviewer"
+    assert saved["modified_at"] > original["modified_at"]
+    curation_service.sync_curation_summary_for_analysis.assert_awaited_once_with(
+        curation_db, sample_id="sample-1", analysis_id="analysis-1", session=None,
+    )
+    event = audit.post_event.call_args.args[0]
+    assert event.event_type == "approve_curation"
+    assert event.actor.id == "reviewer"
+    assert event.metadata["approved_by"] == "reviewer"
 
 
 @pytest.mark.asyncio
@@ -174,6 +204,8 @@ async def test_remove_clears_summary_and_audits_the_removed_annotations(curation
     )
     event = audit.post_event.call_args.args[0]
     assert event.event_type == "delete_curation"
+    assert event.actor.id == "second-user"
+    assert event.metadata["deleted_by"] == "second-user"
     assert event.metadata["curation"]["decision"] == "reject"
     assert event.metadata["curation"]["phenotypes"] == _curation()["phenotypes"]
     assert "_id" not in event.metadata["curation"]

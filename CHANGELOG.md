@@ -28,6 +28,7 @@
 
 ### Fixed
 
+- Label curation timestamps as last modified and show approval authors separately so approval-only changes are not attributed to the curator. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Show variant table sorting arrows, preserve the supplied order until a header is clicked, and prevent selection and action headers from reordering variants. [#631](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/631)

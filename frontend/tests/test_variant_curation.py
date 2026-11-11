@@ -116,16 +116,21 @@ def test_depth_filter_does_not_override_failed_frequency_filter(depth_operator, 
     )
 
 
-def test_updated_curation_displays_latest_curator_and_time():
+@pytest.mark.parametrize("approved_by", [None, "reviewer"])
+@pytest.mark.parametrize("modified_at", [None, "2026-11-10"])
+def test_curation_merge_keeps_authors_separate_from_last_modification(approved_by, modified_at):
     analysis = {
         "result": {"variants": [{"id": 0}]},
         "curations": [{
             "id": "existing", "annotation_type": "variant", "result_key": "0",
             "decision": "accept", "curated_by": "second-user",
-            "created_at": "2025-01-01", "modified_at": "2026-11-10",
+            "created_at": "2025-01-01", "modified_at": modified_at,
+            "approved_by": approved_by,
         }],
     }
     controllers.merge_variants_with_curations(analysis)
     merged = analysis["result"]["variants"][0]["curation"]
     assert merged["curated_by"] == "second-user"
-    assert merged["curated_at"] == "2026-11-10"
+    assert merged["approved_by"] == approved_by
+    assert merged["modified_at"] == (modified_at or "2025-01-01")
+    assert "curated_at" not in merged

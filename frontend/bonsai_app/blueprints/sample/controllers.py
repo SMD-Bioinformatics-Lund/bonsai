@@ -636,7 +636,7 @@ def merge_variants_with_curations(analysis_result: dict[str, Any]) -> dict[str, 
                 "notes": curation.get("notes"),
                 "phenotypes": curation.get("phenotypes", []),
                 "curated_by": curation.get("curated_by"),
-                "curated_at": curation.get("modified_at") or curation.get("created_at"),
+                "modified_at": curation.get("modified_at") or curation.get("created_at"),
                 "approved_by": curation.get("approved_by"),
             }
         else:
