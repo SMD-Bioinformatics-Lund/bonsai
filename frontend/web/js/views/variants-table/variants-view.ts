@@ -54,6 +54,8 @@ function initVariantTables(): void {
       paging: false,
       select: false,
       searching: true,
+      // Keep the supplied variant order until a user sorts a data column.
+      order: [],
     });
   })
 }

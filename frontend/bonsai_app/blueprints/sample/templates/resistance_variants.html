@@ -15,6 +15,7 @@
 
 {% block css %}
 {{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='dataTables.bootstrap5.min.css')}}">
 <link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 {% endblock css %}
@@ -26,7 +27,7 @@
         <table id="sv-variant-tbl" class="table">
             <thead>
                 <tr>
-                    <th>
+                    <th data-dt-order="disable">
                         <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                     </th>
                     <th>Info</th>
@@ -36,7 +37,7 @@
                     <th>Quality</th>
                     <th>Method</th>
                     <th>Phenotype</th>
-                    <th></th>
+                    <th data-dt-order="disable"></th>
                 </tr>
             </thead>
             <tbody id="sv-variant-table">
