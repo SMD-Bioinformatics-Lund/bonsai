@@ -212,7 +212,7 @@
     <h6 class="{{ header_size }} text-muted text-uppercase {{ class_names }}">{{text}}</h6>
 {% endmacro %}
 
-{% macro sidebar(sample, bad_qc_actions, metadata=[], optional_macro=None) %}
+{% macro sidebar(sample, bad_qc_actions, metadata=[], optional_macro=None, groups=None) %}
 <aside class="br-sidebar border-end pe-2">
     <div>
         {{ sidebar_header("Metadata")}}
@@ -221,6 +221,23 @@
                 {{ metadata_link('samples.open_metadata_tbl', sample_id=sample.sample_id, entry=meta) }}
             {% endfor %}
         </ul>
+        <nav aria-label="Sample groups">
+            {{ sidebar_header("Groups") }}
+            {% if groups is none %}
+                <p class="text-muted">Unable to load group memberships.</p>
+            {% elif groups %}
+                <ul class="nav flex-column">
+                    {% for group in groups %}
+                        <li class="nav-item mb-2">
+                            <a class="link-secondary link-underline-success sample-group-link"
+                               href="{{ url_for('groups.group', group_id=group.group_id) }}">{{ group.display_name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No group memberships.</p>
+            {% endif %}
+        </nav>
         {{ sidebar_header("Reports")}}
         <ul class="nav flex-column">
             {{ report_link('samples.metadata', sample_id=sample.sample_id, name='Metadata', icon="bi-clipboard-data") }}
