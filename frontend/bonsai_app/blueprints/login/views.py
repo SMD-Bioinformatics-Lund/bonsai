@@ -159,7 +159,7 @@ def perform_login(user: LoginUser) -> Response:
         )
 
     # could not log in
-    flash("sorry, you could not log in", "warning")
+    flash("Sorry, you could not log in", "warning")
     LOG.warning("User authentication failed.")
     return redirect(url_for("public.index"))
 
