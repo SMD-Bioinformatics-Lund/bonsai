@@ -163,9 +163,9 @@ export async function initGroupView(
   const tableConfig = {
     ...sampleTableConfig,
     columnDefs: [{
-      targets: "_all",
-      // SearchBuilder's default global-search cache can be empty for excluded columns.
-      // Read cell search values directly so advanced filters still work on those columns.
+      targets: '[data-column-id="qc_status"]',
+      // QC is excluded from the global-search cache. Read its plain status
+      // directly while preserving normal text filtering for other columns.
       searchBuilder: { orthogonal: { display: "display", search: "search" } },
     }],
     searchBuilder: {
