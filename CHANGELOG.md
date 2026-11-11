@@ -3,6 +3,7 @@
 ### Added
 
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
+- Show alphabetically sorted visible group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships, no visible memberships, and failed lookups. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
 - Have `doctor` check files through the SKA and MinHash workers, and verify that MinHash signatures are available for similarity searches, respecting failed-QC exclusions and signatures shared by multiple samples. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577) 
@@ -29,6 +30,9 @@
 
 ### Fixed
 
+- Display empty virulence messages and missing or unavailable AMR and variant-analysis messages in cards, retaining analysis context and the distinction between missing data and negative findings. [#637](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/637)
+- Remove the outdated extended virulence report reference and use the same no-hits message in all sample-summary views. [#637](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/637)
+- Keep the STX typing card visible for E. coli samples with no hits, showing an explicit no-hits message for empty analyses and an unavailable-result message when no STX analysis is stored. [#634](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/634)
 - Restore editing of existing variant curations through the Accept/Reject form, clear prior approval on changes, and add removal of curations from the variant table with audit logging and refreshed sample summaries. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Keep variant selections separate between browser tabs, reject selections from another sample, display curations for variant ID zero, include manually annotated resistance in summaries and filtering, and apply frequency and depth filters together. [#632](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/632)
 - Show variant table sorting arrows, preserve the supplied order until a header is clicked, and prevent selection and action headers from reordering variants. [#631](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/631)

@@ -24,7 +24,7 @@
     </div>
 </div>
 <div class="container-fluid br-layout">
-    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls) }}
+    {{ sidebar(sample, bad_qc_actions, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
     <main class="container-fluid">
         {{ sample_header(sample) }}
         <div class="container-fluid">
