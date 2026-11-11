@@ -19,3 +19,14 @@ def get_api_client():
             auth=BearerTokenAuth(current_user.token),
         )
     return g.api_client
+
+
+def update_variant_curation(client, *, curation_id, record):
+    """Use the SDK transport for the variant curation update endpoint."""
+    return client.request_json(
+        "PUT",
+        f"analysis/curations/{curation_id}",
+        json=record.model_dump(
+            mode="json", include={"decision", "rejection_reason", "phenotypes"}
+        ),
+    ).data

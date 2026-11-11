@@ -3,6 +3,7 @@
 import json
 import logging
 from datetime import date
+from functools import partial
 from itertools import groupby
 from typing import Any, Dict, Tuple
 
@@ -22,17 +23,19 @@ from requests import HTTPError
 from pydantic import ValidationError
 from bonsai_libs.api_client.core.exceptions import ApiError
 
-from bonsai_app.bonsai_api import get_api_client
+from bonsai_app.bonsai_api import get_api_client, update_variant_curation
 from bonsai_app.models import BadSampleQualityAction, QualityControlResult
 
 from .controllers import (
     build_curation_records,
+    curation_error_message,
     filter_variants,
     filter_variants_if_processed,
     get_all_variant_types,
     get_all_who_classifications,
     get_results_by,
     get_variant_genes,
+    get_variant_curation_ids,
     kw_metadata_to_table,
     merge_variants_with_curations,
     sort_variants,
@@ -357,6 +360,24 @@ def resistance_variants(sample_id: str) -> str:
                             url_for("samples.resistance_variants", sample_id=sample_id)
                         )
 
+                # Only submit variants belonging to the sample currently displayed.
+                available_variants = {
+                    (result["analysis_id"], result["analysis_type"], str(variant["id"]))
+                    for result in get_results_by(
+                        sample_info, software="tbprofiler", analysis_type="amr"
+                    )
+                    for variant in (result.get("result") or {}).get("variants", [])
+                }
+                if any(
+                    (rec["analysis_id"], rec["analysis_type"], str(rec["variant_id"]))
+                    not in available_variants
+                    for rec in records
+                ):
+                    raise ValueError(
+                        "Selected variants are no longer available for this sample. "
+                        "Reload the page and select them again."
+                    )
+
                 # Build and submit curations
                 batch_records = build_curation_records(
                     records=records,
@@ -365,7 +386,18 @@ def resistance_variants(sample_id: str) -> str:
                     phenotypes=resistance,
                     resistance_level=resistance_level,
                 )
-                results = submit_curations_batch(batch_records, create_curation_fn=client.create_curation)
+                existing_curations = get_variant_curation_ids(sample_info)
+                for record in batch_records:
+                    key = (
+                        record["analysis_id"], record["analysis_type"],
+                        record["curation"].result_key,
+                    )
+                    record["curation_id"] = existing_curations.get(key)
+                results = submit_curations_batch(
+                    batch_records,
+                    create_curation_fn=client.create_curation,
+                    update_curation_fn=partial(update_variant_curation, client),
+                )
                 sample_info = client.get_sample_by_id(sample_id=sample_id)
 
                 # Report results to user
@@ -373,17 +405,18 @@ def resistance_variants(sample_id: str) -> str:
                 failures = sum(1 for r in results if not r.success)
 
                 if successes > 0:
-                    flash(f"Successfully created {successes} curation(s)", "success")
+                    flash(f"Successfully saved {successes} curation(s)", "success")
                 if failures > 0:
                     error_details = "; ".join(r.error for r in results if not r.success)
                     flash(
-                        f"Failed to create {failures} curation(s): {error_details}",
+                        f"Failed to save {failures} curation(s): {error_details}",
                         "danger",
                     )
 
-            except (json.JSONDecodeError, ValueError) as err:
+            except (ValueError, KeyError, TypeError) as err:
                 LOG.error("Invalid form data: %s", err)
-                flash("Invalid form data submitted", "danger")
+                message = str(err) if isinstance(err, ValueError) else "Invalid variant selection submitted"
+                flash(message, "danger")
 
         else:
             # Apply variant filters from form
@@ -478,6 +511,25 @@ def resistance_variants(sample_id: str) -> str:
         display_igv=display_genome_browser,
         metadata_tbls=meta_tbls,
     )
+
+
+@samples_bp.route("/sample/<sample_id>/curation/<curation_id>/remove", methods=["POST"])
+@login_required
+def remove_curation(sample_id: str, curation_id: str):
+    """Remove a variant curation belonging to this sample."""
+    client = get_api_client()
+    sample_info = client.get_sample_by_id(sample_id=sample_id)
+    if curation_id not in get_variant_curation_ids(sample_info).values():
+        flash("This variant curation is no longer available for this sample.", "warning")
+    else:
+        try:
+            client.delete(f"analysis/curations/{curation_id}", expected_status=(204,))
+            flash("Curation removed. The variant is now uncurated.", "success")
+        except ApiError as err:
+            flash(f"Failed to remove curation: {curation_error_message(err)}", "danger")
+        except HTTPError:
+            flash("Failed to remove curation. Please try again.", "danger")
+    return redirect(url_for("samples.resistance_variants", sample_id=sample_id))
 
 
 @samples_bp.route("/sample/<sample_id>/metadata", methods=["GET", "POST"])
