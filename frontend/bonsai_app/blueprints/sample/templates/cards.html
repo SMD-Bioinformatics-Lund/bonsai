@@ -310,6 +310,7 @@
 
 
 {% macro bracken_prediction(result, extended=False) %}
+<div data-bracken-results>
 <table class="table table-sm">
     <thead>
         <th>Species</th>
@@ -323,7 +324,6 @@
     </thead>
     <tbody>
         {% for pred in result %}
-            {% if extended or pred.fraction_total_reads > 0.001 %}
                 <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
                     <td> <a class="br-card-link fst-italic" 
                         href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
@@ -338,10 +338,15 @@
                         </td>
                     {% endif %}
                 </tr>
-            {% endif %}
         {% endfor %}
     </tbody>
 </table>
+{% if result | length > 5 %}
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bracken-toggle aria-expanded="true" hidden>
+        Show less
+    </button>
+{% endif %}
+</div>
 {% endmacro %}
 
 

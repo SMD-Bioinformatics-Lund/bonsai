@@ -49,6 +49,7 @@
             <h5>Epidemiological Typing</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="epi-typing-heading" class="row justify-content-md-center">
+                {% set is_ecoli = sample.pipeline and sample.pipeline.assay == "ecoli" %}
                 <div class="col-md-auto">
                     {{ similar_samples_card(group_id) }}
                 </div>
@@ -61,7 +62,7 @@
                         <div class="col-md-auto">
                         {{ emm_card(res.result, status=res.status, reason=res.reason) }}
                         </div>
-                    {% elif res.analysis_type == "stx" %}
+                    {% elif res.analysis_type == "stx" and is_ecoli %}
                         <div class="col-md-auto">
                         {{ stx_card(res) }}
                         </div>
@@ -80,7 +81,7 @@
                     {% endif %}
                 {% endfor %}
                 {% set stx_results = sample.typing_result | selectattr("analysis_type", "equalto", "stx") | list %}
-                {% if sample.pipeline and sample.pipeline.assay == "ecoli" and not stx_results %}
+                {% if is_ecoli and not stx_results %}
                     <div class="col-md-auto">
                     {{ stx_card(none) }}
                     </div>
