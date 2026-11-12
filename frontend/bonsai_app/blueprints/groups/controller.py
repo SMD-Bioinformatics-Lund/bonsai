@@ -82,7 +82,7 @@ def format_tablular_data(
             type=col["type"],
             renderer=_get_renderer(col),
             sortable=False if col["id"] == "sample_id" else col["sortable"],
-            searchable=col["type"] != "object",
+            searchable=col["type"] != "object" or col["id"] == "qc_status",
             filterable=(
                 col["id"] != "sample_id"
                 and bool(col["label"])

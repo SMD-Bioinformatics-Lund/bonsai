@@ -77,6 +77,8 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
         assert 'data-visible="false"' in header
         assert 'data-searchable="true"' in header
         assert 'data-filterable="true"' in header
+    qc_header = re.search(r'<th\s+data-column-id="qc_status"[^>]*>', table).group()
+    assert 'data-searchable="true"' in qc_header
     assert "EXTERNAL-456" in table
     assert "stx1, stx2" in table
     assert "O157:H7" in table
@@ -100,6 +102,8 @@ def test_overview_keeps_all_samples_and_existing_cell_formatting(overview_client
     assert rows[-1][0] == "sample-4999"
     cells = re.findall(r'<td\b([^>]*)>(.*?)</td>', rows[0][1], re.DOTALL)
     assert len(cells) == 14
+    assert 'data-search="sample-0"' in cells[0][0]
+    assert "sample-0" not in re.sub(r"<[^>]+>", "", cells[0][1])
     assert cells[OVERVIEW_IDS.index("mlst_sequence_type")][1].strip() == "0"
     assert 'data-order="2026-10-15T12:34:56"' in cells[OVERVIEW_IDS.index("created_at")][0]
     assert b"&lt;script&gt;unsafe&lt;/script&gt;" in result.data
