@@ -284,17 +284,19 @@ def test_update_failure_shows_readable_message_and_keeps_existing_curation(sampl
 
 
 @pytest.mark.parametrize("page", ["", "/resistance/variants"])
+@pytest.mark.parametrize("decision", ["accept", "reject"])
 @pytest.mark.parametrize("approved_by", [None, "reviewer"])
 @pytest.mark.parametrize("modified_at", [None, "2026-11-11T12:00:00"])
 def test_curation_tooltip_does_not_attribute_approval_time_to_curator(
-    sample_page, app, page, approved_by, modified_at,
+    sample_page, app, page, decision, approved_by, modified_at,
 ):
     client, sample, prediction = sample_page
     variant = prediction["result"]["variants"][0]
     created_at = "2025-01-01T10:00:00"
     prediction["curations"] = [{
         "id": "existing", "annotation_type": "variant", "result_key": str(variant["id"]),
-        "decision": "reject", "rejection_reason": "Needs review", "phenotypes": [],
+        "decision": decision, "rejection_reason": "Needs review" if decision == "reject" else None,
+        "phenotypes": [], "notes": "Review note",
         "curated_by": "annotation-author", "approved_by": approved_by,
         "created_at": created_at, "modified_at": modified_at,
     }]
@@ -313,3 +315,4 @@ def test_curation_tooltip_does_not_attribute_approval_time_to_curator(
     assert f"Last modified: {expected_time}" in text
     assert "Curated at:" not in text
     assert "Approved by:" not in text
+    assert "Note: Review note" in text

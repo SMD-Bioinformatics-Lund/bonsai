@@ -93,6 +93,19 @@
   width: 1rem !important;
 }
 
+.variant-table .badge,
+.variant-table .btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  vertical-align: middle;
+}
+
+.variant-table .form-check-input {
+  margin-top: 0;
+  vertical-align: middle;
+}
+
 .variant-layout .br-main,
 .variant-layout .br-content {
   min-width: 0;
