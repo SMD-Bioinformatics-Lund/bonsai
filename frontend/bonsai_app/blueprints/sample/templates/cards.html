@@ -718,7 +718,7 @@
         <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <div class="table-responsive">
-            <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped">
+            <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped variant-table align-middle">
                 <thead>
                     <tr>
                         {% if extended %}
@@ -887,10 +887,12 @@
                                     -
                                 {% else %}
                                     {{ rejection_reason | default("-") }}
+                                {% endif %}
+                                {% if variant.curation %}
                                     <span class="badge text-bg-primary"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                             data-bs-html=true
-                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Last modified:</strong> {{ variant.curation.modified_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
+                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by | default('-', true) }}<br><strong>Last modified:</strong> {{ variant.curation.modified_at | strftime('%c') if variant.curation.modified_at else '-' }}<br><strong>Note:</strong> {{ variant.curation.notes | default('-', true) }}">
                                         <i class="bi bi-person-fill"></i>
                                     </span>
                                 {% endif %}

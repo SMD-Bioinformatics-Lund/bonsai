@@ -92,6 +92,18 @@ function initVariantSelection(): void {
       cb.addEventListener("change", () => selectVariant(cb));
     });
 
+  document
+    .querySelectorAll<HTMLTableSectionElement>("#tbprofiler-variant-table, #sv-variant-table")
+    .forEach(body => {
+      body.addEventListener("click", event => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest("a, button, input, select, textarea, label, form, [role='button'], [data-bs-toggle], [contenteditable='true']")) return;
+        const checkbox = target.closest("tr")?.querySelector<HTMLInputElement>("input[type='checkbox']");
+        if (checkbox && !checkbox.disabled) checkbox.click();
+      });
+    });
+
   // "select all"
   const selectAll = document.getElementById("select-all-variants") as HTMLInputElement;
 
