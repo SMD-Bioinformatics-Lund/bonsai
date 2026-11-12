@@ -1,6 +1,7 @@
 import { initToast, initTooltip } from "../../utils/notification";
 import { initSetSampleQc, updateQcStatus, findAndClusterSimilarSamples } from "../../core/actions/sample-actions";
 import { createSampleViewApi } from "./api";
+import { initBrackenTables } from "./bracken-table";
 
 export async function initSampleView(
   bonsaiApiUrl: string,
@@ -12,6 +13,7 @@ export async function initSampleView(
   const api = createSampleViewApi(bonsaiApiUrl, accessToken, refreshToken);
   initToast();
   initTooltip();
+  initBrackenTables();
 
   const qcStatusForm = document.getElementById("qc-classification-form") as HTMLButtonElement;
   if (qcStatusForm) {
