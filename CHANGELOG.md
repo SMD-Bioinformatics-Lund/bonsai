@@ -30,7 +30,7 @@
 
 ### Fixed
 
-- Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Disable panning and zooming in the sample summary's similar-sample tree while keeping sample labels clickable. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
