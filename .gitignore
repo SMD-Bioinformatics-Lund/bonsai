@@ -165,3 +165,4 @@ worktrees/
 # Agent specific
 AGENTS.md
 .worktrees/
+repos/
