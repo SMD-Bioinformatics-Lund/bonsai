@@ -1,7 +1,7 @@
 {% import "bootstrap_helpers.html" as bs %}
 
 {% macro sample_btn_renderer(cell_info)  %}
-    <td>
+    <td data-search="{{ cell_info }}">
         {% set params={"sample_id": cell_info} %}
         {% if group_id is defined %}
             {% do params.update({"group_id": group_id}) %}

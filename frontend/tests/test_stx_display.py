@@ -96,6 +96,20 @@ def test_other_assays_without_stx_analysis_do_not_gain_stx_card(stx_page, assay)
     assert "STX typing" not in page.select_one("#epi-typing-heading").get_text()
 
 
+@pytest.mark.parametrize("assay", [None, "saureus", "mtuberculosis", "spyogenes"])
+@pytest.mark.parametrize("status", ["empty", "parsed"])
+def test_other_assays_with_stored_stx_analysis_do_not_show_stx_card(stx_page, assay, status):
+    client, sample, analysis = stx_page
+    sample["pipeline"]["assay"] = assay
+    analysis.update(status=status, result={"hits": []})
+
+    response = client.get(f"/sample/{sample['sample_id']}")
+
+    assert response.status_code == 200
+    page = BeautifulSoup(response.data, "html.parser")
+    assert "STX typing" not in page.select_one("#epi-typing-heading").get_text()
+
+
 @pytest.mark.parametrize("legacy", [False, True])
 def test_stx_hits_remain_visible_without_an_extra_card(stx_page, legacy):
     client, sample, analysis = stx_page

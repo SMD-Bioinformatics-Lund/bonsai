@@ -165,7 +165,7 @@ export async function initGroupView(
 
   const headers = document.querySelectorAll<HTMLTableCellElement>("#sample-table thead th");
   const defaultSort = document.getElementById("sample-table")?.dataset.defaultSort;
-  // Columns excluded from global search that expose plain data-search values.
+  // Columns that expose plain data-search values for exact status filtering.
   // Add similar column IDs here; keep their data-search values current after edits.
   const directSearchColumnIds = [
     "qc_status",
