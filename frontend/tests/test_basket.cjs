@@ -12,6 +12,8 @@ class Element extends EventTarget {
   disabled = false;
   counter = { textContent: "" };
   badge = { hidden: false };
+  attributes = {};
+  setAttribute(name, value) { this.attributes[name] = value; }
   set innerHTML(value) {
     this.html = value;
     this.children = [];
@@ -22,6 +24,9 @@ class Element extends EventTarget {
   querySelector(selector) {
     if (selector === "#sample-basket-counter") return this.counter;
     if (selector === "#sample-basket-badge") return this.badge;
+    if (selector === "[data-remove-qc-failed]" && this.innerHTML.includes("data-remove-qc-failed")) {
+      return this.qcRemoveButton ??= new Element();
+    }
     return null;
   }
   querySelectorAll() { return []; }
@@ -35,7 +40,7 @@ async function setup(savedIds = []) {
     "add-to-basket-btn", "empty-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element(), clusterLink = new Element();
-  const requests = [], clusters = [], selectionCallbacks = [];
+  const requests = [], clusters = [], selectionCallbacks = [], qcCallbacks = [];
   let selected = [];
   const table = {
     rows: () => ({ ids: () => ({ toArray: () => selected }) }),
@@ -82,7 +87,10 @@ async function setup(savedIds = []) {
     User: class { isAdmin = false; },
     initToast() {}, initTooltip() {},
     throwSmallToast() {},
-    clusterSamples: (_element, sampleIds) => clusters.push(Array.from(sampleIds)),
+    clusterSamples: (_element, sampleIds, _api, onQcBlocked) => {
+      clusters.push(Array.from(sampleIds));
+      qcCallbacks.push(onQcBlocked);
+    },
   }));
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
@@ -90,7 +98,13 @@ async function setup(savedIds = []) {
     requests, clusters, component, clusterButton,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
-    cards: () => component.children.map(card => card.innerHTML.match(/<h6 id="([^"]+)"/)[1]),
+    cards: () => component.children.flatMap(card => {
+      const match = card.innerHTML.match(/<h6 id="([^"]+)"/);
+      return match ? [match[1]] : [];
+    }),
+    qcNotice: () => component.children.find(child => child.innerHTML.includes("data-remove-qc-failed")),
+    qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
+    reportQcBlocked: (index, ids) => qcCallbacks[index](ids),
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
     clear: () => elements["clear-basket-btn"].onclick(),
@@ -121,6 +135,87 @@ test("mixed missing IDs are removed from storage and count before clustering", a
   assert.equal(h.clusterButton.disabled, false);
   h.cluster();
   assert.deepEqual(h.clusters, [valid]);
+});
+
+test("QC highlights and removal appear only after an attempt and preserve eligible samples", async () => {
+  const ids = ["passed-1", "failed-1", "passed-2", "failed-2"];
+  const h = await setup(ids);
+  await h.respond(0, ids);
+  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.qcCards().length, 0);
+  h.cluster();
+  h.reportQcBlocked(0, ["failed-1", "failed-2", "unselected"]);
+  await h.respond(1, ids);
+  assert.deepEqual(h.saved(), ids);
+  assert.equal(h.qcCards().length, 2);
+  assert.ok(h.qcCards().every(card => card.className.includes("bg-danger bg-opacity-10")));
+  assert.ok(h.qcCards().every(card => card.innerHTML.includes("QC failed — excluded from clustering")));
+  assert.match(h.qcNotice().innerHTML, /Remove 2 QC-failed samples from basket/);
+  assert.match(h.qcNotice().innerHTML, /Sample data and QC status are preserved/);
+  h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), ["passed-1", "passed-2"]);
+  assert.equal(h.count(), 2);
+  await h.respond(2, ["passed-1", "passed-2"]);
+  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.qcCards().length, 0);
+  assert.equal(h.clusters.length, 1); // Removal does not automatically retry.
+  h.cluster();
+  assert.deepEqual(h.clusters[1], ["passed-1", "passed-2"]);
+});
+
+test("removing a single QC-failed sample disables clustering when only one remains", async () => {
+  const h = await setup(["passed", "failed"]);
+  await h.respond(0, ["passed", "failed"]);
+  h.cluster();
+  h.reportQcBlocked(0, ["failed"]);
+  await h.respond(1, ["passed", "failed"]);
+  assert.match(h.qcNotice().innerHTML, /Remove 1 QC-failed sample from basket/);
+  h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
+  await h.respond(2, ["passed"]);
+  assert.deepEqual(h.saved(), ["passed"]);
+  assert.deepEqual(h.cards(), ["passed"]);
+  assert.ok(h.component.children.some(child => child.textContent?.includes("At least two samples")));
+  assert.equal(h.clusterButton.disabled, true);
+  h.cluster();
+  assert.equal(h.clusters.length, 1);
+});
+
+test("basket changes clear QC feedback and stale attempts cannot restore it", async () => {
+  const h = await setup(["passed", "failed"]);
+  await h.respond(0, ["passed", "failed"]);
+  h.cluster();
+  h.reportQcBlocked(0, ["failed"]);
+  await h.respond(1, ["passed", "failed"]);
+  h.select(["added"]);
+  h.add();
+  const requestsBefore = h.requests.length;
+  h.reportQcBlocked(0, ["failed"]);
+  assert.equal(h.requests.length, requestsBefore);
+  await h.respond(2, ["passed", "failed", "added"]);
+  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.qcCards().length, 0);
+  h.cluster();
+  h.cluster();
+  h.reportQcBlocked(1, ["failed"]);
+  assert.equal(h.requests.length, requestsBefore);
+  h.reportQcBlocked(2, ["failed"]);
+  await h.respond(3, ["passed", "failed", "added"]);
+  assert.equal(h.qcCards().length, 1);
+});
+
+test("removing all QC-failed samples leaves an empty basket", async () => {
+  const ids = ["failed-1", "failed-2"];
+  const h = await setup(ids);
+  await h.respond(0, ids);
+  h.cluster();
+  h.reportQcBlocked(0, ids);
+  await h.respond(1, ids);
+  h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), []);
+  assert.equal(h.count(), 0);
+  assert.match(h.component.innerHTML, /Your basket is empty/);
+  assert.equal(h.clusterButton.disabled, true);
+  assert.equal(h.qcNotice(), undefined);
 });
 
 test("an entirely missing basket becomes empty and cannot cluster", async () => {

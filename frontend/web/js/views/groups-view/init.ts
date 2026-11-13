@@ -108,6 +108,9 @@ function initBasket(api: GroupViewApi): BasketState | void {
   }
 
   const basketState = new BasketState();
+  // A response belongs to the basket and clustering attempt that submitted it.
+  let clusterAttempt = 0;
+  basketState.onSelection(() => { clusterAttempt++; });
   const basketCounter = new SampleBasketCounter();
   basketCounter.basketState = basketState;
   counterElement.appendChild(basketCounter);
@@ -126,7 +129,12 @@ function initBasket(api: GroupViewApi): BasketState | void {
   clusterBtns.forEach((element) => {
     element.onclick = (event) => {
       event.preventDefault();
-      if (basketComponent.canCluster) clusterSamples(element, basketState.getSampleIds(), api);
+      if (basketComponent.canCluster) {
+        const attempt = ++clusterAttempt;
+        clusterSamples(element, basketState.getSampleIds(), api, (failedIds) => {
+          if (attempt === clusterAttempt) basketComponent.showQcBlocked(failedIds);
+        });
+      }
     };
   });
 

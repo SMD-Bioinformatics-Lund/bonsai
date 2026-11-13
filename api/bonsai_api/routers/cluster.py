@@ -6,6 +6,7 @@ from typing import Dict
 
 from bonsai_api.crud.cluster import (
     TypingProfileOutput,
+    get_qc_failed_sample_ids,
     get_signature_path_for_samples,
     get_ska_index_path_for_samples,
     get_typing_profiles,
@@ -77,6 +78,25 @@ async def cluster_samples(
     :rtype: SubmittedJob
     """
     if typing_method == TypingMethod.MINHASH:
+        failed_ids = await get_qc_failed_sample_ids(db, cluster_input.sample_ids)
+        if failed_ids:
+            count = len(failed_ids)
+            reason = (
+                "1 sample has failed QC and is"
+                if count == 1
+                else f"{count} samples have failed QC and are"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "minhash_qc_failed",
+                    "sample_ids": failed_ids,
+                    "message": (
+                        f"Clustering could not run because {reason} "
+                        "excluded from MinHash analysis."
+                    ),
+                },
+            )
         job = schedule_minhash_cluster_samples(
             cluster_input.sample_ids, cluster_input.method
         )

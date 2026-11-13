@@ -49,6 +49,18 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 TypingProfileOutput = list[TypingProfileAggregate]
 
 
+async def get_qc_failed_sample_ids(db: Database, sample_ids: list[str]) -> list[str]:
+    """Find selected samples intentionally excluded from MinHash by failed QC."""
+    cursor = db.sample_collection.find(
+        {"sample_id": {"$in": sample_ids}, "qc_status.status": "failed"},
+        {"_id": 0, "sample_id": 1},
+    )
+    failed_ids = {sample["sample_id"] for sample in await cursor.to_list(None)}
+    return [
+        sample_id for sample_id in dict.fromkeys(sample_ids) if sample_id in failed_ids
+    ]
+
+
 CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
     "mlst": BuilderArgs(
         selector={"software": "mlst", "analysis_type": "mlst"},
