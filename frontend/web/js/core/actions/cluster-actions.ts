@@ -8,6 +8,8 @@ type ApiProblemDetails = {
   detail?: unknown;
 };
 
+const MINHASH_SIGNATURE_ERROR_PREFIX = "Could not load exactly one MinHash signature per selected sample: ";
+
 async function summarizeMissingClusterData(
   message: string,
   sampleIds: string[],
@@ -19,7 +21,7 @@ async function summarizeMissingClusterData(
     ["No MLST typing profile is available for the following samples: ", "MLST typing profiles are unavailable"],
     ["No SKA index is available for the following samples: ", "SKA indexes are unavailable"],
     ["No SKA index file is available for the following samples: ", "SKA index files are unavailable"],
-    ["Could not load exactly one MinHash signature per selected sample: ", "MinHash signatures are unavailable or invalid"],
+    [MINHASH_SIGNATURE_ERROR_PREFIX, "MinHash signatures are unavailable or invalid"],
   ];
   const detail = message.replace(/^(?:ValueError|FileNotFoundError): /, "");
   const reason = reasons.find(([prefix]) => detail.startsWith(prefix));
@@ -140,6 +142,12 @@ export async function clusterSamples(
       message = error.message;
     }
 
+    const errorMessage = message;
+    const detail = message.replace(/^ValueError: /, "");
+    const affectedSampleIds = typingMethodEnum === TypingMethod.MINHASH && detail.startsWith(MINHASH_SIGNATURE_ERROR_PREFIX)
+      ? detail.slice(MINHASH_SIGNATURE_ERROR_PREFIX.length).split(", ").filter(Boolean)
+      : undefined;
+
     message = await summarizeMissingClusterData(message, sampleIds, api);
 
     if (typingMethodEnum === TypingMethod.SKA && message.includes("Duplicate names found")) {
@@ -154,6 +162,8 @@ export async function clusterSamples(
     console.error("A problem occurred during clustering:", {
       typingMethod: typingMethodEnum,
       sampleIds,
+      affectedSampleIds,
+      errorMessage,
       error,
     });
   } finally {

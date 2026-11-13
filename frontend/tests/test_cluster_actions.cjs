@@ -151,3 +151,28 @@ test("internal IDs use Lab IDs, or a count if lookup fails or a Lab ID is missin
     assert.equal(h.hidden(), 1);
   }
 });
+
+test("MinHash console diagnostics list affected IDs separately from all selected samples", async () => {
+  const sampleIds = Array.from({ length: 20 }, (_, i) => `sample-id-${i}`);
+  for (const [count, prefix] of [[10, "ValueError: "], [1, ""]]) {
+    const affectedSampleIds = sampleIds.slice(5, 5 + count);
+    const error = `${prefix}Could not load exactly one MinHash signature per selected sample: ${affectedSampleIds.join(", ")}`;
+    const h = setup({
+      typingMethod: "minhash", sampleIds, error,
+      lookupError: new Error("Lookup failed"),
+    });
+
+    await h.actions.clusterSamples(h.element, h.sampleIds, h.api);
+
+    const diagnostics = h.logs[0][1];
+    assert.deepEqual(Array.from(diagnostics.affectedSampleIds), affectedSampleIds);
+    assert.equal(diagnostics.sampleIds, sampleIds);
+    assert.equal(diagnostics.errorMessage, error);
+    assert.equal(diagnostics.error.message, error);
+    assert.deepEqual(h.toasts.at(-1), [
+      `Cannot cluster: MinHash signatures are unavailable or invalid for ${count} ${count === 1 ? "sample" : "samples"}.`,
+      "error",
+    ]);
+    assert.equal(h.hidden(), 1);
+  }
+});
