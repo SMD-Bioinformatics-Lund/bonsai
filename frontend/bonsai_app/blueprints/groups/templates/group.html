@@ -25,6 +25,10 @@
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
                 {{ add_to_basket_btn() }}
+                <button id="empty-basket-btn" type="button" class="btn btn-sm btn-outline-secondary ms-1" data-test-id="empty-basket-btn">
+                    <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                    <span>Empty basket</span>
+                </button>
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
 
