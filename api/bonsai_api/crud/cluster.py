@@ -102,8 +102,12 @@ async def get_typing_profiles(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
                 typing_result={
-                    loci: replace_cgmlst_errors(
-                        allele, include_novel_alleles=True, correct_alleles=True
+                    loci: (
+                        replace_cgmlst_errors(
+                            allele, include_novel_alleles=True, correct_alleles=True
+                        )
+                        if typing_method == "cgmlst" and allele is not None
+                        else allele
                     )
                     for loci, allele in loci_map.items()
                 },

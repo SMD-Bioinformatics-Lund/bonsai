@@ -37,6 +37,55 @@ async def _async_records(records):
         yield record
 
 
+@pytest.mark.parametrize(
+    ("typing_method", "stored_alleles", "expected_result", "expected_profile"),
+    [
+        (
+            "mlst",
+            {
+                "adk": 1,
+                "fumC": None,
+                "gyrB": ["2", "3"],
+                "icd": "partial",
+                "mdh": "novel",
+            },
+            {
+                "adk": 1,
+                "fumC": None,
+                "gyrB": ["2", "3"],
+                "icd": "partial",
+                "mdh": "novel",
+            },
+            {"adk": 1, "fumC": None, "gyrB": None, "icd": None, "mdh": None},
+        ),
+        (
+            "cgmlst",
+            {"a": 1, "b": "2", "c": "INF-3", "d": "*4", "e": "LNF", "f": None},
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": None, "f": None},
+            {"a": 1, "b": 2, "c": 3, "d": 4, "e": None, "f": None},
+        ),
+    ],
+)
+def test_get_typing_profiles_handles_missing_and_uncertain_alleles(
+    typing_method, stored_alleles, expected_result, expected_profile
+):
+    """Keep MLST calls intact and normalize cgMLST calls without rejecting nulls."""
+    collection = Mock()
+    collection.aggregate = AsyncMock(
+        return_value=_async_records(
+            [{"sample_id": "sample-1", "typing_result": stored_alleles}]
+        )
+    )
+    db = SimpleNamespace(sample_collection=collection)
+
+    profiles = asyncio.run(get_typing_profiles(db, ["sample-1"], typing_method))
+
+    assert len(profiles) == 1
+    assert profiles[0].sample_id == "sample-1"
+    assert profiles[0].typing_result == expected_result
+    assert profiles[0].allele_profile() == expected_profile
+
+
 def test_get_typing_profiles_rejects_empty_profile_with_lab_id():
     """An existing sample without a profile is reported using its Lab ID."""
     collection = Mock()
