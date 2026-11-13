@@ -112,7 +112,10 @@ function initBasket(api: GroupViewApi): BasketState | void {
   basketCounter.basketState = basketState;
   counterElement.appendChild(basketCounter);
 
-  const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
+  const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api), {
+    feedback: document.getElementById("basket-qc-feedback"),
+    removeButton: document.getElementById("remove-failed-qc-from-basket-btn") as HTMLButtonElement,
+  });
   const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
   if (clusterButton) {
     clusterButton.disabled = true;

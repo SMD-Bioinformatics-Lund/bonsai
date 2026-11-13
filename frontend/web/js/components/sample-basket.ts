@@ -5,6 +5,7 @@ export class BasketComponent extends HTMLElement {
   private state: BasketState;
   private renderVersion = 0;
   private ready = false;
+  private qcFailedSampleIds = new Set<string>();
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
   ) => Promise<ApiSampleDetailsResponse>;
@@ -12,6 +13,7 @@ export class BasketComponent extends HTMLElement {
   constructor(
     state: BasketState,
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
+    private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
   ) {
     super();
     this.state = state;
@@ -21,6 +23,11 @@ export class BasketComponent extends HTMLElement {
 
   connectedCallback() {
     this.state.onSelection(this.handleStateChange);
+    if (this.qcControls?.removeButton) {
+      this.qcControls.removeButton.onclick = () => {
+        if (this.ready) this.state.removeSamples([...this.qcFailedSampleIds]);
+      };
+    }
     this.render();
   }
 
@@ -28,6 +35,7 @@ export class BasketComponent extends HTMLElement {
     this.state.offSelection(this.handleStateChange);
     this.renderVersion++;
     this.setReady(false);
+    if (this.qcControls?.removeButton) this.qcControls.removeButton.onclick = null;
   }
 
   get canCluster(): boolean {
@@ -36,10 +44,27 @@ export class BasketComponent extends HTMLElement {
 
   private setReady(ready: boolean): void {
     this.ready = ready;
+    this.updateQcControls();
     this.dispatchEvent(new CustomEvent("basket:ready-change"));
   }
 
+  private updateQcControls(): void {
+    if (!this.qcControls?.feedback || !this.qcControls?.removeButton) return;
+    const { feedback, removeButton } = this.qcControls;
+    const count = this.qcFailedSampleIds.size;
+    const visible = this.ready && count > 0;
+    feedback.hidden = !visible;
+    removeButton.hidden = !visible;
+    removeButton.disabled = !visible;
+    feedback.innerHTML = "";
+    if (!visible) return;
+    feedback.innerHTML = `
+      <p class="small text-danger mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can still include them in clustering.</p>
+    `;
+  }
+
   private handleStateChange() {
+    this.qcFailedSampleIds.clear();
     this.render();
   }
 
@@ -55,10 +80,9 @@ export class BasketComponent extends HTMLElement {
     try {
       const query: ApiGetSamplesDetailsInput = {
         sid: sampleIds,
-        prediction_result: true,
-        qc: false,
+        // Fetch curated QC with the card data, before enabling clustering.
+        fields: ["sample_id", "sample_name", "assay", "qc_status"],
         limit: 0,
-        skip: 0,
       };
       const data = await this.getSamplesDetails(query);
       // A newer selection or render owns the basket now.
@@ -70,17 +94,32 @@ export class BasketComponent extends HTMLElement {
         this.state.removeSamples(missingIds);
         return;
       }
+      this.qcFailedSampleIds = new Set(
+        sampleIds.filter((id) => samplesById.get(id).qc_status?.status === "failed"),
+      );
       this.innerHTML = "";
+      if (sampleIds.length < 2) {
+        const notice = document.createElement("p");
+        notice.textContent = "At least two samples are needed for clustering.";
+        this.appendChild(notice);
+      }
       // create sample cards for each sample in the basket
       sampleIds.forEach((id) => {
         const sample: SamplesDetails = samplesById.get(id);
         const item = document.createElement("div");
         item.className = "card mb-2 rounded-1 p-0 sample_in_basket";
+        const qcFailed = this.qcFailedSampleIds.has(id);
+        const textColor = qcFailed ? "text-danger" : "text-muted";
+        if (qcFailed) {
+          item.className += " border-danger bg-danger bg-opacity-10";
+          item.setAttribute("role", "group");
+          item.setAttribute("aria-label", `${sample.sample_name}: QC failed`);
+        }
         item.innerHTML = String.raw`
         <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
-            <a class="text-muted d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
-                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
-                <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
+            <a class="${textColor} d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
+                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold ${textColor} my-0 py-0">${sample.sample_name}</h6>
+                <i class="${textColor} fs-6 fw-light p-0">${sample.assay}</i>
             </a>
             <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" type="button" data-id="${sample.sample_id}">
                 <i class="bi bi-trash3-fill"></i>
