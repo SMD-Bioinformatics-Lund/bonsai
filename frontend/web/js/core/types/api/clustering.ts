@@ -4,6 +4,12 @@ import {
   TypingMethod,
 } from "../enums";
 
+export interface ApiUnplacedSample {
+  sample_id: string;
+  label: string;
+  reason: string;
+}
+
 export interface ApiClusterInput {
   sampleIds: string[];
   distance: DistanceMethod;

@@ -26,10 +26,12 @@ function setup({
   error = "ValueError: Duplicate names found", submissionError, typingMethod = "ska",
   sampleIds = ["sample-id-1", "sample-id-2", "sample-id-3", "sample-id-4"],
   samples = [], lookupError,
+  result,
 } = {}) {
   const toasts = [], logs = [], requests = [], lookups = [];
   let hidden = 0;
   const button = {};
+  const forms = [];
   const { pollJob } = loadModule("../web/js/core/api/polling/pollJob.ts", {
     require: () => ({ JobStatusEnum: { FINISHED: "finished", FAILED: "failed" } }),
   });
@@ -42,7 +44,12 @@ function setup({
       showSpinner() {}, hideSpinner: () => { hidden++; },
     }),
     console: { error: (...args) => logs.push(args) },
-    document: { querySelector: () => ({ querySelector: () => button }) },
+    baseUrl: "",
+    document: {
+      querySelector: () => ({ querySelector: () => button }),
+      body: { appendChild: form => forms.push(form) },
+      createElement: () => ({ children: [], appendChild(input) { this.children.push(input); }, submit() { this.submitted = true; }, remove() {} }),
+    },
   });
   const element = { getAttribute: () => typingMethod };
   const api = {
@@ -56,9 +63,9 @@ function setup({
       if (submissionError) throw submissionError;
       return { id: "job" };
     },
-    checkJobStatus: async () => ({ status: "failed", error }),
+    checkJobStatus: async () => result ? { status: "finished", ...result } : ({ status: "failed", error }),
   };
-  return { actions, api, element, sampleIds, toasts, logs, requests, lookups, hidden: () => hidden };
+  return { actions, api, element, sampleIds, toasts, logs, requests, lookups, forms, hidden: () => hidden };
 }
 
 test("failed SNV job explains duplicate sequence IDs and logs diagnostics", async () => {
@@ -78,6 +85,18 @@ test("failed SNV job explains duplicate sequence IDs and logs diagnostics", asyn
   assert.equal(diagnostics.error.message, "ValueError: Duplicate names found");
   assert.equal(h.requests[0][1].sampleIds, h.sampleIds);
   assert.equal(h.hidden(), 1);
+});
+
+test("successful allele trees carry unplaced samples separately without losing labels", async () => {
+  const unplaced = [{ sample_id: "empty", label: "Lab O'Brien <test>", reason: "No usable allele calls" }];
+  const h = setup({ typingMethod: "mlst", sampleIds: ["a", "b", "empty"], result: { result: "(a:1,b:0);", unplaced_samples: unplaced } });
+  await h.actions.clusterSamples(h.element, h.sampleIds, h.api);
+  const form = h.forms[0];
+  assert.ok(form.submitted);
+  const fields = Object.fromEntries(form.children.map(input => [input.name, input.value]));
+  assert.deepEqual(JSON.parse(fields["sample-ids"]), { sample_id: ["a", "b"] });
+  assert.deepEqual(JSON.parse(fields["unplaced-samples"]), unplaced);
+  assert.equal(h.logs.length, 0);
 });
 
 test("SNV duplicate names returned during submission use the same message", async () => {

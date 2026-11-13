@@ -1000,6 +1000,8 @@ class methods(object):
 
 
 def nonredundant(names, profiles):
+    if profiles.ndim != 2 or profiles.shape[1] == 0:
+        raise ValueError("No allele columns are available for clustering")
     encoded_profile = np.array(
         [np.unique(p, return_inverse=True)[1] + 1 for p in profiles.T]
     ).T
@@ -1009,7 +1011,10 @@ def nonredundant(names, profiles):
     names = names[np.lexsort(encoded_profile.T)]
     profiles = encoded_profile[np.lexsort(encoded_profile.T)]
     presence = np.sum(profiles > 0, 1) > 0
-    names, profiles = names[presence], profiles[presence]
+    if not np.all(presence):
+        raise ValueError(
+            "Samples have no usable allele calls: " + ", ".join(names[~presence])
+        )
 
     uniqueness = np.concatenate([[1], np.sum(np.diff(profiles, axis=0) != 0, 1) > 0])
 
