@@ -4,7 +4,7 @@
   style="float: right; margin-right: 5px"
   onclick="getHelpBox('{{help_text}}');"
 ></span>
-{% endmacro %} {% macro sidebar(typing_data) %}
+{% endmacro %} {% macro sidebar(typing_data, unplaced_samples=none) %}
 <div id="sidebar">
   <div>
     <a href="/" class="navbar-brand">
@@ -29,6 +29,17 @@
     ></a>
   </div>
   <h5>Clustering method: <span class="font-italic">{{typing_data}}</span></h5>
+  {% if unplaced_samples %}
+  <div id="unplaced-samples" class="alert alert-warning" role="status">
+    <strong>{{ unplaced_samples | length }} unplaced sample{{ '' if unplaced_samples | length == 1 else 's' }}</strong>
+    <p>These samples remain in the selection but have no usable allele calls. No position or genetic distance has been assigned to them.</p>
+    <ul>
+      {% for sample in unplaced_samples %}
+      <li><a href="{{ url_for('samples.sample', sample_id=sample.sample_id) }}" target="_blank" rel="noopener">{{ sample.label }}</a>: {{ sample.reason }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
   <br />
   <div id="input-output-panel" class="panel panel-default">
     <div class="panel-heading mst-menu-title" id="file-menu">

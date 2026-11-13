@@ -6,7 +6,7 @@ import logging
 from enum import Enum
 from typing import Any
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from pydantic import BaseModel, ConfigDict
 from requests.exceptions import HTTPError
@@ -200,6 +200,19 @@ def tree():
     if request.method == "POST":
         newick = str(request.form.get("newick"))
         typing_data = request.form.get("typing_data")
+        try:
+            unplaced_samples = json.loads(request.form.get("unplaced-samples", "[]"))
+        except (ValueError, TypeError):
+            abort(400, description="Invalid unplaced-sample list")
+        if not isinstance(unplaced_samples, list) or any(
+            not isinstance(sample, dict)
+            or not all(
+                isinstance(sample.get(key), str)
+                for key in ("sample_id", "label", "reason")
+            )
+            for sample in unplaced_samples
+        ):
+            abort(400, description="Invalid unplaced-sample list")
         # get samples info as python object
         samples = str(request.form.get("sample-ids", "{}"))
         samples_obj: dict[str, Any] = {} if samples == "" else json.loads(samples)
@@ -224,6 +237,7 @@ def tree():
             title=f"{typing_data} cluster",
             typing_data=typing_data,
             data=json.dumps(data),
+            unplaced_samples=unplaced_samples,
         )
     return url_for("public.index")
 

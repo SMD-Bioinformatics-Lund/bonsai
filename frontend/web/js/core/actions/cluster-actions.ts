@@ -1,6 +1,6 @@
 import { ApiError, ApiService, pollJob } from "../api";
 import { throwSmallToast } from "../../utils/notification";
-import { ApiJobStatusNewick, ApiClusterInput } from "../types";
+import { ApiJobStatusNewick, ApiClusterInput, ApiUnplacedSample } from "../types";
 import { ClusterMethod, DistanceMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
@@ -57,25 +57,31 @@ async function openGrapeTree(
   newick: string,
   sampleIds: string[],
   clusterMethod: TypingMethod,
+  unplacedSamples: ApiUnplacedSample[] = [],
 ): Promise<void> {
-  // Open grape tree
-  const template = document.createElement("template");
-  template.innerHTML = String.raw`
-  <form id="open-tree-form" action="${baseUrl}/tree" method="POST" hidden target="_blank">
-      <input type="text" name="newick" id="newick-content" value="${newick}">
-      <input type="text" name="typing_data" id="typing-data-content" value="${clusterMethod}">
-      <input type="text" name="sample-ids" id="sample-ids-content" value='${JSON.stringify({ sample_id: sampleIds })}'>
-      <input type="text" name="metadata" id="metadata-content" value="">
-      <input type="submit" value="">
-  </form>
-  `;
-  document.body.appendChild(template.content);
-  const submitBnt = document.querySelector(
-    "#open-tree-form input[type=submit]",
-  ) as HTMLInputElement;
-  submitBnt.click();
-  // clean up
-  document.querySelector("#open-tree-form").remove();
+  const form = document.createElement("form");
+  form.action = `${baseUrl}/tree`;
+  form.method = "POST";
+  form.target = "_blank";
+  form.hidden = true;
+  const unplacedIds = new Set(unplacedSamples.map((sample) => sample.sample_id));
+  const fields = {
+    newick,
+    typing_data: clusterMethod,
+    "sample-ids": JSON.stringify({ sample_id: sampleIds.filter((id) => !unplacedIds.has(id)) }),
+    metadata: "",
+    "unplaced-samples": JSON.stringify(unplacedSamples),
+  };
+  Object.entries(fields).forEach(([name, value]) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+  form.remove();
 }
 
 // cluter all samples in basket
@@ -130,7 +136,7 @@ export async function clusterSamples(
       3000,
     )) as ApiJobStatusNewick;
 
-    openGrapeTree(result.result, sampleIds, typingMethodEnum);
+    await openGrapeTree(result.result, sampleIds, typingMethodEnum, result.unplaced_samples);
   } catch (error) {
     let message = "A problem occurred during clustering";
     if (error instanceof ApiError && error.data) {

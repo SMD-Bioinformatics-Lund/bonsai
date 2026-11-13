@@ -10,6 +10,13 @@ const ts = require("typescript");
 class Element extends EventTarget {
   children = [];
   disabled = false;
+  attributes = new Map();
+  classList = {
+    values: new Set(),
+    toggle(name, enabled) { if (enabled) this.values.add(name); else this.values.delete(name); },
+  };
+  setAttribute(name, value) { this.attributes.set(name, value); }
+  getAttribute(name) { return this.attributes.get(name) ?? null; }
   counter = { textContent: "" };
   badge = { hidden: false };
   set innerHTML(value) {
@@ -29,12 +36,17 @@ class Element extends EventTarget {
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(savedIds = []) {
+async function setup(savedIds = [], { validate } = {}) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
     "add-to-basket-btn", "empty-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
-  const clusterButton = new Element(), clusterLink = new Element();
+  const clusterButton = new Element();
+  const links = Object.fromEntries(["mlst", "cgmlst", "minhash", "ska"].map(method => {
+    const link = new Element();
+    link.setAttribute("data-bi-typing-method", method);
+    return [method, link];
+  }));
   const requests = [], clusters = [], selectionCallbacks = [];
   let selected = [];
   const table = {
@@ -50,7 +62,7 @@ async function setup(savedIds = []) {
     getElementById: id => elements[id] ?? null,
     querySelector: selector => selector === "#basket-cluster-samples .btn" ? clusterButton
       : elements[selector.slice(1)] ?? null,
-    querySelectorAll: selector => selector === "#basket-cluster-samples a" ? [clusterLink] : [],
+    querySelectorAll: selector => selector === "#basket-cluster-samples a" ? Object.values(links) : [],
   };
   const globals = {
     HTMLElement: Element, CustomEvent, Error, document, window: {},
@@ -75,6 +87,7 @@ async function setup(savedIds = []) {
   const api = {
     getUserInfo: async () => ({}),
     getSamplesDetails: query => new Promise((resolve, reject) => requests.push({ query, resolve, reject })),
+    validateAlleleClustering: validate ?? (async () => compatible()),
   };
   const view = load("../web/js/views/groups-view/init.ts", () => ({
     ...state, ...basket, ...counter, ...tableController,
@@ -87,22 +100,28 @@ async function setup(savedIds = []) {
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
   return {
-    requests, clusters, component, clusterButton,
+    requests, clusters, component, clusterButton, links,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
-    cards: () => component.children.map(card => card.innerHTML.match(/<h6 id="([^"]+)"/)[1]),
+    cards: () => component.children.flatMap(card => card.innerHTML.match(/<h6 id="([^"]+)"/)?.[1] ?? []),
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
     clear: () => elements["clear-basket-btn"].onclick(),
     empty: () => elements["empty-basket-btn"].onclick(),
     reopen: () => elements["basket-offcanvas"].dispatchEvent(new Event("show.bs.offcanvas")),
-    cluster: () => clusterLink.onclick({ preventDefault() {} }),
+    cluster: (method = "minhash") => links[method].onclick({ preventDefault() {} }),
     elements,
     async respond(index, sampleIds) {
       requests[index].resolve({ data: sampleIds.map(sample_id => ({ sample_id, sample_name: sample_id, assay: "test" })) });
       await tick();
     },
   };
+}
+
+function compatible() {
+  return Object.fromEntries(["mlst", "cgmlst"].map(method => [method, {
+    can_cluster: true, notice: null, unplaced_samples: [],
+  }]));
 }
 
 test("mixed missing IDs are removed from storage and count before clustering", async () => {
@@ -193,4 +212,57 @@ test("response IDs outside the request never appear in the basket or clustering 
   assert.deepEqual(h.cards(), ["a", "b"]);
   h.cluster();
   assert.deepEqual(h.clusters, [["a", "b"]]);
+});
+
+test("mixed schemes display a notice and disable only the incompatible allele method", async () => {
+  const validation = compatible();
+  validation.mlst = { can_cluster: false, notice: "Cannot cluster by MLST: different typing schemes.", unplaced_samples: [] };
+  const h = await setup(["a", "b"], { validate: async () => validation });
+  await h.respond(0, ["a", "b"]);
+  assert.equal(h.links.mlst.getAttribute("aria-disabled"), "true");
+  assert.ok(h.links.mlst.classList.values.has("disabled"));
+  assert.equal(h.links.cgmlst.getAttribute("aria-disabled"), "false");
+  assert.ok(h.component.children.some(child => child.textContent?.includes("different typing schemes")));
+  h.cluster("mlst");
+  assert.deepEqual(h.clusters, []);
+  h.cluster("cgmlst");
+  assert.deepEqual(h.clusters, [["a", "b"]]);
+});
+
+test("failed scheme checks block allele clustering while other methods remain available", async () => {
+  const h = await setup(["a", "b"], { validate: async () => { throw new Error("Lookup failed"); } });
+  await h.respond(0, ["a", "b"]);
+  assert.equal(h.links.mlst.getAttribute("aria-disabled"), "true");
+  assert.equal(h.links.cgmlst.getAttribute("aria-disabled"), "true");
+  h.cluster("mlst");
+  h.cluster("cgmlst");
+  assert.deepEqual(h.clusters, []);
+  h.cluster("minhash");
+  assert.deepEqual(h.clusters, [["a", "b"]]);
+  assert.ok(h.component.children.some(child => child.textContent?.includes("Could not verify")));
+});
+
+test("scheme checks from a previous selection cannot reenable clustering after clearing", async () => {
+  let resolve;
+  const h = await setup(["a", "b"], { validate: () => new Promise(done => { resolve = done; }) });
+  await h.respond(0, ["a", "b"]);
+  assert.equal(h.links.mlst.getAttribute("aria-disabled"), "true");
+  h.empty();
+  resolve(compatible());
+  await tick();
+  assert.equal(h.clusterButton.disabled, true);
+  assert.equal(h.links.mlst.getAttribute("aria-disabled"), "true");
+  h.cluster("mlst");
+  assert.deepEqual(h.clusters, []);
+});
+
+test("unplaced samples remain in the basket and selection count", async () => {
+  const validation = compatible();
+  validation.mlst.unplaced_samples = [{ sample_id: "empty", label: "LAB-EMPTY", reason: "No usable allele calls" }];
+  const h = await setup(["a", "b", "empty"], { validate: async () => validation });
+  await h.respond(0, ["a", "b", "empty"]);
+  assert.deepEqual(h.saved(), ["a", "b", "empty"]);
+  assert.equal(h.count(), 3);
+  assert.equal(h.links.mlst.getAttribute("aria-disabled"), "false");
+  assert.ok(h.component.children.some(child => child.textContent?.includes("unplaced")));
 });

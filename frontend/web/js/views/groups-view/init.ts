@@ -112,21 +112,28 @@ function initBasket(api: GroupViewApi): BasketState | void {
   basketCounter.basketState = basketState;
   counterElement.appendChild(basketCounter);
 
-  const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api));
+  const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api), api.validateAlleleClustering.bind(api));
   const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
+  const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   if (clusterButton) {
     clusterButton.disabled = true;
     basketComponent.addEventListener("basket:ready-change", () => {
       clusterButton.disabled = !basketComponent.canCluster;
+      clusterBtns.forEach((element) => {
+        const method = element.getAttribute("data-bi-typing-method");
+        const disabled = !basketComponent.canClusterWith(method);
+        element.classList.toggle("disabled", disabled);
+        element.setAttribute("aria-disabled", String(disabled));
+        element.setAttribute("tabindex", disabled ? "-1" : "0");
+      });
     });
   }
   basketElement.appendChild(basketComponent);
 
-  const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
     element.onclick = (event) => {
       event.preventDefault();
-      if (basketComponent.canCluster) clusterSamples(element, basketState.getSampleIds(), api);
+      if (basketComponent.canClusterWith(element.getAttribute("data-bi-typing-method"))) clusterSamples(element, basketState.getSampleIds(), api);
     };
   });
 

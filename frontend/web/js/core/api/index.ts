@@ -8,6 +8,7 @@ import {
   ApiUserInfo,
   ApiSampleQcStatus,
   MembershipEdges,
+  ApiAlleleClusterValidations,
 } from "../types";
 import { TypingMethod } from "../types/enums";
 import { ApiError } from "./http/ApiError";
@@ -68,6 +69,13 @@ export class ApiService {
     return this.http.request<ApiJobSubmission>(`/cluster/${method}`, {
       method: "POST",
       body: JSON.stringify(params),
+    });
+  };
+
+  validateAlleleClustering = async (sampleIds: string[]) => {
+    return this.http.request<ApiAlleleClusterValidations>(`/cluster/validate`, {
+      method: "POST",
+      body: JSON.stringify({ sampleIds }),
     });
   };
 

@@ -30,6 +30,9 @@
 
 ### Fixed
 
+- Preserve every allele column and integer missing-call semantics when exporting MLST and cgMLST profiles to the clustering worker. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Retain samples without usable allele calls in the basket and an unplaced-sample list beside the tree, and reject worker results that lose expected samples. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Disable incompatible MLST and cgMLST clustering options with a notice, require verifiable scheme identities and matching locus sets, and reject profiles with no jointly called loci. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)

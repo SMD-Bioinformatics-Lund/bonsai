@@ -1,4 +1,5 @@
 import { JobStatusEnum } from "../enums";
+import type { ApiUnplacedSample } from "./clustering";
 
 interface ApiSimilarityMatch {
   sample_id: string;
@@ -20,6 +21,7 @@ export interface ApiJobStatusBase {
   status: JobStatusEnum;
   queue: string;
   error: string | null;
+  unplaced_samples?: ApiUnplacedSample[];
   submitted_at: string;
   started_at: string | null;
   finished_at: string | null;

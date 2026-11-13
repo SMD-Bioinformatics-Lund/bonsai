@@ -9,10 +9,13 @@ from bonsai_api.crud.cluster import (
     get_signature_path_for_samples,
     get_ska_index_path_for_samples,
     get_typing_profiles,
+    validate_typing_profiles,
 )
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel
+from bonsai_api.models.allele_cluster import AlleleClusterValidation
+from bonsai_api.exceptions import InvalidDataFormat
 from bonsai_api.models.enums import DistanceMethod, TypingMethod
 from bonsai_api.redis import ClusterMethod, MsTreeMethods, SubmittedJob
 from bonsai_api.redis.allele_cluster import (
@@ -53,6 +56,24 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
     model_config = ConfigDict(use_enum_values=False)
 
 
+class AlleleValidationInput(RWModel):
+    """Sample selection to check before enabling allele clustering."""
+
+    sample_ids: list[str] = Field(..., min_length=1, alias="sampleIds")
+
+
+@router.post("/cluster/validate", response_model=dict[str, AlleleClusterValidation])
+async def validate_allele_clustering(
+    selection: AlleleValidationInput, db: Database = Depends(get_database)
+) -> dict[str, AlleleClusterValidation]:
+    """Check the same scheme and profile rules enforced when submitting a job."""
+    validations = {}
+    for typing_method in ("mlst", "cgmlst"):
+        profiles = await get_typing_profiles(db, selection.sample_ids, typing_method)
+        validations[typing_method] = validate_typing_profiles(profiles, typing_method)
+    return validations
+
+
 @router.post(
     "/cluster/{typing_method}",
     status_code=status.HTTP_201_CREATED,
@@ -88,6 +109,11 @@ async def cluster_samples(
         profiles: TypingProfileOutput = await get_typing_profiles(
             db, cluster_input.sample_ids, typing_method.value
         )
+        validation = validate_typing_profiles(profiles, typing_method.value)
+        if not validation.can_cluster:
+            raise InvalidDataFormat(
+                validation.notice or "Allele clustering is unavailable"
+            )
         job = schedule_allele_cluster_samples(profiles, cluster_input.method)
     return job
 
@@ -103,7 +129,9 @@ class IndexInput(RWModel):  # pylint: disable=too-few-public-methods
     force: bool = False
 
 
-@router.post("/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=[RouterTags.MINHASH])
+@router.post(
+    "/minhash/index", status_code=status.HTTP_202_ACCEPTED, tags=[RouterTags.MINHASH]
+)
 async def index_genome_signatures(
     index_input: IndexInput,
     db: Database = Depends(get_database),
