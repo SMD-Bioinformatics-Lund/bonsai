@@ -80,6 +80,9 @@ def test_overview_requests_only_selected_fields_and_renders_all_of_them(overview
     qc_header = re.search(r'<th\s+data-column-id="qc_status"[^>]*>', table).group()
     assert 'data-searchable="true"' in qc_header
     assert "EXTERNAL-456" in table
+    assert 'data-sample-name="Example sample"' in table
+    assert 'data-lab-id="EXTERNAL-456"' in table
+    assert 'data-scope="this table"' in response.get_data(as_text=True)
     assert "stx1, stx2" in table
     assert "O157:H7" in table
     assert '<a href="/sample/sample-1">Open</a>' in table

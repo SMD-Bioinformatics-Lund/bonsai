@@ -70,6 +70,7 @@ async function setup(savedIds = []) {
   const state = load("../web/js/core/state/basket-state.ts");
   const basket = load("../web/js/components/sample-basket.ts");
   const counter = load("../web/js/components/samples-basket-counter.ts");
+  const sampleIdFilter = load("../web/js/views/groups-view/sample-id-filter.ts");
   const tableController = load("../web/js/utils/table-controller.ts", name =>
     name === "datatables.net-bs5" ? DataTable : {});
   const api = {
@@ -77,7 +78,7 @@ async function setup(savedIds = []) {
     getSamplesDetails: query => new Promise((resolve, reject) => requests.push({ query, resolve, reject })),
   };
   const view = load("../web/js/views/groups-view/init.ts", () => ({
-    ...state, ...basket, ...counter, ...tableController,
+    ...state, ...basket, ...counter, ...tableController, ...sampleIdFilter,
     createGroupViewApi: () => api,
     User: class { isAdmin = false; },
     initToast() {}, initTooltip() {},

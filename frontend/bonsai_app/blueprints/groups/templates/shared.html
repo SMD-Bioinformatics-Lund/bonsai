@@ -110,6 +110,37 @@
         </div>
     </div>
     <div id="sample-table-container" class="d-none">
+    <div id="sample-id-filter-controls" class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#sample-id-filter-modal">Find sample IDs</button>
+        <button id="sample-id-filter-clear" type="button" class="btn btn-sm btn-outline-secondary" hidden>Clear ID filter</button>
+    </div>
+    <div id="sample-id-filter-feedback" class="small my-2" role="status" aria-live="polite" data-scope="{{ 'this group' if group_id is defined and group_id else 'this table' }}" hidden>
+        <span id="sample-id-filter-summary"></span>
+        <span>Other table filters still apply.</span>
+        <details id="sample-id-filter-unmatched" hidden>
+            <summary id="sample-id-filter-unmatched-title"></summary>
+            <ul id="sample-id-filter-unmatched-list" class="text-break" style="max-height: 12rem; overflow-y: auto;"></ul>
+        </details>
+    </div>
+    <div class="modal fade" id="sample-id-filter-modal" tabindex="-1" aria-labelledby="sample-id-filter-title" aria-hidden="true">
+        <div class="modal-dialog">
+            <form id="sample-id-filter-form" class="modal-content">
+                <div class="modal-header">
+                    <h5 id="sample-id-filter-title" class="modal-title">Find sample IDs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="sample-id-filter-input" class="form-label">Sample names, Lab IDs, or internal UUIDs</label>
+                    <textarea id="sample-id-filter-input" class="form-control" rows="8" aria-describedby="sample-id-filter-help" spellcheck="false"></textarea>
+                    <p id="sample-id-filter-help" class="form-text mb-0">Paste IDs separated by newlines, tabs, commas, or semicolons. Matches are exact and case-sensitive. Searches {{ 'within this group' if group_id is defined and group_id else 'this table' }}.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" data-bs-dismiss="modal">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <table id="sample-table" class="display table table-striped" {% if default_sort %}data-default-sort="{{ default_sort }}"{% endif %}>
         <thead>
             <tr>
@@ -133,7 +164,7 @@
         </thead>
         <tbody>
             {% for row in table_data.rows %}
-                <tr id="{{ row.sample_id }}" {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
+                <tr id="{{ row.sample_id }}" data-sample-name="{{ row.get('sample_name') or '' }}" data-lab-id="{{ row.get('external_sample_id') or '' }}" {% if test_id is not none %}data-test-id="sample-row-{{ loop.index }}"{% endif %}>
                     {% for col_info in table_data.columns %}
                         {% set cell_data=row[col_info.id] %}
                         {{ select_render_func(cell_data, name=col_info.renderer) }}

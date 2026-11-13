@@ -15,6 +15,7 @@ import { SampleBasketCounter } from "../../components/samples-basket-counter";
 import { BasketComponent } from "../../components/sample-basket";
 import { createGroupViewApi, GroupViewApi } from "./api";
 import { ApiSampleQcStatus } from "../../core/types";
+import { initSampleIdFilter } from "./sample-id-filter";
 
 import "../../components/group-list";
 import "../../components/group-selector";
@@ -195,6 +196,7 @@ export async function initGroupView(
     showSampleTable();
     throw error;
   }
+  initSampleIdFilter(table);
   showSampleTable(table);
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);

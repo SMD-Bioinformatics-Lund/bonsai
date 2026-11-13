@@ -308,7 +308,12 @@ def group(group_id: str) -> str:
                 "POST", "samples/summary",
                 json={
                     "group_id": group_id,
-                    "fields": [column["id"] for column in columns],
+                    "fields": list(
+                        dict.fromkeys(
+                            [column["id"] for column in columns]
+                            + ["sample_id", "sample_name", "external_sample_id"]
+                        )
+                    ),
                     "sort": "-created_at",
                     "limit": 0,
                     "offset": 0,
