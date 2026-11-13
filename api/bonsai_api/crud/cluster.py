@@ -6,6 +6,7 @@ from typing import Any
 
 from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
+from bonsai_api.crud.allele_scheme import get_profile_scheme
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
@@ -30,6 +31,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
     sample_id: str
     typing_result: dict[str, Any]
+    scheme: str | None = None
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -58,7 +60,7 @@ CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
         exclude_fields=[],  # keep alleles
     ),
     "cgmlst": BuilderArgs(
-        selector={"software": "chewbbaca"},
+        selector={"software": "chewbbaca", "analysis_type": "cgmlst"},
         source_path="typing_result",
         output="tool",
         output_field="typing_result",
@@ -77,7 +79,23 @@ async def get_typing_profiles(
 
     pipeline: PipelineStages = []
     pipeline.append({"$match": {"sample_id": {"$in": sample_idx}}})
-    pipeline.extend(build_summary_entry_stages(spec))
+    stages = build_summary_entry_stages(spec)
+    # Capture scheme metadata before the builder reduces the entry to its result.
+    stages.insert(
+        -1,
+        {
+            "$set": {
+                "typing_pipeline_run_id": "$typing_result.pipeline_run_id",
+                "cluster_scheme": {
+                    "$ifNull": [
+                        "$typing_result.result.scheme",
+                        "$typing_result.meta.scheme",
+                    ]
+                },
+            }
+        },
+    )
+    pipeline.extend(stages)
     pipeline.append({"$addFields": {"typing_result": "$typing_result.alleles"}})
     # The external ID is projected only for user-facing validation errors.
     pipeline.append(
@@ -87,6 +105,9 @@ async def get_typing_profiles(
                 "sample_id": 1,
                 "external_sample_id": 1,
                 "typing_result": 1,
+                "scheme": "$cluster_scheme",
+                "typing_pipeline_run_id": 1,
+                "pipeline_runs": 1,
             }
         }
     )
@@ -101,6 +122,7 @@ async def get_typing_profiles(
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
+                scheme=get_profile_scheme(raw, typing_method),
                 typing_result={
                     loci: replace_cgmlst_errors(
                         allele, include_novel_alleles=True, correct_alleles=True

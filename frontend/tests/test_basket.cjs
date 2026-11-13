@@ -14,6 +14,8 @@ class Element extends EventTarget {
   badge = { hidden: false };
   attributes = {};
   setAttribute(name, value) { this.attributes[name] = value; }
+  getAttribute(name) { return this.attributes[name]; }
+  classList = { toggle() {} };
   set innerHTML(value) {
     this.html = value;
     this.children = [];
@@ -31,12 +33,19 @@ class Element extends EventTarget {
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-async function setup(savedIds = []) {
+async function setup(savedIds = [], { deferSchemes = false } = {}) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
     "add-to-basket-btn", "empty-basket-btn", "basket-qc-feedback", "remove-failed-qc-from-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
-  const clusterButton = new Element(), clusterLink = new Element();
+  const clusterButton = new Element();
+  const clusterLinks = Object.fromEntries(["mlst", "cgmlst", "minhash", "ska"].map(method => {
+    const link = new Element();
+    link.setAttribute("data-bi-typing-method", method);
+    return [method, link];
+  }));
+  const clusterLink = clusterLinks.mlst;
+  const schemeRequests = [];
   const requests = [], clusters = [], selectionCallbacks = [];
   let failedIds = [];
   let selected = [];
@@ -53,7 +62,7 @@ async function setup(savedIds = []) {
     getElementById: id => elements[id] ?? null,
     querySelector: selector => selector === "#basket-cluster-samples .btn" ? clusterButton
       : elements[selector.slice(1)] ?? null,
-    querySelectorAll: selector => selector === "#basket-cluster-samples a" ? [clusterLink] : [],
+    querySelectorAll: selector => selector === "#basket-cluster-samples a" ? Object.values(clusterLinks) : [],
   };
   const globals = {
     HTMLElement: Element, CustomEvent, Error, document, window: {},
@@ -77,6 +86,9 @@ async function setup(savedIds = []) {
     name === "datatables.net-bs5" ? DataTable : {});
   const api = {
     getUserInfo: async () => ({}),
+    validateAlleleClustering: sampleIds => deferSchemes
+      ? new Promise((resolve, reject) => schemeRequests.push({ sampleIds: Array.from(sampleIds), resolve, reject }))
+      : Promise.resolve({ mlst: { can_cluster: true, notice: null }, cgmlst: { can_cluster: true, notice: null } }),
     getSamplesDetails: query => new Promise((resolve, reject) => requests.push({ query, resolve, reject })),
   };
   const view = load("../web/js/views/groups-view/init.ts", () => ({
@@ -90,7 +102,7 @@ async function setup(savedIds = []) {
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
   return {
-    requests, clusters, component, clusterButton,
+    requests, clusters, component, clusterButton, clusterLinks, schemeRequests,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
     cards: () => component.children.flatMap(card => {
@@ -106,7 +118,7 @@ async function setup(savedIds = []) {
     clear: () => elements["clear-basket-btn"].onclick(),
     empty: () => elements["empty-basket-btn"].onclick(),
     reopen: () => elements["basket-offcanvas"].dispatchEvent(new Event("show.bs.offcanvas")),
-    cluster: async () => { await clusterLink.onclick({ preventDefault() {} }); await tick(); },
+    cluster: async (method = "mlst") => { await clusterLinks[method].onclick({ preventDefault() {} }); await tick(); },
     elements,
     async respondData(index, samples) {
       requests[index].resolve({ data: samples.map(sample => ({sample_name: sample.sample_id, assay: "test", ...sample})) });
@@ -369,4 +381,63 @@ test("response IDs outside the request never appear in the basket or clustering 
   assert.deepEqual(h.cards(), ["a", "b"]);
   await h.cluster();
   assert.deepEqual(h.clusters, [["a", "b"]]);
+});
+
+
+test("scheme checks disable only incompatible allele methods and show their notice", async () => {
+  const h = await setup(["a", "b"], { deferSchemes: true });
+  await h.respond(0, ["a", "b"]);
+  assert.equal(h.component.canClusterWith("mlst"), false);
+  await h.cluster("mlst");
+  assert.equal(h.clusters.length, 0);
+  assert.equal(h.component.canClusterWith("minhash"), true);
+  h.schemeRequests[0].resolve({ mlst: { can_cluster: false, notice: "Different MLST schemes <unsafe>" }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.clusterLinks.mlst.attributes["aria-disabled"], "true");
+  assert.equal(h.clusterLinks.mlst.tabIndex, -1);
+  assert.equal(h.clusterLinks.cgmlst.attributes["aria-disabled"], "false");
+  assert.ok(h.component.children.some(child => child.textContent === "Different MLST schemes <unsafe>"));
+  await h.cluster("mlst");
+  assert.equal(h.clusters.length, 0);
+  await h.cluster("cgmlst");
+  assert.deepEqual(h.clusters, [["a", "b"]]);
+  assert.deepEqual(h.saved(), ["a", "b"]);
+});
+
+
+test("failed scheme validation keeps allele methods disabled and allows retry", async () => {
+  const h = await setup(["a", "b"], { deferSchemes: true });
+  await h.respond(0, ["a", "b"]);
+  h.schemeRequests[0].reject(new Error("offline"));
+  await tick();
+  assert.equal(h.component.canClusterWith("mlst"), false);
+  assert.equal(h.component.canClusterWith("cgmlst"), false);
+  assert.equal(h.component.canClusterWith("ska"), true);
+  assert.ok(h.component.children.some(child => child.textContent?.includes("could not be verified")));
+  h.reopen();
+  await h.respond(1, ["a", "b"]);
+  h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.component.canClusterWith("mlst"), true);
+});
+
+
+test("stale scheme responses cannot enable a changed or emptied basket", async () => {
+  const h = await setup(["a", "b"], { deferSchemes: true });
+  await h.respond(0, ["a", "b"]);
+  h.reopen();
+  await h.respond(1, ["a", "b"]);
+  h.schemeRequests[1].resolve({ mlst: { can_cluster: false, notice: "Current mismatch" }, cgmlst: { can_cluster: false } });
+  await tick();
+  h.schemeRequests[0].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.component.canClusterWith("mlst"), false);
+  assert.ok(h.component.children.some(child => child.textContent === "Current mismatch"));
+  h.reopen();
+  await h.respond(2, ["a", "b"]);
+  h.clear();
+  h.schemeRequests[2].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.component.canClusterWith("mlst"), false);
+  assert.deepEqual(h.saved(), []);
 });
