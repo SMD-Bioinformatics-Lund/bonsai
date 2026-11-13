@@ -8,11 +8,6 @@
     <link rel="stylesheet" href="{{ url_for('groups.static', filename='datatables.min.css') }}">
 {% endblock css %}
 
-{% block scripts %}
-    {{ super() }}
-    <script src="{{ url_for('groups.static', filename='datatables.min.js') }}"></script>
-{% endblock scripts %}
-
 {% block content %}
 <div class="card bg-white mt-2 col-lg-auto mx-2">
     <div class="card-body br-main">
@@ -30,6 +25,10 @@
         <nav class="navbar bg-light">
             <div class="container-fluid justify-content-start">
                 {{ add_to_basket_btn() }}
+                <button id="empty-basket-btn" type="button" class="btn btn-sm btn-outline-secondary ms-1" data-test-id="empty-basket-btn">
+                    <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                    <span>Empty basket</span>
+                </button>
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
 
@@ -41,7 +40,7 @@
                     {# Dropdown for adding samples to group #}
 
                     <div class="dropdown ps-2 add-to-group-btn">
-                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         Add to group <i class="bi bi-folder-plus"></i>
                         </button>
                         <div id="add-samples-to-group-container" class="dropdown-menu"></div>
@@ -51,36 +50,33 @@
                 {% if display_qc %}
                     {{ qc_bulk_toggle(bad_qc_actions)}}
                 {% endif %}
-                <div class="btn-group ms-2" role="group" aria-label="Three button group">
+                <div class="btn-group ms-2" role="group" aria-label="Sample table view">
                     <a type="button"
-                            class="btn btn-outline btn-dark btn-sm {% if not display_qc %}active{% endif %}"
-                            data-test-id="open-qc-view-btn"
+                            class="btn btn-sm {% if not display_qc %}btn-success active{% else %}btn-outline-secondary{% endif %}"
+                            aria-pressed="{{ (not display_qc) | lower }}"
+                            data-test-id="open-prediction-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show prediction summary"
                             href="{{ url_for('groups.group', group_id=group_id, qc=False) }}">
-                        <i class="bi bi-search"></i>
+                        <i class="bi bi-search"></i> Summary
                     </a>
                     <a type="button" 
-                            class="btn btn-outline btn-dark btn-sm {% if display_qc %}active{% endif %}"
+                            class="btn btn-sm {% if display_qc %}btn-success active{% else %}btn-outline-secondary{% endif %}"
+                            aria-pressed="{{ display_qc | lower }}"
                             data-test-id="open-qc-view-btn"
                             data-bs-toggle="tooltip" data-bs-title="Show QC metrics"
                             href="{{ url_for('groups.group', group_id=group_id, qc=True) }}">
-                        <i class="bi bi-bar-chart-line"></i>
+                        <i class="bi bi-bar-chart-line"></i> QC
                     </a>
                 </div>
             </div>
         </nav>
-        {{ sample_table(table_data) }}
+        {{ sample_table(table_data, default_sort="created_at" if display_qc else none) }}
     </div>
 </div>
+<script src="{{ asset_url('group-view.js') }}"></script>
 <script>
-    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
-    const accessToken = "{{ token }}"
-    const groupId = "{{ group_id }}"
-    // template code for adding to basket
-    // template code for searching similar samples
-
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
+        initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
     });
 </script>
 {% endblock content %}

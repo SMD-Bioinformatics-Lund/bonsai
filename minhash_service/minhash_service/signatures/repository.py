@@ -71,7 +71,7 @@ class SignatureRepository:
         self, sample_id: str | None = None, checksum: str | None = None,
         kmer_size: int | None = None
     ) -> list[SignatureRecord]:
-        """Get a signature by either sample_id or checksum. Returns None if not found."""
+        """Get a signature by either sample_id or checksum. Empty list if not found."""
         # input validation
         if sample_id is None and checksum is None:
             raise ValueError("Either sample_id or checksum must be defined.")
@@ -134,6 +134,14 @@ class SignatureRepository:
         """Mark a signature as not indexed. Returns True if a document was modified."""
         return self._set_flag(sample_id, flag="has_been_indexed", status=False)
 
+    def set_indexed(self, sample_id: str, kmer_size: int, indexed: bool) -> bool:
+        """Set index status for one sketch; already-correct status is success."""
+        result = self._col.update_one(
+            {"sample_id": sample_id, "kmer_size": kmer_size},
+            {"$set": {"has_been_indexed": indexed}},
+        )
+        return result.matched_count == 1
+
     def exclude_from_analysis(self, sample_id: str) -> bool:
         """Exclude a sample from future analysis. Returns True if a document was modified."""
         return self._set_flag(sample_id, flag="exclude_from_analysis", status=True)
@@ -143,8 +151,12 @@ class SignatureRepository:
         return self._set_flag(sample_id, flag="exclude_from_analysis", status=False)
 
     def marked_for_deletion(self, sample_id: str) -> bool:
-        """Mark a signature for deletion. Returns True if a document was modified."""
-        return self._set_flag(sample_id, flag="mark_for_deletion", status=True)
+        """Stage all sketches for deletion; already marked is success on retry."""
+        result = self._col.update_many(
+            {"sample_id": sample_id},
+            {"$set": {"marked_for_deletion": True}},
+        )
+        return result.matched_count > 0
 
     # ---- delete -------------------------------------------------------------
     def remove_by_sample_id(self, sample_id: str, kmer_size: int | None = None) -> int:

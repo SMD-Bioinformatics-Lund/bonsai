@@ -2,6 +2,7 @@
 {% from "sidebar.html" import sidebar, sidebar_header %}
 {% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
 {% from "cards.html" import amr_prediction_card with context %}
+{% from "cards.html" import analysis_message_card %}
 
 {% macro export_btn() %}
     {{ sidebar_header("Action") }}
@@ -15,18 +16,20 @@
 
 {% block css %}
 {{ super() }}
+<link rel="stylesheet" href="{{url_for('samples.static', filename='dataTables.bootstrap5.min.css')}}">
 <link rel="stylesheet" href="{{url_for('samples.static', filename='sample.css')}}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
 {% endblock css %}
 
 {% macro sv_variants(variants) %}
 <div class="card col-md-auto">
     <div class="card-header">Structural variants</div>
     <div class="card-body">
-        <table id="sv-variant-tbl" class="table">
+        <table id="sv-variant-tbl" class="table variant-table align-middle">
             <thead>
                 <tr>
-                    <th>
-                        <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'sv-variant-table')">
+                    <th data-dt-order="disable">
+                        <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                     </th>
                     <th>Info</th>
                     <th>Subtype</th>
@@ -35,13 +38,13 @@
                     <th>Quality</th>
                     <th>Method</th>
                     <th>Phenotype</th>
-                    <th></th>
+                    <th data-dt-order="disable"></th>
                 </tr>
             </thead>
             <tbody id="sv-variant-table">
                 {% for variant in variants %}
                     <tr class=\"{{ variant.row_class }}\">
-                        <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}" onclick="selectVariant(this)"></td>
+                        <td><input type="checkbox"  class="form-check-input col-auto" name="sv_variants-{{ variant.id }}" id="sv_variant-{{ variant.id }}"></td>
                         <td>
                             {% if variant.verified == "failed" and variant.reason %}
                                 <span class="ms-2 badge text-bg-warning"
@@ -65,7 +68,7 @@
                         </td>
                         {% if display_igv %}
                             <td>
-                                <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=variants, variant_id=variant.display_id) }}"
+                                <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=variant.analysis_id | default(none), variant_id=variant.id if variant.analysis_id else none) }}"
                                    target="_blank" class="btn btn-sm btn-secondary" type="button">
                                    IGV
                                 </a>
@@ -77,11 +80,6 @@
         </table>
     </div>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tbl = bonsai.initVariantsTable('#sv-variant-tbl', false)
-    });
-</script>
 {% endmacro %}
 
 {% macro variant_filters(form_data) %}
@@ -165,6 +163,7 @@
 <div class="variant-options mt-md-2 y-lg-0 px-sm-1 text-body-secondary bg-white border border-1">
     {{ sidebar_header("Analyze variants", size="md") }}
     <div class="fw-light mb-2">Selected: <span id="selected-variants-counter">0</span></div>
+    <p class="small">Confirm saves the selected decision and resistance annotations, replacing any existing curation for each selected variant.</p>
     <form method="post" action="{{ url_for(request.endpoint, **request.view_args) }}" name="variant-classification">
         {# Varaint rejection section #}
         {{ sidebar_header("verify prediction") }}
@@ -225,8 +224,8 @@
 
 {% block content %}
 {% set footnotes = [] %}
-<div class="container-fluid br-layout">
-    {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls) }}
+<div class="container-fluid br-layout variant-layout">
+    {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
     <main class="br-main order-1">
         <div class="br-toc">
             {# right handed sidebar for filters and classification #}
@@ -238,12 +237,21 @@
             <h5>Resistance prediction</h5>
             <hr class="mt-2 col-md-3 border border-success border-2">
             <div id="phenotype-heading" class="row justify-content-md-center">
+                {% if amr_results and not (amr_results | selectattr("result") | list) %}
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "Stored variant detail results are unavailable for this record.") }}
+                    </div>
+                {% endif %}
                 {% if is_filtered and amr_results | length == 0 %}
-                    <p>No predicted resistance to validated phenotypes. Use the extended resistance report to see all predicted resistance.</p>
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "No stored TBProfiler variant result is displayed with these filters. Use the extended report to inspect the available stored results.") }}
+                    </div>
                 {% elif amr_results | length == 0 %}
-                    <p>No predicted resistance determinants.</p>
+                    <div class="col-md-auto">
+                        {{ analysis_message_card("TBProfiler variants", "No stored TBProfiler variant result is available in this view. Other stored result types are not displayed here.") }}
+                    </div>
                 {% else %}
-                    {% for elem in amr_results %}
+                    {% for elem in amr_results if elem.result %}
                         <div class="col-md-auto">
                             {{ amr_prediction_card(elem, extended=True) }}
                         </div>
@@ -258,74 +266,10 @@
         </div>
     </main>
 </div>
+<script src="{{ asset_url('variants-table.js') }}"></script>
 <script>
-    $(document).ready(() => { 
-        // ready select2
-        $("#antibiotic-group").select2()
-        $("#filter-genes").select2()
-        $("#filter-who-class").select2()
-        $("#filter-variant-type").select2()
-        // 
-        $("#accept-variant-btn").click(() => {
-            // disable rejection reason
-            $("#rejection-reason-group").prop('disabled', true)
-            // enable antibiotic resistance annotation
-            $("#antibiotic-group").prop('disabled', false)
-            $("#high-res-btn").prop('disabled', false)
-            $("#low-res-btn").prop('disabled', false)
-        })
-        $("#reject-variant-btn").click(() => {
-            // enable rejection reason
-            $("#rejection-reason-group").prop('disabled', false)
-            // disable antibiotic resistance annotation
-            $("#antibiotic-group").prop('disabled', true)
-            $("#high-res-btn").prop('disabled', true)
-            $("#low-res-btn").prop('disabled', true)
-        })
-    })
-    window.addEventListener("load", () => {
-        // reset selected variants on page load and reload
-        checkedVariants = Array.from(
-            document.querySelectorAll('.br-content input[type="checkbox"]')
-            ).filter(input => input.checked).map(input => input.id)
-        window.localStorage.setItem("selectedVariants", JSON.stringify(checkedVariants))
-    })
-
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-
-    const selectVariant = (element) => {
-        const selected = new Set(JSON.parse(localStorage.getItem("selectedVariants") || "[]"));
-
-        const item = {
-            variant_id: element.dataset.variantId,
-            analysis_id: element.dataset.analysisId,
-            analysis_type: element.dataset.analysisType,
-        };
-        const key = `${item.analysis_id}:${item.analysis_type}:${item.variant_id}`;
-
-        if (element.checked) {
-            selected.add(key);
-        } else {
-            selected.delete(key);
-        }
-
-        const payload = Array.from(selected).map(key => {
-            const [analysis_id, analysis_type, variant_id] = key.split(':');
-            return { analysis_id, analysis_type, variant_id };
-        });
-
-        document.getElementById("curations-input").value = JSON.stringify(payload);
-        localStorage.setItem("selectedVariants", JSON.stringify(Array.from(selected)));
-        // update counter on page
-        document.getElementById("selected-variants-counter").innerHTML = selected.size
-    }
-    // reset selected varants on page load
-    const selectAllVariants = (elem, tableId) => {
-        document.getElementById(tableId).querySelectorAll("input[type=checkbox]").forEach(el => {
-            el.checked = elem.checked; 
-            selectVariant(el);
-        });
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbl = initVariantsView('#sv-variant-tbl', false)
+    });
 </script>
 {% endblock content %}

@@ -22,6 +22,10 @@
         <nav class="navbar bg-light">
             <div id="user-action-container" class="container-fluid justify-content-start">
                 {{ add_to_basket_btn() }}
+                <button id="empty-basket-btn" type="button" class="btn btn-sm btn-outline-secondary ms-1" data-test-id="empty-basket-btn">
+                    <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                    <span>Empty basket</span>
+                </button>
 
                 {% if current_user.is_admin %}
                     {{ delete_samples_btn() }}
@@ -31,9 +35,7 @@
                         <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                         Add to group <i class="bi bi-folder-plus"></i>
                         </button>
-                        <div class="dropdown-menu">
-                            <div id="add-samples-to-group-container" class="px-4 py-2"></div>
-                        </div>
+                        <div id="add-samples-to-group-container" class="dropdown-menu"></div>
                     </div>
                 {% endif %}
 
@@ -45,15 +47,10 @@
         {{ sample_table(table_data) }}
     </div>
 </div>
+<script src="{{ asset_url('group-view.js') }}"></script>
 <script>
-    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
-    const accessToken = "{{ token }}"
-    const groupId = null
-    // template code for adding to basket
-    // template code for searching similar samples
-
     document.addEventListener('DOMContentLoaded', () => {
-        bonsai.initGroupView(groupId, apiUrl, accessToken, "")
+        GroupView.initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
     });
 </script>
 {% endblock content %}

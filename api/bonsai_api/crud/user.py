@@ -4,8 +4,8 @@ import logging
 from typing import Any
 from pymongo.errors import DuplicateKeyError
 
-from api_client.audit_log import AuditLogClient
-from api_client.audit_log.models import SourceType, Subject
+from bonsai_libs.api_client.audit_log import AuditLogClient
+from bonsai_libs.api_client.audit_log.models import SourceType, Subject
 from bonsai_api.auth import get_password_hash, verify_password
 from bonsai_api.config import ALGORITHM, USER_ROLES, settings
 from bonsai_api.db import Database
@@ -110,7 +110,7 @@ async def update_user(
     """Delete user from the database"""
     event_subject = Subject(id=username, type=SourceType.SYS)
     with audit_event_context(audit, "update_user", ctx, event_subject):
-        new_user_info = user.model_dump()
+        new_user_info = user.model_dump(exclude={"password"})
         if len(user.password) > 0:
             # create hash for new password
             LOG.info("Changed password for %s", username)
@@ -124,8 +124,7 @@ async def update_user(
         )
         if resp.matched_count == 0:
             raise EntryNotFound(username)
-        if resp.modified_count == 0:
-            raise DatabaseOperationError(username)
+        return UserOutputDatabase.model_validate(upd_user_info.model_dump())
 
 
 async def create_user(

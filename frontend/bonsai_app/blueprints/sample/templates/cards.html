@@ -7,8 +7,16 @@
     {% set base_url="bitbucket.org/genomicepidemiology/pointfinder_db/commits" %}
 {% elif db.name == 'serotypefinder' %}
     {% set base_url="bitbucket.org/genomicepidemiology/serotypefinder_db/commits" %}
+{% elif db.name == 'plasmidfinder' %}
+    {% set base_url="bitbucket.org/genomicepidemiology/plasmidfinder_db/commits" %}
+{% elif db.name == 'tbdb' %}
+    {% set base_url="github.com/jodyphelan/tbdb/commit" %}
 {% endif %}
+{% if base_url is defined %}
 <a class="br-card-link" href="https://{{base_url}}/{{db.version}}" target="_blank">{{ db.version[:6] }}</a>
+{% else %}
+{{ db.version }}
+{% endif %}
 {% endmacro %}
 
 
@@ -61,7 +69,7 @@
             <div class="pb-1">SAMPLE ID: <span class="fst-italic">{{ sample.external_sample_id }}</span></div>
             <div class="pb-1">LIMS ID: <span class="fst-italic">{{ sample.lims_id }}</span></div>
             <div class="pb-1">ASSAY: <span class="fst-italic">{{ sample.pipeline.assay }}</span></div>
-            <div class="pb-4">SEQRUN ID: <span class="fst-italic">{{ sample.sequencing.run_id }}</span></div>
+            <div class="pb-4">SEQRUN ID: <span class="fst-italic">{{ sample.sequencing.sequencing_run_id }}</span></div>
             <div class="row gx-5">
                 <div class="col-md-auto">
                     {{ qc_status_info(sample.qc_status.status, sample.qc_status.action, sample.qc_status.comment) }}
@@ -159,15 +167,15 @@
                     {% endif %}
                 </td>
                 <td>{{ accession_link(gene.accession) }}</td>
-                <td>{{ gene.coverage }}</td>
                 <td>{{ gene.identity }}</td>
+                <td>{{ gene.coverage }}</td>
             </tr>
             {% endfor %}
             </tbody>
         </table>
         <h5 class="card-title">Predicted mutations</h5>
             {% if resistance.mutations | length == 0 %}
-                <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+                <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
             {% else %}
                 <table class="table">
                     <thead>
@@ -202,15 +210,25 @@
 {% endmacro %}
 
 
+{% macro analysis_message_card(title, message) %}
+<div class="card">
+    <div class="card-header">{{ title }}</div>
+    <div class="card-body">
+        <p class="card-text text-muted mb-0">{{ message }}</p>
+    </div>
+</div>
+{% endmacro %}
+
+
 {% macro virulence_card(pred) %}
 <div class="card">
-    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{pred.type}}</i> ]</div>
+    <div class="card-header">{{ pred.software | capitalize }} v{{ pred.software_version }} [ <i>{{ pred.analysis_type }}</i> ]</div>
     <div class="card-body">
     {% if pred.result.genes | length == 0 %}
-        <p class="card-text fst-italic">No  identified virulence factors.</p>
+        <p class="card-text fst-italic">No virulence factors identified.</p>
     {% elif pred.software == "virulencefinder" %}
         {{ virulencefinder_prediction(pred.result) }}
-    {% elif pred.software == "amrfinder" and pred.type == "VIRULENCE" %}
+    {% elif pred.software == "amrfinder" and pred.analysis_type == "virulence" %}
         {{ amrfinder_virulence_prediction(pred.result) }}
     {% endif %}
     </div>
@@ -247,10 +265,10 @@
         </td>
         {% if extended %}
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
-            <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+            <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name  | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -281,8 +299,8 @@
             <td class="tbl-border-left">{{ gene.contig_id }}</td>
             <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
         {% endif  %}
-        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.identity }}%</td>
+        <td>{{ gene.coverage }}%</td>
         <td>{{ gene.sequence_name | capitalize }}</td>
     </tr>
     {% endfor %}
@@ -292,9 +310,13 @@
 
 
 {% macro bracken_prediction(result, extended=False) %}
+{% if not extended %}
+    {% set result = result | selectattr('fraction_total_reads', 'gt', 0.001) | list %}
+{% endif %}
+<div data-bracken-results>
 <table class="table table-sm">
     <thead>
-        <th>Specie</th>
+        <th>Species</th>
         <th>Fraction of reads</th>
         {% if extended %}
             <th>Assigned reads</th>
@@ -305,7 +327,6 @@
     </thead>
     <tbody>
         {% for pred in result %}
-            {% if extended or pred.fraction_total_reads > 0.001 %}
                 <tr class="{% if predictions | length > 1 and loop.index == 1 %}table-success{% endif %}">
                     <td> <a class="br-card-link fst-italic" 
                         href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/{{pred.taxonomy_id}}/" 
@@ -320,10 +341,15 @@
                         </td>
                     {% endif %}
                 </tr>
-            {% endif %}
         {% endfor %}
     </tbody>
 </table>
+{% if result | length > 5 %}
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bracken-toggle aria-expanded="true" hidden>
+        Show less
+    </button>
+{% endif %}
+</div>
 {% endmacro %}
 
 
@@ -392,7 +418,7 @@
     {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
         <table class="table table-striped">
             <caption>Database: {{result.genes[0].ref_database}}</caption>
@@ -409,8 +435,8 @@
                 <tr>
                     <td>{{ gene.gene_symbol }}</td>
                     <td>{{ accession_link(gene.accession) }}</td>
-                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
+                    <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.depth | fmt_number }}</td>
                     <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 </tr>
@@ -420,7 +446,7 @@
     {% endif  %}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <table class="table table-striped">
             <caption>Database: {{ result.variants[0].ref_database }}</caption>
@@ -457,7 +483,7 @@
     <h5 class="card-title">Genes</h5>
     {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped fs-6">
         <thead>
@@ -488,13 +514,13 @@
                 </td>
                 {% if extended %}
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
-                    <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
+                    <td class="tbl-border-right">{{ gene.query_start_pos }}/ {{ gene.query_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
-                <td>{{ gene.close_seq_name }}</td>
+                <td>{{ gene.close_seq_name | default(gene.sequence_name, true) }}</td>
                 {% endif  %}
             </tr>
         {% endfor %}
@@ -510,7 +536,7 @@
     <h5 class="card-title">Genes</h5>
     {% set result = analysis.result %}
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped">
         <thead>
@@ -534,8 +560,8 @@
                         data-bs-html="true"
                         data-bs-title="{{ amrfinder_method_desc(method=gene.method) | default("-") }}"></i>
                 </td>
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.sequence_name | capitalize }}</td>
             </tr>
         {% endfor %}
@@ -548,9 +574,9 @@
 
 {% macro amrfinder_method_desc(method) %}
     {% if "BLAST" in method %}
-        <p>The hit was identified in a protein (P) or nucleotide translated (X) or Nucleotide (BLASTN).  BLAST hits are hits that are &lt; 100% identical to a database protein, but at coverage &gt; 90%. The percent identity cutoff is, by default, 90%, but may be higher or lower if it was manually curated. Manual curation of BLAST parameters usually occurrs for <i>plus</i> genes where no HMM and cutoff have been curated.</p>
+        <p>The hit was identified in a protein (P) or nucleotide translated (X) or Nucleotide (BLASTN).  BLAST hits are hits that are &lt; 100% identical to a database protein, but at coverage &gt; 90%. The percent identity cutoff is, by default, 90%, but may be higher or lower if it was manually curated. Manual curation of BLAST parameters usually occurs for <i>plus</i> genes where no HMM and cutoff have been curated.</p>
     {% elif "EXACT" in method %}
-        <p>These mean that we have an amino-acid sequence identical protein in the AMRFinderPlus database.</p>
+        <p>The protein has an amino acid sequence identical to a protein in the AMRFinderPlus database.</p>
     {% elif "PARTIAL" in method %}
         <p>Hits &lt; 90% of the length of the database protein are called either PARTIAL if the hit is internal to a contig or PARTIAL_CONTIG_END if the gene could have been broken by a contig boundary.</p>
     {% elif "INTERNAL_STOP" in method %}
@@ -568,7 +594,7 @@
     {% set result = analysis.result %}
     <h5 class="card-title">Genes</h5>
     {% if result.genes | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding genes identified</p>
+        <p class="fw-light fst-italic">No resistance yielding genes identified</p>
     {% else %}
     <table class="table table-striped fs-6">
         <thead>
@@ -601,8 +627,8 @@
                     <td class="tbl-border-left">{{ gene.contig_id }}</td>
                     <td class="tbl-border-right">{{ gene.ass_start_pos }}/ {{ gene.ass_end_pos }}</td>
                 {% endif  %}
-                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.identity }}%</td>
+                <td>{{ gene.coverage }}%</td>
                 <td>{{ gene.phenotypes | get_resistance_profile(level="name") }}</td>
                 {% if extended %}
                 <td>{{ gene.close_seq_name }}</td>
@@ -615,7 +641,7 @@
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | length == 0 %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <table class="table table-striped">
             <thead>
@@ -692,15 +718,15 @@
     {# resistance variants #}
     <h5 class="card-title">Variants</h5>
     {% if result.variants | n_results_with_resistance == 0 and not extended %}
-        <p class="fw-light fst-italic">No resistance yeilding mutations identified</p>
+        <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <div class="table-responsive">
-            <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped">
+            <table id="tb-profiler-variant-tbl" class="table table-sm table-hover table-striped variant-table align-middle">
                 <thead>
                     <tr>
                         {% if extended %}
-                            <td scope="col">
-                                <input type="checkbox" class="form-check-input col-auto" onclick="selectAllVariants(this, 'tbprofiler-variant-table')">
+                            <td scope="col" data-dt-order="disable">
+                                <input id="select-all-variants" type="checkbox" class="form-check-input col-auto">
                             </td>
                         {% endif %}
                         <td scope="col">Status</td>
@@ -717,13 +743,13 @@
                         <td scope="col">Resistance (annotated)</td>
                         <td scope="col">Curation</td>
                         {% if extended %}
-                            <td scope="col"></td>
+                            <td scope="col" data-dt-order="disable"></td>
                         {% endif %}
                     </tr>
                 </thead>
                 <tbody id="tbprofiler-variant-table" class="table-group-divider">
                     {% for variant in result.variants %}
-                        {% if variant.phenotypes | length > 0 or extended %}
+                        {% if variant.phenotypes | length > 0 or (variant.curation.phenotypes | default([], true) | length > 0) or extended %}
                         <tr class="{{ row_class }}">
                             {% if extended %}
                                 <td>
@@ -733,11 +759,12 @@
                                            data-variant-id="{{ variant.id }}"
                                            data-analysis-type="{{ analysis.analysis_type }}"
                                            data-analysis-id="{{ analysis.analysis_id }}"
-                                           onclick="selectVariant(this)">
+                                    >
                                 </td>
                             {% endif %}
                             <td>
                                 {# Status #}
+                                <div class="d-inline-flex align-items-center gap-1 text-nowrap">
                                 {% if variant.curation.decision == "reject" %}
                                     <span class="ms-2 badge text-bg-danger"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
@@ -761,6 +788,17 @@
                                         Uncurated
                                     </span>
                                 {% endif %}
+                                {% if extended and variant.curation.id %}
+                                    <form method="post" class="m-0"
+                                          action="{{ url_for('samples.remove_curation', sample_id=sample.sample_id, curation_id=variant.curation.id) }}"
+                                          onsubmit="return confirm('Remove this curation? The variant will become uncurated.');">
+                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0"
+                                                aria-label="Remove curation" title="Remove curation">
+                                            <i class="bi bi-trash3-fill" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                </div>
                             </td>
                             <td>
                                 {% if variant.hgvs_nt_change | length > 20 %}
@@ -833,12 +871,14 @@
                                     {% for phenotype in user_annotated %}
                                         <li>
                                             {{ phenotype.name | capitalize }}
-                                            {% set resistance_level = phenotype.meta.resistance_level %}
+                                            {% set resistance_level = (phenotype.meta | default({}, true)).get('resistance_level') %}
+                                            {% if resistance_level %}
                                             <span class="badge text-bg-secondary"
                                                     data-bs-toggle="tooltip" data-bs-placement="top"
                                                     data-bs-title="{{ resistance_level | capitalize | default("-") }}">
                                                     {{ resistance_level[:2].upper() }}
                                             </span>
+                                            {% endif %}
                                         </li>
                                     {% endfor %}
                                     </ul>
@@ -850,23 +890,24 @@
                                     -
                                 {% else %}
                                     {{ rejection_reason | default("-") }}
+                                {% endif %}
+                                {% if variant.curation %}
                                     <span class="badge text-bg-primary"
                                             data-bs-toggle="tooltip" data-bs-placement="top"
                                             data-bs-html=true
-                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by }}<br><strong>Curated at:</strong> {{ variant.curation.curated_at | strftime('%c') }}<br><strong>Note:</strong> {{ variant.curation.note | default('-') }}">
+                                            data-bs-title="<strong>Curated by:</strong> {{ variant.curation.curated_by | default('-', true) }}<br><strong>Last modified:</strong> {{ variant.curation.modified_at | strftime('%c') if variant.curation.modified_at else '-' }}<br><strong>Note:</strong> {{ variant.curation.notes | default('-', true) }}">
                                         <i class="bi bi-person-fill"></i>
                                     </span>
                                 {% endif %}
                             </td>
                             {% if extended %}
                                 <td>
-                                    {% set variant_id = "tbprofiler-{}".format(variant["id"]) %}
                                     <span class="d-inline-block" tabindex="0"
                                     {% if not display_igv %}
                                         data-bs-toggle="tooltip" data-bs-placement="top"
                                         data-bs-title="Either no reference genome or BAM assigned to the sample."
                                     {% endif %}>
-                                        <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=analysis.analysis_id, variant_id=variant_id) }}"
+                                        <a href="{{ url_for('alignviewers.igv_view', sample_id=sample.sample_id, analysis_id=analysis.analysis_id, variant_id=variant.id) }}"
                                         type="button" target="_blank" 
                                         class="btn btn-sm btn-secondary {% if not display_igv %}disabled{% endif %}">
                                         IGV
@@ -882,35 +923,48 @@
         </div>
     {% endif %}
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const tbl = bonsai.initVariantsTable('tb-profiler-variant-tbl')
-    });
-</script>
 {% endmacro %}
 
 
 {% macro stx_card(pred) %}
+{# Accept multi-hit results and previously imported single-gene results. #}
+{% set result=pred.result if pred else none %}
+{% if result and result.hits is defined %}
+    {% set genes=result.hits or [] %}
+{% else %}
+    {% set genes=[result] if result else [] %}
+{% endif %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | upper }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        STX typing{% if pred %} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]{% endif %}
     </div>
     <div class="card-body">
         <table class="table table-sm">
             <thead>
                 <td>Gene</td>
+                <td>Database</td>
                 <td>Coverage</td>
                 <td>Identity</td>
                 <td>Name</td>
             </thead>
             <tbody class="table-group-divider">
-                {% set gene=pred.result %}
+                {% for gene in genes %}
                 <tr>
                     <td>{{ accession_link(gene.accession, name=gene.gene_symbol) }}</td>
+                    <td>{{ gene.ref_database or 'Unknown' }}</td>
                     <td>{{ gene.coverage }}%</td>
                     <td>{{ gene.identity }}%</td>
                     <td>{{ gene.sequence_name | capitalize }}</td>
                 </tr>
+                {% else %}
+                <tr><td colspan="5">
+                    {% if pred and (pred.status == "empty" or result) %}
+                        No STX genes identified.
+                    {% else %}
+                        STX typing result is unavailable.
+                    {% endif %}
+                </td></tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -921,7 +975,7 @@
 {% macro oh_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} typing [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <table class="table table-sm">
@@ -1003,7 +1057,7 @@
 {% macro tb_lineage_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         {% if pred.software == "tbprofiler" %}
@@ -1013,6 +1067,31 @@
         {% endif %}
     </div>
 </div>
+{% endmacro %}
+
+
+{% macro analysis_meta_databases(sample_info) %}
+{% set databases = sample_info.pipeline.pipeline_info.databases %}
+{% if databases %}
+<div class="card">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-server me-2"></i>Databases
+        </h6>
+        <table class="table">
+            <tbody>
+                {% for db in databases %}
+                <tr>
+                    <th>{{ db.name | capitalize }}</th>
+                    <td class="text-muted">{{ db.software }}</td>
+                    <td>{{ make_db_link(db) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 {% endmacro %}
 
 
@@ -1090,7 +1169,7 @@
 {% macro shigella_typing_card(pred) %}
 <div class="card col-md-auto">
     <div class="card-header">
-        {{ pred.type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
+        {{ pred.analysis_type | capitalize }} [<i>{{ pred.software }} v{{ pred.software_version }}</i>]
     </div>
     <div class="card-body">
         <div>
@@ -1124,7 +1203,7 @@
                         <td>{{ pred.result.flic | fmt_null_values }}</td>
                     </tr>
                     <tr>
-                        <td>CRISPER</td>
+                        <td>CRISPR</td>
                         <td>{{ pred.result.crispr | fmt_null_values }}</td>
                     </tr>
                     <tr>
@@ -1143,7 +1222,7 @@
 {% endmacro %}
 
 
-{% macro emm_card(emm) %}
+{% macro emm_card(emm, status=none, reason=none) %}
 {# Card for displaying EMM typing results #}
 <div class="card col-md-auto">
     <div class="card-header">
@@ -1153,6 +1232,10 @@
         </a>
     </div>
     <div class="card-body">
+        {% if not emm %}
+            <p class="text-muted">{% if status == 'empty' %}Empty EMM typing report.{% else %}EMM typing result is unavailable.{% endif %}</p>
+            {% if reason %}<p class="text-muted">{{ reason }}</p>{% endif %}
+        {% else %}
         <table class="table table-sm">
             <tbody>
                 <tr>
@@ -1170,7 +1253,7 @@
                             <i class="bi bi-question-circle"></i>
                         </span>
                     </th>
-                    <td>{{ emm.cluster_count | default('-', true) }}</tr>
+                    <td>{{ emm.cluster_count if emm.cluster_count is not none else '-' }}</td>
                 </tr>
                 <tr>
                     <th>
@@ -1187,6 +1270,7 @@
                 </tr>
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -1198,11 +1282,13 @@
      style="width: 24rem;">
     <div class="card-header">
         Similar samples - 
+        <span id="similar-samples-scope">
         {% if group_id is none %}
             all samples
         {% else %}
-            in group: {{ group_id }}
+            in selected group
         {% endif %}
+        </span>
     </div>
     <div class="card-body">
         <spinner-element></spinner-element>
@@ -1216,6 +1302,9 @@
 <div class="card">
     <div class="card-header">PostQc Alignment v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         {% set pct_above_hist=qc_info.result.pct_above_x %}
         {# create entries for tabular data #}
         <table class="table table-sm table-striped">
@@ -1228,7 +1317,7 @@
             <tbody>
             {% for name, value in qc_info.result.items() %}
                 {# skip data that should be plotted #}
-                {% if name != "pct_above_x" %}
+                {% if name != "pct_above_x" and not (name == "restricted_mean_cov" and value is none) %}
                     <tr>
                         <th scope="row">{{ name | camelcase_to_text | capitalize }}</th>
                         <td>{{ value | fmt_number(sig_digits=2) }}</td>
@@ -1279,6 +1368,52 @@
                 font: { size: 12 }}
             Plotly.newPlot('qcPlot', [data], layout, { staticPlot: false} )
         </script>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro qc_card_samtools_coverage(qc_info) %}
+<div class="card">
+    <div class="card-header">Samtools coverage v{{ qc_info.software_version }}</div>
+    <div class="card-body">
+        {% if not qc_info.result or not qc_info.result.contigs %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No coverage result", true) }}</p>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Contig</th>
+                        <th scope="col">Start</th>
+                        <th scope="col">End</th>
+                        <th scope="col">Reads</th>
+                        <th scope="col">Covered bases</th>
+                        <th scope="col">Coverage (%)</th>
+                        <th scope="col">Mean depth (×)</th>
+                        <th scope="col">Mean base quality</th>
+                        <th scope="col">Mean mapping quality</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contig in qc_info.result.contigs %}
+                    <tr>
+                        <th scope="row">{{ contig.contig_name }}</th>
+                        <td>{{ contig.start_pos | fmt_number }}</td>
+                        <td>{{ contig.end_pos | fmt_number }}</td>
+                        <td>{{ contig.n_reads | fmt_number }}</td>
+                        <td>{{ contig.cov_bases | fmt_number }}</td>
+                        <td>{{ contig.coverage | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_depth | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_base_quality | fmt_number(sig_digits=2) }}</td>
+                        <td>{{ contig.mean_map_quality | fmt_number(sig_digits=2) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -1288,6 +1423,9 @@
 <div class="card">
     <div class="card-header">{{qc_info.software | capitalize}} v{{ qc_info.software_version }}</div>
     <div class="card-body">
+        {% if not qc_info.result %}
+        <p class="fw-light fst-italic mb-0">{{ qc_info.reason | default("No result", true) }}</p>
+        {% else %}
         <table class="table table-sm table-striped">
             <thead>
                 <tr>
@@ -1304,6 +1442,7 @@
             {% endfor %}
             </tbody>
         </table>
+        {% endif %}
     </div>
 </div>
 {% endmacro %}
@@ -1312,7 +1451,7 @@
 {% macro cgmlst_qc_card(qc_info) %}
 <div class="card">
     <div class="card-header">
-        {{ qc_info.type }} QC v{{ qc_info.software_version }}
+        cgMLST alleles v{{ qc_info.software_version }}
     </div>
     <div class="card-body">
         <table class="table table-sm table-striped">

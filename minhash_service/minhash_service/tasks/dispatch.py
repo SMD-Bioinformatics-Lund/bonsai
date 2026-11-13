@@ -5,6 +5,8 @@ from typing import Any, Callable
 from rq import Queue, SimpleWorker
 from rq.job import Job
 
+from minhash_service.doctor import check_samples
+
 from .handlers import (add_signature, add_to_index, check_signature,
                        cleanup_removed_files, cluster_samples,
                        exclude_from_analysis, find_similar_and_cluster,
@@ -13,6 +15,7 @@ from .handlers import (add_signature, add_to_index, check_signature,
                        run_data_integrity_check, search_similar)
 
 REGISTRY: dict[str, Callable[..., Any]] = {
+    "doctor_check_samples": check_samples,
     "add_signature": add_signature,
     "remove_signature": remove_signature,
     "add_to_index": add_to_index,

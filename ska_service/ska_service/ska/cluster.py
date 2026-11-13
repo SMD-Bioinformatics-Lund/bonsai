@@ -41,13 +41,15 @@ def to_newick(
     parent_dist: float,
     leaf_names: Sequence[str],
 ) -> str:
-    """Convert hierarcical tree representation to newick format."""
+    """Convert a hierarchical tree to Newick without rounding branch lengths."""
+
+    branch_length = float(parent_dist - node.dist)
 
     if node.is_leaf():
-        return f"{leaf_names[node.id]}:{parent_dist - node.dist:.2f}{newick}"
+        return f"{leaf_names[node.id]}:{branch_length}{newick}"
 
     if len(newick) > 0:
-        newick = f"):{parent_dist - node.dist:.2f}{newick}"
+        newick = f"):{branch_length}{newick}"
     else:
         newick = ");"
     newick = to_newick(node.get_left(), newick, node.dist, leaf_names)
