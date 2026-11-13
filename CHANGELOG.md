@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Retain MLST/cgMLST samples without usable allele calls as an unplaced list beside the tree, keep them in the basket, and verify that each usable sample appears exactly once in the worker result; reject selections with no usable samples. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Check manually curated QC when opening or changing the basket before enabling clustering, highlight failed QC and allow easily removing. [#644](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/644)
 - Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)

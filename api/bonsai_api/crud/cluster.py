@@ -11,6 +11,7 @@ from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
 from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
+from bonsai_api.models.allele_cluster import UnplacedSample
 from bonsai_api.redis.models import SkaIndexInput
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
     sample_id: str
+    label: str | None = None
     typing_result: dict[str, Any]
 
     def allele_profile(self, strip_errors: bool = True):
@@ -47,6 +49,17 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
 
 TypingProfileOutput = list[TypingProfileAggregate]
+
+
+def get_unplaced_samples(profiles: TypingProfileOutput) -> list[UnplacedSample]:
+    """Keep samples with no usable calls visible without assigning a distance."""
+    return [
+        UnplacedSample(
+            sample_id=profile.sample_id, label=profile.label or profile.sample_id
+        )
+        for profile in profiles
+        if not any(profile.allele_profile().values())
+    ]
 
 
 CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
@@ -101,6 +114,7 @@ async def get_typing_profiles(
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
+                label=sample_labels[raw["sample_id"]],
                 typing_result={
                     loci: replace_cgmlst_errors(
                         allele, include_novel_alleles=True, correct_alleles=True
@@ -110,9 +124,9 @@ async def get_typing_profiles(
             )
         )
 
-    # Reject missing samples and samples for which the requested typing result
-    # was not found. The aggregation emits an empty profile for the latter.
-    found_ids = {sample.sample_id for sample in results if sample.typing_result}
+    # Existing samples without a typing result remain visible as unplaced.
+    # Samples that do not exist in the database must still be rejected.
+    found_ids = {sample.sample_id for sample in results}
     missing = set(sample_idx) - found_ids
     if missing:
         missing_labels = ", ".join(

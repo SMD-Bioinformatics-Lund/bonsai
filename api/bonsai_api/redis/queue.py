@@ -6,7 +6,8 @@ from enum import Enum
 from typing import Any
 
 from bonsai_api.config import settings
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from bonsai_api.models.allele_cluster import UnplacedSample
 from redis import Redis
 from rq import Queue
 from rq.job import Job
@@ -53,6 +54,7 @@ class JobStatus(BaseModel):  # pylint: disable=too-few-public-methods
     task: str
     result: Any
     error: str | None = None
+    unplaced_samples: list[UnplacedSample] = Field(default_factory=list)
     submitted_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
@@ -73,6 +75,7 @@ def check_redis_job_status(job_id: str, raise_on_exception: bool = False) -> Job
         task=job.func_name,
         result=job.return_value(),
         error=error,
+        unplaced_samples=job.meta.get("unplaced_samples", []),
         submitted_at=job.enqueued_at,
         started_at=job.started_at,
         finished_at=job.ended_at,
