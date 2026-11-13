@@ -14,6 +14,7 @@ export class BasketComponent extends HTMLElement {
   constructor(
     state: BasketState,
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
+    private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
   ) {
     super();
     this.state = state;
@@ -23,6 +24,11 @@ export class BasketComponent extends HTMLElement {
 
   connectedCallback() {
     this.state.onSelection(this.handleStateChange);
+    if (this.qcControls?.removeButton) {
+      this.qcControls.removeButton.onclick = () => {
+        if (this.ready) this.state.removeSamples([...this.qcFailedSampleIds]);
+      };
+    }
     this.render();
   }
 
@@ -30,6 +36,7 @@ export class BasketComponent extends HTMLElement {
     this.state.offSelection(this.handleStateChange);
     this.renderVersion++;
     this.setReady(false);
+    if (this.qcControls?.removeButton) this.qcControls.removeButton.onclick = null;
   }
 
   get canCluster(): boolean {
@@ -38,7 +45,31 @@ export class BasketComponent extends HTMLElement {
 
   private setReady(ready: boolean): void {
     this.ready = ready;
+    this.updateQcControls();
     this.dispatchEvent(new CustomEvent("basket:ready-change"));
+  }
+
+  private updateQcControls(): void {
+    if (!this.qcControls?.feedback || !this.qcControls?.removeButton) return;
+    const { feedback, removeButton } = this.qcControls;
+    const count = this.qcFailedSampleIds.size;
+    const visible = this.ready && count > 0;
+    feedback.hidden = !visible;
+    removeButton.hidden = !visible;
+    removeButton.disabled = !visible;
+    feedback.innerHTML = "";
+    if (!visible) return;
+    feedback.innerHTML = `
+      <p class="small text-danger mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can still include them in clustering.</p>
+      ${this.clusterWithFailedQc ? '<button type="button" class="btn btn-sm btn-primary" data-cluster-with-failed-qc>Cluster anyway</button>' : ""}
+    `;
+    feedback.querySelector("[data-cluster-with-failed-qc]")?.addEventListener("click", (event) => {
+      if (!this.canCluster || !this.clusterWithFailedQc) return;
+      const proceed = this.clusterWithFailedQc;
+      this.clusterWithFailedQc = undefined;
+      (event.currentTarget as HTMLButtonElement).disabled = true;
+      proceed();
+    });
   }
 
   private handleStateChange() {
@@ -83,32 +114,6 @@ export class BasketComponent extends HTMLElement {
         return;
       }
       this.innerHTML = "";
-      const failedIds = sampleIds.filter((id) => this.qcFailedSampleIds.has(id));
-      if (failedIds.length > 0) {
-        const count = failedIds.length;
-        const notice = document.createElement("div");
-        notice.className = "alert alert-warning py-2";
-        notice.setAttribute("role", "status");
-        notice.innerHTML = `
-          <p class="mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can keep these samples for clustering or remove them from your basket.</p>
-          ${this.clusterWithFailedQc ? '<button type="button" class="btn btn-sm btn-primary mb-1" data-cluster-with-failed-qc>Cluster anyway</button>' : ""}
-          <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-qc-failed>
-            Remove ${count} QC-failed ${count === 1 ? "sample" : "samples"} from basket
-          </button>
-          <p class="small mb-0 mt-2">This changes your basket only. Sample data and QC status are preserved.</p>
-        `;
-        notice.querySelector("[data-remove-qc-failed]").addEventListener("click", () => {
-          this.state.removeSamples(failedIds);
-        });
-        notice.querySelector("[data-cluster-with-failed-qc]")?.addEventListener("click", (event) => {
-          if (!this.canCluster || !this.clusterWithFailedQc) return;
-          const proceed = this.clusterWithFailedQc;
-          this.clusterWithFailedQc = undefined;
-          (event.currentTarget as HTMLButtonElement).disabled = true;
-          proceed();
-        });
-        this.appendChild(notice);
-      }
       if (sampleIds.length < 2) {
         const notice = document.createElement("p");
         notice.textContent = "At least two samples are needed for clustering.";
@@ -120,13 +125,17 @@ export class BasketComponent extends HTMLElement {
         const item = document.createElement("div");
         item.className = "card mb-2 rounded-1 p-0 sample_in_basket";
         const qcFailed = this.qcFailedSampleIds.has(id);
-        if (qcFailed) item.className += " border-danger bg-danger bg-opacity-10";
+        const textColor = qcFailed ? "text-danger" : "text-muted";
+        if (qcFailed) {
+          item.className += " border-danger bg-danger bg-opacity-10";
+          item.setAttribute("role", "group");
+          item.setAttribute("aria-label", `${sample.sample_name}: QC failed`);
+        }
         item.innerHTML = String.raw`
         <div class="card-body py-1 d-flex flex-row justify-content-between align-items-center">
-            <a class="text-muted d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
-                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
-                <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
-                ${qcFailed ? '<span class="text-danger small fw-semibold">QC failed (manually curated)</span>' : ""}
+            <a class="${textColor} d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
+                <h6 id="${sample.sample_id}" class="text-uppercase fw-bold ${textColor} my-0 py-0">${sample.sample_name}</h6>
+                <i class="${textColor} fs-6 fw-light p-0">${sample.assay}</i>
             </a>
             <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" type="button" data-id="${sample.sample_id}">
                 <i class="bi bi-trash3-fill"></i>

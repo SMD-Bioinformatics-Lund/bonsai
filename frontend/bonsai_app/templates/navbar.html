@@ -81,19 +81,22 @@
     <div class="offcanvas-body">
         <div id="basket-content" class="overflow-auto" style="max-height: 60vh;"></div>
         <hr>
-        <div class="row">
-            <div class="col-auto">
-                <button
-                    id="clear-basket-btn"
-                    class="btn btn-outline-secondary btn-sm float-right"
-                    aria-label="Clear basket"
-                    data-test-id="clear-basket-btn"
-                    type="button">
-                    <i class="bi bi-dash-lg" aria-hidden="true"></i>
-                    <span>Clear basket</span>
-                </button>
-            </div>
+        <div class="d-flex align-items-start gap-2">
+            <button
+                id="clear-basket-btn"
+                class="btn btn-outline-secondary btn-sm flex-shrink-0"
+                aria-label="Clear basket"
+                data-test-id="clear-basket-btn"
+                type="button">
+                <i class="bi bi-dash-lg" aria-hidden="true"></i>
+                <span>Clear basket</span>
+            </button>
+            <button id="remove-failed-qc-from-basket-btn" type="button"
+                    class="btn btn-danger btn-sm" data-remove-qc-failed hidden>
+                Remove failed QC from basket
+            </button>
         </div>
+        <div id="basket-qc-feedback" class="mt-2" role="status" hidden></div>
         <hr>
         <div class="row">
             <div class="col-auto">
