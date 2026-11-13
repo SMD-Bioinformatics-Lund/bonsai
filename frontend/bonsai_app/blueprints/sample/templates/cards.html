@@ -310,6 +310,9 @@
 
 
 {% macro bracken_prediction(result, extended=False) %}
+{% if not extended %}
+    {% set result = result | selectattr('fraction_total_reads', 'gt', 0.001) | list %}
+{% endif %}
 <div data-bracken-results>
 <table class="table table-sm">
     <thead>
