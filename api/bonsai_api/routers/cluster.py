@@ -10,6 +10,9 @@ from bonsai_api.crud.cluster import (
     get_ska_index_path_for_samples,
     get_typing_profiles,
 )
+from bonsai_api.crud.allele_scheme import validate_typing_schemes
+from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat
+from bonsai_api.models.allele_scheme import AlleleSchemeValidation
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel
@@ -53,6 +56,32 @@ class ClusterInput(RWModel):  # pylint: disable=too-few-public-methods
     model_config = ConfigDict(use_enum_values=False)
 
 
+class SchemeValidationInput(RWModel):
+    """Selected samples for checking both allele-clustering methods."""
+
+    sample_ids: list[str] = Field(..., min_length=1, alias="sampleIds")
+
+
+@router.post("/cluster/validate", response_model=dict[str, AlleleSchemeValidation])
+async def validate_allele_schemes(
+    selection: SchemeValidationInput, db: Database = Depends(get_database)
+) -> dict[str, AlleleSchemeValidation]:
+    """Validate allele methods before the UI enables their clustering actions."""
+    validations = {}
+    for method in ("mlst", "cgmlst"):
+        try:
+            profiles = await get_typing_profiles(db, selection.sample_ids, method)
+        except (EntryNotFound, InvalidDataFormat, ValueError) as error:
+            validations[method] = AlleleSchemeValidation(
+                can_cluster=False,
+                notice=f"Cannot cluster by {method.upper() if method == 'mlst' else 'cgMLST'}: the typing scheme could not be verified for every sample.",
+            )
+            LOG.debug("Unable to validate %s schemes: %s", method, error)
+        else:
+            validations[method] = validate_typing_schemes(profiles, method)
+    return validations
+
+
 @router.post(
     "/cluster/{typing_method}",
     status_code=status.HTTP_201_CREATED,
@@ -88,6 +117,9 @@ async def cluster_samples(
         profiles: TypingProfileOutput = await get_typing_profiles(
             db, cluster_input.sample_ids, typing_method.value
         )
+        validation = validate_typing_schemes(profiles, typing_method.value)
+        if not validation.can_cluster:
+            raise InvalidDataFormat(validation.notice or "Incompatible typing schemes.")
         job = schedule_allele_cluster_samples(profiles, cluster_input.method)
     return job
 

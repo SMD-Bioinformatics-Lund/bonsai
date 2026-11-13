@@ -1,10 +1,11 @@
-import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse } from "../core/types";
+import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
   private renderVersion = 0;
   private ready = false;
+  private schemeValidation: ApiAlleleSchemeValidations | null = null;
   private qcFailedSampleIds = new Set<string>();
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
@@ -14,6 +15,7 @@ export class BasketComponent extends HTMLElement {
     state: BasketState,
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
     private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
+    private validateSchemes?: (sampleIds: string[]) => Promise<ApiAlleleSchemeValidations>,
   ) {
     super();
     this.state = state;
@@ -40,6 +42,14 @@ export class BasketComponent extends HTMLElement {
 
   get canCluster(): boolean {
     return this.ready && this.state.getSampleIds().length >= 2;
+  }
+
+  canClusterWith(method: string): boolean {
+    if (!this.canCluster) return false;
+    if (method === "mlst" || method === "cgmlst") {
+      return this.schemeValidation?.[method]?.can_cluster === true;
+    }
+    return true;
   }
 
   private setReady(ready: boolean): void {
@@ -70,6 +80,7 @@ export class BasketComponent extends HTMLElement {
 
   async render() {
     const version = ++this.renderVersion;
+    this.schemeValidation = null;
     this.setReady(false);
     const sampleIds = this.state.getSampleIds();
     if (sampleIds.length === 0) {
@@ -137,6 +148,28 @@ export class BasketComponent extends HTMLElement {
         });
       });
       this.setReady(true);
+      if (sampleIds.length >= 2) {
+        try {
+          const validation = await this.validateSchemes(sampleIds);
+          if (version !== this.renderVersion) return;
+          this.schemeValidation = validation;
+          for (const method of ["mlst", "cgmlst"] as const) {
+            if (validation?.[method]?.can_cluster === true) continue;
+            const notice = document.createElement("p");
+            notice.className = "small text-warning mb-2";
+            notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the typing scheme could not be verified.`;
+            this.appendChild(notice);
+          }
+        } catch (error) {
+          if (version !== this.renderVersion) return;
+          const notice = document.createElement("p");
+          notice.className = "small text-warning mb-2";
+          notice.textContent = "MLST/cgMLST scheme compatibility could not be verified. Reopen the basket to retry.";
+          this.appendChild(notice);
+          console.error("Failed to validate typing schemes:", error);
+        }
+        this.setReady(true);
+      }
     } catch (error) {
       if (version !== this.renderVersion) return;
       this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
