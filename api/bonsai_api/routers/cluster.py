@@ -10,6 +10,7 @@ from bonsai_api.crud.cluster import (
     get_ska_index_path_for_samples,
     get_typing_profiles,
 )
+from bonsai_api.crud.allele_overlap import validate_allele_overlap
 from bonsai_api.db import Database
 from bonsai_api.dependencies import get_database
 from bonsai_api.models.base import RWModel
@@ -88,6 +89,7 @@ async def cluster_samples(
         profiles: TypingProfileOutput = await get_typing_profiles(
             db, cluster_input.sample_ids, typing_method.value
         )
+        validate_allele_overlap(profiles, typing_method.value)
         job = schedule_allele_cluster_samples(profiles, cluster_input.method)
     return job
 
