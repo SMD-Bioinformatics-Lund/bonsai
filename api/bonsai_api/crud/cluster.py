@@ -9,7 +9,7 @@ from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
-from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat
 from bonsai_api.models.base import RWModel
 from bonsai_api.redis.models import SkaIndexInput
 
@@ -35,10 +35,11 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
         """Get allele profile."""
         profile = {}
         for gene, allele in self.typing_result.items():
-            if isinstance(allele, int):
-                profile[gene] = allele
-            elif isinstance(allele, str) and allele.startswith("*"):
-                profile[gene] = int(allele[1:])
+            if type(allele) is int:
+                profile[gene] = allele if allele > 0 else None
+            elif isinstance(allele, str) and allele.lstrip("*").isdecimal():
+                value = int(allele.lstrip("*"))
+                profile[gene] = value if value > 0 else None
             elif strip_errors:
                 profile[gene] = None
             else:
@@ -98,16 +99,26 @@ async def get_typing_profiles(
     async for raw in cursor:
         sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
-        results.append(
-            TypingProfileAggregate(
-                sample_id=raw["sample_id"],
-                typing_result={
-                    loci: replace_cgmlst_errors(
-                        allele, include_novel_alleles=True, correct_alleles=True
-                    )
-                    for loci, allele in loci_map.items()
-                },
+        if not isinstance(loci_map, dict):
+            raise InvalidDataFormat(
+                f"Invalid {typing_method} allele profile for {sample_labels[raw['sample_id']]}"
             )
+        normalized = {}
+        for loci, allele in loci_map.items():
+            if allele is None or isinstance(allele, list):
+                normalized[loci] = None
+                continue
+            try:
+                normalized[loci] = replace_cgmlst_errors(
+                    allele, include_novel_alleles=True, correct_alleles=True
+                )
+            except (ValueError, IndexError, TypeError) as error:
+                raise InvalidDataFormat(
+                    f"Invalid {typing_method} allele call at {loci} for "
+                    f"{sample_labels[raw['sample_id']]}"
+                ) from error
+        results.append(
+            TypingProfileAggregate(sample_id=raw["sample_id"], typing_result=normalized)
         )
 
     # Reject missing samples and samples for which the requested typing result
