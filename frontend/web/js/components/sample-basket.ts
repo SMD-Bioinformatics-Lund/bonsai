@@ -6,7 +6,6 @@ export class BasketComponent extends HTMLElement {
   private renderVersion = 0;
   private ready = false;
   private qcFailedSampleIds = new Set<string>();
-  private clusterWithFailedQc?: () => void;
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
   ) => Promise<ApiSampleDetailsResponse>;
@@ -61,29 +60,12 @@ export class BasketComponent extends HTMLElement {
     if (!visible) return;
     feedback.innerHTML = `
       <p class="small text-danger mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can still include them in clustering.</p>
-      ${this.clusterWithFailedQc ? '<button type="button" class="btn btn-sm btn-primary" data-cluster-with-failed-qc>Cluster anyway</button>' : ""}
     `;
-    feedback.querySelector("[data-cluster-with-failed-qc]")?.addEventListener("click", (event) => {
-      if (!this.canCluster || !this.clusterWithFailedQc) return;
-      const proceed = this.clusterWithFailedQc;
-      this.clusterWithFailedQc = undefined;
-      (event.currentTarget as HTMLButtonElement).disabled = true;
-      proceed();
-    });
   }
 
   private handleStateChange() {
     this.qcFailedSampleIds.clear();
-    this.clusterWithFailedQc = undefined;
     this.render();
-  }
-
-  showQcWarning(sampleIds: string[], proceed?: () => void): void {
-    const basketIds = new Set(this.state.getSampleIds());
-    const hadWarning = this.qcFailedSampleIds.size > 0;
-    this.qcFailedSampleIds = new Set(sampleIds.filter((id) => basketIds.has(id)));
-    this.clusterWithFailedQc = proceed;
-    if (hadWarning || this.qcFailedSampleIds.size > 0) this.render();
   }
 
   async render() {
@@ -98,10 +80,9 @@ export class BasketComponent extends HTMLElement {
     try {
       const query: ApiGetSamplesDetailsInput = {
         sid: sampleIds,
-        prediction_result: true,
-        qc: false,
+        // Fetch curated QC with the card data, before enabling clustering.
+        fields: ["sample_id", "sample_name", "assay", "qc_status"],
         limit: 0,
-        skip: 0,
       };
       const data = await this.getSamplesDetails(query);
       // A newer selection or render owns the basket now.
@@ -113,6 +94,9 @@ export class BasketComponent extends HTMLElement {
         this.state.removeSamples(missingIds);
         return;
       }
+      this.qcFailedSampleIds = new Set(
+        sampleIds.filter((id) => samplesById.get(id).qc_status?.status === "failed"),
+      );
       this.innerHTML = "";
       if (sampleIds.length < 2) {
         const notice = document.createElement("p");
