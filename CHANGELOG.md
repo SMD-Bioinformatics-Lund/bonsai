@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add an "Empty basket" button beside "Add to basket" on individual group Summary and QC pages, using the existing basket clear action. [#643](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/643)
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
 - Show alphabetically sorted visible group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships, no visible memberships, and failed lookups. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
