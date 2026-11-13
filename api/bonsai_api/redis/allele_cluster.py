@@ -27,12 +27,17 @@ def schedule_cluster_samples(
     for profile in profiles:
         sample_ids.append(profile.sample_id)
         allele_profile.append(profile.allele_profile())
-    # convert to pandas dataframe
+    # Prefix locus names so MStree does not mistake ST or # loci for metadata.
+    allele_profile = [
+        {f"allele:{gene}": call for gene, call in profile.items()}
+        for profile in allele_profile
+    ]
+    # Keep the sample ID column explicit in the API/worker TSV contract.
     profile_tsv = (
         pd.DataFrame(allele_profile, index=sample_ids)
         .dropna(axis=1, how="all")  # remove cols with all nulls
         .fillna("-")  # replace nulls with MStree null char, "-"
-        .to_csv(sep="\t")  # convert to tsv string
+        .to_csv(sep="\t", index_label="sample_id")
     )
     job = redis.allele.enqueue(
         task, profile=profile_tsv, method=cluster_method.value, job_timeout="30m"
