@@ -27,7 +27,7 @@ function setup({
   sampleIds = ["sample-id-1", "sample-id-2", "sample-id-3", "sample-id-4"],
   samples = [], lookupError,
 } = {}) {
-  const toasts = [], logs = [], requests = [], lookups = [], qcBlocked = [];
+  const toasts = [], logs = [], requests = [], lookups = [];
   let hidden = 0;
   const button = {};
   const { pollJob } = loadModule("../web/js/core/api/polling/pollJob.ts", {
@@ -58,8 +58,7 @@ function setup({
     },
     checkJobStatus: async () => ({ status: "failed", error }),
   };
-  return { actions, api, element, sampleIds, toasts, logs, requests, lookups, qcBlocked,
-    onQcBlocked: ids => qcBlocked.push(Array.from(ids)), hidden: () => hidden };
+  return { actions, api, element, sampleIds, toasts, logs, requests, lookups, hidden: () => hidden };
 }
 
 test("failed SNV job explains duplicate sequence IDs and logs diagnostics", async () => {
@@ -79,43 +78,6 @@ test("failed SNV job explains duplicate sequence IDs and logs diagnostics", asyn
   assert.equal(diagnostics.error.message, "ValueError: Duplicate names found");
   assert.equal(h.requests[0][1].sampleIds, h.sampleIds);
   assert.equal(h.hidden(), 1);
-});
-
-test("QC conflict gives a warning and exact selected IDs without polling or label lookups", async () => {
-  for (const count of [1, 2]) {
-    const sampleIds = ["passed", "failed-1", "failed-2"];
-    const failedIds = sampleIds.slice(1, count + 1);
-    const h = setup({
-      typingMethod: "minhash", sampleIds,
-      submissionError: new ApiError("Conflict", { detail: {
-        code: "minhash_qc_failed", sample_ids: [...failedIds, failedIds[0], "unselected"],
-      } }),
-    });
-    h.api.checkJobStatus = () => { throw new Error("QC conflict must not poll a job"); };
-    await h.actions.clusterSamples(h.element, h.sampleIds, h.api, h.onQcBlocked);
-    assert.deepEqual(h.qcBlocked, [failedIds]);
-    assert.deepEqual(h.toasts.at(-1), [
-      `Clustering could not run because ${count} ${count === 1 ? "sample failed QC and is" : "samples failed QC and are"} excluded from MinHash analysis.`,
-      "warning",
-    ]);
-    assert.equal(h.logs.length, 0);
-    assert.equal(h.lookups.length, 0);
-    assert.equal(h.hidden(), 1);
-  }
-});
-
-test("signature failures and malformed conflicts never offer QC removal", async () => {
-  for (const options of [
-    { error: "ValueError: Could not load exactly one MinHash signature per selected sample: failed" },
-    { submissionError: new ApiError("Conflict", { detail: { code: "minhash_qc_failed", sample_ids: [null, 1, "unselected"] } }) },
-    { submissionError: new ApiError("Conflict", { detail: { code: "missing_signature", sample_ids: ["failed"], message: "Missing signature" } }) },
-  ]) {
-    const h = setup({ typingMethod: "minhash", sampleIds: ["passed", "failed"], ...options });
-    await h.actions.clusterSamples(h.element, h.sampleIds, h.api, h.onQcBlocked);
-    assert.deepEqual(h.qcBlocked, []);
-    assert.equal(h.toasts.at(-1)[1], "error");
-    assert.equal(h.hidden(), 1);
-  }
 });
 
 test("SNV duplicate names returned during submission use the same message", async () => {

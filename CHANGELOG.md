@@ -30,7 +30,7 @@
 
 ### Fixed
 
-- Explain failed-QC exclusions when MinHash clustering is requested, highlight the affected basket samples, and offer to remove them from the basket while preserving sample data and QC status. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Check manually curated QC before basket clustering, highlight failed samples, and offer to cluster anyway or remove them from the basket. Allow explicit MinHash clustering of QC-excluded signatures while preserving their exclusion from similarity searches and indexes. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)

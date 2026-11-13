@@ -127,13 +127,44 @@ function initBasket(api: GroupViewApi): BasketState | void {
 
   const clusterBtns = document.querySelectorAll("#basket-cluster-samples a") as NodeListOf<HTMLLinkElement>;
   clusterBtns.forEach((element) => {
-    element.onclick = (event) => {
+    element.onclick = async (event) => {
       event.preventDefault();
       if (basketComponent.canCluster) {
         const attempt = ++clusterAttempt;
-        clusterSamples(element, basketState.getSampleIds(), api, (failedIds) => {
-          if (attempt === clusterAttempt) basketComponent.showQcBlocked(failedIds);
-        });
+        const sampleIds = basketState.getSampleIds();
+        if (clusterButton) clusterButton.disabled = true;
+        try {
+          // Read only the manually curated status, not automatic QC predictions.
+          const response = await api.getSamplesDetails({
+            sid: sampleIds,
+            fields: ["sample_id", "qc_status"],
+            limit: 0,
+          });
+          if (attempt !== clusterAttempt) return;
+          const samplesById = new Map(response.data.map((sample) => [sample.sample_id, sample]));
+          if (sampleIds.some((id) => !samplesById.has(id))) {
+            basketComponent.render();
+            throwSmallToast("Some samples are no longer available. Review your basket and try again.", "warning");
+            return;
+          }
+          const failedIds = sampleIds.filter((id) => samplesById.get(id).qc_status?.status === "failed");
+          const proceed = () => {
+            if (attempt === clusterAttempt && basketComponent.canCluster) {
+              clusterSamples(element, sampleIds, api);
+            }
+          };
+          // Refresh any earlier warning, including when QC has since passed.
+          basketComponent.showQcWarning(failedIds, failedIds.length > 0 ? proceed : undefined);
+          if (failedIds.length === 0) clusterSamples(element, sampleIds, api);
+        } catch (error) {
+          if (attempt !== clusterAttempt) return;
+          throwSmallToast("Could not check curated QC status. Please try again.", "error");
+          console.error("Failed to check basket QC:", error);
+        } finally {
+          if (attempt === clusterAttempt && clusterButton) {
+            clusterButton.disabled = !basketComponent.canCluster;
+          }
+        }
       }
     };
   });

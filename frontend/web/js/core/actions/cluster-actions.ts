@@ -83,7 +83,6 @@ export async function clusterSamples(
   element: HTMLLinkElement,
   sampleIds: string[],
   api: ApiService,
-  onQcBlocked?: (sampleIds: string[]) => void,
 ) {
   const typingMethodEnum = element.getAttribute("data-bi-typing-method") as TypingMethod;
   // base dropdown element
@@ -137,30 +136,6 @@ export async function clusterSamples(
     if (error instanceof ApiError && error.data) {
       const detail = (error.data as ApiProblemDetails).detail;
       if (typeof detail === "string") message = detail;
-      if (typeof detail === "object" && detail !== null) {
-        const problem = detail as { code?: unknown; sample_ids?: unknown; message?: unknown };
-        if (
-          typingMethodEnum === TypingMethod.MINHASH &&
-          problem.code === "minhash_qc_failed" &&
-          Array.isArray(problem.sample_ids)
-        ) {
-          const failedIds = [...new Set(
-            problem.sample_ids.filter(
-              (id): id is string => typeof id === "string" && sampleIds.includes(id),
-            ),
-          )];
-          if (failedIds.length > 0) {
-            onQcBlocked?.(failedIds);
-            const count = failedIds.length;
-            throwSmallToast(
-              `Clustering could not run because ${count} ${count === 1 ? "sample failed QC and is" : "samples failed QC and are"} excluded from MinHash analysis.`,
-              "warning",
-            );
-            return;
-          }
-        }
-        if (typeof problem.message === "string") message = problem.message;
-      }
     } else if (error instanceof Error) {
       message = error.message;
     }

@@ -18,6 +18,7 @@ export interface SamplesDetails {
   lims_id: string;
   assay: string;
   created_at: string;
+  qc_status?: ApiSampleQcStatus | null;
 }
 
 export interface ApiSampleQcStatus {

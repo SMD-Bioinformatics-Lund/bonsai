@@ -27,6 +27,9 @@ class Element extends EventTarget {
     if (selector === "[data-remove-qc-failed]" && this.innerHTML.includes("data-remove-qc-failed")) {
       return this.qcRemoveButton ??= new Element();
     }
+    if (selector === "[data-cluster-with-failed-qc]" && this.innerHTML.includes("data-cluster-with-failed-qc")) {
+      return this.qcContinueButton ??= new Element();
+    }
     return null;
   }
   querySelectorAll() { return []; }
@@ -40,7 +43,8 @@ async function setup(savedIds = []) {
     "add-to-basket-btn", "empty-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element(), clusterLink = new Element();
-  const requests = [], clusters = [], selectionCallbacks = [], qcCallbacks = [];
+  const requests = [], clusters = [], selectionCallbacks = [], qcRequests = [], toasts = [];
+  let failedIds = [], deferQc = false;
   let selected = [];
   const table = {
     rows: () => ({ ids: () => ({ toArray: () => selected }) }),
@@ -79,18 +83,23 @@ async function setup(savedIds = []) {
     name === "datatables.net-bs5" ? DataTable : {});
   const api = {
     getUserInfo: async () => ({}),
-    getSamplesDetails: query => new Promise((resolve, reject) => requests.push({ query, resolve, reject })),
+    getSamplesDetails: query => {
+      if (query.fields?.includes("qc_status")) {
+        const data = query.sid.map(sample_id => ({ sample_id, qc_status: { status: failedIds.includes(sample_id) ? "failed" : "passed" } }));
+        if (deferQc) return new Promise((resolve, reject) => qcRequests.push({ query, resolve, reject }));
+        qcRequests.push({ query });
+        return Promise.resolve({ data });
+      }
+      return new Promise((resolve, reject) => requests.push({ query, resolve, reject }));
+    },
   };
   const view = load("../web/js/views/groups-view/init.ts", () => ({
     ...state, ...basket, ...counter, ...tableController,
     createGroupViewApi: () => api,
     User: class { isAdmin = false; },
     initToast() {}, initTooltip() {},
-    throwSmallToast() {},
-    clusterSamples: (_element, sampleIds, _api, onQcBlocked) => {
-      clusters.push(Array.from(sampleIds));
-      qcCallbacks.push(onQcBlocked);
-    },
+    throwSmallToast: (...args) => toasts.push(args),
+    clusterSamples: (_element, sampleIds) => clusters.push(Array.from(sampleIds)),
   }));
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
@@ -104,13 +113,15 @@ async function setup(savedIds = []) {
     }),
     qcNotice: () => component.children.find(child => child.innerHTML.includes("data-remove-qc-failed")),
     qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
-    reportQcBlocked: (index, ids) => qcCallbacks[index](ids),
+    qcRequests, toasts,
+    setFailed: ids => { failedIds = ids; },
+    deferQc: () => { deferQc = true; },
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
     clear: () => elements["clear-basket-btn"].onclick(),
     empty: () => elements["empty-basket-btn"].onclick(),
     reopen: () => elements["basket-offcanvas"].dispatchEvent(new Event("show.bs.offcanvas")),
-    cluster: () => clusterLink.onclick({ preventDefault() {} }),
+    cluster: async () => { await clusterLink.onclick({ preventDefault() {} }); await tick(); },
     elements,
     async respond(index, sampleIds) {
       requests[index].resolve({ data: sampleIds.map(sample_id => ({ sample_id, sample_name: sample_id, assay: "test" })) });
@@ -123,7 +134,7 @@ test("mixed missing IDs are removed from storage and count before clustering", a
   const valid = Array.from({ length: 16 }, (_, i) => `valid-${i}`);
   const h = await setup([...valid, ...Array.from({ length: 7 }, (_, i) => `missing-${i}`)]);
   assert.equal(h.clusterButton.disabled, true);
-  h.cluster();
+  await h.cluster();
   assert.equal(h.clusters.length, 0);
   assert.equal(h.requests[0].query.limit, 0);
   await h.respond(0, valid);
@@ -133,7 +144,7 @@ test("mixed missing IDs are removed from storage and count before clustering", a
   await h.respond(1, valid);
   assert.deepEqual(h.cards(), valid);
   assert.equal(h.clusterButton.disabled, false);
-  h.cluster();
+  await h.cluster();
   assert.deepEqual(h.clusters, [valid]);
 });
 
@@ -143,13 +154,14 @@ test("QC highlights and removal appear only after an attempt and preserve eligib
   await h.respond(0, ids);
   assert.equal(h.qcNotice(), undefined);
   assert.equal(h.qcCards().length, 0);
-  h.cluster();
-  h.reportQcBlocked(0, ["failed-1", "failed-2", "unselected"]);
+  h.setFailed(["failed-1", "failed-2"]);
+  await h.cluster();
+  assert.equal(h.clusters.length, 0);
   await h.respond(1, ids);
   assert.deepEqual(h.saved(), ids);
   assert.equal(h.qcCards().length, 2);
   assert.ok(h.qcCards().every(card => card.className.includes("bg-danger bg-opacity-10")));
-  assert.ok(h.qcCards().every(card => card.innerHTML.includes("QC failed — excluded from clustering")));
+  assert.ok(h.qcCards().every(card => card.innerHTML.includes("QC failed (manually curated)")));
   assert.match(h.qcNotice().innerHTML, /Remove 2 QC-failed samples from basket/);
   assert.match(h.qcNotice().innerHTML, /Sample data and QC status are preserved/);
   h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
@@ -158,16 +170,16 @@ test("QC highlights and removal appear only after an attempt and preserve eligib
   await h.respond(2, ["passed-1", "passed-2"]);
   assert.equal(h.qcNotice(), undefined);
   assert.equal(h.qcCards().length, 0);
-  assert.equal(h.clusters.length, 1); // Removal does not automatically retry.
-  h.cluster();
-  assert.deepEqual(h.clusters[1], ["passed-1", "passed-2"]);
+  assert.equal(h.clusters.length, 0); // Removal does not automatically submit.
+  await h.cluster();
+  assert.deepEqual(h.clusters[0], ["passed-1", "passed-2"]);
 });
 
 test("removing a single QC-failed sample disables clustering when only one remains", async () => {
   const h = await setup(["passed", "failed"]);
   await h.respond(0, ["passed", "failed"]);
-  h.cluster();
-  h.reportQcBlocked(0, ["failed"]);
+  h.setFailed(["failed"]);
+  await h.cluster();
   await h.respond(1, ["passed", "failed"]);
   assert.match(h.qcNotice().innerHTML, /Remove 1 QC-failed sample from basket/);
   h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
@@ -176,39 +188,115 @@ test("removing a single QC-failed sample disables clustering when only one remai
   assert.deepEqual(h.cards(), ["passed"]);
   assert.ok(h.component.children.some(child => child.textContent?.includes("At least two samples")));
   assert.equal(h.clusterButton.disabled, true);
-  h.cluster();
-  assert.equal(h.clusters.length, 1);
+  await h.cluster();
+  assert.equal(h.clusters.length, 0);
 });
 
-test("basket changes clear QC feedback and stale attempts cannot restore it", async () => {
+test("basket changes invalidate QC checks and an earlier continue action", async () => {
   const h = await setup(["passed", "failed"]);
   await h.respond(0, ["passed", "failed"]);
-  h.cluster();
-  h.reportQcBlocked(0, ["failed"]);
+  h.setFailed(["failed"]);
+  await h.cluster();
   await h.respond(1, ["passed", "failed"]);
+  const oldContinue = h.qcNotice().querySelector("[data-cluster-with-failed-qc]");
   h.select(["added"]);
   h.add();
-  const requestsBefore = h.requests.length;
-  h.reportQcBlocked(0, ["failed"]);
-  assert.equal(h.requests.length, requestsBefore);
+  oldContinue.dispatchEvent(new Event("click"));
   await h.respond(2, ["passed", "failed", "added"]);
   assert.equal(h.qcNotice(), undefined);
-  assert.equal(h.qcCards().length, 0);
-  h.cluster();
-  h.cluster();
-  h.reportQcBlocked(1, ["failed"]);
-  assert.equal(h.requests.length, requestsBefore);
-  h.reportQcBlocked(2, ["failed"]);
-  await h.respond(3, ["passed", "failed", "added"]);
+  assert.equal(h.clusters.length, 0);
+  h.deferQc();
+  const pending = h.cluster();
+  h.clear();
+  h.qcRequests.at(-1).resolve({ data: [{ sample_id: "failed", qc_status: { status: "failed" } }] });
+  await pending;
+  assert.equal(h.qcNotice(), undefined);
+  assert.deepEqual(h.saved(), []);
+  assert.equal(h.clusters.length, 0);
+});
+
+test("cluster anyway preserves failed samples and their warning", async () => {
+  const h = await setup(["passed", "failed"]);
+  await h.respond(0, ["passed", "failed"]);
+  h.setFailed(["failed"]);
+  await h.cluster();
+  assert.equal(h.clusters.length, 0);
+  await h.respond(1, ["passed", "failed"]);
+  const proceed = h.qcNotice().querySelector("[data-cluster-with-failed-qc]");
+  proceed.dispatchEvent(new Event("click"));
+  proceed.dispatchEvent(new Event("click"));
+  assert.deepEqual(h.clusters, [["passed", "failed"]]);
+  assert.deepEqual(h.saved(), ["passed", "failed"]);
   assert.equal(h.qcCards().length, 1);
+  assert.equal(proceed.disabled, true);
+  assert.deepEqual(Array.from(h.qcRequests[0].query.fields), ["sample_id", "qc_status"]);
+});
+
+test("a failed curated QC lookup reports an error and permits retry", async () => {
+  const h = await setup(["a", "b"]);
+  await h.respond(0, ["a", "b"]);
+  h.deferQc();
+  const pending = h.cluster();
+  h.qcRequests[0].reject(new Error("Unavailable"));
+  await pending;
+  assert.equal(h.clusters.length, 0);
+  assert.equal(h.toasts.at(-1)[1], "error");
+  assert.deepEqual(h.saved(), ["a", "b"]);
+  assert.equal(h.clusterButton.disabled, false);
+});
+
+test("automatic QC findings and unprocessed or absent curated status do not trigger a warning", async () => {
+  const h = await setup(["unprocessed", "unknown", "missing-qc"]);
+  await h.respond(0, ["unprocessed", "unknown", "missing-qc"]);
+  h.deferQc();
+  const pending = h.cluster();
+  h.qcRequests[0].resolve({ data: [
+    { sample_id: "unprocessed", qc_status: { status: "unprocessed" }, automatic_qc: "failed" },
+    { sample_id: "unknown", qc_status: null, automatic_qc: "failed" },
+    { sample_id: "missing-qc", automatic_qc: "failed" },
+  ] });
+  await pending;
+  assert.equal(h.qcNotice(), undefined);
+  assert.deepEqual(h.clusters, [["unprocessed", "unknown", "missing-qc"]]);
+});
+
+test("a fresh curated QC check clears an earlier warning after QC is corrected", async () => {
+  const h = await setup(["passed", "failed"]);
+  await h.respond(0, ["passed", "failed"]);
+  h.setFailed(["failed"]);
+  await h.cluster();
+  await h.respond(1, ["passed", "failed"]);
+  assert.equal(h.qcCards().length, 1);
+  h.setFailed([]);
+  await h.cluster();
+  await h.respond(2, ["passed", "failed"]);
+  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.qcCards().length, 0);
+  assert.deepEqual(h.clusters, [["passed", "failed"]]);
+  assert.equal(h.qcRequests.length, 2);
+});
+
+test("a sample disappearing during the QC check refreshes the basket without submitting", async () => {
+  const h = await setup(["a", "b"]);
+  await h.respond(0, ["a", "b"]);
+  h.deferQc();
+  const pending = h.cluster();
+  h.qcRequests[0].resolve({ data: [{ sample_id: "a", qc_status: { status: "passed" } }] });
+  await pending;
+  assert.equal(h.clusters.length, 0);
+  assert.match(h.toasts.at(-1)[0], /no longer available/);
+  await h.respond(1, ["a"]);
+  await h.respond(2, ["a"]);
+  assert.deepEqual(h.saved(), ["a"]);
+  assert.equal(h.clusterButton.disabled, true);
 });
 
 test("removing all QC-failed samples leaves an empty basket", async () => {
   const ids = ["failed-1", "failed-2"];
   const h = await setup(ids);
   await h.respond(0, ids);
-  h.cluster();
-  h.reportQcBlocked(0, ids);
+  h.setFailed(ids);
+  await h.cluster();
   await h.respond(1, ids);
   h.qcNotice().querySelector("[data-remove-qc-failed]").dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), []);
@@ -225,7 +313,7 @@ test("an entirely missing basket becomes empty and cannot cluster", async () => 
   assert.equal(h.count(), 0);
   assert.match(h.component.innerHTML, /Your basket is empty/);
   assert.equal(h.clusterButton.disabled, true);
-  h.cluster();
+  await h.cluster();
   assert.equal(h.clusters.length, 0);
 });
 
@@ -237,7 +325,7 @@ test("failed lookup preserves saved IDs, blocks clustering, and can be retried",
   assert.deepEqual(h.saved(), ids);
   assert.equal(h.count(), 2);
   assert.match(h.component.innerHTML, /Could not load your basket/);
-  h.cluster();
+  await h.cluster();
   assert.equal(h.clusters.length, 0);
   h.reopen();
   await h.respond(1, ids);
@@ -255,7 +343,7 @@ test("adding samples preserves valid entries and ignores an older response", asy
   assert.deepEqual(h.saved(), ["old", "overlap", "new"]);
   assert.deepEqual(h.cards(), ["old", "overlap", "new"]);
   assert.equal(h.count(), 3);
-  h.cluster();
+  await h.cluster();
   assert.deepEqual(h.clusters, [["old", "overlap", "new"]]);
 });
 
@@ -286,6 +374,6 @@ test("response IDs outside the request never appear in the basket or clustering 
   await h.respond(0, ["a", "b", "unexpected"]);
   assert.deepEqual(h.saved(), ["a", "b"]);
   assert.deepEqual(h.cards(), ["a", "b"]);
-  h.cluster();
+  await h.cluster();
   assert.deepEqual(h.clusters, [["a", "b"]]);
 });

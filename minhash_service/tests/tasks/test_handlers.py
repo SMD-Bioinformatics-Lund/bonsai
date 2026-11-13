@@ -9,6 +9,7 @@ from minhash_service.analysis.models import SimilarResult
 from minhash_service.signatures.index import AddResult
 from minhash_service.signatures.io import read_signatures
 from minhash_service.tasks.handlers import (
+    _load_sample_signatures,
     _lookup_checksums_from_sample_ids,
     _resolve_sample_matches,
     add_to_index,
@@ -229,8 +230,34 @@ def test_cluster_samples_labels_samples_sharing_a_signature(data_dir):
         assert newick.count(f"{sample_id}:") == 1
 
 
+def test_explicit_clustering_can_include_qc_excluded_signatures_without_reindexing(
+    data_dir,
+):
+    records = {
+        sample_id: SimpleNamespace(
+            signature_path=data_dir / f"{sample_id}.sig",
+            exclude_from_analysis=sample_id == "DRR237261",
+            marked_for_deletion=False,
+        )
+        for sample_id in ["DRR237260", "DRR237261", "DRR237262"]
+    }
+    repo = Mock()
+    repo.get_by_sample_id_or_checksum.side_effect = lambda sample_id, kmer_size: [
+        records[sample_id]
+    ]
+    with patch("minhash_service.tasks.handlers.create_signature_repo", return_value=repo):
+        # Search/index callers keep the default exclusion policy.
+        eligible = _load_sample_signatures(list(records), kmer_size=31)
+        assert [sid for sid, _ in eligible] == ["DRR237260", "DRR237262"]
+        newick = cluster_samples(list(records))
+    for sample_id in records:
+        assert newick.count(f"{sample_id}:") == 1
+    assert records["DRR237261"].exclude_from_analysis
+    assert {entry[0] for entry in repo.mock_calls} == {"get_by_sample_id_or_checksum"}
+
+
 @pytest.mark.parametrize(
-    "problem", ["missing", "excluded", "deleting", "duplicate_records", "multiple_sketches"]
+    "problem", ["missing", "deleting", "duplicate_records", "multiple_sketches"]
 )
 def test_cluster_samples_rejects_incomplete_input(data_dir, problem):
     """Two valid samples must not produce a tree when a third cannot participate."""
@@ -242,7 +269,7 @@ def test_cluster_samples_rejects_incomplete_input(data_dir, problem):
             return []
         record = SimpleNamespace(
             signature_path=data_dir / f"{sample_id}.sig",
-            exclude_from_analysis=invalid and problem == "excluded",
+            exclude_from_analysis=False,
             marked_for_deletion=invalid and problem == "deleting",
         )
         return [record, record] if invalid and problem == "duplicate_records" else [record]

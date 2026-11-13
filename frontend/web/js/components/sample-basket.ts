@@ -6,6 +6,7 @@ export class BasketComponent extends HTMLElement {
   private renderVersion = 0;
   private ready = false;
   private qcFailedSampleIds = new Set<string>();
+  private clusterWithFailedQc?: () => void;
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
   ) => Promise<ApiSampleDetailsResponse>;
@@ -42,13 +43,16 @@ export class BasketComponent extends HTMLElement {
 
   private handleStateChange() {
     this.qcFailedSampleIds.clear();
+    this.clusterWithFailedQc = undefined;
     this.render();
   }
 
-  showQcBlocked(sampleIds: string[]): void {
+  showQcWarning(sampleIds: string[], proceed?: () => void): void {
     const basketIds = new Set(this.state.getSampleIds());
+    const hadWarning = this.qcFailedSampleIds.size > 0;
     this.qcFailedSampleIds = new Set(sampleIds.filter((id) => basketIds.has(id)));
-    this.render();
+    this.clusterWithFailedQc = proceed;
+    if (hadWarning || this.qcFailedSampleIds.size > 0) this.render();
   }
 
   async render() {
@@ -86,7 +90,8 @@ export class BasketComponent extends HTMLElement {
         notice.className = "alert alert-warning py-2";
         notice.setAttribute("role", "status");
         notice.innerHTML = `
-          <p class="mb-2">Clustering could not run because ${count} ${count === 1 ? "sample failed QC and is" : "samples failed QC and are"} excluded from MinHash analysis.</p>
+          <p class="mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can keep these samples for clustering or remove them from your basket.</p>
+          ${this.clusterWithFailedQc ? '<button type="button" class="btn btn-sm btn-primary mb-1" data-cluster-with-failed-qc>Cluster anyway</button>' : ""}
           <button type="button" class="btn btn-sm btn-outline-secondary" data-remove-qc-failed>
             Remove ${count} QC-failed ${count === 1 ? "sample" : "samples"} from basket
           </button>
@@ -94,6 +99,13 @@ export class BasketComponent extends HTMLElement {
         `;
         notice.querySelector("[data-remove-qc-failed]").addEventListener("click", () => {
           this.state.removeSamples(failedIds);
+        });
+        notice.querySelector("[data-cluster-with-failed-qc]")?.addEventListener("click", (event) => {
+          if (!this.canCluster || !this.clusterWithFailedQc) return;
+          const proceed = this.clusterWithFailedQc;
+          this.clusterWithFailedQc = undefined;
+          (event.currentTarget as HTMLButtonElement).disabled = true;
+          proceed();
         });
         this.appendChild(notice);
       }
@@ -114,7 +126,7 @@ export class BasketComponent extends HTMLElement {
             <a class="text-muted d-flex flex-column" href="${baseUrl}/sample/${sample.sample_id}">
                 <h6 id="${sample.sample_id}" class="text-uppercase fw-bold text-muted my-0 py-0">${sample.sample_name}</h6>
                 <i class="text-muted fs-6 fw-light p-0">${sample.assay}</i>
-                ${qcFailed ? '<span class="text-danger small fw-semibold">QC failed — excluded from clustering</span>' : ""}
+                ${qcFailed ? '<span class="text-danger small fw-semibold">QC failed (manually curated)</span>' : ""}
             </a>
             <button class="float-end float-top btn btn-sm btn-outline-danger" aria-label="Remove" type="button" data-id="${sample.sample_id}">
                 <i class="bi bi-trash3-fill"></i>

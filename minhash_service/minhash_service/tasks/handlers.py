@@ -501,7 +501,7 @@ def _load_signatures_from_sample_id(sample_ids: list[str], kmer_size: int | None
 
 
 def _load_sample_signatures(
-    sample_ids: list[str], kmer_size: int | None = None
+    sample_ids: list[str], kmer_size: int | None = None, *, include_excluded: bool = False
 ) -> list[tuple[str, SourmashSignature]]:
     """Load signatures paired with the sample id they were loaded for."""
     LOG.debug("Load signatures to memory")
@@ -525,7 +525,9 @@ def _load_sample_signatures(
 
         record = records[0]
 
-        if record.exclude_from_analysis or record.marked_for_deletion:
+        if record.marked_for_deletion or (
+            record.exclude_from_analysis and not include_excluded
+        ):
             LOG.info("Skipping excluded signature %s", sample_id)
             continue
 
@@ -617,7 +619,11 @@ def cluster_samples(sample_ids: list[str], cluster_method: str = "single") -> st
         LOG.error(msg)
         raise ValueError(msg) from error
 
-    loaded = _load_sample_signatures(sample_ids, kmer_size=cnf.kmer_size)
+    # Explicit basket clustering may include failed-QC samples without changing
+    # their eligibility for indexing and similarity searches.
+    loaded = _load_sample_signatures(
+        sample_ids, kmer_size=cnf.kmer_size, include_excluded=True
+    )
     loaded_counts = Counter(sample_id for sample_id, _ in loaded)
     invalid_ids = [
         sample_id
