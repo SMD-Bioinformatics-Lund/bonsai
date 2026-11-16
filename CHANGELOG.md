@@ -169,7 +169,6 @@
 
 ### Changed
 
-- Bump the API and frontend to `3.0.0-rc11` for stage validation. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Rename the top navigation tab from Groups to Home. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)
