@@ -165,7 +165,7 @@ async def get_typing_profiles(
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
-            f"No {profile_name} typing profile is available for the following samples: "
+            f"No {profile_name} typing profile is available for the following samples:\n"
             f"{missing_labels}"
         )
     return results

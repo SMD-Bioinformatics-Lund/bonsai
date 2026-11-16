@@ -119,9 +119,11 @@ export class BasketComponent extends HTMLElement {
       disclosure.appendChild(heading);
       if (details?.length) {
         const list = document.createElement("ul");
-        list.className = "ps-3 mb-2 text-break";
+        list.className = "list-unstyled mb-2 text-break";
         for (const detail of details) {
           const item = document.createElement("li");
+          item.className = "mb-2";
+          item.style.whiteSpace = "pre-line";
           item.textContent = detail;
           list.appendChild(item);
         }

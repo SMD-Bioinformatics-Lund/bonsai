@@ -55,7 +55,7 @@ def test_get_typing_profiles_rejects_empty_profile_with_lab_id():
 
     with pytest.raises(
         EntryNotFound,
-        match="No cgMLST typing profile is available.*LAB-123",
+        match="(?s)No cgMLST typing profile is available.*LAB-123",
     ):
         asyncio.run(
             get_typing_profiles(

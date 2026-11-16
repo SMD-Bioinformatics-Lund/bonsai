@@ -144,7 +144,7 @@ def test_missing_mlst_scheme_reports_only_affected_lab_ids(endpoint):
     response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
     validation = response.json()["mlst"]
     assert "typing scheme could not be verified" in validation["notice"]
-    assert validation["details"] == ["LAB-123: no detected MLST scheme is available."]
+    assert validation["details"] == ["No detected MLST scheme is available:\nLAB-123"]
     schedule.assert_not_called()
 
 
