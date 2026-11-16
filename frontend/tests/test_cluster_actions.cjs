@@ -151,3 +151,40 @@ test("internal IDs use Lab IDs, or a count if lookup fails or a Lab ID is missin
     assert.equal(h.hidden(), 1);
   }
 });
+
+test("uncallable allele submissions provide structured basket feedback without removing IDs", async () => {
+  for (const typingMethod of ["mlst", "cgmlst"]) {
+    const affected = [{ sample_id: "sample-id-2", label: "LAB-2" }];
+    const h = setup({ typingMethod, submissionError: new ApiError("Request failed", {
+      type: "urn:bonsai:problem:no-usable-allele-calls",
+      typing_method: typingMethod,
+      detail: "No usable calls for LAB-2",
+      samples: affected,
+    }) });
+    const reports = [];
+    await h.actions.clusterSamples(h.element, h.sampleIds, h.api, (...args) => reports.push(args));
+    assert.deepEqual(reports, [[typingMethod, affected]]);
+    assert.match(h.toasts.at(-1)[0], /1 sample has no usable allele calls/);
+    assert.match(h.toasts.at(-1)[0], /Remove the affected samples from the basket/);
+    assert.equal(h.sampleIds.length, 4);
+    assert.equal(h.lookups.length, 0);
+    assert.equal(h.hidden(), 1);
+  }
+});
+
+test("ordinary validation errors and unrelated sample IDs never offer basket removal", async () => {
+  for (const problem of [
+    { type: "urn:bonsai:problem:invalid-data", samples: [{ sample_id: "sample-id-2", label: "LAB-2" }] },
+    { type: "urn:bonsai:problem:no-usable-allele-calls", samples: [{ sample_id: "outside-request", label: "OTHER" }] },
+    { type: "urn:bonsai:problem:no-usable-allele-calls", samples: [null] },
+    { type: "urn:bonsai:problem:no-usable-allele-calls", typing_method: "cgmlst", samples: [{ sample_id: "sample-id-2", label: "LAB-2" }] },
+  ]) {
+    const h = setup({ typingMethod: "mlst", submissionError: new ApiError("Request failed", {
+      typing_method: "mlst", detail: "Invalid allele data", ...problem,
+    }) });
+    const reports = [];
+    await h.actions.clusterSamples(h.element, h.sampleIds, h.api, (...args) => reports.push(args));
+    assert.deepEqual(reports, []);
+    assert.equal(h.toasts.at(-1)[0], "Invalid allele data");
+  }
+});

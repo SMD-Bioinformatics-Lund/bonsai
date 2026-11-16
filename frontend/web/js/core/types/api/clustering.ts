@@ -10,6 +10,11 @@ export interface ApiClusterInput {
   method: ClusterMethod;
 }
 
+export interface ApiUncallableSample {
+  sample_id: string;
+  label: string;
+}
+
 export interface ApiFindSimilarInput {
   limit: number | null;
   narrow_to_sample_ids: string[] | null;
