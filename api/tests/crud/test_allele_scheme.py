@@ -1,4 +1,4 @@
-"""Scheme compatibility uses complete locus sets and selected-run provenance."""
+"""Compatibility uses detected MLST schemes or producing cgMLST profiles."""
 
 import asyncio
 from types import SimpleNamespace
@@ -11,7 +11,7 @@ from bonsai_api.crud.cluster import get_typing_profiles, TypingProfileAggregate
 from bonsai_api.exceptions import EntryNotFound
 
 
-def stored(sid, scheme="same", alleles=None, method="mlst", **extra):
+def stored(sid, scheme="same", alleles=None, method="mlst", assay="same", **extra):
     return {
         "sample_id": sid,
         "typing_result": [
@@ -19,6 +19,7 @@ def stored(sid, scheme="same", alleles=None, method="mlst", **extra):
                 "software": "mlst" if method == "mlst" else "chewbbaca",
                 "analysis_type": method,
                 "status": "parsed",
+                "pipeline_run_id": "run",
                 "result": {
                     "scheme": scheme,
                     "alleles": alleles if alleles is not None else {"x": 1, "y": "LNF"},
@@ -26,6 +27,7 @@ def stored(sid, scheme="same", alleles=None, method="mlst", **extra):
                 **extra,
             }
         ],
+        "pipeline_runs": [{"pipeline_run_id": "run", "assay": assay}],
     }
 
 
@@ -63,19 +65,20 @@ def test_matching_full_locus_sets_allow_missing_calls(method):
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
 def test_different_schemes_or_locus_sets_are_blocked(method):
+    identity = "analysis profiles" if method == "cgmlst" else "typing schemes"
     for second in [
-        stored("b", "other", method=method),
+        stored("b", "other", method=method, assay="other"),
         stored("b", alleles={"x": 1, "z": "LNF"}, method=method),
     ]:
         result = validate([stored("a", method=method), second], method)
         assert not result.can_cluster
-        assert "different typing schemes or locus sets" in result.notice
+        assert f"different {identity} or locus sets" in result.notice
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
 def test_unknown_identity_blocks_even_when_locus_names_match(method):
     result = validate(
-        [stored("a", None, method=method), stored("b", None, method=method)], method
+        [stored(sid, None, method=method, assay=None) for sid in ["a", "b"]], method
     )
     assert not result.can_cluster
     assert "could not be verified" in result.notice
@@ -94,34 +97,26 @@ def test_empty_profiles_do_not_supply_locus_evidence_for_unplaced_samples():
     assert validate_typing_schemes(profiles, "mlst").can_cluster
 
 
-def test_cgmlst_identity_uses_database_from_the_selected_analysis_run():
+def test_cgmlst_identity_uses_profile_from_the_selected_analysis_run():
     raw = {
         "typing_pipeline_run_id": "older",
         "pipeline_runs": [
             {
                 "pipeline_run_id": "newer",
-                "pipeline_info": {
-                    "databases": [
-                        {"software": "chewbbaca", "name": "other", "version": "2"}
-                    ]
-                },
+                "assay": "saureus",
             },
             {
                 "pipeline_run_id": "older",
-                "pipeline_info": {
-                    "databases": [
-                        {"software": "chewbbaca", "name": "expected", "version": "1"}
-                    ]
-                },
+                "assay": "ecoli",
             },
         ],
     }
-    assert get_profile_scheme(raw, "cgmlst") == '[null,"expected","1"]'
+    assert get_profile_scheme(raw, "cgmlst") == "ecoli"
     raw["typing_pipeline_run_id"] = "unknown"
     assert get_profile_scheme(raw, "cgmlst") is None
 
 
-def test_cgmlst_uses_selected_analysis_and_database_version():
+def test_cgmlst_uses_selected_analysis_and_its_producing_profile():
     a = stored(
         "a",
         scheme=None,
@@ -148,40 +143,115 @@ def test_cgmlst_uses_selected_analysis_and_database_version():
         sample["pipeline_runs"] = [
             {
                 "pipeline_run_id": "newest",
-                "pipeline_info": {
-                    "databases": [
-                        {"software": "chewbbaca", "name": "wrong", "version": "9"}
-                    ]
-                },
+                "assay": "saureus",
             },
             {
                 "pipeline_run_id": "run-1",
-                "pipeline_info": {
-                    "databases": [
-                        {"software": "chewbbaca", "name": "expected", "version": "1"}
-                    ]
-                },
+                "assay": "ecoli",
             },
         ]
     assert validate([a, b], "cgmlst").can_cluster
-    b["pipeline_runs"][1]["pipeline_info"]["databases"][0]["version"] = "2"
-    assert not validate([a, b], "cgmlst").can_cluster
+    # A shared latest assay must not hide different producing assays.
+    b["pipeline_runs"][1]["assay"] = "staphylococcus"
+    result = validate([a, b], "cgmlst")
+    assert not result.can_cluster
+    assert "different analysis profiles" in result.notice
 
 
-def test_database_identity_is_available_without_declared_cgmlst_scheme():
+def test_cgmlst_profile_is_sufficient_without_scheme_or_database_metadata():
     samples = [
-        stored(sid, scheme=None, method="cgmlst", pipeline_run_id="run")
+        stored(sid, scheme=None, method="cgmlst", assay="ecoli")
+        for sid in ["a", "b"]
+    ]
+    assert validate(samples, "cgmlst").can_cluster
+
+
+def test_cgmlst_metadata_versions_do_not_split_a_shared_analysis_profile():
+    samples = [
+        stored(sid, scheme=sid, method="cgmlst", assay="ecoli", software_version=sid)
         for sid in ["a", "b"]
     ]
     for sample in samples:
-        sample["pipeline_runs"] = [
-            {
-                "pipeline_run_id": "run",
-                "pipeline_info": {
-                    "databases": [
-                        {"software": "chewbbaca", "name": "db", "version": "1"}
-                    ]
-                },
-            }
-        ]
+        sample["pipeline_runs"][0]["pipeline_info"] = {
+            "databases": [
+                {
+                    "software": "chewbbaca",
+                    "name": sample["sample_id"],
+                    "version": sample["sample_id"],
+                }
+            ]
+        }
     assert validate(samples, "cgmlst").can_cluster
+
+
+@pytest.mark.parametrize("assay", [None, "", "  ", 42, ["ecoli"]])
+def test_cgmlst_unknown_profile_is_not_replaced_by_scheme_or_database(assay):
+    a = stored("a", method="cgmlst", assay="ecoli")
+    b = stored("b", method="cgmlst", assay=assay)
+    for sample in (a, b):
+        sample["pipeline_runs"][0]["pipeline_info"] = {
+            "databases": [{"software": "chewbbaca", "name": "shared", "version": "1"}]
+        }
+    result = validate([a, b], "cgmlst")
+    assert not result.can_cluster
+    assert "analysis profile could not be verified" in result.notice
+
+
+@pytest.mark.parametrize(
+    "provenance", ["missing_run_id", "unknown_run_id", "no_runs", "duplicate_runs"]
+)
+def test_cgmlst_requires_an_unambiguous_producing_run(provenance):
+    a = stored("a", method="cgmlst", assay="ecoli")
+    b = stored("b", method="cgmlst", assay="ecoli")
+    b["last_pipeline_run_id"] = "run"
+    if provenance == "missing_run_id":
+        del b["typing_result"][0]["pipeline_run_id"]
+    elif provenance == "unknown_run_id":
+        b["typing_result"][0]["pipeline_run_id"] = "unknown"
+    elif provenance == "no_runs":
+        b["pipeline_runs"] = []
+    else:
+        b["pipeline_runs"].append(dict(b["pipeline_runs"][0]))
+    result = validate([a, b], "cgmlst")
+    assert not result.can_cluster
+    assert "analysis profile could not be verified" in result.notice
+
+
+def test_mlst_matching_schemes_can_cross_analysis_profiles():
+    assert validate(
+        [
+            stored("a", scheme="spneumoniae", assay="streptococcus"),
+            stored("b", scheme="spneumoniae", assay="spneumoniae"),
+        ]
+    ).can_cluster
+
+
+def test_mlst_same_broad_profile_cannot_mix_detected_schemes():
+    result = validate(
+        [
+            stored("a", scheme="spneumoniae", assay="streptococcus"),
+            stored("b", scheme="spyogenes", assay="streptococcus"),
+        ]
+    )
+    assert not result.can_cluster
+    assert "different typing schemes" in result.notice
+
+
+def test_mlst_unknown_scheme_cannot_use_the_analysis_profile():
+    result = validate(
+        [
+            stored("a", scheme="spneumoniae", assay="streptococcus"),
+            stored("b", scheme=None, assay="streptococcus"),
+        ]
+    )
+    assert not result.can_cluster
+    assert "typing scheme could not be verified" in result.notice
+
+
+def test_mlst_scheme_can_come_from_selected_analysis_metadata():
+    assert validate(
+        [
+            stored(sid, scheme=None, meta={"scheme": "spneumoniae"})
+            for sid in ["a", "b"]
+        ]
+    ).can_cluster

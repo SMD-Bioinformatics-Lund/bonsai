@@ -31,7 +31,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
 
     sample_id: str
     typing_result: dict[str, Any]
-    scheme: str | None = None
+    scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""

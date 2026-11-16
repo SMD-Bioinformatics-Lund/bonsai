@@ -72,9 +72,11 @@ async def validate_allele_schemes(
         try:
             profiles = await get_typing_profiles(db, selection.sample_ids, method)
         except (EntryNotFound, InvalidDataFormat, ValueError) as error:
+            name = "cgMLST" if method == "cgmlst" else "MLST"
+            identity = "analysis profile" if method == "cgmlst" else "typing scheme"
             validations[method] = AlleleSchemeValidation(
                 can_cluster=False,
-                notice=f"Cannot cluster by {method.upper() if method == 'mlst' else 'cgMLST'}: the typing scheme could not be verified for every sample.",
+                notice=f"Cannot cluster by {name}: the {identity} could not be verified for every sample.",
             )
             LOG.debug("Unable to validate %s schemes: %s", method, error)
         else:

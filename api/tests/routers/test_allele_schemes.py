@@ -40,7 +40,8 @@ def test_direct_submission_cannot_bypass_scheme_checks(endpoint, method):
         f"/cluster/{method}", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
     )
     assert response.status_code == 422
-    assert "different typing schemes" in response.json()["detail"]
+    identity = "analysis profiles" if method == "cgmlst" else "typing schemes"
+    assert f"different {identity}" in response.json()["detail"]
     getter.assert_awaited_once()
     schedule.assert_not_called()
 
@@ -61,14 +62,30 @@ def test_static_preflight_route_checks_both_methods(endpoint):
     schedule.assert_not_called()
 
 
-def test_compatible_profiles_are_validated_from_the_same_read_as_submission(endpoint):
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_compatible_profiles_are_validated_from_the_same_read_as_submission(
+    endpoint, method
+):
     client, getter, schedule = endpoint
     response = client.post(
-        "/cluster/mlst", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
+        f"/cluster/{method}", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
     )
     assert response.status_code == 201
     getter.assert_awaited_once()
     assert schedule.call_args.args[0] is getter.return_value
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_unknown_identity_blocks_submission_with_method_specific_notice(endpoint, method):
+    client, getter, schedule = endpoint
+    getter.return_value[1].scheme = None
+    response = client.post(
+        f"/cluster/{method}", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
+    )
+    assert response.status_code == 422
+    identity = "analysis profile" if method == "cgmlst" else "typing scheme"
+    assert f"{identity} could not be verified" in response.json()["detail"]
+    schedule.assert_not_called()
 
 
 def test_unavailable_method_does_not_hide_other_preflight_results(endpoint):
@@ -80,3 +97,16 @@ def test_unavailable_method_does_not_hide_other_preflight_results(endpoint):
     assert response.status_code == 200
     assert response.json()["mlst"]["can_cluster"] is False
     assert response.json()["cgmlst"]["can_cluster"] is True
+
+
+def test_missing_cgmlst_result_reports_profile_notice_without_blocking_mlst(endpoint):
+    from bonsai_api.exceptions import EntryNotFound
+
+    client, getter, schedule = endpoint
+    getter.side_effect = [getter.return_value, EntryNotFound("No cgMLST profiles")]
+    response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert response.status_code == 200
+    assert response.json()["mlst"]["can_cluster"] is True
+    assert response.json()["cgmlst"]["can_cluster"] is False
+    assert "analysis profile could not be verified" in response.json()["cgmlst"]["notice"]
+    schedule.assert_not_called()

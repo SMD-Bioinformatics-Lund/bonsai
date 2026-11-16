@@ -11,14 +11,22 @@ Tasks
 Scheme compatibility
 --------------------
 
-MLST and cgMLST require a verifiable scheme identity and matching complete locus
-sets before clustering. Unknown identity blocks the affected allele method;
-matching locus names alone do not establish that allele databases match.
-For cgMLST, the declared scheme and the chewBBACA database name/version are
-combined when the selected analysis's own pipeline run supplies them. The latest
-pipeline run is not substituted for that run. A declared scheme is used when
-database provenance is unavailable. Legacy records with neither form of identity
-are blocked. Empty profiles do not supply locus-set evidence.
+MLST requires the same detected typing scheme, even within one analysis profile:
+broad profiles can auto-detect different MLST schemes. Matching MLST schemes may
+be compared across analysis profiles.
+
+cgMLST requires the same analysis profile, stored as ``assay`` on the pipeline run
+that produced the selected cgMLST result. Each profile is currently assumed to
+define one compatible cgMLST scheme; supporting multiple schemes per profile
+will require explicit scheme identity. Neither a declared cgMLST scheme nor
+database or software versions replace this profile check. The latest pipeline
+run is not substituted for the producing run.
+
+Both methods also require matching complete locus sets. Unknown MLST scheme or
+cgMLST profile identity blocks the affected method; matching locus names alone
+do not establish compatibility. Missing allele calls retain their locus keys.
+Empty profiles do not supply locus-set evidence. These identity restrictions do
+not apply to MinHash.
 
 ``POST /cluster/validate`` checks both allele methods for the selected
 ``sampleIds``. The basket disables each incompatible method and shows its

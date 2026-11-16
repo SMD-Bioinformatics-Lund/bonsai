@@ -157,14 +157,14 @@ export class BasketComponent extends HTMLElement {
             if (validation?.[method]?.can_cluster === true) continue;
             const notice = document.createElement("p");
             notice.className = "small text-warning mb-2";
-            notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the typing scheme could not be verified.`;
+            notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`;
             this.appendChild(notice);
           }
         } catch (error) {
           if (version !== this.renderVersion) return;
           const notice = document.createElement("p");
           notice.className = "small text-warning mb-2";
-          notice.textContent = "MLST/cgMLST scheme compatibility could not be verified. Reopen the basket to retry.";
+          notice.textContent = "MLST scheme/cgMLST analysis profile compatibility could not be verified. Reopen the basket to retry.";
           this.appendChild(notice);
           console.error("Failed to validate typing schemes:", error);
         }
