@@ -1,34 +1,12 @@
 import { ApiError, ApiService, pollJob } from "../api";
 import { throwSmallToast } from "../../utils/notification";
-import { ApiJobStatusNewick, ApiClusterInput, ApiUncallableSample } from "../types";
+import { ApiJobStatusNewick, ApiClusterInput } from "../types";
 import { ClusterMethod, DistanceMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
 type ApiProblemDetails = {
   detail?: unknown;
-  type?: string;
-  typing_method?: string;
-  samples?: ApiUncallableSample[];
 };
-
-function getUncallableSamples(
-  problem: ApiProblemDetails,
-  typingMethod: TypingMethod,
-  sampleIds: string[],
-): ApiUncallableSample[] | null {
-  if (
-    problem.type !== "urn:bonsai:problem:no-usable-allele-calls" ||
-    (typingMethod !== TypingMethod.MLST && typingMethod !== TypingMethod.CGMLST) ||
-    problem.typing_method !== typingMethod ||
-    !Array.isArray(problem.samples) || problem.samples.length === 0
-  ) return null;
-
-  const validSamples = problem.samples.every((sample) =>
-    sample && typeof sample.sample_id === "string" &&
-    typeof sample.label === "string" && sampleIds.includes(sample.sample_id),
-  );
-  return validSamples ? problem.samples : null;
-}
 
 async function summarizeMissingClusterData(
   message: string,
@@ -105,7 +83,6 @@ export async function clusterSamples(
   element: HTMLLinkElement,
   sampleIds: string[],
   api: ApiService,
-  onUncallableSamples?: (method: TypingMethod, samples: ApiUncallableSample[]) => void,
 ) {
   const typingMethodEnum = element.getAttribute("data-bi-typing-method") as TypingMethod;
   // base dropdown element
@@ -157,15 +134,8 @@ export async function clusterSamples(
   } catch (error) {
     let message = "A problem occurred during clustering";
     if (error instanceof ApiError && error.data) {
-      const problem = error.data as ApiProblemDetails;
-      const detail = problem.detail;
+      const detail = (error.data as ApiProblemDetails).detail;
       if (typeof detail === "string") message = detail;
-      const uncallableSamples = getUncallableSamples(problem, typingMethodEnum, sampleIds);
-      if (uncallableSamples) {
-        onUncallableSamples?.(typingMethodEnum, uncallableSamples);
-        const name = typingMethodEnum === TypingMethod.CGMLST ? "cgMLST" : "MLST";
-        message = `Cannot cluster by ${name}: ${uncallableSamples.length} ${uncallableSamples.length === 1 ? "sample has" : "samples have"} no usable allele calls. Remove the affected samples from the basket to continue.`;
-      }
     } else if (error instanceof Error) {
       message = error.message;
     }

@@ -36,8 +36,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 async function setup(savedIds = [], { deferSchemes = false } = {}) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
-    "add-to-basket-btn", "empty-basket-btn", "basket-qc-feedback", "remove-failed-qc-from-basket-btn",
-    "basket-allele-feedback", "remove-uncallable-from-basket-btn"];
+    "add-to-basket-btn", "empty-basket-btn", "basket-qc-feedback", "remove-failed-qc-from-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element();
   const clusterLinks = Object.fromEntries(["mlst", "cgmlst", "minhash", "ska"].map(method => {
@@ -47,7 +46,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
   }));
   const clusterLink = clusterLinks.mlst;
   const schemeRequests = [];
-  const requests = [], clusters = [], selectionCallbacks = [], clusteringFeedback = [];
+  const requests = [], clusters = [], selectionCallbacks = [];
   let failedIds = [];
   let selected = [];
   const table = {
@@ -81,9 +80,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     return exports;
   }
   const state = load("../web/js/core/state/basket-state.ts");
-  const basket = load("../web/js/components/sample-basket.ts", () => ({
-    TypingMethod: { MLST: "mlst", CGMLST: "cgmlst" },
-  }));
+  const basket = load("../web/js/components/sample-basket.ts");
   const counter = load("../web/js/components/samples-basket-counter.ts");
   const tableController = load("../web/js/utils/table-controller.ts", name =>
     name === "datatables.net-bs5" ? DataTable : {});
@@ -100,10 +97,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     User: class { isAdmin = false; },
     initToast() {}, initTooltip() {},
     throwSmallToast() {},
-    clusterSamples: (_element, sampleIds, _api, feedback) => {
-      clusters.push(Array.from(sampleIds));
-      clusteringFeedback.push(feedback);
-    },
+    clusterSamples: (_element, sampleIds) => clusters.push(Array.from(sampleIds)),
   }));
   await view.initGroupView(null, "", "", "");
   const component = elements["basket-content"].children[0];
@@ -117,8 +111,6 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     }),
     qcNotice: () => elements["basket-qc-feedback"].hidden ? undefined : elements["basket-qc-feedback"],
     removeQc: () => elements["remove-failed-qc-from-basket-btn"].onclick(),
-    reportUncallable: (index, method, samples) => clusteringFeedback[index](method, samples),
-    removeUncallable: () => elements["remove-uncallable-from-basket-btn"].onclick(),
     qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
     setFailed: ids => { failedIds = ids; },
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
@@ -391,63 +383,6 @@ test("response IDs outside the request never appear in the basket or clustering 
   assert.deepEqual(h.clusters, [["a", "b"]]);
 });
 
-test("uncallable samples stay selected until explicit removal after submission", async () => {
-  const h = await setup(["a", "b", "c"]);
-  await h.respond(0, ["a", "b", "c"]);
-  assert.equal(h.requests.length, 1);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, true);
-  await h.cluster();
-  h.reportUncallable(0, "cgmlst", [{ sample_id: "b", label: "LAB-B <literal>" }]);
-  assert.deepEqual(h.saved(), ["a", "b", "c"]);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, false);
-  assert.match(h.elements["basket-allele-feedback"].textContent, /no usable cgMLST calls: LAB-B <literal>/);
-  assert.equal(h.elements["basket-allele-feedback"].innerHTML, "");
-  assert.equal(h.elements["remove-uncallable-from-basket-btn"].textContent, "Remove 1 sample from basket");
-  assert.equal(h.requests.length, 1);
-  h.removeUncallable();
-  assert.deepEqual(h.saved(), ["a", "c"]);
-  assert.equal(h.count(), 2);
-  assert.equal(h.clusters.length, 1);
-  assert.equal(h.clusterButton.disabled, true);
-  await h.respond(1, ["a", "c"]);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, true);
-  assert.equal(h.elements["remove-uncallable-from-basket-btn"].hidden, true);
-  await h.cluster();
-  assert.deepEqual(h.clusters, [["a", "b", "c"], ["a", "c"]]);
-});
-
-test("removing all uncallable samples or leaving one preserves minimum-size rules", async () => {
-  for (const affected of [["a"], ["a", "b"]]) {
-    const h = await setup(["a", "b"]);
-    await h.respond(0, ["a", "b"]);
-    await h.cluster();
-    h.reportUncallable(0, "mlst", affected.map(sample_id => ({ sample_id, label: sample_id })));
-    h.removeUncallable();
-    if (affected.length === 1) await h.respond(1, ["b"]);
-    assert.deepEqual(h.saved(), affected.length === 1 ? ["b"] : []);
-    assert.equal(h.clusterButton.disabled, true);
-    await h.cluster();
-    assert.equal(h.clusters.length, 1);
-  }
-});
-
-test("a changed basket ignores stale clustering failures and clears removal feedback", async () => {
-  const h = await setup(["a", "b"]);
-  await h.respond(0, ["a", "b"]);
-  await h.cluster();
-  h.reportUncallable(0, "mlst", [{ sample_id: "a", label: "LAB-A" }]);
-  h.select(["c"]);
-  h.add();
-  await h.respond(1, ["a", "b", "c"]);
-  h.reportUncallable(0, "mlst", [{ sample_id: "a", label: "LAB-A" }]);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, true);
-  assert.equal(h.elements["remove-uncallable-from-basket-btn"].hidden, true);
-  assert.deepEqual(h.saved(), ["a", "b", "c"]);
-  h.empty();
-  h.reportUncallable(0, "mlst", [{ sample_id: "a", label: "LAB-A" }]);
-  assert.deepEqual(h.saved(), []);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, true);
-});
 
 test("scheme checks disable only incompatible allele methods and show their notice", async () => {
   const h = await setup(["a", "b"], { deferSchemes: true });
@@ -467,11 +402,6 @@ test("scheme checks disable only incompatible allele methods and show their noti
   await h.cluster("cgmlst");
   assert.deepEqual(h.clusters, [["a", "b"]]);
   assert.deepEqual(h.saved(), ["a", "b"]);
-  h.reportUncallable(0, "cgmlst", [{ sample_id: "a", label: "LAB-A" }]);
-  assert.equal(h.elements["basket-allele-feedback"].hidden, false);
-  h.removeUncallable();
-  assert.deepEqual(h.saved(), ["b"]);
-  assert.equal(h.clusterButton.disabled, true);
 });
 
 

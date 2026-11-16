@@ -115,9 +115,6 @@ function initBasket(api: GroupViewApi): BasketState | void {
   const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api), {
     feedback: document.getElementById("basket-qc-feedback"),
     removeButton: document.getElementById("remove-failed-qc-from-basket-btn") as HTMLButtonElement,
-  }, {
-    feedback: document.getElementById("basket-allele-feedback"),
-    removeButton: document.getElementById("remove-uncallable-from-basket-btn") as HTMLButtonElement,
   }, api.validateAlleleClustering.bind(api));
   const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
   if (clusterButton) {
@@ -138,9 +135,7 @@ function initBasket(api: GroupViewApi): BasketState | void {
   clusterBtns.forEach((element) => {
     element.onclick = (event) => {
       event.preventDefault();
-      if (basketComponent.canClusterWith(element.getAttribute("data-bi-typing-method"))) {
-        clusterSamples(element, basketState.getSampleIds(), api, basketComponent.uncallableSamplesHandler());
-      }
+      if (basketComponent.canClusterWith(element.getAttribute("data-bi-typing-method"))) clusterSamples(element, basketState.getSampleIds(), api);
     };
   });
 

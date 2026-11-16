@@ -70,11 +70,7 @@ async def validate_allele_schemes(
     validations = {}
     for method in ("mlst", "cgmlst"):
         try:
-            # Check compatibility here; submission reports uncallable samples so
-            # the basket can offer their explicit removal.
-            profiles = await get_typing_profiles(
-                db, selection.sample_ids, method, require_usable_calls=False
-            )
+            profiles = await get_typing_profiles(db, selection.sample_ids, method)
         except (EntryNotFound, InvalidDataFormat, ValueError) as error:
             name = "cgMLST" if method == "cgmlst" else "MLST"
             identity = "analysis profile" if method == "cgmlst" else "typing scheme"

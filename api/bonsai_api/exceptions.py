@@ -13,17 +13,6 @@ class EntryNotFound(DomainError):
     """Raised when a requested entry is not found in the database."""
 
 
-class NoUsableAlleleCalls(DomainError):
-    """Selected samples cannot contribute to the requested allele tree."""
-
-    def __init__(self, typing_method: str, samples: list[dict[str, str]]):
-        name = "cgMLST" if typing_method == "cgmlst" else "MLST"
-        labels = ", ".join(sample["label"] for sample in samples)
-        super().__init__(f"No usable {name} allele calls for: {labels}")
-        self.typing_method = typing_method
-        self.samples = samples
-
-
 class NotChangedError(Exception):
     """Raised when an update does not change anything."""
 

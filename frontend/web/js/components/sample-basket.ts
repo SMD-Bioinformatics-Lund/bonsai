@@ -1,6 +1,5 @@
-import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiUncallableSample, ApiAlleleSchemeValidations } from "../core/types";
+import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
-import { TypingMethod } from "../core/types/enums";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
@@ -8,7 +7,6 @@ export class BasketComponent extends HTMLElement {
   private ready = false;
   private schemeValidation: ApiAlleleSchemeValidations | null = null;
   private qcFailedSampleIds = new Set<string>();
-  private uncallableSampleIds = new Set<string>();
   private getSamplesDetails: (
     query: ApiGetSamplesDetailsInput,
   ) => Promise<ApiSampleDetailsResponse>;
@@ -17,7 +15,6 @@ export class BasketComponent extends HTMLElement {
     state: BasketState,
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
     private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
-    private alleleControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
     private validateSchemes?: (sampleIds: string[]) => Promise<ApiAlleleSchemeValidations>,
   ) {
     super();
@@ -33,11 +30,6 @@ export class BasketComponent extends HTMLElement {
         if (this.ready) this.state.removeSamples([...this.qcFailedSampleIds]);
       };
     }
-    if (this.alleleControls?.removeButton) {
-      this.alleleControls.removeButton.onclick = () => {
-        if (this.ready) this.state.removeSamples([...this.uncallableSampleIds]);
-      };
-    }
     this.render();
   }
 
@@ -46,37 +38,6 @@ export class BasketComponent extends HTMLElement {
     this.renderVersion++;
     this.setReady(false);
     if (this.qcControls?.removeButton) this.qcControls.removeButton.onclick = null;
-    if (this.alleleControls?.removeButton) this.alleleControls.removeButton.onclick = null;
-    this.clearAlleleFeedback();
-  }
-
-  uncallableSamplesHandler(): (method: TypingMethod, samples: ApiUncallableSample[]) => void {
-    const version = this.renderVersion;
-    return (method, samples) => {
-      // A response for a previous selection must not offer removal from this one.
-      if (version !== this.renderVersion || !this.ready) return;
-      if (!this.alleleControls?.feedback || !this.alleleControls?.removeButton) return;
-      const currentIds = new Set(this.state.getSampleIds());
-      const affected = samples.filter((sample) => currentIds.has(sample.sample_id));
-      if (affected.length === 0) return;
-      this.uncallableSampleIds = new Set(affected.map((sample) => sample.sample_id));
-      const name = method === TypingMethod.CGMLST ? "cgMLST" : "MLST";
-      const count = this.uncallableSampleIds.size;
-      const { feedback, removeButton } = this.alleleControls;
-      feedback.textContent = `${count} ${count === 1 ? "sample has" : "samples have"} no usable ${name} calls: ${affected.map((sample) => sample.label).join(", ")}. Remove these samples from the basket to continue ${name} clustering.`;
-      feedback.hidden = false;
-      removeButton.textContent = `Remove ${count} ${count === 1 ? "sample" : "samples"} from basket`;
-      removeButton.hidden = false;
-    };
-  }
-
-  private clearAlleleFeedback(): void {
-    this.uncallableSampleIds.clear();
-    if (this.alleleControls?.feedback) {
-      this.alleleControls.feedback.hidden = true;
-      this.alleleControls.feedback.textContent = "";
-    }
-    if (this.alleleControls?.removeButton) this.alleleControls.removeButton.hidden = true;
   }
 
   get canCluster(): boolean {
@@ -142,7 +103,6 @@ export class BasketComponent extends HTMLElement {
 
   async render() {
     const version = ++this.renderVersion;
-    this.clearAlleleFeedback();
     this.schemeValidation = null;
     this.setReady(false);
     const sampleIds = this.state.getSampleIds();

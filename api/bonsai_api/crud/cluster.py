@@ -10,7 +10,7 @@ from bonsai_api.crud.allele_scheme import get_profile_assay, get_profile_scheme
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
-from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat, NoUsableAlleleCalls
+from bonsai_api.exceptions import EntryNotFound
 from bonsai_api.models.base import RWModel
 from bonsai_api.redis.models import SkaIndexInput
 
@@ -71,13 +71,9 @@ CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
 
 
 async def get_typing_profiles(
-    db: Database,
-    sample_idx: list[str],
-    typing_method: str,
-    *,
-    require_usable_calls: bool = True,
+    db: Database, sample_idx: list[str], typing_method: str
 ) -> TypingProfileOutput:
-    """Get normalized profiles, requiring usable calls for clustering submissions."""
+    """Get locations from database."""
     spec = CLUSTER_TYPING_SPECS.get(typing_method)
     if spec is None:
         raise ValueError(f"Unsupported typing method: {typing_method}")
@@ -126,27 +122,17 @@ async def get_typing_profiles(
     async for raw in cursor:
         sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
-        if not isinstance(loci_map, dict):
-            raise InvalidDataFormat(
-                f"Invalid {typing_method} allele profile for {sample_labels[raw['sample_id']]}"
-            )
-        normalized = {}
-        for locus, allele in loci_map.items():
-            try:
-                normalized[locus] = replace_cgmlst_errors(
-                    allele, include_novel_alleles=True, correct_alleles=True
-                )
-            except (ValueError, IndexError, TypeError) as error:
-                raise InvalidDataFormat(
-                    f"Invalid {typing_method} allele call at {locus} for "
-                    f"{sample_labels[raw['sample_id']]}"
-                ) from error
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
                 scheme=get_profile_scheme(raw, typing_method),
                 assay=get_profile_assay(raw),
-                typing_result=normalized,
+                typing_result={
+                    loci: replace_cgmlst_errors(
+                        allele, include_novel_alleles=True, correct_alleles=True
+                    )
+                    for loci, allele in loci_map.items()
+                },
             )
         )
 
@@ -163,19 +149,6 @@ async def get_typing_profiles(
             f"No {profile_name} typing profile is available for the following samples: "
             f"{missing_labels}"
         )
-    # Match the worker's allele-column selection and zero-as-missing convention.
-    # Reject the whole submission; the basket can offer explicit removal.
-    uncallable = [
-        {"sample_id": profile.sample_id, "label": sample_labels[profile.sample_id]}
-        for profile in results
-        if not any(
-            allele is not None and allele != 0
-            for locus, allele in profile.allele_profile().items()
-            if not locus.startswith("#") and locus.lower() not in {"st", "st_id"}
-        )
-    ]
-    if require_usable_calls and uncallable:
-        raise NoUsableAlleleCalls(typing_method, uncallable)
     return results
 
 
