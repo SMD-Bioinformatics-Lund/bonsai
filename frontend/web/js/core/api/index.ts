@@ -3,6 +3,7 @@ import {
   ApiGetSamplesDetailsInput,
   ApiSampleDetailsResponse,
   ApiClusterInput,
+  ApiAlleleSchemeValidations,
   ApiJobSubmission,
   ApiFindSimilarInput,
   ApiUserInfo,
@@ -62,6 +63,13 @@ export class ApiService {
       this.handleError(error);
       throw error;
     }
+  };
+
+  validateAlleleClustering = async (sampleIds: string[]) => {
+    return this.http.request<ApiAlleleSchemeValidations>(`/cluster/validate`, {
+      method: "POST",
+      body: JSON.stringify({ sampleIds }),
+    });
   };
 
   clusterSamples = async (method: TypingMethod, params: ApiClusterInput) => {

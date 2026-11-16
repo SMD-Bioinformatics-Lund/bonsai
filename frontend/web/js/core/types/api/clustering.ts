@@ -18,3 +18,9 @@ export interface ApiFindSimilarInput {
   typing_method: TypingMethod | null;
   cluster_method: ClusterMethod | null;
 }
+export interface ApiAlleleSchemeValidation {
+  can_cluster: boolean;
+  notice: string | null;
+}
+
+export type ApiAlleleSchemeValidations = Record<"mlst" | "cgmlst", ApiAlleleSchemeValidation>;
