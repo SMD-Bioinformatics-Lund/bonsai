@@ -1,4 +1,4 @@
-import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiUncallableSample } from "../core/types";
+import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiUncallableSample, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
 import { TypingMethod } from "../core/types/enums";
 
@@ -6,6 +6,7 @@ export class BasketComponent extends HTMLElement {
   private state: BasketState;
   private renderVersion = 0;
   private ready = false;
+  private schemeValidation: ApiAlleleSchemeValidations | null = null;
   private qcFailedSampleIds = new Set<string>();
   private uncallableSampleIds = new Set<string>();
   private getSamplesDetails: (
@@ -17,6 +18,7 @@ export class BasketComponent extends HTMLElement {
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
     private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
     private alleleControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
+    private validateSchemes?: (sampleIds: string[]) => Promise<ApiAlleleSchemeValidations>,
   ) {
     super();
     this.state = state;
@@ -81,6 +83,14 @@ export class BasketComponent extends HTMLElement {
     return this.ready && this.state.getSampleIds().length >= 2;
   }
 
+  canClusterWith(method: string): boolean {
+    if (!this.canCluster) return false;
+    if (method === "mlst" || method === "cgmlst") {
+      return this.schemeValidation?.[method]?.can_cluster === true;
+    }
+    return true;
+  }
+
   private setReady(ready: boolean): void {
     this.ready = ready;
     this.updateQcControls();
@@ -107,9 +117,33 @@ export class BasketComponent extends HTMLElement {
     this.render();
   }
 
+  private async validateClustering(sampleIds: string[], version: number): Promise<void> {
+    try {
+      const validation = await this.validateSchemes(sampleIds);
+      if (version !== this.renderVersion) return;
+      this.schemeValidation = validation;
+      for (const method of ["mlst", "cgmlst"] as const) {
+        if (validation?.[method]?.can_cluster === true) continue;
+        const notice = document.createElement("p");
+        notice.className = "small text-warning mb-2";
+        notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`;
+        this.appendChild(notice);
+      }
+    } catch (error) {
+      if (version !== this.renderVersion) return;
+      const notice = document.createElement("p");
+      notice.className = "small text-warning mb-2";
+      notice.textContent = "MLST scheme/cgMLST analysis profile compatibility could not be verified. Reopen the basket to retry.";
+      this.appendChild(notice);
+      console.error("Failed to validate typing schemes:", error);
+    }
+    this.setReady(true);
+  }
+
   async render() {
     const version = ++this.renderVersion;
     this.clearAlleleFeedback();
+    this.schemeValidation = null;
     this.setReady(false);
     const sampleIds = this.state.getSampleIds();
     if (sampleIds.length === 0) {
@@ -177,6 +211,9 @@ export class BasketComponent extends HTMLElement {
         });
       });
       this.setReady(true);
+      if (sampleIds.length >= 2) {
+        await this.validateClustering(sampleIds, version);
+      }
     } catch (error) {
       if (version !== this.renderVersion) return;
       this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";

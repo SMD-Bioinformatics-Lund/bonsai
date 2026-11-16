@@ -118,12 +118,18 @@ function initBasket(api: GroupViewApi): BasketState | void {
   }, {
     feedback: document.getElementById("basket-allele-feedback"),
     removeButton: document.getElementById("remove-uncallable-from-basket-btn") as HTMLButtonElement,
-  });
+  }, api.validateAlleleClustering.bind(api));
   const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;
   if (clusterButton) {
     clusterButton.disabled = true;
     basketComponent.addEventListener("basket:ready-change", () => {
       clusterButton.disabled = !basketComponent.canCluster;
+      document.querySelectorAll<HTMLLinkElement>("#basket-cluster-samples a").forEach((link) => {
+        const disabled = !basketComponent.canClusterWith(link.getAttribute("data-bi-typing-method"));
+        link.classList.toggle("disabled", disabled);
+        link.setAttribute("aria-disabled", String(disabled));
+        link.tabIndex = disabled ? -1 : 0;
+      });
     });
   }
   basketElement.appendChild(basketComponent);
@@ -132,7 +138,7 @@ function initBasket(api: GroupViewApi): BasketState | void {
   clusterBtns.forEach((element) => {
     element.onclick = (event) => {
       event.preventDefault();
-      if (basketComponent.canCluster) {
+      if (basketComponent.canClusterWith(element.getAttribute("data-bi-typing-method"))) {
         clusterSamples(element, basketState.getSampleIds(), api, basketComponent.uncallableSamplesHandler());
       }
     };

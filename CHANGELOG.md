@@ -32,6 +32,7 @@
 ### Fixed
 
 - Preserve integer allele calls and zero-as-missing during clustering export, stop submissions with uncallable profiles, and offer explicit removal of affected samples from the basket while retaining strict rejection of null, ambiguous, and malformed calls. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Require the same producing analysis profile (assay) for MLST/cgMLST clustering, and the same detected scheme for MLST. [#650](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/650)
 - Include the last allele column in MLST/cgMLST clustering and retain the empty sample-ID header field when reading legacy profiles. [#648](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/648)
 - Restore the 0.1% Bracken summary-table cutoff while retaining Show more/Show less and all species in extended reports. [#653](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/653)
 - Check manually curated QC when opening or changing the basket before enabling clustering, highlight failed QC and allow easily removing. [#644](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/644)

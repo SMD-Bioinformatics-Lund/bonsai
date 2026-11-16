@@ -25,12 +25,19 @@ def database(rows):
             yield row
 
     return SimpleNamespace(
-        sample_collection=SimpleNamespace(aggregate=AsyncMock(return_value=records()))
+        sample_collection=SimpleNamespace(aggregate=AsyncMock(side_effect=lambda _: records()))
     )
 
 
 def sample(sid, calls):
-    return {"sample_id": sid, "external_sample_id": f"LAB-{sid}", "typing_result": calls}
+    return {
+        "sample_id": sid,
+        "external_sample_id": f"LAB-{sid}",
+        "typing_result": calls,
+        "scheme": "same",
+        "typing_pipeline_run_id": "run",
+        "pipeline_runs": [{"pipeline_run_id": "run", "assay": "same"}],
+    }
 
 
 def endpoint(monkeypatch, rows):
@@ -94,6 +101,26 @@ def test_metadata_columns_cannot_make_a_sample_callable(monkeypatch):
     response = client.post("/cluster/mlst", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"})
     assert response.status_code == 422
     assert response.json()["samples"] == [{"sample_id": "a", "label": "LAB-a"}]
+    schedule.assert_not_called()
+
+
+def test_compatibility_preflight_preserves_submission_feedback_for_uncallable_samples(monkeypatch):
+    client, schedule, _ = endpoint(monkeypatch, [
+        sample("a", {"x": "LNF", "y": 0}),
+        sample("b", {"x": 1, "y": 2}),
+    ])
+    preflight = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert preflight.status_code == 200
+    assert preflight.json()["mlst"]["can_cluster"] is True
+    assert preflight.json()["cgmlst"]["can_cluster"] is True
+    schedule.assert_not_called()
+
+    submission = client.post(
+        "/cluster/mlst", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
+    )
+    assert submission.status_code == 422
+    assert submission.json()["type"] == "urn:bonsai:problem:no-usable-allele-calls"
+    assert submission.json()["samples"] == [{"sample_id": "a", "label": "LAB-a"}]
     schedule.assert_not_called()
 
 
