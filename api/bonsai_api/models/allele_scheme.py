@@ -1,5 +1,7 @@
 """Compatibility of selected typing schemes for allele clustering."""
 
+from pydantic import Field
+
 from bonsai_api.models.base import RWModel
 
 
@@ -8,3 +10,4 @@ class AlleleSchemeValidation(RWModel):
 
     can_cluster: bool
     notice: str | None = None
+    details: list[str] = Field(default_factory=list)

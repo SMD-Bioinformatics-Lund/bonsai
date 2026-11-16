@@ -6,11 +6,15 @@ from typing import Any
 
 from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
-from bonsai_api.crud.allele_scheme import get_profile_assay, get_profile_scheme
+from bonsai_api.crud.allele_scheme import (
+    get_profile_assay,
+    get_profile_scheme,
+    summarize_sample_labels,
+)
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
-from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat
 from bonsai_api.models.base import RWModel
 from bonsai_api.redis.models import SkaIndexInput
 
@@ -30,6 +34,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
     sample_id: str
+    external_sample_id: str | None = None
     typing_result: dict[str, Any]
     scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
     assay: str | None = None  # Assay of the run that produced the selected result.
@@ -122,17 +127,31 @@ async def get_typing_profiles(
     async for raw in cursor:
         sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
         loci_map = raw.get("typing_result") or {}
+        name = "cgMLST" if typing_method == "cgmlst" else "MLST"
+        if not isinstance(loci_map, Mapping):
+            raise InvalidDataFormat(
+                f"Invalid {name} allele profile for {sample_labels[raw['sample_id']]}: "
+                "the stored allele profile has an invalid format."
+            )
+        try:
+            alleles = {
+                loci: replace_cgmlst_errors(
+                    allele, include_novel_alleles=True, correct_alleles=True
+                )
+                for loci, allele in loci_map.items()
+            }
+        except (ValueError, TypeError, IndexError) as error:
+            raise InvalidDataFormat(
+                f"Invalid {name} allele profile for {sample_labels[raw['sample_id']]}: "
+                "the stored allele calls could not be read."
+            ) from error
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
+                external_sample_id=raw.get("external_sample_id"),
                 scheme=get_profile_scheme(raw, typing_method),
                 assay=get_profile_assay(raw),
-                typing_result={
-                    loci: replace_cgmlst_errors(
-                        allele, include_novel_alleles=True, correct_alleles=True
-                    )
-                    for loci, allele in loci_map.items()
-                },
+                typing_result=alleles,
             )
         )
 
@@ -141,8 +160,8 @@ async def get_typing_profiles(
     found_ids = {sample.sample_id for sample in results if sample.typing_result}
     missing = set(sample_idx) - found_ids
     if missing:
-        missing_labels = ", ".join(
-            sorted(sample_labels.get(sample_id, sample_id) for sample_id in missing)
+        missing_labels = summarize_sample_labels(
+            sample_labels.get(sample_id, sample_id) for sample_id in missing
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(

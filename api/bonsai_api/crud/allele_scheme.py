@@ -1,12 +1,12 @@
 """Verify method-specific identity and complete locus sets before comparison."""
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
 from bonsai_api.models.allele_scheme import AlleleSchemeValidation
 
 if TYPE_CHECKING:
-    from bonsai_api.crud.cluster import TypingProfileOutput
+    from bonsai_api.crud.cluster import TypingProfileAggregate, TypingProfileOutput
 
 
 def get_profile_scheme(raw: Mapping[str, Any], typing_method: str) -> str | None:
@@ -37,6 +37,32 @@ def get_profile_assay(raw: Mapping[str, Any]) -> str | None:
     return assay.strip() if isinstance(assay, str) and assay.strip() else None
 
 
+def _sample_label(profile: "TypingProfileAggregate") -> str:
+    """Prefer the Lab ID in validation details."""
+    return profile.external_sample_id or profile.sample_id
+
+
+def summarize_sample_labels(labels: Iterable[str]) -> str:
+    """Show at most five sample labels and count any remaining samples."""
+    samples = sorted(labels)
+    summary = ", ".join(samples[:5])
+    if len(samples) > 5:
+        summary += f", and {len(samples) - 5} more"
+    return summary
+
+
+def _identity_details(profiles: "TypingProfileOutput", field: str, label: str) -> list[str]:
+    """Show which samples belong to each known compatibility identity."""
+    groups: dict[str, list[str]] = {}
+    for profile in profiles:
+        if value := getattr(profile, field):
+            groups.setdefault(value, []).append(_sample_label(profile))
+    return [
+        f"{label} {value}: {summarize_sample_labels(samples)}."
+        for value, samples in sorted(groups.items())
+    ]
+
+
 def validate_typing_schemes(
     profiles: "TypingProfileOutput", typing_method: str
 ) -> AlleleSchemeValidation:
@@ -45,28 +71,62 @@ def validate_typing_schemes(
     identity = "analysis profile" if typing_method == "cgmlst" else "typing scheme"
     candidates = [p for p in profiles if p.typing_result]
     if not candidates or any(not p.scheme for p in candidates):
+        unknown = [p for p in candidates if not p.scheme]
+        reason = (
+            "the analysis profile of the producing run is missing or ambiguous."
+            if typing_method == "cgmlst"
+            else "no detected MLST scheme is available."
+        )
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: the {identity} could not be verified for every sample.",
+            details=(
+                [f"{summarize_sample_labels(_sample_label(p) for p in unknown)}: {reason}"]
+                if unknown
+                else []
+            ),
         )
     # Include identities from empty profiles when available, but do not infer
     # a locus definition from a profile that has no typing result.
     schemes = {p.scheme for p in profiles if p.scheme}
     locus_sets = {frozenset(p.typing_result) for p in candidates}
     if len(schemes) > 1 or len(locus_sets) > 1:
+        details = []
+        if len(schemes) > 1:
+            details.extend(_identity_details(profiles, "scheme", identity.capitalize()))
+        if len(locus_sets) > 1:
+            groups: dict[frozenset[str], list[str]] = {}
+            for profile in candidates:
+                groups.setdefault(frozenset(profile.typing_result), []).append(
+                    _sample_label(profile)
+                )
+            for index, (loci, samples) in enumerate(groups.items(), start=1):
+                examples = ", ".join(sorted(loci)[:5])
+                if len(loci) > 5:
+                    examples += ", …"
+                details.append(
+                    f"Locus set {index} ({len(loci)} loci; {examples}): "
+                    f"{summarize_sample_labels(samples)}."
+                )
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: the selected samples have different {identity}s or locus sets.",
+            details=details,
         )
     if typing_method == "mlst":
         if any(not p.assay for p in candidates):
             return AlleleSchemeValidation(
                 can_cluster=False,
                 notice="Cannot cluster by MLST: the analysis profile could not be verified for every sample.",
+                details=[
+                    f"{summarize_sample_labels(_sample_label(p) for p in candidates if not p.assay)}: "
+                    "the analysis profile of the producing run is missing or ambiguous."
+                ],
             )
         if len({p.assay for p in profiles if p.assay}) > 1:
             return AlleleSchemeValidation(
                 can_cluster=False,
                 notice="Cannot cluster by MLST: the selected samples have different analysis profiles.",
+                details=_identity_details(profiles, "assay", "Analysis profile"),
             )
     return AlleleSchemeValidation(can_cluster=len(profiles) >= 2)
