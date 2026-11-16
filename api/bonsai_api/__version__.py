@@ -1,3 +1,3 @@
 """API version"""
 
-VERSION = "3.0.0-rc10"
+VERSION = "3.0.0-rc11"
