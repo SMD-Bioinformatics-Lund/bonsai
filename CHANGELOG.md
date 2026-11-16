@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - List basket notice samples one per row and simplify cgMLST details to show affected samples without locus definitions, retaining the five-ID limit and compatibility checks. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Clarify notices about missing / conflicting MLST and cgMLST in basket. [#654](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/654)
 - Preserve integer allele calls during clustering TSV export and recognize legacy `0.0` values as missing calls in the allele worker. [#651](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/651)

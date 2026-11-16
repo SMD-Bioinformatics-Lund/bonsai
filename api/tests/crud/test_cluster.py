@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 import mongomock
+from bonsai_api.crud.allele_scheme import validate_typing_schemes
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.cluster import (
     CLUSTER_TYPING_SPECS,
@@ -64,6 +65,51 @@ def test_get_typing_profiles_rejects_empty_profile_with_lab_id():
                 "cgmlst",
             )
         )
+
+
+@pytest.mark.parametrize("ambiguous_call", [None, ["1", "10"]])
+def test_mlst_missing_and_multiple_calls_preserve_loci_for_clustering(ambiguous_call):
+    """The reported sagalactiae profile keeps four calls and three missing loci."""
+    alleles = {
+        "adhP": ambiguous_call,
+        "sdhA": "partial",
+        "glnA": 1,
+        "atr": 2,
+        "glcK": 2,
+        "pheS": 1,
+        "tkt": "partial",
+    }
+    reference = {**alleles, "adhP": 1, "sdhA": 182, "tkt": 153}
+    rows = [
+        {
+            "sample_id": sid,
+            "scheme": "sagalactiae",
+            "typing_result": calls,
+            "typing_pipeline_run_id": "run",
+            "pipeline_runs": [{"pipeline_run_id": "run", "assay": "streptococcus"}],
+        }
+        for sid, calls in [("INS100135", alleles), ("reference", reference)]
+    ]
+    db = SimpleNamespace(
+        sample_collection=SimpleNamespace(
+            aggregate=AsyncMock(return_value=_async_records(rows))
+        )
+    )
+    profiles = asyncio.run(
+        get_typing_profiles(db, [row["sample_id"] for row in rows], "mlst")
+    )
+    assert profiles[0].scheme == "sagalactiae"
+    assert profiles[0].allele_profile() == {
+        "adhP": None,
+        "sdhA": None,
+        "glnA": 1,
+        "atr": 2,
+        "glcK": 2,
+        "pheS": 1,
+        "tkt": None,
+    }
+    assert set(profiles[0].typing_result) == set(alleles)
+    assert validate_typing_schemes(profiles, "mlst").can_cluster
 
 
 def test_get_ska_indexes_rejects_missing_index_with_lab_id():

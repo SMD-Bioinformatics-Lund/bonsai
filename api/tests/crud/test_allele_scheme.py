@@ -325,7 +325,7 @@ def test_locus_details_distinguish_equal_sized_but_different_sets(method):
         ]
 
 
-@pytest.mark.parametrize("alleles", [[1, 2], {"x": None}, {"x": "INF"}])
+@pytest.mark.parametrize("alleles", [[1, 2], {"x": "INF"}])
 def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
     sample = stored("a", alleles=alleles)
     sample["external_sample_id"] = "LAB-123"
