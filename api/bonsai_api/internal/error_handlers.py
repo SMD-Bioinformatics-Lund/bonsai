@@ -15,6 +15,7 @@ from bonsai_api.exceptions import (
     UnsupportedVersionError,
     UnsupportedAnalysisTypeError,
     InvalidDataFormat,
+    NoUsableAlleleCalls,
     SchemaMismatchError,
     AnalysisExistsError,
 )
@@ -23,6 +24,7 @@ from .problem_types import (
     AUDIT_LOG_UNAVAILABLE,
     CONFLICT,
     INVALID_DATA,
+    NO_USABLE_ALLELE_CALLS,
     NOT_FOUND,
     NOT_IMPLEMENTED,
     NOT_MODIFIED,
@@ -92,6 +94,14 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(InvalidDataFormat)
     async def _invalid_data_format(_: Request, exc: InvalidDataFormat):
         return problem_details(422, "Invalid data format", str(exc), type_=INVALID_DATA)
+
+
+    @app.exception_handler(NoUsableAlleleCalls)
+    async def _no_usable_alleles(_: Request, exc: NoUsableAlleleCalls):
+        return problem_details(
+            422, "No usable allele calls", str(exc), type_=NO_USABLE_ALLELE_CALLS,
+            extra={"typing_method": exc.typing_method, "samples": exc.samples},
+        )
 
 
     @app.exception_handler(SchemaMismatchError)

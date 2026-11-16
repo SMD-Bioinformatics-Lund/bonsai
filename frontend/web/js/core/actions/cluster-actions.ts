@@ -1,11 +1,14 @@
 import { ApiError, ApiService, pollJob } from "../api";
 import { throwSmallToast } from "../../utils/notification";
-import { ApiJobStatusNewick, ApiClusterInput } from "../types";
+import { ApiJobStatusNewick, ApiClusterInput, ApiUncallableSample } from "../types";
 import { ClusterMethod, DistanceMethod, TypingMethod } from "../types/enums";
 import { hideSpinner, showSpinner } from "./spinner-actions";
 
 type ApiProblemDetails = {
   detail?: unknown;
+  type?: string;
+  typing_method?: string;
+  samples?: ApiUncallableSample[];
 };
 
 async function summarizeMissingClusterData(
@@ -83,6 +86,7 @@ export async function clusterSamples(
   element: HTMLLinkElement,
   sampleIds: string[],
   api: ApiService,
+  onUncallableSamples?: (method: TypingMethod, samples: ApiUncallableSample[]) => void,
 ) {
   const typingMethodEnum = element.getAttribute("data-bi-typing-method") as TypingMethod;
   // base dropdown element
@@ -134,8 +138,21 @@ export async function clusterSamples(
   } catch (error) {
     let message = "A problem occurred during clustering";
     if (error instanceof ApiError && error.data) {
-      const detail = (error.data as ApiProblemDetails).detail;
+      const problem = error.data as ApiProblemDetails;
+      const detail = problem.detail;
       if (typeof detail === "string") message = detail;
+      if (
+        problem.type === "urn:bonsai:problem:no-usable-allele-calls" &&
+        (typingMethodEnum === TypingMethod.MLST || typingMethodEnum === TypingMethod.CGMLST) &&
+        problem.typing_method === typingMethodEnum &&
+        Array.isArray(problem.samples) && problem.samples.length > 0 &&
+        problem.samples.every((sample) => sample && typeof sample.sample_id === "string" &&
+          typeof sample.label === "string" && sampleIds.includes(sample.sample_id))
+      ) {
+        onUncallableSamples?.(typingMethodEnum, problem.samples);
+        const name = typingMethodEnum === TypingMethod.CGMLST ? "cgMLST" : "MLST";
+        message = `Cannot cluster by ${name}: ${problem.samples.length} ${problem.samples.length === 1 ? "sample has" : "samples have"} no usable allele calls. Remove the affected samples from the basket to continue.`;
+      }
     } else if (error instanceof Error) {
       message = error.message;
     }
