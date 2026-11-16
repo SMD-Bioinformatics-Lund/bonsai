@@ -1,6 +1,6 @@
 """Verify method-specific identity and complete locus sets before comparison."""
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
 from bonsai_api.models.allele_scheme import AlleleSchemeValidation
@@ -42,6 +42,15 @@ def _sample_label(profile: "TypingProfileAggregate") -> str:
     return profile.external_sample_id or profile.sample_id
 
 
+def summarize_sample_labels(labels: Iterable[str]) -> str:
+    """Show at most five sample labels and count any remaining samples."""
+    samples = sorted(labels)
+    summary = ", ".join(samples[:5])
+    if len(samples) > 5:
+        summary += f", and {len(samples) - 5} more"
+    return summary
+
+
 def _identity_details(profiles: "TypingProfileOutput", field: str, label: str) -> list[str]:
     """Show which samples belong to each known compatibility identity."""
     groups: dict[str, list[str]] = {}
@@ -49,7 +58,7 @@ def _identity_details(profiles: "TypingProfileOutput", field: str, label: str) -
         if value := getattr(profile, field):
             groups.setdefault(value, []).append(_sample_label(profile))
     return [
-        f"{label} {value}: {', '.join(sorted(samples))}."
+        f"{label} {value}: {summarize_sample_labels(samples)}."
         for value, samples in sorted(groups.items())
     ]
 
@@ -62,19 +71,20 @@ def validate_typing_schemes(
     identity = "analysis profile" if typing_method == "cgmlst" else "typing scheme"
     candidates = [p for p in profiles if p.typing_result]
     if not candidates or any(not p.scheme for p in candidates):
+        unknown = [p for p in candidates if not p.scheme]
+        reason = (
+            "the analysis profile of the producing run is missing or ambiguous."
+            if typing_method == "cgmlst"
+            else "no detected MLST scheme is available."
+        )
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: the {identity} could not be verified for every sample.",
-            details=[
-                f"{_sample_label(p)}: "
-                + (
-                    "the analysis profile of the producing run is missing or ambiguous."
-                    if typing_method == "cgmlst"
-                    else "no detected MLST scheme is available."
-                )
-                for p in candidates
-                if not p.scheme
-            ],
+            details=(
+                [f"{summarize_sample_labels(_sample_label(p) for p in unknown)}: {reason}"]
+                if unknown
+                else []
+            ),
         )
     # Include identities from empty profiles when available, but do not infer
     # a locus definition from a profile that has no typing result.
@@ -96,7 +106,7 @@ def validate_typing_schemes(
                     examples += ", …"
                 details.append(
                     f"Locus set {index} ({len(loci)} loci; {examples}): "
-                    f"{', '.join(sorted(samples))}."
+                    f"{summarize_sample_labels(samples)}."
                 )
         return AlleleSchemeValidation(
             can_cluster=False,
@@ -109,9 +119,8 @@ def validate_typing_schemes(
                 can_cluster=False,
                 notice="Cannot cluster by MLST: the analysis profile could not be verified for every sample.",
                 details=[
-                    f"{_sample_label(p)}: the analysis profile of the producing run is missing or ambiguous."
-                    for p in candidates
-                    if not p.assay
+                    f"{summarize_sample_labels(_sample_label(p) for p in candidates if not p.assay)}: "
+                    "the analysis profile of the producing run is missing or ambiguous."
                 ],
             )
         if len({p.assay for p in profiles if p.assay}) > 1:

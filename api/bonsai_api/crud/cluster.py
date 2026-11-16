@@ -6,7 +6,11 @@ from typing import Any
 
 from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
-from bonsai_api.crud.allele_scheme import get_profile_assay, get_profile_scheme
+from bonsai_api.crud.allele_scheme import (
+    get_profile_assay,
+    get_profile_scheme,
+    summarize_sample_labels,
+)
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
@@ -156,8 +160,8 @@ async def get_typing_profiles(
     found_ids = {sample.sample_id for sample in results if sample.typing_result}
     missing = set(sample_idx) - found_ids
     if missing:
-        missing_labels = ", ".join(
-            sorted(sample_labels.get(sample_id, sample_id) for sample_id in missing)
+        missing_labels = summarize_sample_labels(
+            sample_labels.get(sample_id, sample_id) for sample_id in missing
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(

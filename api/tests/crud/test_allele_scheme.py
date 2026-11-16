@@ -322,3 +322,66 @@ def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
     sample["external_sample_id"] = "LAB-123"
     with pytest.raises(InvalidDataFormat, match="Invalid MLST allele profile for LAB-123"):
         validate([sample])
+
+
+@pytest.mark.parametrize(
+    "field,missing,method",
+    [
+        ("scheme", False, "mlst"),
+        ("assay", False, "mlst"),
+        ("loci", False, "cgmlst"),
+        ("scheme", True, "mlst"),
+        ("assay", True, "mlst"),
+        ("scheme", True, "cgmlst"),
+    ],
+)
+def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missing, method):
+    profiles = [
+        TypingProfileAggregate(
+            sample_id=f"internal-{i}", external_sample_id=f"LAB-{i:02}",
+            scheme="same", assay="same", typing_result={"x": 1},
+        )
+        for i in reversed(range(25))
+    ]
+    if missing:
+        for profile in profiles:
+            setattr(profile, field, None)
+    else:
+        other = TypingProfileAggregate(
+            sample_id="other", scheme="same", assay="same", typing_result={"x": 1},
+        )
+        if field == "loci":
+            other.typing_result = {"y": 1}
+        else:
+            setattr(other, field, "other")
+        profiles.append(other)
+    result = validate_typing_schemes(profiles, method)
+    assert not result.can_cluster
+    detail = next(detail for detail in result.details if "LAB-00" in detail)
+    assert "LAB-00, LAB-01, LAB-02, LAB-03, LAB-04, and 20 more" in detail
+    assert "LAB-05" not in detail
+    assert "LAB-24" not in detail
+
+
+@pytest.mark.parametrize("count", [5, 6])
+def test_missing_scheme_notices_count_only_ids_beyond_five(count):
+    result = validate([stored(f"sample-{i}", scheme=None) for i in range(count)])
+    assert len(result.details) == 1
+    assert "sample-0, sample-1, sample-2, sample-3, sample-4" in result.details[0]
+    if count == 5:
+        assert "more" not in result.details[0]
+    else:
+        assert ", and 1 more:" in result.details[0]
+        assert "sample-5" not in result.details[0]
+
+
+def test_missing_typing_profiles_limit_ids_in_the_unavailable_data_notice():
+    samples = [stored(f"internal-{i}", alleles={}) for i in reversed(range(25))]
+    for sample in samples:
+        sample["external_sample_id"] = f"LAB-{int(sample['sample_id'].split('-')[1]):02}"
+    with pytest.raises(EntryNotFound) as error:
+        validate(samples)
+    message = str(error.value)
+    assert "LAB-00, LAB-01, LAB-02, LAB-03, LAB-04, and 20 more" in message
+    assert "LAB-05" not in message
+    assert "LAB-24" not in message
