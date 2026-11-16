@@ -81,7 +81,9 @@ async def get_typing_profiles(
     pipeline: PipelineStages = []
     pipeline.append({"$match": {"sample_id": {"$in": sample_idx}}})
     stages = build_summary_entry_stages(spec)
-    # Capture scheme metadata before the builder reduces the entry to its result.
+    # FIXME: This could likely be part of the main builder function
+    # Didn't want to touch that part though when Markus wasn't available for reviewing
+    # 261116 JW
     stages.insert(
         -1,
         {
