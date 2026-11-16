@@ -22,7 +22,9 @@ def endpoint(monkeypatch):
     app.dependency_overrides[get_database] = lambda: SimpleNamespace()
     getter = AsyncMock(
         return_value=[
-            TypingProfileAggregate(sample_id=sid, scheme="same", typing_result={"x": 1})
+            TypingProfileAggregate(
+                sample_id=sid, scheme="same", assay="same", typing_result={"x": 1}
+            )
             for sid in ["a", "b"]
         ]
     )
@@ -49,7 +51,9 @@ def test_direct_submission_cannot_bypass_scheme_checks(endpoint, method):
 def test_static_preflight_route_checks_both_methods(endpoint):
     client, getter, schedule = endpoint
     incompatible = [
-        TypingProfileAggregate(sample_id=sid, scheme=sid, typing_result={"x": 1})
+        TypingProfileAggregate(
+            sample_id=sid, scheme=sid, assay="same", typing_result={"x": 1}
+        )
         for sid in ["a", "b"]
     ]
     compatible = getter.return_value
@@ -59,6 +63,25 @@ def test_static_preflight_route_checks_both_methods(endpoint):
     assert response.json()["mlst"]["can_cluster"] is False
     assert response.json()["cgmlst"]["can_cluster"] is True
     assert [call.args[-1] for call in getter.await_args_list] == ["mlst", "cgmlst"]
+    schedule.assert_not_called()
+
+
+@pytest.mark.parametrize("assay", [None, "other"])
+def test_mlst_assay_check_applies_to_preflight_and_submission(endpoint, assay):
+    client, getter, schedule = endpoint
+    getter.return_value[1].assay = assay
+    preflight = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert preflight.status_code == 200
+    validation = preflight.json()["mlst"]
+    assert validation["can_cluster"] is False
+    assert "analysis profile" in validation["notice"]
+    assert preflight.json()["cgmlst"]["can_cluster"] is True
+
+    submission = client.post(
+        "/cluster/mlst", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
+    )
+    assert submission.status_code == 422
+    assert submission.json()["detail"] == validation["notice"]
     schedule.assert_not_called()
 
 

@@ -78,6 +78,29 @@ export class BasketComponent extends HTMLElement {
     this.render();
   }
 
+  private async validateClustering(sampleIds: string[], version: number): Promise<void> {
+    try {
+      const validation = await this.validateSchemes(sampleIds);
+      if (version !== this.renderVersion) return;
+      this.schemeValidation = validation;
+      for (const method of ["mlst", "cgmlst"] as const) {
+        if (validation?.[method]?.can_cluster === true) continue;
+        const notice = document.createElement("p");
+        notice.className = "small text-warning mb-2";
+        notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`;
+        this.appendChild(notice);
+      }
+    } catch (error) {
+      if (version !== this.renderVersion) return;
+      const notice = document.createElement("p");
+      notice.className = "small text-warning mb-2";
+      notice.textContent = "MLST scheme/cgMLST analysis profile compatibility could not be verified. Reopen the basket to retry.";
+      this.appendChild(notice);
+      console.error("Failed to validate typing schemes:", error);
+    }
+    this.setReady(true);
+  }
+
   async render() {
     const version = ++this.renderVersion;
     this.schemeValidation = null;
@@ -149,26 +172,7 @@ export class BasketComponent extends HTMLElement {
       });
       this.setReady(true);
       if (sampleIds.length >= 2) {
-        try {
-          const validation = await this.validateSchemes(sampleIds);
-          if (version !== this.renderVersion) return;
-          this.schemeValidation = validation;
-          for (const method of ["mlst", "cgmlst"] as const) {
-            if (validation?.[method]?.can_cluster === true) continue;
-            const notice = document.createElement("p");
-            notice.className = "small text-warning mb-2";
-            notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`;
-            this.appendChild(notice);
-          }
-        } catch (error) {
-          if (version !== this.renderVersion) return;
-          const notice = document.createElement("p");
-          notice.className = "small text-warning mb-2";
-          notice.textContent = "MLST scheme/cgMLST analysis profile compatibility could not be verified. Reopen the basket to retry.";
-          this.appendChild(notice);
-          console.error("Failed to validate typing schemes:", error);
-        }
-        this.setReady(true);
+        await this.validateClustering(sampleIds, version);
       }
     } catch (error) {
       if (version !== this.renderVersion) return;

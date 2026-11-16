@@ -16,6 +16,13 @@ def get_profile_scheme(raw: Mapping[str, Any], typing_method: str) -> str | None
         return (
             declared.strip() if isinstance(declared, str) and declared.strip() else None
         )
+    # Each cgMLST assay currently defines one compatible scheme. Database and
+    # software versions can change without changing that compatibility identity.
+    return get_profile_assay(raw)
+
+
+def get_profile_assay(raw: Mapping[str, Any]) -> str | None:
+    """Get the assay of the unambiguous run that produced the selected result."""
     run_id = raw.get("typing_pipeline_run_id")
     if not run_id:
         return None
@@ -26,8 +33,6 @@ def get_profile_scheme(raw: Mapping[str, Any], typing_method: str) -> str | None
     ]
     if len(runs) != 1:
         return None
-    # Each cgMLST assay currently defines one compatible scheme. Database and
-    # software versions can change without changing that compatibility identity.
     assay = runs[0].get("assay")
     return assay.strip() if isinstance(assay, str) and assay.strip() else None
 
@@ -53,4 +58,15 @@ def validate_typing_schemes(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: the selected samples have different {identity}s or locus sets.",
         )
+    if typing_method == "mlst":
+        if any(not p.assay for p in candidates):
+            return AlleleSchemeValidation(
+                can_cluster=False,
+                notice="Cannot cluster by MLST: the analysis profile could not be verified for every sample.",
+            )
+        if len({p.assay for p in profiles if p.assay}) > 1:
+            return AlleleSchemeValidation(
+                can_cluster=False,
+                notice="Cannot cluster by MLST: the selected samples have different analysis profiles.",
+            )
     return AlleleSchemeValidation(can_cluster=len(profiles) >= 2)

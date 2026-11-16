@@ -6,7 +6,7 @@ from typing import Any
 
 from bonsai_libs.parse.parsers.chewbacca import replace_cgmlst_errors
 
-from bonsai_api.crud.allele_scheme import get_profile_scheme
+from bonsai_api.crud.allele_scheme import get_profile_assay, get_profile_scheme
 from bonsai_api.crud.builder.summary import build_summary_entry_stages
 from bonsai_api.crud.builder.types import BuilderArgs, PipelineStages
 from bonsai_api.db import Database
@@ -32,6 +32,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     sample_id: str
     typing_result: dict[str, Any]
     scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
+    assay: str | None = None  # Assay of the run that produced the selected result.
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -123,6 +124,7 @@ async def get_typing_profiles(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
                 scheme=get_profile_scheme(raw, typing_method),
+                assay=get_profile_assay(raw),
                 typing_result={
                     loci: replace_cgmlst_errors(
                         allele, include_novel_alleles=True, correct_alleles=True

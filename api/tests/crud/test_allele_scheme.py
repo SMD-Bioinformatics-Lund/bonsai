@@ -1,4 +1,4 @@
-"""Compatibility uses detected MLST schemes or producing cgMLST profiles."""
+"""Compatibility uses producing profiles and, for MLST, detected schemes."""
 
 import asyncio
 from types import SimpleNamespace
@@ -91,8 +91,12 @@ def test_missing_database_sample_is_not_considered_compatible():
 
 def test_empty_profiles_do_not_supply_locus_evidence_for_unplaced_samples():
     profiles = [
-        TypingProfileAggregate(sample_id="a", scheme="same", typing_result={"x": 1}),
-        TypingProfileAggregate(sample_id="empty", scheme="same", typing_result={}),
+        TypingProfileAggregate(
+            sample_id="a", scheme="same", assay="same", typing_result={"x": 1}
+        ),
+        TypingProfileAggregate(
+            sample_id="empty", scheme="same", assay="same", typing_result={}
+        ),
     ]
     assert validate_typing_schemes(profiles, "mlst").can_cluster
 
@@ -185,14 +189,15 @@ def test_cgmlst_metadata_versions_do_not_split_a_shared_analysis_profile():
 
 
 @pytest.mark.parametrize("assay", [None, "", "  ", 42, ["ecoli"]])
-def test_cgmlst_unknown_profile_is_not_replaced_by_scheme_or_database(assay):
-    a = stored("a", method="cgmlst", assay="ecoli")
-    b = stored("b", method="cgmlst", assay=assay)
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_unknown_profile_is_not_replaced_by_scheme_or_database(assay, method):
+    a = stored("a", method=method, assay="ecoli")
+    b = stored("b", method=method, assay=assay)
     for sample in (a, b):
         sample["pipeline_runs"][0]["pipeline_info"] = {
             "databases": [{"software": "chewbbaca", "name": "shared", "version": "1"}]
         }
-    result = validate([a, b], "cgmlst")
+    result = validate([a, b], method)
     assert not result.can_cluster
     assert "analysis profile could not be verified" in result.notice
 
@@ -200,9 +205,10 @@ def test_cgmlst_unknown_profile_is_not_replaced_by_scheme_or_database(assay):
 @pytest.mark.parametrize(
     "provenance", ["missing_run_id", "unknown_run_id", "no_runs", "duplicate_runs"]
 )
-def test_cgmlst_requires_an_unambiguous_producing_run(provenance):
-    a = stored("a", method="cgmlst", assay="ecoli")
-    b = stored("b", method="cgmlst", assay="ecoli")
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_requires_an_unambiguous_producing_run(provenance, method):
+    a = stored("a", method=method, assay="ecoli")
+    b = stored("b", method=method, assay="ecoli")
     b["last_pipeline_run_id"] = "run"
     if provenance == "missing_run_id":
         del b["typing_result"][0]["pipeline_run_id"]
@@ -212,18 +218,35 @@ def test_cgmlst_requires_an_unambiguous_producing_run(provenance):
         b["pipeline_runs"] = []
     else:
         b["pipeline_runs"].append(dict(b["pipeline_runs"][0]))
-    result = validate([a, b], "cgmlst")
+    result = validate([a, b], method)
     assert not result.can_cluster
     assert "analysis profile could not be verified" in result.notice
 
 
-def test_mlst_matching_schemes_can_cross_analysis_profiles():
-    assert validate(
+def test_mlst_matching_schemes_cannot_cross_analysis_profiles():
+    result = validate(
         [
             stored("a", scheme="spneumoniae", assay="streptococcus"),
             stored("b", scheme="spneumoniae", assay="spneumoniae"),
         ]
-    ).can_cluster
+    )
+    assert not result.can_cluster
+    assert "different analysis profiles" in result.notice
+
+
+def test_mlst_assay_comes_from_selected_result_not_the_latest_run():
+    samples = [stored(sid, assay="streptococcus") for sid in ["a", "b"]]
+    for sample in samples:
+        sample["pipeline_runs"].insert(
+            0, {"pipeline_run_id": "newest", "assay": "spneumoniae"}
+        )
+        sample["last_pipeline_run_id"] = "newest"
+    assert validate(samples).can_cluster
+    # A shared latest assay must not hide different producing assays.
+    samples[1]["pipeline_runs"][1]["assay"] = "spneumoniae"
+    result = validate(samples)
+    assert not result.can_cluster
+    assert "different analysis profiles" in result.notice
 
 
 def test_mlst_same_broad_profile_cannot_mix_detected_schemes():
