@@ -1,16 +1,16 @@
-"""Bracken species remain available in full behind a compact-table toggle."""
+"""Bracken summary filtering preserves the compact-table toggle and full report."""
 
 import pytest
 from bs4 import BeautifulSoup
 
 
-@pytest.mark.parametrize("count", [0, 5, 8])
+@pytest.mark.parametrize("count", [0, 5, 6, 8])
 @pytest.mark.parametrize("extended", [False, True])
-def test_bracken_renders_all_species_and_only_long_tables_need_a_toggle(app, count, extended):
+def test_bracken_filters_summary_and_counts_only_rendered_rows_for_toggle(app, count, extended):
     results = [
-        {"scientific_name": f"Species {index}", "fraction_total_reads": 0.9 if index == 0 else 0.00001,
+        {"scientific_name": f"Species {index}", "fraction_total_reads": fraction,
          "kraken_assigned_reads": 100, "added_reads": 0}
-        for index in range(count)
+        for index, fraction in enumerate([0.001] + [0.002] * count + [0.00099, 0.0])
     ]
     template = app.jinja_env.from_string(
         '{% from "cards.html" import bracken_prediction %}'
@@ -19,10 +19,11 @@ def test_bracken_renders_all_species_and_only_long_tables_need_a_toggle(app, cou
     page = BeautifulSoup(template.render(results=results, extended=extended), "html.parser")
     container = page.select_one("[data-bracken-results]")
     rows = container.select("tbody tr")
-    assert len(rows) == count
-    if count:
-        assert f"Species {count - 1}" in rows[-1].get_text()
+    expected = results if extended else results[1:count + 1]
+    assert [row.select_one("a").get_text() for row in rows] == [
+        result["scientific_name"] for result in expected
+    ]
     button = container.select_one("[data-bracken-toggle]")
-    assert (button is not None) == (count > 5)
+    assert (button is not None) == (len(expected) > 5)
     # Until JavaScript initializes the toggle, every result remains accessible.
     assert not container.select("tr[hidden]")

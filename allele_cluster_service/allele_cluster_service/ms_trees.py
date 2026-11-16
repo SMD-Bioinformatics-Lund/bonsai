@@ -1089,7 +1089,7 @@ def backend(**args):
     for line_id, line in enumerate(fin):
         if line.startswith("#"):
             if not line.startswith("##"):
-                header = line.strip().split("\t")
+                header = line.rstrip("\r\n").split("\t")
                 allele_cols = np.array(
                     [
                         id
@@ -1105,7 +1105,7 @@ def backend(**args):
         else:
             fmt = "profile"
             if allele_cols is None:
-                header = line.strip().split("\t")
+                header = line.rstrip("\r\n").split("\t")
                 allele_cols = np.array(
                     [
                         id
