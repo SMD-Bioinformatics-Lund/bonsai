@@ -113,7 +113,6 @@ function initBasket(api: GroupViewApi): BasketState | void {
   counterElement.appendChild(basketCounter);
 
   const basketComponent = new BasketComponent(basketState, api.getSamplesDetails.bind(api), {
-    feedback: document.getElementById("basket-qc-feedback"),
     removeButton: document.getElementById("remove-failed-qc-from-basket-btn") as HTMLButtonElement,
   }, api.validateAlleleClustering.bind(api));
   const clusterButton = document.querySelector("#basket-cluster-samples .btn") as HTMLButtonElement;

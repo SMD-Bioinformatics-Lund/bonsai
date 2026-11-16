@@ -126,10 +126,36 @@ def test_missing_cgmlst_result_reports_profile_notice_without_blocking_mlst(endp
     from bonsai_api.exceptions import EntryNotFound
 
     client, getter, schedule = endpoint
-    getter.side_effect = [getter.return_value, EntryNotFound("No cgMLST profiles")]
+    message = "No cgMLST typing profile is available for the following samples: LAB-123"
+    getter.side_effect = [getter.return_value, EntryNotFound(message)]
     response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
     assert response.status_code == 200
     assert response.json()["mlst"]["can_cluster"] is True
     assert response.json()["cgmlst"]["can_cluster"] is False
-    assert "analysis profile could not be verified" in response.json()["cgmlst"]["notice"]
+    assert "typing data is unavailable" in response.json()["cgmlst"]["notice"]
+    assert response.json()["cgmlst"]["details"] == [message]
+    schedule.assert_not_called()
+
+
+def test_missing_mlst_scheme_reports_only_affected_lab_ids(endpoint):
+    client, getter, schedule = endpoint
+    getter.return_value[1].scheme = None
+    getter.return_value[1].external_sample_id = "LAB-123"
+    response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    validation = response.json()["mlst"]
+    assert "typing scheme could not be verified" in validation["notice"]
+    assert validation["details"] == ["LAB-123: no detected MLST scheme is available."]
+    schedule.assert_not_called()
+
+
+@pytest.mark.parametrize("error_type", [routes.InvalidDataFormat, ValueError])
+def test_unreadable_typing_result_is_distinct_from_missing_scheme(endpoint, error_type):
+    client, getter, schedule = endpoint
+    message = "Invalid MLST allele profile for LAB-123: the stored allele calls could not be read."
+    getter.side_effect = [error_type(message), getter.return_value]
+    response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert response.status_code == 200
+    assert "stored typing results could not be read" in response.json()["mlst"]["notice"]
+    assert response.json()["mlst"]["details"] == [message]
+    assert response.json()["cgmlst"]["can_cluster"] is True
     schedule.assert_not_called()

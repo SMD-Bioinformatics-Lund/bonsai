@@ -14,7 +14,7 @@ export class BasketComponent extends HTMLElement {
   constructor(
     state: BasketState,
     getSamplesDetails: (query: ApiGetSamplesDetailsInput) => Promise<ApiSampleDetailsResponse>,
-    private qcControls?: { feedback: HTMLElement | null; removeButton: HTMLButtonElement | null },
+    private qcControls?: { removeButton: HTMLButtonElement | null },
     private validateSchemes?: (sampleIds: string[]) => Promise<ApiAlleleSchemeValidations>,
   ) {
     super();
@@ -59,18 +59,13 @@ export class BasketComponent extends HTMLElement {
   }
 
   private updateQcControls(): void {
-    if (!this.qcControls?.feedback || !this.qcControls?.removeButton) return;
-    const { feedback, removeButton } = this.qcControls;
+    if (!this.qcControls?.removeButton) return;
+    const { removeButton } = this.qcControls;
     const count = this.qcFailedSampleIds.size;
     const visible = this.ready && count > 0;
-    feedback.hidden = !visible;
     removeButton.hidden = !visible;
     removeButton.disabled = !visible;
-    feedback.innerHTML = "";
-    if (!visible) return;
-    feedback.innerHTML = `
-      <p class="small text-danger mb-2">${count} ${count === 1 ? "sample is" : "samples are"} marked as QC failed. You can still include them in clustering.</p>
-    `;
+    removeButton.textContent = `Remove ${count} failed QC from basket`;
   }
 
   private handleStateChange() {
@@ -83,22 +78,57 @@ export class BasketComponent extends HTMLElement {
       const validation = await this.validateSchemes(sampleIds);
       if (version !== this.renderVersion) return;
       this.schemeValidation = validation;
+      const notices: { notice: string; details?: string[] }[] = [];
       for (const method of ["mlst", "cgmlst"] as const) {
         if (validation?.[method]?.can_cluster === true) continue;
-        const notice = document.createElement("p");
-        notice.className = "small text-warning mb-2";
-        notice.textContent = validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`;
-        this.appendChild(notice);
+        notices.push({
+          notice: validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`,
+          details: validation?.[method]?.details,
+        });
       }
+      this.renderNotices(notices);
     } catch (error) {
       if (version !== this.renderVersion) return;
-      const notice = document.createElement("p");
-      notice.className = "small text-warning mb-2";
-      notice.textContent = "MLST scheme/cgMLST analysis profile compatibility could not be verified. Reopen the basket to retry.";
-      this.appendChild(notice);
+      this.renderNotices([{
+        notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
+      }]);
       console.error("Failed to validate typing schemes:", error);
     }
     this.setReady(true);
+  }
+
+  private renderNotices(notices: { notice: string; details?: string[] }[]): void {
+    if (notices.length === 0) return;
+    const disclosure = document.createElement("details");
+    disclosure.className = "small mt-3 mb-2";
+    disclosure.setAttribute("data-test-id", "basket-notices");
+    const summary = document.createElement("summary");
+    summary.className = "text-secondary";
+    const icon = document.createElement("i");
+    icon.className = "bi bi-info-circle me-1";
+    icon.setAttribute("aria-hidden", "true");
+    summary.appendChild(icon);
+    const count = document.createElement("span");
+    count.textContent = `${notices.length} ${notices.length === 1 ? "notice" : "notices"}`;
+    summary.appendChild(count);
+    disclosure.appendChild(summary);
+    for (const { notice, details } of notices) {
+      const heading = document.createElement("p");
+      heading.className = "mt-2 mb-1";
+      heading.textContent = notice;
+      disclosure.appendChild(heading);
+      if (details?.length) {
+        const list = document.createElement("ul");
+        list.className = "ps-3 mb-2 text-break";
+        for (const detail of details) {
+          const item = document.createElement("li");
+          item.textContent = detail;
+          list.appendChild(item);
+        }
+        disclosure.appendChild(list);
+      }
+    }
+    this.appendChild(disclosure);
   }
 
   async render() {

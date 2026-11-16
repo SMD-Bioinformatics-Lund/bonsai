@@ -36,7 +36,7 @@ const tick = () => new Promise(resolve => setImmediate(resolve));
 async function setup(savedIds = [], { deferSchemes = false } = {}) {
   const storage = new Map([["basket_content", JSON.stringify(savedIds)]]);
   const ids = ["basket-content", "basket-counter-container", "clear-basket-btn", "basket-offcanvas",
-    "add-to-basket-btn", "empty-basket-btn", "basket-qc-feedback", "remove-failed-qc-from-basket-btn"];
+    "add-to-basket-btn", "empty-basket-btn", "remove-failed-qc-from-basket-btn"];
   const elements = Object.fromEntries(ids.map(id => [id, new Element()]));
   const clusterButton = new Element();
   const clusterLinks = Object.fromEntries(["mlst", "cgmlst", "minhash", "ska"].map(method => {
@@ -109,7 +109,11 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
       const match = card.innerHTML.match(/<h6 id="([^"]+)"/);
       return match ? [match[1]] : [];
     }),
-    qcNotice: () => elements["basket-qc-feedback"].hidden ? undefined : elements["basket-qc-feedback"],
+    notices: () => component.children.find(child => child.attributes["data-test-id"] === "basket-notices"),
+    noticeText: () => {
+      const texts = element => [element.textContent || "", ...element.children.flatMap(texts)];
+      return texts(component).join(" ");
+    },
     removeQc: () => elements["remove-failed-qc-from-basket-btn"].onclick(),
     qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
     setFailed: ids => { failedIds = ids; },
@@ -164,17 +168,14 @@ test("QC is checked before enabling clustering and removal preserves eligible sa
   assert.ok(h.qcCards().every(card => card.className.includes("bg-danger bg-opacity-10")));
   assert.ok(h.qcCards().every(card => !card.innerHTML.includes("QC failed")));
   assert.ok(h.qcCards().every(card => card.attributes["aria-label"].endsWith(": QC failed")));
-  assert.ok(!h.component.children.includes(h.qcNotice()));
-  assert.ok(!h.qcNotice().className?.includes("alert"));
   assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, false);
-  assert.match(h.qcNotice().innerHTML, /2 samples are marked as QC failed/);
-  assert.ok(!h.qcNotice().innerHTML.includes("Cluster anyway"));
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].textContent, "Remove 2 failed QC from basket");
+  assert.ok(!h.noticeText().includes("marked as QC failed"));
   h.removeQc();
   assert.deepEqual(h.saved(), ["passed-1", "passed-2"]);
   assert.equal(h.count(), 2);
   assert.equal(h.clusterButton.disabled, true);
   await h.respond(1, ["passed-1", "passed-2"]);
-  assert.equal(h.qcNotice(), undefined);
   assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   assert.equal(h.qcCards().length, 0);
   assert.equal(h.clusters.length, 0); // Removal does not automatically submit.
@@ -200,7 +201,7 @@ test("removing a single QC-failed sample disables clustering when only one remai
   const h = await setup(["passed", "failed"]);
   h.setFailed(["failed"]);
   await h.respond(0, ["passed", "failed"]);
-  assert.match(h.qcNotice().innerHTML, /1 sample is marked as QC failed/);
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].textContent, "Remove 1 failed QC from basket");
   h.removeQc();
   await h.respond(1, ["passed"]);
   assert.deepEqual(h.saved(), ["passed"]);
@@ -214,7 +215,7 @@ test("removing a single QC-failed sample disables clustering when only one remai
 test("opening the basket refreshes curated QC before re-enabling clustering", async () => {
   const h = await setup(["passed", "changed"]);
   await h.respond(0, ["passed", "changed"]);
-  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   h.setFailed(["changed"]);
   h.reopen();
   assert.equal(h.clusterButton.disabled, true);
@@ -226,10 +227,10 @@ test("opening the basket refreshes curated QC before re-enabling clustering", as
   h.setFailed([]);
   h.reopen();
   assert.equal(h.clusterButton.disabled, true);
-  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   await h.respond(2, ["passed", "changed"]);
   assert.equal(h.qcCards().length, 0);
-  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   assert.equal(h.clusterButton.disabled, false);
   assert.equal(h.requests.length, 3);
 });
@@ -257,7 +258,6 @@ test("automatic QC findings and unprocessed or absent curated status do not trig
     { sample_id: "unknown", qc_status: null, automatic_qc: "failed" },
     { sample_id: "missing-qc", automatic_qc: "failed" },
   ]);
-  assert.equal(h.qcNotice(), undefined);
   assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   assert.equal(h.clusterButton.disabled, false);
   await h.cluster();
@@ -271,7 +271,7 @@ test("stale QC responses cannot replace the status of the current basket", async
   h.setFailed(["changed"]);
   await h.respond(0, ["a", "changed"]);
   assert.equal(h.qcCards().length, 0);
-  assert.equal(h.qcNotice(), undefined);
+  assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   assert.equal(h.clusterButton.disabled, false);
 });
 
@@ -285,7 +285,6 @@ test("removing all QC-failed samples leaves an empty basket", async () => {
   assert.equal(h.count(), 0);
   assert.match(h.component.innerHTML, /Your basket is empty/);
   assert.equal(h.clusterButton.disabled, true);
-  assert.equal(h.qcNotice(), undefined);
   assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
 });
 
@@ -327,7 +326,6 @@ test("a failed basket refresh keeps clustering disabled until a successful QC re
   h.requests[1].reject(new Error("QC lookup failed"));
   await tick();
   assert.equal(h.clusterButton.disabled, true);
-  assert.equal(h.qcNotice(), undefined);
   assert.equal(h.elements["remove-failed-qc-from-basket-btn"].hidden, true);
   assert.deepEqual(h.saved(), ids);
   await h.cluster();
@@ -396,7 +394,10 @@ test("scheme checks disable only incompatible allele methods and show their noti
   assert.equal(h.clusterLinks.mlst.attributes["aria-disabled"], "true");
   assert.equal(h.clusterLinks.mlst.tabIndex, -1);
   assert.equal(h.clusterLinks.cgmlst.attributes["aria-disabled"], "false");
-  assert.ok(h.component.children.some(child => child.textContent === "Different MLST schemes <unsafe>"));
+  assert.equal(h.notices().attributes.open, undefined);
+  assert.match(h.noticeText(), /1 notice/);
+  assert.match(h.noticeText(), /Different MLST schemes <unsafe>/);
+  assert.equal(h.notices().children[1].innerHTML, "");
   await h.cluster("mlst");
   assert.equal(h.clusters.length, 0);
   await h.cluster("cgmlst");
@@ -413,7 +414,8 @@ test("failed scheme validation keeps allele methods disabled and allows retry", 
   assert.equal(h.component.canClusterWith("mlst"), false);
   assert.equal(h.component.canClusterWith("cgmlst"), false);
   assert.equal(h.component.canClusterWith("ska"), true);
-  assert.ok(h.component.children.some(child => child.textContent?.includes("could not be verified")));
+  assert.match(h.noticeText(), /1 notice/);
+  assert.match(h.noticeText(), /compatibility could not be checked/);
   h.reopen();
   await h.respond(1, ["a", "b"]);
   h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
@@ -432,7 +434,7 @@ test("stale scheme responses cannot enable a changed or emptied basket", async (
   h.schemeRequests[0].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
   await tick();
   assert.equal(h.component.canClusterWith("mlst"), false);
-  assert.ok(h.component.children.some(child => child.textContent === "Current mismatch"));
+  assert.match(h.noticeText(), /Current mismatch/);
   h.reopen();
   await h.respond(2, ["a", "b"]);
   h.clear();
@@ -440,4 +442,38 @@ test("stale scheme responses cannot enable a changed or emptied basket", async (
   await tick();
   assert.equal(h.component.canClusterWith("mlst"), false);
   assert.deepEqual(h.saved(), []);
+  assert.equal(h.notices(), undefined);
+});
+
+test("two method notices keep sample-specific details inside one closed disclosure", async () => {
+  const h = await setup(["a", "b"], { deferSchemes: true });
+  await h.respond(0, ["a", "b"]);
+  h.schemeRequests[0].resolve({
+    mlst: {
+      can_cluster: false,
+      notice: "Cannot cluster by MLST: the typing scheme could not be verified.",
+      details: ["LAB-123 <unsafe>: no detected MLST scheme is available."],
+    },
+    cgmlst: {
+      can_cluster: false,
+      notice: "Cannot cluster by cgMLST: different analysis profiles.",
+      details: ["Analysis profile ecoli: a.", "Analysis profile staphylococcus: b."],
+    },
+  });
+  await tick();
+  const disclosure = h.notices();
+  assert.equal(disclosure.attributes.open, undefined);
+  assert.equal(disclosure.children[0].children[1].textContent, "2 notices");
+  assert.match(h.noticeText(), /LAB-123 <unsafe>: no detected MLST scheme/);
+  assert.equal(disclosure.children[2].children[0].innerHTML, "");
+  assert.equal(h.clusterLinks.mlst.attributes["aria-disabled"], "true");
+  assert.equal(h.clusterLinks.cgmlst.attributes["aria-disabled"], "true");
+  assert.equal(h.component.canClusterWith("minhash"), true);
+  assert.equal(h.component.canClusterWith("ska"), true);
+  h.reopen();
+  assert.equal(h.notices(), undefined);
+  await h.respond(1, ["a", "b"]);
+  h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.notices(), undefined);
 });

@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Show basket typing compatibility warnings in a collapsed notice count with sample-specific details, and put the failed-QC count in the removal button without a separate warning paragraph. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Preserve integer allele calls during clustering TSV export and recognize legacy `0.0` values as missing calls in the allele worker. [#651](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/651)
 - Require the same producing analysis profile (assay) for MLST/cgMLST clustering, and the same detected scheme for MLST. [#650](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/650)
 - Include the last allele column in MLST/cgMLST clustering and retain the empty sample-ID header field when reading legacy profiles. [#648](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/648)

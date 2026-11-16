@@ -8,7 +8,7 @@ import pytest
 
 from bonsai_api.crud.allele_scheme import get_profile_scheme, validate_typing_schemes
 from bonsai_api.crud.cluster import get_typing_profiles, TypingProfileAggregate
-from bonsai_api.exceptions import EntryNotFound
+from bonsai_api.exceptions import EntryNotFound, InvalidDataFormat
 
 
 def stored(sid, scheme="same", alleles=None, method="mlst", assay="same", **extra):
@@ -278,3 +278,47 @@ def test_mlst_scheme_can_come_from_selected_analysis_metadata():
             for sid in ["a", "b"]
         ]
     ).can_cluster
+
+
+def test_unknown_scheme_details_identify_only_affected_lab_ids():
+    samples = [stored("a"), stored("b", scheme=None)]
+    samples[1]["external_sample_id"] = "LAB-123"
+    result = validate(samples)
+    assert result.details == ["LAB-123: no detected MLST scheme is available."]
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_different_identities_include_values_and_affected_samples(method):
+    result = validate(
+        [
+            stored("a", scheme="ecoli", assay="ecoli", method=method),
+            stored("b", scheme="saureus", assay="staphylococcus", method=method),
+        ],
+        method,
+    )
+    assert not result.can_cluster
+    assert any("ecoli: a" in detail for detail in result.details)
+    other = "staphylococcus" if method == "cgmlst" else "saureus"
+    assert any(f"{other}: b" in detail for detail in result.details)
+
+
+def test_locus_details_distinguish_equal_sized_but_different_sets():
+    result = validate(
+        [
+            stored("a", alleles={"x": 1, "y": 2}),
+            stored("b", alleles={"x": 1, "z": 2}),
+        ]
+    )
+    assert not result.can_cluster
+    assert result.details == [
+        "Locus set 1 (2 loci; x, y): a.",
+        "Locus set 2 (2 loci; x, z): b.",
+    ]
+
+
+@pytest.mark.parametrize("alleles", [[1, 2], {"x": None}, {"x": "INF"}])
+def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
+    sample = stored("a", alleles=alleles)
+    sample["external_sample_id"] = "LAB-123"
+    with pytest.raises(InvalidDataFormat, match="Invalid MLST allele profile for LAB-123"):
+        validate([sample])

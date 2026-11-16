@@ -21,6 +21,7 @@ export interface ApiFindSimilarInput {
 export interface ApiAlleleSchemeValidation {
   can_cluster: boolean;
   notice: string | null;
+  details?: string[];
 }
 
 export type ApiAlleleSchemeValidations = Record<"mlst" | "cgmlst", ApiAlleleSchemeValidation>;
