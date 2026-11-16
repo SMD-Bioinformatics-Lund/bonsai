@@ -1003,7 +1003,7 @@ def nonredundant(names, profiles):
     encoded_profile = np.array(
         [np.unique(p, return_inverse=True)[1] + 1 for p in profiles.T]
     ).T
-    encoded_profile[(profiles == "0") | (profiles == "N") | (profiles == "-")] = 0
+    encoded_profile[np.isin(profiles, ["0", "0.0", "N", "-"])] = 0
     if params["handle_missing"] == "complete_delete":
         encoded_profile = encoded_profile[:, np.sum(encoded_profile == 0, 0) > 0]
     names = names[np.lexsort(encoded_profile.T)]
