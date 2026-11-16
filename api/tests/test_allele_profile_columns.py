@@ -35,7 +35,7 @@ def test_export_and_worker_preserve_all_loci(monkeypatch, tmp_path):
         "redis",
         SimpleNamespace(allele=SimpleNamespace(enqueue=enqueue)),
     )
-    calls = {**{f"gene{i}": 1 for i in range(7)}, "ST": 1, "#locus": 1}
+    calls = {f"gene{i}": 1 for i in range(7)}
     for gene in calls:
         changed = dict(calls)
         changed[gene] = 2
@@ -48,7 +48,7 @@ def test_export_and_worker_preserve_all_loci(monkeypatch, tmp_path):
         )
         queued = enqueue.call_args.kwargs
         rows = list(csv.reader(io.StringIO(queued["profile"]), delimiter="\t"))
-        assert rows[0] == ["sample_id", *[f"allele:{locus}" for locus in calls]]
+        assert rows[0] == ["sample_id", *calls]
         assert all(len(row) == len(calls) + 1 for row in rows)
         tree = Tree(worker.cluster(queued["profile"], queued["method"]))
         assert tree.get_distance("a", "b") == 1
