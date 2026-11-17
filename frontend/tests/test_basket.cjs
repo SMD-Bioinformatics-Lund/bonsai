@@ -559,8 +559,9 @@ test("notice category removal uses every sample ID and revalidates the remaining
   });
   await tick();
   const item = h.notices().children[1].children[2].children[0];
-  const button = item.children[2];
-  assert.equal(button.textContent, "Remove 8 from basket");
+  const button = item.children[0].children[0];
+  assert.equal(button.title, "Remove 8 samples from basket");
+  assert.equal(button.children[0].className, "bi bi-trash");
   button.dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), ["keep-a", "keep-b"]);
   assert.equal(h.component.canClusterWith("cgmlst"), false);
@@ -594,7 +595,7 @@ test("missing typing data categories remove only the affected samples", async ()
   assert.equal(h.component.canClusterWith("cgmlst"), false);
   const item = h.notices().children[1].children[2].children[0];
   assert.equal(item.children[1].textContent, "missing <literal>");
-  item.children[2].dispatchEvent(new Event("click"));
+  item.children[0].children[0].dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), ["typed-a", "typed-b"]);
 });
 

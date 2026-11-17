@@ -166,9 +166,9 @@ export class BasketComponent extends HTMLElement {
           const item = document.createElement("li");
           item.className = "mb-2";
           const newline = detail.indexOf("\n");
+          const label = document.createElement("strong");
+          label.textContent = (newline > 0 ? detail.slice(0, newline) : detail).replace(/:$/, "");
           if (newline > 0) {
-            const label = document.createElement("strong");
-            label.textContent = detail.slice(0, newline).replace(/:$/, "");
             item.appendChild(label);
             const samples = document.createElement("div");
             samples.style.whiteSpace = "pre-line";
@@ -178,15 +178,24 @@ export class BasketComponent extends HTMLElement {
             item.textContent = detail;
           }
           if (sampleIds.length > 0) {
+            if (newline <= 0) {
+              item.textContent = "";
+              item.appendChild(label);
+            }
+            label.className = "d-flex justify-content-between align-items-start gap-2";
             const remove = document.createElement("button");
             remove.type = "button";
-            remove.className = "btn btn-sm btn-outline-danger mt-1";
-            remove.textContent = `Remove ${sampleIds.length} from basket`;
+            remove.className = "btn btn-link btn-sm text-danger p-0 flex-shrink-0";
+            remove.title = `Remove ${sampleIds.length} ${sampleIds.length === 1 ? "sample" : "samples"} from basket`;
             remove.setAttribute("aria-label", `Remove ${detail.split("\n")[0].replace(/:$/, "")} from basket`);
+            const trash = document.createElement("i");
+            trash.className = "bi bi-trash";
+            trash.setAttribute("aria-hidden", "true");
+            remove.appendChild(trash);
             remove.addEventListener("click", () => {
               if (this.ready && version === this.renderVersion) this.state.removeSamples(sampleIds);
             });
-            item.appendChild(remove);
+            label.appendChild(remove);
           }
           list.appendChild(item);
         }
