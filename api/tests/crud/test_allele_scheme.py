@@ -301,9 +301,28 @@ def test_different_identities_include_values_and_affected_samples(method):
         method,
     )
     assert not result.can_cluster
-    assert any("ecoli:\na" in detail for detail in result.details)
+    assert any("ecoli — 1 sample:\na" in detail for detail in result.details)
     other = "staphylococcus" if method == "cgmlst" else "saureus"
-    assert any(f"{other}:\nb" in detail for detail in result.details)
+    assert any(f"{other} — 1 sample:\nb" in detail for detail in result.details)
+
+
+def test_mlst_different_schemes_do_not_repeat_samples_under_locus_sets():
+    samples = [
+        stored("a", scheme="spneumoniae", alleles={"x": 1, "y": 2}),
+        stored("b", scheme="spyogenes", alleles={"x": 1, "z": 2}),
+        stored("c", scheme="spneumoniae", alleles={"x": 2, "y": 3}),
+    ]
+    result = validate(samples)
+    assert not result.can_cluster
+    assert "Select samples from one scheme" in result.notice
+    assert "locus" not in result.notice
+    assert result.details == [
+        "spneumoniae — 2 samples:\na\nc",
+        "spyogenes — 1 sample:\nb",
+    ]
+    # Keeping just one scheme still checks its locus definitions.
+    samples[2]["typing_result"][0]["result"]["alleles"] = {"x": 2, "z": 3}
+    assert not validate([samples[0], samples[2]]).can_cluster
 
 
 @pytest.mark.parametrize(
@@ -323,17 +342,19 @@ def test_cgmlst_shared_analysis_profile_assumes_compatible_loci(alleles):
 
 
 def test_mlst_locus_details_distinguish_equal_sized_but_different_sets():
+    shared_loci = dict.fromkeys(["spi", "recP", "gki", "gdh", "ddl", "aroE"], 1)
     result = validate(
         [
-            stored("a", alleles={"x": 1, "y": 2}),
-            stored("b", alleles={"x": 1, "z": 2}),
+            stored("a", alleles={**shared_loci, "xpt": 2}),
+            stored("b", alleles={**shared_loci, "zpt": 2}),
         ],
     )
     assert not result.can_cluster
-    assert "different typing schemes or locus sets" in result.notice
+    assert "share a typing scheme but have different locus sets" in result.notice
+    assert "same locus definitions" in result.notice
     assert result.details == [
-        "Locus set 1 (2 loci; x, y):\na",
-        "Locus set 2 (2 loci; x, z):\nb",
+        "Locus set 1 (7 loci; aroE, ddl, gdh, gki, recP, spi, xpt):\na",
+        "Locus set 2 (7 loci; aroE, ddl, gdh, gki, recP, spi, zpt):\nb",
     ]
 
 
@@ -383,6 +404,8 @@ def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missi
     assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in detail
     assert "LAB-05" not in detail
     assert "LAB-24" not in detail
+    if field in {"scheme", "assay"} and not missing:
+        assert "25 samples" in detail
 
 
 @pytest.mark.parametrize("count", [5, 6])

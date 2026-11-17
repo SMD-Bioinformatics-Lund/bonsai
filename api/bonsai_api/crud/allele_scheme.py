@@ -57,14 +57,17 @@ def _sample_detail(label: str, samples: Iterable[str]) -> str:
     return f"{label}:\n{rows}"
 
 
-def _identity_details(profiles: "TypingProfileOutput", field: str, label: str) -> list[str]:
+def _identity_details(profiles: "TypingProfileOutput", field: str) -> list[str]:
     """Show which samples belong to each known compatibility identity."""
     groups: dict[str, list[str]] = {}
     for profile in profiles:
         if value := getattr(profile, field):
             groups.setdefault(value, []).append(_sample_label(profile))
     return [
-        _sample_detail(f"{label} {value}", samples)
+        _sample_detail(
+            f"{value} — {len(samples)} {'sample' if len(samples) == 1 else 'samples'}",
+            samples,
+        )
         for value, samples in sorted(groups.items())
     ]
 
@@ -104,25 +107,32 @@ def validate_typing_schemes(
     if len(schemes) > 1 or len(locus_sets) > 1:
         details = []
         if len(schemes) > 1:
-            details.extend(_identity_details(profiles, "scheme", identity.capitalize()))
-        if len(locus_sets) > 1:
+            details.extend(_identity_details(profiles, "scheme"))
+        elif len(locus_sets) > 1:
             groups: dict[frozenset[str], list[str]] = {}
             for profile in candidates:
                 groups.setdefault(frozenset(profile.typing_result), []).append(
                     _sample_label(profile)
                 )
             for index, (loci, samples) in enumerate(groups.items(), start=1):
-                examples = ", ".join(sorted(loci)[:5])
-                if len(loci) > 5:
-                    examples += ", …"
+                locus_names = ", ".join(sorted(loci))
                 details.append(
                     _sample_detail(
-                        f"Locus set {index} ({len(loci)} loci; {examples})", samples
+                        f"Locus set {index} ({len(loci)} loci; {locus_names})", samples
                     )
                 )
-        notice = f"Cannot cluster by {name}: the selected samples have different {identity}s or locus sets."
-        if typing_method == "cgmlst":
-            notice = "Cannot cluster by cgMLST: the selected samples have different analysis profiles."
+        if len(schemes) > 1:
+            selection = "profile" if typing_method == "cgmlst" else "scheme"
+            notice = (
+                f"Cannot cluster by {name}: the selected samples use different {identity}s. "
+                f"Select samples from one {selection} to resolve this conflict."
+            )
+        else:
+            notice = (
+                "Cannot cluster by MLST: the selected samples share a typing scheme "
+                "but have different locus sets. Check that their MLST results use "
+                "the same locus definitions."
+            )
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=notice,
@@ -143,7 +153,10 @@ def validate_typing_schemes(
         if len({p.assay for p in profiles if p.assay}) > 1:
             return AlleleSchemeValidation(
                 can_cluster=False,
-                notice="Cannot cluster by MLST: the selected samples have different analysis profiles.",
-                details=_identity_details(profiles, "assay", "Analysis profile"),
+                notice=(
+                    "Cannot cluster by MLST: the selected samples use different analysis profiles. "
+                    "Select samples from one profile to resolve this conflict."
+                ),
+                details=_identity_details(profiles, "assay"),
             )
     return AlleleSchemeValidation(can_cluster=len(profiles) >= 2)
