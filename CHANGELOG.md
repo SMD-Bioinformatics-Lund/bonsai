@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add a green selection icon to basket notice groups to keep only their samples in the basket and recheck compatibility. [#666](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/666)
 - Show a spinner and status message while basket MLST/cgMLST compatibility checks are running. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Add subtle red trash icons at the end of basket notice category headers so whole assay, scheme, locus-set, or missing-typing groups can be removed at once. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#664](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/664)

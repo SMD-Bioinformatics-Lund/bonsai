@@ -560,7 +560,7 @@ test("notice category removal uses every sample ID and revalidates the remaining
   });
   await tick();
   const item = h.notices().children[1].children[2].children[0];
-  const button = item.children[0].children[0];
+  const button = item.children[0].children[1].children[1];
   assert.equal(button.title, "Remove 8 samples from basket");
   assert.equal(button.children[0].className, "bi bi-trash");
   button.dispatchEvent(new Event("click"));
@@ -596,7 +596,7 @@ test("missing typing data categories remove only the affected samples", async ()
   assert.equal(h.component.canClusterWith("cgmlst"), false);
   const item = h.notices().children[1].children[2].children[0];
   assert.equal(item.children[1].textContent, "missing <literal>");
-  item.children[0].children[0].dispatchEvent(new Event("click"));
+  item.children[0].children[1].children[1].dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), ["typed-a", "typed-b"]);
 });
 
@@ -619,4 +619,40 @@ test("compatibility status stays visible while pending and clears on success or 
   await tick();
   assert.equal(status(), undefined);
   assert.match(h.noticeText(), /compatibility could not be checked/);
+});
+
+test("selecting a notice group keeps every member and revalidates only those samples", async () => {
+  const kept = Array.from({ length: 8 }, (_, i) => `keep-${i}`);
+  const all = ["other-a", ...kept, "other-b"];
+  const h = await setup(all, { deferSchemes: true });
+  await h.respond(0, all);
+  h.schemeRequests[0].resolve({
+    mlst: { can_cluster: true },
+    cgmlst: {
+      can_cluster: false,
+      notice: "Cannot cluster by cgMLST: different analysis profiles.",
+      notice_groups: [{ detail: "Keep assay — 8 samples:\nkeep-0\nkeep-1\nkeep-2\nkeep-3\nkeep-4\nand 3 more", sample_ids: kept }],
+    },
+  });
+  await tick();
+  const item = h.notices().children[1].children[2].children[0];
+  const select = item.children[0].children[1].children[0];
+  assert.equal(select.title, "Select this group: keep only these samples in the basket");
+  assert.equal(select.children[0].className, "bi bi-check2-square");
+  select.dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), kept);
+  assert.equal(h.count(), 8);
+  assert.equal(h.component.canClusterWith("cgmlst"), false);
+  await h.respond(1, kept);
+  assert.deepEqual(h.schemeRequests[1].sampleIds, kept);
+  h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.notices(), undefined);
+  assert.equal(h.component.canClusterWith("cgmlst"), true);
+  // A button from a previous render must not discard newly added samples.
+  h.select(["other-a", "other-b"]);
+  h.add();
+  await h.respond(2, all);
+  select.dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), [...kept, "other-a", "other-b"]);
 });

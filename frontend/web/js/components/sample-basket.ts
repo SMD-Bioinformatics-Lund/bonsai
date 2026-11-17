@@ -126,8 +126,15 @@ export class BasketComponent extends HTMLElement {
   private renderNotices(notices: BasketNotice[]): void {
     if (notices.length === 0) return;
     const version = this.renderVersion;
-    this.appendChild(createBasketNotices(notices, (sampleIds) => {
-      if (this.ready && version === this.renderVersion) this.state.removeSamples(sampleIds);
+    this.appendChild(createBasketNotices(notices, {
+      onRemove: (sampleIds) => {
+        if (this.ready && version === this.renderVersion) this.state.removeSamples(sampleIds);
+      },
+      onSelect: (sampleIds) => {
+        if (!this.ready || version !== this.renderVersion) return;
+        const keep = new Set(sampleIds);
+        this.state.removeSamples(this.state.getSampleIds().filter(id => !keep.has(id)));
+      },
     }));
   }
 
