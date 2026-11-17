@@ -171,8 +171,14 @@ export class ColumnSelector extends HTMLElement {
     const disabled = this._items.filter(i => !i.enabled);
 
     const reordered = ids.map(id => enabled.find(i => i.id === id)!);
+    const visibleIds = new Set(ids);
+    let visibleIndex = 0;
 
-    this._items = [...reordered, ...disabled];
+    // Reorder visible slots without dropping selections hidden by the search.
+    this._items = [
+      ...enabled.map(item => visibleIds.has(item.id) ? reordered[visibleIndex++] : item),
+      ...disabled,
+    ];
     this.dispatchChange();
   }
 
