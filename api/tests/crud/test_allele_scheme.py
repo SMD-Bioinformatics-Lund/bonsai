@@ -284,11 +284,14 @@ def test_mlst_scheme_can_come_from_selected_analysis_metadata():
     ).can_cluster
 
 
-def test_unknown_scheme_details_identify_only_affected_lab_ids():
+@pytest.mark.parametrize("sample_name", [None, "", "CARD-123"])
+def test_unknown_scheme_details_identify_only_affected_samples(sample_name):
     samples = [stored("a"), stored("b", scheme=None)]
     samples[1]["external_sample_id"] = "LAB-123"
+    samples[1]["sample_name"] = sample_name
     result = validate(samples)
-    assert result.details == ["No detected MLST scheme is available:\nLAB-123"]
+    label = sample_name or "LAB-123"
+    assert result.details == [f"No detected MLST scheme is available:\n{label}"]
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
@@ -378,10 +381,14 @@ def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
         ("scheme", True, "cgmlst"),
     ],
 )
-def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missing, method):
+@pytest.mark.parametrize("label_field", ["sample_name", "external_sample_id"])
+def test_notice_sample_groups_show_five_labels_and_remaining_count(
+    field, missing, method, label_field
+):
     profiles = [
         TypingProfileAggregate(
-            sample_id=f"internal-{i}", external_sample_id=f"LAB-{i:02}",
+            sample_id=f"internal-{i}",
+            **{"external_sample_id": f"EXTERNAL-{i:02}", label_field: f"LABEL-{i:02}"},
             scheme="same", assay="same", typing_result={"x": 1},
         )
         for i in reversed(range(25))
@@ -400,10 +407,12 @@ def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missi
         profiles.append(other)
     result = validate_typing_schemes(profiles, method)
     assert not result.can_cluster
-    detail = next(detail for detail in result.details if "LAB-00" in detail)
-    assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in detail
-    assert "LAB-05" not in detail
-    assert "LAB-24" not in detail
+    detail = next(detail for detail in result.details if "LABEL-00" in detail)
+    assert "LABEL-00\nLABEL-01\nLABEL-02\nLABEL-03\nLABEL-04\nand 20 more" in detail
+    assert "LABEL-05" not in detail
+    assert "LABEL-24" not in detail
+    assert "EXTERNAL-" not in detail
+    assert "internal-" not in detail
     if field in {"scheme", "assay"} and not missing:
         assert "25 samples" in detail
 
@@ -430,3 +439,15 @@ def test_missing_typing_profiles_limit_ids_in_the_unavailable_data_notice():
     assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in message
     assert "LAB-05" not in message
     assert "LAB-24" not in message
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+@pytest.mark.parametrize("alleles", [{}, [1, 2], {"x": "INF"}])
+def test_typing_data_errors_use_the_basket_card_name(method, alleles):
+    sample = stored("internal-123", alleles=alleles, method=method)
+    sample.update(sample_name="CARD-123", external_sample_id="LAB-123")
+    with pytest.raises((EntryNotFound, InvalidDataFormat)) as error:
+        validate([sample], method)
+    assert "CARD-123" in str(error.value)
+    assert "LAB-123" not in str(error.value)
+    assert "internal-123" not in str(error.value)
