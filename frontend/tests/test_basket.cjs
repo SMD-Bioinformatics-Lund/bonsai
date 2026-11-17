@@ -560,7 +560,7 @@ test("notice category removal uses every sample ID and revalidates the remaining
   });
   await tick();
   const item = h.notices().children[1].children[2].children[0];
-  const button = item.children[0].children[0].children[1];
+  const button = item.children[0].children[1].children[1];
   assert.equal(button.title, "Remove 8 samples from basket");
   assert.equal(button.children[0].className, "bi bi-trash");
   button.dispatchEvent(new Event("click"));
@@ -596,7 +596,7 @@ test("missing typing data categories remove only the affected samples", async ()
   assert.equal(h.component.canClusterWith("cgmlst"), false);
   const item = h.notices().children[1].children[2].children[0];
   assert.equal(item.children[1].textContent, "missing <literal>");
-  item.children[0].children[0].children[1].dispatchEvent(new Event("click"));
+  item.children[0].children[1].children[1].dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), ["typed-a", "typed-b"]);
 });
 
@@ -636,8 +636,9 @@ test("selecting a notice group keeps every member and revalidates only those sam
   });
   await tick();
   const item = h.notices().children[1].children[2].children[0];
-  const select = item.children[0].children[0].children[0];
-  assert.equal(select.textContent, "Select this group");
+  const select = item.children[0].children[1].children[0];
+  assert.equal(select.title, "Select this group: keep only these samples in the basket");
+  assert.equal(select.children[0].className, "bi bi-check2-square");
   select.dispatchEvent(new Event("click"));
   assert.deepEqual(h.saved(), kept);
   assert.equal(h.count(), 8);

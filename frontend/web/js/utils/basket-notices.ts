@@ -34,15 +34,23 @@ function createNoticeCategory(
       item.textContent = "";
       item.appendChild(label);
     }
-    label.className = "d-flex flex-wrap align-items-start gap-2";
+    const heading = document.createElement("span");
+    heading.textContent = label.textContent;
+    heading.style.minWidth = "0";
+    label.textContent = "";
+    label.appendChild(heading);
+    label.className = "d-inline-flex align-items-start gap-2 mw-100";
     const actions = document.createElement("span");
     actions.className = "d-inline-flex align-items-center gap-2 flex-shrink-0";
     const select = document.createElement("button");
     select.type = "button";
-    select.className = "btn btn-link btn-sm p-0 text-nowrap";
-    select.textContent = "Select this group";
-    select.title = "Keep only these samples in the basket";
+    select.className = "btn btn-link btn-sm text-success p-0 flex-shrink-0";
+    select.title = "Select this group: keep only these samples in the basket";
     select.setAttribute("aria-label", `Select only ${detail.split("\n")[0].replace(/:$/, "")} in basket`);
+    const check = document.createElement("i");
+    check.className = "bi bi-check2-square";
+    check.setAttribute("aria-hidden", "true");
+    select.appendChild(check);
     select.addEventListener("click", () => onSelect(sampleIds));
     actions.appendChild(select);
     const remove = document.createElement("button");
