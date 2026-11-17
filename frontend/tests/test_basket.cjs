@@ -57,7 +57,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
   let failedIds = [];
   let selected = [];
   const table = {
-    rows: () => ({ ids: () => ({ toArray: () => selected }) }),
+    rows: () => ({ ids: () => ({ toArray: () => selected }), count: () => selected.length }),
     draw() {},
     columns: { adjust() {} },
     on: (_events, callback) => selectionCallbacks.push(callback),
