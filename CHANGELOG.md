@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Clear sessions rejected for inactive accounts so existing browser tabs can reach login and logout without HTTP 500 errors. [#656](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/656)
 - Show up to 20 Bracken species rows before collapsing additional hits behind Show more, increasing the previous limit of five. [#660](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/660)
 - Keep saved group names and descriptions as literal form values in the group editor, preventing HTML and script injection. [#657](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/657)
 - Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
