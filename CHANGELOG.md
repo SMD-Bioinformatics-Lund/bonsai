@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Keep saved group names and descriptions as literal form values in the group editor, preventing HTML and script injection. [#657](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/657)
 - Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
 - List basket notice samples one per row and simplify cgMLST details to show affected samples without locus definitions, retaining the five-ID limit and compatibility checks. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
 - Clarify notices about missing / conflicting MLST and cgMLST in basket. [#654](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/654)
