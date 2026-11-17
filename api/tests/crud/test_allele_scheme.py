@@ -64,15 +64,19 @@ def test_matching_full_locus_sets_allow_missing_calls(method):
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
-def test_different_schemes_or_locus_sets_are_blocked(method):
+def test_different_identities_are_blocked(method):
     identity = "analysis profiles" if method == "cgmlst" else "typing schemes"
-    for second in [
-        stored("b", "other", method=method, assay="other"),
-        stored("b", alleles={"x": 1, "z": "LNF"}, method=method),
-    ]:
-        result = validate([stored("a", method=method), second], method)
-        assert not result.can_cluster
-        assert f"different {identity} or locus sets" in result.notice
+    result = validate(
+        [
+            stored("a", method=method),
+            stored("b", "other", method=method, assay="other"),
+        ],
+        method,
+    )
+    assert not result.can_cluster
+    assert f"different {identity}" in result.notice
+    if method == "cgmlst":
+        assert "locus" not in result.notice.lower()
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
@@ -284,7 +288,7 @@ def test_unknown_scheme_details_identify_only_affected_lab_ids():
     samples = [stored("a"), stored("b", scheme=None)]
     samples[1]["external_sample_id"] = "LAB-123"
     result = validate(samples)
-    assert result.details == ["LAB-123: no detected MLST scheme is available."]
+    assert result.details == ["No detected MLST scheme is available:\nLAB-123"]
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
@@ -297,26 +301,43 @@ def test_different_identities_include_values_and_affected_samples(method):
         method,
     )
     assert not result.can_cluster
-    assert any("ecoli: a" in detail for detail in result.details)
+    assert any("ecoli:\na" in detail for detail in result.details)
     other = "staphylococcus" if method == "cgmlst" else "saureus"
-    assert any(f"{other}: b" in detail for detail in result.details)
+    assert any(f"{other}:\nb" in detail for detail in result.details)
 
 
-def test_locus_details_distinguish_equal_sized_but_different_sets():
+@pytest.mark.parametrize(
+    "alleles", [{"x": 1}, {"x": 1, "z": 2}, {"x": 1, "y": 2, "z": 3}]
+)
+def test_cgmlst_shared_analysis_profile_assumes_compatible_loci(alleles):
+    result = validate(
+        [
+            stored("a", method="cgmlst"),
+            stored("b", alleles=alleles, method="cgmlst"),
+        ],
+        "cgmlst",
+    )
+    assert result.can_cluster
+    assert not result.notice
+    assert not result.details
+
+
+def test_mlst_locus_details_distinguish_equal_sized_but_different_sets():
     result = validate(
         [
             stored("a", alleles={"x": 1, "y": 2}),
             stored("b", alleles={"x": 1, "z": 2}),
-        ]
+        ],
     )
     assert not result.can_cluster
+    assert "different typing schemes or locus sets" in result.notice
     assert result.details == [
-        "Locus set 1 (2 loci; x, y): a.",
-        "Locus set 2 (2 loci; x, z): b.",
+        "Locus set 1 (2 loci; x, y):\na",
+        "Locus set 2 (2 loci; x, z):\nb",
     ]
 
 
-@pytest.mark.parametrize("alleles", [[1, 2], {"x": None}, {"x": "INF"}])
+@pytest.mark.parametrize("alleles", [[1, 2], {"x": "INF"}])
 def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
     sample = stored("a", alleles=alleles)
     sample["external_sample_id"] = "LAB-123"
@@ -329,7 +350,8 @@ def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
     [
         ("scheme", False, "mlst"),
         ("assay", False, "mlst"),
-        ("loci", False, "cgmlst"),
+        ("loci", False, "mlst"),
+        ("scheme", False, "cgmlst"),
         ("scheme", True, "mlst"),
         ("assay", True, "mlst"),
         ("scheme", True, "cgmlst"),
@@ -358,7 +380,7 @@ def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missi
     result = validate_typing_schemes(profiles, method)
     assert not result.can_cluster
     detail = next(detail for detail in result.details if "LAB-00" in detail)
-    assert "LAB-00, LAB-01, LAB-02, LAB-03, LAB-04, and 20 more" in detail
+    assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in detail
     assert "LAB-05" not in detail
     assert "LAB-24" not in detail
 
@@ -367,11 +389,11 @@ def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missi
 def test_missing_scheme_notices_count_only_ids_beyond_five(count):
     result = validate([stored(f"sample-{i}", scheme=None) for i in range(count)])
     assert len(result.details) == 1
-    assert "sample-0, sample-1, sample-2, sample-3, sample-4" in result.details[0]
+    assert "sample-0\nsample-1\nsample-2\nsample-3\nsample-4" in result.details[0]
     if count == 5:
         assert "more" not in result.details[0]
     else:
-        assert ", and 1 more:" in result.details[0]
+        assert result.details[0].endswith("\nand 1 more")
         assert "sample-5" not in result.details[0]
 
 
@@ -382,6 +404,6 @@ def test_missing_typing_profiles_limit_ids_in_the_unavailable_data_notice():
     with pytest.raises(EntryNotFound) as error:
         validate(samples)
     message = str(error.value)
-    assert "LAB-00, LAB-01, LAB-02, LAB-03, LAB-04, and 20 more" in message
+    assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in message
     assert "LAB-05" not in message
     assert "LAB-24" not in message

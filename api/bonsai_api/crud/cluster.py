@@ -134,9 +134,18 @@ async def get_typing_profiles(
                 "the stored allele profile has an invalid format."
             )
         try:
+            # MLST nulls and multiple matches have no unambiguous allele call.
+            # Preserve their locus keys so compatibility still checks the full scheme.
             alleles = {
-                loci: replace_cgmlst_errors(
-                    allele, include_novel_alleles=True, correct_alleles=True
+                loci: (
+                    None
+                    if (
+                        typing_method == "mlst"
+                        and (allele is None or isinstance(allele, list))
+                    )
+                    else replace_cgmlst_errors(
+                        allele, include_novel_alleles=True, correct_alleles=True
+                    )
                 )
                 for loci, allele in loci_map.items()
             }
@@ -165,7 +174,7 @@ async def get_typing_profiles(
         )
         profile_name = "cgMLST" if typing_method == "cgmlst" else typing_method.upper()
         raise EntryNotFound(
-            f"No {profile_name} typing profile is available for the following samples: "
+            f"No {profile_name} typing profile is available for the following samples:\n"
             f"{missing_labels}"
         )
     return results

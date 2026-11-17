@@ -13,6 +13,7 @@ class Element extends EventTarget {
   counter = { textContent: "" };
   badge = { hidden: false };
   attributes = {};
+  style = {};
   setAttribute(name, value) { this.attributes[name] = value; }
   getAttribute(name) { return this.attributes[name]; }
   classList = { toggle() {} };
@@ -452,20 +453,22 @@ test("two method notices keep sample-specific details inside one closed disclosu
     mlst: {
       can_cluster: false,
       notice: "Cannot cluster by MLST: the typing scheme could not be verified.",
-      details: ["LAB-123 <unsafe>: no detected MLST scheme is available."],
+      details: ["No detected MLST scheme is available:\nLAB-123 <unsafe>"],
     },
     cgmlst: {
       can_cluster: false,
       notice: "Cannot cluster by cgMLST: different analysis profiles.",
-      details: ["Analysis profile ecoli: a.", "Analysis profile staphylococcus: b."],
+      details: ["Analysis profile ecoli:\na\nb\nc\nd\ne\nand 20 more", "Analysis profile staphylococcus:\nf"],
     },
   });
   await tick();
   const disclosure = h.notices();
   assert.equal(disclosure.attributes.open, undefined);
   assert.equal(disclosure.children[0].children[1].textContent, "2 notices");
-  assert.match(h.noticeText(), /LAB-123 <unsafe>: no detected MLST scheme/);
+  assert.match(h.noticeText(), /No detected MLST scheme is available:\nLAB-123 <unsafe>/);
   assert.equal(disclosure.children[2].children[0].innerHTML, "");
+  assert.equal(disclosure.children[2].children[0].style.whiteSpace, "pre-line");
+  assert.match(h.noticeText(), /ecoli:\na\nb\nc\nd\ne\nand 20 more/);
   assert.equal(h.clusterLinks.mlst.attributes["aria-disabled"], "true");
   assert.equal(h.clusterLinks.cgmlst.attributes["aria-disabled"], "true");
   assert.equal(h.component.canClusterWith("minhash"), true);
