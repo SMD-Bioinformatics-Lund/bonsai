@@ -31,6 +31,8 @@
 
 ### Fixed
 
+- Keep basket notices and actions below the independently scrolling sample list, using the full available panel height for samples. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
+- Handle expired basket sessions with a message to reload the page instead of attempting refresh without a token, preserving saved samples and disabling clustering until recovery. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
 - Separate basket compatibility notices into MLST/cgMLST sections with bold sample groups, group counts, and selection guidance; show all MLST locus names when locus sets differ within a shared typing scheme. [#661](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/661)
 - Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#658](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/658)
 - Preserve selected columns hidden by the group editor's search when dragging visible columns into a new order. [#659](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/659)

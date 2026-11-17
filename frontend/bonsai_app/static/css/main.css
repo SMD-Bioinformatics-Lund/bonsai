@@ -100,3 +100,41 @@ div#grid_grid_searches.w2ui-grid-searches {
   padding: 0.2rem !important;
   font-size: small !important;
 }
+
+#basket-offcanvas .offcanvas-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: visible;
+}
+
+#basket-offcanvas .offcanvas-body > :not(#basket-content) {
+  flex-shrink: 0;
+}
+
+#basket-content,
+#basket-content basket-component {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+#basket-content .basket-samples {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#basket-content .basket-notices {
+  flex-shrink: 0;
+  max-height: 50%;
+  overflow-y: auto;
+}
+
+#basket-content .basket-notices summary {
+  position: sticky;
+  top: 0;
+  background: var(--bs-offcanvas-bg, #fff);
+}
