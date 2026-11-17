@@ -41,10 +41,10 @@ function createNoticeCategory(
     label.appendChild(heading);
     label.className = "d-flex justify-content-between align-items-start gap-2";
     const actions = document.createElement("span");
-    actions.className = "d-inline-flex align-items-center gap-2 flex-shrink-0";
+    actions.className = "d-inline-flex align-items-center gap-1 flex-shrink-0";
     const select = document.createElement("button");
     select.type = "button";
-    select.className = "btn btn-link btn-sm text-success px-1 py-0 flex-shrink-0";
+    select.className = "btn btn-link btn-sm fs-6 text-success px-1 py-0 flex-shrink-0";
     select.title = "Select this group: keep only these samples in the basket";
     select.setAttribute("aria-label", `Select only ${detail.split("\n")[0].replace(/:$/, "")} in basket`);
     const check = document.createElement("i");
@@ -55,7 +55,7 @@ function createNoticeCategory(
     actions.appendChild(select);
     const remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "btn btn-link btn-sm text-danger px-1 py-0 flex-shrink-0";
+    remove.className = "btn btn-link btn-sm fs-6 text-danger px-1 py-0 flex-shrink-0";
     remove.title = `Remove ${sampleIds.length} ${sampleIds.length === 1 ? "sample" : "samples"} from basket`;
     remove.setAttribute("aria-label", `Remove ${detail.split("\n")[0].replace(/:$/, "")} from basket`);
     const trash = document.createElement("i");
