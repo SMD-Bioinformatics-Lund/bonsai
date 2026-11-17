@@ -1,5 +1,6 @@
 import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
+import { ApiError } from "../core/api/http/ApiError";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
@@ -90,18 +91,26 @@ export class BasketComponent extends HTMLElement {
       this.renderNotices(notices);
     } catch (error) {
       if (version !== this.renderVersion) return;
+      console.error("Failed to validate typing schemes:", error);
+      if (this.renderSessionExpired(error)) return;
       this.renderNotices([{
         notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
       }]);
-      console.error("Failed to validate typing schemes:", error);
     }
     this.setReady(true);
+  }
+
+  private renderSessionExpired(error: unknown): boolean {
+    if (!(error instanceof ApiError) || error.status !== 401) return false;
+    this.setReady(false);
+    this.innerHTML = "<p>Your session is no longer valid. Reload the page to continue. Your basket is saved.</p>";
+    return true;
   }
 
   private renderNotices(notices: { method?: string; notice: string; details?: string[] }[]): void {
     if (notices.length === 0) return;
     const disclosure = document.createElement("details");
-    disclosure.className = "small mt-3 mb-2";
+    disclosure.className = "basket-notices small mt-3 mb-2";
     disclosure.setAttribute("data-test-id", "basket-notices");
     const summary = document.createElement("summary");
     summary.className = "text-secondary";
@@ -186,10 +195,13 @@ export class BasketComponent extends HTMLElement {
         sampleIds.filter((id) => samplesById.get(id).qc_status?.status === "failed"),
       );
       this.innerHTML = "";
+      const sampleList = document.createElement("div");
+      sampleList.className = "basket-samples";
+      this.appendChild(sampleList);
       if (sampleIds.length < 2) {
         const notice = document.createElement("p");
         notice.textContent = "At least two samples are needed for clustering.";
-        this.appendChild(notice);
+        sampleList.appendChild(notice);
       }
       // create sample cards for each sample in the basket
       sampleIds.forEach((id) => {
@@ -214,7 +226,7 @@ export class BasketComponent extends HTMLElement {
             </button>
         </div>
         `;
-        this.appendChild(item);
+        sampleList.appendChild(item);
       });
       this.querySelectorAll("button[data-id]").forEach((button) => {
         button.addEventListener("click", (e) => {
@@ -230,7 +242,9 @@ export class BasketComponent extends HTMLElement {
       }
     } catch (error) {
       if (version !== this.renderVersion) return;
-      this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
+      if (!this.renderSessionExpired(error)) {
+        this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
+      }
       console.error("Failed to render basket:", error);
     }
   }

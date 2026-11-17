@@ -5,6 +5,12 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { test } = require("node:test");
 const ts = require("typescript");
+const apiErrorExports = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(
+  path.join(__dirname, "../web/js/core/api/http/ApiError.ts"), "utf8",
+), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
+{ exports: apiErrorExports, Error });
+const { ApiError } = apiErrorExports;
 
 // Only the DOM surface needed by the basket and group-view initialization.
 class Element extends EventTarget {
@@ -51,7 +57,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
   let failedIds = [];
   let selected = [];
   const table = {
-    rows: () => ({ ids: () => ({ toArray: () => selected }) }),
+    rows: () => ({ ids: () => ({ toArray: () => selected }), count: () => selected.length }),
     draw() {},
     columns: { adjust() {} },
     on: (_events, callback) => selectionCallbacks.push(callback),
@@ -66,7 +72,8 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     querySelectorAll: selector => selector === "#basket-cluster-samples a" ? Object.values(clusterLinks) : [],
   };
   const globals = {
-    HTMLElement: Element, CustomEvent, Error, document, window: {},
+    HTMLElement: Element, CustomEvent, Error, document,
+    window: {},
     customElements: { define() {} }, baseUrl: "",
     localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) },
     console: { error() {} },
@@ -81,7 +88,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     return exports;
   }
   const state = load("../web/js/core/state/basket-state.ts");
-  const basket = load("../web/js/components/sample-basket.ts");
+  const basket = load("../web/js/components/sample-basket.ts", () => ({ ApiError }));
   const counter = load("../web/js/components/samples-basket-counter.ts");
   const tableController = load("../web/js/utils/table-controller.ts", name =>
     name === "datatables.net-bs5" ? DataTable : {});
@@ -106,7 +113,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     requests, clusters, component, clusterButton, clusterLinks, schemeRequests,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
-    cards: () => component.children.flatMap(card => {
+    cards: () => (component.children.find(child => child.className === "basket-samples")?.children ?? []).flatMap(card => {
       const match = card.innerHTML.match(/<h6 id="([^"]+)"/);
       return match ? [match[1]] : [];
     }),
@@ -116,7 +123,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
       return texts(component).join(" ");
     },
     removeQc: () => elements["remove-failed-qc-from-basket-btn"].onclick(),
-    qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
+    qcCards: () => (component.children.find(child => child.className === "basket-samples")?.children ?? []).filter(child => child.className?.includes("border-danger")),
     setFailed: ids => { failedIds = ids; },
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
@@ -207,7 +214,7 @@ test("removing a single QC-failed sample disables clustering when only one remai
   await h.respond(1, ["passed"]);
   assert.deepEqual(h.saved(), ["passed"]);
   assert.deepEqual(h.cards(), ["passed"]);
-  assert.ok(h.component.children.some(child => child.textContent?.includes("At least two samples")));
+  assert.match(h.noticeText(), /At least two samples/);
   assert.equal(h.clusterButton.disabled, true);
   await h.cluster();
   assert.equal(h.clusters.length, 0);
@@ -315,6 +322,46 @@ test("failed lookup preserves saved IDs, blocks clustering, and can be retried",
   await h.respond(1, ids);
   assert.deepEqual(h.cards(), ids);
   assert.equal(h.clusterButton.disabled, false);
+});
+
+test("an expired basket session explains recovery and preserves saved samples", async () => {
+  const ids = ["a", "b"];
+  const h = await setup(ids);
+  h.requests[0].reject(new ApiError(401, "Token expired"));
+  await tick();
+  assert.deepEqual(h.saved(), ids);
+  assert.equal(h.count(), 2);
+  assert.equal(h.clusterButton.disabled, true);
+  assert.match(h.component.innerHTML, /Your session is no longer valid/);
+  assert.match(h.component.innerHTML, /Your basket is saved/);
+  assert.doesNotMatch(h.component.innerHTML, /Reopen it/);
+  assert.match(h.component.innerHTML, /Reload the page to continue\./);
+  assert.doesNotMatch(h.component.innerHTML, /sign in/);
+  assert.equal(h.component.children.length, 0);
+  assert.equal(h.requests.length, 1);
+  await h.cluster();
+  assert.deepEqual(h.clusters, []);
+
+  // Reloading reconstructs the basket from saved IDs with fresh page credentials.
+  const reloaded = await setup(h.saved());
+  await reloaded.respond(0, ids);
+  assert.deepEqual(reloaded.cards(), ids);
+  assert.equal(reloaded.clusterButton.disabled, false);
+});
+
+test("a session expiring during scheme validation also explains recovery and blocks clustering", async () => {
+  const ids = ["a", "b"];
+  const h = await setup(ids, { deferSchemes: true });
+  await h.respond(0, ids);
+  h.schemeRequests[0].reject(new ApiError(401, "Token expired"));
+  await tick();
+  assert.deepEqual(h.saved(), ids);
+  assert.equal(h.clusterButton.disabled, true);
+  assert.match(h.component.innerHTML, /Your session is no longer valid/);
+  assert.match(h.component.innerHTML, /Reload the page to continue\./);
+  assert.equal(h.component.children.length, 0);
+  await h.cluster("minhash");
+  assert.deepEqual(h.clusters, []);
 });
 
 test("a failed basket refresh keeps clustering disabled until a successful QC reload", async () => {

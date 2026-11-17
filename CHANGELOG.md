@@ -2,6 +2,7 @@
 
 ### Added
 
+- Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#664](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/664)
 - Add an "Empty basket" button beside "Add to basket" on individual group Summary and QC pages, using the existing basket clear action. [#643](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/643)
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
 - Show alphabetically sorted visible group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships, no visible memberships, and failed lookups. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
@@ -32,6 +33,8 @@
 ### Fixed
 
 - Use the same sample names as basket cards in MLST/cgMLST compatibility notices, missing or unreadable typing data errors, and similar-sample tree labels. [#663](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/663)
+- Keep basket notices and actions below the independently scrolling sample list, using the full available panel height for samples. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
+- Handle expired basket sessions with a message to reload the page instead of attempting refresh without a token, preserving saved samples and disabling clustering until recovery. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
 - Separate basket compatibility notices into MLST/cgMLST sections with bold sample groups, group counts, and selection guidance; show all MLST locus names when locus sets differ within a shared typing scheme. [#661](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/661)
 - Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#658](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/658)
 - Preserve selected columns hidden by the group editor's search when dragging visible columns into a new order. [#659](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/659)

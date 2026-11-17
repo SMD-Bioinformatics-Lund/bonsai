@@ -178,8 +178,16 @@ export async function initGroupView(
   const directSearchColumnIds = [
     "qc_status",
   ];
+  const selectionCount = document.createElement("span");
+  selectionCount.className = "text-muted ms-2 text-nowrap";
+  selectionCount.setAttribute("role", "status");
+  selectionCount.setAttribute("data-test-id", "sample-selection-count");
   const tableConfig = {
     ...sampleTableConfig,
+    layout: {
+      ...sampleTableConfig.layout,
+      top1Start: [sampleTableConfig.layout.top1Start, selectionCount],
+    },
     columnDefs: [{
       targets: directSearchColumnIds.map((columnId) => `[data-column-id="${columnId}"]`),
       searchBuilder: { orthogonal: { display: "display", search: "search" } },
@@ -203,6 +211,12 @@ export async function initGroupView(
     showSampleTable();
     throw error;
   }
+  const updateSelectionCount = () => {
+    const count = table.getTable().rows({ selected: true }).count();
+    selectionCount.textContent = `${count} ${count === 1 ? "sample" : "samples"} selected`;
+  };
+  table.getTable().on("select deselect draw", updateSelectionCount);
+  updateSelectionCount();
   showSampleTable(table);
   const userInfo = await api.getUserInfo();
   const user = new User(userInfo);

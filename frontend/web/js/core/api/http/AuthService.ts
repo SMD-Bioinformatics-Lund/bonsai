@@ -52,4 +52,6 @@ export class AuthService {
   getAuthHeader = (): HeadersInit => {
     return this.authToken ? { Authorization: `Bearer ${this.authToken}` } : {};
   };
+
+  hasRefreshToken = (): boolean => Boolean(this.refreshToken);
 }
