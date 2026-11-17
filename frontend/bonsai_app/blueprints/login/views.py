@@ -2,12 +2,10 @@
 
 import logging
 
-from bonsai_libs.api_client.core import BearerTokenAuth
 from bonsai_libs.api_client.core.exceptions import UnauthorizedError
 from flask import (
     Blueprint,
     Response,
-    current_app,
     flash,
     redirect,
     render_template,
@@ -18,7 +16,7 @@ from flask import (
 from flask_login import UserMixin, login_required, login_user, logout_user
 
 from bonsai_app import __version__ as VERSION
-from bonsai_app.bonsai_api import BonsaiApiClient
+from bonsai_app.bonsai_api import create_api_client
 from bonsai_app.extensions import login_manager
 
 LOG = logging.getLogger(__name__)
@@ -96,9 +94,7 @@ def login():
     username = request.form["username"]
     password = request.form["password"]
 
-    client = BonsaiApiClient(
-        base_url=current_app.config["API_INTERNAL_URL"],
-    )
+    client = create_api_client()
     try:
         client.authenticate_user(username, password)
         user_obj = client.get_current_user()
@@ -127,10 +123,7 @@ def load_user(user_id: str) -> LoginUser | None:
     """
     token = session.get("access_token")
 
-    client = BonsaiApiClient(
-        base_url=current_app.config["API_INTERNAL_URL"],
-        auth=BearerTokenAuth(token),
-    )
+    client = create_api_client(token)
     try:
         user_data = client.get_current_user()
     except UnauthorizedError:
