@@ -310,7 +310,7 @@ export async function findAndClusterSimilarSamples(
 
     // draw dendrogam in container element
     const leaves = drawDendrogram("#tree-body", jobResult.result, sampleId);
-    await showLabIds(leaves, api);
+    await showSampleNames(leaves, api);
   } catch (error) {
     container.hidden = true;
     showSimilarityError(error, sampleId);
@@ -364,32 +364,27 @@ export function drawDendrogram(
   tree.eachLeafLabel((label: HTMLElement) => {
     const leafSampleId = label.textContent ?? "";
     leaves.push({ element: label, sampleId: leafSampleId });
-    label.textContent = "Loading Lab ID...";
-    label.parentElement?.querySelector("circle")?.removeAttribute("title");
     label.style.cursor = "pointer";
     label.onclick = () => openSamplePage(leafSampleId);
   });
   return leaves;
 }
 
-async function showLabIds(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
+async function showSampleNames(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
   const sampleIds = leaves.map((leaf) => leaf.sampleId).filter(Boolean);
   if (sampleIds.length === 0) return;
 
   const response = await api.getSamplesDetails({
     sid: sampleIds,
-    fields: ["sample_id", "external_sample_id", "sample_name"],
+    fields: ["sample_id", "sample_name"],
     limit: sampleIds.length,
     offset: 0,
   });
-  const labIds = new Map(
-    response.data.map((sample) => [sample.sample_id,
-      sample.external_sample_id?.trim() || sample.sample_name?.trim()]),
+  const sampleNames = new Map(
+    response.data.map((sample) => [sample.sample_id, sample.sample_name]),
   );
   leaves.forEach(({ element, sampleId: internalSampleId }) => {
-    const label = labIds.get(internalSampleId) || "Lab ID unavailable";
-    element.textContent = label;
-    element.parentElement?.querySelector("circle")?.setAttribute("title", label);
+    element.textContent = sampleNames.get(internalSampleId) || "Sample name unavailable";
   });
 }
 
