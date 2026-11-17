@@ -1,3 +1,3 @@
 """Bonsai frontend version."""
 
-VERSION = "3.0.0-rc12"
+VERSION = "3.0.0-rc13"
