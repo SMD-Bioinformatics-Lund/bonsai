@@ -364,6 +364,8 @@ export function drawDendrogram(
   tree.eachLeafLabel((label: HTMLElement) => {
     const leafSampleId = label.textContent ?? "";
     leaves.push({ element: label, sampleId: leafSampleId });
+    label.textContent = "Loading Lab ID...";
+    label.parentElement?.querySelector("circle")?.removeAttribute("title");
     label.style.cursor = "pointer";
     label.onclick = () => openSamplePage(leafSampleId);
   });
@@ -376,15 +378,18 @@ async function showLabIds(leaves: DendrogramLeaf[], api: ApiService): Promise<vo
 
   const response = await api.getSamplesDetails({
     sid: sampleIds,
-    fields: ["sample_id", "external_sample_id"],
+    fields: ["sample_id", "external_sample_id", "sample_name"],
     limit: sampleIds.length,
     offset: 0,
   });
   const labIds = new Map(
-    response.data.map((sample) => [sample.sample_id, sample.external_sample_id]),
+    response.data.map((sample) => [sample.sample_id,
+      sample.external_sample_id?.trim() || sample.sample_name?.trim()]),
   );
   leaves.forEach(({ element, sampleId: internalSampleId }) => {
-    element.textContent = labIds.get(internalSampleId) || "Lab ID unavailable";
+    const label = labIds.get(internalSampleId) || "Lab ID unavailable";
+    element.textContent = label;
+    element.parentElement?.querySelector("circle")?.setAttribute("title", label);
   });
 }
 

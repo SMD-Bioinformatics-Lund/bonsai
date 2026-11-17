@@ -14,8 +14,23 @@ class ApiError extends Error {
   }
 }
 
-function setup({ ids = [uuid], confirm = true, error, submissionFails = false } = {}) {
+function setup({ ids = [uuid], confirm = true, error, submissionFails = false, treeResult, sampleDetails = { data: [] } } = {}) {
   const toasts = [], logs = [], prompts = [], deleted = [], removed = [], groupRemovals = [], events = [];
+  const detailRequests = [], opened = [];
+  const labels = ids.map(id => {
+    const circle = {
+      attributes: { title: id },
+      setAttribute(name, value) { this.attributes[name] = value; },
+      removeAttribute(name) { delete this.attributes[name]; },
+    };
+    return { textContent: id, style: {}, circle,
+      parentElement: { querySelector: () => circle } };
+  });
+  class TidyTree {
+    zoom = { filter() {} };
+    search() { return { selectAll() { return this; }, style() { return this; }, attr() { return this; } }; }
+    eachLeafLabel(callback) { labels.forEach(callback); }
+  }
   let hidden = 0;
   const spinner = { show() {}, hide() { hidden++; } };
   const container = { querySelector: selector => selector === "spinner-element" ? spinner : { value: "0.5" } };
@@ -26,7 +41,11 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
       groupRemovals.push([groupId, samples]);
     },
     findSimilarSamples: async () => { if (submissionFails) throw error; return { id: "job" }; },
-    checkJobStatus: async () => { throw error; },
+    checkJobStatus: async () => {
+      if (treeResult !== undefined) return { result: treeResult };
+      throw error;
+    },
+    getSamplesDetails: async query => { detailRequests.push(query); return sampleDetails; },
   };
   const table = {
     getSelectedRows: () => ids,
@@ -50,11 +69,12 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
       TypingMethod: { MINHASH: "minhash" }, ClusterMethod: { SINGLE: "single" },
     }),
     console: { error: (...args) => logs.push(args), log() {} },
-    window: { confirm: message => { prompts.push(message); return confirm; } },
-    document: { getElementById: () => container },
+    window: { confirm: message => { prompts.push(message); return confirm; }, TidyTree,
+      location: { pathname: `/staging/bonsai/sample/${uuid}` }, open: url => opened.push(url) },
+    document: { getElementById: () => container, querySelector: () => container },
   });
   return { actions: exports, api, table, toasts, logs, prompts, deleted, removed, groupRemovals, events,
-    btn: { closest: () => container }, hidden: () => hidden };
+    btn: { closest: () => container }, hidden: () => hidden, labels, detailRequests, opened, container };
 }
 
 test("empty selections and cancelled confirmation never submit deletion", () => {
@@ -139,4 +159,31 @@ test("unexpected API details stay in the console", async () => {
   assert.match(h.toasts[0][0], /contact the server administrator/);
   assert.ok(!h.toasts[0][0].includes(uuid));
   assert.ok(h.logs[0].includes(error));
+});
+
+test("similar-sample labels prefer Lab IDs, fall back to names, and keep internal IDs for navigation", async () => {
+  const ids = [uuid, "sample-2", "sample-3", "sample-4", "sample-5"];
+  let resolveDetails;
+  const sampleDetails = new Promise(resolve => { resolveDetails = resolve; });
+  const h = setup({ ids, treeResult: "(tree);", sampleDetails });
+  const result = h.actions.findAndClusterSimilarSamples(uuid, null, h.api);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(h.labels.every(label => label.textContent === "Loading Lab ID..."));
+  assert.ok(h.labels.every(label => label.circle.attributes.title === undefined));
+  assert.deepEqual(Array.from(h.detailRequests[0].sid), ids);
+  assert.ok(h.detailRequests[0].fields.includes("sample_name"));
+
+  resolveDetails({ data: [
+    { sample_id: uuid, external_sample_id: " LAB-123 ", sample_name: "Different name" },
+    { sample_id: "sample-2", external_sample_id: "  ", sample_name: "Readable sample name" },
+    { sample_id: "sample-3", sample_name: "Another sample name" },
+    { sample_id: "sample-4", external_sample_id: " ", sample_name: " " },
+  ] });
+  assert.equal(await result, "(tree);");
+  const expected = ["LAB-123", "Readable sample name", "Another sample name", "Lab ID unavailable", "Lab ID unavailable"];
+  assert.deepEqual(h.labels.map(label => label.textContent), expected);
+  assert.deepEqual(h.labels.map(label => label.circle.attributes.title), expected);
+  h.labels.forEach(label => label.onclick());
+  assert.deepEqual(h.opened, ids.map(id => `/staging/bonsai/sample/${id}`));
+  assert.equal(h.container.hidden, undefined);
 });
