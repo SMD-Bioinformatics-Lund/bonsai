@@ -59,7 +59,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
   class DataTable { constructor() { return table; } }
   DataTable.Buttons = { jszip() {} };
   const document = {
-    createElement: () => new Element(),
+    createElement: tag => Object.assign(new Element(), { tagName: tag.toUpperCase() }),
     getElementById: id => elements[id] ?? null,
     querySelector: selector => selector === "#basket-cluster-samples .btn" ? clusterButton
       : elements[selector.slice(1)] ?? null,
@@ -457,18 +457,31 @@ test("two method notices keep sample-specific details inside one closed disclosu
     },
     cgmlst: {
       can_cluster: false,
-      notice: "Cannot cluster by cgMLST: different analysis profiles.",
-      details: ["Analysis profile ecoli:\na\nb\nc\nd\ne\nand 20 more", "Analysis profile staphylococcus:\nf"],
+      notice: "Cannot cluster by cgMLST: different analysis profiles. Select samples from one profile to resolve this conflict.",
+      details: ["ecoli — 25 samples:\na\nb\nc\nd\ne\nand 20 more", "staphylococcus — 1 sample:\nf"],
     },
   });
   await tick();
   const disclosure = h.notices();
   assert.equal(disclosure.attributes.open, undefined);
   assert.equal(disclosure.children[0].children[1].textContent, "2 notices");
-  assert.match(h.noticeText(), /No detected MLST scheme is available:\nLAB-123 <unsafe>/);
-  assert.equal(disclosure.children[2].children[0].innerHTML, "");
-  assert.equal(disclosure.children[2].children[0].style.whiteSpace, "pre-line");
-  assert.match(h.noticeText(), /ecoli:\na\nb\nc\nd\ne\nand 20 more/);
+  const [mlst, cgmlst] = disclosure.children.slice(1);
+  assert.equal(mlst.children[0].tagName, "H6");
+  assert.equal(mlst.children[0].textContent, "MLST");
+  assert.equal(cgmlst.children[0].tagName, "H6");
+  assert.equal(cgmlst.children[0].textContent, "cgMLST");
+  assert.equal(mlst.children[1].textContent, "The typing scheme could not be verified.");
+  assert.match(cgmlst.children[1].textContent, /^Different analysis profiles\. Select samples/);
+  const missing = mlst.children[2].children[0];
+  assert.equal(missing.children[0].tagName, "STRONG");
+  assert.equal(missing.children[0].textContent, "No detected MLST scheme is available");
+  assert.equal(missing.children[1].textContent, "LAB-123 <unsafe>");
+  assert.equal(missing.children[1].innerHTML, "");
+  assert.equal(missing.children[1].style.whiteSpace, "pre-line");
+  const group = cgmlst.children[2].children[0];
+  assert.equal(group.children[0].tagName, "STRONG");
+  assert.equal(group.children[0].textContent, "ecoli — 25 samples");
+  assert.equal(group.children[1].textContent, "a\nb\nc\nd\ne\nand 20 more");
   assert.equal(h.clusterLinks.mlst.attributes["aria-disabled"], "true");
   assert.equal(h.clusterLinks.cgmlst.attributes["aria-disabled"], "true");
   assert.equal(h.component.canClusterWith("minhash"), true);
