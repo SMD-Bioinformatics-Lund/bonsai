@@ -77,9 +77,9 @@ CLUSTER_TYPING_SPECS: dict[str, BuilderArgs] = {
 
 
 async def get_typing_profiles(
-    db: Database, sample_idx: list[str], typing_method: str
+    db: Database, sample_idx: list[str], typing_method: str, *, allow_empty: bool = False
 ) -> TypingProfileOutput:
-    """Get locations from database."""
+    """Read typing profiles; preflight may retain empty results for notices."""
     spec = CLUSTER_TYPING_SPECS.get(typing_method)
     if spec is None:
         raise ValueError(f"Unsupported typing method: {typing_method}")
@@ -169,9 +169,11 @@ async def get_typing_profiles(
             )
         )
 
-    # Reject missing samples and samples for which the requested typing result
-    # was not found. The aggregation emits an empty profile for the latter.
-    found_ids = {sample.sample_id for sample in results if sample.typing_result}
+    # Always reject absent samples. Preflight can retain empty profiles to group
+    # samples without typing data; job submission still rejects them here.
+    found_ids = {
+        sample.sample_id for sample in results if allow_empty or sample.typing_result
+    }
     missing = set(sample_idx) - found_ids
     if missing:
         missing_labels = summarize_sample_labels(

@@ -186,7 +186,7 @@ export async function initGroupView(
     ...sampleTableConfig,
     layout: {
       ...sampleTableConfig.layout,
-      top1Start: [sampleTableConfig.layout.top1Start, selectionCount],
+      topStart: ["pageLength", selectionCount],
     },
     columnDefs: [{
       targets: directSearchColumnIds.map((columnId) => `[data-column-id="${columnId}"]`),
@@ -212,8 +212,11 @@ export async function initGroupView(
     throw error;
   }
   const updateSelectionCount = () => {
-    const count = table.getTable().rows({ selected: true }).count();
-    selectionCount.textContent = `${count} ${count === 1 ? "sample" : "samples"} selected`;
+    const dt = table.getTable();
+    const selected = dt.rows({ selected: true }).count();
+    const shown = dt.rows({ search: "applied" }).count();
+    selectionCount.textContent = `${shown} ${shown === 1 ? "row" : "rows"} shown` +
+      (selected > 0 ? ` · ${selected} ${selected === 1 ? "row" : "rows"} selected` : "");
   };
   table.getTable().on("select deselect draw", updateSelectionCount);
   updateSelectionCount();

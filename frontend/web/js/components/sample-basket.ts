@@ -1,6 +1,11 @@
-import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
+import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations, ApiAlleleSchemeValidation } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
 import { ApiError } from "../core/api/http/ApiError";
+
+type BasketNotice = Pick<ApiAlleleSchemeValidation, "details" | "groups"> & {
+  method?: string;
+  notice: string;
+};
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
@@ -75,17 +80,30 @@ export class BasketComponent extends HTMLElement {
   }
 
   private async validateClustering(sampleIds: string[], version: number): Promise<void> {
+    const status = document.createElement("p");
+    status.className = "basket-notices small mt-3 mb-2 text-secondary";
+    status.setAttribute("role", "status");
+    status.setAttribute("data-test-id", "basket-validation-status");
+    const spinner = document.createElement("span");
+    spinner.className = "spinner-border spinner-border-sm me-1";
+    spinner.setAttribute("aria-hidden", "true");
+    status.appendChild(spinner);
+    const message = document.createElement("span");
+    message.textContent = "Checking MLST/cgMLST compatibility…";
+    status.appendChild(message);
+    this.appendChild(status);
     try {
       const validation = await this.validateSchemes(sampleIds);
       if (version !== this.renderVersion) return;
       this.schemeValidation = validation;
-      const notices: { method: string; notice: string; details?: string[] }[] = [];
+      const notices: BasketNotice[] = [];
       for (const method of ["mlst", "cgmlst"] as const) {
         if (validation?.[method]?.can_cluster === true) continue;
         notices.push({
           method: method === "mlst" ? "MLST" : "cgMLST",
           notice: validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`,
           details: validation?.[method]?.details,
+          groups: validation?.[method]?.groups,
         });
       }
       this.renderNotices(notices);
@@ -96,6 +114,8 @@ export class BasketComponent extends HTMLElement {
       this.renderNotices([{
         notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
       }]);
+    } finally {
+      status.remove();
     }
     this.setReady(true);
   }
@@ -107,8 +127,9 @@ export class BasketComponent extends HTMLElement {
     return true;
   }
 
-  private renderNotices(notices: { method?: string; notice: string; details?: string[] }[]): void {
+  private renderNotices(notices: BasketNotice[]): void {
     if (notices.length === 0) return;
+    const version = this.renderVersion;
     const disclosure = document.createElement("details");
     disclosure.className = "basket-notices small mt-3 mb-2";
     disclosure.setAttribute("data-test-id", "basket-notices");
@@ -122,7 +143,7 @@ export class BasketComponent extends HTMLElement {
     count.textContent = `${notices.length} ${notices.length === 1 ? "notice" : "notices"}`;
     summary.appendChild(count);
     disclosure.appendChild(summary);
-    for (const { method, notice, details } of notices) {
+    for (const { method, notice, details, groups } of notices) {
       const section = document.createElement("section");
       section.className = "mt-3";
       if (method) {
@@ -137,10 +158,11 @@ export class BasketComponent extends HTMLElement {
       const reason = notice.startsWith(prefix) ? notice.slice(prefix.length) : notice;
       explanation.textContent = reason.charAt(0).toUpperCase() + reason.slice(1);
       section.appendChild(explanation);
-      if (details?.length) {
+      const categories = groups?.length ? groups : (details || []).map(detail => ({ detail, sample_ids: [] }));
+      if (categories.length) {
         const list = document.createElement("ul");
         list.className = "list-unstyled mb-0 ms-2 text-break";
-        for (const detail of details) {
+        for (const { detail, sample_ids: sampleIds } of categories) {
           const item = document.createElement("li");
           item.className = "mb-2";
           const newline = detail.indexOf("\n");
@@ -154,6 +176,17 @@ export class BasketComponent extends HTMLElement {
             item.appendChild(samples);
           } else {
             item.textContent = detail;
+          }
+          if (sampleIds.length > 0) {
+            const remove = document.createElement("button");
+            remove.type = "button";
+            remove.className = "btn btn-sm btn-outline-danger mt-1";
+            remove.textContent = `Remove ${sampleIds.length} from basket`;
+            remove.setAttribute("aria-label", `Remove ${detail.split("\n")[0].replace(/:$/, "")} from basket`);
+            remove.addEventListener("click", () => {
+              if (this.ready && version === this.renderVersion) this.state.removeSamples(sampleIds);
+            });
+            item.appendChild(remove);
           }
           list.appendChild(item);
         }

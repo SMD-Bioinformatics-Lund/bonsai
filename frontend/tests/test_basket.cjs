@@ -29,7 +29,10 @@ class Element extends EventTarget {
     this.counter.textContent = value.match(/data-test-id="samples-in-basket-counter">([^<]*)/)?.[1] ?? "";
   }
   get innerHTML() { return this.html ?? ""; }
-  appendChild(child) { this.children.push(child); child.connectedCallback?.(); }
+  appendChild(child) { this.children.push(child); child.parentElement = this; child.connectedCallback?.(); }
+  remove() {
+    if (this.parentElement) this.parentElement.children = this.parentElement.children.filter(child => child !== this);
+  }
   querySelector(selector) {
     if (selector === "#sample-basket-counter") return this.counter;
     if (selector === "#sample-basket-badge") return this.badge;
@@ -539,4 +542,79 @@ test("two method notices keep sample-specific details inside one closed disclosu
   h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
   await tick();
   assert.equal(h.notices(), undefined);
+});
+
+test("notice category removal uses every sample ID and revalidates the remaining basket", async () => {
+  const removed = Array.from({ length: 8 }, (_, i) => `other-${i}`);
+  const all = ["keep-a", "keep-b", ...removed];
+  const h = await setup(all, { deferSchemes: true });
+  await h.respond(0, all);
+  h.schemeRequests[0].resolve({
+    mlst: { can_cluster: true },
+    cgmlst: {
+      can_cluster: false,
+      notice: "Cannot cluster by cgMLST: different analysis profiles.",
+      groups: [{ detail: "Other assay — 8 samples:\nother-0\nother-1\nother-2\nother-3\nother-4\nand 3 more", sample_ids: removed }],
+    },
+  });
+  await tick();
+  const item = h.notices().children[1].children[2].children[0];
+  const button = item.children[2];
+  assert.equal(button.textContent, "Remove 8 from basket");
+  button.dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), ["keep-a", "keep-b"]);
+  assert.equal(h.component.canClusterWith("cgmlst"), false);
+  await h.respond(1, ["keep-a", "keep-b"]);
+  h.schemeRequests[1].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(h.notices(), undefined);
+  assert.equal(h.component.canClusterWith("cgmlst"), true);
+  assert.equal(h.count(), 2);
+  // A detached button from an earlier render cannot remove current selections.
+  h.select(removed);
+  h.add();
+  await h.respond(2, all);
+  button.dispatchEvent(new Event("click"));
+  assert.deepEqual(new Set(h.saved()), new Set(all));
+});
+
+test("missing typing data categories remove only the affected samples", async () => {
+  const h = await setup(["typed-a", "typed-b", "missing"], { deferSchemes: true });
+  await h.respond(0, ["typed-a", "typed-b", "missing"]);
+  h.schemeRequests[0].resolve({
+    mlst: { can_cluster: true },
+    cgmlst: {
+      can_cluster: false,
+      notice: "Cannot cluster by cgMLST: typing data is unavailable for 1 sample.",
+      groups: [{ detail: "No cgMLST typing profile is available:\nmissing <literal>", sample_ids: ["missing"] }],
+    },
+  });
+  await tick();
+  assert.equal(h.component.canClusterWith("mlst"), true);
+  assert.equal(h.component.canClusterWith("cgmlst"), false);
+  const item = h.notices().children[1].children[2].children[0];
+  assert.equal(item.children[1].textContent, "missing <literal>");
+  item.children[2].dispatchEvent(new Event("click"));
+  assert.deepEqual(h.saved(), ["typed-a", "typed-b"]);
+});
+
+test("compatibility status stays visible while pending and clears on success or failure", async () => {
+  const h = await setup(["a", "b"], { deferSchemes: true });
+  const status = () => h.component.children.find(child => child.attributes["data-test-id"] === "basket-validation-status");
+  await h.respond(0, ["a", "b"]);
+  assert.equal(status().attributes.role, "status");
+  assert.equal(status().children[1].textContent, "Checking MLST/cgMLST compatibility…");
+  assert.equal(h.component.canClusterWith("mlst"), false);
+  assert.equal(h.notices(), undefined);
+  h.schemeRequests[0].resolve({ mlst: { can_cluster: true }, cgmlst: { can_cluster: true } });
+  await tick();
+  assert.equal(status(), undefined);
+  assert.equal(h.component.canClusterWith("mlst"), true);
+  h.reopen();
+  await h.respond(1, ["a", "b"]);
+  assert.ok(status());
+  h.schemeRequests[1].reject(new Error("unavailable"));
+  await tick();
+  assert.equal(status(), undefined);
+  assert.match(h.noticeText(), /compatibility could not be checked/);
 });

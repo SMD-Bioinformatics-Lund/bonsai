@@ -70,7 +70,9 @@ async def validate_allele_schemes(
     validations = {}
     for method in ("mlst", "cgmlst"):
         try:
-            profiles = await get_typing_profiles(db, selection.sample_ids, method)
+            profiles = await get_typing_profiles(
+                db, selection.sample_ids, method, allow_empty=True
+            )
         except EntryNotFound as error:
             name = "cgMLST" if method == "cgmlst" else "MLST"
             validations[method] = AlleleSchemeValidation(
