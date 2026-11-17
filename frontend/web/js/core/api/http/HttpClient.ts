@@ -20,7 +20,7 @@ export class HttpClient {
       signal: options.signal,
     });
 
-    if (response.status === 401 && retry) {
+    if (response.status === 401 && retry && this.authService.hasRefreshToken()) {
       await this.authService.refreshAuthToken();
       return this.request<T>(endpoint, options, false);
     }

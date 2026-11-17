@@ -1,5 +1,6 @@
 import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
+import { ApiError } from "../core/api/http/ApiError";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
@@ -90,12 +91,26 @@ export class BasketComponent extends HTMLElement {
       this.renderNotices(notices);
     } catch (error) {
       if (version !== this.renderVersion) return;
+      console.error("Failed to validate typing schemes:", error);
+      if (this.renderSessionExpired(error)) return;
       this.renderNotices([{
         notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
       }]);
-      console.error("Failed to validate typing schemes:", error);
     }
     this.setReady(true);
+  }
+
+  private renderSessionExpired(error: unknown): boolean {
+    if (!(error instanceof ApiError) || error.status !== 401) return false;
+    this.setReady(false);
+    this.innerHTML = "<p>Your session is no longer valid. Reload the page to continue; you may need to sign in again. Your basket is saved.</p>";
+    const reloadButton = document.createElement("button");
+    reloadButton.type = "button";
+    reloadButton.className = "btn btn-sm btn-primary";
+    reloadButton.textContent = "Reload page";
+    reloadButton.onclick = () => window.location.reload();
+    this.appendChild(reloadButton);
+    return true;
   }
 
   private renderNotices(notices: { method?: string; notice: string; details?: string[] }[]): void {
@@ -230,7 +245,9 @@ export class BasketComponent extends HTMLElement {
       }
     } catch (error) {
       if (version !== this.renderVersion) return;
-      this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
+      if (!this.renderSessionExpired(error)) {
+        this.innerHTML = "<p>Could not load your basket. Reopen it to retry.</p>";
+      }
       console.error("Failed to render basket:", error);
     }
   }
