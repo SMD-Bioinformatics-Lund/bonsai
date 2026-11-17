@@ -110,7 +110,7 @@ export class BasketComponent extends HTMLElement {
   private renderNotices(notices: { method?: string; notice: string; details?: string[] }[]): void {
     if (notices.length === 0) return;
     const disclosure = document.createElement("details");
-    disclosure.className = "small mt-3 mb-2";
+    disclosure.className = "basket-notices small mt-3 mb-2";
     disclosure.setAttribute("data-test-id", "basket-notices");
     const summary = document.createElement("summary");
     summary.className = "text-secondary";
@@ -195,10 +195,13 @@ export class BasketComponent extends HTMLElement {
         sampleIds.filter((id) => samplesById.get(id).qc_status?.status === "failed"),
       );
       this.innerHTML = "";
+      const sampleList = document.createElement("div");
+      sampleList.className = "basket-samples";
+      this.appendChild(sampleList);
       if (sampleIds.length < 2) {
         const notice = document.createElement("p");
         notice.textContent = "At least two samples are needed for clustering.";
-        this.appendChild(notice);
+        sampleList.appendChild(notice);
       }
       // create sample cards for each sample in the basket
       sampleIds.forEach((id) => {
@@ -223,7 +226,7 @@ export class BasketComponent extends HTMLElement {
             </button>
         </div>
         `;
-        this.appendChild(item);
+        sampleList.appendChild(item);
       });
       this.querySelectorAll("button[data-id]").forEach((button) => {
         button.addEventListener("click", (e) => {

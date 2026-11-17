@@ -113,7 +113,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     requests, clusters, component, clusterButton, clusterLinks, schemeRequests,
     saved: () => JSON.parse(storage.get("basket_content")),
     count: () => Number(elements["basket-counter-container"].children[0].counter.textContent),
-    cards: () => component.children.flatMap(card => {
+    cards: () => (component.children.find(child => child.className === "basket-samples")?.children ?? []).flatMap(card => {
       const match = card.innerHTML.match(/<h6 id="([^"]+)"/);
       return match ? [match[1]] : [];
     }),
@@ -123,7 +123,7 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
       return texts(component).join(" ");
     },
     removeQc: () => elements["remove-failed-qc-from-basket-btn"].onclick(),
-    qcCards: () => component.children.filter(child => child.className?.includes("border-danger")),
+    qcCards: () => (component.children.find(child => child.className === "basket-samples")?.children ?? []).filter(child => child.className?.includes("border-danger")),
     setFailed: ids => { failedIds = ids; },
     select(sampleIds) { selected = sampleIds; selectionCallbacks.forEach(callback => callback()); },
     add: () => elements["add-to-basket-btn"].onclick(),
@@ -214,7 +214,7 @@ test("removing a single QC-failed sample disables clustering when only one remai
   await h.respond(1, ["passed"]);
   assert.deepEqual(h.saved(), ["passed"]);
   assert.deepEqual(h.cards(), ["passed"]);
-  assert.ok(h.component.children.some(child => child.textContent?.includes("At least two samples")));
+  assert.match(h.noticeText(), /At least two samples/);
   assert.equal(h.clusterButton.disabled, true);
   await h.cluster();
   assert.equal(h.clusters.length, 0);
