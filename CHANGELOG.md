@@ -32,6 +32,7 @@
 
 ### Fixed
 
+- Use the same sample names as basket cards in MLST/cgMLST compatibility notices, missing or unreadable typing data errors, and similar-sample tree labels. [#663](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/663)
 - Keep basket notices and actions below the independently scrolling sample list, using the full available panel height for samples. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
 - Handle expired basket sessions with a message to reload the page instead of attempting refresh without a token, preserving saved samples and disabling clustering until recovery. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
 - Separate basket compatibility notices into MLST/cgMLST sections with bold sample groups, group counts, and selection guidance; show all MLST locus names when locus sets differ within a shared typing scheme. [#661](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/661)

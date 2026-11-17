@@ -310,7 +310,7 @@ export async function findAndClusterSimilarSamples(
 
     // draw dendrogam in container element
     const leaves = drawDendrogram("#tree-body", jobResult.result, sampleId);
-    await showLabIds(leaves, api);
+    await showSampleNames(leaves, api);
   } catch (error) {
     container.hidden = true;
     showSimilarityError(error, sampleId);
@@ -370,21 +370,21 @@ export function drawDendrogram(
   return leaves;
 }
 
-async function showLabIds(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
+async function showSampleNames(leaves: DendrogramLeaf[], api: ApiService): Promise<void> {
   const sampleIds = leaves.map((leaf) => leaf.sampleId).filter(Boolean);
   if (sampleIds.length === 0) return;
 
   const response = await api.getSamplesDetails({
     sid: sampleIds,
-    fields: ["sample_id", "external_sample_id"],
+    fields: ["sample_id", "sample_name"],
     limit: sampleIds.length,
     offset: 0,
   });
-  const labIds = new Map(
-    response.data.map((sample) => [sample.sample_id, sample.external_sample_id]),
+  const sampleNames = new Map(
+    response.data.map((sample) => [sample.sample_id, sample.sample_name]),
   );
   leaves.forEach(({ element, sampleId: internalSampleId }) => {
-    element.textContent = labIds.get(internalSampleId) || "Lab ID unavailable";
+    element.textContent = sampleNames.get(internalSampleId) || "Sample name unavailable";
   });
 }
 

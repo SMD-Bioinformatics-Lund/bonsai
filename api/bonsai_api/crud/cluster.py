@@ -34,6 +34,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     """Sample id and predicted alleles."""
 
     sample_id: str
+    sample_name: str | None = None
     external_sample_id: str | None = None
     typing_result: dict[str, Any]
     scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
@@ -105,12 +106,13 @@ async def get_typing_profiles(
     )
     pipeline.extend(stages)
     pipeline.append({"$addFields": {"typing_result": "$typing_result.alleles"}})
-    # The external ID is projected only for user-facing validation errors.
+    # Match basket card labels in validation errors; retain legacy ID fallbacks.
     pipeline.append(
         {
             "$project": {
                 "_id": 0,
                 "sample_id": 1,
+                "sample_name": 1,
                 "external_sample_id": 1,
                 "typing_result": 1,
                 "scheme": "$cluster_scheme",
@@ -125,7 +127,9 @@ async def get_typing_profiles(
     sample_labels: dict[str, str] = {}
     cursor = await db.sample_collection.aggregate(pipeline)
     async for raw in cursor:
-        sample_labels[raw["sample_id"]] = get_sample_label(raw, raw["sample_id"])
+        sample_labels[raw["sample_id"]] = raw.get("sample_name") or get_sample_label(
+            raw, raw["sample_id"]
+        )
         loci_map = raw.get("typing_result") or {}
         name = "cgMLST" if typing_method == "cgmlst" else "MLST"
         if not isinstance(loci_map, Mapping):
@@ -157,6 +161,7 @@ async def get_typing_profiles(
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
+                sample_name=raw.get("sample_name"),
                 external_sample_id=raw.get("external_sample_id"),
                 scheme=get_profile_scheme(raw, typing_method),
                 assay=get_profile_assay(raw),

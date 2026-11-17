@@ -38,8 +38,8 @@ def get_profile_assay(raw: Mapping[str, Any]) -> str | None:
 
 
 def _sample_label(profile: "TypingProfileAggregate") -> str:
-    """Prefer the Lab ID in validation details."""
-    return profile.external_sample_id or profile.sample_id
+    """Use the sample name shown on basket cards, with legacy ID fallbacks."""
+    return profile.sample_name or profile.external_sample_id or profile.sample_id
 
 
 def summarize_sample_labels(labels: Iterable[str]) -> str:

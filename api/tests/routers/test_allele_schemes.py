@@ -158,14 +158,19 @@ def test_missing_cgmlst_result_reports_profile_notice_without_blocking_mlst(endp
     schedule.assert_not_called()
 
 
-def test_missing_mlst_scheme_reports_only_affected_lab_ids(endpoint):
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_missing_scheme_reports_only_affected_card_names(endpoint, method):
     client, getter, schedule = endpoint
     getter.return_value[1].scheme = None
     getter.return_value[1].external_sample_id = "LAB-123"
+    getter.return_value[1].sample_name = "CARD-123"
     response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
-    validation = response.json()["mlst"]
-    assert "typing scheme could not be verified" in validation["notice"]
-    assert validation["details"] == ["No detected MLST scheme is available:\nLAB-123"]
+    assert response.status_code == 200
+    validation = response.json()[method]
+    assert "could not be verified" in validation["notice"]
+    assert len(validation["details"]) == 1
+    assert validation["details"][0].endswith(":\nCARD-123")
+    assert "LAB-123" not in validation["details"][0]
     schedule.assert_not_called()
 
 
