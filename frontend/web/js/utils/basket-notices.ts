@@ -1,6 +1,6 @@
 import type { ApiAlleleSchemeValidation } from "../core/types";
 
-export type BasketNotice = Pick<ApiAlleleSchemeValidation, "details" | "groups"> & {
+export type BasketNotice = Pick<ApiAlleleSchemeValidation, "details" | "notice_groups"> & {
   method?: string;
   notice: string;
 };
@@ -62,7 +62,7 @@ export function createBasketNotices(
   count.textContent = `${notices.length} ${notices.length === 1 ? "notice" : "notices"}`;
   summary.appendChild(count);
   disclosure.appendChild(summary);
-  for (const { method, notice, details, groups } of notices) {
+  for (const { method, notice, details, notice_groups: noticeGroups } of notices) {
     const section = document.createElement("section");
     section.className = "mt-3";
     if (method) {
@@ -77,7 +77,7 @@ export function createBasketNotices(
     const reason = notice.startsWith(prefix) ? notice.slice(prefix.length) : notice;
     explanation.textContent = reason.charAt(0).toUpperCase() + reason.slice(1);
     section.appendChild(explanation);
-    const categories = groups?.length ? groups : (details || []).map(detail => ({ detail, sample_ids: [] }));
+    const categories = noticeGroups?.length ? noticeGroups : (details || []).map(detail => ({ detail, sample_ids: [] }));
     if (categories.length) {
       const list = document.createElement("ul");
       list.className = "list-unstyled mb-0 ms-2 text-break";

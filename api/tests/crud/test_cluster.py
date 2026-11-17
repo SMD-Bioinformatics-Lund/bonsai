@@ -158,7 +158,7 @@ def test_preflight_keeps_empty_profiles_but_still_rejects_absent_samples(method)
     profiles = asyncio.run(load(["empty"]))
     result = validate_typing_schemes(profiles, method)
     assert not result.can_cluster
-    assert result.groups[0].sample_ids == ["empty"]
-    assert result.groups[0].detail.endswith("\nCARD-123")
+    assert result.notice_groups[0].sample_ids == ["empty"]
+    assert result.notice_groups[0].detail.endswith("\nCARD-123")
     with pytest.raises(EntryNotFound):
         asyncio.run(load(["empty", "absent"]))

@@ -3,7 +3,7 @@
 from collections.abc import Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
-from bonsai_api.models.allele_scheme import AlleleSchemeGroup, AlleleSchemeValidation
+from bonsai_api.models.allele_scheme import AlleleSchemeNoticeGroup, AlleleSchemeValidation
 
 if TYPE_CHECKING:
     from bonsai_api.crud.cluster import TypingProfileAggregate, TypingProfileOutput
@@ -57,14 +57,16 @@ def _sample_detail(label: str, samples: Iterable[str]) -> str:
     return f"{label}:\n{rows}"
 
 
-def _notice_group(label: str, profiles: "TypingProfileOutput") -> AlleleSchemeGroup:
-    return AlleleSchemeGroup(
+def _notice_group(label: str, profiles: "TypingProfileOutput") -> AlleleSchemeNoticeGroup:
+    return AlleleSchemeNoticeGroup(
         detail=_sample_detail(label, (_sample_label(p) for p in profiles)),
         sample_ids=[p.sample_id for p in profiles],
     )
 
 
-def _identity_groups(profiles: "TypingProfileOutput", field: str) -> list[AlleleSchemeGroup]:
+def _identity_groups(
+    profiles: "TypingProfileOutput", field: str
+) -> list[AlleleSchemeNoticeGroup]:
     """Keep every category's IDs even when the displayed names are truncated."""
     groups: dict[str, TypingProfileOutput] = {}
     for profile in profiles:
@@ -94,7 +96,7 @@ def validate_typing_schemes(
             notice=f"Cannot cluster by {name}: typing data is unavailable for {len(missing)} "
             f"{'sample' if len(missing) == 1 else 'samples'}.",
             details=[group.detail],
-            groups=[group],
+            notice_groups=[group],
         )
     if not candidates or any(not p.scheme for p in candidates):
         unknown = [p for p in candidates if not p.scheme]
@@ -111,7 +113,7 @@ def validate_typing_schemes(
                 "could not be verified for every sample."
             ),
             details=[group.detail for group in groups],
-            groups=groups,
+            notice_groups=groups,
         )
     schemes = {p.scheme for p in profiles if p.scheme}
     # For now, assume cgMLST uses the same loci within an analysis profile.
@@ -146,7 +148,7 @@ def validate_typing_schemes(
             can_cluster=False,
             notice=notice,
             details=[group.detail for group in notice_groups],
-            groups=notice_groups,
+            notice_groups=notice_groups,
         )
     if typing_method == "mlst":
         if any(not p.assay for p in candidates):
@@ -161,7 +163,7 @@ def validate_typing_schemes(
                     "could not be verified for every sample."
                 ),
                 details=[group.detail],
-                groups=[group],
+                notice_groups=[group],
             )
         if len({p.assay for p in profiles if p.assay}) > 1:
             groups = _identity_groups(profiles, "assay")
@@ -169,6 +171,6 @@ def validate_typing_schemes(
                 can_cluster=False,
                 notice="Cannot cluster by MLST: the selected samples use different analysis profiles.",
                 details=[group.detail for group in groups],
-                groups=groups,
+                notice_groups=groups,
             )
     return AlleleSchemeValidation(can_cluster=len(profiles) >= 2)

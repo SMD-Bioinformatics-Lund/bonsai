@@ -105,7 +105,7 @@ def test_empty_profiles_are_reported_as_missing_typing_data():
     result = validate_typing_schemes(profiles, "mlst")
     assert not result.can_cluster
     assert "typing data is unavailable for 1 sample" in result.notice
-    assert result.groups[0].sample_ids == ["empty"]
+    assert result.notice_groups[0].sample_ids == ["empty"]
 
 
 def test_cgmlst_identity_uses_profile_from_the_selected_analysis_run():
@@ -419,7 +419,7 @@ def test_notice_sample_groups_show_five_labels_and_remaining_count(
     assert "LABEL-24" not in detail
     assert "EXTERNAL-" not in detail
     assert "internal-" not in detail
-    group = next(group for group in result.groups if group.detail == detail)
+    group = next(group for group in result.notice_groups if group.detail == detail)
     assert set(group.sample_ids) == {f"internal-{i}" for i in range(25)}
     if field in {"scheme", "assay"} and not missing:
         assert "25 samples" in detail

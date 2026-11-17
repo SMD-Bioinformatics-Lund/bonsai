@@ -555,7 +555,7 @@ test("notice category removal uses every sample ID and revalidates the remaining
     cgmlst: {
       can_cluster: false,
       notice: "Cannot cluster by cgMLST: different analysis profiles.",
-      groups: [{ detail: "Other assay — 8 samples:\nother-0\nother-1\nother-2\nother-3\nother-4\nand 3 more", sample_ids: removed }],
+      notice_groups: [{ detail: "Other assay — 8 samples:\nother-0\nother-1\nother-2\nother-3\nother-4\nand 3 more", sample_ids: removed }],
     },
   });
   await tick();
@@ -588,7 +588,7 @@ test("missing typing data categories remove only the affected samples", async ()
     cgmlst: {
       can_cluster: false,
       notice: "Cannot cluster by cgMLST: typing data is unavailable for 1 sample.",
-      groups: [{ detail: "No cgMLST typing profile is available:\nmissing <literal>", sample_ids: ["missing"] }],
+      notice_groups: [{ detail: "No cgMLST typing profile is available:\nmissing <literal>", sample_ids: ["missing"] }],
     },
   });
   await tick();

@@ -99,7 +99,7 @@ export class BasketComponent extends HTMLElement {
           method: method === "mlst" ? "MLST" : "cgMLST",
           notice: validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`,
           details: validation?.[method]?.details,
-          groups: validation?.[method]?.groups,
+          notice_groups: validation?.[method]?.notice_groups,
         });
       }
       this.renderNotices(notices);

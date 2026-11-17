@@ -5,7 +5,7 @@ from pydantic import Field
 from bonsai_api.models.base import RWModel
 
 
-class AlleleSchemeGroup(RWModel):
+class AlleleSchemeNoticeGroup(RWModel):
     """A displayed notice category and every sample it contains."""
 
     detail: str
@@ -18,4 +18,4 @@ class AlleleSchemeValidation(RWModel):
     can_cluster: bool
     notice: str | None = None
     details: list[str] = Field(default_factory=list)
-    groups: list[AlleleSchemeGroup] = Field(default_factory=list)
+    notice_groups: list[AlleleSchemeNoticeGroup] = Field(default_factory=list)

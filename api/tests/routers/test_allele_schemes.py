@@ -204,7 +204,7 @@ def test_missing_profiles_have_removable_category_without_blocking_other_method(
     assert response.status_code == 200
     validation = response.json()[method]
     assert not validation["can_cluster"]
-    assert validation["groups"] == [{
+    assert validation["notice_groups"] == [{
         "detail": f"No {'MLST' if method == 'mlst' else 'cgMLST'} typing profile is available:\nCARD-123",
         "sample_ids": ["b"],
     }]
