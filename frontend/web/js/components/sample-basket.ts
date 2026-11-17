@@ -103,13 +103,7 @@ export class BasketComponent extends HTMLElement {
   private renderSessionExpired(error: unknown): boolean {
     if (!(error instanceof ApiError) || error.status !== 401) return false;
     this.setReady(false);
-    this.innerHTML = "<p>Your session is no longer valid. Reload the page to continue; you may need to sign in again. Your basket is saved.</p>";
-    const reloadButton = document.createElement("button");
-    reloadButton.type = "button";
-    reloadButton.className = "btn btn-sm btn-primary";
-    reloadButton.textContent = "Reload page";
-    reloadButton.onclick = () => window.location.reload();
-    this.appendChild(reloadButton);
+    this.innerHTML = "<p>Your session is no longer valid. Reload the page to continue. Your basket is saved.</p>";
     return true;
   }
 
