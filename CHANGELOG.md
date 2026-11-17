@@ -2,8 +2,8 @@
 
 ### Added
 
-- Show a spinner and status message while basket MLST/cgMLST compatibility checks are running. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
-- Add subtle red trash icons at the end of basket notice category headers so whole assay, scheme, locus-set, or missing-typing groups can be removed at once. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show a spinner and status message while basket MLST/cgMLST compatibility checks are running. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
+- Add subtle red trash icons at the end of basket notice category headers so whole assay, scheme, locus-set, or missing-typing groups can be removed at once. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#664](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/664)
 - Add an "Empty basket" button beside "Add to basket" on individual group Summary and QC pages, using the existing basket clear action. [#643](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/643)
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
