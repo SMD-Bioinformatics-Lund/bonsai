@@ -3,6 +3,8 @@
 import logging
 
 from bonsai_libs.api_client.core.exceptions import UnauthorizedError
+from bonsai_libs.api_client.core import BearerTokenAuth
+from bonsai_libs.api_client.core.exceptions import BadRequestError, UnauthorizedError
 from flask import (
     Blueprint,
     Response,
@@ -126,10 +128,10 @@ def load_user(user_id: str) -> LoginUser | None:
     client = create_api_client(token)
     try:
         user_data = client.get_current_user()
-    except UnauthorizedError:
-        # Flask-Login requires a missing user to be represented by None. Remember
-        # that this was an expired authenticated session so the unauthorized
-        # handler can distinguish it from a first-time visitor.
+    except (BadRequestError, UnauthorizedError):
+        # Inactive accounts return HTTP 400. Treat them like expired sessions,
+        # returning None for Flask-Login and letting the unauthorized handler
+        # distinguish a rejected session from a first-time visitor.
         session.clear()
         session[SESSION_ENDED_KEY] = True
         return None

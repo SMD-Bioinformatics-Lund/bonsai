@@ -4,7 +4,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 
-@pytest.mark.parametrize("count", [0, 5, 6, 8])
+@pytest.mark.parametrize("count", [0, 5, 19, 20, 21, 23])
 @pytest.mark.parametrize("extended", [False, True])
 def test_bracken_filters_summary_and_counts_only_rendered_rows_for_toggle(app, count, extended):
     results = [
@@ -24,6 +24,6 @@ def test_bracken_filters_summary_and_counts_only_rendered_rows_for_toggle(app, c
         result["scientific_name"] for result in expected
     ]
     button = container.select_one("[data-bracken-toggle]")
-    assert (button is not None) == (len(expected) > 5)
+    assert (button is not None) == (len(expected) > 20)
     # Until JavaScript initializes the toggle, every result remains accessible.
     assert not container.select("tr[hidden]")

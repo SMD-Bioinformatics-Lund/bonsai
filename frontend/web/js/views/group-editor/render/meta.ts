@@ -14,7 +14,6 @@ export function renderMeta(
         id="group-name"
         type="text"
         class="form-control"
-        value="${model.displayName}"
       />
     </div>
     <div class="mb-3">
@@ -25,7 +24,6 @@ export function renderMeta(
         id="group-key"
         type="text"
         class="form-control"
-        value="${model.groupKey}"
         placeholder="saureus"
         pattern="[a-z0-9][a-z0-9_-]*"
         ${model.mode === "edit" ? "disabled" : ""}
@@ -43,13 +41,18 @@ export function renderMeta(
         id="group-description"
         class="form-control"
         rows="3"
-      >${model.description}</textarea>
+      ></textarea>
     </div>
   `;
 
   const nameInput = container.querySelector<HTMLInputElement>("#group-name")!;
   const keyInput = container.querySelector<HTMLInputElement>("#group-key")!;
   const descInput = container.querySelector("textarea")!;
+
+  // Set form values as text so saved quotes or markup cannot create HTML.
+  nameInput.value = model.displayName;
+  keyInput.value = model.groupKey;
+  descInput.value = model.description ?? "";
 
   nameInput.addEventListener("input", e => {
     model.displayName = (e.target as HTMLInputElement).value;
