@@ -31,6 +31,7 @@
 
 ### Fixed
 
+- Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#658](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/658)
 - Preserve selected columns hidden by the group editor's search when dragging visible columns into a new order. [#659](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/659)
 - Clear sessions rejected for inactive accounts so existing browser tabs can reach login and logout without HTTP 500 errors. [#656](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/656)
 - Show up to 20 Bracken species rows before collapsing additional hits behind Show more, increasing the previous limit of five. [#660](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/660)
