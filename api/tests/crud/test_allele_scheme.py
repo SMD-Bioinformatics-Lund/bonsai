@@ -64,18 +64,19 @@ def test_matching_full_locus_sets_allow_missing_calls(method):
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
-def test_different_schemes_or_locus_sets_are_blocked(method):
+def test_different_identities_are_blocked(method):
     identity = "analysis profiles" if method == "cgmlst" else "typing schemes"
-    for second in [
-        stored("b", "other", method=method, assay="other"),
-        stored("b", alleles={"x": 1, "z": "LNF"}, method=method),
-    ]:
-        result = validate([stored("a", method=method), second], method)
-        assert not result.can_cluster
-        if method == "mlst":
-            assert f"different {identity} or locus sets" in result.notice
-        else:
-            assert "locus" not in result.notice.lower()
+    result = validate(
+        [
+            stored("a", method=method),
+            stored("b", "other", method=method, assay="other"),
+        ],
+        method,
+    )
+    assert not result.can_cluster
+    assert f"different {identity}" in result.notice
+    if method == "cgmlst":
+        assert "locus" not in result.notice.lower()
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
@@ -305,24 +306,35 @@ def test_different_identities_include_values_and_affected_samples(method):
     assert any(f"{other}:\nb" in detail for detail in result.details)
 
 
-@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
-def test_locus_details_distinguish_equal_sized_but_different_sets(method):
+@pytest.mark.parametrize(
+    "alleles", [{"x": 1}, {"x": 1, "z": 2}, {"x": 1, "y": 2, "z": 3}]
+)
+def test_cgmlst_shared_analysis_profile_assumes_compatible_loci(alleles):
     result = validate(
         [
-            stored("a", alleles={"x": 1, "y": 2}, method=method),
-            stored("b", alleles={"x": 1, "z": 2}, method=method),
+            stored("a", method="cgmlst"),
+            stored("b", alleles=alleles, method="cgmlst"),
         ],
-        method,
+        "cgmlst",
+    )
+    assert result.can_cluster
+    assert not result.notice
+    assert not result.details
+
+
+def test_mlst_locus_details_distinguish_equal_sized_but_different_sets():
+    result = validate(
+        [
+            stored("a", alleles={"x": 1, "y": 2}),
+            stored("b", alleles={"x": 1, "z": 2}),
+        ],
     )
     assert not result.can_cluster
-    if method == "cgmlst":
-        assert "incompatible cgMLST profiles" in result.notice
-        assert result.details == ["Affected samples:\na\nb"]
-    else:
-        assert result.details == [
-            "Locus set 1 (2 loci; x, y):\na",
-            "Locus set 2 (2 loci; x, z):\nb",
-        ]
+    assert "different typing schemes or locus sets" in result.notice
+    assert result.details == [
+        "Locus set 1 (2 loci; x, y):\na",
+        "Locus set 2 (2 loci; x, z):\nb",
+    ]
 
 
 @pytest.mark.parametrize("alleles", [[1, 2], {"x": "INF"}])
@@ -338,7 +350,8 @@ def test_malformed_allele_profiles_report_the_affected_lab_id(alleles):
     [
         ("scheme", False, "mlst"),
         ("assay", False, "mlst"),
-        ("loci", False, "cgmlst"),
+        ("loci", False, "mlst"),
+        ("scheme", False, "cgmlst"),
         ("scheme", True, "mlst"),
         ("assay", True, "mlst"),
         ("scheme", True, "cgmlst"),
@@ -367,8 +380,7 @@ def test_notice_sample_groups_show_five_lab_ids_and_remaining_count(field, missi
     result = validate_typing_schemes(profiles, method)
     assert not result.can_cluster
     detail = next(detail for detail in result.details if "LAB-00" in detail)
-    remaining = 21 if field == "loci" else 20
-    assert f"LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand {remaining} more" in detail
+    assert "LAB-00\nLAB-01\nLAB-02\nLAB-03\nLAB-04\nand 20 more" in detail
     assert "LAB-05" not in detail
     assert "LAB-24" not in detail
 

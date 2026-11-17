@@ -99,6 +99,27 @@ def test_compatible_profiles_are_validated_from_the_same_read_as_submission(
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_locus_differences_only_block_mlst_preflight_and_submission(endpoint, method):
+    client, getter, schedule = endpoint
+    getter.return_value[1].typing_result = {"y": 2}
+    preflight = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert preflight.status_code == 200
+    assert preflight.json()["mlst"]["can_cluster"] is False
+    assert preflight.json()["cgmlst"]["can_cluster"] is True
+
+    submission = client.post(
+        f"/cluster/{method}", json={"sampleIds": ["a", "b"], "method": "MSTreeV2"}
+    )
+    if method == "cgmlst":
+        assert submission.status_code == 201
+        assert schedule.call_args.args[0] is getter.return_value
+    else:
+        assert submission.status_code == 422
+        assert submission.json()["detail"] == preflight.json()["mlst"]["notice"]
+        schedule.assert_not_called()
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
 def test_unknown_identity_blocks_submission_with_method_specific_notice(endpoint, method):
     client, getter, schedule = endpoint
     getter.return_value[1].scheme = None

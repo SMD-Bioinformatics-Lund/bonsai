@@ -1,4 +1,4 @@
-"""Verify method-specific identity and complete locus sets before comparison."""
+"""Verify producing profiles and, for MLST, detected schemes and locus sets."""
 
 from collections.abc import Iterable, Mapping
 from typing import Any, TYPE_CHECKING
@@ -72,7 +72,7 @@ def _identity_details(profiles: "TypingProfileOutput", field: str, label: str) -
 def validate_typing_schemes(
     profiles: "TypingProfileOutput", typing_method: str
 ) -> AlleleSchemeValidation:
-    """Validate the exact selected profiles; normalization must preserve locus keys."""
+    """Validate selected profiles, assuming shared cgMLST loci within an assay."""
     name = "cgMLST" if typing_method == "cgmlst" else "MLST"
     identity = "analysis profile" if typing_method == "cgmlst" else "typing scheme"
     candidates = [p for p in profiles if p.typing_result]
@@ -95,20 +95,17 @@ def validate_typing_schemes(
     # Include identities from empty profiles when available, but do not infer
     # a locus definition from a profile that has no typing result.
     schemes = {p.scheme for p in profiles if p.scheme}
-    locus_sets = {frozenset(p.typing_result) for p in candidates}
+    # For now, assume cgMLST uses the same loci within an analysis profile.
+    locus_sets = (
+        {frozenset(p.typing_result) for p in candidates}
+        if typing_method == "mlst"
+        else set()
+    )
     if len(schemes) > 1 or len(locus_sets) > 1:
         details = []
         if len(schemes) > 1:
             details.extend(_identity_details(profiles, "scheme", identity.capitalize()))
-        if len(locus_sets) > 1 and typing_method == "cgmlst":
-            # Keep checking loci, but show only the affected samples in cgMLST details.
-            if len(schemes) <= 1:
-                details.append(
-                    _sample_detail(
-                        "Affected samples", (_sample_label(p) for p in candidates)
-                    )
-                )
-        elif len(locus_sets) > 1:
+        if len(locus_sets) > 1:
             groups: dict[frozenset[str], list[str]] = {}
             for profile in candidates:
                 groups.setdefault(frozenset(profile.typing_result), []).append(
@@ -125,12 +122,7 @@ def validate_typing_schemes(
                 )
         notice = f"Cannot cluster by {name}: the selected samples have different {identity}s or locus sets."
         if typing_method == "cgmlst":
-            reason = (
-                "different analysis profiles"
-                if len(schemes) > 1
-                else "incompatible cgMLST profiles"
-            )
-            notice = f"Cannot cluster by cgMLST: the selected samples have {reason}."
+            notice = "Cannot cluster by cgMLST: the selected samples have different analysis profiles."
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=notice,
