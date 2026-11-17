@@ -92,7 +92,7 @@ def validate_typing_schemes(
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: typing data is unavailable for {len(missing)} "
-            f"{'sample' if len(missing) == 1 else 'samples'}. Remove these samples to continue.",
+            f"{'sample' if len(missing) == 1 else 'samples'}.",
             details=[group.detail],
             groups=[group],
         )

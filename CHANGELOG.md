@@ -34,7 +34,7 @@
 
 ### Fixed
 
-- Show missing MLST/cgMLST profiles as sample-specific basket notice categories, with complete membership available for removal and compatibility rechecked afterwards. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show concise basket notices for missing MLST/cgMLST profiles and affected samples, with complete category membership available for removal and compatibility rechecked afterwards. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Place filtered row counts after "entries per page" and show "X rows selected" only while rows are selected, retaining counts across pages and filters. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Use the same sample names as basket cards in MLST/cgMLST compatibility notices, missing or unreadable typing data errors, and similar-sample tree labels. [#663](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/663)
 - Keep basket notices and actions below the independently scrolling sample list, using the full available panel height for samples. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
