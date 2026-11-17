@@ -131,6 +131,8 @@ div#grid_grid_searches.w2ui-grid-searches {
   flex-shrink: 0;
   max-height: 50%;
   overflow-y: auto;
+  padding-inline-end: 1rem;
+  scrollbar-gutter: stable;
 }
 
 #basket-content .basket-notices summary {

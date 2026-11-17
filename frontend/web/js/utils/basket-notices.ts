@@ -5,10 +5,15 @@ export type BasketNotice = Pick<ApiAlleleSchemeValidation, "details" | "notice_g
   notice: string;
 };
 
+type NoticeActions = {
+  onRemove: (sampleIds: string[]) => void;
+  onSelect: (sampleIds: string[]) => void;
+};
+
 function createNoticeCategory(
   detail: string,
   sampleIds: string[],
-  onRemove: (sampleIds: string[]) => void,
+  { onRemove, onSelect }: NoticeActions,
 ): HTMLLIElement {
   const item = document.createElement("li");
   item.className = "mb-2";
@@ -29,7 +34,17 @@ function createNoticeCategory(
       item.textContent = "";
       item.appendChild(label);
     }
-    label.className = "d-flex justify-content-between align-items-start gap-2";
+    label.className = "d-flex flex-wrap align-items-start gap-2";
+    const actions = document.createElement("span");
+    actions.className = "d-inline-flex align-items-center gap-2 flex-shrink-0";
+    const select = document.createElement("button");
+    select.type = "button";
+    select.className = "btn btn-link btn-sm p-0 text-nowrap";
+    select.textContent = "Select this group";
+    select.title = "Keep only these samples in the basket";
+    select.setAttribute("aria-label", `Select only ${detail.split("\n")[0].replace(/:$/, "")} in basket`);
+    select.addEventListener("click", () => onSelect(sampleIds));
+    actions.appendChild(select);
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "btn btn-link btn-sm text-danger p-0 flex-shrink-0";
@@ -40,14 +55,15 @@ function createNoticeCategory(
     trash.setAttribute("aria-hidden", "true");
     remove.appendChild(trash);
     remove.addEventListener("click", () => onRemove(sampleIds));
-    label.appendChild(remove);
+    actions.appendChild(remove);
+    label.appendChild(actions);
   }
   return item;
 }
 
 export function createBasketNotices(
   notices: BasketNotice[],
-  onRemove: (sampleIds: string[]) => void,
+  actions: NoticeActions,
 ): HTMLDetailsElement {
   const disclosure = document.createElement("details");
   disclosure.className = "basket-notices small mt-3 mb-2";
@@ -82,7 +98,7 @@ export function createBasketNotices(
       const list = document.createElement("ul");
       list.className = "list-unstyled mb-0 ms-2 text-break";
       for (const { detail, sample_ids: sampleIds } of categories) {
-        list.appendChild(createNoticeCategory(detail, sampleIds, onRemove));
+        list.appendChild(createNoticeCategory(detail, sampleIds, actions));
       }
       section.appendChild(list);
     }
