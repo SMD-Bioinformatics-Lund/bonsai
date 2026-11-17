@@ -32,7 +32,6 @@
 ### Fixed
 
 - Separate basket compatibility notices into MLST/cgMLST sections with bold sample groups, group counts, and selection guidance; show all MLST locus names when locus sets differ within a shared typing scheme. [#661](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/661)
-- Show up to 20 Bracken species rows before collapsing additional hits behind Show more, increasing the previous limit of five. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show up to 20 Bracken species rows before collapsing additional hits behind Show more, increasing the previous limit of five. [#660](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/660)
 - Keep saved group names and descriptions as literal form values in the group editor, preventing HTML and script injection. [#657](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/657)
 - Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
