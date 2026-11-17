@@ -2,7 +2,7 @@
 
 ### Added
 
-- Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#664](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/664)
 - Add an "Empty basket" button beside "Add to basket" on individual group Summary and QC pages, using the existing basket clear action. [#643](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/643)
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
 - Show alphabetically sorted visible group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships, no visible memberships, and failed lookups. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
