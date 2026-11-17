@@ -1,6 +1,7 @@
 import { ApiGetSamplesDetailsInput, SamplesDetails, ApiSampleDetailsResponse, ApiAlleleSchemeValidations } from "../core/types";
 import { BasketState } from "../core/state/basket-state";
 import { ApiError } from "../core/api/http/ApiError";
+import { createBasketNotices, type BasketNotice } from "../utils/basket-notices";
 
 export class BasketComponent extends HTMLElement {
   private state: BasketState;
@@ -75,17 +76,30 @@ export class BasketComponent extends HTMLElement {
   }
 
   private async validateClustering(sampleIds: string[], version: number): Promise<void> {
+    const status = document.createElement("p");
+    status.className = "basket-notices small mt-3 mb-2 text-secondary";
+    status.setAttribute("role", "status");
+    status.setAttribute("data-test-id", "basket-validation-status");
+    const spinner = document.createElement("span");
+    spinner.className = "spinner-border spinner-border-sm me-1";
+    spinner.setAttribute("aria-hidden", "true");
+    status.appendChild(spinner);
+    const message = document.createElement("span");
+    message.textContent = "Checking MLST/cgMLST compatibility…";
+    status.appendChild(message);
+    this.appendChild(status);
     try {
       const validation = await this.validateSchemes(sampleIds);
       if (version !== this.renderVersion) return;
       this.schemeValidation = validation;
-      const notices: { method: string; notice: string; details?: string[] }[] = [];
+      const notices: BasketNotice[] = [];
       for (const method of ["mlst", "cgmlst"] as const) {
         if (validation?.[method]?.can_cluster === true) continue;
         notices.push({
           method: method === "mlst" ? "MLST" : "cgMLST",
           notice: validation?.[method]?.notice || `Cannot cluster by ${method === "mlst" ? "MLST" : "cgMLST"}: the ${method === "mlst" ? "typing scheme" : "analysis profile"} could not be verified.`,
           details: validation?.[method]?.details,
+          notice_groups: validation?.[method]?.notice_groups,
         });
       }
       this.renderNotices(notices);
@@ -94,8 +108,10 @@ export class BasketComponent extends HTMLElement {
       console.error("Failed to validate typing schemes:", error);
       if (this.renderSessionExpired(error)) return;
       this.renderNotices([{
-        notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
+        notice: "MLST/cgMLST compatibility could not be checked.",
       }]);
+    } finally {
+      status.remove();
     }
     this.setReady(true);
   }
@@ -107,61 +123,12 @@ export class BasketComponent extends HTMLElement {
     return true;
   }
 
-  private renderNotices(notices: { method?: string; notice: string; details?: string[] }[]): void {
+  private renderNotices(notices: BasketNotice[]): void {
     if (notices.length === 0) return;
-    const disclosure = document.createElement("details");
-    disclosure.className = "basket-notices small mt-3 mb-2";
-    disclosure.setAttribute("data-test-id", "basket-notices");
-    const summary = document.createElement("summary");
-    summary.className = "text-secondary";
-    const icon = document.createElement("i");
-    icon.className = "bi bi-info-circle me-1";
-    icon.setAttribute("aria-hidden", "true");
-    summary.appendChild(icon);
-    const count = document.createElement("span");
-    count.textContent = `${notices.length} ${notices.length === 1 ? "notice" : "notices"}`;
-    summary.appendChild(count);
-    disclosure.appendChild(summary);
-    for (const { method, notice, details } of notices) {
-      const section = document.createElement("section");
-      section.className = "mt-3";
-      if (method) {
-        const heading = document.createElement("h6");
-        heading.className = "fw-bold mb-1";
-        heading.textContent = method;
-        section.appendChild(heading);
-      }
-      const explanation = document.createElement("p");
-      explanation.className = "mb-2";
-      const prefix = `Cannot cluster by ${method}: `;
-      const reason = notice.startsWith(prefix) ? notice.slice(prefix.length) : notice;
-      explanation.textContent = reason.charAt(0).toUpperCase() + reason.slice(1);
-      section.appendChild(explanation);
-      if (details?.length) {
-        const list = document.createElement("ul");
-        list.className = "list-unstyled mb-0 ms-2 text-break";
-        for (const detail of details) {
-          const item = document.createElement("li");
-          item.className = "mb-2";
-          const newline = detail.indexOf("\n");
-          if (newline > 0) {
-            const label = document.createElement("strong");
-            label.textContent = detail.slice(0, newline).replace(/:$/, "");
-            item.appendChild(label);
-            const samples = document.createElement("div");
-            samples.style.whiteSpace = "pre-line";
-            samples.textContent = detail.slice(newline + 1);
-            item.appendChild(samples);
-          } else {
-            item.textContent = detail;
-          }
-          list.appendChild(item);
-        }
-        section.appendChild(list);
-      }
-      disclosure.appendChild(section);
-    }
-    this.appendChild(disclosure);
+    const version = this.renderVersion;
+    this.appendChild(createBasketNotices(notices, (sampleIds) => {
+      if (this.ready && version === this.renderVersion) this.state.removeSamples(sampleIds);
+    }));
   }
 
   async render() {

@@ -22,6 +22,7 @@ export interface ApiAlleleSchemeValidation {
   can_cluster: boolean;
   notice: string | null;
   details?: string[];
+  notice_groups?: { detail: string; sample_ids: string[] }[];
 }
 
 export type ApiAlleleSchemeValidations = Record<"mlst" | "cgmlst", ApiAlleleSchemeValidation>;

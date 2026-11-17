@@ -139,3 +139,26 @@ def test_get_ska_indexes_rejects_missing_index_with_lab_id():
                 ["01991d8e-5d6d-7000-8000-000000000001"],
             )
         )
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_preflight_keeps_empty_profiles_but_still_rejects_absent_samples(method):
+    async def load(ids):
+        db = SimpleNamespace(
+            sample_collection=SimpleNamespace(
+                aggregate=AsyncMock(
+                    return_value=_async_records([
+                        {"sample_id": "empty", "sample_name": "CARD-123", "typing_result": {}}
+                    ])
+                )
+            )
+        )
+        return await get_typing_profiles(db, ids, method, allow_empty=True)
+
+    profiles = asyncio.run(load(["empty"]))
+    result = validate_typing_schemes(profiles, method)
+    assert not result.can_cluster
+    assert result.notice_groups[0].sample_ids == ["empty"]
+    assert result.notice_groups[0].detail.endswith("\nCARD-123")
+    with pytest.raises(EntryNotFound):
+        asyncio.run(load(["empty", "absent"]))

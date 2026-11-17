@@ -93,7 +93,7 @@ def test_missing_database_sample_is_not_considered_compatible():
         validate([stored("a")], ids=["a", "missing"])
 
 
-def test_empty_profiles_do_not_supply_locus_evidence_for_unplaced_samples():
+def test_empty_profiles_are_reported_as_missing_typing_data():
     profiles = [
         TypingProfileAggregate(
             sample_id="a", scheme="same", assay="same", typing_result={"x": 1}
@@ -102,7 +102,10 @@ def test_empty_profiles_do_not_supply_locus_evidence_for_unplaced_samples():
             sample_id="empty", scheme="same", assay="same", typing_result={}
         ),
     ]
-    assert validate_typing_schemes(profiles, "mlst").can_cluster
+    result = validate_typing_schemes(profiles, "mlst")
+    assert not result.can_cluster
+    assert "typing data is unavailable for 1 sample" in result.notice
+    assert result.notice_groups[0].sample_ids == ["empty"]
 
 
 def test_cgmlst_identity_uses_profile_from_the_selected_analysis_run():
@@ -317,7 +320,7 @@ def test_mlst_different_schemes_do_not_repeat_samples_under_locus_sets():
     ]
     result = validate(samples)
     assert not result.can_cluster
-    assert "Select samples from one scheme" in result.notice
+    assert result.notice == "Cannot cluster by MLST: the selected samples use different typing schemes."
     assert "locus" not in result.notice
     assert result.details == [
         "spneumoniae — 2 samples:\na\nc",
@@ -354,7 +357,10 @@ def test_mlst_locus_details_distinguish_equal_sized_but_different_sets():
     )
     assert not result.can_cluster
     assert "share a typing scheme but have different locus sets" in result.notice
-    assert "same locus definitions" in result.notice
+    assert result.notice == (
+        "Cannot cluster by MLST: the selected samples share a typing scheme "
+        "but have different locus sets."
+    )
     assert result.details == [
         "Locus set 1 (7 loci; aroE, ddl, gdh, gki, recP, spi, xpt):\na",
         "Locus set 2 (7 loci; aroE, ddl, gdh, gki, recP, spi, zpt):\nb",
@@ -413,6 +419,8 @@ def test_notice_sample_groups_show_five_labels_and_remaining_count(
     assert "LABEL-24" not in detail
     assert "EXTERNAL-" not in detail
     assert "internal-" not in detail
+    group = next(group for group in result.notice_groups if group.detail == detail)
+    assert set(group.sample_ids) == {f"internal-{i}" for i in range(25)}
     if field in {"scheme", "assay"} and not missing:
         assert "25 samples" in detail
 

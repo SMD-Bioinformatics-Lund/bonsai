@@ -3,7 +3,7 @@
 from collections.abc import Iterable, Mapping
 from typing import Any, TYPE_CHECKING
 
-from bonsai_api.models.allele_scheme import AlleleSchemeValidation
+from bonsai_api.models.allele_scheme import AlleleSchemeNoticeGroup, AlleleSchemeValidation
 
 if TYPE_CHECKING:
     from bonsai_api.crud.cluster import TypingProfileAggregate, TypingProfileOutput
@@ -57,14 +57,23 @@ def _sample_detail(label: str, samples: Iterable[str]) -> str:
     return f"{label}:\n{rows}"
 
 
-def _identity_details(profiles: "TypingProfileOutput", field: str) -> list[str]:
-    """Show which samples belong to each known compatibility identity."""
-    groups: dict[str, list[str]] = {}
+def _notice_group(label: str, profiles: "TypingProfileOutput") -> AlleleSchemeNoticeGroup:
+    return AlleleSchemeNoticeGroup(
+        detail=_sample_detail(label, (_sample_label(p) for p in profiles)),
+        sample_ids=[p.sample_id for p in profiles],
+    )
+
+
+def _identity_groups(
+    profiles: "TypingProfileOutput", field: str
+) -> list[AlleleSchemeNoticeGroup]:
+    """Keep every category's IDs even when the displayed names are truncated."""
+    groups: dict[str, TypingProfileOutput] = {}
     for profile in profiles:
         if value := getattr(profile, field):
-            groups.setdefault(value, []).append(_sample_label(profile))
+            groups.setdefault(value, []).append(profile)
     return [
-        _sample_detail(
+        _notice_group(
             f"{value} — {len(samples)} {'sample' if len(samples) == 1 else 'samples'}",
             samples,
         )
@@ -79,6 +88,16 @@ def validate_typing_schemes(
     name = "cgMLST" if typing_method == "cgmlst" else "MLST"
     identity = "analysis profile" if typing_method == "cgmlst" else "typing scheme"
     candidates = [p for p in profiles if p.typing_result]
+    missing = [p for p in profiles if not p.typing_result]
+    if missing:
+        group = _notice_group(f"No {name} typing profile is available", missing)
+        return AlleleSchemeValidation(
+            can_cluster=False,
+            notice=f"Cannot cluster by {name}: typing data is unavailable for {len(missing)} "
+            f"{'sample' if len(missing) == 1 else 'samples'}.",
+            details=[group.detail],
+            notice_groups=[group],
+        )
     if not candidates or any(not p.scheme for p in candidates):
         unknown = [p for p in candidates if not p.scheme]
         reason = (
@@ -86,17 +105,16 @@ def validate_typing_schemes(
             if typing_method == "cgmlst"
             else "No detected MLST scheme is available"
         )
+        groups = [_notice_group(reason, unknown)] if unknown else []
         return AlleleSchemeValidation(
             can_cluster=False,
-            notice=f"Cannot cluster by {name}: the {identity} could not be verified for every sample.",
-            details=(
-                [_sample_detail(reason, (_sample_label(p) for p in unknown))]
-                if unknown
-                else []
+            notice=(
+                f"Cannot cluster by {name}: the {identity} "
+                "could not be verified for every sample."
             ),
+            details=[group.detail for group in groups],
+            notice_groups=groups,
         )
-    # Include identities from empty profiles when available, but do not infer
-    # a locus definition from a profile that has no typing result.
     schemes = {p.scheme for p in profiles if p.scheme}
     # For now, assume cgMLST uses the same loci within an analysis profile.
     locus_sets = (
@@ -105,58 +123,54 @@ def validate_typing_schemes(
         else set()
     )
     if len(schemes) > 1 or len(locus_sets) > 1:
-        details = []
+        notice_groups = []
         if len(schemes) > 1:
-            details.extend(_identity_details(profiles, "scheme"))
+            notice_groups.extend(_identity_groups(profiles, "scheme"))
         elif len(locus_sets) > 1:
-            groups: dict[frozenset[str], list[str]] = {}
+            locus_groups: dict[frozenset[str], TypingProfileOutput] = {}
             for profile in candidates:
-                groups.setdefault(frozenset(profile.typing_result), []).append(
-                    _sample_label(profile)
-                )
-            for index, (loci, samples) in enumerate(groups.items(), start=1):
+                locus_groups.setdefault(frozenset(profile.typing_result), []).append(profile)
+            for index, (loci, samples) in enumerate(locus_groups.items(), start=1):
                 locus_names = ", ".join(sorted(loci))
-                details.append(
-                    _sample_detail(
+                notice_groups.append(
+                    _notice_group(
                         f"Locus set {index} ({len(loci)} loci; {locus_names})", samples
                     )
                 )
         if len(schemes) > 1:
-            selection = "profile" if typing_method == "cgmlst" else "scheme"
-            notice = (
-                f"Cannot cluster by {name}: the selected samples use different {identity}s. "
-                f"Select samples from one {selection} to resolve this conflict."
-            )
+            notice = f"Cannot cluster by {name}: the selected samples use different {identity}s."
         else:
             notice = (
                 "Cannot cluster by MLST: the selected samples share a typing scheme "
-                "but have different locus sets. Check that their MLST results use "
-                "the same locus definitions."
+                "but have different locus sets."
             )
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=notice,
-            details=details,
+            details=[group.detail for group in notice_groups],
+            notice_groups=notice_groups,
         )
     if typing_method == "mlst":
         if any(not p.assay for p in candidates):
-            return AlleleSchemeValidation(
-                can_cluster=False,
-                notice="Cannot cluster by MLST: the analysis profile could not be verified for every sample.",
-                details=[
-                    _sample_detail(
-                        "The analysis profile of the producing run is missing or ambiguous",
-                        (_sample_label(p) for p in candidates if not p.assay),
-                    )
-                ],
+            group = _notice_group(
+                "The analysis profile of the producing run is missing or ambiguous",
+                [p for p in candidates if not p.assay],
             )
-        if len({p.assay for p in profiles if p.assay}) > 1:
             return AlleleSchemeValidation(
                 can_cluster=False,
                 notice=(
-                    "Cannot cluster by MLST: the selected samples use different analysis profiles. "
-                    "Select samples from one profile to resolve this conflict."
+                    "Cannot cluster by MLST: the analysis profile "
+                    "could not be verified for every sample."
                 ),
-                details=_identity_details(profiles, "assay"),
+                details=[group.detail],
+                notice_groups=[group],
+            )
+        if len({p.assay for p in profiles if p.assay}) > 1:
+            groups = _identity_groups(profiles, "assay")
+            return AlleleSchemeValidation(
+                can_cluster=False,
+                notice="Cannot cluster by MLST: the selected samples use different analysis profiles.",
+                details=[group.detail for group in groups],
+                notice_groups=groups,
             )
     return AlleleSchemeValidation(can_cluster=len(profiles) >= 2)

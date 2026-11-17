@@ -185,3 +185,30 @@ def test_unreadable_typing_result_is_distinct_from_missing_scheme(endpoint, erro
     assert response.json()["mlst"]["details"] == [message]
     assert response.json()["cgmlst"]["can_cluster"] is True
     schedule.assert_not_called()
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_missing_profiles_have_removable_category_without_blocking_other_method(
+    endpoint, method
+):
+    client, getter, schedule = endpoint
+    complete = getter.return_value
+    incomplete = [p.model_copy(deep=True) for p in complete]
+    incomplete[1].typing_result = {}
+    incomplete[1].sample_name = "CARD-123"
+    getter.side_effect = [
+        incomplete if method == "mlst" else complete,
+        incomplete if method == "cgmlst" else complete,
+    ]
+    response = client.post("/cluster/validate", json={"sampleIds": ["a", "b"]})
+    assert response.status_code == 200
+    validation = response.json()[method]
+    assert not validation["can_cluster"]
+    assert validation["notice_groups"] == [{
+        "detail": f"No {'MLST' if method == 'mlst' else 'cgMLST'} typing profile is available:\nCARD-123",
+        "sample_ids": ["b"],
+    }]
+    other = "mlst" if method == "cgmlst" else "cgmlst"
+    assert response.json()[other]["can_cluster"]
+    assert all(call.kwargs == {"allow_empty": True} for call in getter.await_args_list)
+    schedule.assert_not_called()
