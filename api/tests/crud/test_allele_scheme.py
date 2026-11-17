@@ -320,7 +320,7 @@ def test_mlst_different_schemes_do_not_repeat_samples_under_locus_sets():
     ]
     result = validate(samples)
     assert not result.can_cluster
-    assert "Select samples from one scheme" in result.notice
+    assert result.notice == "Cannot cluster by MLST: the selected samples use different typing schemes."
     assert "locus" not in result.notice
     assert result.details == [
         "spneumoniae — 2 samples:\na\nc",
@@ -357,7 +357,10 @@ def test_mlst_locus_details_distinguish_equal_sized_but_different_sets():
     )
     assert not result.can_cluster
     assert "share a typing scheme but have different locus sets" in result.notice
-    assert "same locus definitions" in result.notice
+    assert result.notice == (
+        "Cannot cluster by MLST: the selected samples share a typing scheme "
+        "but have different locus sets."
+    )
     assert result.details == [
         "Locus set 1 (7 loci; aroE, ddl, gdh, gki, recP, spi, xpt):\na",
         "Locus set 2 (7 loci; aroE, ddl, gdh, gki, recP, spi, zpt):\nb",

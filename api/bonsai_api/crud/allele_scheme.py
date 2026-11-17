@@ -136,16 +136,11 @@ def validate_typing_schemes(
                     )
                 )
         if len(schemes) > 1:
-            selection = "profile" if typing_method == "cgmlst" else "scheme"
-            notice = (
-                f"Cannot cluster by {name}: the selected samples use different {identity}s. "
-                f"Select samples from one {selection} to resolve this conflict."
-            )
+            notice = f"Cannot cluster by {name}: the selected samples use different {identity}s."
         else:
             notice = (
                 "Cannot cluster by MLST: the selected samples share a typing scheme "
-                "but have different locus sets. Check that their MLST results use "
-                "the same locus definitions."
+                "but have different locus sets."
             )
         return AlleleSchemeValidation(
             can_cluster=False,
@@ -172,10 +167,7 @@ def validate_typing_schemes(
             groups = _identity_groups(profiles, "assay")
             return AlleleSchemeValidation(
                 can_cluster=False,
-                notice=(
-                    "Cannot cluster by MLST: the selected samples use different analysis profiles. "
-                    "Select samples from one profile to resolve this conflict."
-                ),
+                notice="Cannot cluster by MLST: the selected samples use different analysis profiles.",
                 details=[group.detail for group in groups],
                 groups=groups,
             )

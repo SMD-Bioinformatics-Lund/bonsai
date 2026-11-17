@@ -507,7 +507,7 @@ test("two method notices keep sample-specific details inside one closed disclosu
     },
     cgmlst: {
       can_cluster: false,
-      notice: "Cannot cluster by cgMLST: different analysis profiles. Select samples from one profile to resolve this conflict.",
+      notice: "Cannot cluster by cgMLST: different analysis profiles.",
       details: ["ecoli — 25 samples:\na\nb\nc\nd\ne\nand 20 more", "staphylococcus — 1 sample:\nf"],
     },
   });
@@ -521,7 +521,7 @@ test("two method notices keep sample-specific details inside one closed disclosu
   assert.equal(cgmlst.children[0].tagName, "H6");
   assert.equal(cgmlst.children[0].textContent, "cgMLST");
   assert.equal(mlst.children[1].textContent, "The typing scheme could not be verified.");
-  assert.match(cgmlst.children[1].textContent, /^Different analysis profiles\. Select samples/);
+  assert.equal(cgmlst.children[1].textContent, "Different analysis profiles.");
   const missing = mlst.children[2].children[0];
   assert.equal(missing.children[0].tagName, "STRONG");
   assert.equal(missing.children[0].textContent, "No detected MLST scheme is available");

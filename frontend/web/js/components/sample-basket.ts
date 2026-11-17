@@ -112,7 +112,7 @@ export class BasketComponent extends HTMLElement {
       console.error("Failed to validate typing schemes:", error);
       if (this.renderSessionExpired(error)) return;
       this.renderNotices([{
-        notice: "MLST/cgMLST compatibility could not be checked. Reopen the basket to retry.",
+        notice: "MLST/cgMLST compatibility could not be checked.",
       }]);
     } finally {
       status.remove();
