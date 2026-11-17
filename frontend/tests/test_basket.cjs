@@ -91,7 +91,8 @@ async function setup(savedIds = [], { deferSchemes = false } = {}) {
     return exports;
   }
   const state = load("../web/js/core/state/basket-state.ts");
-  const basket = load("../web/js/components/sample-basket.ts", () => ({ ApiError }));
+  const basketNotices = load("../web/js/utils/basket-notices.ts");
+  const basket = load("../web/js/components/sample-basket.ts", () => ({ ApiError, ...basketNotices }));
   const counter = load("../web/js/components/samples-basket-counter.ts");
   const tableController = load("../web/js/utils/table-controller.ts", name =>
     name === "datatables.net-bs5" ? DataTable : {});
