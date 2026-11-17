@@ -31,7 +31,7 @@
 
 ### Fixed
 
-- Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#658](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/658)
 - Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
 - List basket notice samples one per row and simplify cgMLST details to show affected samples without locus definitions, retaining the five-ID limit and compatibility checks. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
 - Clarify notices about missing / conflicting MLST and cgMLST in basket. [#654](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/654)
