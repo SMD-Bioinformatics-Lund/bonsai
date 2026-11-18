@@ -25,15 +25,17 @@ Bonsai, execute the CLI commands in the container.
 Check sample integrity
 ----------------------
 
-Run ``doctor`` in the API container to check all samples for potentially missing
-alignment and index data:
+Run ``doctor`` in the API container to check all samples for SKA and MinHash
+issues. Add ``--include-alignments`` to also check alignment files and their
+indexes.
 
 .. code-block:: bash
 
    docker compose exec api bonsai-api doctor --output /tmp/doctor.tsv
    docker compose cp api:/tmp/doctor.tsv ./doctor.tsv
 
-The required ``--output PATH`` (or ``-o PATH``) writes a tab-separated table.
+The default TSV format requires ``--output PATH`` (or ``-o PATH``) to write a
+tab-separated table.
 In a container, this path is inside the container; use a writable mounted
 directory or copy the report out as shown above. The table has one row per
 finding, with sample IDs, Lab/LIMS IDs, assay, file type, reason, and path.
@@ -43,16 +45,26 @@ contain only the column headers.
 
 The terminal shows the number of samples checked, samples with potential
 issues, findings by file type, and incomplete checks. If all checks complete
-without findings, it also prints ``No issues found``. All assays require
-alignment files and their indexes, SKA indexes, and MinHash signatures.
-The command checks every sample without
-pagination and does not change sample records, files, or analysis indexes.
+without findings, it also prints ``No issues found``. The command scans every
+sample across all assays and uses read-only checks.
 
 Progress is printed to stderr while scanning samples and waiting for workers.
 The scan reports its sample count every 100 samples or five seconds. Worker
 status updates appear when their state changes and every five seconds while
-waiting. Summary statistics go to stdout; the detailed rows go to the specified
+waiting. Summary statistics go to stdout and the detailed rows go to the specified
 output file.
+
+For cron or shell scripts, use alert output.
+
+.. code-block:: bash
+
+   docker compose exec -T api bonsai-api doctor --format alert
+
+A clean alert run is silent. Findings and incomplete checks go to stderr.
+Alert output lists the first 50 affected sample IDs per check by default, along
+with the total affected. Use ``--max-samples N`` to change the limit or
+``--max-samples 0`` for counts only. An optional ``--output PATH`` writes the full
+TSV alongside the alert.
 
 Alignment paths use the same rules as IGV under ``annotations_dir``, including
 symlinks. Files must be present, readable, and nonempty. SKA and MinHash checks

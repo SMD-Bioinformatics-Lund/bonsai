@@ -170,13 +170,19 @@ async def check_worker(
         connection.close()
 
 
-async def run_check(progress: Callable[[str], None] | None = None) -> DoctorReport:
+async def run_check(
+    progress: Callable[[str], None] | None = None, *, include_alignments: bool = False
+) -> DoctorReport:
     """Check every sample without pagination or full-model hydration."""
     report = DoctorReport()
     selected = {}
     batches = defaultdict(list)
     notify = progress or (lambda message: None)
-    notify("Scanning samples and checking alignment files...")
+    notify(
+        "Scanning samples and checking alignment files..."
+        if include_alignments
+        else "Scanning samples..."
+    )
     last_update = monotonic()
     projection = {
         field: 1
@@ -187,12 +193,13 @@ async def run_check(progress: Callable[[str], None] | None = None) -> DoctorRepo
             "pipeline_runs.assay",
             "pipeline_runs.pipeline_run_id",
             "last_pipeline_run_id",
-            "genomic_resources",
             "ska_index",
             "genome_signature",
             "qc_status.status",
         )
     }
+    if include_alignments:
+        projection["genomic_resources"] = 1
     async with get_db_connection() as db:
         async for sample in db.sample_collection.find({}, projection):
             assay = current_assay(sample)
@@ -205,9 +212,10 @@ async def run_check(progress: Callable[[str], None] | None = None) -> DoctorRepo
                 "assay": assay,
             }
             selected[sid] = context
-            report.findings.extend(
-                Finding(**context, **issue) for issue in check_alignment(sample)
-            )
+            if include_alignments:
+                report.findings.extend(
+                    Finding(**context, **issue) for issue in check_alignment(sample)
+                )
             for file_type, field in (
                 ("ska", "ska_index"),
                 ("minhash", "genome_signature"),
