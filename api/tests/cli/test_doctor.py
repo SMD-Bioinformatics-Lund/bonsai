@@ -3,6 +3,7 @@
 import csv
 import importlib
 from contextlib import asynccontextmanager
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -58,18 +59,18 @@ async def test_all_records_are_checked_without_pagination(database):
 
 
 @pytest.mark.asyncio
-async def test_all_assays_and_samples_are_checked(database):
+@pytest.mark.parametrize("include_alignments", [False, True])
+async def test_all_assays_and_samples_are_checked(database, include_alignments):
     await database.insert_many([sample("one"), sample("two", "other")])
-    report = await doctor.run_check()
+    report = await doctor.run_check(include_alignments=include_alignments)
     assert report.checked_samples == 2
     assert {f.sample_id for f in report.findings} == {"one", "two"}
     assert {f.assay for f in report.findings} == {"wgs", "other"}
+    expected = {"ska", "minhash"}
+    if include_alignments:
+        expected.add("alignment")
     for sid in ("one", "two"):
-        assert {f.file_type for f in report.findings if f.sample_id == sid} == {
-            "alignment",
-            "ska",
-            "minhash",
-        }
+        assert {f.file_type for f in report.findings if f.sample_id == sid} == expected
     assert report.exit_code == 1
 
 
@@ -98,7 +99,7 @@ async def test_worker_errors_leave_local_findings_visible(database, monkeypatch)
     await database.insert_one(doc)
     worker = AsyncMock(return_value={"findings": [], "errors": ["worker unavailable"]})
     monkeypatch.setattr(doctor, "check_worker", worker)
-    report = await doctor.run_check()
+    report = await doctor.run_check(include_alignments=True)
     assert report.exit_code == 2
     assert report.affected_samples == 1  # Missing alignment is still reported.
     assert worker.await_count == 2
@@ -216,7 +217,8 @@ def test_report_and_exit_status(monkeypatch, tmp_path, errors, findings, expecte
         ],
     )
 
-    async def fake_check(progress):
+    async def fake_check(progress, *, include_alignments):
+        assert not include_alignments
         progress("Scanning samples and checking alignment files...")
         return report
 
@@ -258,6 +260,104 @@ def test_report_and_exit_status(monkeypatch, tmp_path, errors, findings, expecte
             assert rows[-1]["status"] == "incomplete"
             assert rows[-1]["message"] == "unavailable"
             assert rows[-1]["sample_id"] == ""
+
+
+@pytest.mark.parametrize(("errors", "exit_code"), [([], 0), (["Worker timed out"], 2)])
+def test_alert_only_writes_findings_and_errors_to_stderr(monkeypatch, errors, exit_code):
+    check = AsyncMock(return_value=doctor.DoctorReport(checked_samples=1, errors=errors))
+    monkeypatch.setattr(doctor_cli, "run_check", check)
+
+    result = CliRunner(mix_stderr=False).invoke(
+        cli, ["doctor", "--format", "alert", "--include-alignments"]
+    )
+
+    check.assert_awaited_once_with(progress=None, include_alignments=True)
+    assert result.exit_code == exit_code
+    assert result.stdout == ""
+    if errors:
+        assert result.stderr == "Doctor check incomplete\n  Worker timed out\n"
+    else:
+        assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "missing/report.tsv",
+        pytest.param(
+            "/dev/full",
+            marks=pytest.mark.skipif(
+                not Path("/dev/full").is_char_device(), reason="requires /dev/full"
+            ),
+        ),
+    ],
+)
+def test_alert_survives_tsv_output_failure(monkeypatch, tmp_path, output):
+    report = doctor.DoctorReport(
+        findings=[
+            doctor.Finding(
+                sample_id="one", file_type="ska", message="SKA index file is missing"
+            )
+        ],
+        errors=["MinHash worker timed out"],
+    )
+    monkeypatch.setattr(doctor_cli, "run_check", AsyncMock(return_value=report))
+
+    result = CliRunner(mix_stderr=False).invoke(
+        cli, ["doctor", "--format", "alert", "--output", str(tmp_path / output)]
+    )
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert "one  SKA index file is missing" in result.stderr
+    assert "MinHash worker timed out" in result.stderr
+    assert "Could not write report" in result.stderr
+
+
+@pytest.mark.parametrize(("limit", "listed"), [(None, 50), (1, 1), (0, 0)])
+def test_alert_limits_distinct_sample_ids_per_check(monkeypatch, tmp_path, limit, listed):
+    findings = [
+        doctor.Finding(
+            sample_id=f"{check}-{number:02}",
+            file_type=check,
+            message="File is missing",
+        )
+        for check in ("minhash", "ska")
+        for number in range(52)
+    ]
+    findings.append(
+        doctor.Finding(
+            sample_id="minhash-00",
+            file_type="minhash-index",
+            message="Index entry is missing",
+        )
+    )
+    check = AsyncMock(return_value=doctor.DoctorReport(checked_samples=104, findings=findings))
+    monkeypatch.setattr(doctor_cli, "run_check", check)
+    output = tmp_path / "doctor.tsv"
+    args = ["doctor", "--format", "alert", "--output", str(output)]
+    if limit is not None:
+        args.extend(["--max-samples", str(limit)])
+
+    result = CliRunner(mix_stderr=False).invoke(cli, args)
+
+    check.assert_awaited_once_with(progress=None, include_alignments=False)
+    assert result.exit_code == 1
+    assert result.stdout == ""
+    assert "MinHash findings for 52 sample(s)" in result.stderr
+    assert "SKA findings for 52 sample(s)" in result.stderr
+    for prefix in ("minhash", "ska"):
+        ids = [
+            line.split()[0]
+            for line in result.stderr.splitlines()
+            if line.startswith(f"  {prefix}-")
+        ]
+        assert ids == [f"{prefix}-{number:02}" for number in range(listed)]
+    if listed:
+        assert f"(showing first {listed})" in result.stderr
+        assert "minhash-00  File is missing, Index entry is missing" in result.stderr
+    with output.open(newline="") as handle:
+        assert len(list(csv.DictReader(handle, delimiter="\t"))) == len(findings)
 
 
 def test_database_failure_is_reported(monkeypatch, tmp_path):

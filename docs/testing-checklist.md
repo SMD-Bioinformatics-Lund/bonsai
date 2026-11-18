@@ -171,8 +171,9 @@ the prepared synthetic dataset, clustering and parsed values. Follow their
 dataset and do not replace the browser checks above.
 
 After deployment or migration, `bonsai-api doctor --output /tmp/doctor.tsv` in
-the configured API container can help distinguish missing files, signature
-metadata and index eligibility from UI failures. See the
+the configured API container checks SKA files, MinHash signatures and search
+index eligibility. Add `--include-alignments` when investigating alignment
+files or their indexes. See the
 [administration guide](source/administration.rst) for configuration and limits.
 
 For each failed check, record only the information needed to reproduce it:
