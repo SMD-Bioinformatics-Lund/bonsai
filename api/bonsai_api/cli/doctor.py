@@ -3,14 +3,13 @@
 import asyncio
 import csv
 from collections import Counter
-from typing import TextIO
 
 import click
 
 from bonsai_api.doctor import DoctorReport, run_check
 
 
-def write_tsv(report: DoctorReport, output: TextIO) -> None:
+def write_tsv(report: DoctorReport, path: str) -> str:
     columns = [
         "status",
         "sample_id",
@@ -21,7 +20,7 @@ def write_tsv(report: DoctorReport, output: TextIO) -> None:
         "message",
         "path",
     ]
-    try:
+    with click.open_file(path, "w", encoding="utf-8") as output:
         writer = csv.DictWriter(
             output, fieldnames=columns, delimiter="\t", lineterminator="\n"
         )
@@ -31,8 +30,7 @@ def write_tsv(report: DoctorReport, output: TextIO) -> None:
         for error in report.errors:
             writer.writerow({"status": "incomplete", "message": error})
         output.flush()
-    except OSError as error:
-        raise click.ClickException(f"Could not write report: {error}") from error
+        return output.name
 
 
 def show_summary(report: DoctorReport, output_name: str) -> None:
@@ -81,7 +79,7 @@ def show_alert(report: DoctorReport, max_samples: int) -> None:
 @click.option(
     "-o",
     "--output",
-    type=click.File("w", encoding="utf-8", lazy=False),
+    metavar="PATH",
     help="Write the full TSV report to this path. Required for TSV format.",
 )
 @click.option(
@@ -107,7 +105,7 @@ def show_alert(report: DoctorReport, max_samples: int) -> None:
 @click.pass_context
 def doctor(
     ctx: click.Context,
-    output: TextIO | None,
+    output: str | None,
     report_format: str,
     include_alignments: bool,
     max_samples: int,
@@ -129,10 +127,14 @@ def doctor(
     except Exception as error:
         report = DoctorReport(errors=[f"Sample checks could not complete: {error}"])
 
-    if output is not None:
-        write_tsv(report, output)
     if report_format == "alert":
         show_alert(report, max_samples)
-    elif output is not None:
-        show_summary(report, output.name)
+    if output is not None:
+        try:
+            output_name = write_tsv(report, output)
+        except OSError as error:
+            click.echo(f"Error: Could not write report: {error}", err=True)
+            ctx.exit(2)
+        if report_format == "tsv":
+            show_summary(report, output_name)
     ctx.exit(report.exit_code)

@@ -75,9 +75,9 @@ and shared signatures.
 
 Unavailable services, worker failures, and timeouts are reported as incomplete
 checks. Exit codes are ``0`` for no issues, ``1`` for potential problems, and
-``2`` for incomplete checks. Each worker batch has a 60-second timeout. The
-report reflects data observed during the scan; uploads or deletions in progress
-may warrant a repeat check after they finish.
+``2`` for incomplete checks or a failed report write. Each worker batch has a
+60-second timeout. The report reflects data observed during the scan. Uploads
+or deletions in progress may warrant a repeat check after they finish.
 
 Create users
 ------------

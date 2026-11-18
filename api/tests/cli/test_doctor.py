@@ -3,6 +3,7 @@
 import csv
 import importlib
 from contextlib import asynccontextmanager
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -277,6 +278,40 @@ def test_alert_only_writes_findings_and_errors_to_stderr(monkeypatch, errors, ex
         assert result.stderr == "Doctor check incomplete\n  Worker timed out\n"
     else:
         assert result.stderr == ""
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "missing/report.tsv",
+        pytest.param(
+            "/dev/full",
+            marks=pytest.mark.skipif(
+                not Path("/dev/full").is_char_device(), reason="requires /dev/full"
+            ),
+        ),
+    ],
+)
+def test_alert_survives_tsv_output_failure(monkeypatch, tmp_path, output):
+    report = doctor.DoctorReport(
+        findings=[
+            doctor.Finding(
+                sample_id="one", file_type="ska", message="SKA index file is missing"
+            )
+        ],
+        errors=["MinHash worker timed out"],
+    )
+    monkeypatch.setattr(doctor_cli, "run_check", AsyncMock(return_value=report))
+
+    result = CliRunner(mix_stderr=False).invoke(
+        cli, ["doctor", "--format", "alert", "--output", str(tmp_path / output)]
+    )
+
+    assert result.exit_code == 2
+    assert result.stdout == ""
+    assert "one  SKA index file is missing" in result.stderr
+    assert "MinHash worker timed out" in result.stderr
+    assert "Could not write report" in result.stderr
 
 
 @pytest.mark.parametrize(("limit", "listed"), [(None, 50), (1, 1), (0, 0)])
