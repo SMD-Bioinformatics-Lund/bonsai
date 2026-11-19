@@ -43,10 +43,12 @@ Its ``status`` column distinguishes potential issues from incomplete checks;
 incomplete checks without a sample have empty sample columns. Clean reports
 contain only the column headers.
 
-The terminal shows the number of samples checked, samples with potential
-issues, findings by file type, and incomplete checks. If all checks complete
-without findings, it also prints ``No issues found``. The command scans every
-sample across all assays and uses read-only checks.
+The terminal shows the requested file checks, the number of samples checked,
+samples with potential issues, findings by file type, and incomplete checks.
+The summary includes the MinHash k-mer size and search-index format when the
+worker returns them. If all checks complete without findings, the report prints
+``No issues found``. The command scans every sample across all assays and uses
+read-only checks.
 
 Progress is printed to stderr while scanning samples and waiting for workers.
 The scan reports its sample count every 100 samples or five seconds. Worker
@@ -60,11 +62,11 @@ For cron or shell scripts, use alert output.
 
    docker compose exec -T api bonsai-api doctor --format alert
 
-A clean alert run is silent. Findings and incomplete checks go to stderr.
-Alert output lists the first 50 affected sample IDs per check by default, along
-with the total affected. Use ``--max-samples N`` to change the limit or
-``--max-samples 0`` for counts only. An optional ``--output PATH`` writes the full
-TSV alongside the alert.
+Every alert run writes its summary to stderr, including clean runs. Findings
+and incomplete checks follow the summary. Alert output lists the first 20
+affected sample IDs per check by default, along with the total affected. Use
+``--max-samples N`` to change the limit or ``--max-samples 0`` for counts only.
+An optional ``--output PATH`` writes the full TSV alongside the alert.
 
 Alignment paths use the same rules as IGV under ``annotations_dir``, including
 symlinks. Files must be present, readable, and nonempty. SKA and MinHash checks

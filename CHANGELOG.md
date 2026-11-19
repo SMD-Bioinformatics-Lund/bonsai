@@ -187,6 +187,7 @@
 
 ### Changed
 
+- Show sample counts, requested file checks, and available MinHash settings in Doctor summaries. Cron alerts include the summary on clean runs and print it before affected samples and incomplete checks. Alerts now list up to 20 affected samples per check by default. [#668](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/668)
 - Rename the top navigation tab from Groups to Home. [#630](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/630)
 - Pin Python and Miniconda container bases to Bullseye-compatible versions for legacy deployment hardware. [#504](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/504)
 - Use Groups as the default landing page and move the previous home content to About. [#494](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/494)

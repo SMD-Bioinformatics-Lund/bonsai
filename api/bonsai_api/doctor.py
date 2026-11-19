@@ -28,12 +28,20 @@ class Finding(BaseModel):
     path: str | None = None
 
 
+class MinHashParameters(BaseModel):
+    """Settings used by the MinHash worker for this check."""
+
+    kmer_size: int
+    index_format: str
+
+
 class DoctorReport(BaseModel):
     """Keep detected problems separate from checks that could not complete."""
 
     checked_samples: int = 0
     findings: list[Finding] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
+    minhash_parameters: MinHashParameters | None = None
 
     @property
     def affected_samples(self) -> int:
@@ -255,7 +263,11 @@ async def run_check(
             for name, samples in batches.items()
         )
     )
-    for result in results:
+    for name, result in zip(batches, results, strict=True):
+        if name == "minhash" and "parameters" in result:
+            report.minhash_parameters = MinHashParameters.model_validate(
+                result["parameters"]
+            )
         report.errors.extend(result["errors"])
         for issue in result["findings"]:
             context = selected[issue["sample_id"]]

@@ -74,6 +74,28 @@ async def test_all_assays_and_samples_are_checked(database, include_alignments):
     assert report.exit_code == 1
 
 
+@pytest.mark.asyncio
+async def test_report_uses_parameters_from_minhash_worker(database, monkeypatch):
+    await database.insert_one(sample("one") | {"ska_index": "one.skf"})
+    worker = AsyncMock(
+        side_effect=[
+            {"findings": [], "errors": []},
+            {
+                "findings": [],
+                "errors": [],
+                "parameters": {"kmer_size": 51, "index_format": "SBT"},
+            },
+        ]
+    )
+    monkeypatch.setattr(doctor, "check_worker", worker)
+
+    report = await doctor.run_check()
+
+    assert report.minhash_parameters == doctor.MinHashParameters(
+        kmer_size=51, index_format="SBT"
+    )
+
+
 def test_alignment_uses_current_resources_and_checks_index(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.settings, "annotations_dir", str(tmp_path))
     (tmp_path / "reads.bam").write_bytes(b"nonempty")
@@ -263,8 +285,13 @@ def test_report_and_exit_status(monkeypatch, tmp_path, errors, findings, expecte
 
 
 @pytest.mark.parametrize(("errors", "exit_code"), [([], 0), (["Worker timed out"], 2)])
-def test_alert_only_writes_findings_and_errors_to_stderr(monkeypatch, errors, exit_code):
-    check = AsyncMock(return_value=doctor.DoctorReport(checked_samples=1, errors=errors))
+def test_alert_always_prints_summary_to_stderr(monkeypatch, errors, exit_code):
+    report = doctor.DoctorReport(
+        checked_samples=1,
+        errors=errors,
+        minhash_parameters=doctor.MinHashParameters(kmer_size=51, index_format="SBT"),
+    )
+    check = AsyncMock(return_value=report)
     monkeypatch.setattr(doctor_cli, "run_check", check)
 
     result = CliRunner(mix_stderr=False).invoke(
@@ -274,10 +301,21 @@ def test_alert_only_writes_findings_and_errors_to_stderr(monkeypatch, errors, ex
     check.assert_awaited_once_with(progress=None, include_alignments=True)
     assert result.exit_code == exit_code
     assert result.stdout == ""
+    summary, _, details = result.stderr.partition("\n\n")
+    assert summary.startswith("Doctor check summary\nSamples checked: 1 (all assays)")
+    assert "SKA index files" in summary
+    assert "MinHash signature files and search-index membership" in summary
+    assert "k-mer size 51, index format SBT" in summary
+    assert "Alignment files and indexes (enabled)" in summary
+    assert "Samples with potential issues: 0" in summary
+    assert "Findings: 0" in summary
+    assert f"Incomplete checks: {len(errors)}" in summary
     if errors:
-        assert result.stderr == "Doctor check incomplete\n  Worker timed out\n"
+        assert "No issues found" not in summary
+        assert details == "Doctor check incomplete\n  Worker timed out\n"
     else:
-        assert result.stderr == ""
+        assert summary.endswith("No issues found\n")
+        assert details == ""
 
 
 @pytest.mark.parametrize(
@@ -314,8 +352,10 @@ def test_alert_survives_tsv_output_failure(monkeypatch, tmp_path, output):
     assert "Could not write report" in result.stderr
 
 
-@pytest.mark.parametrize(("limit", "listed"), [(None, 50), (1, 1), (0, 0)])
-def test_alert_limits_distinct_sample_ids_per_check(monkeypatch, tmp_path, limit, listed):
+@pytest.mark.parametrize(("limit", "listed"), [(None, 20), (1, 1), (0, 0)])
+def test_alert_limits_distinct_sample_ids_per_check(
+    monkeypatch, tmp_path, limit, listed
+):
     findings = [
         doctor.Finding(
             sample_id=f"{check}-{number:02}",
@@ -332,7 +372,9 @@ def test_alert_limits_distinct_sample_ids_per_check(monkeypatch, tmp_path, limit
             message="Index entry is missing",
         )
     )
-    check = AsyncMock(return_value=doctor.DoctorReport(checked_samples=104, findings=findings))
+    check = AsyncMock(
+        return_value=doctor.DoctorReport(checked_samples=104, findings=findings)
+    )
     monkeypatch.setattr(doctor_cli, "run_check", check)
     output = tmp_path / "doctor.tsv"
     args = ["doctor", "--format", "alert", "--output", str(output)]
@@ -344,12 +386,17 @@ def test_alert_limits_distinct_sample_ids_per_check(monkeypatch, tmp_path, limit
     check.assert_awaited_once_with(progress=None, include_alignments=False)
     assert result.exit_code == 1
     assert result.stdout == ""
-    assert "MinHash findings for 52 sample(s)" in result.stderr
-    assert "SKA findings for 52 sample(s)" in result.stderr
+    summary, _, details = result.stderr.partition("\n\n")
+    assert "Alignment files and indexes (disabled)" in summary
+    assert "Samples with potential issues: 104" in summary
+    assert "Findings: 105" in summary
+    assert "No issues found" not in summary
+    assert details.startswith("MinHash findings for 52 sample(s)")
+    assert "SKA findings for 52 sample(s)" in details
     for prefix in ("minhash", "ska"):
         ids = [
             line.split()[0]
-            for line in result.stderr.splitlines()
+            for line in details.splitlines()
             if line.startswith(f"  {prefix}-")
         ]
         assert ids == [f"{prefix}-{number:02}" for number in range(listed)]

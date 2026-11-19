@@ -33,11 +33,30 @@ def write_tsv(report: DoctorReport, path: str) -> str:
         return output.name
 
 
-def show_summary(report: DoctorReport, output_name: str) -> None:
-    click.echo(f"Samples checked: {report.checked_samples}")
-    click.echo(f"Samples with potential issues: {report.affected_samples}")
-    click.echo(f"Findings: {len(report.findings)}")
-    click.echo(f"Incomplete checks: {len(report.errors)}")
+def show_summary(
+    report: DoctorReport, include_alignments: bool, *, err: bool = False
+) -> None:
+    click.echo("Doctor check summary", err=err)
+    click.echo(f"Samples checked: {report.checked_samples} (all assays)", err=err)
+    click.echo("Checks requested:", err=err)
+    click.echo("  SKA index files", err=err)
+    click.echo("  MinHash signature files and search-index membership", err=err)
+    if report.minhash_parameters is not None:
+        parameters = report.minhash_parameters
+        click.echo(
+            f"    k-mer size {parameters.kmer_size}, index format {parameters.index_format}",
+            err=err,
+        )
+    alignment_status = "enabled" if include_alignments else "disabled"
+    click.echo(f"  Alignment files and indexes ({alignment_status})", err=err)
+    click.echo(f"Samples with potential issues: {report.affected_samples}", err=err)
+    click.echo(f"Findings: {len(report.findings)}", err=err)
+    click.echo(f"Incomplete checks: {len(report.errors)}", err=err)
+    if not report.findings and not report.errors:
+        click.echo("No issues found", err=err)
+
+
+def show_tsv_details(report: DoctorReport, output_name: str) -> None:
     if report.findings:
         click.echo("Findings by file type:")
         for file_type, count in sorted(
@@ -46,8 +65,6 @@ def show_summary(report: DoctorReport, output_name: str) -> None:
             click.echo(f"  {file_type}: {count}")
     if report.errors:
         click.echo("Check incomplete. See the report for details.")
-    elif not report.findings:
-        click.echo("No issues found")
     click.echo(f"Report written to: {output_name}")
 
 
@@ -88,7 +105,7 @@ def show_alert(report: DoctorReport, max_samples: int) -> None:
     type=click.Choice(["tsv", "alert"]),
     default="tsv",
     show_default=True,
-    help="Write a TSV report or print alerts to stderr for scheduled checks.",
+    help="Write a TSV report or print a summary and alerts to stderr for scheduled checks.",
 )
 @click.option(
     "--include-alignments",
@@ -98,7 +115,7 @@ def show_alert(report: DoctorReport, max_samples: int) -> None:
 @click.option(
     "--max-samples",
     type=click.IntRange(min=0),
-    default=50,
+    default=20,
     show_default=True,
     help="Maximum sample IDs per check in alert output. Use 0 for counts only.",
 )
@@ -128,7 +145,10 @@ def doctor(
         report = DoctorReport(errors=[f"Sample checks could not complete: {error}"])
 
     if report_format == "alert":
-        show_alert(report, max_samples)
+        show_summary(report, include_alignments, err=True)
+        if report.findings or report.errors:
+            click.echo(err=True)
+            show_alert(report, max_samples)
     if output is not None:
         try:
             output_name = write_tsv(report, output)
@@ -136,5 +156,6 @@ def doctor(
             click.echo(f"Error: Could not write report: {error}", err=True)
             ctx.exit(2)
         if report_format == "tsv":
-            show_summary(report, output_name)
+            show_summary(report, include_alignments)
+            show_tsv_details(report, output_name)
     ctx.exit(report.exit_code)
