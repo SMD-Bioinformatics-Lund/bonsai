@@ -115,7 +115,7 @@ def show_alert(report: DoctorReport, max_samples: int) -> None:
 @click.option(
     "--max-samples",
     type=click.IntRange(min=0),
-    default=50,
+    default=20,
     show_default=True,
     help="Maximum sample IDs per check in alert output. Use 0 for counts only.",
 )
