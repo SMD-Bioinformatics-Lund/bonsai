@@ -112,4 +112,11 @@ def check_samples(samples: list[dict]) -> dict:
                         "minhash-index",
                         "Signature is missing from the search index",
                     )
-    return {"findings": findings, "errors": errors}
+    return {
+        "findings": findings,
+        "errors": errors,
+        "parameters": {
+            "kmer_size": cnf.kmer_size,
+            "index_format": cnf.index_format.value,
+        },
+    }

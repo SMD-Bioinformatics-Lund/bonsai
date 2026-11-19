@@ -56,7 +56,11 @@ def test_excluded_sample_can_share_a_signature_with_an_active_sample(data):
     )
     assert job.func_name in ALLOWED_ENTRYPOINTS
     result = job.func(*job.args, **job.kwargs)
-    assert result == {"findings": [], "errors": []}
+    assert result == {
+        "findings": [],
+        "errors": [],
+        "parameters": {"kmer_size": 31, "index_format": doctor.cnf.index_format.value},
+    }
 
 
 def test_qc_failure_with_stale_exclusion_flags_is_reported(data):
