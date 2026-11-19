@@ -55,7 +55,7 @@
                     </div>
                 </div>
                 <h5 class="card-title pt-2">Roles</h5>
-                {{ form.roles }}
+                {{ bootstrap_field(form.roles, label=False) }}
                 <div class="row g-2 mt-2">
                 {% if method == "create" %}
                     <button  class="btn mt-2 btn-success">

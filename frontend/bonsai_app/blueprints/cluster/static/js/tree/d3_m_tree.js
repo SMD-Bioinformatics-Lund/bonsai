@@ -1931,10 +1931,16 @@ D3MSTree.prototype.showLinkLabels = function (show) {
 };
 
 D3MSTree.prototype._showLinkLabels = function () {
-  var self = this;
   this.link_elements.selectAll("text").remove();
   if (!this.show_link_labels) {
     return;
+  }
+  function formatDistance(it) {
+    var distance = it.original_value;
+    // Keep small nonzero distances distinguishable from zero.
+    return distance > 0 && distance < 0.01
+      ? distance.toPrecision(2)
+      : distance.toFixed(2);
   }
   this.link_elements
     .append("text")
@@ -1947,11 +1953,7 @@ D3MSTree.prototype._showLinkLabels = function () {
     .style("stroke", "white")
     .style("stroke-width", "5px")
     .style("opacity", "0.9")
-    .text(function (it) {
-      return it.original_value >= 1
-        ? Math.floor(it.original_value)
-        : it.original_value.toPrecision(2);
-    });
+    .text(formatDistance);
   this.link_elements
     .append("text")
     .attr("class", "distance-label")
@@ -1962,11 +1964,7 @@ D3MSTree.prototype._showLinkLabels = function () {
     .style("fill", "#666666")
     .style("stroke", "#f0f0f0")
     .style("stroke-width", ".2px")
-    .text(function (it) {
-      return it.original_value >= 1
-        ? Math.floor(it.original_value)
-        : it.original_value.toPrecision(2);
-    });
+    .text(formatDistance);
 
   this.link_elements
     .selectAll("text")

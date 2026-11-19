@@ -70,10 +70,20 @@ class SimilaritySearchConfig(BaseModel):
 
 
 class SimilarResult(BaseModel):
-    """Container for """
+    """Raw signature match returned by the MinHash index."""
 
     name: str
     md5: str
+    containment: float
+    jaccard_similarity: float
+    max_containment: float
+
+
+class SimilarSampleResult(BaseModel):
+    """Similarity match resolved to a Bonsai sample."""
+
+    sample_id: str
+    signature_checksum: str
     containment: float
     jaccard_similarity: float
     max_containment: float
