@@ -352,7 +352,7 @@ def test_alert_survives_tsv_output_failure(monkeypatch, tmp_path, output):
     assert "Could not write report" in result.stderr
 
 
-@pytest.mark.parametrize(("limit", "listed"), [(None, 50), (1, 1), (0, 0)])
+@pytest.mark.parametrize(("limit", "listed"), [(None, 20), (1, 1), (0, 0)])
 def test_alert_limits_distinct_sample_ids_per_check(
     monkeypatch, tmp_path, limit, listed
 ):

@@ -63,7 +63,7 @@ For cron or shell scripts, use alert output.
    docker compose exec -T api bonsai-api doctor --format alert
 
 Every alert run writes its summary to stderr, including clean runs. Findings
-and incomplete checks follow the summary. Alert output lists the first 50
+and incomplete checks follow the summary. Alert output lists the first 20
 affected sample IDs per check by default, along with the total affected. Use
 ``--max-samples N`` to change the limit or ``--max-samples 0`` for counts only.
 An optional ``--output PATH`` writes the full TSV alongside the alert.
