@@ -54,8 +54,6 @@
       type="text/css"
       href="{{url_for('cluster.static', filename='js/SlickGrid/examples/examples.css')}}"
     />
-    <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/firebugx.js')}}"></script>
-
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-1.11.2.min.js')}}"></script>
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-ui-1.11.3.min.js')}}"></script>
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery.event.drag-2.3.0.js')}}"></script>
@@ -238,20 +236,20 @@
       var current_metadata_file = null;
 
       var waiting_spinner = null;
-      var metadata_categories = {};
-
       var cannot_connect = false;
 
+      const DEFAULT_NODE_LABEL_FIELD = "Name";
+      const DEFAULT_TOOLTIP_FIELD = "Lab ID";
       var default_control_panel_values = {
         max_link_scale: 500,
         base_node_size: 10,
         max_link_length: "",
         size_power: 0.5,
         log_link_scale: false,
-        show_individual_segments: false,
+        show_individual_segments: true,
         link_font_size: 14,
         show_link_labels: false,
-        show_node_labels: false,
+        show_node_labels: true,
         node_font_size: 12,
         hide_link_length: "",
         node_collapsed_value: 0,
@@ -305,15 +303,15 @@
             "#tooltip-text",
           ];
           selectElements.forEach((selector) => {
-            let targetElement = $(selector);
-            // if categories exists group data in optgroups
+            const select = $(selector);
+            let targetElement = select;
             if (category) {
-              if (!metadata_categories[category]) {
-                metadata_categories[category] = true;
-                const optgroup = $("<optgroup>").attr("label", category);
-                $(selector).append(optgroup);
+              targetElement = select
+                .children("optgroup")
+                .filter((_, group) => group.label === category);
+              if (!targetElement.length) {
+                targetElement = $("<optgroup>").attr("label", category).appendTo(select);
               }
-              targetElement = $(selector).find(`optgroup[label='${category}']`);
             }
             targetElement.append(
               $("<option>").attr("value", fieldKey).text(label),
@@ -327,6 +325,7 @@
         the_tree.removeCategory(category);
         $(`#metadata-select option[value='${category}']`).remove();
         $(`#node-label-text option[value='${category}']`).remove();
+        $(`#tooltip-text option[value='${category}']`).remove();
         $(`#add-new-values-select option[value='${category}']`).remove();
         delete metadata_options[category];
       }
@@ -335,9 +334,13 @@
         if (!e) {
           e = d3.event;
         }
+        if (msg instanceof Node) {
+          tooltip_div.node().replaceChildren(msg);
+        } else {
+          tooltip_div.text(msg ?? "");
+        }
         tooltip_div.transition().duration(200).style("opacity", 0.9);
         tooltip_div
-          .html(msg)
           .style("left", `${e.pageX}px`)
           .style("top", `${e.pageY - 28}px`)
           .style("height", "auto");
@@ -459,9 +462,9 @@
         if (data["log_link_scale"]) {
           $("#link-log-scale").prop("checked", true);
         }
-        if (data["show_individual_segments"]) {
-          $("#show-individual-segments").prop("checked", true);
-        }
+        $("#show-individual-segments").prop(
+          "checked", Boolean(data["show_individual_segments"]),
+        );
         if (data["link_font_size"]) {
           $("#slider-linkfontsize").slider({ value: data["link_font_size"] });
           $("#spinner-linkfontsize").spinner({ value: data["link_font_size"] });
@@ -471,7 +474,7 @@
           sll = false;
         }
         $("#show-link-labels").prop("checked", sll);
-        $("#show-node-labels").prop("checked", data["show_node_labels"]);
+        $("#show-node-labels").prop("checked", Boolean(data["show_node_labels"]));
         if (data["node_font_size"]) {
           $("#slider-node-fontsize").slider({ value: data["node_font_size"] });
           $("#spinner-node-fontsize").spinner({
@@ -492,8 +495,7 @@
         if (the_tree) {
           the_tree.svg.remove();
           the_tree.legend_div[0].remove();
-          $("#metadata-select").find("option").remove();
-          $("#node-label-text").find("option").remove();
+          $("#metadata-select, #node-label-text, #tooltip-text").empty();
           $("#metadata-div").remove();
           $("#context-menu").remove();
         }
@@ -516,29 +518,25 @@
           },
         );
 
-        const renderMetadataValue = (nodeId) => {
-          const metadata = the_tree.metadata[nodeId];
-          const selectedField = document.querySelector("#tooltip-text").value;
-
-          if (metadata) {
-            return metadata[selectedField] || metadata.ID || "";
-          }
-          return "";
-        };
-
         the_tree.addSegmentOverListener((node) => {
-          const tooltipEnabled = $("#show-node-tooltip").prop("checked");
-          if (!tooltipEnabled) return;
+          if (!$("#show-node-tooltip").prop("checked")) return;
 
           if (the_tree.display_category === "nothing") {
-            const nodeIds = the_tree.grouped_nodes[node.data.idx];
-            const listItems = nodeIds
-              .map(renderMetadataValue)
-              .map((value) => `<li>${value}</li>`)
-              .join("");
-
-            const tooltipHtml = `<ul style="margin:0; padding-left:1.2em">${listItems}</ul>`;
-            showToolTip(tooltipHtml);
+            const selectedField = $("#tooltip-text").val();
+            const list = document.createElement("ul");
+            list.style.cssText = "margin:0; padding-left:1.2em";
+            for (const id of the_tree.grouped_nodes[node.data.idx]) {
+              const metadata = the_tree.metadata[id];
+              const values = [
+                metadata?.[selectedField], metadata?.[DEFAULT_TOOLTIP_FIELD], metadata?.Name, id,
+              ];
+              const item = document.createElement("li");
+              item.textContent = values.find(
+                (value) => value != null && value !== "" && value !== "-",
+              );
+              list.appendChild(item);
+            }
+            showToolTip(list);
           } else {
             const { type, value } = node.data;
             showToolTip(`${type} (${value})`);
@@ -561,18 +559,30 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
-        $("#node-label-text").val("ID");
+        const savedControls = data.layout_data?.nodes_links;
+        const labelField = savedControls?.node_text_value ?? (
+          [DEFAULT_NODE_LABEL_FIELD, DEFAULT_TOOLTIP_FIELD]
+            .find((field) => field in the_tree.metadata_info) ?? "node_id"
+        );
+        if (labelField === "node_id") {
+          $("#node-label-text").append(new Option("Node ID", "node_id"));
+        }
+        $("#node-label-text").val(labelField);
+        the_tree.setNodeText(labelField);
+        const tooltipField = [DEFAULT_TOOLTIP_FIELD, DEFAULT_NODE_LABEL_FIELD]
+          .find((field) => field in the_tree.metadata_info) ?? "nothing";
+        $("#tooltip-text").val(tooltipField);
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);
         } else {
           $("#metadata-select").val("nothing");
         }
-        if (data["layout_data"] && data["layout_data"]["nodes_links"]) {
-          setControlPanel(data["layout_data"]["nodes_links"]);
-        } else {
-          setControlPanel(default_control_panel_values);
+        if (!savedControls) {
+          the_tree.showNodeLabels(default_control_panel_values.show_node_labels);
+          the_tree.showIndividualSegments(default_control_panel_values.show_individual_segments);
         }
+        setControlPanel(savedControls ?? default_control_panel_values);
         if (current_metadata_file) {
           loadMetadataText(current_metadata_file);
         }
@@ -679,12 +689,6 @@
 
         $("#metadata-select").on("change", function (e) {
           the_tree.changeCategory($(this).val());
-        });
-        $("#tooltip-text").change(function (e) {
-          the_tree.setNodeText($(this).val());
-        });
-        $("#node-label-text").change(function (e) {
-          the_tree.setNodeText($(this).val());
         });
 
         $("#mst-download-svg").click(function (e) {
@@ -904,8 +908,8 @@
           the_tree.showIndividualSegments($(this).is(":checked"));
         });
 
-        $("#show-node-tooltip").click(function (e) {
-          show_node_tooltips = $(this).is(":checked");
+        $("#show-node-tooltip").on("change", function () {
+          if (!this.checked) hideToolTip();
         });
 
         $("#link-log-scale").click(function (e) {

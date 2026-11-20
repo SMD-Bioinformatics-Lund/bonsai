@@ -1,5 +1,4 @@
 -r ./requirements.tooling.txt
--e ./libs/api_client
 -e ./frontend[test]
 -e ./api[test]
 -e ./allele_cluster_service[test]

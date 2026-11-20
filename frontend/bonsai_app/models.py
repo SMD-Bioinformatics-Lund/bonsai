@@ -36,6 +36,7 @@ class TableColumn(BaseModel):
     visible: bool = True
     sortable: bool = True
     searchable: bool = True
+    filterable: bool = True
     renderer: str = "text_renderer"
 
 

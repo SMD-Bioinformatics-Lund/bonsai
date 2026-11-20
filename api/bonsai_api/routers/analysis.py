@@ -2,12 +2,17 @@
 
 import logging
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, Form, status, Body, Security
 from fastapi.responses import JSONResponse
 
-from bonsai_api.models.analysis import CurationCreateRecord, CurationRecord, CurationCreateRecord
+from bonsai_api.models.analysis import (
+    CurationCreateRecord, CurationRecord, VariantCurationUpdate,
+)
 from bonsai_api.models.context import ApiRequestContext
-from bonsai_api.services.curation_service import approve_curation_service, create_curation_service, delete_curation_service, get_curations_service
+from bonsai_api.services.curation_service import (
+    approve_curation_service, create_curation_service, delete_curation_service,
+    get_curations_service, update_variant_curation_service,
+)
 from bonsai_api.services.analysis_service import ingest_analysis_service
 from bonsai_api.db import Database
 from bonsai_api.models.user import UserOutputDatabase
@@ -17,7 +22,7 @@ from bonsai_api.dependencies import (
     get_request_context,
     get_audit_log,
 )
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from .tags import RouterTags
 
 LOG = logging.getLogger(__name__)
@@ -32,12 +37,19 @@ UPDATE_PERMISSION = "samples:update"
 async def upload_analysis(
     sample_id: str = Form(...),
     software: str = Form(...),
+    subcommand: str | None = Form(None),
     software_version: str | None = Form(None),
     pipeline_run_id: str | None = Form(None),
     force: bool = Form(False, description="Overwrite existing analysis if present"),
     file: UploadFile = File(...),
+    coverage_file: UploadFile | None = File(
+        None, description="Optional samtools coverage output for post-align QC"
+    ),
+    bedcov_file: UploadFile | None = File(
+        None, description="Optional samtools bedcov output for post-align QC"
+    ),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=[WRITE_PERMISSION]),
     ctx: ApiRequestContext=Depends(get_request_context),
     audit: AuditLogClient=Depends(get_audit_log),
 ):
@@ -48,9 +60,12 @@ async def upload_analysis(
         sample_id=sample_id,
         pipeline_run=pipeline_run_id,
         software=software,
+        subcommand=subcommand,
         software_version=software_version,
         force=force,
         file=file,
+        coverage_file=coverage_file,
+        bedcov_file=bedcov_file,
         ctx=ctx,
         audit=audit,
     )
@@ -68,7 +83,7 @@ async def create_analysis_curation(
     curation: CurationCreateRecord,
     analysis_type: str = Body(description="Type of analysis result this curation applies to (e.g., 'resistance_variants')"),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):
@@ -93,7 +108,7 @@ async def list_curations(
         False, description="If true, only return approved curations"
     ),
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
 ):
     """List all curations for an analysis."""
     filters = {"analysis_id": analysis_id}
@@ -115,7 +130,7 @@ async def list_curations(
 async def get_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
 ):
     """Get a specific curation record for a analysis."""
     curations = await get_curations_service(
@@ -126,11 +141,32 @@ async def get_curation(
     return curations[0]
 
 
+@router.put("/curations/{curation_id}", response_model=dict[str, str])
+async def update_variant_curation(
+    curation_id: str,
+    curation: VariantCurationUpdate,
+    db: Database = Depends(get_database),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
+    ctx: ApiRequestContext = Depends(get_request_context),
+    audit: AuditLogClient = Depends(get_audit_log),
+):
+    """Update the decision and resistance annotations of an existing variant curation."""
+    await update_variant_curation_service(
+        db,
+        curation_id=curation_id,
+        curation=curation,
+        curated_by=user.username,
+        ctx=ctx,
+        audit=audit,
+    )
+    return {"curation_id": curation_id}
+
+
 @router.patch("/curations/{curation_id}/approve")
 async def approve_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):
@@ -151,7 +187,7 @@ async def approve_curation(
 async def delete_curation(
     curation_id: str,
     db: Database = Depends(get_database),
-    user: UserOutputDatabase = Depends(get_current_active_user),
+    user: UserOutputDatabase = Security(get_current_active_user, scopes=["users:me"]),
     ctx: ApiRequestContext = Depends(get_request_context),
     audit: AuditLogClient = Depends(get_audit_log),
 ):

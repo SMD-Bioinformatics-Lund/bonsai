@@ -373,7 +373,10 @@ def count_results(results, pred_type=None):
 
 def n_results_with_resistance(results):
     """Count the number of prediction results yeilding resistance."""
-    n_results = len([res for res in results if len(res["phenotypes"]) > 0])
+    n_results = len([
+        res for res in results
+        if res.get("phenotypes") or (res.get("curation") or {}).get("phenotypes")
+    ])
     return n_results
 
 

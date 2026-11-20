@@ -1,7 +1,11 @@
 """Test base lims export module."""
 
+import csv
+import io
+
 import pytest
 from bonsai_api.lims_export.export import (
+    RequiredAnalysisMissingError,
     _to_str,
     lims_rs_formatter,
     serialize_lims_results,
@@ -28,7 +32,8 @@ def test_to_str():
     assert _to_str(1234) == "1234"
 
 
-def test_lims_rs_formatter(mtuberculosis_sample):
+@pytest.mark.parametrize("delimiter", ["csv", "tsv"])
+def test_lims_rs_formatter(mtuberculosis_sample, delimiter):
     """Test the LIMS export formatter."""
 
     assay_config = AssayConfig(
@@ -50,6 +55,7 @@ def test_lims_rs_formatter(mtuberculosis_sample):
                 parameter_name="MTBC_ETB",
                 data_type=DataType.AMR,
                 required=True,
+                no_result_value="Mutation ej pavisad",
                 options={"antibiotic_name": "ethambutol"},
             ),
         ],
@@ -61,6 +67,19 @@ def test_lims_rs_formatter(mtuberculosis_sample):
 
     # TEST parameter names are correctly assigned
     assert result[0].parameter_name == assay_config.fields[0].parameter_name
+
+    rows = list(
+        csv.reader(
+            io.StringIO(serialize_lims_results(result, delimiter=delimiter)),
+            delimiter="," if delimiter == "csv" else "\t",
+        )
+    )
+    assert rows[3][1:] == [
+        "MTBC_RIF",
+        "Mutation pavisad",
+        "Rv1129c.c.-28T>C WHO-5",
+    ]
+    assert rows[4][1:] == ["MTBC_ETB", "Mutation ej pavisad", "-"]
 
 
 def test_lims_rs_formatter_failures(mtuberculosis_sample):
@@ -93,7 +112,7 @@ def test_lims_rs_formatter_failures(mtuberculosis_sample):
         ],
     )
     # Test a missing required analysis raises an error
-    with pytest.raises(ValueError):
+    with pytest.raises(RequiredAnalysisMissingError, match="MTBC_MLST"):
         result = lims_rs_formatter(mtuberculosis_sample, assay_config)
 
 

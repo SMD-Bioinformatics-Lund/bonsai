@@ -1,7 +1,7 @@
 {% import "bootstrap_helpers.html" as bs %}
 
 {% macro sample_btn_renderer(cell_info)  %}
-    <td>
+    <td data-search="{{ cell_info }}">
         {% set params={"sample_id": cell_info} %}
         {% if group_id is defined %}
             {% do params.update({"group_id": group_id}) %}
@@ -37,7 +37,8 @@
     {% else %}
         {% set tooltip_info = None %}
     {% endif %}
-    <td>
+    {# Exact QC filters need the plain status without display whitespace or markup. #}
+    <td data-search="{{ status }}">
         <span class="fw-light {{ text_colour }}">
             {{ status }}
         </span>
@@ -93,7 +94,7 @@
 {% endmacro %}
 
 {% macro comments_renderer(cell_info) %}
-    {% set comments_obj = cell_info %}
+    {% set comments_obj = (cell_info or []) | selectattr("displayed") | list %}
     <td>
         {% if comments_obj | length %}
             <span class="badge text-bg-primary" data-bs-toggle="tooltip" 
@@ -101,7 +102,7 @@
                   data-bs-title="
                   <div>
                   {% for comment in comments_obj %}
-                  {% if comment.displayed %}{{ comment_tooltip(comment) }}{% endif %}
+                  {{ comment_tooltip(comment) }}
                   {% endfor %}
                   </div>
                   ">
@@ -121,7 +122,7 @@
 {% endmacro %}
 
 {% macro date_renderer(cell_info) %}
-    <td>{{ cell_info | strftime }}</td>
+    <td data-order="{{ cell_info or '' }}">{{ cell_info | strftime if cell_info else '-' }}</td>
 {% endmacro %}
 
 {% macro boolean_renderer(cell_info) %}
@@ -142,7 +143,7 @@
     <td>
     {% for gr in cell_info %}
         <span class="me-1">
-            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.id, bg_color="info") }}
+            {{ bs.pill_with_tooltip( text=gr.display_name, tooltip=gr.display_name, bg_color="info") }}
         </span>
     {% endfor %}
     </td>

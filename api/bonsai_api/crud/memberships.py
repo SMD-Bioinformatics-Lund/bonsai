@@ -45,6 +45,7 @@ async def find_samples_by_group_ids(
         {"$match": {"groups": {"$in": group_ids}}},
         {"$project": {"_id": 0, "sample_id": 1, "group_id": "$groups"}},
         {"$unwind": "$group_id"},
+        {"$match": {"group_id": {"$in": group_ids}}},
     ]
 
     cursor = await db.sample_collection.aggregate(pipeline, session=session)
