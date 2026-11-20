@@ -147,7 +147,7 @@ def sample(sample_id: str) -> str:
         reverse=True,
     )
 
-    # filter tbprofiler results and sort variants
+    # Apply legacy filters and sort variants before displaying their curations.
     sample_info = filter_variants_if_processed(sample_info)
 
     # Sort variants within all prediction results

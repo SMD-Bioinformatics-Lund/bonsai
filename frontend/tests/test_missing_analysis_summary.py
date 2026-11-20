@@ -46,7 +46,7 @@ def test_missing_amr_analysis_is_unavailable(summary_client, query, other_analys
 
 
 @pytest.mark.parametrize("query", ["", "?group_id=group-1"])
-def test_parsed_empty_amr_result_keeps_its_negative_finding(summary_client, query):
+def test_parsed_amr_result_without_curations_has_a_distinct_empty_state(summary_client, query):
     client, sample = summary_client
     sample["element_type_result"] = [{
         "software": "tbprofiler", "software_version": "test",
@@ -57,4 +57,4 @@ def test_parsed_empty_amr_result_keeps_its_negative_finding(summary_client, quer
 
     assert response.status_code == 200
     assert b"No stored AMR analysis is available." not in response.data
-    assert b"No resistance yielding mutations identified" in response.data
+    assert b"No curated variants to show." in response.data
