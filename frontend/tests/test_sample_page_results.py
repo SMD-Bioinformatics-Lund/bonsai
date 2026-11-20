@@ -97,6 +97,11 @@ def test_non_tbprofiler_result_is_not_presented_as_a_negative_finding(sample_pag
 
 def test_extended_summary_links_identify_the_sample_and_analysis(sample_page):
     client, sample, prediction = sample_page
+    variant = prediction["result"]["variants"][0]
+    prediction["curations"] = [{
+        "annotation_type": "variant", "result_key": str(variant["id"]),
+        "decision": "accept", "phenotypes": [],
+    }]
 
     response = client.get(f"/sample/{sample['sample_id']}?extended=1")
 
@@ -106,6 +111,51 @@ def test_extended_summary_links_identify_the_sample_and_analysis(sample_page):
     assert igv_links
     assert all(sample["sample_id"] in href for href in igv_links)
     assert all(prediction["analysis_id"] in href for href in igv_links)
+
+
+@pytest.mark.parametrize("decision", [None, "reject", "flag_for_review", "accept"])
+def test_only_accepted_curations_appear_in_the_sample_summary(sample_page, decision):
+    client, sample, prediction = sample_page
+    variant = prediction["result"]["variants"][0]
+    if decision:
+        prediction["curations"] = [{
+            "annotation_type": "variant", "result_key": str(variant["id"]),
+            "decision": decision, "phenotypes": [],
+        }]
+    url = f"/sample/{sample['sample_id']}"
+
+    summary = client.get(url)
+    assert summary.status_code == 200
+    assert b"Curated variants" in summary.data
+    assert (b"No curated variants to show." in summary.data) == (decision != "accept")
+    assert (b'id="tbprofiler-variant-table"' in summary.data) == (decision == "accept")
+
+    details = client.get(f"{url}/resistance/variants")
+    assert details.status_code == 200
+    assert b'id="tbprofiler-variant-table"' in details.data
+    assert b"data-predicted-resistance" in details.data
+
+
+def test_accept_requires_an_antibiotic_in_the_submitted_form(sample_page):
+    client, sample, prediction = sample_page
+    variant = prediction["result"]["variants"][0]
+    api = views.get_api_client()
+    api.create_curation = Mock()
+
+    response = client.post(
+        f"/sample/{sample['sample_id']}/resistance/variants",
+        data={
+            "classify-variant": "1", "verify-variant-btn": "accept", "amrs": [" "],
+            "curations": json.dumps([{
+                "analysis_id": prediction["analysis_id"], "analysis_type": "amr",
+                "variant_id": str(variant["id"]),
+            }]),
+        },
+    )
+
+    assert response.status_code == 200
+    assert b"Select at least one antibiotic to accept variants" in response.data
+    api.create_curation.assert_not_called()
 
 
 @pytest.mark.parametrize("page", ["", "/resistance/variants"])
@@ -271,6 +321,7 @@ def test_update_failure_shows_readable_message_and_keeps_existing_curation(sampl
         f"/sample/{sample['sample_id']}/resistance/variants",
         data={
             "classify-variant": "1", "verify-variant-btn": "accept",
+            "amrs": ["rifampicin"],
             "curations": json.dumps([{
                 "analysis_id": prediction["analysis_id"], "analysis_type": "amr",
                 "variant_id": str(variant["id"]),
@@ -283,8 +334,11 @@ def test_update_failure_shows_readable_message_and_keeps_existing_curation(sampl
     api.create_curation.assert_not_called()
 
 
-@pytest.mark.parametrize("page", ["", "/resistance/variants"])
-@pytest.mark.parametrize("decision", ["accept", "reject"])
+@pytest.mark.parametrize("page,decision", [
+    ("", "accept"),
+    ("/resistance/variants", "accept"),
+    ("/resistance/variants", "reject"),
+])
 @pytest.mark.parametrize("approved_by", [None, "reviewer"])
 @pytest.mark.parametrize("modified_at", [None, "2026-11-11T12:00:00"])
 def test_curation_tooltip_does_not_attribute_approval_time_to_curator(

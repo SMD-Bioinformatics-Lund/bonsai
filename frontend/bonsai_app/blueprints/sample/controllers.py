@@ -379,11 +379,15 @@ def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
     return tuple(sorted(variant_types))
 
 
-def filter_variants_if_processed(sample_info, result_type="AMR"):
-    """Filter out unprocessed and failed variants if any variants have been processed."""
+def filter_variants_if_processed(sample_info):
+    """Apply legacy verification filtering to AMR tools outside TBProfiler."""
     results = []
     for result in sample_info["element_type_result"]:
-        if result["analysis_type"] == "amr" and (result.get("result") or {}).get("variants"):
+        if (
+            result["analysis_type"] == "amr"
+            and result["software"] != "tbprofiler"
+            and (result.get("result") or {}).get("variants")
+        ):
             # check if result has has processed variants
             processed = [QualityControlResult.FAILED, QualityControlResult.PASSED]
             has_proc_variants = any(
@@ -468,11 +472,13 @@ def build_curation_records(
         raise ValueError("Rejection reason required when rejecting variants")
 
     meta = {"resistance_level": resistance_level} if resistance_level else {}
-    phenotype_records = (
-        [PhenotypeAnnotation(name=p, meta=meta) for p in phenotypes]
-        if phenotypes
-        else []
-    )
+    phenotype_records = [
+        PhenotypeAnnotation(name=name.strip(), meta=meta)
+        for name in phenotypes or []
+        if name.strip()
+    ]
+    if decision == "accept" and not phenotype_records:
+        raise ValueError("Select at least one antibiotic to accept variants")
 
     return [
         {

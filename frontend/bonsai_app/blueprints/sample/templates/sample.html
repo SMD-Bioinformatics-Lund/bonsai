@@ -104,7 +104,7 @@
                 {% for elem in sample.element_type_result %}
                     {% if elem.analysis_type != 'virulence' and elem.result %}
                         <div class="col-md-auto">
-                            {{ amr_prediction_card(elem, extended=extended) }}
+                            {{ amr_prediction_card(elem, extended=extended, curated_only=True) }}
                         </div>
                     {% elif elem.analysis_type == 'amr' and elem.result is none %}
                         <div class="col-md-auto">
