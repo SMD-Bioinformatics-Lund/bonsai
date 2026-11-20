@@ -21,9 +21,11 @@ def get_profile_scheme(raw: Mapping[str, Any], typing_method: str) -> str | None
     return get_profile_assay(raw)
 
 
-def get_profile_assay(raw: Mapping[str, Any]) -> str | None:
-    """Get the assay of the unambiguous run that produced the selected result."""
-    run_id = raw.get("typing_pipeline_run_id")
+def get_profile_assay(
+    raw: Mapping[str, Any], *, run_id_field: str = "typing_pipeline_run_id"
+) -> str | None:
+    """Get the assay of the unambiguous run referenced by the given field."""
+    run_id = raw.get(run_id_field)
     if not run_id:
         return None
     runs = [
@@ -65,12 +67,12 @@ def _notice_group(label: str, profiles: "TypingProfileOutput") -> AlleleSchemeNo
 
 
 def _identity_groups(
-    profiles: "TypingProfileOutput", field: str
+    profiles: "TypingProfileOutput", field: str, *, missing_label: str | None = None
 ) -> list[AlleleSchemeNoticeGroup]:
     """Keep every category's IDs even when the displayed names are truncated."""
     groups: dict[str, TypingProfileOutput] = {}
     for profile in profiles:
-        if value := getattr(profile, field):
+        if value := getattr(profile, field) or missing_label:
             groups.setdefault(value, []).append(profile)
     return [
         _notice_group(
@@ -90,13 +92,13 @@ def validate_typing_schemes(
     candidates = [p for p in profiles if p.typing_result]
     missing = [p for p in profiles if not p.typing_result]
     if missing:
-        group = _notice_group(f"No {name} typing profile is available", missing)
+        groups = _identity_groups(missing, "sample_assay", missing_label="Unknown assay")
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: typing data is unavailable for {len(missing)} "
             f"{'sample' if len(missing) == 1 else 'samples'}.",
-            details=[group.detail],
-            notice_groups=[group],
+            details=[group.detail for group in groups],
+            notice_groups=groups,
         )
     if not candidates or any(not p.scheme for p in candidates):
         unknown = [p for p in candidates if not p.scheme]

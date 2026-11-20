@@ -580,15 +580,19 @@ test("notice category removal uses every sample ID and revalidates the remaining
   assert.deepEqual(new Set(h.saved()), new Set(all));
 });
 
-test("missing typing data categories remove only the affected samples", async () => {
-  const h = await setup(["typed-a", "typed-b", "missing"], { deferSchemes: true });
-  await h.respond(0, ["typed-a", "typed-b", "missing"]);
+test("missing typing data categories remove only the affected assay", async () => {
+  const samples = ["typed-a", "typed-b", "missing-ecoli", "missing-strep"];
+  const h = await setup(samples, { deferSchemes: true });
+  await h.respond(0, samples);
   h.schemeRequests[0].resolve({
     mlst: { can_cluster: true },
     cgmlst: {
       can_cluster: false,
-      notice: "Cannot cluster by cgMLST: typing data is unavailable for 1 sample.",
-      notice_groups: [{ detail: "No cgMLST typing profile is available:\nmissing <literal>", sample_ids: ["missing"] }],
+      notice: "Cannot cluster by cgMLST: typing data is unavailable for 2 samples.",
+      notice_groups: [
+        { detail: "ecoli — 1 sample:\nmissing <literal>", sample_ids: ["missing-ecoli"] },
+        { detail: "streptococcus — 1 sample:\nmissing-strep", sample_ids: ["missing-strep"] },
+      ],
     },
   });
   await tick();
@@ -597,7 +601,7 @@ test("missing typing data categories remove only the affected samples", async ()
   const item = h.notices().children[1].children[2].children[0];
   assert.equal(item.children[1].textContent, "missing <literal>");
   item.children[0].children[1].children[1].dispatchEvent(new Event("click"));
-  assert.deepEqual(h.saved(), ["typed-a", "typed-b"]);
+  assert.deepEqual(h.saved(), ["typed-a", "typed-b", "missing-strep"]);
 });
 
 test("compatibility status stays visible while pending and clears on success or failure", async () => {
