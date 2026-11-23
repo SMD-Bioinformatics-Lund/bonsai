@@ -31,7 +31,7 @@ def test_sample_sidebar_enables_qc_on_each_tab(app, user_obj, monkeypatch, page)
     monkeypatch.setitem(login_manager.__dict__, "_user_callback", lambda _: user_obj)
 
     with app.test_client(user=user_obj) as client:
-        response = client.get(f"/sample/sample-a{page}")
+        response = client.get(f"/sample/sample-a{page}?group_id=group-a")
 
     assert response.status_code == 200
     dom = BeautifulSoup(response.data, "html.parser")
@@ -39,13 +39,15 @@ def test_sample_sidebar_enables_qc_on_each_tab(app, user_obj, monkeypatch, page)
     assert form.select_one('option[value="resequence"]').has_attr("selected")
     assert form.select_one('label[for="unprocessed-qc-btn"]')["title"] == "Unprocessed"
     assert len(dom.find_all("script", src=re.compile(r"/sample-view(?:\.[^/]+)?\.js$"))) == 1
-    is_summary_page = json.dumps(page == "")
-    assert any(
-        "initSampleView(" in script.get_text()
-        and '"sample-a"' in script.get_text()
-        and f"isSummaryPage: {is_summary_page}" in script.get_text()
+    init_script = next(
+        script.get_text()
         for script in dom.find_all("script", src=False)
+        if "initSampleSidebar(" in script.get_text()
     )
+    assert 'const sampleId = "sample-a"' in init_script
+    assert ("initSampleSummary(" in init_script) == (page == "")
+    if page == "":
+        assert 'initSampleSummary(sampleId, "group-a", api)' in init_script
 
 
 @pytest.mark.parametrize(

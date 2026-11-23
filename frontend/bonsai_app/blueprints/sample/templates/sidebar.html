@@ -162,7 +162,7 @@
 {% endmacro %}
 
 
-{% macro qc_classification(sample_qc_classification_obj, bad_qc_actions, sample_id) %}
+{% macro qc_classification(sample_qc_classification_obj, bad_qc_actions) %}
     {#
 
         Sidebar UI section for setting QC status in sample-view sidebar
@@ -170,7 +170,6 @@
         Inputs:
         - qc_classification_obj     SampleQcClassification  Sample QC settings
         - bad_qc_actions:           List[str]               List of selectable follow-up actions for failed samples
-        - sample_id:                str                     Current sample id
 
     #}
     <form id="qc-classification-form" name="qc-classification" class="form-control">
@@ -181,21 +180,6 @@
         comment_text=sample_qc_classification_obj.comment
         ) }}
     </form>
-    <script src="{{ asset_url('sample-view.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            initSampleView(
-                {{ config.API_EXTERNAL_URL|tojson }},
-                {{ current_user.token|default('')|tojson }},
-                "",
-                {{ sample_id|tojson }},
-                {
-                    groupId: {{ group_id|default(none)|tojson }},
-                    isSummaryPage: {{ (request.endpoint == 'samples.sample')|tojson }}
-                }
-            );
-        });
-    </script>
 {% endmacro %}
 
 {% macro metadata_link(endpoint, sample_id, entry) %}
@@ -272,7 +256,7 @@
         </ul>
 
         {{ sidebar_header("Quality control")}}
-        {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+        {{ qc_classification(sample.qc_status, bad_qc_actions) }}
 
         {# optional specific to certain views #}
         {% if optional_macro %}
