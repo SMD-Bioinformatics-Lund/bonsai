@@ -54,6 +54,8 @@
       type="text/css"
       href="{{url_for('cluster.static', filename='js/SlickGrid/examples/examples.css')}}"
     />
+    <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/firebugx.js')}}"></script>
+
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-1.11.2.min.js')}}"></script>
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery-ui-1.11.3.min.js')}}"></script>
     <script src="{{url_for('cluster.static', filename='js/SlickGrid/lib/jquery.event.drag-2.3.0.js')}}"></script>
@@ -236,6 +238,8 @@
       var current_metadata_file = null;
 
       var waiting_spinner = null;
+      var metadata_categories = {};
+
       var cannot_connect = false;
 
       const DEFAULT_NODE_LABEL_FIELD = "Name";
@@ -304,13 +308,14 @@
           ];
           selectElements.forEach((selector) => {
             let targetElement = $(selector);
+            // if categories exists group data in optgroups
             if (category) {
-              // Each dropdown needs its own group for the metadata field.
-              const group = targetElement.children("optgroup")
-                .filter((_, option) => option.label === category);
-              targetElement = group.length
-                ? group
-                : $("<optgroup>").attr("label", category).appendTo(targetElement);
+              if (!metadata_categories[category]) {
+                metadata_categories[category] = true;
+                const optgroup = $("<optgroup>").attr("label", category);
+                $(selector).append(optgroup);
+              }
+              targetElement = $(selector).find(`optgroup[label='${category}']`);
             }
             targetElement.append(
               $("<option>").attr("value", fieldKey).text(label),
@@ -324,7 +329,6 @@
         the_tree.removeCategory(category);
         $(`#metadata-select option[value='${category}']`).remove();
         $(`#node-label-text option[value='${category}']`).remove();
-        $(`#tooltip-text option[value='${category}']`).remove();
         $(`#add-new-values-select option[value='${category}']`).remove();
         delete metadata_options[category];
       }
@@ -333,10 +337,9 @@
         if (!e) {
           e = d3.event;
         }
-        // replaceChildren inserts strings as text and accepts the grouped-sample list.
-        tooltip_div.node().replaceChildren(msg ?? "");
         tooltip_div.transition().duration(200).style("opacity", 0.9);
         tooltip_div
+          .html(msg)
           .style("left", `${e.pageX}px`)
           .style("top", `${e.pageY - 28}px`)
           .style("height", "auto");
@@ -468,7 +471,7 @@
           sll = false;
         }
         $("#show-link-labels").prop("checked", sll);
-        $("#show-node-labels").prop("checked", Boolean(data["show_node_labels"]));
+        $("#show-node-labels").prop("checked", data["show_node_labels"]);
         if (data["node_font_size"]) {
           $("#slider-node-fontsize").slider({ value: data["node_font_size"] });
           $("#spinner-node-fontsize").spinner({
@@ -489,7 +492,8 @@
         if (the_tree) {
           the_tree.svg.remove();
           the_tree.legend_div[0].remove();
-          $("#metadata-select, #node-label-text, #tooltip-text").empty();
+          $("#metadata-select").find("option").remove();
+          $("#node-label-text").find("option").remove();
           $("#metadata-div").remove();
           $("#context-menu").remove();
         }
@@ -512,26 +516,23 @@
           },
         );
 
+        const renderMetadataValue = (nodeId) => {
+          const metadata = the_tree.metadata[nodeId];
+          const selectedField = document.querySelector("#tooltip-text").value;
+          return [metadata?.[selectedField], metadata?.[DEFAULT_TOOLTIP_FIELD], metadata?.Name, metadata?.ID]
+            .find((value) => value != null && value !== "" && value !== "-") ?? "";
+        };
+
         the_tree.addSegmentOverListener((node) => {
-          if (!$("#show-node-tooltip").prop("checked")) return;
+          const tooltipEnabled = $("#show-node-tooltip").prop("checked");
+          if (!tooltipEnabled) return;
 
           if (the_tree.display_category === "nothing") {
-            // The tooltip uses its own metadata selector.
-            const selectedField = $("#tooltip-text").val();
-            const list = document.createElement("ul");
-            list.style.cssText = "margin:0; padding-left:1.2em";
-            for (const id of the_tree.grouped_nodes[node.data.idx]) {
-              const metadata = the_tree.metadata[id];
-              const values = [
-                metadata?.[selectedField], metadata?.[DEFAULT_TOOLTIP_FIELD], metadata?.Name, id,
-              ];
-              const item = document.createElement("li");
-              item.textContent = values.find(
-                (value) => value != null && value !== "" && value !== "-",
-              );
-              list.appendChild(item);
-            }
-            showToolTip(list);
+            const nodeIds = the_tree.grouped_nodes[node.data.idx];
+            // Treat imported metadata as text in the tooltip list.
+            const list = $("<ul>").css({ margin: 0, paddingLeft: "1.2em" });
+            nodeIds.forEach((id) => $("<li>").text(renderMetadataValue(id)).appendTo(list));
+            showToolTip(list[0].outerHTML);
           } else {
             const { type, value } = node.data;
             showToolTip(`${type} (${value})`);
@@ -551,18 +552,15 @@
         });
         //the_tree.resize();
 
-        const fields = the_tree.metadata_info ?? {};
-        addMetadataOptions(fields);
-        const savedControls = data.layout_data?.nodes_links;
-        const nameField = DEFAULT_NODE_LABEL_FIELD in fields ? DEFAULT_NODE_LABEL_FIELD : null;
-        const labIdField = DEFAULT_TOOLTIP_FIELD in fields ? DEFAULT_TOOLTIP_FIELD : null;
-        const labelField = savedControls?.node_text_value ?? nameField ?? labIdField ?? "node_id";
-        if (labelField === "node_id") {
-          $("#node-label-text").append(new Option("Node ID", "node_id"));
+        if (the_tree.metadata_info) {
+          addMetadataOptions(the_tree.metadata_info);
         }
+        const savedControls = data.layout_data?.nodes_links;
+        const labelField = savedControls?.node_text_value ??
+          (the_tree.metadata_info?.[DEFAULT_NODE_LABEL_FIELD] ? DEFAULT_NODE_LABEL_FIELD : DEFAULT_TOOLTIP_FIELD);
         $("#node-label-text").val(labelField);
         the_tree.setNodeText(labelField);
-        $("#tooltip-text").val(labIdField ?? nameField ?? "nothing");
+        $("#tooltip-text").val(DEFAULT_TOOLTIP_FIELD);
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);
@@ -681,6 +679,9 @@
 
         $("#metadata-select").on("change", function (e) {
           the_tree.changeCategory($(this).val());
+        });
+        $("#node-label-text").change(function (e) {
+          the_tree.setNodeText($(this).val());
         });
 
         $("#mst-download-svg").click(function (e) {
@@ -900,8 +901,8 @@
           the_tree.showIndividualSegments($(this).is(":checked"));
         });
 
-        $("#show-node-tooltip").on("change", function () {
-          if (!this.checked) hideToolTip();
+        $("#show-node-tooltip").click(function (e) {
+          show_node_tooltips = $(this).is(":checked");
         });
 
         $("#link-log-scale").click(function (e) {
