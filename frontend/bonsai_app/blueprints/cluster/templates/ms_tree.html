@@ -242,16 +242,18 @@
 
       var cannot_connect = false;
 
+      const DEFAULT_NODE_LABEL_FIELD = "Name";
+      const DEFAULT_TOOLTIP_FIELD = "Lab ID";
       var default_control_panel_values = {
         max_link_scale: 500,
         base_node_size: 10,
         max_link_length: "",
         size_power: 0.5,
         log_link_scale: false,
-        show_individual_segments: false,
+        show_individual_segments: true,
         link_font_size: 14,
         show_link_labels: false,
-        show_node_labels: false,
+        show_node_labels: true,
         node_font_size: 12,
         hide_link_length: "",
         node_collapsed_value: 0,
@@ -459,9 +461,7 @@
         if (data["log_link_scale"]) {
           $("#link-log-scale").prop("checked", true);
         }
-        if (data["show_individual_segments"]) {
-          $("#show-individual-segments").prop("checked", true);
-        }
+        $("#show-individual-segments").prop("checked", Boolean(data["show_individual_segments"]));
         if (data["link_font_size"]) {
           $("#slider-linkfontsize").slider({ value: data["link_font_size"] });
           $("#spinner-linkfontsize").spinner({ value: data["link_font_size"] });
@@ -516,41 +516,28 @@
           },
         );
 
-        const DEFAULT_NODE_LABEL_FIELD = "Lab ID";
-
         const renderMetadataValue = (nodeId) => {
           const metadata = the_tree.metadata[nodeId];
           const selectedField = document.querySelector("#tooltip-text").value;
-
-          if (metadata) {
-            return (
-              metadata[DEFAULT_NODE_LABEL_FIELD] ||
-              metadata[selectedField] ||
-              metadata.Name ||
-              metadata.ID ||
-              ""
-            );
-          }
-          return "";
+          return [metadata?.[selectedField], metadata?.[DEFAULT_TOOLTIP_FIELD], metadata?.Name, metadata?.ID]
+            .find((value) => value != null && value !== "" && value !== "-") ?? "";
         };
 
         the_tree.addSegmentOverListener((node) => {
           const tooltipEnabled = $("#show-node-tooltip").prop("checked");
           if (!tooltipEnabled) return;
 
-          if (the_tree.display_category === "nothing") {
-            const nodeIds = the_tree.grouped_nodes[node.data.idx];
-            const listItems = nodeIds
-              .map(renderMetadataValue)
-              .map((value) => `<li>${value}</li>`)
-              .join("");
-
-            const tooltipHtml = `<ul style="margin:0; padding-left:1.2em">${listItems}</ul>`;
-            showToolTip(tooltipHtml);
-          } else {
-            const { type, value } = node.data;
-            showToolTip(`${type} (${value})`);
+          const { idx, type, value, node_ids } = node.data;
+          const tooltip = $("<div>");
+          const coloured = the_tree.display_category && the_tree.display_category !== "nothing";
+          if (coloured) {
+            tooltip.text(`${type} (${value})`);
           }
+          // Treat imported metadata as text in the tooltip list.
+          const list = $("<ul>").css({ margin: 0, paddingLeft: "1.2em" }).appendTo(tooltip);
+          const nodeIds = coloured ? node_ids : the_tree.grouped_nodes[idx];
+          nodeIds.forEach((id) => $("<li>").text(renderMetadataValue(id)).appendTo(list));
+          showToolTip(tooltip[0].outerHTML);
         });
 
         the_tree.addSegmentOutListener(function (d) {
@@ -569,19 +556,26 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
-        $("#node-label-text").val(DEFAULT_NODE_LABEL_FIELD);
-        the_tree.setNodeText(DEFAULT_NODE_LABEL_FIELD);
+        const firstAvailableField = (...fields) =>
+          fields.find((field) => the_tree.metadata_info?.[field]) ?? "ID";
+        const savedControls = data.layout_data?.nodes_links;
+        const labelField = savedControls?.node_text_value ??
+          firstAvailableField(DEFAULT_NODE_LABEL_FIELD, DEFAULT_TOOLTIP_FIELD);
+        $("#node-label-text").val(labelField);
+        the_tree.setNodeText(labelField);
+        $("#tooltip-text").val(firstAvailableField(DEFAULT_TOOLTIP_FIELD, DEFAULT_NODE_LABEL_FIELD));
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);
         } else {
           $("#metadata-select").val("nothing");
         }
-        if (data["layout_data"] && data["layout_data"]["nodes_links"]) {
-          setControlPanel(data["layout_data"]["nodes_links"]);
-        } else {
-          setControlPanel(default_control_panel_values);
+        // The tree constructor applies display settings from saved layouts.
+        if (!savedControls) {
+          the_tree.showNodeLabels(default_control_panel_values.show_node_labels);
+          the_tree.showIndividualSegments(default_control_panel_values.show_individual_segments);
         }
+        setControlPanel(savedControls ?? default_control_panel_values);
         if (current_metadata_file) {
           loadMetadataText(current_metadata_file);
         }
@@ -688,9 +682,6 @@
 
         $("#metadata-select").on("change", function (e) {
           the_tree.changeCategory($(this).val());
-        });
-        $("#tooltip-text").change(function (e) {
-          the_tree.setNodeText($(this).val());
         });
         $("#node-label-text").change(function (e) {
           the_tree.setNodeText($(this).val());
