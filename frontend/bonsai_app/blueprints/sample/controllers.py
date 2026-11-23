@@ -380,7 +380,7 @@ def get_all_variant_types(sample_info, software=None) -> tuple[str, ...]:
 
 
 def filter_variants_if_processed(sample_info):
-    """Apply legacy verification filtering to AMR tools outside TBProfiler."""
+    """Filter non-TBProfiler AMR variants by verification status."""
     results = []
     for result in sample_info["element_type_result"]:
         if (

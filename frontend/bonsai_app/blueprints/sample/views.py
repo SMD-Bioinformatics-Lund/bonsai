@@ -148,7 +148,7 @@ def sample(sample_id: str) -> str:
         reverse=True,
     )
 
-    # Apply legacy filters and sort variants before displaying their curations.
+    # The Summary template filters TBProfiler variants by curation decision.
     sample_info = filter_variants_if_processed(sample_info)
 
     # Sort variants within all prediction results

@@ -22,7 +22,13 @@ def sample_page(app, user_obj, monkeypatch):
         entry for entry in sample["element_type_result"]
         if entry["software"] == "tbprofiler" and entry["analysis_type"] == "amr"
     )
-    prediction["result"]["variants"] = prediction["result"]["variants"][:1]
+    # The curation tests work with one variant whose evidence supports resistance.
+    variant = next(
+        variant for variant in prediction["result"]["variants"]
+        if variant["phenotypes"]
+        and all(phenotype.get("note") == "Assoc w R" for phenotype in variant["phenotypes"])
+    )
+    prediction["result"]["variants"] = [variant]
     prediction["curations"] = []
     sample.update(
         element_type_result=[prediction], species_prediction=[], typing_result=[], groups=[],
