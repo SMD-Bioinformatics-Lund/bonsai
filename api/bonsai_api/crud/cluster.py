@@ -38,7 +38,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     external_sample_id: str | None = None
     typing_result: dict[str, Any]
     scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
-    assay: str | None = None  # Assay of the run that produced the selected result.
+    assay: str | None = None
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -118,6 +118,7 @@ async def get_typing_profiles(
                 "scheme": "$cluster_scheme",
                 "typing_pipeline_run_id": 1,
                 "pipeline_runs": 1,
+                "last_pipeline_run_id": 1,
             }
         }
     )
@@ -164,7 +165,11 @@ async def get_typing_profiles(
                 sample_name=raw.get("sample_name"),
                 external_sample_id=raw.get("external_sample_id"),
                 scheme=get_profile_scheme(raw, typing_method),
-                assay=get_profile_assay(raw),
+                assay=(
+                    get_profile_assay(raw)
+                    if alleles
+                    else get_profile_assay(raw, run_id_field="last_pipeline_run_id")
+                ),
                 typing_result=alleles,
             )
         )

@@ -313,6 +313,8 @@
 {% if not extended %}
     {% set result = result | selectattr('fraction_total_reads', 'gt', 0.001) | list %}
 {% endif %}
+{% set result = result | sort(attribute='fraction_total_reads', reverse=true) %}
+{% set initial_row_count = 5 %}
 <div data-bracken-results>
 <table class="table table-sm">
     <thead>
@@ -344,8 +346,8 @@
         {% endfor %}
     </tbody>
 </table>
-{% if result | length > 20 %}
-    <button type="button" class="btn btn-sm btn-outline-secondary" data-bracken-toggle aria-expanded="true" hidden>
+{% if result | length > initial_row_count %}
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-bracken-toggle="{{ initial_row_count }}" aria-expanded="true" hidden>
         Show less
     </button>
 {% endif %}

@@ -57,6 +57,69 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
     btn: { closest: () => container }, hidden: () => hidden };
 }
 
+function setupQcReset({ action = "", comment = "", submit = async (_sampleId, data) => data } = {}) {
+  const { actions } = setup();
+  const reset = { value: "unprocessed", checked: true, defaultChecked: true };
+  const actionField = { value: action };
+  const commentField = { value: comment };
+  const confirm = { disabled: true };
+  const fields = {
+    "#passed-qc-btn": {},
+    "#failed-qc-btn": {},
+    "#unprocessed-qc-btn": reset,
+    "#failed-qc-action": actionField,
+    "#failed-qc-comment-container": { querySelector: () => commentField },
+    "#qc-submit-btn": confirm,
+    "input[name='qc-validation']:checked": reset,
+  };
+  const requests = [];
+  actions.initSetSampleQc(() => [uuid], (sampleId, data) => {
+    requests.push([sampleId, { ...data }]);
+    return submit(sampleId, data);
+  }, () => {}, { querySelector: (selector) => fields[selector] });
+  return { reset, confirm, commentField, requests };
+}
+
+test("reselecting Unprocessed enables Confirm only when there are details to clear", async () => {
+  const clean = setupQcReset();
+  clean.reset.onclick();
+  assert.ok(clean.confirm.disabled);
+
+  for (const details of [{ action: "resequence" }, { comment: "Previous failure" }]) {
+    const h = setupQcReset(details);
+    h.reset.onclick();
+    assert.equal(h.confirm.disabled, false);
+    assert.deepEqual(h.requests, []);
+
+    await h.confirm.onclick({ preventDefault() {} });
+    assert.deepEqual(h.requests, [[uuid, { status: "unprocessed", action: null, comment: "" }]]);
+    assert.equal(h.commentField.value, "");
+    h.reset.onclick();
+    assert.ok(h.confirm.disabled);
+  }
+});
+
+test("clearing details from Unprocessed can be retried after a failed save", async () => {
+  let rejectFirst;
+  const firstRequest = new Promise((_, reject) => { rejectFirst = reject; });
+  const h = setupQcReset({
+    action: "resequence",
+    submit: async (_sampleId, data) => h.requests.length === 1 ? firstRequest : data,
+  });
+
+  h.reset.onclick();
+  const firstSave = h.confirm.onclick({ preventDefault() {} });
+  h.reset.onclick();
+  assert.ok(h.confirm.disabled);
+  rejectFirst(new Error("QC save failed"));
+  await firstSave;
+
+  assert.equal(h.confirm.disabled, false);
+  await h.confirm.onclick({ preventDefault() {} });
+  assert.deepEqual(h.requests[1], h.requests[0]);
+  assert.ok(h.confirm.disabled);
+});
+
 test("empty selections and cancelled confirmation never submit deletion", () => {
   for (const options of [{ ids: [] }, { confirm: false }]) {
     const h = setup(options);

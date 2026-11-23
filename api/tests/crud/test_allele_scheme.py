@@ -31,7 +31,7 @@ def stored(sid, scheme="same", alleles=None, method="mlst", assay="same", **extr
     }
 
 
-def validate(samples, method="mlst", ids=None):
+def validate(samples, method="mlst", ids=None, *, allow_empty=False):
     collection = mongomock.MongoClient().db.samples
     collection.insert_many(samples)
 
@@ -47,7 +47,9 @@ def validate(samples, method="mlst", ids=None):
 
     db = SimpleNamespace(sample_collection=SimpleNamespace(aggregate=aggregate))
     profiles = asyncio.run(
-        get_typing_profiles(db, ids or [s["sample_id"] for s in samples], method)
+        get_typing_profiles(
+            db, ids or [s["sample_id"] for s in samples], method, allow_empty=allow_empty
+        )
     )
     return validate_typing_schemes(profiles, method)
 
@@ -106,6 +108,38 @@ def test_empty_profiles_are_reported_as_missing_typing_data():
     assert not result.can_cluster
     assert "typing data is unavailable for 1 sample" in result.notice
     assert result.notice_groups[0].sample_ids == ["empty"]
+
+
+@pytest.mark.parametrize("method", ["mlst", "cgmlst"])
+def test_missing_typing_profiles_are_grouped_by_assay(method):
+    def missing(sid, assay):
+        sample = stored(sid, alleles={}, assay=assay, method=method)
+        sample["sample_name"] = f"Name {sid}"
+        sample["last_pipeline_run_id"] = "run"
+        return sample
+
+    without_result = missing("b", "ecoli")
+    del without_result["typing_result"]
+    result = validate(
+        [
+            missing("a", "ecoli"),
+            without_result,
+            missing("c", "streptococcus"),
+            missing("d", None),
+            stored("present", assay="ecoli", method=method),
+        ],
+        method,
+        allow_empty=True,
+    )
+
+    assert not result.can_cluster
+    assert "typing data is unavailable for 4 samples" in result.notice
+    assert {group.detail: group.sample_ids for group in result.notice_groups} == {
+        "ecoli — 2 samples:\nName a\nName b": ["a", "b"],
+        "streptococcus — 1 sample:\nName c": ["c"],
+        "Unknown assay — 1 sample:\nName d": ["d"],
+    }
+    assert result.details == [group.detail for group in result.notice_groups]
 
 
 def test_cgmlst_identity_uses_profile_from_the_selected_analysis_run():

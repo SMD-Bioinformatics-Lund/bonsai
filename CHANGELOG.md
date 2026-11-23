@@ -9,6 +9,7 @@
 - Show a live selected-sample count beside "Show only selected" on sample tables, including selections across pages and filters. [#664](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/664)
 - Add an "Empty basket" button beside "Add to basket" on individual group Summary and QC pages, using the existing basket clear action. [#643](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/643)
 - Add an "Empty basket" button beside "Add to basket" on the main screen, using the existing basket clear action without opening the basket. [#638](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/638)
+- Add a reset icon to bulk QC and to the sample Summary, Metadata, and Variants QC forms to set the status to Unprocessed and clear any previous failure action and comment. [#681](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/681)
 - Show alphabetically sorted visible group membership links below Metadata in the sample sidebar on Summary, Variants, and Metadata pages, with separate messages for no memberships, no visible memberships, and failed lookups. [#636](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/636)
 - Add configurable top bar background color, light/dark navigation text, and an optional instance label through frontend environment variables. [#615](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/615)
 - Add `bonsai-api doctor --output PATH` to check all samples for potentially missing alignment, SKA, and MinHash data, show scan counts and worker status on stderr, print summary statistics, and write detailed findings and incomplete checks to a TSV report. [#577](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/577)
@@ -37,6 +38,7 @@
 ### Fixed
 
 - Keep MLST/cgMLST basket notices focused on missing data or conflicts and affected samples, without extra instructional sentences, with complete category membership available for removal and compatibility rechecked afterwards. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
+- Group samples missing MLST or cgMLST data by their latest assay in basket notices, with the existing select and remove actions for each group. [#686](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/686)
 - Place filtered row counts after "entries per page" and show "X rows selected" only while rows are selected, retaining counts across pages and filters. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Use the same sample names as basket cards in MLST/cgMLST compatibility notices, missing or unreadable typing data errors, and similar-sample tree labels. [#663](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/663)
 - Keep basket notices and actions below the independently scrolling sample list, using the full available panel height for samples. [#662](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/662)
@@ -45,6 +47,7 @@
 - Honor frontend API timeout and TLS verification settings, including custom CA bundles, during login, session reloads, and authenticated requests. [#658](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/658)
 - Preserve selected columns hidden by the group editor's search when dragging visible columns into a new order. [#659](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/659)
 - Clear sessions rejected for inactive accounts so existing browser tabs can reach login and logout without HTTP 500 errors. [#656](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/656)
+- Sort Bracken hits by fraction of reads, highest first, and show the first five before collapsing the remaining rows behind Show more. [#684](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/684)
 - Show up to 20 Bracken species rows before collapsing additional hits behind Show more, increasing the previous limit of five. [#660](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/660)
 - Keep saved group names and descriptions as literal form values in the group editor, preventing HTML and script injection. [#657](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/657)
 - Accept missing and multiple-match MLST allele calls during clustering preparation, treating them as missing while retaining locus keys and the existing distance calculation. [#655](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/655)
@@ -57,6 +60,7 @@
 - Check manually curated QC when opening or changing the basket before enabling clustering, highlight failed QC and allow easily removing. [#644](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/644)
 - Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Label the group table's Remove from group button so it can be distinguished from Delete samples. [#682](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/682)
 - Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Disable panning and zooming in the sample summary's similar-sample tree while keeping sample labels clickable. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Clearly highlight the active Summary or QC view in group tables. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
