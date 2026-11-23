@@ -58,6 +58,7 @@
 - Check manually curated QC when opening or changing the basket before enabling clustering, highlight failed QC and allow easily removing. [#644](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/644)
 - Limit STX typing cards to E. coli assays and initially show five Bracken species rows with a Show more/Show less toggle while retaining the full result table. [#640](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/640)
 - Place group selection actions beside the dropdown and confirm membership removals before applying changes or removing selected samples from a group. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
+- Label the group table's Remove from group button so it can be distinguished from Delete samples. [#682](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/682)
 - Move variant curation removal to a small red trash icon beside the status badge, and preserve sidebar widths while wide variant tables scroll horizontally. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Disable panning and zooming in the sample summary's similar-sample tree while keeping sample labels clickable. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
 - Clearly highlight the active Summary or QC view in group tables. [#635](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/635)
