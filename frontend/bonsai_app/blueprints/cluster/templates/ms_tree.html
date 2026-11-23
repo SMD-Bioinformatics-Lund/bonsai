@@ -556,12 +556,14 @@
         if (the_tree.metadata_info) {
           addMetadataOptions(the_tree.metadata_info);
         }
+        const firstAvailableField = (...fields) =>
+          fields.find((field) => the_tree.metadata_info?.[field]) ?? "ID";
         const savedControls = data.layout_data?.nodes_links;
         const labelField = savedControls?.node_text_value ??
-          (the_tree.metadata_info?.[DEFAULT_NODE_LABEL_FIELD] ? DEFAULT_NODE_LABEL_FIELD : DEFAULT_TOOLTIP_FIELD);
+          firstAvailableField(DEFAULT_NODE_LABEL_FIELD, DEFAULT_TOOLTIP_FIELD);
         $("#node-label-text").val(labelField);
         the_tree.setNodeText(labelField);
-        $("#tooltip-text").val(DEFAULT_TOOLTIP_FIELD);
+        $("#tooltip-text").val(firstAvailableField(DEFAULT_TOOLTIP_FIELD, DEFAULT_NODE_LABEL_FIELD));
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);
