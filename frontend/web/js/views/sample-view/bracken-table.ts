@@ -4,7 +4,7 @@ export function initBrackenTables(): void {
     const body = container.querySelector<HTMLTableSectionElement>("tbody");
     if (!button || !body) return;
 
-    const extraRows = Array.from(body.rows).slice(20);
+    const extraRows = Array.from(body.rows).slice(Number(button.dataset.brackenToggle));
     if (extraRows.length === 0) return;
     body.id = `bracken-species-${index}`;
     button.setAttribute("aria-controls", body.id);
