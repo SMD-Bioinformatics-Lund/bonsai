@@ -37,7 +37,7 @@
 
 ### Fixed
 
-- Show comment tooltips on every page of the sample tables and preserve angle brackets and other special characters in comment text. Dismiss open tooltips when the table redraws and skip tooltips for tags without descriptions. [#687](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/687)
+- Show comment tooltips on every page of the sample tables and preserve literal tooltip text, including angle brackets and values such as `null`. Dismiss open tooltips when the table redraws and skip tooltips for tags without descriptions. [#687](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/687)
 - Keep MLST/cgMLST basket notices focused on missing data or conflicts and affected samples, without extra instructional sentences, with complete category membership available for removal and compatibility rechecked afterwards. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Group samples missing MLST or cgMLST data by their latest assay in basket notices, with the existing select and remove actions for each group. [#686](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/686)
 - Place filtered row counts after "entries per page" and show "X rows selected" only while rows are selected, retaining counts across pages and filters. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)

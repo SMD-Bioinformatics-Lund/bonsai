@@ -64,7 +64,9 @@ export function initToast() {
 
 export function initTooltip(container: ParentNode = document) {
   const tooltipTriggerList = container.querySelectorAll('[data-bs-toggle="tooltip"]');
-  [...tooltipTriggerList].map((tooltipTriggerEl) =>
-    bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl),
-  );
+  tooltipTriggerList.forEach((tooltipTriggerEl) => {
+    const title = tooltipTriggerEl.getAttribute("data-bs-title");
+    // Pass the title as text so Bootstrap doesn't interpret values like "null".
+    bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl, title === null ? undefined : { title });
+  });
 }
