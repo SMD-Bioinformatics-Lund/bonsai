@@ -527,16 +527,17 @@
           const tooltipEnabled = $("#show-node-tooltip").prop("checked");
           if (!tooltipEnabled) return;
 
-          if (the_tree.display_category === "nothing") {
-            const nodeIds = the_tree.grouped_nodes[node.data.idx];
-            // Treat imported metadata as text in the tooltip list.
-            const list = $("<ul>").css({ margin: 0, paddingLeft: "1.2em" });
-            nodeIds.forEach((id) => $("<li>").text(renderMetadataValue(id)).appendTo(list));
-            showToolTip(list[0].outerHTML);
-          } else {
-            const { type, value } = node.data;
-            showToolTip(`${type} (${value})`);
+          const { idx, type, value, node_ids } = node.data;
+          const tooltip = $("<div>");
+          const coloured = the_tree.display_category && the_tree.display_category !== "nothing";
+          if (coloured) {
+            tooltip.text(`${type} (${value})`);
           }
+          // Treat imported metadata as text in the tooltip list.
+          const list = $("<ul>").css({ margin: 0, paddingLeft: "1.2em" }).appendTo(tooltip);
+          const nodeIds = coloured ? node_ids : the_tree.grouped_nodes[idx];
+          nodeIds.forEach((id) => $("<li>").text(renderMetadataValue(id)).appendTo(list));
+          showToolTip(tooltip[0].outerHTML);
         });
 
         the_tree.addSegmentOutListener(function (d) {
