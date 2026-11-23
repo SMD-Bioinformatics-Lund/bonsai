@@ -1212,8 +1212,9 @@ D3MSTree.prototype._setNodeText = function () {
 
   function wrap(text) {
     text.each(function () {
+      // Bonsai: Skip empty labels so wrapping continues with the next sample.
       var text = d3.select(this),
-        words = text.text().split(",").reverse(),
+        words = text.text().split(",").filter(Boolean).reverse(),
         word,
         line = [],
         lineHeight = 1, // ems

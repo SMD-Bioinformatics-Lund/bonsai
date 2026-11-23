@@ -142,7 +142,7 @@
 - Forward stored variant IDs and analysis context to the IGV configuration endpoint so variant links open at their genomic locus; support numeric and string variant IDs. [#515](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/515)
 - Authenticate IGV configuration requests with the user's API token instead of their username, fixing unauthorized responses when opening IGV. [#514](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/514)
 - Prefer Lab ID in default GrapeTree hover labels using a shared label-field constant, with name and internal ID fallbacks. [#513](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/513)
-- Show Name labels and pie segments by default in new GrapeTree views, and let users choose a tooltip field independently of node labels and colours. [#685](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/685)
+- Show Name labels and pie segments by default in new GrapeTree views, and let users choose a tooltip field independently of node labels and colours. Keep available labels visible in collapsed nodes with incomplete metadata. [#685](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/685)
 - Show a dismissible error toast and return to the sample list when sample retrieval fails, including API data-validation errors. [#512](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/512)
 - Show a dismissible error toast for unexpected LIMS download failures instead of crashing the page.
 - Display identity and reference coverage under the correct headings in resistance and virulence gene tables. [#507](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/507)
