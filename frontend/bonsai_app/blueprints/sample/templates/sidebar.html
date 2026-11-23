@@ -189,7 +189,10 @@
                 {{ current_user.token|default('')|tojson }},
                 "",
                 {{ sample_id|tojson }},
-                {{ group_id|default(none)|tojson }}
+                {
+                    groupId: {{ group_id|default(none)|tojson }},
+                    isSummaryPage: {{ (request.endpoint == 'samples.sample')|tojson }}
+                }
             );
         });
     </script>

@@ -39,8 +39,11 @@ def test_sample_sidebar_enables_qc_on_each_tab(app, user_obj, monkeypatch, page)
     assert form.select_one('option[value="resequence"]').has_attr("selected")
     assert form.select_one('label[for="unprocessed-qc-btn"]')["title"] == "Unprocessed"
     assert len(dom.find_all("script", src=re.compile(r"/sample-view(?:\.[^/]+)?\.js$"))) == 1
+    is_summary_page = json.dumps(page == "")
     assert any(
-        "initSampleView(" in script.get_text() and '"sample-a"' in script.get_text()
+        "initSampleView(" in script.get_text()
+        and '"sample-a"' in script.get_text()
+        and f"isSummaryPage: {is_summary_page}" in script.get_text()
         for script in dom.find_all("script", src=False)
     )
 

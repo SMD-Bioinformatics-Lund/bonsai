@@ -8,19 +8,21 @@ export async function initSampleView(
   accessToken: string,
   refreshToken: string,
   sampleId: string,
-  groupId: string | null,
+  { groupId, isSummaryPage }: { groupId: string | null; isSummaryPage: boolean },
 ): Promise<string | null> {
   const api = createSampleViewApi(bonsaiApiUrl, accessToken, refreshToken);
   initToast();
   initTooltip();
-  initBrackenTables();
 
   const qcStatusForm = document.getElementById("qc-classification-form");
   if (qcStatusForm) {
     initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), updateQcStatus, qcStatusForm);
   }
 
-  if (!document.getElementById("similar-samples-card")) return null;
+  // Every tab sets up QC before continuing with Summary features.
+  if (!isSummaryPage) return null;
+
+  initBrackenTables();
 
   let narrow_search_to: string[] | null = null;
   if (groupId !== null) {
