@@ -97,15 +97,16 @@
     {% set comments_obj = (cell_info or []) | selectattr("displayed") | list %}
     <td>
         {% if comments_obj | length %}
-            <span class="badge text-bg-primary" data-bs-toggle="tooltip" 
+            {% set tooltip %}
+                <div>
+                    {% for comment in comments_obj %}
+                        {{ comment_tooltip(comment) }}
+                    {% endfor %}
+                </div>
+            {% endset %}
+            <span class="badge text-bg-primary" data-bs-toggle="tooltip"
                   data-bs-placement="top" data-bs-html="true"
-                  data-bs-title="
-                  <div>
-                  {% for comment in comments_obj %}
-                  {{ comment_tooltip(comment) }}
-                  {% endfor %}
-                  </div>
-                  ">
+                  data-bs-title="{{ tooltip | forceescape }}">
                 <i class="bi bi-chat-right"></i>
                 <span>{{ comments_obj | length }}</span>
             </span>

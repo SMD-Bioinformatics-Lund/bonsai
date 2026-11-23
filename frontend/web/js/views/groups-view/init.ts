@@ -184,6 +184,9 @@ export async function initGroupView(
   selectionCount.setAttribute("data-test-id", "sample-selection-count");
   const tableConfig = {
     ...sampleTableConfig,
+    drawCallback: function () {
+      initTooltip(this.api().table().body());
+    },
     layout: {
       ...sampleTableConfig.layout,
       topStart: ["pageLength", selectionCount],
