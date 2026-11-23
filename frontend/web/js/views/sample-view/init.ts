@@ -1,24 +1,24 @@
 import { initToast, initTooltip } from "../../utils/notification";
 import { initSetSampleQc, updateQcStatus, findAndClusterSimilarSamples } from "../../core/actions/sample-actions";
-import { createSampleViewApi } from "./api";
+import type { SampleViewApi } from "./api";
 import { initBrackenTables } from "./bracken-table";
 
-export async function initSampleView(
-  bonsaiApiUrl: string,
-  accessToken: string,
-  refreshToken: string,
-  sampleId: string,
-  groupId: string | null,
-): Promise<string | null> {
-  const api = createSampleViewApi(bonsaiApiUrl, accessToken, refreshToken);
+export function initSampleSidebar(sampleId: string, api: SampleViewApi): void {
   initToast();
   initTooltip();
-  initBrackenTables();
 
-  const qcStatusForm = document.getElementById("qc-classification-form") as HTMLButtonElement;
+  const qcStatusForm = document.getElementById("qc-classification-form");
   if (qcStatusForm) {
     initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), updateQcStatus, qcStatusForm);
   }
+}
+
+export async function initSampleSummary(
+  sampleId: string,
+  groupId: string | null,
+  api: SampleViewApi,
+): Promise<string | null> {
+  initBrackenTables();
 
   let narrow_search_to: string[] | null = null;
   if (groupId !== null) {
@@ -36,6 +36,3 @@ export async function initSampleView(
 
   return await findAndClusterSimilarSamples(sampleId, narrow_search_to, api);
 }
-
-// Backwards-compatible global for templates
-Object.assign(window, { initSampleView });

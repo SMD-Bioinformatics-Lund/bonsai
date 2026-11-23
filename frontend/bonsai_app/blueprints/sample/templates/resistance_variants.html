@@ -1,5 +1,5 @@
-{% extends "layout.html" %}
-{% from "sidebar.html" import sidebar, sidebar_header %}
+{% extends "sample_page.html" %}
+{% from "sidebar.html" import sidebar, sidebar_header with context %}
 {% from "cards.html" import sample_header, virulence_card, fmt_resistance_info %}
 {% from "cards.html" import amr_prediction_card with context %}
 {% from "cards.html" import analysis_message_card %}
@@ -170,7 +170,7 @@
         <div class="d-flex justify-content-md-left mb-2">
             <input name="curations" id="curations-input" autocomplete="off" value="[]" hidden>
             <div>
-                <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="accept" onclick="">
+                <input type="radio" name="verify-variant-btn" class="btn-check" id="accept-variant-btn" autocomplete="off" value="accept">
                 <label class="btn btn-sm btn-outline-success me-2" for="accept-variant-btn">Accept</label>
             </div>
             <div>
@@ -189,6 +189,7 @@
         </div>
         <hr>
         {{ sidebar_header("Annotate resistance") }}
+        <p class="small mb-1">Select at least one antibiotic to accept.</p>
         {# Annotate additional resistance #}
         <div class="mb-2">
             <select name="amrs" class="form-control form-select" id="antibiotic-group" multiple="multiple" data-placeholder="Select antibiotic" data-close-on-select="false">
@@ -215,8 +216,8 @@
         </div>
         {# Confirm annotation #}
         <hr>
-        <div class="col-auto"auld tri>
-            <input class="btn btn-sm btn-success" type="submit" value="Confirm" name="classify-variant">
+        <div class="col-auto">
+            <input class="btn btn-sm btn-success" type="submit" value="Confirm" name="classify-variant" disabled>
         </div>
     </form>
 </div>
@@ -225,7 +226,7 @@
 {% block content %}
 {% set footnotes = [] %}
 <div class="container-fluid br-layout variant-layout">
-    {{ sidebar(sample, optional_macro=export_btn, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
+    {{ sidebar(sample, bad_qc_actions, optional_macro=export_btn, metadata=metadata_tbls, groups=sample_groups|default(none)) }}
     <main class="br-main order-1">
         <div class="br-toc">
             {# right handed sidebar for filters and classification #}

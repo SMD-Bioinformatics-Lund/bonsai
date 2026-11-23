@@ -84,6 +84,7 @@ def test_curation_post_renders_fresh_sample_data(app, monkeypatch):
         data={
             "classify-variant": "1",
             "verify-variant-btn": "accept",
+            "amrs": ["rifampicin"],
             "curations": json.dumps([{
                 "analysis_id": "analysis-1", "analysis_type": "amr", "variant_id": "variant-1"
             }]),

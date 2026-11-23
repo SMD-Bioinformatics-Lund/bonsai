@@ -45,6 +45,7 @@ from .controllers import (
 )
 
 LOG = logging.getLogger(__name__)
+BAD_QC_ACTIONS = [member.value for member in BadSampleQualityAction]
 
 samples_bp = Blueprint(
     "samples",
@@ -147,7 +148,7 @@ def sample(sample_id: str) -> str:
         reverse=True,
     )
 
-    # filter tbprofiler results and sort variants
+    # The Summary template filters TBProfiler variants by curation decision.
     sample_info = filter_variants_if_processed(sample_info)
 
     # Sort variants within all prediction results
@@ -156,9 +157,6 @@ def sample(sample_id: str) -> str:
             pred_res["result"]["variants"] = sort_variants(
                 pred_res["result"]["variants"]
             )
-
-    # get all actions if sample fail qc
-    bad_qc_actions = [member.value for member in BadSampleQualityAction]
 
     kw_meta_records, meta_tbls = split_metadata(sample_info)
 
@@ -174,11 +172,10 @@ def sample(sample_id: str) -> str:
         group_id=group_id,
         title=sample_info["sample_name"],
         is_filtered=bool(group_id),
-        bad_qc_actions=bad_qc_actions,
+        bad_qc_actions=BAD_QC_ACTIONS,
         extended=extended,
         kw_metadata=kw_meta_records,
         metadata_tbls=meta_tbls,
-        token=current_user.token,
     )
 
 
@@ -237,7 +234,7 @@ def update_qc_classification(sample_id: str) -> str:
 
     # build data to store in db
     result = request.form.get("qc-validation", None)
-    if result == QualityControlResult.PASSED.value:
+    if result in {QualityControlResult.PASSED.value, QualityControlResult.UNPROCESSED.value}:
         action = None
         comment = ""
     elif result == QualityControlResult.FAILED.value:
@@ -531,6 +528,7 @@ def resistance_variants(sample_id: str) -> str:
         rejection_reasons=rejection_reasons,
         display_igv=display_genome_browser,
         metadata_tbls=meta_tbls,
+        bad_qc_actions=BAD_QC_ACTIONS,
     )
 
 
@@ -583,6 +581,7 @@ def metadata(sample_id: str) -> str:
         kw_tbl=kw_tbl,
         metadata_tbls=metadata_tbls,
         grouped_metadata_tbls=grouped_meta_tbl,
+        bad_qc_actions=BAD_QC_ACTIONS,
     )
 
 
