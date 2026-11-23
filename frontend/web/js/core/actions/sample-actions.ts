@@ -205,6 +205,8 @@ export function initSetSampleQc(
   const failedQcCommentContainer = form.querySelector("#failed-qc-comment-container") as HTMLElement;
   const failedQcComment = failedQcCommentContainer.querySelector("textarea")!;
   const submitBtn = form.querySelector("#qc-submit-btn") as HTMLButtonElement;
+  let hasSavedFailureDetails = unprocessedQcBtn.defaultChecked && Boolean(failedQcAction.value || failedQcComment.value);
+  let submitting = false;
 
   const hideQcRejection = () => {
     failedQcAction.disabled = true;
@@ -221,11 +223,16 @@ export function initSetSampleQc(
 
   passedQcBtn.onclick = hideQcRejection;
   failedQcBtn.onclick = showQcRejection;
-  unprocessedQcBtn.onclick = hideQcRejection;
-  form.onchange = () => {
-    const qcStatus = form.querySelector<HTMLInputElement>("input[name='qc-validation']:checked");
-    submitBtn.disabled = !qcStatus || (qcStatus.value === "failed" && failedQcAction.value === "");
+  unprocessedQcBtn.onclick = () => {
+    hideQcRejection();
+    // Clicking the already-selected reset radio can clear details without a change event.
+    if (hasSavedFailureDetails && !submitting) submitBtn.disabled = false;
   };
+  const updateSubmitButton = () => {
+    const qcStatus = form.querySelector<HTMLInputElement>("input[name='qc-validation']:checked");
+    submitBtn.disabled = submitting || !qcStatus || (qcStatus.value === "failed" && failedQcAction.value === "");
+  };
+  form.onchange = updateSubmitButton;
 
   // add submit function
   submitBtn.onclick = async (e: Event) => {
@@ -245,13 +252,15 @@ export function initSetSampleQc(
     };
 
     // Disable submit button while requests are processing
+    submitting = true;
     submitBtn.disabled = true;
     // allSettled allows proceeding with successful samples even if some failed
     // The alternative would be Promise.all(...)
     const results = await Promise.allSettled(
       sampleIds.map((sampleId) => submitQc(sampleId, qcStatus)),
     );
-    submitBtn.disabled = false;
+    submitting = false;
+    updateSubmitButton();
 
     const updatedSampleIds: string[] = [];
     let confirmedStatus: ApiSampleQcStatus | undefined;
@@ -279,7 +288,13 @@ export function initSetSampleQc(
     });
 
     if (updatedSampleIds.length > 0 && confirmedStatus) {
-      if (!isFailed && status.checked) failedQcComment.value = "";
+      if (!isFailed) {
+        if (status.checked) {
+          failedQcComment.value = "";
+          if (status === unprocessedQcBtn && hasSavedFailureDetails) submitBtn.disabled = true;
+        }
+        hasSavedFailureDetails = false;
+      }
       onStatusChange(confirmedStatus, updatedSampleIds);
       const sampleLabel = updatedSampleIds.length === 1 ? "sample" : "samples";
       throwSmallToast(`Updated QC of ${updatedSampleIds.length} ${sampleLabel}`, "success");
