@@ -81,8 +81,10 @@
     <td data-search="{% for tag in tag_info %}{{tag.label}} {% endfor %}">
     {% for tag in tag_info %}
         <span class="badge text-bg-{{tag.severity}} p-1 me-1"
-              data-bs-toggle="tooltip" data-bs-placement="top" 
-              data-bs-title="{{ tag.description | default("-") }}">{{tag.label}}</span>
+              {% if tag.description | default("", true) | trim %}
+                  data-bs-toggle="tooltip" data-bs-placement="top"
+                  data-bs-title="{{ tag.description }}"
+              {% endif %}>{{tag.label}}</span>
     {% endfor %}
     </td>
 {% endmacro %}
