@@ -166,22 +166,4 @@
         </div>
     </main>
 </div>
-<script src="{{ asset_url('sample-view.js') }}"></script>
-<script>
-    const apiUrl = "{{ config.API_EXTERNAL_URL }}"
-    const accessToken = "{{ token }}"
-    const sampleId = getSampleId()
-    const groupId = {{ group_id|tojson }}
-
-    document.addEventListener('DOMContentLoaded', () => {
-        // get similar samples newick
-        initSampleView("{{ config.API_EXTERNAL_URL }}", "{{ token }}", "", sampleId, groupId)
-    });
-
-    function getSampleId() {
-        // get sample id from the URL
-        const samplePos = window.location.pathname.split('/').indexOf('sample')
-        return window.location.pathname.split('/')[samplePos + 1]
-    }
-</script>
 {% endblock content %}

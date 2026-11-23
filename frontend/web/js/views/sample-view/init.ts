@@ -15,10 +15,12 @@ export async function initSampleView(
   initTooltip();
   initBrackenTables();
 
-  const qcStatusForm = document.getElementById("qc-classification-form") as HTMLButtonElement;
+  const qcStatusForm = document.getElementById("qc-classification-form");
   if (qcStatusForm) {
     initSetSampleQc(() => [sampleId], api.setSampleQc.bind(api), updateQcStatus, qcStatusForm);
   }
+
+  if (!document.getElementById("similar-samples-card")) return null;
 
   let narrow_search_to: string[] | null = null;
   if (groupId !== null) {

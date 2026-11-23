@@ -60,9 +60,13 @@
                 <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down" aria-hidden="true"></i></label>
                 <input type="radio" class="btn-check btn-sm" name="qc-validation"
                        id="unprocessed-qc-btn" autocomplete="off" value="unprocessed"
+                       aria-label="Reset QC to Unprocessed"
                        {% if selected_qc_status == "unprocessed" %}checked{% endif %}
                 >
-                <label class="btn btn-outline-secondary" for="unprocessed-qc-btn">Unprocessed</label>
+                <label class="btn btn-outline-secondary" for="unprocessed-qc-btn"
+                       data-bs-toggle="tooltip" data-bs-placement="top" title="Unprocessed">
+                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                </label>
             </div>
             <div class="col-auto d-flex flex-row">
                 <select
@@ -177,6 +181,18 @@
         comment_text=sample_qc_classification_obj.comment
         ) }}
     </form>
+    <script src="{{ asset_url('sample-view.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initSampleView(
+                {{ config.API_EXTERNAL_URL|tojson }},
+                {{ current_user.token|default('')|tojson }},
+                "",
+                {{ sample_id|tojson }},
+                {{ group_id|default(none)|tojson }}
+            );
+        });
+    </script>
 {% endmacro %}
 
 {% macro metadata_link(endpoint, sample_id, entry) %}
