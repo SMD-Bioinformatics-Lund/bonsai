@@ -14,8 +14,9 @@ function table(count) {
   const body = { rows: Array.from({ length: count }, () => ({ hidden: false })) };
   const attributes = new Map();
   let onClick;
-  const button = count > 20 ? {
+  const button = count > 5 ? {
     hidden: true, textContent: "Show less",
+    dataset: { brackenToggle: "5" },
     setAttribute: (key, value) => attributes.set(key, value),
     getAttribute: key => attributes.get(key),
     addEventListener: (name, fn) => { if (name === "click") onClick = fn; },
@@ -33,10 +34,10 @@ function initialize(tables) {
   exports.initBrackenTables();
 }
 
-test("long Bracken tables show twenty rows and toggle all remaining rows", () => {
-  const t = table(23);
+test("long Bracken tables show five rows and toggle all remaining rows", () => {
+  const t = table(8);
   initialize([t]);
-  assert.equal(t.body.rows.filter(row => !row.hidden).length, 20);
+  assert.equal(t.body.rows.filter(row => !row.hidden).length, 5);
   assert.equal(t.button.hidden, false);
   assert.equal(t.button.textContent, "Show more (3)");
   assert.equal(t.button.getAttribute("aria-expanded"), "false");
@@ -48,15 +49,15 @@ test("long Bracken tables show twenty rows and toggle all remaining rows", () =>
   assert.equal(t.button.getAttribute("aria-expanded"), "true");
 
   t.button.click();
-  assert.equal(t.body.rows.filter(row => !row.hidden).length, 20);
+  assert.equal(t.body.rows.filter(row => !row.hidden).length, 5);
 });
 
 test("short tables stay visible and multiple cards expand independently", () => {
-  const short = table(20), a = table(21), b = table(24);
+  const short = table(5), a = table(6), b = table(9);
   initialize([short, a, b]);
   assert.ok(short.body.rows.every(row => !row.hidden));
   assert.notEqual(a.body.id, b.body.id);
   a.button.click();
-  assert.equal(a.body.rows.filter(row => !row.hidden).length, 21);
-  assert.equal(b.body.rows.filter(row => !row.hidden).length, 20);
+  assert.equal(a.body.rows.filter(row => !row.hidden).length, 6);
+  assert.equal(b.body.rows.filter(row => !row.hidden).length, 5);
 });
