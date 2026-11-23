@@ -33,8 +33,9 @@
                     {{ delete_samples_btn() }}
 
                     {# remove samples from group #}
-                    <button id="remove-from-group-btn" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ group_id }}">
-                        <i class="bi bi-folder-minus"></i>
+                    <button id="remove-from-group-btn" type="button" class="btn btn-sm btn-secondary ms-1" data-bi-group-id="{{ group_id }}">
+                        <i class="bi bi-folder-minus" aria-hidden="true"></i>
+                        Remove from group
                     </button>
 
                     {# Dropdown for adding samples to group #}
