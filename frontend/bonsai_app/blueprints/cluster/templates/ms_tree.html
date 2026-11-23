@@ -303,15 +303,14 @@
             "#tooltip-text",
           ];
           selectElements.forEach((selector) => {
-            const select = $(selector);
-            let targetElement = select;
+            let targetElement = $(selector);
             if (category) {
-              targetElement = select
-                .children("optgroup")
-                .filter((_, group) => group.label === category);
-              if (!targetElement.length) {
-                targetElement = $("<optgroup>").attr("label", category).appendTo(select);
-              }
+              // Each dropdown needs its own group for the metadata field.
+              const group = targetElement.children("optgroup")
+                .filter((_, option) => option.label === category);
+              targetElement = group.length
+                ? group
+                : $("<optgroup>").attr("label", category).appendTo(targetElement);
             }
             targetElement.append(
               $("<option>").attr("value", fieldKey).text(label),
@@ -334,11 +333,8 @@
         if (!e) {
           e = d3.event;
         }
-        if (msg instanceof Node) {
-          tooltip_div.node().replaceChildren(msg);
-        } else {
-          tooltip_div.text(msg ?? "");
-        }
+        // replaceChildren inserts strings as text and accepts the grouped-sample list.
+        tooltip_div.node().replaceChildren(msg ?? "");
         tooltip_div.transition().duration(200).style("opacity", 0.9);
         tooltip_div
           .style("left", `${e.pageX}px`)
@@ -462,9 +458,7 @@
         if (data["log_link_scale"]) {
           $("#link-log-scale").prop("checked", true);
         }
-        $("#show-individual-segments").prop(
-          "checked", Boolean(data["show_individual_segments"]),
-        );
+        $("#show-individual-segments").prop("checked", Boolean(data["show_individual_segments"]));
         if (data["link_font_size"]) {
           $("#slider-linkfontsize").slider({ value: data["link_font_size"] });
           $("#spinner-linkfontsize").spinner({ value: data["link_font_size"] });
@@ -522,6 +516,7 @@
           if (!$("#show-node-tooltip").prop("checked")) return;
 
           if (the_tree.display_category === "nothing") {
+            // The tooltip uses its own metadata selector.
             const selectedField = $("#tooltip-text").val();
             const list = document.createElement("ul");
             list.style.cssText = "margin:0; padding-left:1.2em";
@@ -556,28 +551,25 @@
         });
         //the_tree.resize();
 
-        if (the_tree.metadata_info) {
-          addMetadataOptions(the_tree.metadata_info);
-        }
+        const fields = the_tree.metadata_info ?? {};
+        addMetadataOptions(fields);
         const savedControls = data.layout_data?.nodes_links;
-        const labelField = savedControls?.node_text_value ?? (
-          [DEFAULT_NODE_LABEL_FIELD, DEFAULT_TOOLTIP_FIELD]
-            .find((field) => field in the_tree.metadata_info) ?? "node_id"
-        );
+        const nameField = DEFAULT_NODE_LABEL_FIELD in fields ? DEFAULT_NODE_LABEL_FIELD : null;
+        const labIdField = DEFAULT_TOOLTIP_FIELD in fields ? DEFAULT_TOOLTIP_FIELD : null;
+        const labelField = savedControls?.node_text_value ?? nameField ?? labIdField ?? "node_id";
         if (labelField === "node_id") {
           $("#node-label-text").append(new Option("Node ID", "node_id"));
         }
         $("#node-label-text").val(labelField);
         the_tree.setNodeText(labelField);
-        const tooltipField = [DEFAULT_TOOLTIP_FIELD, DEFAULT_NODE_LABEL_FIELD]
-          .find((field) => field in the_tree.metadata_info) ?? "nothing";
-        $("#tooltip-text").val(tooltipField);
+        $("#tooltip-text").val(labIdField ?? nameField ?? "nothing");
 
         if (data["initial_category"]) {
           $("#metadata-select").val(data["initial_category"]);
         } else {
           $("#metadata-select").val("nothing");
         }
+        // The tree constructor applies display settings from saved layouts.
         if (!savedControls) {
           the_tree.showNodeLabels(default_control_panel_values.show_node_labels);
           the_tree.showIndividualSegments(default_control_panel_values.show_individual_segments);
