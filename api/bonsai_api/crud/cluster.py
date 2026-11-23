@@ -38,8 +38,7 @@ class TypingProfileAggregate(RWModel):  # pylint: disable=too-few-public-methods
     external_sample_id: str | None = None
     typing_result: dict[str, Any]
     scheme: str | None = None  # Detected MLST scheme or producing cgMLST run's assay.
-    assay: str | None = None  # Assay of the run that produced the selected result.
-    sample_assay: str | None = None  # Latest assay shown in the sample overview, for notices.
+    assay: str | None = None
 
     def allele_profile(self, strip_errors: bool = True):
         """Get allele profile."""
@@ -160,19 +159,17 @@ async def get_typing_profiles(
                 f"Invalid {name} allele profile for {sample_labels[raw['sample_id']]}: "
                 "the stored allele calls could not be read."
             ) from error
-        sample_assay = (
-            get_profile_assay(raw, run_id_field="last_pipeline_run_id")
-            if allow_empty and not alleles
-            else None
-        )
         results.append(
             TypingProfileAggregate(
                 sample_id=raw["sample_id"],
                 sample_name=raw.get("sample_name"),
                 external_sample_id=raw.get("external_sample_id"),
                 scheme=get_profile_scheme(raw, typing_method),
-                assay=get_profile_assay(raw),
-                sample_assay=sample_assay,
+                assay=(
+                    get_profile_assay(raw)
+                    if alleles
+                    else get_profile_assay(raw, run_id_field="last_pipeline_run_id")
+                ),
                 typing_result=alleles,
             )
         )

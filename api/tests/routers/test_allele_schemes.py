@@ -196,7 +196,7 @@ def test_missing_profiles_have_removable_category_without_blocking_other_method(
     incomplete = [p.model_copy(deep=True) for p in complete]
     incomplete[1].typing_result = {}
     incomplete[1].sample_name = "CARD-123"
-    incomplete[1].sample_assay = "ecoli"
+    incomplete[1].assay = "ecoli"
     getter.side_effect = [
         incomplete if method == "mlst" else complete,
         incomplete if method == "cgmlst" else complete,

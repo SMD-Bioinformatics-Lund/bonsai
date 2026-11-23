@@ -111,13 +111,11 @@ def test_empty_profiles_are_reported_as_missing_typing_data():
 
 
 @pytest.mark.parametrize("method", ["mlst", "cgmlst"])
-def test_missing_typing_groups_use_the_sample_overview_assay(method):
+def test_missing_typing_profiles_are_grouped_by_assay(method):
     def missing(sid, assay):
-        sample = stored(sid, alleles={}, assay="older-assay", method=method)
+        sample = stored(sid, alleles={}, assay=assay, method=method)
         sample["sample_name"] = f"Name {sid}"
-        if assay:
-            sample["last_pipeline_run_id"] = "latest"
-            sample["pipeline_runs"].append({"pipeline_run_id": "latest", "assay": assay})
+        sample["last_pipeline_run_id"] = "run"
         return sample
 
     without_result = missing("b", "ecoli")

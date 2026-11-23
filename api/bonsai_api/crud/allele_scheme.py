@@ -92,7 +92,7 @@ def validate_typing_schemes(
     candidates = [p for p in profiles if p.typing_result]
     missing = [p for p in profiles if not p.typing_result]
     if missing:
-        groups = _identity_groups(missing, "sample_assay", missing_label="Unknown assay")
+        groups = _identity_groups(missing, "assay", missing_label="Unknown assay")
         return AlleleSchemeValidation(
             can_cluster=False,
             notice=f"Cannot cluster by {name}: typing data is unavailable for {len(missing)} "
