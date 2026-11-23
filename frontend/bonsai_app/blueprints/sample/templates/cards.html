@@ -395,7 +395,7 @@
 {% endmacro %}
 
 
-{% macro amr_prediction_card(analysis, extended=False) %}
+{% macro amr_prediction_card(analysis, extended=False, curated_only=False) %}
 <div class="card">
     <div class="card-header">{{ analysis.software | capitalize }} v{{ analysis.software_version }} [ <i>{{analysis.analysis_type | upper }}</i> ]</div>
     <div class="card-body">
@@ -408,7 +408,7 @@
     {% elif analysis.software == "mykrobe" %}
         {{ mykrobe_amr_prediction(analysis, extended=extended) }}
     {% elif analysis.software == "tbprofiler" %}
-        {{ tbprofiler_amr_prediction(analysis, extended=extended) }}
+        {{ tbprofiler_amr_prediction(analysis, extended=extended, curated_only=curated_only) }}
     {% endif %}
     </div>
 </div>
@@ -714,12 +714,16 @@
 {% endmacro %}
 
 
-{% macro tbprofiler_amr_prediction(analysis, extended=False) %}
+{% macro tbprofiler_amr_prediction(analysis, extended=False, curated_only=False) %}
 <div>
-    {% set result = analysis.result %}
-    {# resistance variants #}
-    <h5 class="card-title">Variants</h5>
-    {% if result.variants | n_results_with_resistance == 0 and not extended %}
+    {% set variants = analysis.result.variants | default([], true) %}
+    {% if curated_only %}
+        {% set variants = variants | selectattr("curation") | selectattr("curation.decision", "equalto", "accept") | list %}
+    {% endif %}
+    <h5 class="card-title">{{ "Curated variants" if curated_only else "Variants" }}</h5>
+    {% if curated_only and not variants %}
+        <p class="fw-light fst-italic">No curated variants to show.</p>
+    {% elif not curated_only and not extended and variants | n_results_with_resistance == 0 %}
         <p class="fw-light fst-italic">No resistance yielding mutations identified</p>
     {% else %}
         <div class="table-responsive">
@@ -750,8 +754,8 @@
                     </tr>
                 </thead>
                 <tbody id="tbprofiler-variant-table" class="table-group-divider">
-                    {% for variant in result.variants %}
-                        {% if variant.phenotypes | length > 0 or (variant.curation.phenotypes | default([], true) | length > 0) or extended %}
+                    {% for variant in variants %}
+                        {% if curated_only or extended or variant.phenotypes | length > 0 or (variant.curation.phenotypes | default([], true) | length > 0) %}
                         <tr class="{{ row_class }}">
                             {% if extended %}
                                 <td>
@@ -761,6 +765,7 @@
                                            data-variant-id="{{ variant.id }}"
                                            data-analysis-type="{{ analysis.analysis_type }}"
                                            data-analysis-id="{{ analysis.analysis_id }}"
+                                           data-predicted-resistance="{{ variant.phenotypes | default([], true) | selectattr('name') | map(attribute='name') | list | tojson | forceescape }}"
                                     >
                                 </td>
                             {% endif %}

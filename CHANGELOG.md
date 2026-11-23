@@ -94,6 +94,7 @@
 - Refresh sample tables when selection changes so selected-only rows and exports stay in sync. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Restrict variant selection to variant checkboxes so Select all does not add an undefined curation target. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Use saved curation decisions when hiding dismissed variants, avoiding detail-page errors for variants without the legacy verification field. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
+- Require an antibiotic when accepting variants, prefill predictions shared by the selected variants with removable badges, and show accepted curations on the sample summary. [#683](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/683)
 - Split group-membership lookups into batches of at most 100 sample IDs so membership preselection works for larger selections. [#624](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/624)
 - Allow appending metadata to samples with existing metadata without HTTP 500 errors, preserving existing entries. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)
 - Preserve concurrent metadata additions and reject conflicting field names atomically. [#623](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/623)

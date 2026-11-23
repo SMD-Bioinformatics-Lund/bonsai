@@ -148,7 +148,7 @@ def sample(sample_id: str) -> str:
         reverse=True,
     )
 
-    # filter tbprofiler results and sort variants
+    # The Summary template filters TBProfiler variants by curation decision.
     sample_info = filter_variants_if_processed(sample_info)
 
     # Sort variants within all prediction results

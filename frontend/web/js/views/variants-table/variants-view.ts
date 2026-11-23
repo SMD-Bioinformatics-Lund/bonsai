@@ -6,36 +6,28 @@ const selectedVariants = new Map<string, {
   variant_id: string;
   analysis_id: string;
   analysis_type: string;
+  predictedResistance: Set<string>;
 }>();
+
+const choiceOptions = { searchEnabled: true, itemSelectText: "", shouldSort: false };
 
 export function initVariantsView(): void {
   initSelects();
-  initButtons();
-  initVariantSelection();
+  const prefillResistance = initCurationForm();
+  initVariantSelection(() => {
+    renderVariantSelection();
+    prefillResistance?.();
+  });
   initVariantTables();
   initTooltip();
   resetSelectedOnLoad();
 }
 
 function initSelects(): void {
-  const selectors = [
-    "#antibiotic-group",
-    "#filter-genes",
-    "#filter-who-class",
-    "#filter-variant-type"
-  ];
-
-  selectors.forEach(selector => {
-    const el = document.querySelector(selector) as HTMLSelectElement | null;
-
-    if (!el) return;
-
-    new Choices(el, {
-      searchEnabled: true,
-      itemSelectText: '',
-      shouldSort: false
-    });
-  });
+  for (const selector of ["#filter-genes", "#filter-who-class", "#filter-variant-type"]) {
+    const select = document.querySelector<HTMLSelectElement>(selector);
+    if (select) new Choices(select, choiceOptions);
+  }
 }
 
 /* Initialize bootstrap tables */
@@ -60,36 +52,67 @@ function initVariantTables(): void {
   })
 }
 
-function initButtons(): void {
-  const acceptBtn = document.getElementById("accept-variant-btn");
-  const rejectBtn = document.getElementById("reject-variant-btn");
+function initCurationForm(): (() => void) | undefined {
+  const antibiotic = document.querySelector<HTMLSelectElement>("#antibiotic-group");
+  const form = antibiotic?.form;
+  if (!form) return;
 
-  const rejection = document.getElementById("rejection-reason-group") as HTMLSelectElement;
-  const antibiotic = document.getElementById("antibiotic-group") as HTMLSelectElement;
-  const highRes = document.getElementById("high-res-btn") as HTMLButtonElement;
-  const lowRes = document.getElementById("low-res-btn") as HTMLButtonElement;
+  const accept = form.querySelector<HTMLInputElement>("#accept-variant-btn");
+  const reject = form.querySelector<HTMLInputElement>("#reject-variant-btn");
+  const rejection = form.querySelector<HTMLSelectElement>("#rejection-reason-group");
+  const confirm = form.querySelector<HTMLInputElement>("[name='classify-variant']");
+  const levels = form.querySelectorAll<HTMLInputElement>("[name='resistance-lvl-btn']");
+  const antibioticValues = new Map(
+    Array.from(antibiotic.options, ({ value }) => [value.trim().toLowerCase(), value]),
+  );
+  const choices = new Choices(antibiotic, { ...choiceOptions, removeItemButton: true });
 
-  acceptBtn?.addEventListener("click", () => {
-    rejection.disabled = true;
-    antibiotic.disabled = false;
-    highRes.disabled = false;
-    lowRes.disabled = false;
-  });
+  function updateConfirm(): void {
+    const hasDecisionDetails =
+      (accept.checked && antibiotic.selectedOptions.length > 0) ||
+      (reject.checked && Boolean(rejection.value));
+    confirm.disabled = selectedVariants.size === 0 || !hasDecisionDetails;
+  }
 
-  rejectBtn?.addEventListener("click", () => {
-    rejection.disabled = false;
-    antibiotic.disabled = true;
-    highRes.disabled = true;
-    lowRes.disabled = true;
-  });
+  function updateDecision(): void {
+    rejection.disabled = !reject.checked;
+    levels.forEach(level => { level.disabled = reject.checked; });
+    if (reject.checked) choices.disable();
+    else choices.enable();
+  }
+
+  accept.addEventListener("change", updateDecision);
+  reject.addEventListener("change", updateDecision);
+  form.addEventListener("change", updateConfirm);
+  updateDecision();
+  updateConfirm();
+
+  return () => {
+    const [first, ...others] = Array.from(selectedVariants.values(), variant => variant.predictedResistance);
+    const shared = [...(first ?? [])].filter(value => others.every(predictions => predictions.has(value)));
+    const uncatalogued = shared.filter(value => !antibioticValues.has(value));
+    if (uncatalogued.length) {
+      choices.setChoices(uncatalogued.map(value => ({
+        value,
+        label: value.charAt(0).toUpperCase() + value.slice(1),
+      })));
+      uncatalogued.forEach(value => antibioticValues.set(value, value));
+    }
+    choices.removeActiveItems();
+    choices.setChoiceByValue(shared.map(value => antibioticValues.get(value)));
+    updateConfirm();
+  };
 }
 
-function initVariantSelection(): void {
+function initVariantSelection(updateSelection: () => void): void {
   // individual checkboxes
   document
     .querySelectorAll<HTMLInputElement>(".br-content input[type='checkbox'][data-variant-id]")
     .forEach(cb => {
-      cb.addEventListener("change", () => selectVariant(cb));
+      cb.addEventListener("change", () => {
+        selectVariant(cb);
+        updateSelection();
+      });
     });
 
   document
@@ -109,6 +132,7 @@ function initVariantSelection(): void {
 
   selectAll?.addEventListener("change", () => {
     selectAllVariants(selectAll, "tbprofiler-variant-table");
+    updateSelection();
   });
 }
 
@@ -122,12 +146,22 @@ function selectVariant(element: HTMLInputElement): void {
   const key = JSON.stringify(item);
 
   if (element.checked) {
-    selectedVariants.set(key, item);
+    const predictions: string[] = JSON.parse(element.dataset.predictedResistance ?? "[]");
+    selectedVariants.set(key, {
+      ...item,
+      predictedResistance: new Set(
+        predictions.map(name => name.trim().toLowerCase()).filter(Boolean),
+      ),
+    });
   } else {
     selectedVariants.delete(key);
   }
+}
 
-  const payload = Array.from(selectedVariants.values());
+function renderVariantSelection(): void {
+  const payload = Array.from(selectedVariants.values(), ({ variant_id, analysis_id, analysis_type }) => ({
+    variant_id, analysis_id, analysis_type,
+  }));
 
   const input = document.getElementById("curations-input") as HTMLInputElement;
   if (input) {
@@ -156,8 +190,5 @@ function resetSelectedOnLoad(): void {
   selectedVariants.clear();
   document.querySelectorAll<HTMLInputElement>('.br-content input[type="checkbox"]')
     .forEach(input => { input.checked = false; });
-  const input = document.getElementById("curations-input") as HTMLInputElement | null;
-  if (input) input.value = "[]";
-  const counter = document.getElementById("selected-variants-counter");
-  if (counter) counter.textContent = "0";
+  renderVariantSelection();
 }
