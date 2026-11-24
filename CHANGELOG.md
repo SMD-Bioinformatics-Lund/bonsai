@@ -37,7 +37,7 @@
 
 ### Fixed
 
-- Show newly selected optional columns in the group Summary table after saving group settings. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show newly selected optional columns in the group Summary table after saving group settings. [#690](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/690)
 - Show comment tooltips on every page of the sample tables and preserve literal tooltip text, including angle brackets and values such as `null`. Dismiss open tooltips when the table redraws and skip tooltips for tags without descriptions. [#687](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/687)
 - Keep MLST/cgMLST basket notices focused on missing data or conflicts and affected samples, without extra instructional sentences, with complete category membership available for removal and compatibility rechecked afterwards. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Group samples missing MLST or cgMLST data by their latest assay in basket notices, with the existing select and remove actions for each group. [#686](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/686)
