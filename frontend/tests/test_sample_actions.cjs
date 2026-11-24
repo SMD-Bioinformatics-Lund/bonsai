@@ -18,7 +18,11 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
   const toasts = [], logs = [], prompts = [], deleted = [], removed = [], groupRemovals = [], events = [];
   let hidden = 0;
   const spinner = { show() {}, hide() { hidden++; } };
-  const container = { querySelector: selector => selector === "spinner-element" ? spinner : { value: "0.5" } };
+  const treeBody = { textContent: "" };
+  const container = {
+    hidden: false,
+    querySelector: selector => ({ "spinner-element": spinner, "#tree-body": treeBody })[selector] ?? { value: "0.5" },
+  };
   const api = {
     deleteSamples: async samples => { deleted.push(samples); },
     removeSamplesFromGroup: async (groupId, samples) => {
@@ -53,7 +57,7 @@ function setup({ ids = [uuid], confirm = true, error, submissionFails = false } 
     window: { confirm: message => { prompts.push(message); return confirm; } },
     document: { getElementById: () => container },
   });
-  return { actions: exports, api, table, toasts, logs, prompts, deleted, removed, groupRemovals, events,
+  return { actions: exports, api, table, toasts, logs, prompts, deleted, removed, groupRemovals, events, container, treeBody,
     btn: { closest: () => container }, hidden: () => hidden };
 }
 
@@ -177,6 +181,18 @@ test("failed group removal preserves table rows and selection", async () => {
   assert.equal(h.events.length, 0);
   assert.equal(h.table.selectedRows, undefined);
   assert.equal(h.toasts.at(-1)[1], "error");
+});
+
+test("an empty similarity tree displays a message and keeps the card visible", async () => {
+  const h = setup();
+  h.api.checkJobStatus = async () => ({ status: "finished", result: "()" });
+
+  assert.equal(await h.actions.findAndClusterSimilarSamples(uuid, null, h.api), "()");
+  assert.equal(h.treeBody.textContent, "No similar samples to show.");
+  assert.equal(h.container.hidden, false);
+  assert.equal(h.hidden(), 1);
+  assert.deepEqual(h.toasts, []);
+  assert.deepEqual(h.logs, []);
 });
 
 for (const view of ["table", "detail"]) {
