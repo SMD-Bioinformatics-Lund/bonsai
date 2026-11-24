@@ -85,7 +85,13 @@
 <script src="{{ asset_url('group-view.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
+        initGroupView(
+            "{{ group_id }}",
+            "{{ config.API_EXTERNAL_URL }}",
+            "{{ token }}",
+            "",
+            {{ (not display_qc) | tojson }}
+        )
     });
 </script>
 {% endblock content %}
