@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add an Edit group shortcut for admins on the group Summary and QC pages. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Add Doctor alert output for cron with a configurable list of affected samples per check. Doctor checks SKA and MinHash by default and offers alignment checks via `--include-alignments`. [#667](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/667)
 - Add a green selection icon to basket notice groups to keep only their samples in the basket and recheck compatibility. [#666](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/666)
 - Show a spinner and status message while basket MLST/cgMLST compatibility checks are running. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
