@@ -35,3 +35,15 @@ def test_group_filters_keep_populated_columns_without_changing_layout():
     assert [col.id for col in table.columns if col.filterable] == ["zero", "partial"]
     assert [col.id for col in table.columns] == [col["id"] for col in columns]
     assert all(not col.visible for col in table.columns)
+
+
+@pytest.mark.parametrize("visible", [True, False])
+def test_group_column_uses_effective_visibility(visible):
+    table = format_tablular_data(
+        [{"sample_id": "sample-1", "quast_n50": 1000}],
+        [{
+            "id": "quast_n50", "label": "N50", "type": "number", "sortable": True,
+            "default_visible": not visible, "visible": visible,
+        }],
+    )
+    assert table.columns[0].visible is visible

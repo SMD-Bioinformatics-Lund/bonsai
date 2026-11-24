@@ -13,8 +13,12 @@ export function renderColumns(
     if (!selector) {
       console.warn("<column-selector> not found; skipping column")
     }
-    selector.items = availbleColumns.map( col => {
-        return {id: col.id, label: col.label, enabled: false || model.allowedColumnIds.includes(col.id)}});
+    const usesDefaults = model.mode === "edit" && model.allowedColumnIds.length === 0;
+    selector.items = availbleColumns.map(col => ({
+      id: col.id,
+      label: col.label,
+      enabled: usesDefaults ? col.default_visible : model.allowedColumnIds.includes(col.id),
+    }));
 
     selector.addEventListener("column-selector:change", (event: Event) => {
       const { items } = (event as CustomEvent<{ items: ColumnItem[] }>).detail;
