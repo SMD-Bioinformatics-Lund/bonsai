@@ -1,8 +1,12 @@
 """Column relevance is based on sample values rather than rendered placeholders."""
 
+from types import SimpleNamespace
+from unittest.mock import Mock
+
 import pytest
 
 from bonsai_app.blueprints.groups.controller import format_tablular_data
+from bonsai_app.blueprints.groups.views import _get_group_table_columns
 from bonsai_app.summary_columns import has_value
 
 
@@ -47,3 +51,16 @@ def test_group_column_uses_effective_visibility(visible):
         }],
     )
     assert table.columns[0].visible is visible
+
+
+def test_group_table_requests_hidden_allowed_columns():
+    column = {"id": "quast_n50", "default_visible": False, "visible": False}
+    api = Mock()
+    api.get_valid_group_columns.return_value = [
+        SimpleNamespace(model_dump=lambda **_: column),
+    ]
+
+    columns = _get_group_table_columns(api, SimpleNamespace(table_columns=["quast_n50"]), "group-1")
+
+    api.get_valid_group_columns.assert_called_once_with(group_id="group-1", include_invisible=True)
+    assert columns == [column]

@@ -379,21 +379,19 @@ async def build_column_overrides(
         if group_preset := group_obj.presets.get(preset):
             override_idx = {col.id: col for col in group_preset.overrides}
 
-    allowed_ids = set(group_obj.allowed_columns.column_ids)
-    # The group editor saves checked columns as the default table selection.
-    show_selected = bool(allowed_ids) and preset in (None, DEFAULT_PRESET_NAME)
-
     result: list[ColumnOut] = []
     for default_order, man_col in enumerate(manifest.columns, start=1):
-        if allowed_ids and man_col.id not in allowed_ids:
-            continue
+        # only include allowed columns if allowed columns have been set.
+        if len(group_obj.allowed_columns.column_ids) > 0:
+            if man_col.id not in group_obj.allowed_columns.column_ids:
+                continue
 
         ov: ColumnOverride | None = override_idx.get(man_col.id)
 
         # Mutate with override if available
         label = man_col.label if not (ov and ov.label is not None) else ov.label
         visible = (
-            show_selected or man_col.default_visible
+            man_col.default_visible
             if not (ov and ov.visible is not None)
             else ov.visible
         )

@@ -20,13 +20,19 @@ async def test_adding_and_removing_a_default_hidden_column():
     )
 
     group.allowed_columns.column_ids.append("quast_n50")
-    columns = await build_column_overrides(group, MANIFEST, preset="default")
+    columns = await build_column_overrides(
+        group, MANIFEST, preset="default", include_invisible=True
+    )
     assert [column.id for column in columns] == ["sample_id", "sample_name", "quast_n50"]
-    assert columns[-1].visible is True
-    assert columns[-1].default_visible is False
+    assert columns[-1].visible is False
+
+    visible_columns = await build_column_overrides(group, MANIFEST, preset="default")
+    assert [column.id for column in visible_columns] == ["sample_id", "sample_name"]
 
     group.allowed_columns.column_ids.remove("quast_n50")
-    columns = await build_column_overrides(group, MANIFEST, preset="default")
+    columns = await build_column_overrides(
+        group, MANIFEST, preset="default", include_invisible=True
+    )
     assert [column.id for column in columns] == ["sample_id", "sample_name"]
 
 
@@ -40,9 +46,10 @@ async def test_explicit_preset_visibility_takes_precedence():
         GroupPreset(
             preset_id="default",
             label="Default",
-            overrides=[ColumnOverride(id="quast_n50", visible=False)],
+            overrides=[ColumnOverride(id="quast_n50", visible=True)],
         )
     )
 
     columns = await build_column_overrides(group, MANIFEST, preset="default")
-    assert [column.id for column in columns] == ["sample_id"]
+    assert [column.id for column in columns] == ["sample_id", "quast_n50"]
+    assert columns[-1].visible is True
