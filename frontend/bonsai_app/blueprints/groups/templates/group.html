@@ -11,7 +11,15 @@
 {% block content %}
 <div class="card bg-white mt-2 col-lg-auto mx-2">
     <div class="card-body br-main">
-        <h4 class="card-title me-auto fw-light">{{group_name}}</h4>
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <h4 class="card-title mb-0 fw-light">{{ group_name }}</h4>
+            {% if current_user.is_admin %}
+                <a class="btn btn-sm btn-outline-secondary"
+                   href="{{ url_for('groups.group_editor_view', group_id=group_id) }}">
+                    <i class="bi bi-pencil" aria-hidden="true"></i> Edit group
+                </a>
+            {% endif %}
+        </div>
         <hr class="mt-2 col-md-2 border border-success border-2">
         <p class="card-text mb-2">{{group_desc}}</p>
         <table class="table table-sm w-auto">
@@ -77,7 +85,13 @@
 <script src="{{ asset_url('group-view.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        initGroupView("{{ group_id }}", "{{ config.API_EXTERNAL_URL }}", "{{ token }}", "")
+        initGroupView(
+            "{{ group_id }}",
+            "{{ config.API_EXTERNAL_URL }}",
+            "{{ token }}",
+            "",
+            {{ (not display_qc) | tojson }}
+        )
     });
 </script>
 {% endblock content %}

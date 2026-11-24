@@ -89,7 +89,7 @@ def format_tablular_data(
                 and col.get("filterable", True)
                 and col["id"] in relevant_ids
             ),
-            visible=col.get("default_visible", True),
+            visible=col.get("visible", col.get("default_visible", True)),
         )
         for col in column_defs
     ]

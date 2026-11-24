@@ -22,7 +22,7 @@ import "../../components/group-selector";
 import "../../components/spinner-element";
 import "../../utils/choice-select";
 
-const sampleTableConfig = {
+const sampleTableConfig = (exportVisibleColumnsOnly: boolean) => ({
   select: true,
   layout: {
     top1Start: {
@@ -47,9 +47,9 @@ const sampleTableConfig = {
           collectionLayout: "column-visibility-menu",
           columns: ':not([data-column-id="sample_id"])',
         },
-        "copy",
-        "csv",
-        "excel",
+        ...["copy", "csv", "excel"].map(extend => exportVisibleColumnsOnly
+          ? { extend, exportOptions: { columns: ":visible" } }
+          : extend),
       ],
     },
     top2Start: "searchBuilder",
@@ -60,7 +60,7 @@ const sampleTableConfig = {
   ],
   scrollX: true,
   pageLength: 50,
-};
+});
 
 function updateQcTableCells(
   table: TableController,
@@ -163,6 +163,7 @@ export async function initGroupView(
   bonsaiApiUrl: string,
   accessToken: string,
   refreshToken: string,
+  exportVisibleColumnsOnly = false,
 ): Promise<void> {
   const api = createGroupViewApi(bonsaiApiUrl, accessToken, refreshToken);
   const basket = initBasket(api);
@@ -183,8 +184,9 @@ export async function initGroupView(
   selectionCount.className = "text-muted ms-2 text-nowrap";
   selectionCount.setAttribute("role", "status");
   selectionCount.setAttribute("data-test-id", "sample-selection-count");
+  const baseTableConfig = sampleTableConfig(exportVisibleColumnsOnly);
   const tableConfig = {
-    ...sampleTableConfig,
+    ...baseTableConfig,
     preDrawCallback: function () {
       const body = this.api().table().body();
       body.querySelectorAll('[data-bs-toggle="tooltip"][aria-describedby]').forEach((trigger) => {
@@ -195,7 +197,7 @@ export async function initGroupView(
       initTooltip(this.api().table().body());
     },
     layout: {
-      ...sampleTableConfig.layout,
+      ...baseTableConfig.layout,
       topStart: ["pageLength", selectionCount],
     },
     columnDefs: [{

@@ -2,6 +2,7 @@
 
 ### Added
 
+- Add an Edit group shortcut for admins on the group Summary and QC pages. [#690](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/690)
 - Add Doctor alert output for cron with a configurable list of affected samples per check. Doctor checks SKA and MinHash by default and offers alignment checks via `--include-alignments`. [#667](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/667)
 - Add a green selection icon to basket notice groups to keep only their samples in the basket and recheck compatibility. [#666](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/666)
 - Show a spinner and status message while basket MLST/cgMLST compatibility checks are running. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
@@ -37,6 +38,8 @@
 
 ### Fixed
 
+- Export only the visible columns when copying or downloading the group Summary table. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
+- Show newly selected optional columns in the group Summary table after saving group settings. [#690](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/690)
 - Show comment tooltips on every page of the sample tables and preserve literal tooltip text, including angle brackets and values such as `null`. Dismiss open tooltips when the table redraws and skip tooltips for tags without descriptions. [#687](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/687)
 - Keep MLST/cgMLST basket notices focused on missing data or conflicts and affected samples, without extra instructional sentences, with complete category membership available for removal and compatibility rechecked afterwards. [#665](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/665)
 - Group samples missing MLST or cgMLST data by their latest assay in basket notices, with the existing select and remove actions for each group. [#686](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/686)

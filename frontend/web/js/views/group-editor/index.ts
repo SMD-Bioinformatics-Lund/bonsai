@@ -14,6 +14,7 @@ export class GroupEditor extends HTMLElement {
   private mode!: "create" | "edit";
   private groupId: string | null = null;
   private availableColumns: ManifestColumn[] = [];
+  private initialColumnIds: string[] = [];
 
   private _api?: GroupEditorApi;
   private isInitialized = false;
@@ -93,13 +94,15 @@ export class GroupEditor extends HTMLElement {
         await this._api.updateGroup(groupId, corePayload)
       }
 
-      // update allowed columns
-      // first narrow to only selected elements then get the col id
-      const selector =this.querySelector('column-selector') as ColumnSelector
-      await this._api.updateAllowedColumns(
-        groupId,
-        selector.items.filter(item => item.enabled).map(item => item.id)
-      );
+      const selector = this.querySelector<ColumnSelector>("column-selector")!;
+      const columnIds = selector.items.filter(item => item.enabled).map(item => item.id);
+      const columnsChanged = columnIds.length !== this.initialColumnIds.length
+        || columnIds.some((id, index) => id !== this.initialColumnIds[index]);
+      if (columnsChanged) {
+        await this._api.updateAllowedColumns(groupId, columnIds);
+        this.model.allowedColumnIds = columnIds;
+        this.initialColumnIds = columnIds;
+      }
 
       this.dispatchEvent(
         new CustomEvent("group-editor:saved", {
@@ -196,8 +199,8 @@ export class GroupEditor extends HTMLElement {
       this.model
     );
 
-    renderColumns(
-      this.querySelector("column-selector")!,
+    this.initialColumnIds = renderColumns(
+      this.querySelector<ColumnSelector>("column-selector")!,
       this.availableColumns,
       this.model
     );

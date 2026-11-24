@@ -85,8 +85,13 @@ def _get_group_table_columns(
 ) -> list[dict[str, Any]]:
     """Resolve the effective column configuration for a group table."""
     if group_info.table_columns:
-        columns = client.get_valid_group_columns(group_id=group_id)
-        return [column.model_dump(mode="json") for column in columns]
+        columns = client.get_valid_group_columns(group_id=group_id, include_invisible=True)
+        # Honor locked hidden columns and allow temporary toggles for visible columns.
+        return [
+            column.model_dump(mode="json")
+            for column in columns
+            if column.visible or not column.locked
+        ]
 
     column_info = client.get_valid_summary_columns()
     columns = column_info.get("columns")
