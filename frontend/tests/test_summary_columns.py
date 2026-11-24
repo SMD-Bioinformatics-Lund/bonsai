@@ -53,14 +53,20 @@ def test_group_column_uses_effective_visibility(visible):
     assert table.columns[0].visible is visible
 
 
-def test_group_table_requests_hidden_allowed_columns():
-    column = {"id": "quast_n50", "default_visible": False, "visible": False}
+@pytest.mark.parametrize(
+    ("visible", "locked", "included"),
+    [(False, False, True), (False, True, False), (True, True, True)],
+)
+def test_group_table_includes_columns_available_to_toggle(visible, locked, included):
+    column = {
+        "id": "quast_n50", "default_visible": False, "visible": visible, "locked": locked,
+    }
     api = Mock()
     api.get_valid_group_columns.return_value = [
-        SimpleNamespace(model_dump=lambda **_: column),
+        SimpleNamespace(**column, model_dump=lambda **_: column),
     ]
 
     columns = _get_group_table_columns(api, SimpleNamespace(table_columns=["quast_n50"]), "group-1")
 
     api.get_valid_group_columns.assert_called_once_with(group_id="group-1", include_invisible=True)
-    assert columns == [column]
+    assert columns == ([column] if included else [])
