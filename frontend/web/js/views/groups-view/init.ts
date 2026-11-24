@@ -1,3 +1,4 @@
+import { Tooltip } from "bootstrap";
 import { initToast, initTooltip, throwSmallToast } from "../../utils/notification";
 import { initSamplesTable, TableController } from "../../utils/table-controller";
 import {
@@ -184,6 +185,15 @@ export async function initGroupView(
   selectionCount.setAttribute("data-test-id", "sample-selection-count");
   const tableConfig = {
     ...sampleTableConfig,
+    preDrawCallback: function () {
+      const body = this.api().table().body();
+      body.querySelectorAll('[data-bs-toggle="tooltip"][aria-describedby]').forEach((trigger) => {
+        Tooltip.getInstance(trigger)?.hide();
+      });
+    },
+    drawCallback: function () {
+      initTooltip(this.api().table().body());
+    },
     layout: {
       ...sampleTableConfig.layout,
       topStart: ["pageLength", selectionCount],

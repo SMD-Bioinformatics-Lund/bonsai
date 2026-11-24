@@ -43,3 +43,18 @@ def test_removing_final_comment_removes_badge(app):
     html = template.render(comments=comments)
     assert BeautifulSoup(html, "html.parser").find("span", class_="badge") is None
     assert "Review note" not in html
+
+
+def test_comment_tooltip_preserves_literal_text(app):
+    template = app.jinja_env.from_string(
+        '{% from "cell_fmt.html" import comments_renderer %}{{ comments_renderer(comments) }}'
+    )
+    comment = {"comment": '<Review> & "notes"', "username": "<Reviewer>", "displayed": True}
+    html = template.render(comments=[comment])
+    badge = BeautifulSoup(html, "html.parser").find("span", class_="badge")
+    tooltip = BeautifulSoup(badge["data-bs-title"], "html.parser")
+
+    assert [p.get_text() for p in tooltip.find_all("p")] == [
+        comment["comment"],
+        f'- {comment["username"]}',
+    ]
