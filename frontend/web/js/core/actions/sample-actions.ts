@@ -327,6 +327,12 @@ export async function findAndClusterSimilarSamples(
     jobResult = await pollJob(jobFunc, 3000, 40);
     console.log("Here is the find similar result:", jobResult.result);
 
+    if (jobResult.result === "()") {
+      const treeBody = container.querySelector("#tree-body");
+      if (treeBody) treeBody.textContent = "No similar samples to show.";
+      return jobResult.result;
+    }
+
     // draw dendrogam in container element
     const leaves = drawDendrogram("#tree-body", jobResult.result, sampleId);
     await showSampleNames(leaves, api);

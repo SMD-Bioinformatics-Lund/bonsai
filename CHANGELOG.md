@@ -38,6 +38,7 @@
 
 ### Fixed
 
+- Show a message in the Similar samples card when there is no tree to display. [#691](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/691)
 - Export only the visible columns when copying or downloading the group Summary table. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show newly selected optional columns in the group Summary table after saving group settings. [#690](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/690)
 - Show comment tooltips on every page of the sample tables and preserve literal tooltip text, including angle brackets and values such as `null`. Dismiss open tooltips when the table redraws and skip tooltips for tags without descriptions. [#687](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/687)
