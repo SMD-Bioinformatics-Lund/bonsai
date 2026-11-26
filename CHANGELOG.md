@@ -38,6 +38,7 @@
 
 ### Fixed
 
+- Accept Gambitcore uploads with missing scientific names, assembly QC flags, or core metrics when an assessment is skipped. [#692](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/692)
 - Show a message in the Similar samples card when there is no tree to display. [#691](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/691)
 - Export only the visible columns when copying or downloading the group Summary table. [#PR](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/PR)
 - Show newly selected optional columns in the group Summary table after saving group settings. [#690](https://github.com/SMD-Bioinformatics-Lund/bonsai/pull/690)
