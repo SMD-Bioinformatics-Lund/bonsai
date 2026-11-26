@@ -1,13 +1,79 @@
 """Test functions for clustering."""
 
+import re
 from pathlib import Path
 
 import pytest
+from scipy.cluster.hierarchy import ClusterNode
+from sourmash import MinHash, SourmashSignature
 
-from minhash_service.analysis.cluster import ClusterMethod, cluster_signatures
+from minhash_service.analysis.cluster import (
+    ClusterMethod,
+    cluster_signatures,
+    tree_to_newick,
+)
 from minhash_service.signatures.io import read_signatures
 
 from ..utils import get_data_path
+
+
+@pytest.mark.parametrize("distance", [0.0, 0.004, 0.123456, 1.75, 12.875, 1e-10])
+def test_newick_preserves_leaf_and_internal_branch_lengths(distance: float):
+    """Small nonzero branches and fractional distances must survive export."""
+    subtree = ClusterNode(3, ClusterNode(0), ClusterNode(1), distance)
+    tree = ClusterNode(4, subtree, ClusterNode(2), 2 * distance)
+
+    newick = tree_to_newick(tree, "", tree.dist, ["A", "B", "C"])
+
+    leaves = {
+        name: float(length)
+        for name, length in re.findall(r"([ABC]):([^,();]+)", newick)
+    }
+    internal_lengths = [
+        float(length) for length in re.findall(r"\):([^,();]+)", newick)
+    ]
+    assert leaves == {"A": distance, "B": distance, "C": 2 * distance}
+    assert internal_lengths == [distance]
+
+
+@pytest.mark.parametrize(
+    "method,root_distance",
+    [
+        (ClusterMethod.SINGLE, 7 / 8),
+        (ClusterMethod.COMPLETE, 1),
+        (ClusterMethod.AVERAGE, 15 / 16),
+    ],
+)
+def test_cluster_uses_jaccard_distances(method: ClusterMethod, root_distance: float):
+    """Merge heights must use pairwise Jaccard distances, not similarity rows."""
+    signatures = []
+    for hashes in ([1, 2, 3, 4], [1, 2, 3, 4, 5], [5, 6, 7, 8]):
+        minhash = MinHash(n=0, ksize=31, scaled=1)
+        minhash.add_many(hashes)
+        signatures.append(SourmashSignature(minhash))
+
+    tree, checksums = cluster_signatures(signatures, method)
+
+    # A and B share 4 of 5 hashes; B and C share 1 of 8; A and C share none.
+    first_merge = next(node for node in (tree.left, tree.right) if not node.is_leaf())
+    assert set(first_merge.pre_order()) == {0, 1}
+    assert first_merge.dist == pytest.approx(1 / 5)
+    assert tree.dist == pytest.approx(root_distance)
+    assert checksums == [signature.md5sum() for signature in signatures]
+
+
+@pytest.mark.parametrize("hashes,distance", [([1, 2], 0), ([3, 4], 1)])
+def test_cluster_identical_and_disjoint_signatures(hashes: list[int], distance: float):
+    """Identical and disjoint signatures have distances zero and one."""
+    signatures = []
+    for values in ([1, 2], hashes):
+        minhash = MinHash(n=0, ksize=31, scaled=1)
+        minhash.add_many(values)
+        signatures.append(SourmashSignature(minhash))
+
+    tree, _ = cluster_signatures(signatures, ClusterMethod.SINGLE)
+
+    assert tree.dist == pytest.approx(distance)
 
 
 @pytest.mark.parametrize(

@@ -6,3 +6,4 @@ from .compare import ska_align as align
 from .compare import ska_distance as distance
 from .index import resolve_index_path
 from .index import ska_merge as merge
+from .index import ska_sample_count as sample_count

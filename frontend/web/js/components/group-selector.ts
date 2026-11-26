@@ -1,19 +1,21 @@
-import { emitEvent } from "../utils/event-bus";
-import { GroupInfo, MembershipEdges } from "../types";
+import { ApiGroupInfoResponse, MembershipEdges } from "../core/types";
 import { ChoiceSelect } from "../utils/choice-select";
+import { emitEvent } from "../utils/event-bus";
 
 const template = document.createElement("template");
 template.innerHTML = String.raw`
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
   <style>
-    :host { display: inline-block; }
-    .actions { display: flex; gap: .5rem; margin-top: .5rem; }
+    :host { display: block; width: min(32rem, calc(100vw - 3rem)); padding: .75rem; }
+    .group-picker { display: flex; align-items: flex-start; gap: .75rem; }
+    choice-select { flex: 1; min-width: 0; }
+    .actions { display: flex; flex-shrink: 0; gap: .5rem; }
   </style>
-      <div class="mb-3"><choice-select id="groups" multiple placeholder="Groups"></choice-select></div>
-      <div class="mb-3 actions">
-        <button id="apply" class="btn btn-sm btn-success">Apply</button>
-        <button id="clear" class="btn btn-sm btn-outline-secondary">Clear</button>
-      </div>
+  <div class="group-picker">
+    <choice-select id="groups" multiple placeholder="Groups"></choice-select>
+    <div class="actions">
+      <button id="apply" type="button" class="btn btn-sm btn-success">Apply</button>
+      <button id="clear" type="button" class="btn btn-sm btn-outline-secondary">Clear</button>
     </div>
   </div>
 `;
@@ -36,6 +38,7 @@ export class GroupSelector extends HTMLElement {
   private membershipAbort?: AbortController;
   private currentSelectedSamples: string[] = [];
   private currentMemberships: MembershipBySample = {};
+  private commonGroupIds = new Set<string>();
 
   constructor() {
     super();
@@ -76,6 +79,8 @@ export class GroupSelector extends HTMLElement {
 
     const sampleIds = this.getSelectedSamples();
     const selectedGroupIds: string[] = this.selector.getSelected();
+    const memberships = this.currentMemberships;
+    const commonGroupIds = new Set(this.commonGroupIds);
 
     if (!sampleIds.length) {
       this.dispatchEvent(
@@ -84,27 +89,36 @@ export class GroupSelector extends HTMLElement {
       return;
     }
 
+    const removedGroupIds = [...commonGroupIds].filter(gid => !selectedGroupIds.includes(gid));
+    if (removedGroupIds.length && !window.confirm(
+      `Remove ${sampleIds.length} selected sample(s) from ${removedGroupIds.length} deselected group(s)?\n\nThe samples will remain in Bonsai.`,
+    )) return;
+
+    let membershipChanged = false;
+
     try {
       // For each sample, compute which groups to add/remove
       // A sample should be in ALL selected groups and in NO deselected groups
       for (const sampleId of sampleIds) {
-        const currentGroups = new Set(this.currentMemberships[sampleId] ?? []);
+        const currentGroups = new Set(memberships[sampleId] ?? []);
         const targetGroups = new Set(selectedGroupIds);
 
         // Groups to add: in target but not in current
         const toAdd = [...targetGroups].filter(gid => !currentGroups.has(gid));
         // Groups to remove: in current but not in target
-        const toRemove = [...currentGroups].filter(gid => !targetGroups.has(gid));
+        const toRemove = [...commonGroupIds].filter(gid => currentGroups.has(gid) && !targetGroups.has(gid));
 
         if (toAdd.length > 0) {
           for (const gid of toAdd) {
             await this.addToGroup!(gid, [sampleId]);
+            membershipChanged = true;
           }
         }
 
         if (toRemove.length > 0) {
           for (const gid of toRemove) {
             await this.removeFromGroup!(gid, [sampleId]);
+            membershipChanged = true;
           }
         }
       }
@@ -114,6 +128,11 @@ export class GroupSelector extends HTMLElement {
     } catch (err) {
       console.error("Updating sample group memberships failed", err);
       this.dispatchEvent(new CustomEvent("apply:error", { detail: { error: err }, bubbles: true }));
+    } finally {
+      if (membershipChanged) {
+        emitEvent("samples:group-memberships-changed", { sampleIds });
+        await this.preselectGroupsForSamples(this.currentSelectedSamples);
+      }
     }
   };
 
@@ -165,10 +184,11 @@ export class GroupSelector extends HTMLElement {
 
       // Select only groups that ALL selected samples are members of (intersection)
       const groupNameIntersect = [...counts.entries()]
-        .filter(([_, cnt]) => cnt === nSamples)
+        .filter(([, count]) => count === nSamples)
         .map(([gid]) => gid);
 
       groupNameIntersect.sort();
+      this.commonGroupIds = new Set(groupNameIntersect);
       this.selector.setSelected(groupNameIntersect);
     } catch (err) {
       console.warn("Failed to preselect samples", err);
@@ -182,7 +202,7 @@ type MembershipBySample = Record<string, string[]>;
 
 function groupMemberships(
   edges: MembershipEdges,
-  { dedupe = true, sort = true } = {}
+  { sort = true } = {}
 ): MembershipBySample {
   const map = new Map<string, Set<string>>();
 

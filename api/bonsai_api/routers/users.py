@@ -3,7 +3,7 @@
 import logging
 from typing import Annotated
 
-from api_client.audit_log.client import AuditLogClient
+from bonsai_libs.api_client.audit_log.client import AuditLogClient
 from bonsai_api.crud.user import (
     add_samples_to_user_basket,
     delete_user,

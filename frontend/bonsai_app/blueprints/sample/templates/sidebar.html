@@ -46,18 +46,27 @@
             <div
                 class="btn-group btn-group-sm col-auto pb-1"
                 role="group"
-                aria-label="Sample qc rejection group">
+                aria-label="Sample QC status">
                 <input
                     type="radio" class="btn-check btn-sm" name="qc-validation"
-                    id="passed-qc-btn" autocomplete="off" value="passed"
+                    id="passed-qc-btn" autocomplete="off" value="passed" aria-label="Passed"
                     {% if selected_qc_status == "passed" %}checked{% endif %}
                 >
-                <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up"></i></label>
+                <label class="btn btn-outline-success" for="passed-qc-btn"><i class="bi bi-hand-thumbs-up" aria-hidden="true"></i></label>
                 <input type="radio" class="btn-check btn-sm" name="qc-validation"
-                       id="failed-qc-btn" autocomplete="off" value="failed"
+                       id="failed-qc-btn" autocomplete="off" value="failed" aria-label="Failed"
                        {% if selected_qc_status == "failed" %}checked{% endif %}
                 >
-                <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down"></i></label>
+                <label class="btn btn-outline-danger" for="failed-qc-btn"><i class="bi bi-hand-thumbs-down" aria-hidden="true"></i></label>
+                <input type="radio" class="btn-check btn-sm" name="qc-validation"
+                       id="unprocessed-qc-btn" autocomplete="off" value="unprocessed"
+                       aria-label="Reset QC to Unprocessed"
+                       {% if selected_qc_status == "unprocessed" %}checked{% endif %}
+                >
+                <label class="btn btn-outline-secondary" for="unprocessed-qc-btn"
+                       data-bs-toggle="tooltip" data-bs-placement="top" title="Unprocessed">
+                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                </label>
             </div>
             <div class="col-auto d-flex flex-row">
                 <select
@@ -153,7 +162,7 @@
 {% endmacro %}
 
 
-{% macro qc_classification(sample_qc_classification_obj, bad_qc_actions, sample_id) %}
+{% macro qc_classification(sample_qc_classification_obj, bad_qc_actions) %}
     {#
 
         Sidebar UI section for setting QC status in sample-view sidebar
@@ -161,7 +170,6 @@
         Inputs:
         - qc_classification_obj     SampleQcClassification  Sample QC settings
         - bad_qc_actions:           List[str]               List of selectable follow-up actions for failed samples
-        - sample_id:                str                     Current sample id
 
     #}
     <form id="qc-classification-form" name="qc-classification" class="form-control">
@@ -212,7 +220,7 @@
     <h6 class="{{ header_size }} text-muted text-uppercase {{ class_names }}">{{text}}</h6>
 {% endmacro %}
 
-{% macro sidebar(sample, bad_qc_actions, metadata=[], optional_macro=None) %}
+{% macro sidebar(sample, bad_qc_actions, metadata=[], optional_macro=None, groups=None) %}
 <aside class="br-sidebar border-end pe-2">
     <div>
         {{ sidebar_header("Metadata")}}
@@ -221,6 +229,25 @@
                 {{ metadata_link('samples.open_metadata_tbl', sample_id=sample.sample_id, entry=meta) }}
             {% endfor %}
         </ul>
+        <nav aria-label="Sample groups">
+            {{ sidebar_header("Groups") }}
+            {% if groups is none %}
+                <p class="text-muted">Unable to load group memberships.</p>
+            {% elif groups %}
+                <ul class="nav flex-column">
+                    {% for group in groups %}
+                        <li class="nav-item mb-2">
+                            <a class="link-secondary link-underline-success sample-group-link"
+                               href="{{ url_for('groups.group', group_id=group.group_id) }}">{{ group.display_name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% elif sample.groups %}
+                <p class="text-muted">No visible group memberships.</p>
+            {% else %}
+                <p class="text-muted">No group memberships.</p>
+            {% endif %}
+        </nav>
         {{ sidebar_header("Reports")}}
         <ul class="nav flex-column">
             {{ report_link('samples.metadata', sample_id=sample.sample_id, name='Metadata', icon="bi-clipboard-data") }}
@@ -229,7 +256,7 @@
         </ul>
 
         {{ sidebar_header("Quality control")}}
-        {{ qc_classification(sample.qc_status, bad_qc_actions, sample.sample_id) }}
+        {{ qc_classification(sample.qc_status, bad_qc_actions) }}
 
         {# optional specific to certain views #}
         {% if optional_macro %}

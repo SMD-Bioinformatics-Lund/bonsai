@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ asset_url('sample-view.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sampleId = {{ sample.sample_id|tojson }};
+        const api = createSampleViewApi(
+            {{ config.API_EXTERNAL_URL|tojson }},
+            {{ current_user.token|default('')|tojson }},
+            ""
+        );
+        initSampleSidebar(sampleId, api);
+        {% block init_sample_details %}{% endblock %}
+    });
+</script>
+{% endblock scripts %}

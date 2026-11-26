@@ -1191,12 +1191,14 @@ D3MSTree.prototype._setNodeText = function () {
     .attr("text-anchor", "middle")
     .attr("font-size", this.node_font_size)
     .attr("font-family", "sans-serif")
-    .attr("transform", (self) => `translate(0,${-self.node_font_size / 3})`)
+    // Bonsai: Use the tree's font size for the offset. D3 callbacks receive node data.
+    .attr("transform", `translate(0,${-this.node_font_size / 3})`)
     .text(function (it) {
       if (field && field !== "node_id") {
         const metaIds = grouped[it.id];
         if (metaIds) {
-          const display = metaIds.map(id => self.metadata[id][field]);
+          // Bonsai: Keep rendering grouped labels when a sample lacks metadata.
+          const display = metaIds.map(id => self.metadata[id]?.[field]);
           return display ? display : "ND";
         } else {
           return "ND";
@@ -1210,8 +1212,9 @@ D3MSTree.prototype._setNodeText = function () {
 
   function wrap(text) {
     text.each(function () {
+      // Bonsai: Skip empty labels so wrapping continues with the next sample.
       var text = d3.select(this),
-        words = text.text().split(",").reverse(),
+        words = text.text().split(",").filter(Boolean).reverse(),
         word,
         line = [],
         lineHeight = 1, // ems
@@ -1470,64 +1473,28 @@ D3MSTree.prototype._getPieData = function (d, category) {
 	
 	}*/
   if (category) {
-    //get all nodes assocaited with the master
-    var node_ids = this.grouped_nodes[d.id];
-    //get all the strains
-    var strains = [];
-    for (var i in node_ids) {
-      var id = node_ids[i];
-      if (this.metadata_map[id]) {
-        strains = strains.concat(this.metadata_map[id]);
-      } else {
-        strains.push("missing");
-      }
+    // Bonsai: Keep the sample IDs for each coloured slice so tooltips can show their metadata.
+    const samplesByType = Object.create(null);
+    for (const id of this._getIDsForNode(d.id)) {
+      const type = this.metadata[id]?.[category] || "missing";
+      (samplesByType[type] ??= []).push(id);
     }
-    var type_counts = {};
-    for (i in strains) {
-      strain = strains[i];
-
-      if (strain == "missing") {
-        var missing = type_counts["missing"];
-        if (!missing) {
-          type_counts["missing"] = 1;
-        } else {
-          type_counts["missing"]++;
-        }
-      } else {
-        strain_metadata = this.metadata[strain];
-        var value = strain_metadata[category];
-        if (!value) {
-          var missing = type_counts["missing"];
-          if (!missing) {
-            type_counts["missing"] = 1;
-          } else {
-            type_counts["missing"]++;
-          }
-        } else {
-          var count = type_counts[value];
-          if (!count) {
-            type_counts[value] = 1;
-          } else {
-            type_counts[value]++;
-          }
-        }
-      }
-    }
-    for (var type in type_counts) {
-      var count = type_counts[type];
+    for (const [type, ids] of Object.entries(samplesByType)) {
       if (this.show_individual_segments) {
-        for (var n = 0; n < count; n++) {
+        for (const id of ids) {
           results.push({
             value: 1,
             type: type,
             idx: d.id,
+            node_ids: [id],
           });
         }
       } else {
         results.push({
-          value: count,
+          value: ids.length,
           type: type,
           idx: d.id,
+          node_ids: ids,
         });
       }
     }
@@ -1560,6 +1527,7 @@ D3MSTree.prototype._getPieData = function (d, category) {
           ? this.metadata[d.id][category]
           : "missing",
         idx: d.id,
+        node_ids: [d.id],
       },
     ];
   }
@@ -1931,10 +1899,16 @@ D3MSTree.prototype.showLinkLabels = function (show) {
 };
 
 D3MSTree.prototype._showLinkLabels = function () {
-  var self = this;
   this.link_elements.selectAll("text").remove();
   if (!this.show_link_labels) {
     return;
+  }
+  function formatDistance(it) {
+    var distance = it.original_value;
+    // Keep small nonzero distances distinguishable from zero.
+    return distance > 0 && distance < 0.01
+      ? distance.toPrecision(2)
+      : distance.toFixed(2);
   }
   this.link_elements
     .append("text")
@@ -1947,11 +1921,7 @@ D3MSTree.prototype._showLinkLabels = function () {
     .style("stroke", "white")
     .style("stroke-width", "5px")
     .style("opacity", "0.9")
-    .text(function (it) {
-      return it.original_value >= 1
-        ? Math.floor(it.original_value)
-        : it.original_value.toPrecision(2);
-    });
+    .text(formatDistance);
   this.link_elements
     .append("text")
     .attr("class", "distance-label")
@@ -1962,11 +1932,7 @@ D3MSTree.prototype._showLinkLabels = function () {
     .style("fill", "#666666")
     .style("stroke", "#f0f0f0")
     .style("stroke-width", ".2px")
-    .text(function (it) {
-      return it.original_value >= 1
-        ? Math.floor(it.original_value)
-        : it.original_value.toPrecision(2);
-    });
+    .text(formatDistance);
 
   this.link_elements
     .selectAll("text")

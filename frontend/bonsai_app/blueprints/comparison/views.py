@@ -3,7 +3,7 @@
 from flask import Blueprint, redirect, render_template, session, url_for
 from flask_login import current_user, login_required
 
-from bonsai_app.bonsai import TokenObject, get_samples_by_id
+from bonsai_app.bonsai_api import get_api_client
 
 comparison_bp = Blueprint(
     "comparison",
@@ -26,9 +26,10 @@ def compare_res_page():
     if current_user.get_id() is None or not current_user.is_admin:
         return redirect(url_for("public.index"))
 
-    token = TokenObject(**current_user.get_id())
+    client = get_api_client()
+
     sample_ids = session["samples"]
-    samples = get_samples_by_id(token, sample_ids=sample_ids, limit=0, skip=0)
+    samples = client.get_samples_by_id(sample_ids=sample_ids, limit=0, skip=0)
 
     return render_template(
         "resistance_compare.html", title="Resistance", samples=samples
